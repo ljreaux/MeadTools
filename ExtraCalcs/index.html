@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extra Calculators</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <link rel="stylesheet" href="../mainstyles.css">
+  <script src="calc.js"></script>
+  <script src="sulfite.js"></script>
+  <script src="sorbate.js"></script>
+  <script src="convert.js"></script>
+  <script src="refrac.js"></script>
+  <script src="tempCorrect.js"></script>
+  <script src="blend.js"></script>
+</head>
+
+<body class="Nutes">
+  <div id="navbar">
+    <a  href="../Home/home.html">Home</a>
+    <a href="../NutrientCalc/nutrientCalc.html">Nutrient Calculator</a>
+    <a class="active" href="../ExtraCalcs/index.html">Extra Calculators</a>
+    <a href="../Documentation/documentation.html">Documentation</a>
+    <a href="../Contact/contact.html">Contact</a>
+  </div>
+  
+  <div class="abvCalc">
+    <table class="table">
+
+      <tr>
+        <td colspan="4">
+          <h1>ABV Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="OG">Enter OG:</label></td>
+        <td><input type="text" onchange="runOGBrix()" id="OG" required></td>
+        <td>
+          <p id="OGBrix">0 Brix</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="FG">Enter FG:</label></td>
+        <td><input type="text" onchange="runFGBrix()" value=".996" id="fg" required></td>
+        <td>
+          <p id="FGBrix">0 Brix</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td id="submit" colspan="4"><input value="Submit" type="button" onclick="return runABV() ;"></input>
+      </tr>
+
+    </table>
+    <h3 id="ABV"></h3>
+    <h4 id="delle"></h4>
+  </div>
+
+
+  <div class="sulfiteCalc">
+    <table>
+      <tr>
+        <td colspan="4">
+          <h1>Sulfite Addition Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="Size">Batch Size:</label></td>
+        <td><input id="batchSize" type="text"></td>
+        <td rowspan="2"><select id="units" name="units">
+            <option value="gal">Gallons</option>
+            <option value="liter">Liters</option>
+          </select></td>
+      </tr>
+
+      <tr>
+        <td><label for="ppm">Desired PPM:</label></td>
+        <td><input id="ppm" type="text"></td>
+      </tr>
+
+      <tr>
+        <td id="runsulfite" colspan="4"><input value="Submit" type="button" onclick="return displaySulfite() ;"></input>
+      </tr>
+
+    </table>
+    <h3 id="displayPPM"></h3>
+  </div>
+
+
+  <div class="sorbCalc">
+    <table>
+      <tr>
+        <td colspan="4">
+          <h1>Sorbate Addition Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="Size">Batch Size:</label></td>
+        <td><input id="sorbSize" type="text"></td>
+        <td rowspan="2"><select id="sorbUnits" name="units">
+            <option value="gal">Gallons</option>
+            <option value="liter">Liters</option>
+          </select></td>
+      </tr>
+
+      <tr>
+        <td><label for="abvSorb">ABV:</label></td>
+        <td><input id="sorbAbv" type="text"></td>
+      </tr>
+
+      <tr>
+        <td id="runsorbate" colspan="4"><input value="Submit" type="button"
+            onclick="return  displaySorbate() ;"></input>
+      </tr>
+
+    </table>
+    <h3 id="disSorbPPM"></h3>
+  </div>
+
+
+  <div class="convertSG">
+    <table class="convert">
+      <tr>
+        <td colspan="4">
+          <h1>Brix Conversion Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="gravityReading">Gravity:</label></td>
+        <td><input id="gravityReading" type="text"></td>
+        <td><select id="gravityUnits" name="units">
+            <option value="brix">Brix</option>
+            <option value="sg">SG</option>
+          </select></td>
+      </tr>
+
+      <tr>
+        <td id="runConvert" colspan="4"><input value="Submit" type="button"
+            onclick="return  displayConvert() ;"></input>
+      </tr>
+
+    </table>
+    <h3 id="disConvertFunc"></h3>
+  </div>
+
+
+  <div class="refrac">
+    <table class="refracTable">
+      <tr rowspan="2">
+        <td colspan="4">
+          <h1>Refractometer Correction Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="correction">Correction Factor:</label></td>
+        <td><input id="correction" type="text" value="1"></td>
+      </tr>
+
+
+      <tr rowspan="2">
+        <td><label for="OG">Enter OG:</label></td>
+        <td><input type="text" onchange="runCorOGBrix()" id="correctOG" required></td>
+        <td>
+          <select id="ogUnits" name="units">
+            <option value="brix">Brix</option>
+            <option value="sg">SG</option>
+          </select>
+          <p id="displayCorOG"></p>
+        </td>
+      </tr>
+
+      <tr rowspan="2">
+        <td><label for="FG">Enter FG in Brix:</label></td>
+        <td><input type="text" onchange="displaySG()" id="correctFG" required></td>
+        <td>
+          <p id="corSG"></p>
+        </td>
+      </tr>
+
+      <tr rowspan="2">
+        <td id="runCorrection" colspan="4"><input value="Submit" type="button"
+            onclick="return displayCorrection();"></input>
+      </tr>
+
+    </table>
+    <h3 id="disCorrectFunc"></h3>
+    <h3 id="disCorrectABV"></h3>
+  </div>
+
+  <div class="tempCorrect">
+    <table>
+      <tr>
+        <td colspan="4">
+          <h1>Hydrometer Temperature Correction</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2"><label for="measuredSG">Measured SG:</label></td>
+        <td><input type="text" onchange="displaySGBrix()" id="hydroSG" required></td>
+        <td>
+          <p id="disHydroSG"></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2"><label for="currentTemp">Current Temp:</label></td>
+        <td><input type="text" onchange="" id="currentTemp" required></td>
+        <td>
+          <select name="units" id="tempUnits" onchange="displayTempUnits()">
+            <option value="°F">°F</option>
+            <option value="°C">°C</option>
+          </select>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2"><label for="calibrationTemp">Calibration Temp:</label></td>
+        <td><input type="text" onchange="" id="calibrationTemp"></td>
+        <td>
+          <p id="displayTempUnits"></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td id="runTempCal" colspan="4"><input value="Submit" type="button"
+            onclick="return disTempCorrection();"></input>
+      </tr>
+    </table>
+    <h3 id="disTempCorrection"></h3>
+  </div>
+
+  <div class="blendingCalc">
+    <table>
+      <tr>
+        <td colspan="4">
+          <h1>Blending Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="value1">Value 1:</label></td>
+        <td><input type="text" id="blendv1"></td>
+        <td><label for="vol1">Volume 1:</label></td>
+        <td><input type="text" id="blendvol1"></td>
+      </tr>
+
+      <tr>
+        <td><label for="value2">Value 2:</label></td>
+        <td><input type="text" id="blendv2"></td>
+        <td><label for="vol2">Volume 2:</label></td>
+        <td><input type="text" id="blendvol2"></td>
+      </tr>
+
+      <tr>
+        <td>
+        <td id="runBlendCal" colspan="4"><input value="Submit" type="button" onclick="return runBlendCal();"></input>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2">
+          <h3 id="blendedValue">Blended Value:</h3>
+        </td>
+        <td colspan="2">
+          <h3 id="blendedVolume">Total Volume:</h3>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>
