@@ -7,11 +7,11 @@
   <title>Mead Tools</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="../mainstyles.css">
-  <script src="../navbar.js"></script>
+  <script src="./tools.js"></script>
 </head>
 
 <body>
-  
+
   <div id="navbar">
     <a class="active" href="../Home/home.html">Home</a>
     <a href="../NutrientCalc/nutrientCalc.html">Nutrient Calculator</a>
@@ -19,11 +19,11 @@
     <a href="../Documentation/documentation.html">Documentation</a>
     <a href="../Contact/contact.html">Contact</a>
   </div>
-  
+
   <div class="mainPage">
-   
+
     <h1>Welcome to Mead Tools</h1>
-   
+
     <p>This Calculator is intended to replace several other calculators all in one. Just input your ingredients,
       weights, and expected FG on this page and use that output directly for your nutrients. Input your yeast selection,
       number of additions, preferred nutrients, and whether or not you plan to use stabilizers. From there you can view
@@ -35,6 +35,107 @@
       calculators you may want/need are located on the additonal calculator page, but will not effect your pdf recipe
       sheet. Please let me know any and all changes/updates you would like see on this project. I can be contacted
       through the contact form.</p>
+  </div>
+  <div class="meadTools">
+    <table>
+      <tr>
+        <td colspan="5">
+          <h1>Recipe Builder</h1>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <h3>Ingredient</h3>
+        </td>
+        <td>
+          <h3>Amount to Add in <select id="mtUnits" name="units">
+              <option value="lbs">lbs</option>
+              <option value="kg">kg</option>
+            </select></h3>
+        </td>
+        <td>
+          <h3>Sugar Percentage (Brix)</h3>
+        </td>
+        <td>
+          <h3>Water Content</h3>
+        </td>
+        <td>
+          <h3>Total Volume <select id="volUnits" name="units">
+              <option value="gal">Gallons</option>
+              <option value="liters">Liters</option>
+            </select></h3>
+        </td>
+      </tr>
+      <tr>
+        <td><select id="ingredient" name="units">
+            <option value="honey">Honey</option>
+            <option value="blueberry">Blueberry</option>
+        </td>
+        <td><input type="number" id="weightAmount"
+            onchange="return calcGal('ingredientBrix', 'weightAmount', 'totalVol')" required></td>
+        <td>
+          <p id="ingredientBrix">79.6</p>
+        </td>
+        <td>
+          <p>15.5</p>
+        </td>
+        <td>
+          <p id="totalVol"></p>
+        </td>
+      </tr>
+      <tr>
+        <td><select id="ingredient2" name="units">
+            <option value="blueberry">Blueberry</option>
+            <option value="honey">Honey</option>
+
+        </td>
+        <td><input type="number" id="weightAmount2"
+            onchange="return calcGal('ingredientBrix2','weightAmount2', 'totalVol2')" required></td>
+        <td>
+          <p id="ingredientBrix2">9.36</p>
+        </td>
+        <td>
+          <p>84.2</p>
+        </td>
+        <td>
+          <p id="totalVol2"></p>
+        </td>
+      </tr>
+      <tr>
+        <td id="submit" colspan="6"><input value="Submit" type="button" onclick="return addVolume();"></input>
+      </tr>
+      </tr>
+
+      <tr>
+        <td>
+          <h3>Estimated OG:</h3>
+        </td>
+        <td>
+          <h3>Estimated FG:</h3>
+        </td>
+        <td>
+          <h3>ABV:</h3>
+        </td>
+        <td>
+          <h3>Delle Units:</h3>
+        </td>
+        <td rowspan="2">
+          <h3 id="addedVol"></h3>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <h4 id="estOG"></h4>
+        </td>
+        <td><input type="number" id="estFG" required></td>
+        <td>
+          <h4 id="estABV"></h4>
+        </td>
+        <td>
+          <h4 id="estDelle"></h4>
+        </td>
+      </tr>
+    </table>
   </div>
 </body>
 

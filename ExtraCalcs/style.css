@@ -6,7 +6,9 @@ body {
   flex-wrap: wrap;
   justify-content: center;
 }
-
+select, input {
+  border-radius: 10px;
+}
 /* the not is only to eliminate extra divs rendered by server */
 div:not(#tmc-app, #pwm-extension-root, #navbar) {
   background-color: beige;
