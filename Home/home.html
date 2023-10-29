@@ -101,8 +101,19 @@
           <p id="totalVol2"></p>
         </td>
       </tr>
+
       <tr>
-        <td id="submit" colspan="6"><input value="Submit" type="button" onclick="return addVolume();"></input>
+        <td><p>Water</p></td>
+        <td><p></p></td>
+        <td><input type="number" id="inputForJuice"
+          onchange="return" value="0" required></td>
+        <td><p>100</p></td>
+        <td><input type="number" id="waterVol"
+          onchange="return" value="0" required></td>
+      </tr>
+
+      <tr>
+        <td id="submit" colspan="6"><input value="Submit" type="button" onclick="return displayStuff()"></input>
       </tr>
       </tr>
 
@@ -127,7 +138,7 @@
         <td>
           <h4 id="estOG"></h4>
         </td>
-        <td><input type="number" id="estFG" required></td>
+        <td><input type="number" id="estFG" value=".996" required></td>
         <td>
           <h4 id="estABV"></h4>
         </td>
