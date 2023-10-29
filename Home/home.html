@@ -48,7 +48,7 @@
           <h3>Ingredient</h3>
         </td>
         <td>
-          <h3>Amount to Add in <select id="mtUnits" name="units">
+          <h3>Amount to Add in <select id="mtUnits" name="units" onchange=" calcGal('ingredientBrix', 'weightAmount', 'totalVol'); calcGal('ingredientBrix2','weightAmount2', 'totalVol2')">
               <option value="lbs">lbs</option>
               <option value="kg">kg</option>
             </select></h3>
@@ -60,7 +60,7 @@
           <h3>Water Content</h3>
         </td>
         <td>
-          <h3>Total Volume <select id="volUnits" name="units">
+          <h3>Total Volume <select id="volUnits" name="units" onchange=" calcGal('ingredientBrix', 'weightAmount', 'totalVol');calcGal('ingredientBrix2','weightAmount2', 'totalVol2')">
               <option value="gal">Gallons</option>
               <option value="liters">Liters</option>
             </select></h3>
@@ -108,7 +108,7 @@
         <td><input type="number" id="inputForJuice"
           onchange="return" value="0" required></td>
         <td><p>100</p></td>
-        <td><input type="text" id="waterVol"
+        <td><input type="text" value="0"  id="waterVol"
         required></td>
       </tr>
 
