@@ -36,7 +36,7 @@
 
       <tr>
         <td><label for="OG">Enter OG:</label></td>
-        <td><input type="text" onchange="runOGBrix()" id="OG" required></td>
+        <td><input type="number" onchange="runOGBrix()" id="OG" required></td>
         <td>
           <p id="OGBrix">0 Brix</p>
         </td>
@@ -44,7 +44,7 @@
 
       <tr>
         <td><label for="FG">Enter FG:</label></td>
-        <td><input type="text" onchange="runFGBrix()" value=".996" id="fg" required></td>
+        <td><input type="number" onchange="runFGBrix()" value=".996" id="fg" required></td>
         <td>
           <p id="FGBrix">0 Brix</p>
         </td>
@@ -70,7 +70,7 @@
 
       <tr>
         <td><label for="Size">Batch Size:</label></td>
-        <td><input id="batchSize" type="text"></td>
+        <td><input id="batchSize" type="number"></td>
         <td rowspan="2"><select id="units" name="units">
             <option value="gal">Gallons</option>
             <option value="liter">Liters</option>
@@ -79,7 +79,7 @@
 
       <tr>
         <td><label for="ppm">Desired PPM:</label></td>
-        <td><input id="ppm" type="text"></td>
+        <td><input id="ppm" type="number"></td>
       </tr>
 
       <tr>
@@ -101,7 +101,7 @@
 
       <tr>
         <td><label for="Size">Batch Size:</label></td>
-        <td><input id="sorbSize" type="text"></td>
+        <td><input id="sorbSize" type="number"></td>
         <td rowspan="2"><select id="sorbUnits" name="units">
             <option value="gal">Gallons</option>
             <option value="liter">Liters</option>
@@ -110,7 +110,7 @@
 
       <tr>
         <td><label for="abvSorb">ABV:</label></td>
-        <td><input id="sorbAbv" type="text"></td>
+        <td><input id="sorbAbv" type="number"></td>
       </tr>
 
       <tr>
@@ -133,7 +133,7 @@
 
       <tr>
         <td><label for="gravityReading">Gravity:</label></td>
-        <td><input id="gravityReading" type="text"></td>
+        <td><input id="gravityReading" type="number"></td>
         <td><select id="gravityUnits" name="units">
             <option value="brix">Brix</option>
             <option value="sg">SG</option>
@@ -160,13 +160,13 @@
 
       <tr>
         <td><label for="correction">Correction Factor:</label></td>
-        <td><input id="correction" type="text" value="1"></td>
+        <td><input id="correction" type="number" value="1"></td>
       </tr>
 
 
       <tr rowspan="2">
         <td><label for="OG">Enter OG:</label></td>
-        <td><input type="text" onchange="runCorOGBrix()" id="correctOG" required></td>
+        <td><input type="number" onchange="runCorOGBrix()" id="correctOG" required></td>
         <td>
           <select id="ogUnits" name="units">
             <option value="brix">Brix</option>
@@ -178,7 +178,7 @@
 
       <tr rowspan="2">
         <td><label for="FG">Enter FG in Brix:</label></td>
-        <td><input type="text" onchange="displaySG()" id="correctFG" required></td>
+        <td><input type="number" onchange="displaySG()" id="correctFG" required></td>
         <td>
           <p id="corSG"></p>
         </td>
@@ -204,7 +204,7 @@
 
       <tr>
         <td colspan="2"><label for="measuredSG">Measured SG:</label></td>
-        <td><input type="text" onchange="displaySGBrix()" id="hydroSG" required></td>
+        <td><input type="number" onchange="displaySGBrix()" id="hydroSG" required></td>
         <td>
           <p id="disHydroSG"></p>
         </td>
@@ -212,7 +212,7 @@
 
       <tr>
         <td colspan="2"><label for="currentTemp">Current Temp:</label></td>
-        <td><input type="text" onchange="" id="currentTemp" required></td>
+        <td><input type="number" onchange="" id="currentTemp" required></td>
         <td>
           <select name="units" id="tempUnits" onchange="displayTempUnits()">
             <option value="°F">°F</option>
@@ -223,7 +223,7 @@
 
       <tr>
         <td colspan="2"><label for="calibrationTemp">Calibration Temp:</label></td>
-        <td><input type="text" onchange="" id="calibrationTemp"></td>
+        <td><input type="number" onchange="" id="calibrationTemp"></td>
         <td>
           <p id="displayTempUnits"></p>
         </td>

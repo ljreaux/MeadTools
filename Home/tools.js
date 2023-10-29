@@ -28,23 +28,26 @@ function calcGal(a, w, b) {
 function addVolume() {
   const t1 = document.getElementById("totalVol").innerHTML;
   const t2 = document.getElementById("totalVol2").innerHTML;
-  const total = Number(t1) + Number(t2)
+  const t3 = document.getElementById("waterVol").value;
+  const total = Number(t1) + Number(t2)+ Number(t3)
   document.getElementById("addedVol").innerHTML = round(total, 4) + " gal"
   return total
 }
 
 // blending equation
 function blending(a, b, c, d) {
-  const blendedValue = ((a * c) + (b * d)) / (c + d)
+  const blendedNum = ((a * c) + (b * d))
+  const blendedDen = Number(c) + Number(d)
+  const blendedValue = blendedNum / blendedDen
   return blendedValue
 }
 
-function blendSG() {
-  const value1 = ingredientSG("ingredientBrix")
-  const value2 = ingredientSG("ingredientBrix2")
+function blendSG(id1, id2, v1, v2) {
+  const value1 = ingredientSG(id1)
+  const value2 = ingredientSG(id2)
 
-  const volume1 = document.getElementById("totalVol").innerHTML
-  const volume2 = document.getElementById("totalVol2").innerHTML
+  const volume1 = document.getElementById(v1).innerHTML
+  const volume2 = document.getElementById(v2).innerHTML
 
   const val1 = Number(value1)
   const val2 = Number(value2)
@@ -56,9 +59,10 @@ function blendSG() {
 
   // rounds answers 
   const roundedBlend = round(blendedValue, 3)
-  
+
   // displays value to screen
-  document.getElementById("estOG").innerHTML = roundedBlend
+  // document.getElementById("estOG").innerHTML = roundedBlend
+  // alert(vol1)
   return (roundedBlend)
 }
 
@@ -76,11 +80,37 @@ function MeadToolsABV(OG, FG) {
   return roundedABV
 }
 
-function runMTABV(){
-  const OG = blendSG()
+function runMTABV() {
+  let water = document.getElementById("waterVol").value
+  water = Number(water)
+
+  const v1 = ingredientSG("inputForJuice")
+  const v2 = ingredientSG("ingredientBrix")
+  
+  let vol2 = document.getElementById("totalVol").innerHTML
+  vol2 = Number(vol2)
+  
+  const v3 = ingredientSG("ingredientBrix2")
+  const vol3 = document.getElementById("totalVol2").innerHTML
+  
+  let OG
+  
+  if (water > 0) {
+    OG = blending(v1, v2, water, Number(vol2))
+  }
+  else {
+    OG = blendSG("ingredientBrix", "ingredientBrix2", "totalVol", "totalVol2")
+  }
+
+  if (OG === blending(v1, v2, water, Number(vol2))) {
+    OG = blending(OG, v3, (water + vol2), vol3)
+  } else { return OG }
+  
   const FG = document.getElementById("estFG").value
   const ABV = MeadToolsABV(OG, FG)
+  
   document.getElementById("estABV").innerHTML = ABV + "%"
+  document.getElementById("estOG").innerHTML = round(OG, 3)
   return ABV
 }
 
@@ -90,16 +120,16 @@ function delleUnits(a, b) {
   return Math.round(result)
 }
 
-function displayDelle(){
+function displayDelle() {
   const ABVstring = runMTABV()
   const FGstring = document.getElementById("estFG").value
   const ABV = Number(ABVstring)
-  const FG = Number (FGstring)
+  const FG = Number(FGstring)
   const DU = delleUnits(FG, ABV)
-  document.getElementById("estDelle").innerHTML = DU 
+  document.getElementById("estDelle").innerHTML = DU
 }
 
-function displayStuff(){
+function displayStuff() {
   displayDelle()
   addVolume()
 }

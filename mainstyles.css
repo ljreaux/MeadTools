@@ -1,5 +1,7 @@
 /* Style the navbar */
 #navbar {
+  position: fixed;
+  top: 0;
   overflow: hidden;
   background-color: #333;
 }
@@ -33,4 +35,13 @@ body:not(.Nutes) {
   flex-wrap: wrap;
   justify-content: center;
   flex-direction: column;
+}
+select, input {
+  border-radius: 10px;
+  text-align: center;
+  
+}
+
+body {
+  padding-top: 50px;
 }

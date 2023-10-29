@@ -6,7 +6,9 @@ function round(a, b) {
 
 // blending equation
 function blend(a, b, c, d) {
-  const blendedValue = ((a * c) + (b * d)) / (c + d)
+  const blendedNum = ((a * c) + (b * d))
+  const blendedDen = Number(c) + Number(d)
+  const blendedValue = blendedNum/blendedDen
   return blendedValue
 }
 
@@ -31,4 +33,5 @@ function runBlendCal() {
   // displays value to screen
   document.getElementById("blendedValue").innerHTML = "Blended Value: " + roundedBlend
   document.getElementById("blendedVolume").innerHTML = "Total Volume: " + roundedVol
+
 }
