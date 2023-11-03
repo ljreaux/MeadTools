@@ -1,0 +1,55 @@
+body {
+  background-color: black;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+select, input {
+  border-radius: 10px;
+}
+/* the not is only to eliminate extra divs rendered by server */
+div:not(#tmc-app, #pwm-extension-root, #navbar) {
+  background-color: beige;
+  text-align: center;
+  height: 400px;
+  align-items: center;
+  margin: 20px;
+  flex: 1 0 40%;
+  border: 1px solid;
+  border-radius: 30px;
+}
+.topnav{
+  display: flex;
+}
+table {
+
+  min-width: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
+
+label {
+  margin: 10px;
+}
+
+input {
+  border: 1px solid;
+  margin: 10px;
+}
+
+h3:not(#ABV) {
+  margin: 20px;
+}
+
+#sgBR{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+#sgBR input{
+  height: fit-content;}

@@ -5,8 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nutrient Calculator</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="../mainstyles.css">
+  <script src="nutes.js"></script>
 </head>
 
 <body>
@@ -16,6 +17,184 @@
     <a href="../ExtraCalcs/index.html">Extra Calculators</a>
     <a href="../Documentation/documentation.html">Documentation</a>
     <a href="../Contact/contact.html">Contact</a>
+  </div>
+  <div>
+    <table>
+      <tr>
+        <td colspan="5">
+          <h1>Nutrient Calculator</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <h3>Yeast Brand</h3>
+        </td>
+        <td>
+          <h3>Strain</h3>
+        </td>
+        <td>
+          <h3>Volume <select name="units" id="nuteVolUnits">
+            <option value="gal">gal</option>
+            <option value="liters">liters</option>
+          </select></h3>
+        </td>
+        <td>
+          <h3>Specific Gravity</h3>
+        </td>
+        <td>
+          <h3>Offset PPM</h3>
+        </td>
+      </tr>
+
+      <tr>
+        <td><select id="yeastBrand" name="brand">
+            <option value="Lalvin">Lalvin</option>
+            <option value="MangroveJack">Mangrove Jack</option>
+            <option value="RedStar">Red Star</option>
+            <option value="other">Other</option>
+        </td>
+        <td><select id="yeastBrand" name="brand">
+          <option value="EC1118">EC1118</option>
+          <option value="71B">71B</option>
+          <option value="BM 4x4">BM 4x4</option>
+          <option value="D47">D47</option>
+      </td>
+      <td><input type="number"></td>
+      <td id="sgBR"><input id="sgMeasurement" type="number"><p id="nuteOG">0 Brix</p></td>
+      
+      <td><input type="number" id="offsetYan" value="0"></td>
+      </tr>
+
+      <tr>
+        <td>
+          <h3>Nitrogen Requirement</h3>
+        </td>
+        <td>
+          <h3>Preferred Schedule</h3>          
+        </td>
+        <td><h3>Target YAN</h3></td>
+        <td><h3>Number of Additions</h3></td>
+        <td><h3>Yeast Amount (g)</h3></td>
+      </tr>
+
+      <tr>
+        <td>
+          <p id="nitrogenRequirement">Low</p>
+        </td>
+        <td>
+          <select name="preferredSchedule" id="nuteSchedule">
+            <option value="TOSNA">TOSNA (Fermaid O Only)</option>
+            <option value="FermK">Fermaid K Only</option>
+            <option value="DAP">DAP Only</option>
+            <option value="OandK">Fermaid O + K</option>
+            <option value="OandDAP">Fermaid O + DAP</option>
+            <option value="KandDAP">Fermaid K + DAP</option>
+            <option value="TBE">TBE (All Three)</option>
+          </select>
+        </td>
+        <td>
+          <p id="targetYan">0 PPM</p>
+        </td>
+        <td>
+          <select name="additions" id="numAdd">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </td>
+        <td>
+          <input  type="number" id="yeastAmount"></input>
+        </td>
+      </tr>
+      <tr>
+        <td id="submit" colspan="5"><input value="Submit" type="button" onclick="return calcPPM()"></input>
+        </td>
+      </tr>
+      
+      <tr>
+        <td></td>
+        <td><h3>Fermaid O</h3></td>
+        <td><h3>Fermaid K</h3></td>
+        <td><h3>DAP</h3></td>
+        <td><h3>Go Ferm (g)</h3></td>
+      </tr>
+      <tr>
+        <td>
+          <h3>Max g/L</h3>
+        </td>
+        <td>
+          <input type="number" name="fermOgpl" id="fermOgpl" value=".45" required>
+        </td>
+        <td>
+          <input type="number" name="fermKgpl" id="fermKgpl" value=".5" required>
+        </td>
+        <td>
+          <input type="number" name="DAP" id="DAPgpl" value=".96" required>
+        </td>
+        <td><p id="go-fermGrams">0g</p></td>
+      </tr>
+
+      <tr>
+        <td><h3>g/L to add</h3></td>
+        <td>
+          <p name="fermOToAdd" id="fermOToAdd"></p>
+        </td>
+        <td>
+          <p name="fermKToAdd" id="fermKToAdd"></p>
+        </td>
+        <td>
+          <p name="DAP" id="DAPToAdd"></p>
+        </td>
+        <td>
+          <h3>Water for Go-Ferm</h3>
+        </td>
+      </tr>
+
+      <tr>
+        <td><h3>PPM YAN</h3></td>
+        <td>
+          <p name="fermOPpm" id="fermOPpm"></p>
+        </td>
+        <td>
+          <p name="fermKPpm" id="fermKPpm"></p>
+        </td>
+        <td>
+          <p name="DAP" id="DAPPpm"></p>
+        </td>
+        <td>
+          <p>0ml</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td><h3>Total Grams</h3></td>
+        <td>
+          <p name="fermOTotGrams" id="fermOTotGrams"></p>
+        </td>
+        <td>
+          <p name="fermKTotGrams" id="fermKTotGrams"></p>
+        </td>
+        <td>
+          <p name="DAP" id="DAPTotGrams"></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="3">
+          <h3>Amount per Addition</h3>
+        </td>
+        <td colspan="2"><h3>1/3 Sugar Break</h3></td>
+      </tr>
+
+      <tr>
+        <td><p>0g Ferm 0</p></td>
+        <td><p>0g Ferm K</p></td>
+        <td><p>0g DAP</p></td>
+        <td colspan="2"><p></p></td>
+      </tr>
+    </table>
   </div>
 </body>
 
