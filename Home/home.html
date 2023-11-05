@@ -113,11 +113,32 @@
         <td>
           <p></p>
         </td>
-        <td><input type="number" id="inputForJuice" onchange="return" value="0" required></td>
+        <td><input type="number" id="water" value="0" disabled></td>
         <td>
           <p>100</p>
         </td>
         <td><input type="text" value="0" id="waterVol" required></td>
+      </tr>
+
+      <tr>
+        <td>
+          <p>Juice</p>
+        </td>
+        <td>
+          <p></p>
+        </td>
+        <td>
+          <select class="juice-units" id="juiceUnits" name="units" onchange="changeJuiceUnits()">
+            <option value="Brix">Brix</option>
+            <option value="SG">SG</option>
+            <input type="number" id="inputForJuice" value="12.4" required>
+        </td>
+        <td>
+          <p>100</p>
+        </td>
+        <td>
+          <input type="number" value="0" id="juiceVol" required>
+        </td>
       </tr>
 
       <tr>
@@ -391,22 +412,32 @@
             <option value="No">No</option>
           </select>
         </td>
-        <td colspan="2"><h3>Are you taking a pH reading?</h3>
+        <td colspan="2">
+          <h3>Are you taking a pH reading?</h3>
           <select name="pHReading" id="pHReading" onchange="kMeta()">
             <option value="No">No</option>
             <option value="Yes">Yes</option>
-          </select></td>
+          </select>
+        </td>
       </tr>
       <tr>
-        <td><h3>Potassium Sorbate:</h3></td>
-        <td><p id="kSorb">0g</p></td>
+        <td>
+          <h3>Potassium Sorbate:</h3>
+        </td>
+        <td>
+          <p id="kSorb">0g</p>
+        </td>
         <td></td>
-        <td colspan="2" ><input id="pH"type="number" onchange="kMeta()"></td>
+        <td colspan="2"><input id="pH" type="number" onchange="kMeta()"></td>
       </tr>
 
       <tr>
-        <td><h3>Potassium Metabisulfite:</h3></td>
-        <td><p id="kMeta">0g</p></td>
+        <td>
+          <h3>Potassium Metabisulfite:</h3>
+        </td>
+        <td>
+          <p id="kMeta">0g</p>
+        </td>
         <td></td>
         <td></td>
       </tr>

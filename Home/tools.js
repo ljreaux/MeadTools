@@ -22,6 +22,17 @@ function ingredientSG(a) {
   return toSG
 }
 
+function liquidIngredientSG(a) {
+  let gravityReading = document.getElementById(a).value;
+
+  let toSG = 1.00001 + 0.0038661 * gravityReading + (1.3488 * 10 ** -5) * (gravityReading) ** 2 + (4.3074 * 10 ** -8) * (gravityReading) ** 3
+
+  if (document.getElementById("juiceUnits").value=="SG"){
+    toSG = gravityReading
+  }
+  return toSG
+}
+
 // displays ingredient volume
 function calcGal(a, w, b) {
   let gravityReading = document.getElementById(w);
@@ -51,7 +62,8 @@ function addVolume() {
   const t1 = document.getElementById("totalVol").innerHTML;
   const t2 = document.getElementById("totalVol2").innerHTML;
   const t3 = document.getElementById("waterVol").value;
-  const total = Number(t1) + Number(t2) + Number(t3)
+  const t4 = document.getElementById("juiceVol").value
+  const total = Number(t1) + Number(t2) + Number(t3) + Number(t4)
 
   if (determineWeightUnits("volUnits") === "gal") {
     document.getElementById("addedVol").innerHTML = round(total, 4) + " gal"
@@ -67,13 +79,15 @@ function blend(numerator, denominator) {
 
 // blending equation
 function blending() {
-  let t1 = ingredientSG("inputForJuice")
+  let t1 = ingredientSG("water")
   let t2 = ingredientSG("ingredientBrix")
   let t3 = ingredientSG("ingredientBrix2")
+  let t4 = liquidIngredientSG("inputForJuice")
 
   let vol1 = document.getElementById("waterVol").value
   let vol2 = document.getElementById("totalVol").innerHTML
   let vol3 = document.getElementById("totalVol2").innerHTML
+  let vol4 = document.getElementById("juiceVol").value
 
   t1 = Number(t1)
   t2 = Number(t2)
@@ -81,9 +95,10 @@ function blending() {
   vol1 = Number(vol1)
   vol2 = Number(vol2)
   vol3 = Number(vol3)
+  vol4 = Number(vol4)
 
-  let numerator = (t1 * vol1) + (t2 * vol2) + (t3 * vol3)
-  let denominator = vol1 + vol2 + vol3
+  let numerator = (t1 * vol1) + (t2 * vol2) + (t3 * vol3) + (t4 * vol4)
+  let denominator = vol1 + vol2 + vol3 +vol4
   return blend(numerator, denominator)
 }
 
@@ -207,4 +222,19 @@ function kMeta() {
     document.getElementById("kMeta").innerHTML = kMeta
   }
   return kMeta
+}
+
+function changeJuiceUnits(){
+  const juiceUnits = document.getElementById("juiceUnits").value
+  let value
+  let gravityReading = document.getElementById("inputForJuice").value
+  if(juiceUnits=="SG"){
+    value = 1.00001 + 0.0038661 * gravityReading + (1.3488 * 10 ** -5) * (gravityReading) ** 2 + (4.3074 * 10 ** -8) * (gravityReading) ** 3
+    value = round(value, 3)
+  } else {
+    value =-668.962+ 1262.45*gravityReading-776.43*gravityReading**2+182.94*gravityReading**3
+    value = round(value, 2)
+  }
+  
+  document.getElementById("inputForJuice").value = value
 }

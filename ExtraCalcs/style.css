@@ -13,19 +13,20 @@ select, input {
 div:not(#tmc-app, #pwm-extension-root, #navbar) {
   background-color: beige;
   text-align: center;
-  height: 400px;
+  min-height: 400px;
   align-items: center;
   margin: 20px;
   flex: 1 0 40%;
   border: 1px solid;
   border-radius: 30px;
+  width: 30vw;
 }
 .topnav{
   display: flex;
 }
 table {
 
-  min-width: 400px;
+  max-width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -37,8 +38,10 @@ label {
 }
 
 input {
+  max-width: 10ch;
   border: 1px solid;
   margin: 10px;
+  
 }
 
 h3:not(#ABV) {
