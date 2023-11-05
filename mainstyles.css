@@ -1,4 +1,4 @@
-/* Style the navbar */
+
 #navbar {
   position: fixed;
   top: 0;
@@ -6,7 +6,7 @@
   background-color: #333;
 }
 
-/* Navbar links */
+
 #navbar a {
   float: left;
   display: block;
@@ -16,18 +16,22 @@
   text-decoration: none;
 }
 
-/* Page content */
+#navbar a:hover{
+  transition: 750ms;
+  color: #333;
+  background-color: #f2f2f2;
+}
 .content {
   padding: 16px;
 }
 
-/* Add a color to the active/current link */
+
 #navbar a.active {
   background-color: red;
   color: white;
 }
 
-body:not(.Nutes) {
+body {
   background-color: black;
   text-align: center;
   display: flex;
@@ -46,14 +50,16 @@ body {
   padding-top: 50px;
 }
 
-/* the not is only to eliminate extra divs rendered by server */
 div:not(#tmc-app, #pwm-extension-root, #navbar) {
-  /* background-color: beige; */
+  background-color: beige;
   text-align: center;
-  /* height: 400px; */
   align-items: center;
+  justify-content: center;
   margin: 20px;
-  flex: 1 0 40%;
-  border: 1px solid;
   border-radius: 30px;
+  width: 90vw; 
+}
+
+table{
+  width: 100%;
 }
