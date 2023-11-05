@@ -1,7 +1,7 @@
 // determines volume units
 function determineSorbUnits() {
-  let sorbUnits = document.getElementById("sorbUnits")
-  let sorbValue = sorbUnits.value
+  const sorbUnits = document.getElementById("sorbUnits")
+  const sorbValue = sorbUnits.value
   return sorbValue
 }
 
@@ -12,19 +12,18 @@ function round(a, b) {
 }
 
 function calcSorbate() {
-  let kSorbUnits = determineSorbUnits()
+  const kSorbUnits = determineSorbUnits()
   const sorbSize = document.getElementById("sorbSize").value;
   const sorbAbv = document.getElementById("sorbAbv").value;
   let gSorb = ((- sorbAbv * 25 + 400) / .75) * sorbSize
 
   // evaluates given volume based on units
-  if (kSorbUnits == "gal") { gSorb = round((gSorb * .003785411784), 3) }
-  else { gSorb = round((gSorb / 1000), 3) }
-  return gSorb
+  return kSorbUnits == "gal" ? gSorb = round((gSorb * .003785411784), 3) :
+  gSorb = round((gSorb / 1000), 3);
 }
 
 // displays amount of sorbate 
 function displaySorbate() {
-  let display = calcSorbate() + "g k-sorbate"
+  const display = calcSorbate() + "g k-sorbate"
   document.getElementById("disSorbPPM").innerHTML = display
 }

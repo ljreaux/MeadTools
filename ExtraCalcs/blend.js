@@ -8,7 +8,7 @@ function round(a, b) {
 function blend(a, b, c, d) {
   const blendedNum = ((a * c) + (b * d))
   const blendedDen = Number(c) + Number(d)
-  const blendedValue = blendedNum/blendedDen
+  const blendedValue = blendedNum / blendedDen
   return blendedValue
 }
 

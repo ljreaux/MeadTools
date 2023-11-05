@@ -4,6 +4,7 @@ function round(a, b) {
   return result
 }
 
+// calculates ABV
 function ABV(OG, FG) {
   const OE = (-668.962 + 1262.45 * OG - 776.43 * (OG ** 2) + 182.94 * (OG ** 3))
   const AE = (-668.962 + 1262.45 * FG - 776.43 * (FG ** 2) + 182.94 * (FG ** 3))
@@ -21,7 +22,7 @@ function ABV(OG, FG) {
 function delle(fgBrix, abv) {
   let delle = fgBrix + 4.5 * abv
   delle = round(delle, 0)
-  return delle+ " Delle Units"
+  return delle + " Delle Units"
 }
 
 // converts OG to brix
@@ -31,13 +32,17 @@ function readingtoBrix(a) {
   return OGBrix
 }
 
+// displays brix on the screen
 function displayBrix() {
   document.getElementById("fgInBrix").innerHTML = round(readingtoBrix("hydroFG"), 2) + " Brix"
 }
+
+// calculates estimated OG
 function estimatedOG(fgh, fgr) {
-  return (-1.728 * (fgh) + 0.01085 * (fgr) + 2.728)
+  return -1.728 * (fgh) + 0.01085 * (fgr) + 2.728
 }
 
+// takes input and runs estimated OG calc
 function runOGCalc() {
   let fgh = document.getElementById("hydroFG").value
   let fgr = document.getElementById("refracFG").value
@@ -47,16 +52,21 @@ function runOGCalc() {
   let OG = estimatedOG(fgh, fgr)
   OG = round(OG, 3)
 
+  // displays estimated OG on screen
   document.getElementById("estOG").innerHTML = OG
 
+  // converts estimated OG to Brix
   let OGBrix = -668.962 + 1262.45 * (OG) - 776.43 * (OG ** 2) + 182.94 * (OG ** 3)
   OGBrix = round(OGBrix, 2)
 
+  // displays Brix on screen
   document.getElementById("estOGBrix").innerHTML = OGBrix + " Brix"
 
+  // calculates and displays ABV
   const estABV = ABV(OG, fgh)
   document.getElementById("estABV").innerHTML = estABV + "% ABV"
 
+  // calculates DU and displays to the screen
   let fgInBrix = readingtoBrix("hydroFG")
   fgInBrix = round(fgInBrix, 2)
   const delleUnits = delle(fgInBrix, estABV)

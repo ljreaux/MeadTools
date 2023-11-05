@@ -1,6 +1,6 @@
 // sets value to correction factor
 function correctionFactor() {
-  let correctionFactor = document.getElementById("correction").value
+  const correctionFactor = document.getElementById("correction").value
   return correctionFactor
 }
 
@@ -12,8 +12,8 @@ function round(a, b) {
 
 // determines units from OG form feild
 function determineCorUnits() {
-  let select = document.getElementById("ogUnits")
-  let selectedValue = select.value
+  const select = document.getElementById("ogUnits")
+  const selectedValue = select.value
   return selectedValue
 }
 
@@ -40,25 +40,25 @@ function fgBrix() {
 
 // uses fg and ABV to find delle units
 function delle() {
-  const delle = fgBrix() + 4.5 * (ABV())
-  const roundedDelle = round(delle, 0)
-  return roundedDelle + " Delle Units"
+  let delle = fgBrix() + 4.5 * (ABV())
+  delle = round(delle, 0)
+  return delle + " Delle Units"
 }
 
 // displays og as other unit and rounds
 function runCorOGBrix() {
-  let roundedOG = round(ogBrix(), 2)
-  let brixtosg = round(cal("correctOG"), 3)
+  const roundedOG = round(ogBrix(), 2)
+  const brixtosg = round(cal("correctOG"), 3)
 
   // determines if value is sg or brix and displays as the converted value
-  if (determineCorUnits() == "sg") {
-    document.getElementById("displayCorOG").innerHTML = roundedOG + " Brix";
-  } else { document.getElementById("displayCorOG").innerHTML = brixtosg; }
+  determineCorUnits() == "sg" ?
+    document.getElementById("displayCorOG").innerHTML = roundedOG + " Brix" :
+    document.getElementById("displayCorOG").innerHTML = brixtosg;
 }
 
 // displays FG brix as SG
 function displaySG() {
-  let roundedFG = round(cal("correctFG"), 3)
+  const roundedFG = round(cal("correctFG"), 3)
   document.getElementById("corSG").innerHTML = roundedFG
 }
 
@@ -70,19 +70,18 @@ function refracCalc(ogBr, fgBr, corFac) {
 
 // run correction factor
 function runCorrection() {
-  let ogBr = document.getElementById("correctOG").value
-  let fgBr = document.getElementById("correctFG").value
-  let cf = correctionFactor()
+  const ogBr = document.getElementById("correctOG").value
+  const fgBr = document.getElementById("correctFG").value
+  const cf = correctionFactor()
   let calc
 
   // determines whether OG is in brix or sg and calculates appropriately
-  if (determineCorUnits() == "brix") {
-    calc = refracCalc(ogBr, fgBr, cf)
-  } else { calc = refracCalc(ogBrix(), fgBr, cf) }
+  determineCorUnits() == "brix" ? calc = refracCalc(ogBr, fgBr, cf) : 
+  calc = refracCalc(ogBrix(), fgBr, cf)
 
   // rounds numbers
-  const roundedRefrac = round(calc, 3)
-  return roundedRefrac
+  calc = round(calc, 3)
+  return calc
 }
 
 // calculates abv 
@@ -93,10 +92,10 @@ function ABV(OG, FG) {
   const RE = (q * OE + AE) / (1 + q)
 
   const ABW = (OE - RE) / (2.0665 - 0.010665 * OE)
-  const ABV = (ABW * (FG / 0.794))
-  const roundedABV = round(ABV, 2)
+  let ABV = (ABW * (FG / 0.794))
+  ABV = round(ABV, 2)
 
-  return roundedABV
+  return ABV
 }
 
 // calculates delle units
@@ -110,18 +109,17 @@ function displayCorrection() {
 
   // converts result from sg to brix then rounds
   const sg = runCorrection()
-  const brix = -668.962 + 1262.45 * (sg) - 776.43 * (sg ** 2) + 182.94 * (sg ** 3)
-  const roundedBrix = round(brix, 2)
+  let brix = -668.962 + 1262.45 * (sg) - 776.43 * (sg ** 2) + 182.94 * (sg ** 3)
+  brix = round(brix, 2)
 
   // determines sg units, and calculates abv
   let corABV
-  if (determineCorUnits() == "brix") {
-    corABV = ABV(cal("correctOG"), sg)
-  } else { corABV = ABV(document.getElementById("correctOG").value, sg) }
+  determineCorUnits() == "brix" ? corABV = ABV(cal("correctOG"), sg):
+  corABV = ABV(document.getElementById("correctOG").value, sg);
 
   const delleUnits = delleCor(corABV, sg)
 
   // displays results on page
-  document.getElementById("disCorrectFunc").innerHTML = (roundedBrix + " Brix, ") + sg
+  document.getElementById("disCorrectFunc").innerHTML = (brix + " Brix, ") + sg
   document.getElementById("disCorrectABV").innerHTML = (corABV + "% ABV, ") + delleUnits + " Delle Units"
 }

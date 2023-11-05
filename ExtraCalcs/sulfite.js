@@ -1,7 +1,7 @@
 // determines volume units
 function determineUnits() {
-  let select = document.getElementById("units")
-  let selectedValue = select.value
+  const select = document.getElementById("units")
+  const selectedValue = select.value
   return selectedValue
 }
 
@@ -11,20 +11,20 @@ function round(a, b) {
   return result
 }
 function calcSulfite() {
-  let kMetaUnits = determineUnits()
+  const kMetaUnits = determineUnits()
   const batchSize = document.getElementById("batchSize").value;
   const ppmDesired = document.getElementById("ppm").value;
   let ppmSulfite
 
   // evaluates given volume based on units
-  if (kMetaUnits == "gal") { ppmSulfite = round(((batchSize * 3.785 * ppmDesired) / 570), 3) }
-  else { ppmSulfite = round(((batchSize * ppmDesired) / 570), 3) }
-  return ppmSulfite
+  return kMetaUnits == "gal" ?
+    ppmSulfite = round(((batchSize * 3.785 * ppmDesired) / 570), 3) :
+    ppmSulfite = round(((batchSize * ppmDesired) / 570), 3)
 }
 
 // displays amount of sulfite
 function displaySulfite() {
-  let display = calcSulfite() + "g k-meta"
+  const display = calcSulfite() + "g k-meta"
   document.getElementById("displayPPM").innerHTML = display
 }
 

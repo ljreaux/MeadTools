@@ -1,10 +1,11 @@
 // rounding function allows b to be value for number of places
-function round (a, b){
-  const result = Math.round(a*10**b)/10**b
-  return result}
+function round(a, b) {
+  const result = Math.round(a * 10 ** b) / 10 ** b
+  return result
+}
 
 // calculates abv
-function abvCalc () {
+function abvCalc() {
   // gets value OG/FG value from form elements
   const OG = document.getElementById("OG").value;
   const FG = document.getElementById("fg").value;
@@ -18,13 +19,11 @@ function abvCalc () {
   const ABV = (ABW * (FG / 0.794))
 
   // rounds ABV
-  const roundedABV =round(ABV, 2) 
+  const roundedABV = round(ABV, 2)
 
   // check to see if ABV is a good value and returns error otherwise
-  if (roundedABV > 0 && roundedABV < 25) { return roundedABV}
-  else {
-    alert("ERROR: Please enter a valid OG and FG")
-  }
+  return (roundedABV > 0 && roundedABV < 25) ? roundedABV :
+    alert("ERROR: Please enter a valid OG and FG");
 }
 
 // converts OG into brix 
@@ -43,28 +42,32 @@ function calcFgBrix() {
 
 // uses fg and ABV to calculate delle units, 
 // rounds it to the nearest interger and adds "Delle Units" string
-function calcDelle(){
-  const delle= calcFgBrix()+4.5*(abvCalc())
-  const roundedDelle=round(delle, 0)
+function calcDelle() {
+  const delle = calcFgBrix() + 4.5 * (abvCalc())
+  const roundedDelle = round(delle, 0)
   return roundedDelle + " Delle Units"
 }
 
 // takes input from calcOgBrix(), rounds it and displays it on the page
 function runOGBrix() {
-  let roundedOG = round(calcOgBrix(), 2)
+  const roundedOG = round(calcOgBrix(), 2)
   document.getElementById("OGBrix").innerHTML = roundedOG + " Brix";
 }
 
 // takes input from calcFgBrix(), rounds it and displays it on the page
-function runFGBrix(){
-  let roundedFG = round(calcFgBrix(), 2)
+function runFGBrix() {
+  const roundedFG = round(calcFgBrix(), 2)
   document.getElementById("FGBrix").innerHTML = roundedFG + " Brix";
 }
 
 // displays abv when submit button is pressed.
-function runABV(){
-  if (abvCalc() != undefined) { document.getElementById("ABV").innerHTML = abvCalc ()+ "%ABV "; document.getElementById("delle").innerHTML = calcDelle();}
-  else { document.getElementById("ABV").innerHTML = "ERROR: Not a valid ABV for Fermentation"; }
+function runABV() {
+  if (abvCalc() != undefined) {
+    document.getElementById("ABV").innerHTML = abvCalc() + "%ABV ";
+    document.getElementById("delle").innerHTML = calcDelle();
+  } else {
+    document.getElementById("ABV").innerHTML = "ERROR: Not a valid ABV for Fermentation";
+  }
 }
 
 

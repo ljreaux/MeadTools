@@ -8,30 +8,31 @@ function round(a, b) {
 function ogBrix() {
   const OG = document.getElementById("sgMeasurement").value;
   const OGBrix = -668.962 + 1262.45 * (OG) - 776.43 * (OG ** 2) + 182.94 * (OG ** 3)
-  let roundedBrix = round(OGBrix, 2)
+  const roundedBrix = round(OGBrix, 2)
   document.getElementById("nuteOG").innerHTML = roundedBrix + " Brix"
   return OGBrix
 }
 
+// calculates sugar in grams per liter
 function calcGpl() {
   const ogSg = document.getElementById("sgMeasurement").value;
   const sugar = ogBrix() * ogSg * 10
   return round(sugar, 4)
 }
 
+// calculates PPM of YAN needed
 function calcPPM() {
   let multiplier
-  let nitroRequirement = document.getElementById("nitrogenRequirement").innerHTML
-  if (nitroRequirement == "Low") {
-    multiplier = .75
-  } else if (nitroRequirement == "Medium") {
-    multiplier = .9
-  } else if (nitroRequirement == "High") {
-    multiplier = 1.25
-  } else { multiplier = 1.8 }
+  const nitroRequirement = document.getElementById("nitrogenRequirement").innerHTML
+
+  // determines yeast nitrogen requirement and sets multiplier
+  nitroRequirement == "Low" ? multiplier = .75 
+  : nitroRequirement == "Medium" ? multiplier = .9
+  : nitroRequirement == "High" ? multiplier = 1.25
+  : multiplier = 1.8; 
 
   let targetYan = calcGpl() * multiplier
-  let offsetPPM = document.getElementById("offsetYan").value
+  const offsetPPM = document.getElementById("offsetYan").value
   targetYan = targetYan - offsetPPM
   const roundedYan = round(targetYan, 0)
 
@@ -39,6 +40,7 @@ function calcPPM() {
   return roundedYan
 }
 
+// determines amount of fermaid O needed in grams per liter
 function checkFermOPPM() {
   const totalPPM = calcPPM()
   const maxGPL = document.getElementById("fermOgpl").value
@@ -62,9 +64,9 @@ function calcNPPM(a, b, c) {
 
 function fermOPPMN() {
   const totalPPM = calcPPM()
-  const GPL = checkFermOPPM()
+  checkFermOPPM()
   const fermONPPM = calcNPPM(160, "fermOToAdd", "fermOPpm")
-  let leftOver = totalPPM - fermONPPM
+  const leftOver = totalPPM - fermONPPM
   return leftOver
 }
 
@@ -87,9 +89,9 @@ function checkFermKPPM() {
 
 function fermKPPMN() {
   const totalPPM = fermOPPMN()
-  const GPL = checkFermKPPM()
+  checkFermKPPM()
   const fermKNPPM = calcNPPM(100, "fermKToAdd", "fermKPpm")
-  let leftOver = totalPPM - fermKNPPM
+  const leftOver = totalPPM - fermKNPPM
   return leftOver
 }
 
@@ -111,9 +113,9 @@ function checkDAPPPM() {
 
 function DAPPPMN() {
   const totalPPM = fermKPPMN()
-  const GPL = checkDAPPPM()
+  checkDAPPPM()
   const DAPNPPM = calcNPPM(210, "DAPToAdd", "DAPPpm")
-  let leftOver = totalPPM - DAPNPPM
+  const leftOver = totalPPM - DAPNPPM
   return leftOver
 }
 

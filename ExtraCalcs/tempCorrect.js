@@ -1,7 +1,7 @@
 // determines units from OG form feild
 function determineTempUnits() {
-  let select = document.getElementById("tempUnits")
-  let selectedValue = select.value
+  const select = document.getElementById("tempUnits")
+  const selectedValue = select.value
   return selectedValue
 }
 
@@ -20,7 +20,7 @@ function temperatureCorrection(r, t, c) {
 // runs temp correct function
 function runTempCorrection() {
   // establishes units and SG
-  let units = determineTempUnits()
+  const units = determineTempUnits()
   const SG = document.getElementById("hydroSG").value;
   let result
 
@@ -33,11 +33,8 @@ function runTempCorrection() {
   const convertedCalTemp = (calTemp * (9 / 5)) + 32
 
   // runs temp correction based off correct 
-  if (units == "°F") {
-    result = temperatureCorrection(SG, currentTemp, calTemp)
-  } else {
-    result = temperatureCorrection(SG, convertedCurrentTemp, convertedCalTemp)
-  }
+  units == "°F" ? result = temperatureCorrection(SG, currentTemp, calTemp) :
+  result = temperatureCorrection(SG, convertedCurrentTemp, convertedCalTemp)
 
   // rounds and returns result
   result = round(result, 3)
