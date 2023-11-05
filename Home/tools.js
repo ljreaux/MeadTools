@@ -27,19 +27,19 @@ function calcGal(a, w, b) {
   let gravityReading = document.getElementById(w);
   let gr = gravityReading.value
 
-  if(determineWeightUnits("mtUnits")=== "lbs"){
+  if (determineWeightUnits("mtUnits") === "lbs") {
     gr = gr
   } else {
-    gr = Number(gr)*2.20462
+    gr = Number(gr) * 2.20462
   }
 
   let SG = ingredientSG(a)
   let answer = gr / num / SG
-  
 
-  if(determineWeightUnits("volUnits")=== "gal"){
-    answer= answer
-  } else {answer= Number(answer)*3.78541}
+
+  if (determineWeightUnits("volUnits") === "gal") {
+    answer = answer
+  } else { answer = Number(answer) * 3.78541 }
 
   const roundedvol = round(answer, 4)
   document.getElementById(b).innerHTML = roundedvol;
@@ -53,9 +53,9 @@ function addVolume() {
   const t3 = document.getElementById("waterVol").value;
   const total = Number(t1) + Number(t2) + Number(t3)
 
-  if(determineWeightUnits("volUnits")=== "gal"){
-  document.getElementById("addedVol").innerHTML = round(total, 4) + " gal"
-  } else {document.getElementById("addedVol").innerHTML = round(total, 4) + " liters"}
+  if (determineWeightUnits("volUnits") === "gal") {
+    document.getElementById("addedVol").innerHTML = round(total, 4) + " gal"
+  } else { document.getElementById("addedVol").innerHTML = round(total, 4) + " liters" }
   return total
 }
 
@@ -102,7 +102,7 @@ function MeadToolsABV(OG, FG) {
 }
 
 function runMTABV() {
-  let OG= blending()
+  let OG = blending()
 
   const FG = document.getElementById("estFG").value
   const ABV = MeadToolsABV(OG, FG)
@@ -130,4 +130,81 @@ function displayDelle() {
 function displayStuff() {
   displayDelle()
   addVolume()
+}
+
+// k-sorb (((-abv*25+400)/.75)/.75)*vol in liters
+function kSorb() {
+  const abv = runMTABV()
+  let volume = addVolume()
+  let stabilizers = document.getElementById("stabilizers").value
+  if (determineWeightUnits("volUnits") === "gal") {
+    volume = volume * 3.785411784
+  }
+  let kSorb = ((-abv * 25 + 400) /( .75*1000)) * volume
+  kSorb = round(kSorb, 2)
+  if (kSorb < 0) {
+    kSorb = "No k-sorb needed."
+  } else {
+    kSorb = kSorb + "g"
+  }
+  if (stabilizers == "No") {
+    document.getElementById("kSorb").innerHTML = ""
+  } else {
+    document.getElementById("kSorb").innerHTML = kSorb
+  }
+  return kSorb
+}
+
+// k-meta vol*PPM/(1000*.57)
+function kMeta() {
+  const takepH = document.getElementById("pHReading").value
+  let pH = document.getElementById("pH").value
+  pH = round(pH, 1)
+  let ppm = 50
+  let stabilizers = document.getElementById("stabilizers").value
+  let volume = addVolume()
+  if (determineWeightUnits("volUnits") === "gal") {
+    volume = volume * 3.785411784
+  }
+  if (takepH == "No") {
+    ppm = 50
+  } else if (pH < 2.9) {
+    ppm = 11
+  } else if (pH == 3) {
+    ppm = 13
+  } else if (pH == 3.1) {
+    ppm = 16
+  } else if (pH == 3.2) {
+    ppm = 21
+  } else if (pH == 3.3) {
+    ppm = 26
+  } else if (pH == 3.4) {
+    ppm = 32
+  } else if (pH == 3.5) {
+    ppm = 39
+  } else if (pH == 3.6) {
+    ppm = 49
+  } else if (pH == 3.7) {
+    ppm = 63
+  } else if (pH == 3.7) {
+    ppm = 63
+  } else if (pH == 3.8) {
+    ppm = 98
+  } else if (pH >3.9) {
+    ppm = 123
+  }
+  
+  let kMeta = volume*ppm/(1000*.57)
+  kMeta = round(kMeta, 2)
+  if (kMeta< 0) {
+    kMeta= "No k-meta needed."
+  } else {
+    kMeta= kMeta+ "g"
+  }
+  if (stabilizers == "No") {
+    document.getElementById("kMeta").innerHTML = ""
+  } else {
+    document.getElementById("kMeta").innerHTML = kMeta
+  }
+  return kMeta
 }
