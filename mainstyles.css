@@ -45,3 +45,15 @@ select, input {
 body {
   padding-top: 50px;
 }
+
+/* the not is only to eliminate extra divs rendered by server */
+div:not(#tmc-app, #pwm-extension-root, #navbar) {
+  background-color: beige;
+  text-align: center;
+  height: 400px;
+  align-items: center;
+  margin: 20px;
+  flex: 1 0 40%;
+  border: 1px solid;
+  border-radius: 30px;
+}

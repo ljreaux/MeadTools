@@ -115,7 +115,7 @@
       </tr>
 
       <tr>
-        <td id="submit" colspan="6"><input value="Submit" type="button" onclick=" setVolume(); displayStuff(); determineYeastAmount(); setSG() "></input>
+        <td id="submit" colspan="6"><input value="Submit" type="button" onclick=" setVolume(); displayStuff(); determineYeastAmount(); setSG(); ogBrix()"></input>
       </tr>
       </tr>
 
@@ -138,7 +138,7 @@
       </tr>
       <tr>
         <td>
-          <h4 id="estOG"></h4>
+          <h4 id="estOG"></h4><h4 id="nuteOG"></h4>
         </td>
         <td><input type="number" id="estFG" value=".996" required></td>
         <td>
@@ -189,7 +189,7 @@
           <option value="D47">D47</option>
       </td>
       <td><input type="number" id="Volume" onchange="return determineYeastAmount()" disabled></td>
-      <td id="sgBR"><input id="sgMeasurement" type="number" onchange="return determineYeastAmount()" disabled><p id="nuteOG">0 Brix</p></td>
+      <td id="sgBR"><input id="sgMeasurement" type="number" onchange="return determineYeastAmount()" disabled></td>
       
       <td><input type="number" id="offsetYan" value="0" disabled></td>
       </tr>
@@ -238,7 +238,7 @@
         </td>
       </tr>
       <tr>
-        <td id="submit" colspan="5"><input value="Submit" type="button" onclick="return DAPPPMN(), totalGramsAll(), determineSB(), determineExtraYan()"></input>
+        <td id="submit" colspan="5"><input value="Submit" type="button" onclick="return DAPPPMN(), totalGramsAll(), determineSB(), determineExtraYan();"></input>
         </td>
       </tr>
       

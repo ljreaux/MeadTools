@@ -14,6 +14,7 @@
   <script src="refrac.js"></script>
   <script src="tempCorrect.js"></script>
   <script src="blend.js"></script>
+  <script src="estimatedOG.js"></script>
 </head>
 
 <body class="Nutes">
@@ -260,7 +261,6 @@
       </tr>
 
       <tr>
-        <td>
         <td id="runBlendCal" colspan="4"><input value="Submit" type="button" onclick="return runBlendCal();"></input>
         </td>
       </tr>
@@ -272,6 +272,46 @@
         <td colspan="2">
           <h3 id="blendedVolume">Total Volume:</h3>
         </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="OGWithoutReading">
+    <table>
+      <tr>
+        <td colspan="3">
+          <h1>Estimated OG without Reading</h1>
+        </td>
+      </tr>
+
+      <tr>
+        <td><label for="value1">Measured FG (Hydrometer):</label></td>
+        <td><input type="number" id="hydroFG" onchange="displayBrix()"></td>
+        <td rowspan="2"><p id="fgInBrix">0 Brix</p></td>
+      </tr>
+
+      <tr>
+        <td><label for="vol1">Measured FG (Refractometer):</label></td>
+        <td><input type="number" id="refracFG"></td>
+      </tr>
+
+      <tr>
+        <td id="runBlendCal" colspan="3"><input value="Submit" type="button" onclick="runOGCalc()"></input>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="3">
+          <h3 >Estimated OG:</h3>
+        </td>
+      </tr>
+      <tr>
+        <td><p id="estOG"></p></td>
+        <td><p id="estOGBrix"></p></td>
+      </tr>
+      <tr>
+        <td><p id="estABV"></p></td>
+        <td><p id="estDelle"></p></td>
       </tr>
     </table>
   </div>
