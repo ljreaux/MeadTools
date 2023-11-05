@@ -3,5 +3,23 @@ body{
 }
 
 div:not(#navbar) {
-  max-width: 30%;
+  max-width: 44vw;
+  min-height: 40px;
+}
+@media only screen and (max-width: 930px) {
+  body {
+    font-size: smaller;
+  }
+  div:not(#navbar) {
+    max-width: 80vw;
+    min-height: fit-content;
+  }
+}
+@media only screen and (max-width: 500px) {
+  body {
+    font-size: smaller;
+  }
+  input{
+    width: 30%;
+  }
 }

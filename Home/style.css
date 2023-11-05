@@ -8,3 +8,97 @@ p {
  .juice-units{
   margin: 3%;
  } 
+
+ @media only screen and (max-width: 930px) {
+  body {
+    font-size: small;
+  }
+  div {
+    width: 80vw;
+    /* min-height: 400px; */
+  }
+  input{
+    width: 5em;
+  }
+  a{
+    font-size: smaller;
+  }
+}
+@media only screen and (max-width: 700px) {
+  body {
+    font-size: 1.8vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: x-small;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
+
+@media only screen and (max-width: 700px) {
+  body {
+    font-size: 1.8vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: x-small;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
+
+@media only screen and (max-width: 420px) {
+  body {
+    font-size: 1.2vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    max-width: 50px;
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: 1.8vw;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
