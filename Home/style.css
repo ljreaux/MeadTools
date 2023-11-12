@@ -1,37 +1,5 @@
-body {
-  background-color: black;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-  flex-direction: column;
-}
-
-/* the not is only to eliminate extra divs rendered by server */
-div:not(#tmc-app, #pwm-extension-root, #navbar) {
-  background-color: beige;
-  text-align: center;
-  /* height: 400px; */
-  align-items: center;
-  margin: 20px;
-  flex: 1 0 40%;
-  border: 1px solid;
-  border-radius: 30px;
-  max-width: 90vw;
-}
-
 p {
   padding: 30px;
-}
-
-h3 {
-  padding: 30px;
-  padding-bottom: 10px;
-}
-
-table{
-  text-align: center;
 }
 
 #secondHeading{
@@ -39,4 +7,98 @@ table{
 }
  .juice-units{
   margin: 3%;
- }
+ } 
+
+ @media only screen and (max-width: 930px) {
+  body {
+    font-size: small;
+  }
+  div {
+    width: 80vw;
+    /* min-height: 400px; */
+  }
+  input{
+    width: 5em;
+  }
+  a{
+    font-size: smaller;
+  }
+}
+@media only screen and (max-width: 700px) {
+  body {
+    font-size: 1.8vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: x-small;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
+
+@media only screen and (max-width: 700px) {
+  body {
+    font-size: 1.8vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: x-small;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
+
+@media only screen and (max-width: 420px) {
+  body {
+    font-size: 1.2vw;
+    margin: 0%;
+    margin-left: -1%;
+  }
+  td{
+    max-width: 50px;
+    padding: 0;
+  }
+  input:not(.submit), select{
+    width: 3em;
+    font-size: 1.5vw;
+    padding: 0;
+  }
+  .submit{
+    font-size: 1.8vw;
+   margin-bottom: 2%;
+  }
+  h3{
+    margin: 1%;
+  }
+  a{
+    font-size: small;
+  }
+}
