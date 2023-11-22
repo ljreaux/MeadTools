@@ -1,4 +1,4 @@
-
+// determines volume for nute calculator
 function addVolume2() {
   const t1 = document.getElementById("totalVol").innerHTML;
   const t2 = document.getElementById("totalVol2").innerHTML;
@@ -7,6 +7,7 @@ function addVolume2() {
   return total
 }
 
+// sets volume units to match ingredient calc
 function setVolume(){
   const calUnits = document.getElementById("volUnits").value
   const totalVol = addVolume2()
@@ -20,6 +21,7 @@ function setVolume(){
   document.getElementById("Volume").value= round(totalVol, 4)
 }
 
+// sets sg to match ingredient calc
 function setSG(){
   let sg = document.getElementById("estOG").innerHTML
   document.getElementById("sgMeasurement").value= Number(sg)

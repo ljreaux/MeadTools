@@ -1,3 +1,4 @@
+// conversion factor to determine volume
 const num = 8.345
 
 // rounding function allows b to be value for number of places
@@ -22,12 +23,13 @@ function ingredientSG(a) {
   return toSG
 }
 
+// returns the brix to sg of each ingredient
 function liquidIngredientSG(a) {
   let gravityReading = document.getElementById(a).value;
 
   let toSG = 1.00001 + 0.0038661 * gravityReading + (1.3488 * 10 ** -5) * (gravityReading) ** 2 + (4.3074 * 10 ** -8) * (gravityReading) ** 3
 
-  if (document.getElementById("juiceUnits").value=="SG"){
+  if (document.getElementById("juiceUnits").value == "SG") {
     toSG = gravityReading
   }
   return toSG
@@ -38,9 +40,7 @@ function calcGal(a, w, b) {
   let gravityReading = document.getElementById(w);
   let gr = gravityReading.value
 
-  if (determineWeightUnits("mtUnits") === "lbs") {
-    gr = gr
-  } else {
+  if (determineWeightUnits("mtUnits") !== "lbs") {
     gr = Number(gr) * 2.20462
   }
 
@@ -48,13 +48,13 @@ function calcGal(a, w, b) {
   let answer = gr / num / SG
 
 
-  if (determineWeightUnits("volUnits") === "gal") {
-    answer = answer
-  } else { answer = Number(answer) * 3.78541 }
+  if (determineWeightUnits("volUnits") !== "gal") {
+    answer = Number(answer) * 3.78541
+  }
 
-  const roundedvol = round(answer, 4)
-  document.getElementById(b).innerHTML = roundedvol;
-  return roundedvol
+  answer = round(answer, 4)
+  document.getElementById(b).innerHTML = answer;
+  return answer
 }
 
 // fills in total volume
@@ -65,9 +65,9 @@ function addVolume() {
   const t4 = document.getElementById("juiceVol").value
   const total = Number(t1) + Number(t2) + Number(t3) + Number(t4)
 
-  if (determineWeightUnits("volUnits") === "gal") {
+  determineWeightUnits("volUnits") === "gal" ?
     document.getElementById("addedVol").innerHTML = round(total, 4) + " gal"
-  } else { document.getElementById("addedVol").innerHTML = round(total, 4) + " liters" }
+    : document.getElementById("addedVol").innerHTML = round(total, 4) + " liters"
   return total
 }
 
@@ -77,7 +77,7 @@ function blend(numerator, denominator) {
   return answer
 }
 
-// blending equation
+// blending equation; wil probably refactor to a loop at some point
 function blending() {
   let t1 = ingredientSG("water")
   let t2 = ingredientSG("ingredientBrix")
@@ -98,7 +98,7 @@ function blending() {
   vol4 = Number(vol4)
 
   let numerator = (t1 * vol1) + (t2 * vol2) + (t3 * vol3) + (t4 * vol4)
-  let denominator = vol1 + vol2 + vol3 +vol4
+  let denominator = vol1 + vol2 + vol3 + vol4
   return blend(numerator, denominator)
 }
 
@@ -116,6 +116,7 @@ function MeadToolsABV(OG, FG) {
   return roundedABV
 }
 
+// runs ABV
 function runMTABV() {
   let OG = blending()
 
@@ -155,22 +156,18 @@ function kSorb() {
   if (determineWeightUnits("volUnits") === "gal") {
     volume = volume * 3.785411784
   }
-  let kSorb = ((-abv * 25 + 400) /( .75*1000)) * volume
+  let kSorb = ((-abv * 25 + 400) / (.75 * 1000)) * volume
   kSorb = round(kSorb, 2)
-  if (kSorb < 0) {
-    kSorb = "No k-sorb needed."
-  } else {
-    kSorb = kSorb + "g"
-  }
-  if (stabilizers == "No") {
-    document.getElementById("kSorb").innerHTML = ""
-  } else {
-    document.getElementById("kSorb").innerHTML = kSorb
-  }
+  kSorb < 0 ? kSorb = "No k-sorb needed."
+    : kSorb = kSorb + "g"
+
+  stabilizers == "No" ? document.getElementById("kSorb").innerHTML = ""
+    : document.getElementById("kSorb").innerHTML = kSorb
+
   return kSorb
 }
 
-// k-meta vol*PPM/(1000*.57)
+// calculates amount of k-meta needed; would like to refactor if statement to be a simple equation at some point
 function kMeta() {
   const takepH = document.getElementById("pHReading").value
   let pH = document.getElementById("pH").value
@@ -205,36 +202,33 @@ function kMeta() {
     ppm = 63
   } else if (pH == 3.8) {
     ppm = 98
-  } else if (pH >3.9) {
+  } else if (pH > 3.9) {
     ppm = 123
   }
-  
-  let kMeta = volume*ppm/(1000*.57)
+
+  let kMeta = volume * ppm / (1000 * .57)
   kMeta = round(kMeta, 2)
-  if (kMeta< 0) {
-    kMeta= "No k-meta needed."
-  } else {
-    kMeta= kMeta+ "g"
-  }
-  if (stabilizers == "No") {
-    document.getElementById("kMeta").innerHTML = ""
-  } else {
-    document.getElementById("kMeta").innerHTML = kMeta
-  }
+  kMeta < 0 ? kMeta = "No k-meta needed."
+    : kMeta = kMeta + "g"
+
+  stabilizers == "No" ? document.getElementById("kMeta").innerHTML = ""
+    : document.getElementById("kMeta").innerHTML = kMeta
+
   return kMeta
 }
 
-function changeJuiceUnits(){
+// changes from brix to SG automatically
+function changeJuiceUnits() {
   const juiceUnits = document.getElementById("juiceUnits").value
   let value
   let gravityReading = document.getElementById("inputForJuice").value
-  if(juiceUnits=="SG"){
+  if (juiceUnits == "SG") {
     value = 1.00001 + 0.0038661 * gravityReading + (1.3488 * 10 ** -5) * (gravityReading) ** 2 + (4.3074 * 10 ** -8) * (gravityReading) ** 3
     value = round(value, 3)
   } else {
-    value =-668.962+ 1262.45*gravityReading-776.43*gravityReading**2+182.94*gravityReading**3
+    value = -668.962 + 1262.45 * gravityReading - 776.43 * gravityReading ** 2 + 182.94 * gravityReading ** 3
     value = round(value, 2)
   }
-  
+
   document.getElementById("inputForJuice").value = value
 }

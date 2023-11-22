@@ -56,12 +56,14 @@ function checkFermOPPM() {
   document.getElementById("fermOToAdd").innerHTML = toAddGPL
 }
 
+// calculates and displays needed PPM for each nutrient
 function calcNPPM(a, b, c) {
   const nPPM = a * document.getElementById(b).innerHTML
   document.getElementById(c).innerHTML = nPPM
   return nPPM
 }
 
+// calculates needed YAN for fermaid O and subtracts from the total
 function fermOPPMN() {
   const totalPPM = calcPPM()
   checkFermOPPM()
@@ -70,23 +72,21 @@ function fermOPPMN() {
   return leftOver
 }
 
-
+// determines amount of fermaid k needed in grams per liter
 function checkFermKPPM() {
   const totalPPM = fermOPPMN()
   const maxGPL = document.getElementById("fermKgpl").value
   let toAddGPL
   const target = totalPPM / 100
 
-  if (target > maxGPL) {
-    toAddGPL = round(maxGPL, 2)
-  }
-  else {
-    toAddGPL = round(target, 2)
-  }
+  target > maxGPL ? toAddGPL = round(maxGPL, 2) :
+  toAddGPL = round(target, 2)
+
   document.getElementById("fermKToAdd").innerHTML = toAddGPL
   return toAddGPL
 }
 
+// calculates needed YAN for fermaid k and subtracts from the total
 function fermKPPMN() {
   const totalPPM = fermOPPMN()
   checkFermKPPM()
@@ -95,22 +95,21 @@ function fermKPPMN() {
   return leftOver
 }
 
+// determines amount of DAP needed in grams per liter
 function checkDAPPPM() {
   const totalPPM = fermKPPMN()
   const maxGPL = document.getElementById("DAPgpl").value
   let toAddGPL
   const target = totalPPM / 210
 
-  if (target > maxGPL) {
-    toAddGPL = round(maxGPL, 2)
-  }
-  else {
-    toAddGPL = round(target, 2)
-  }
+  target > maxGPL ? toAddGPL = round(maxGPL, 2) :
+  toAddGPL = round(target, 2)
+
   document.getElementById("DAPToAdd").innerHTML = toAddGPL
   return toAddGPL
 }
 
+// calculates needed YAN for DAP and subtracts from the total
 function DAPPPMN() {
   const totalPPM = fermKPPMN()
   checkDAPPPM()
@@ -119,6 +118,7 @@ function DAPPPMN() {
   return leftOver
 }
 
+// calculates the toatl grams needed for each nutrient
 function totalGrams(a, b) {
   const units = document.getElementById("nuteVolUnits").value
   const gpl = document.getElementById(a).innerHTML
@@ -133,6 +133,7 @@ function totalGrams(a, b) {
   return totalGrams
 }
 
+// runs totalGrams for each Nutrient
 function totalGramsAll() {
   const fermO = totalGrams('fermOToAdd', 'fermOTotGrams')
   const fermK = totalGrams('fermKToAdd', 'fermKTotGrams')
@@ -145,6 +146,7 @@ function totalGramsAll() {
   document.getElementById("DAPperAdd").innerHTML = round((DAP / diviser), 2) + "g DAP"
 }
 
+// determins where the 1/3 sugar break is and displays to screen
 function determineSB() {
   const SG = document.getElementById("sgMeasurement").value - 1
   let SB = SG * (2 / 3) + 1
@@ -152,6 +154,7 @@ function determineSB() {
   document.getElementById("oneThird").innerHTML = SB
 }
 
+// determines the amount of yeast needed for the batch
 function determineYeastAmount() {
   let multiplier
   const units = document.getElementById("nuteVolUnits").value
@@ -176,6 +179,7 @@ function determineYeastAmount() {
   document.getElementById("go-fermWater").innerHTML = round(goFermWater, 0) + "ml"
 }
 
+// used on home.html to change go-ferm amount based on amount of yeast
 function determineGoFerm() {
   const yeastAmount = document.getElementById("yeastAmount").value
   const goFerm = yeastAmount * 1.25
@@ -184,6 +188,7 @@ function determineGoFerm() {
   document.getElementById("go-fermWater").innerHTML = goFermWater + "ml"
 }
 
+// changes max GPL values for each nutrient schedule
 function determineNuteSch() {
   const preferredSch = document.getElementById("nuteSchedule").value
   const gravity = document.getElementById("sgMeasurement").value
@@ -228,6 +233,7 @@ function determineNuteSch() {
   }
 }
 
+// determines if there is any remaining YAN will probably want to refractor to depreciate a global variable at some point
 function determineExtraYan() {
   let totalYAN = calcPPM()
   totalYAN = Number(totalYAN)
@@ -239,6 +245,8 @@ function determineExtraYan() {
   totalGramsDAP = Number(totalGramsDAP)
   let remainingYAN = totalYAN - (totalGramsO + totalGramsK + totalGramsDAP)
   remainingYAN = round(remainingYAN, 0)
+
+  // avoids negative YAN numbers that ocassionally pop up
   if (remainingYAN <= 1) {
     remainingYAN = 0
   }
@@ -246,13 +254,13 @@ function determineExtraYan() {
   document.getElementById("TotalYan").innerHTML = totalYAN + " PPM"
 }
 
+// allows for change of volume units automatically
 function changeUnits(){
   const units = document.getElementById("nuteVolUnits").value
   let vol = document.getElementById("Volume").value
-  if (units === "gal") {
-    vol /= 3.78541
-  } else {
-    vol *= 3.78541
-  }
+  
+  units === "gal" ? vol /= 3.78541
+  : vol *= 3.78541
+  
   document.getElementById("Volume").value= round(vol, 2)
 }
