@@ -7,14 +7,14 @@
   <title>Extra Calculators</title>
   <link rel="stylesheet" type="text/css" href="style.css" />
   <link rel="stylesheet" href="../mainstyles.css">
-  <script src="calc.js"></script>
-  <script src="sulfite.js"></script>
-  <script src="sorbate.js"></script>
-  <script src="convert.js"></script>
-  <script src="refrac.js"></script>
-  <script src="tempCorrect.js"></script>
-  <script src="blend.js"></script>
-  <script src="estimatedOG.js"></script>
+  <script src="calc.js" defer></script>
+  <script src="sulfite.js" defer></script>
+  <script src="sorbate.js" defer></script>
+  <script src="convert.js" defer></script>
+  <script src="refrac.js" defer></script>
+  <script src="tempCorrect.js" defer></script>
+  <script src="blend.js" defer></script>
+  <script src="estimatedOG.js" defer></script>
 </head>
 
 <body class="Nutes">
@@ -37,7 +37,7 @@
 
       <tr>
         <td><label for="OG">Enter OG:</label></td>
-        <td><input type="number" onchange="runOGBrix()" id="OG" required></td>
+        <td><input type="number" id="OG" required></td>
         <td>
           <p id="OGBrix">0 Brix</p>
         </td>
@@ -45,14 +45,14 @@
 
       <tr>
         <td><label for="FG">Enter FG:</label></td>
-        <td><input type="number" onchange="runFGBrix()" value=".996" id="fg" required></td>
+        <td><input type="number" value=".996" id="fg" required></td>
         <td>
           <p id="FGBrix">0 Brix</p>
         </td>
       </tr>
 
       <tr>
-        <td id="submit" colspan="4"><input value="Submit" type="button" onclick="return runABV() ;"></input>
+        <td id="submitABV" colspan="4"><input value="Submit" type="button"></input>
       </tr>
 
     </table>
@@ -142,8 +142,7 @@
       </tr>
 
       <tr>
-        <td id="runConvert" colspan="4"><input value="Submit" type="button"
-            onclick="return  displayConvert() ;"></input>
+        <td id="runConvert" colspan="4"><input value="Submit" type="button"></input>
       </tr>
 
     </table>
@@ -261,7 +260,7 @@
       </tr>
 
       <tr>
-        <td id="runBlendCal" colspan="4"><input value="Submit" type="button" onclick="return runBlendCal();"></input>
+        <td  colspan="4"><input id="runBlendCal" value="Submit" type="button"></input>
         </td>
       </tr>
 

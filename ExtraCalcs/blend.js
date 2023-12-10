@@ -1,37 +1,39 @@
+const blendButton = document.querySelector("#runBlendCal");
+blendButton.addEventListener("click", runBlendCal);
 // rounding function allows b to be value for number of places
 function round(a, b) {
-  const result = Math.round(a * 10 ** b) / 10 ** b
-  return result
+  const result = Math.round(a * 10 ** b) / 10 ** b;
+  return result;
 }
 
 // blending equation
 function blend(a, b, c, d) {
-  const blendedNum = ((a * c) + (b * d))
-  const blendedDen = Number(c) + Number(d)
-  const blendedValue = blendedNum / blendedDen
-  return blendedValue
+  const blendedNum = a * c + b * d;
+  const blendedDen = Number(c) + Number(d);
+  const blendedValue = blendedNum / blendedDen;
+  return blendedValue;
 }
 
 // prints value to screen
 function runBlendCal() {
-  const val1 = document.getElementById("blendv1").value
-  const val2 = document.getElementById("blendv2").value
-
-  const vol1 = document.getElementById("blendvol1").value
-  const vol2 = document.getElementById("blendvol2").value
-
   // blending equation
-  const blendedValue = blend(val1, val2, vol1, vol2)
+  const val1 = document.querySelector("#blendv1").value;
+  const val2 = document.querySelector("#blendv2").value;
+
+  const vol1 = document.querySelector("#blendvol1").value;
+  const vol2 = document.querySelector("#blendvol2").value;
+  let blendedValue = blend(val1, val2, vol1, vol2);
 
   // total volume equation
-  const totalVol = Number(vol1) + Number(vol2)
+  let totalVol = Number(vol1) + Number(vol2);
 
   // rounds answers to 4 digits
-  const roundedBlend = round(blendedValue, 4)
-  const roundedVol = round(totalVol, 4)
+  blendedValue = round(blendedValue, 4);
+  totalVol = round(totalVol, 4);
 
   // displays value to screen
-  document.getElementById("blendedValue").innerHTML = "Blended Value: " + roundedBlend
-  document.getElementById("blendedVolume").innerHTML = "Total Volume: " + roundedVol
-
+  document.getElementById("blendedValue").textContent =
+    "Blended Value: " + blendedValue;
+  document.getElementById("blendedVolume").textContent =
+    "Total Volume: " + totalVol;
 }
