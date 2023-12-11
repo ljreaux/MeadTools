@@ -84,7 +84,7 @@
       </tr>
 
       <tr>
-        <td id="runsulfite" colspan="4"><input value="Submit" type="button" onclick="return displaySulfite() ;"></input>
+        <td id="runSulfite" colspan="4"><input value="Submit" type="button"></input>
       </tr>
 
     </table>
@@ -115,8 +115,7 @@
       </tr>
 
       <tr>
-        <td id="runsorbate" colspan="4"><input value="Submit" type="button"
-            onclick="return  displaySorbate() ;"></input>
+        <td id="runSorbate" colspan="4"><input value="Submit" type="button"></input>
       </tr>
 
     </table>
@@ -204,7 +203,7 @@
 
       <tr>
         <td colspan="2"><label for="measuredSG">Measured SG:</label></td>
-        <td><input type="number" onchange="displaySGBrix()" id="hydroSG" required></td>
+        <td><input type="number" id="hydroSG" required></td>
         <td>
           <p id="disHydroSG"></p>
         </td>
@@ -212,9 +211,9 @@
 
       <tr>
         <td colspan="2"><label for="currentTemp">Current Temp:</label></td>
-        <td><input type="number" onchange="" id="currentTemp" required></td>
+        <td><input type="number" id="currentTemp" required></td>
         <td>
-          <select name="units" id="tempUnits" onchange="displayTempUnits()">
+          <select name="units" id="tempUnits">
             <option value="°F">°F</option>
             <option value="°C">°C</option>
           </select>
@@ -223,15 +222,14 @@
 
       <tr>
         <td colspan="2"><label for="calibrationTemp">Calibration Temp:</label></td>
-        <td><input type="number" onchange="" id="calibrationTemp"></td>
+        <td><input type="number" id="calibrationTemp"></td>
         <td>
           <p id="displayTempUnits"></p>
         </td>
       </tr>
 
       <tr>
-        <td id="runTempCal" colspan="4"><input value="Submit" type="button"
-            onclick="return disTempCorrection();"></input>
+        <td  colspan="4"><input id="runTempCal"value="Submit" type="button"></input>
       </tr>
     </table>
     <h3 id="disTempCorrection"></h3>
@@ -285,7 +283,7 @@
 
       <tr>
         <td><label for="value1">Measured FG (Hydrometer):</label></td>
-        <td><input type="number" id="hydroFG" onchange="displayBrix()"></td>
+        <td><input type="number" id="hydroFG"></td>
         <td rowspan="2"><p id="fgInBrix">0 Brix</p></td>
       </tr>
 
@@ -295,7 +293,7 @@
       </tr>
 
       <tr>
-        <td id="runBlendCal" colspan="3"><input value="Submit" type="button" onclick="runOGCalc()"></input>
+        <td id="runBlendCal" colspan="3"><input id='estOGSubmit' value="Submit" type="button"></input>
         </td>
       </tr>
 
