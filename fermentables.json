@@ -9,7 +9,7 @@
     { 
       "name": "Table Sugar",
       "sugarContent": 99.8,
-      "waterContent": .02,
+      "waterContent": 0.02,
       "category": "sugar"
     },
     { 
