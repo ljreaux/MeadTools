@@ -17,32 +17,39 @@ async function displayYeasts() {
     option.textContent = key;
     selectYeastBrand.append(option);
   }
+
   const selectYeastName = document.getElementById("yeastName");
+
   const lalvin = yeastBrand.Lalvin;
   const lalvinYeastNames = lalvin.map((item) => {
     const option = document.createElement("option");
     option.textContent = item.name;
     return option;
   });
+
   const redStar = yeastBrand["Red Star"];
   const redStarYeastNames = redStar.map((item) => {
     const option = document.createElement("option");
     option.textContent = item.name;
     return option;
   });
+
   const mangroveJack = yeastBrand["Mangrove Jack"];
   const mangroveJackYeastNames = mangroveJack.map((item) => {
     const option = document.createElement("option");
     option.textContent = item.name;
     return option;
   });
+
   const other = yeastBrand["Other"];
   const otherYeastNames = other.map((item) => {
     const option = document.createElement("option");
     option.textContent = item.name;
     return option;
   });
+
   selectYeastName.replaceChildren(...lalvinYeastNames);
+
   function changeStrainList() {
     if (selectYeastBrand.value == "Lalvin") {
       selectYeastName.replaceChildren(...lalvinYeastNames);
@@ -60,15 +67,20 @@ displayYeasts();
 
 function displayNitrogen() {
   const data = yeastObj.data;
+
   const lalvin = data.Lalvin;
   const redStar = data["Red Star"];
   const mangrove = data["Mangrove Jack"];
   const other = data.Other;
+
   const selectYeastBrand = document.getElementById("yeastBrand");
   selectYeastBrand.addEventListener("change", changeNRequirement);
+
   const strain = document.getElementById("yeastName");
   strain.addEventListener("change", changeNRequirement);
+
   const nitrogenDisplay = document.getElementById("nitrogenRequirement");
+
   function changeNRequirement() {
     if (selectYeastBrand.value == "Lalvin") {
       const obj = lalvin.find((obj) => obj.name == strain.value);

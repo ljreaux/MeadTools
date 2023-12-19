@@ -120,6 +120,13 @@
       "ABV Tolerance": 18,
       "LowTemp": 57,
       "High Temp": 90
+    },
+    {
+      "name": "CR51",
+      "Nitrogen Requirement": "High",
+      "ABV Tolerance": 14,
+      "LowTemp": 61,
+      "High Temp": 75
     }
   ],
   "Red Star": [
@@ -129,7 +136,71 @@
       "ABV Tolerance": "12-14",
       "LowTemp": 64,
       "High Temp": 86
+    },
+    {
+      "name": "Premier Blanc",
+      "Nitrogen Requirement": "Low",
+      "ABV Tolerance": 18,
+      "LowTemp": 59,
+      "High Temp": 86
+    },
+    {
+      "name": "Premier Classique",
+      "Nitrogen Requirement": "Low",
+      "ABV Tolerance": 13,
+      "LowTemp": 59,
+      "High Temp": 86
+    }, 
+    {
+      "name": "Premier Cuvee",
+      "Nitrogen Requirement": "Medium",
+      "ABV Tolerance": 18,
+      "LowTemp": 45,
+      "High Temp": 95
+    },
+    {
+      "name": "Premier Rouge (Pasteur Red)",
+      "Nitrogen Requirement": "Medium",
+      "ABV Tolerance": 18,
+      "LowTemp": 64,
+      "High Temp": 86
     }
   ],
-  "Other": []
+  "Other": [
+    {
+      "name": "Generic Beer Yeast",
+      "Nitrogen Requirement": "Medium",
+      "ABV Tolerance": 12,
+      "LowTemp": 50,
+      "High Temp": 65
+    },
+    {
+      "name": "Kveik Yeast",
+      "Nitrogen Requirement": "Very High",
+      "ABV Tolerance": 12,
+      "LowTemp": 70,
+      "High Temp": 100
+    },
+    {
+      "name": "Other High N Yeast",
+      "Nitrogen Requirement": "High",
+      "ABV Tolerance": 12,
+      "LowTemp": 55,
+      "High Temp": 70
+    },
+    {
+      "name": "Other Medium N Yeast",
+      "Nitrogen Requirement": "Medium",
+      "ABV Tolerance": 12,
+      "LowTemp": 55,
+      "High Temp": 70
+    },
+    {
+      "name": "Other Low N Yeast",
+      "Nitrogen Requirement": "Low",
+      "ABV Tolerance": 12,
+      "LowTemp": 55,
+      "High Temp": 70
+    }
+  ]
 }
