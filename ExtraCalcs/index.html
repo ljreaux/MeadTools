@@ -165,7 +165,7 @@
 
       <tr rowspan="2">
         <td><label for="OG">Enter OG:</label></td>
-        <td><input type="number" onchange="runCorOGBrix()" id="correctOG" required></td>
+        <td><input type="number" id="correctOG" required></td>
         <td>
           <select id="ogUnits" name="units">
             <option value="brix">Brix</option>
@@ -177,15 +177,14 @@
 
       <tr rowspan="2">
         <td><label for="FG">Enter FG in Brix:</label></td>
-        <td><input type="number" onchange="displaySG()" id="correctFG" required></td>
+        <td><input type="number" id="correctFG" required></td>
         <td>
           <p id="corSG"></p>
         </td>
       </tr>
 
       <tr rowspan="2">
-        <td id="runCorrection" colspan="4"><input value="Submit" type="button"
-            onclick="return displayCorrection();"></input>
+        <td  colspan="4"><input id="runCorrection" value="Submit" type="button"></input>
       </tr>
 
     </table>
