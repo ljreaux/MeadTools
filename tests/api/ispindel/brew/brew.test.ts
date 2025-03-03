@@ -1,4 +1,4 @@
-import { GET, POST, PATCH } from "@/app/api/ispindel/brew/route";
+import { GET, POST, PATCH } from "@/app/api/hydrometer/brew/route";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { getBrews, startBrew, endBrew, setBrewName } from "@/lib/db/iSpindel";
 import { createRequest } from "node-mocks-http";

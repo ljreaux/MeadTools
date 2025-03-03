@@ -105,12 +105,12 @@ export async function createLog(log: LogType) {
   const data = {
     brew_id: log.brew_id,
     device_id: log.device_id,
-    angle: log.angle,
+    angle: log.angle || 0,
     temperature: log.temperature,
     temp_units: log.temp_units,
     battery: log.battery,
     gravity: log.gravity,
-    interval: log.interval,
+    interval: log.interval || 0,
     calculated_gravity: log.calculated_gravity,
   };
 

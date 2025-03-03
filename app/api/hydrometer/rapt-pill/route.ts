@@ -1,5 +1,4 @@
 import {
-  calcGravity,
   createLog,
   registerDevice,
   updateBrewGravity,
@@ -16,21 +15,23 @@ export async function POST(req: NextRequest) {
   try {
     const userId = await verifyToken(body.token);
     if (userId instanceof NextResponse) {
-      return userId; // Return error response if the token is invalid
+      return userId;
     }
 
     const newDevice = { userId, device_name: body.name };
     const device = await registerDevice(newDevice);
-    const { coefficients, brew_id } = device;
+    const { brew_id } = device;
 
-    let calculated_gravity = null;
-    if (!!coefficients.length)
-      calculated_gravity = calcGravity(coefficients, body.angle);
-    const gravity = calculated_gravity ?? body.gravity;
+    const gravity = body.gravity;
 
     if (!!brew_id) await updateBrewGravity(brew_id, gravity);
 
-    const data = { ...body, calculated_gravity, brew_id, device_id: device.id };
+    const data = {
+      ...body,
+      calculated_gravity: null,
+      brew_id,
+      device_id: device.id,
+    };
 
     const log = await createLog(data);
     return NextResponse.json(log, { status: 200 });

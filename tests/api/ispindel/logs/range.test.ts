@@ -1,4 +1,4 @@
-import { DELETE } from "@/app/api/ispindel/logs/range/route";
+import { DELETE } from "@/app/api/hydrometer/logs/range/route";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { deleteLogsInRange } from "@/lib/db/iSpindel";
 import { NextResponse } from "next/server"; // Import this to fix the ReferenceError
