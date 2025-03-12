@@ -382,6 +382,10 @@ export async function deleteBrew(brew_id: string, user_id: number) {
       where: { id: brew_id, user_id },
     });
 
+    if (!deleted_brew) {
+      throw new Error("Brew not found.");
+    }
+
     return {
       message: `Your brew "${
         deleted_brew.name || deleted_brew.id

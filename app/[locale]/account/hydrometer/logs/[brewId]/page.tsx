@@ -103,7 +103,7 @@ function Brew() {
 
     try {
       await deleteBrew(brew.id);
-      router.push("/account/hydrometer/brews");
+      router.replace("/account/hydrometer/brews");
     } catch (error) {
       console.error("Error deleting brew:", error);
       toast({
