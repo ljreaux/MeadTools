@@ -41,6 +41,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }
 ) {
+  console.log("in delete", req);
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {
     return userOrResponse; // Return error response if the user is not verified

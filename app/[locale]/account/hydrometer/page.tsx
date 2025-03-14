@@ -61,7 +61,7 @@ const DeviceCard = ({ device }: { device: DeviceType }) => {
       <div className="grid gap-1">
         <Link
           className={buttonVariants({ variant: "secondary" })}
-          href={`/account/ispindel/devices/${device.id}`}
+          href={`/account/hydrometer/devices/${device.id}`}
         >
           {t("iSpindelDashboard.deviceDetails")}
         </Link>

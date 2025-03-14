@@ -1,4 +1,4 @@
-import { GET } from "@/app/api/ispindel/logs/route";
+import { GET } from "@/app/api/hydrometer/logs/route";
 import { getLogs } from "@/lib/db/iSpindel";
 import { createRequest } from "node-mocks-http";
 

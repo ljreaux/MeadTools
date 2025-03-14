@@ -10,11 +10,15 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 const Nav = () => {
   const { t } = useTranslation();
-  const baseRoute = "/account/ispindel";
+  const baseRoute = "/account/hydrometer";
   const navLinks = [
     {
-      name: "iSpindelDashboard.nav.device",
+      name: "iSpindelDashboard.nav.home",
       to: baseRoute,
+    },
+    {
+      name: "iSpindelDashboard.nav.device",
+      to: baseRoute + "/devices",
     },
     {
       name: "iSpindelDashboard.nav.brews",

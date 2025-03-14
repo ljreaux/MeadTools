@@ -32,7 +32,9 @@ function AccountLinks() {
             <DropdownMenuItem onClick={() => router.push("/account")}>
               {t("account.label")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/account/ispindel")}>
+            <DropdownMenuItem
+              onClick={() => router.push("/account/hydrometer")}
+            >
               {t("iSpindelDashboard.manage")}
             </DropdownMenuItem>
             <DropdownMenuItem

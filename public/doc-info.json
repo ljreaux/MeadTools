@@ -659,22 +659,22 @@
         }
       }
     ],
-    "iSpindel": [
+    "Hydrometer": [
       {
         "method": "GET",
-        "path": "/api/ispindel",
-        "description": "Get iSpindel Token & Devices - Retrieve the user's iSpindel hydrometer token and registered devices.",
+        "path": "/api/hydrometer",
+        "description": "Get hydrometer Token & Devices - Retrieve the user's hydrometer token and registered devices.",
         "auth": "Required (Authenticated users only)",
         "response": {
           "200": {
             "token": "string - Hydrometer token",
             "devices": [
               {
-                "id": 1,
+                "id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
                 "userId": 5,
                 "device_name": "MySpindel",
                 "coefficients": "[c0, c1, c2]",
-                "brew_id": 10
+                "brew_id": null
               }
             ]
           },
@@ -687,21 +687,23 @@
         "path": "/api/ispindel",
         "description": "Log iSpindel Data - Submit a data log from an iSpindel device.",
         "request": {
-          "token": "string (required) - Hydrometer token",
-          "name": "string (required) - Name of the iSpindel device",
-          "angle": "number (optional) - Tilt angle of the device",
-          "gravity": "number (optional) - Measured gravity",
-          "temp": "number (optional) - Temperature reading",
-          "battery": "number (optional) - Battery voltage"
+          "token": "string  - Hydrometer token",
+          "name": "string  - Name of the iSpindel device",
+          "angle": "number - Tilt angle of the device",
+          "gravity": "number - Measured gravity",
+          "temperature": "number - Temperature reading",
+          "temp_units": "string (C or F) - Temperature units",
+          "battery": "number - Battery voltage"
         },
         "response": {
           "200": {
-            "id": 1,
-            "device_id": 3,
-            "brew_id": 10,
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
+            "brew_id": "068aa368-9a1d-4bb1-ab71-714a38b6ea5f",
             "gravity": 1.045,
             "calculated_gravity": 1.046,
-            "temp": 20.1,
+            "temperature": 20.1,
+            "temp_units": "C",
             "battery": 3.9
           },
           "400": { "error": "Missing token" },
@@ -711,8 +713,36 @@
       },
       {
         "method": "POST",
-        "path": "/api/ispindel/register",
-        "description": "Register iSpindel Token - Generate a new hydrometer token for the authenticated user.",
+        "path": "/api/hydrometer/rapt-pill",
+        "description": "Log Rapt Pill Data - Submit a data log from an RAPT pill device.",
+        "request": {
+          "token": "string - Hydrometer token",
+          "name": "string - Name of the RAPT pill device",
+          "gravity": "number - Measured gravity",
+          "temperature": "number - Temperature reading",
+          "temp_units": "string (C or F) - Temperature units",
+          "battery": "number - Battery percentage"
+        },
+        "response": {
+          "200": {
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
+            "brew_id": "068aa368-9a1d-4bb1-ab71-714a38b6ea5f",
+            "gravity": 1.045,
+            "calculated_gravity": null,
+            "temperature": 20.1,
+            "temp_units": "C",
+            "battery": 100
+          },
+          "400": { "error": "Missing token" },
+          "401": { "error": "Unauthorized" },
+          "500": { "error": "Failed to log" }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/hydrometer/register",
+        "description": "Register hydrometer Token - Generate a new hydrometer token for the authenticated user.",
         "auth": "Required (Authenticated users only)",
         "response": {
           "200": {
@@ -724,19 +754,20 @@
       },
       {
         "method": "GET",
-        "path": "/api/ispindel/brew",
+        "path": "/api/hydrometer/brew",
         "description": "Get Brews - Retrieve a list of the user's active and past brews.",
         "auth": "Required (Authenticated users only)",
         "response": {
           "200": {
             "brews": [
               {
-                "id": 1,
-                "device_id": 3,
+                "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
                 "user_id": 5,
                 "brew_name": "Summer Mead",
                 "start_date": "2024-02-01T12:00:00Z",
-                "end_date": null
+                "end_date": null,
+                "latest_gravity": 1.1,
+                "recipe_id": null
               }
             ]
           },
@@ -746,17 +777,17 @@
       },
       {
         "method": "POST",
-        "path": "/api/ispindel/brew",
+        "path": "/api/hydrometer/brew",
         "description": "Start a New Brew - Register a new brew session for a device.",
         "auth": "Required (Authenticated users only)",
         "request": {
-          "device_id": "integer (required) - ID of the iSpindel device",
+          "device_id": "string (required) - ID of the device",
           "brew_name": "string (required) - Name of the brew"
         },
         "response": {
           "200": {
-            "id": 2,
-            "device_id": 3,
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
             "user_id": 5,
             "brew_name": "Blackberry Cyser",
             "start_date": "2024-02-05T10:30:00Z"
@@ -768,18 +799,18 @@
       },
       {
         "method": "PATCH",
-        "path": "/api/ispindel/brew",
+        "path": "/api/hydrometer/brew",
         "description": "Update or End a Brew - Modify the brew name or mark it as completed.",
         "auth": "Required (Authenticated users only)",
         "request": {
-          "device_id": "integer (required) - ID of the iSpindel device",
-          "brew_id": "integer (required) - ID of the brew session",
+          "device_id": "string (required) - ID of the device",
+          "brew_id": "string (required) - ID of the brew session",
           "brew_name": "string (optional) - New name for the brew (if renaming)"
         },
         "response": {
           "200": {
-            "id": 2,
-            "device_id": 3,
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
             "user_id": 5,
             "brew_name": "Updated Brew Name",
             "start_date": "2024-02-05T10:30:00Z",
@@ -792,7 +823,7 @@
       },
       {
         "method": "PATCH",
-        "path": "/api/ispindel/brew/:brew_id",
+        "path": "/api/hydrometer/brew/:brew_id",
         "description": "Attach Recipe to Brew - Link a recipe to an active brew session.",
         "auth": "Required (Authenticated users only)",
         "request": {
@@ -800,8 +831,8 @@
         },
         "response": {
           "200": {
-            "id": 2,
-            "device_id": 3,
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
             "user_id": 5,
             "brew_name": "Updated Brew Name",
             "recipe_id": 10,
@@ -815,7 +846,7 @@
       },
       {
         "method": "DELETE",
-        "path": "/api/ispindel/brew/:brew_id",
+        "path": "/api/hydrometer/brew/:brew_id",
         "description": "Delete Brew - Remove an active or past brew session.",
         "auth": "Required (Authenticated users only)",
         "response": {
@@ -827,15 +858,15 @@
       },
       {
         "method": "PATCH",
-        "path": "/api/ispindel/device/:device_id",
-        "description": "Update iSpindel Device - Modify the calibration coefficients for an iSpindel device.",
+        "path": "/api/hydrometer/device/:device_id",
+        "description": "Update Device - Modify the calibration coefficients for a device. ONLY for iSpindel",
         "auth": "Required (Authenticated users only)",
         "request": {
           "coefficients": "array (required) - Updated calibration coefficients for gravity calculation"
         },
         "response": {
           "200": {
-            "id": 3,
+            "id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
             "user_id": 5,
             "device_name": "MySpindel",
             "coefficients": "[c0, c1, c2]"
@@ -846,8 +877,8 @@
       },
       {
         "method": "DELETE",
-        "path": "/api/ispindel/device/:device_id",
-        "description": "Delete iSpindel Device - Remove an iSpindel device from the user's account.",
+        "path": "/api/hydrometer/device/:device_id",
+        "description": "Delete Device - Remove a device from the user's account.",
         "auth": "Required (Authenticated users only)",
         "response": {
           "200": { "message": "Device deleted successfully." },
@@ -857,11 +888,11 @@
       },
       {
         "method": "GET",
-        "path": "/api/ispindel/logs",
-        "description": "Retrieve iSpindel Logs - Fetch device logs within a specified date range.",
+        "path": "/api/hydrometer/logs",
+        "description": "Retrieve Logs - Fetch device logs within a specified date range.",
         "auth": "Required (Authenticated users only)",
         "queryParams": {
-          "device_id": "integer (required) - ID of the iSpindel device",
+          "device_id": "string (required) - ID of the device",
           "start_date": "string (required) - Start date in ISO format (YYYY-MM-DD)",
           "end_date": "string (optional) - End date in ISO format (defaults to current date)"
         },
@@ -869,8 +900,8 @@
           "200": {
             "logs": [
               {
-                "id": 1,
-                "device_id": 3,
+                "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+                "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
                 "timestamp": "2024-02-05T10:30:00Z",
                 "gravity": 1.045,
                 "temp": 20.1,
@@ -883,11 +914,11 @@
       },
       {
         "method": "DELETE",
-        "path": "/api/ispindel/logs/range",
-        "description": "Delete iSpindel Logs in a Date Range - Remove logs for a device within a specified time range.",
+        "path": "/api/hydrometer/logs/range",
+        "description": "Delete Logs in a Date Range - Remove logs for a device within a specified time range.",
         "auth": "Required (Authenticated users only)",
         "queryParams": {
-          "device_id": "integer (required) - ID of the iSpindel device",
+          "device_id": "string (required) - ID of the device",
           "start_date": "string (required) - Start date in ISO format (YYYY-MM-DD)",
           "end_date": "string (required) - End date in ISO format (YYYY-MM-DD)"
         },
@@ -904,16 +935,16 @@
       },
       {
         "method": "GET",
-        "path": "/api/ispindel/logs/:id",
-        "description": "Retrieve Logs for a Brew - Fetch all iSpindel logs associated with a specific brew.",
+        "path": "/api/hydrometer/logs/:id",
+        "description": "Retrieve Logs for a Brew - Fetch all logs associated with a specific brew.",
         "auth": "Required (Authenticated users only)",
         "response": {
           "200": {
             "logs": [
               {
-                "id": 1,
-                "device_id": 3,
-                "brew_id": 10,
+                "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+                "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
+                "brew_id": "068aa368-9a1d-4bb1-ab71-714a38b6ea5f",
                 "timestamp": "2024-02-05T10:30:00Z",
                 "gravity": 1.045,
                 "temp": 20.1,
@@ -927,11 +958,11 @@
       },
       {
         "method": "PATCH",
-        "path": "/api/ispindel/logs/:id",
-        "description": "Update a Specific Log - Modify an existing log entry for an iSpindel device.",
+        "path": "/api/hydrometer/logs/:id",
+        "description": "Update a Specific Log - Modify an existing log entry for a device.",
         "auth": "Required (Authenticated users only)",
         "queryParams": {
-          "device_id": "integer (required) - ID of the iSpindel device"
+          "device_id": "string (required) - ID of the device"
         },
         "request": {
           "gravity": "number (optional) - Updated gravity reading",
@@ -940,9 +971,9 @@
         },
         "response": {
           "200": {
-            "id": 1,
-            "device_id": 3,
-            "brew_id": 10,
+            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
+            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
+            "brew_id": "068aa368-9a1d-4bb1-ab71-714a38b6ea5f",
             "timestamp": "2024-02-05T10:30:00Z",
             "gravity": 1.047,
             "temp": 20.3,
@@ -955,11 +986,11 @@
       },
       {
         "method": "DELETE",
-        "path": "/api/ispindel/logs/:id",
-        "description": "Delete a Specific Log - Remove a log entry from an iSpindel device.",
+        "path": "/api/hydrometer/logs/:id",
+        "description": "Delete a Specific Log - Remove a log entry from a device.",
         "auth": "Required (Authenticated users only)",
         "queryParams": {
-          "device_id": "integer (required) - ID of the iSpindel device"
+          "device_id": "string (required) - ID of the device"
         },
         "response": {
           "200": { "message": "Log deleted successfully." },

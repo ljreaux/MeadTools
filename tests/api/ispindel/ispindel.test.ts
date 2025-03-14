@@ -1,4 +1,4 @@
-import { GET, POST } from "@/app/api/ispindel/route";
+import { GET, POST } from "@/app/api/hydrometer/route";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import {
   calcGravity,

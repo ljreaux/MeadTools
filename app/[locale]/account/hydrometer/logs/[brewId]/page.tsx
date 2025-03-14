@@ -103,7 +103,7 @@ function Brew() {
 
     try {
       await deleteBrew(brew.id);
-      router.push("/account/ispindel/brews");
+      router.replace("/account/hydrometer/brews");
     } catch (error) {
       console.error("Error deleting brew:", error);
       toast({
@@ -178,7 +178,7 @@ function Brew() {
           </Button>
         ) : (
           <Button asChild className={buttonVariants({ variant: "default" })}>
-            <a href={`/account/ispindel/link/${brewId}`}>
+            <a href={`/account/hydrometer/link/${brewId}`}>
               {t("iSpindelDashboard.brews.link")}
             </a>
           </Button>

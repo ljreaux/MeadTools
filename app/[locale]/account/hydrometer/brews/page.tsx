@@ -145,7 +145,7 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
       {currentItems.map((brew) => (
         <TableRow key={brew.id}>
           <TableCell className="truncate max-w-24 text-[rgb(200_215_255)]">
-            <a href={`/account/ispindel/logs/${brew.id}`}>
+            <a href={`/account/hydrometer/logs/${brew.id}`}>
               {brew.name || brew.id}
             </a>
           </TableCell>
@@ -164,7 +164,7 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
               </a>
             ) : (
               <a
-                href={`/account/ispindel/link/${brew.id}`}
+                href={`/account/hydrometer/link/${brew.id}`}
                 className={buttonVariants({ variant: "default" })}
               >
                 {t("iSpindelDashboard.brews.link")}

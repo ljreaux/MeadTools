@@ -1,4 +1,4 @@
-import { GET, PATCH, DELETE } from "@/app/api/ispindel/logs/[id]/route";
+import { GET, PATCH, DELETE } from "@/app/api/hydrometer/logs/[id]/route";
 import { getLogsForBrew, updateLog, deleteLog } from "@/lib/db/iSpindel";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { createRequest } from "node-mocks-http";

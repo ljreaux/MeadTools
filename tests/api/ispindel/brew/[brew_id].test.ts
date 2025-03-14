@@ -1,4 +1,4 @@
-import { PATCH, DELETE } from "@/app/api/ispindel/brew/[brew_id]/route";
+import { PATCH, DELETE } from "@/app/api/hydrometer/brew/[brew_id]/route";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { addRecipeToBrew, deleteBrew } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";

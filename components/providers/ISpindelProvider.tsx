@@ -68,7 +68,7 @@ export const ISpindelProvider = ({
     (async () => {
       try {
         setLoading(true);
-        const response = await fetchAuthenticatedData("/api/ispindel");
+        const response = await fetchAuthenticatedData("/api/hydrometer");
         const { hydro_token, devices } = response;
         setDeviceList(devices || []);
         if (hydro_token) {
@@ -105,7 +105,7 @@ export const ISpindelProvider = ({
     (async () => {
       try {
         setLoading(true);
-        const brews = await fetchAuthenticatedData("/api/ispindel/brew");
+        const brews = await fetchAuthenticatedData("/api/hydrometer/brew");
         setBrews(brews || []);
       } catch (error) {
         console.error("Error fetching brews:", error);
@@ -119,7 +119,7 @@ export const ISpindelProvider = ({
     try {
       setTokenLoading(true);
       const { token } = await fetchAuthenticatedPost(
-        "/api/ispindel/register",
+        "/api/hydrometer/register",
         {}
       );
       setHydrometerToken(token || null);
@@ -137,7 +137,7 @@ export const ISpindelProvider = ({
   ) => {
     try {
       const data = await fetchAuthenticatedData(
-        `/api/ispindel/logs?start_date=${startDate}&end_date=${endDate}&device_id=${deviceId}`
+        `/api/hydrometer/logs?start_date=${startDate}&end_date=${endDate}&device_id=${deviceId}`
       );
       return data;
     } catch (error) {
@@ -148,7 +148,7 @@ export const ISpindelProvider = ({
   const startBrew = async (id: string, brewName: string | null = null) => {
     try {
       const [brew, device] = await fetchAuthenticatedPost(
-        "/api/ispindel/brew",
+        "/api/hydrometer/brew",
         {
           device_id: id,
           brew_name: brewName,
@@ -165,7 +165,7 @@ export const ISpindelProvider = ({
 
   const endBrew = async (deviceId: string, brewId: string | null) => {
     try {
-      const [, device] = await fetchAuthenticatedPatch("/api/ispindel/brew", {
+      const [, device] = await fetchAuthenticatedPatch("/api/hydrometer/brew", {
         device_id: deviceId,
         brew_id: brewId,
       });
@@ -181,7 +181,7 @@ export const ISpindelProvider = ({
   const updateCoeff = async (deviceId: string, coefficients: number[]) => {
     try {
       const device = await fetchAuthenticatedPatch(
-        `/api/ispindel/device/${deviceId}`,
+        `/api/hydrometer/device/${deviceId}`,
         { coefficients }
       );
       setDeviceList((prev) =>
@@ -195,7 +195,7 @@ export const ISpindelProvider = ({
   const deleteDevice = async (deviceId: string) => {
     try {
       await fetchAuthenticatedData(
-        `/api/ispindel/device/${deviceId}`,
+        `/api/hydrometer/device/${deviceId}`,
         "DELETE"
       );
       setDeviceList((prev) => prev.filter((dev) => dev.id !== deviceId));
@@ -206,7 +206,7 @@ export const ISpindelProvider = ({
 
   const deleteBrew = async (brewId: string) => {
     try {
-      await fetchAuthenticatedData(`/api/ispindel/brew/${brewId}`, "DELETE");
+      await fetchAuthenticatedData(`/api/hydrometer/brew/${brewId}`, "DELETE");
       setBrews((prev) => prev.filter((brew) => brew.id !== brewId));
     } catch (error) {
       console.error("Error deleting brew:", error);
@@ -216,7 +216,7 @@ export const ISpindelProvider = ({
   const deleteLog = async (logId: string, deviceId: string) => {
     try {
       await fetchAuthenticatedData(
-        `/api/ispindel/logs/${logId}?device_id=${deviceId}`,
+        `/api/hydrometer/logs/${logId}?device_id=${deviceId}`,
         "DELETE"
       );
     } catch (error) {
@@ -228,7 +228,7 @@ export const ISpindelProvider = ({
   const updateLog = async (log: any) => {
     try {
       return await fetchAuthenticatedPatch(
-        `/api/ispindel/logs/${log.id}?device_id=${log.device_id}`,
+        `/api/hydrometer/logs/${log.id}?device_id=${log.device_id}`,
         log
       );
     } catch (error) {
@@ -246,7 +246,7 @@ export const ISpindelProvider = ({
 
     try {
       const response = await fetchAuthenticatedData(
-        `/api/ispindel/logs/range?start_date=${start_date.toISOString()}&end_date=${end_date.toISOString()}&device_id=${deviceId}`,
+        `/api/hydrometer/logs/range?start_date=${start_date.toISOString()}&end_date=${end_date.toISOString()}&device_id=${deviceId}`,
         "DELETE"
       );
 
@@ -274,7 +274,7 @@ export const ISpindelProvider = ({
 
     try {
       const response = await fetchAuthenticatedData(
-        `/api/ispindel/logs?start_date=${start_date}&end_date=${end_date}&device_id=${device_id}`
+        `/api/hydrometer/logs?start_date=${start_date}&end_date=${end_date}&device_id=${device_id}`
       );
 
       return response || [];
@@ -288,7 +288,7 @@ export const ISpindelProvider = ({
     brew_name: string | null = null
   ) => {
     try {
-      const response = await fetchAuthenticatedPatch("/api/ispindel/brew", {
+      const response = await fetchAuthenticatedPatch("/api/hydrometer/brew", {
         brew_id: id,
         brew_name,
       });
@@ -307,7 +307,7 @@ export const ISpindelProvider = ({
 
   const linkBrew = async (recipe_id: string, brew_id: string) => {
     try {
-      await fetchAuthenticatedPatch(`/api/ispindel/brew/${brew_id}`, {
+      await fetchAuthenticatedPatch(`/api/hydrometer/brew/${brew_id}`, {
         recipe_id,
       });
     } catch (error) {
@@ -318,7 +318,7 @@ export const ISpindelProvider = ({
   const getBrewLogs = async (brews_id: string) => {
     try {
       const response = await fetchAuthenticatedData(
-        `/api/ispindel/logs/${brews_id}`
+        `/api/hydrometer/logs/${brews_id}`
       );
       return response || [];
     } catch (error) {

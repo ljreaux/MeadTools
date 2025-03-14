@@ -302,10 +302,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logout,
         fetchAuthenticatedData: async (endpoint: string, method?: string) => {
           const headers: Record<string, string> = {
-            method: method ? method : "GET",
             Authorization: `Bearer ${token || session?.accessToken}`,
           };
-          const res = await fetch(endpoint, { headers });
+          const res = await fetch(endpoint, {
+            method: method ? method : "GET",
+            headers,
+          });
           if (!res.ok) {
             throw new Error("Failed to fetch data");
           }
