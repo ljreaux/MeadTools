@@ -1,11 +1,9 @@
 import {
-  createLog,
   registerDevice,
   updateBrewGravity,
   verifyToken,
 } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
-
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -26,17 +24,12 @@ export async function POST(req: NextRequest) {
 
     if (!!brew_id) await updateBrewGravity(brew_id, gravity);
 
-    const data = {
-      ...body,
-      calculated_gravity: null,
-      brew_id,
-      device_id: device.id,
-    };
-
-    const log = await createLog(data);
-    return NextResponse.json(log, { status: 200 });
+    return NextResponse.json(device, { status: 200 });
   } catch (error) {
     console.error("Error logging:", error);
-    return NextResponse.json({ error: "Failed to log" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to get device info" },
+      { status: 500 }
+    );
   }
 }

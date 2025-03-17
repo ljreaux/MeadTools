@@ -712,30 +712,6 @@
         }
       },
       {
-        "method": "GET",
-        "path": "/api/hydrometer/rapt-pill",
-        "description": "GET Rapt Pill device information.",
-        "request": {
-          "token": "string - Hydrometer token",
-          "name": "string - Name of the RAPT pill device"
-        },
-        "response": {
-          "200": {
-            "id": "a8b0fe5b-8f7c-4429-ac48-4a2d505e0546",
-            "device_id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
-            "brew_id": "068aa368-9a1d-4bb1-ab71-714a38b6ea5f",
-            "gravity": 1.045,
-            "calculated_gravity": null,
-            "temperature": 20.1,
-            "temp_units": "C",
-            "battery": 100
-          },
-          "400": { "error": "Missing token" },
-          "401": { "error": "Unauthorized" },
-          "500": { "error": "Failed to get device info." }
-        }
-      },
-      {
         "method": "POST",
         "path": "/api/hydrometer/rapt-pill",
         "description": "Log Rapt Pill Data - Submit a data log from an RAPT pill device.",
@@ -761,6 +737,27 @@
           "400": { "error": "Missing token" },
           "401": { "error": "Unauthorized" },
           "500": { "error": "Failed to log" }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/hydrometer/rapt-pill/register",
+        "description": "Register a new Rapt Pill device.",
+        "request": {
+          "token": "string - Hydrometer token",
+          "name": "string - Name of the RAPT pill device"
+        },
+        "response": {
+          "200": {
+            "id": "f139070f-e92d-47e9-af94-0297a5b5c61c",
+            "userId": 5,
+            "device_name": "MySpindel",
+            "coefficients": "[c0, c1, c2]",
+            "brew_id": null
+          },
+          "400": { "error": "Missing token" },
+          "401": { "error": "Unauthorized" },
+          "500": { "error": "Failed to get device info." }
         }
       },
 
