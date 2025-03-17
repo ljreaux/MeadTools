@@ -1,4 +1,4 @@
-import { POST } from "@/app/api/hydrometer/register/route";
+import { POST } from "@/app/api/hydrometer/token/route";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { createHydrometerToken } from "@/lib/db/iSpindel";
 import { createRequest } from "node-mocks-http";

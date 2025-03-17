@@ -119,7 +119,7 @@ export const ISpindelProvider = ({
     try {
       setTokenLoading(true);
       const { token } = await fetchAuthenticatedPost(
-        "/api/hydrometer/register",
+        "/api/hydrometer/token",
         {}
       );
       setHydrometerToken(token || null);
