@@ -30,7 +30,6 @@ export async function verifyUser(req: NextRequest) {
     }
 
     let userId: number | string | null = null;
-
     // Try verifying as a custom token
     try {
       const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as { id: number };
