@@ -71,6 +71,8 @@ export default function RecipeProvider({
   );
   const [recipeName, setRecipeName] = useState(providedName || "");
 
+  const [numberOfAdditions, setNumberOfAdditions] = useState("1");
+
   const addIngredient = () => {
     setRecipeData((prev) => ({
       ...prev,
@@ -543,6 +545,11 @@ export default function RecipeProvider({
     if (storedName) {
       setRecipeName(storedName);
     }
+
+    const storedAdds = localStorage.getItem("numberOfAdditions");
+    if (storedAdds) {
+      setNumberOfAdditions(storedAdds);
+    }
   };
 
   function calculateHoneyAndWater(
@@ -955,7 +962,7 @@ export default function RecipeProvider({
             }
           ),
           offset: recipeData.offset,
-          numberOfAdditions: "1",
+          numberOfAdditions,
           units: recipeData.units.volume,
         }}
         storeData

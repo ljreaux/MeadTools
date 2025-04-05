@@ -171,6 +171,7 @@ export const NutrientProvider = ({
 
   const setNumberOfAdditions = (value: string) => {
     if (!isNaN(parseInt(value, 10))) {
+      localStorage.setItem("numberOfAdditions", value);
       setFullData((prev) => ({
         ...prev,
         inputs: { ...prev.inputs, numberOfAdditions: value },
