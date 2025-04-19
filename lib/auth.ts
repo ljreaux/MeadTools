@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
+import { createUser } from "./db/users";
 
 // Extend Session and JWT types for TypeScript
 declare module "next-auth" {
@@ -45,20 +46,24 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      const existingUser = await prisma.users.findUnique({
+      let existingUser = await prisma.users.findUnique({
         where: { email: user.email },
       });
 
-      if (existingUser) {
-        if (account?.provider === "google" && !existingUser.google_id) {
-          await prisma.users.update({
-            where: { email: user.email },
-            data: { google_id: profile?.sub },
-          });
-        }
-        return true; // Allow sign-in
+      if (!existingUser) {
+        existingUser = await createUser({
+          email: user.email!,
+          google_id: profile?.sub,
+          role: "user", // or set a default role
+        });
+      } else if (account?.provider === "google" && !existingUser.google_id) {
+        await prisma.users.update({
+          where: { email: user.email },
+          data: { google_id: profile?.sub },
+        });
       }
-      return false; // Reject sign-in if user does not exist
+
+      return true;
     },
     async session({ session, token }) {
       if (token) {
