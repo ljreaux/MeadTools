@@ -67,7 +67,9 @@ export const SavedNutrientProvider = ({
   const [yanContributions, setYanContributions] = useState(
     storedYanContribution
   );
-  const [otherNutrientName, setOtherNutrientName] = useState("");
+  const [otherNutrientName, setOtherNutrientName] = useState(
+    storedFullData?.otherNutrientName ?? ""
+  );
   const [remainingYan, setRemainingYan] = useState(0);
   const [providedYan, setProvidedYan] = useState(["0", "0", "0", "0"]);
   const [adjustAllowed, setAdjustAllowed] = useState(false);

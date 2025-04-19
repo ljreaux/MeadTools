@@ -47,7 +47,6 @@ const RecipePage = ({ id }: { id: string }) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           response = await res.json();
         }
-
         setRecipe(response.recipe);
       } catch (error: any) {
         handleFetchError(error);
@@ -103,6 +102,8 @@ const RecipePage = ({ id }: { id: string }) => {
 
   const { recipeData, nutrientData, getSelectedSchedule, yanContribution } =
     parseRecipeData(recipe);
+
+  console.log(nutrientData);
 
   return (
     <SavedRecipeProvider

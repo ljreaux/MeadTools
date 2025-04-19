@@ -55,6 +55,7 @@ export type FullNutrientData = {
     yeastAmount: number;
     goFerm?: { type: GoFermType; amount: number; water: number };
   };
+  otherNutrientName?: string;
 };
 
 export type NutrientType = {

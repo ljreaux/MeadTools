@@ -39,8 +39,6 @@ export default function RecipeProvider({
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
   const [firstMount, setFirstMount] = useState(true);
-  const [preferredUnits, setPreferredUnits] = useState("US");
-
   const [recipeData, setRecipeData] = useState({
     ...initialData,
     ingredients: initialData.ingredients.map((ing) => ({
@@ -498,6 +496,21 @@ export default function RecipeProvider({
         })),
       };
       setRecipeData(parsedWithAdditiveIds);
+    } else {
+      const preferredUnits = localStorage.getItem("units");
+      if (preferredUnits) {
+        const units: UnitType =
+          preferredUnits === "US"
+            ? {
+                weight: "lbs",
+                volume: "gal",
+              }
+            : {
+                weight: "kg",
+                volume: "liter",
+              };
+        setRecipeData((prev) => ({ ...prev, units }));
+      }
     }
 
     // get notes data
@@ -653,10 +666,6 @@ export default function RecipeProvider({
     fetchAdditives();
 
     retrieveStoredData();
-    const units = localStorage.getItem("units");
-    if (units) {
-      setPreferredUnits(units);
-    }
 
     setFirstMount(false);
   }, []);
@@ -847,23 +856,6 @@ export default function RecipeProvider({
     recipeData.volume,
     addingStabilizers,
   ]);
-
-  // default to users preferred units when recipe is reset. The abv check is required to ensure it doesn't change the state of the recipe if there is data in local storage.
-  useEffect(() => {
-    if (recipeData.ABV < 1) {
-      const units: UnitType =
-        preferredUnits === "US"
-          ? {
-              weight: "lbs",
-              volume: "gal",
-            }
-          : {
-              weight: "kg",
-              volume: "liter",
-            };
-      setRecipeData((prev) => ({ ...prev, units }));
-    }
-  }, [preferredUnits]);
 
   useEffect(() => {
     localStorage.setItem("recipeData", JSON.stringify(recipeData));
