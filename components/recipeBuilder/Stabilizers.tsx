@@ -5,6 +5,13 @@ import { Input } from "../ui/input";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
 import Tooltip from "../Tooltips";
 import { Recipe } from "@/types/recipeDataTypes";
+import {
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+  SelectItem,
+} from "../ui/select";
 
 function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
   const { t } = useTranslation();
@@ -18,7 +25,10 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
     sorbate,
     sulfite,
     campden,
+    stabilizerType,
+    setStabilizerType,
   } = useRecipe();
+
   return (
     <div className="joyride-stabilizersCard grid py-6 gap-2">
       <label className="flex items-center gap-1">
@@ -58,12 +68,16 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
           </label>
           <span className="grid items-center space-y-2 py-2">
             <label>
-              {t("kMeta")}
-              <InputWithUnits
-                value={sulfite.toFixed(3)}
-                disabled
-                text="g"
-              />{" "}
+              <Select value={stabilizerType} onValueChange={setStabilizerType}>
+                <SelectTrigger>
+                  <SelectValue></SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kmeta"> {t("kMeta")}</SelectItem>
+                  <SelectItem value="nameta">{t("naMeta")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <InputWithUnits value={sulfite.toFixed(3)} disabled text="g" />
             </label>
             <p className="text-center"> {t("accountPage.or")}</p>
             <label>

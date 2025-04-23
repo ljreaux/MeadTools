@@ -41,6 +41,7 @@ function SaveRecipe() {
     notes,
     recipeNameProps,
     stabilizers,
+    stabilizerType,
   } = useRecipe();
 
   const {
@@ -70,6 +71,7 @@ function SaveRecipe() {
       sulfite,
       campden,
       stabilizers,
+      stabilizerType,
     });
 
     const otherNutrientName =

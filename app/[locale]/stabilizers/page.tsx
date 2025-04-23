@@ -35,6 +35,8 @@ const Stabilizers = () => {
     setAbv,
     takingReading,
     setTakingReading,
+    stabilizerType,
+    setStabilizerType,
   } = useStabilizers();
 
   const { t } = useTranslation();
@@ -127,9 +129,21 @@ const Stabilizers = () => {
                 {sorbate.toFixed(3)}g {t("kSorb")}
               </TableCell>
               <TableCell className="text-center">
-                <p>
-                  {sulfite.toFixed(3)}g {t("kMeta")}
-                </p>{" "}
+                <div className="flex items-center gap-2 justify-center">
+                  {sulfite.toFixed(3)}g{" "}
+                  <Select
+                    value={stabilizerType}
+                    onValueChange={setStabilizerType}
+                  >
+                    <SelectTrigger className="w-max">
+                      <SelectValue></SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kMeta"> {t("kMeta")}</SelectItem>
+                      <SelectItem value="naMeta">{t("naMeta")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>{" "}
                 <p>{t("accountPage.or")}</p>{" "}
                 <p className="flex items-center justify-center gap-2">
                   {Math.round(campden * 10) / 10} {t("list.campden")}

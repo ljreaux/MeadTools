@@ -98,6 +98,9 @@ export default function SavedRecipeProvider({
   const [totalForAbv, setTotalForAbv] = useState(1);
   const [delle, setDelle] = useState(0);
 
+  const [stabilizerType, setStabilizerType] = useState(
+    recipe.recipeData.stabilizerType ?? "kmeta"
+  );
   const [addingStabilizers, setAddingStabilizers] = useState(
     recipe.recipeData?.stabilizers?.adding ?? false
   );
@@ -695,10 +698,12 @@ export default function SavedRecipeProvider({
       if (ph == 3.8) ppm = 98;
       if (ph >= 3.9) ppm = 123;
 
+      const multiplier = stabilizerType === "kmeta" ? 570 : 674;
+
       const sulfite =
         volumeUnits == "gal"
-          ? (volume * 3.785 * ppm) / 570
-          : (volume * ppm) / 570;
+          ? (volume * 3.785 * ppm) / multiplier
+          : (volume * ppm) / multiplier;
 
       const campden =
         volumeUnits !== "gal"
@@ -860,6 +865,8 @@ export default function SavedRecipeProvider({
         public_username: recipe.users.public_username,
         fillToNearest,
         setIngredientsToTarget,
+        stabilizerType,
+        setStabilizerType,
       }}
     >
       <SavedNutrientProvider

@@ -58,6 +58,7 @@ export default function RecipeProvider({
   const [totalForAbv, setTotalForAbv] = useState(1);
   const [delle, setDelle] = useState(0);
 
+  const [stabilizerType, setStabilizerType] = useState("kmeta");
   const [addingStabilizers, setAddingStabilizers] = useState(
     initialData?.stabilizers?.adding ?? false
   );
@@ -549,6 +550,11 @@ export default function RecipeProvider({
     const parsedStabilizers = JSON.parse(storedStabilizers) as
       | { adding: boolean; pH: boolean; phReading: string }
       | false;
+
+    const stabilizerType = localStorage.getItem("stabilizerType");
+    if (stabilizerType) {
+      setStabilizerType(stabilizerType);
+    }
     if (parsedStabilizers) {
       setAddingStabilizers(parsedStabilizers.adding);
       setTakingPh(parsedStabilizers.pH);
@@ -825,10 +831,12 @@ export default function RecipeProvider({
       if (ph == 3.8) ppm = 98;
       if (ph >= 3.9) ppm = 123;
 
+      const multiplier = stabilizerType === "kmeta" ? 570 : 674;
+
       const sulfite =
         volumeUnits == "gal"
-          ? (volume * 3.785 * ppm) / 570
-          : (volume * ppm) / 570;
+          ? (volume * 3.785 * ppm) / multiplier
+          : (volume * ppm) / multiplier;
 
       const campden =
         volumeUnits !== "gal"
@@ -855,6 +863,7 @@ export default function RecipeProvider({
     recipeData.ABV,
     recipeData.volume,
     addingStabilizers,
+    stabilizerType,
   ]);
 
   useEffect(() => {
@@ -870,6 +879,7 @@ export default function RecipeProvider({
         phReading,
       })
     );
+    localStorage.setItem("stabilizerType", stabilizerType);
   }, [
     recipeData,
     primaryNotes,
@@ -878,6 +888,7 @@ export default function RecipeProvider({
     takingPh,
     phReading,
     recipeName,
+    stabilizerType,
   ]);
 
   return (
@@ -942,6 +953,8 @@ export default function RecipeProvider({
         },
         setIngredientsToTarget,
         fillToNearest,
+        stabilizerType,
+        setStabilizerType,
       }}
     >
       <NutrientProvider
