@@ -322,7 +322,6 @@ function RecipeView({
                 </thead>
                 <tbody>
                   {notes.primary.map((note, i) => {
-                    console.log(note.content[0].includes("\n"));
                     return (
                       <tr key={note.id}>
                         <td>

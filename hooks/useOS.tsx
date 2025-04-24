@@ -37,7 +37,6 @@ export const useOS = () => {
   useEffect(() => {
     async function getOs() {
       const ua = navigator.userAgent;
-      console.log(ua.includes("Macintosh"));
       if (ua.includes("Windows")) return setOs("windows");
       if (ua.includes("Linux")) return setOs("linux");
       if (ua.includes("Macintosh")) return setOs("macos");
@@ -46,8 +45,6 @@ export const useOS = () => {
     }
     getOs();
   }, []);
-
-  useEffect(() => console.log(os), [os]);
 
   return {
     currentButton,
