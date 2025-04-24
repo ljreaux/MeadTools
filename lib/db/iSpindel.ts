@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
 
 export type LogType = {
-  id: string;
+  id?: string;
   brew_id: string | null;
   device_id: string;
   angle: number;

@@ -123,7 +123,7 @@ function Brews() {
           )}
         </>
       ) : (
-        <p>{t("iSpindelDashboard.noBrews")}</p>
+        <p className="text-center my-4">{t("iSpindelDashboard.noBrews")}</p>
       )}
     </>
   );
