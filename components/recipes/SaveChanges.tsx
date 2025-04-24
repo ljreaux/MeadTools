@@ -45,7 +45,13 @@ function SaveChanges() {
     stabilizerType,
   } = useRecipe();
 
-  const { fullData, yanContributions } = useNutrients();
+  const {
+    fullData,
+    yanContributions,
+    otherNutrientName: otherNameState,
+    providedYan,
+    maxGpl,
+  } = useNutrients();
 
   const { fetchAuthenticatedPatch } = useAuth();
 
@@ -79,7 +85,14 @@ function SaveChanges() {
       stabilizers,
       stabilizerType,
     });
-    const nutrientData = JSON.stringify(fullData);
+
+    const otherNutrientName =
+      otherNameState.value.length > 0 ? otherNameState.value : undefined;
+
+    const nutrientData = JSON.stringify({
+      ...fullData,
+      otherNutrientName,
+    });
     const yanContribution = JSON.stringify(yanContributions);
 
     const primaryNotes = notes.primary.map((note) => note.content).flat();
@@ -89,16 +102,15 @@ function SaveChanges() {
     const body = {
       name: recipeNameProps.value,
       recipeData,
-      yanFromSource: null,
+      yanFromSource: JSON.stringify(providedYan),
       yanContribution,
       nutrientData,
       advanced,
-      nuteInfo: null,
+      nuteInfo: JSON.stringify(maxGpl),
       primaryNotes,
       secondaryNotes,
       private: checked,
     };
-
     try {
       await fetchAuthenticatedPatch(`/api/recipes/${recipeId}`, body);
 

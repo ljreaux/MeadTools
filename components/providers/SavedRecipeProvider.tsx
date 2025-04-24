@@ -47,6 +47,8 @@ export default function SavedRecipeProvider({
     users: {
       public_username: string | null;
     };
+    yanFromSource?: string[];
+    nuteInfo?: string[];
   };
 }) {
   const { t, i18n } = useTranslation();
@@ -872,6 +874,8 @@ export default function SavedRecipeProvider({
       <SavedNutrientProvider
         storedFullData={recipe.nutrientData}
         storedYanContribution={recipe.yanContribution}
+        storedProvidedYan={recipe.yanFromSource}
+        storedMaxGpl={recipe.nuteInfo}
       >
         {children}
       </SavedNutrientProvider>

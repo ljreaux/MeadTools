@@ -48,6 +48,8 @@ function SaveRecipe() {
     fullData,
     yanContributions,
     otherNutrientName: otherNameState,
+    providedYan,
+    maxGpl,
   } = useNutrients();
 
   const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
@@ -90,11 +92,11 @@ function SaveRecipe() {
     const body = {
       name: recipeNameProps.value,
       recipeData,
-      yanFromSource: null,
+      yanFromSource: JSON.stringify(providedYan),
       yanContribution,
       nutrientData,
       advanced,
-      nuteInfo: null,
+      nuteInfo: JSON.stringify(maxGpl),
       primaryNotes,
       secondaryNotes,
       private: checked,
@@ -102,7 +104,6 @@ function SaveRecipe() {
 
     try {
       await fetchAuthenticatedPost("/api/recipes", body);
-
       resetRecipe();
       toast({
         description: "Recipe created successfully.",

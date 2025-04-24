@@ -27,10 +27,14 @@ export const SavedNutrientProvider = ({
   children,
   storedFullData,
   storedYanContribution,
+  storedProvidedYan,
+  storedMaxGpl,
 }: {
   children: ReactNode;
   storedFullData: FullNutrientData;
   storedYanContribution: string[];
+  storedProvidedYan?: string[];
+  storedMaxGpl?: string[];
 }) => {
   const { i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
@@ -40,8 +44,9 @@ export const SavedNutrientProvider = ({
 
   const [fullData, setFullData] = useState<FullNutrientData>(storedFullData);
 
+  const [firstMount, setFirstMount] = useState(true);
   const [selectedGpl, setSelectedGpl] = useState(
-    maxGpl.tosna.value as string[]
+    storedMaxGpl ?? (maxGpl.tosna.value as string[])
   );
   const [nuteArr, setNuteArr] = useState<string[]>([]);
   const [yeastAmount, setYeastAmount] = useState(
@@ -71,7 +76,9 @@ export const SavedNutrientProvider = ({
     storedFullData?.otherNutrientName ?? ""
   );
   const [remainingYan, setRemainingYan] = useState(0);
-  const [providedYan, setProvidedYan] = useState(["0", "0", "0", "0"]);
+  const [providedYan, setProvidedYan] = useState(
+    storedProvidedYan ?? ["0", "0", "0", "0"]
+  );
   const [adjustAllowed, setAdjustAllowed] = useState(false);
 
   const calculateGoFerm = (type: GoFermType, yeastAmount: number) => {
@@ -514,40 +521,45 @@ export const SavedNutrientProvider = ({
 
   // determine how much yan comes from each source
   useEffect(() => {
-    const { schedule } = fullData.selected;
-    const value = maxGpl[schedule].value;
-    const { sg } = fullData.inputs;
-    const og = parseNumber(sg);
-
-    if (schedule !== "other") {
-      if (typeof value[0] === "string") {
-        setSelectedGpl(value as string[]);
-      } else {
-        if (og <= 1.08) {
-          setSelectedGpl(value[0]);
-        } else if (og <= 1.11) {
-          setSelectedGpl(value[1] as string[]);
-        } else {
-          setSelectedGpl(value[2] as string[]);
-        }
-      }
+    if (firstMount && !!storedMaxGpl) {
+      setSelectedGpl(storedMaxGpl);
     } else {
-      const nutrientValues = {
-        "Fermaid O": "0.45",
-        "Fermaid K": "0.5",
-        DAP: "0.96",
-        Other: "1",
-      };
+      const { schedule } = fullData.selected;
+      const value = maxGpl[schedule].value;
+      const { sg } = fullData.inputs;
+      const og = parseNumber(sg);
 
-      // Ensure arr has a fixed order corresponding to "Fermaid O", "Fermaid K", "DAP", "Other"
-      const arr = ["Fermaid O", "Fermaid K", "DAP", "Other"].map((nute) =>
-        nuteArr.includes(nute)
-          ? nutrientValues[nute as keyof typeof nutrientValues]
-          : "0"
-      );
+      if (schedule !== "other") {
+        if (typeof value[0] === "string") {
+          setSelectedGpl(value as string[]);
+        } else {
+          if (og <= 1.08) {
+            setSelectedGpl(value[0]);
+          } else if (og <= 1.11) {
+            setSelectedGpl(value[1] as string[]);
+          } else {
+            setSelectedGpl(value[2] as string[]);
+          }
+        }
+      } else {
+        const nutrientValues = {
+          "Fermaid O": "0.45",
+          "Fermaid K": "0.5",
+          DAP: "0.96",
+          Other: "1",
+        };
 
-      setSelectedGpl(arr);
+        // Ensure arr has a fixed order corresponding to "Fermaid O", "Fermaid K", "DAP", "Other"
+        const arr = ["Fermaid O", "Fermaid K", "DAP", "Other"].map((nute) =>
+          nuteArr.includes(nute)
+            ? nutrientValues[nute as keyof typeof nutrientValues]
+            : "0"
+        );
+
+        setSelectedGpl(arr);
+      }
     }
+    setFirstMount(false);
   }, [
     fullData.selected.schedule,
     fullData.inputs.sg,

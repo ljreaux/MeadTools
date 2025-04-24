@@ -100,10 +100,14 @@ const RecipePage = ({ id }: { id: string }) => {
     return null; // No recipe to render, fallback handled above
   }
 
-  const { recipeData, nutrientData, getSelectedSchedule, yanContribution } =
-    parseRecipeData(recipe);
-
-  console.log(nutrientData);
+  const {
+    recipeData,
+    nutrientData,
+    getSelectedSchedule,
+    yanContribution,
+    yanFromSource,
+    nuteInfo,
+  } = parseRecipeData(recipe);
 
   return (
     <SavedRecipeProvider
@@ -120,6 +124,8 @@ const RecipePage = ({ id }: { id: string }) => {
           },
         },
         yanContribution,
+        yanFromSource,
+        nuteInfo,
       }}
     >
       <>
