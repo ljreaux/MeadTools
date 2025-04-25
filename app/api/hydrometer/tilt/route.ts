@@ -5,6 +5,7 @@ import {
   createLog,
   startBrew,
 } from "@/lib/db/iSpindel";
+import { parseNumber } from "@/lib/utils/validateInput";
 import { NextRequest, NextResponse } from "next/server";
 
 enum Colors {
@@ -19,11 +20,11 @@ enum Colors {
 
 type TiltRequest = {
   Beer?: string;
-  Temp?: number;
-  SG?: number;
+  Temp?: number | string;
+  SG?: number | string;
   Color?: Colors;
   Comment?: string;
-  Timepoint?: number;
+  Timepoint?: number | string;
 };
 
 export async function POST(req: NextRequest) {
@@ -62,23 +63,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (brew_id) await updateBrewGravity(brew_id, SG);
+    if (brew_id) await updateBrewGravity(brew_id, parseNumber(SG));
 
-    const dateTime =
-      Timepoint && typeof Timepoint === "number"
-        ? new Date((Timepoint - 25569) * 86400 * 1000)
-        : new Date();
+    const dateTime = Timepoint
+      ? new Date((parseNumber(Timepoint) - 25569) * 86400 * 1000)
+      : new Date();
 
     const log = await createLog({
       brew_id,
       device_id,
       angle: 0,
-      temperature: Temp,
+      temperature: parseNumber(Temp),
       temp_units: "F",
       battery: 0,
-      gravity: SG,
+      gravity: parseNumber(SG),
       interval: 0,
-      calculated_gravity: SG,
+      calculated_gravity: parseNumber(SG),
       dateTime,
     });
 
