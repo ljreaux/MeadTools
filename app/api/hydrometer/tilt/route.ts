@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const token = searchParams.get("token")?.trim();
 
   const body: TiltRequest = await req.json();
-  const { Beer, Temp, SG, Color, Timepoint } = body;
+  const { Beer, Temp, SG, Color } = body;
 
   if (!token || !Temp || !SG || !Color) {
     return NextResponse.json(
@@ -65,21 +65,13 @@ export async function POST(req: NextRequest) {
 
     if (brew_id) await updateBrewGravity(brew_id, parseNumber(SG));
 
-    const dateTime = Timepoint
-      ? new Date((parseNumber(Timepoint) - 25569) * 86400 * 1000)
-      : new Date();
-
     const log = await createLog({
       brew_id,
       device_id,
-      angle: 0,
       temperature: parseNumber(Temp),
       temp_units: "F",
-      battery: 0,
       gravity: parseNumber(SG),
-      interval: 0,
       calculated_gravity: parseNumber(SG),
-      dateTime,
     });
 
     return NextResponse.json(log, { status: 200 });

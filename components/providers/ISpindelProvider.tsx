@@ -13,6 +13,7 @@ export interface ISpindelContext {
     endDate: string,
     deviceId: string
   ) => Promise<any[]>;
+  fetchBrews: () => void;
   hydrometerToken: string | undefined;
   loading: boolean;
   startBrew: (id: string, brewName: string | null) => Promise<void>;
@@ -99,20 +100,20 @@ export const ISpindelProvider = ({
       }
     })();
   }, [user]);
-
+  const fetchBrews = async () => {
+    try {
+      setLoading(true);
+      const brews = await fetchAuthenticatedData("/api/hydrometer/brew");
+      setBrews(brews || []);
+    } catch (error) {
+      console.error("Error fetching brews:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Fetch all brews
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const brews = await fetchAuthenticatedData("/api/hydrometer/brew");
-        setBrews(brews || []);
-      } catch (error) {
-        console.error("Error fetching brews:", error);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchBrews();
   }, [user]);
 
   const getNewHydrometerToken = async () => {
@@ -331,6 +332,7 @@ export const ISpindelProvider = ({
     logs,
     setLogs,
     fetchLogs,
+    fetchBrews,
     hydrometerToken,
     getNewHydrometerToken,
     loading,

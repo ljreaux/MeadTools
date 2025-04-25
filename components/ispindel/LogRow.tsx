@@ -91,7 +91,7 @@ const LogRow = ({ log, remove }: { log: any; remove: () => void }) => {
         />
       </TableCell>
       <TableCell>
-        <span className="flex items-center justify-center w-full gap-1">
+        <span className="flex items-center  w-full gap-1">
           <Input
             value={currentLog.temperature}
             disabled={!editable}
@@ -103,8 +103,6 @@ const LogRow = ({ log, remove }: { log: any; remove: () => void }) => {
           <p> °{currentLog.temp_units}</p>
         </span>
       </TableCell>
-      <TableCell>{currentLog.angle}</TableCell>
-      <TableCell>{currentLog.battery.toFixed(3)}</TableCell>
       <TableCell className="grid grid-flow-col gap-2 px-4">
         {editable ? (
           <>

@@ -30,12 +30,14 @@ function AccountLinks() {
         {user ? (
           <>
             <DropdownMenuItem onClick={() => router.push("/account")}>
-              {t("account.label")}
+              <p className="text-center w-full"> {t("account.label")}</p>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/account/hydrometer")}
             >
-              {t("iSpindelDashboard.manage")}
+              <p className="text-center w-full">
+                {t("iSpindelDashboard.manage")}
+              </p>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -43,7 +45,7 @@ function AccountLinks() {
                 router.push("/login");
               }}
             >
-              {t("account.logout")}
+              <p className="text-center w-full"> {t("account.logout")}</p>
             </DropdownMenuItem>
           </>
         ) : (

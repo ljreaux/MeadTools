@@ -73,7 +73,6 @@ function Device() {
 
     fetchLogs(start_date, end_date, deviceId).then((logs) => {
       setLogs(logs);
-      if (logs.length > 0) setShowTable(true);
     });
   }, []);
 
