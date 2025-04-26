@@ -9,7 +9,7 @@ import hydroFile from "@/public/chart-images/hydro-file.png";
 import pillFile from "@/public/chart-images/pill-file.png";
 import { WindowsIcon } from "@/components/osIcons/WindowsIcon";
 import { UbuntuIcon } from "@/components/osIcons/UbuntuIcon";
-import { AppleIcon } from "lucide-react";
+import { AppleIcon } from "@/components/osIcons/AppleIcon";
 
 type OSType = "windows" | "linux" | "macos-intel" | "macos-arm";
 

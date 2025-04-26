@@ -1,6 +1,6 @@
-import { UbuntuIcon } from "@/components/osIcons/UbuntuIcon";
+import { LinuxIcon } from "@/components/osIcons/LinuxIcon";
 import { WindowsIcon } from "@/components/osIcons/WindowsIcon";
-import { AppleIcon } from "lucide-react";
+import { AppleIcon } from "@/components/osIcons/AppleIcon";
 import { useEffect, useState } from "react";
 type OSType = "windows" | "linux" | "macos";
 
@@ -18,10 +18,10 @@ export const useOS = () => {
       logo: <WindowsIcon />,
     },
     {
-      os: "Ubuntu",
+      os: "Linux",
       href: `${baseURL}Linux`,
       key: "linux",
-      logo: <UbuntuIcon />,
+      logo: <LinuxIcon />,
     },
     {
       os: "Mac",
