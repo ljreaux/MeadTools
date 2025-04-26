@@ -30,6 +30,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toBrix } from "@/lib/utils/unitConverter";
 import ChartDownload from "./ChartDownload";
+import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
 type FileData = {
   date: string;
   temperature?: number;
@@ -55,7 +56,7 @@ export function HydrometerData({
   const { i18n, t } = useTranslation();
   const lang = i18n.resolvedLanguage || "en-US";
   const [data, setData] = useState(chartData);
-  const [fileName, setFileName] = useState("");
+  const [currentTempUnits, setCurrentTempUnits] = useState(tempUnits);
 
   const chartConfig = {
     temperature: {
@@ -106,11 +107,14 @@ export function HydrometerData({
     abv: false,
   };
 
-  const initialChecked = Object.keys(chartConfig).reduce((acc, key) => {
-    const label = key;
-    acc[label] = true;
-    return acc;
-  }, {} as { [key: string]: boolean });
+  const initialChecked = Object.keys(chartConfig).reduce(
+    (acc, key) => {
+      const label = key;
+      acc[label] = true;
+      return acc;
+    },
+    {} as { [key: string]: boolean }
+  );
   const roundToNearest005 = (value: number) => {
     return Math.round(value / 0.005) * 0.005;
   };
@@ -165,7 +169,7 @@ export function HydrometerData({
           <CardContent className="block md:hidden">
             {t("mobileChartMessage")}
           </CardContent>
-          <CardContent className="hidden md:block">
+          <CardContent className="hidden md:flex gap-2">
             <Select
               onValueChange={(val) => {
                 const dataWithBrix = chartData.map((data) => {
@@ -187,6 +191,30 @@ export function HydrometerData({
               <SelectContent>
                 <SelectItem value="SG">{t("SG")}</SelectItem>
                 <SelectItem value="Brix">{t("BRIX")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              onValueChange={(val) => {
+                setCurrentTempUnits(val as "F" | "C");
+                setData((prev) =>
+                  prev.map((obj) => ({
+                    ...obj,
+                    temperature:
+                      currentTempUnits === "F"
+                        ? toCelsius(obj.temperature!)
+                        : toFahrenheit(obj.temperature!),
+                  }))
+                );
+              }}
+              value={currentTempUnits}
+            >
+              <SelectTrigger>
+                <SelectValue></SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="F">{t("FAR")}</SelectItem>
+                <SelectItem value="C">{t("CEL")}</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -237,7 +265,7 @@ export function HydrometerData({
                 tickCount={10}
                 tickFormatter={(val) => val.toFixed()}
                 padding={yPadding}
-                unit={`°${tempUnits}`}
+                unit={`°${currentTempUnits}`}
                 hide={!checkObj.temperature}
               />
               <YAxis
@@ -334,7 +362,7 @@ export function HydrometerData({
                 strokeWidth={2}
                 dot={false}
                 yAxisId={"temperature"}
-                unit={`°${tempUnits}`}
+                unit={`°${currentTempUnits}`}
                 hide={!checkObj.temperature}
               />
               <Line
@@ -363,11 +391,7 @@ export function HydrometerData({
         </CardContent>
       </CardContent>
       <CardFooter className="hidden md:block">
-        <ChartDownload
-          fileName={fileName}
-          updateFileName={(e) => setFileName(e.target.value)}
-          data={data}
-        ></ChartDownload>
+        <ChartDownload data={data} />
         <Button onClick={handleDivDownload} className="w-full my-4">
           {t("downloadPNG")}
         </Button>

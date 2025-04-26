@@ -12,19 +12,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChangeEvent } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-function ChartDownload({
-  fileName,
-  updateFileName,
-  data,
-}: {
-  fileName: string;
-  updateFileName: (e: ChangeEvent<HTMLInputElement>) => void;
-  data: any[];
-}) {
+function ChartDownload({ data }: { data: any[] }) {
   const { t } = useTranslation();
+  const [fileName, setFileName] = useState("");
   return (
     <span className="flex items-center justify-center gap-4">
       {t("iSpindelDashboard.chartDownload.desc")}
@@ -36,7 +29,10 @@ function ChartDownload({
           <AlertDialogHeader>
             <AlertDialogTitle>{t("iSpindelDashboard.enter")}</AlertDialogTitle>
             <AlertDialogDescription className="flex flex-col gap-2">
-              <Input value={fileName} onChange={updateFileName} />
+              <Input
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
