@@ -19,7 +19,7 @@ enum Colors {
 }
 
 type TiltRequest = {
-  Beer?: string;
+  Beer: string;
   Temp?: number | string;
   SG?: number | string;
   Color?: Colors;
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     let brew_id = existingBrewId;
 
     // Start a brew if Beer is defined and no brew is currently attached
-    if (Beer && !brew_id) {
+    if (Beer && Beer !== "Untitled" && !brew_id) {
       try {
         const [brew] = await startBrew(device_id, userId, Beer);
         brew_id = brew.id;
