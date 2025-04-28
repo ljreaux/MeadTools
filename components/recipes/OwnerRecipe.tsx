@@ -25,7 +25,9 @@ import { useNutrients } from "../providers/SavedNutrientProvider";
 import SaveChanges from "./SaveChanges";
 import SaveNew from "./SaveNew";
 import DeleteRecipe from "./DeleteRecipe";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Pencil, PencilOff } from "lucide-react";
+import { Switch } from "../ui/switch";
 
 const cardConfig = [
   {
@@ -84,17 +86,38 @@ const cardConfig = [
 ];
 
 function OwnerRecipe({ pdfRedirect }: { pdfRedirect: boolean }) {
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [nameEditable, setNameEditable] = useState(false);
   const recipe = useRecipe();
+  const { t } = useTranslation();
+
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
       <Heading text={heading} toolTipProps={tooltip} />
-      <p className="text-xl text-center">{recipe.recipeNameProps.value}</p>
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <input
+            {...recipe.recipeNameProps}
+            disabled={!nameEditable}
+            className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-2xl shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <button
+            onClick={() => setNameEditable(!nameEditable)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 -translate-x-1/2 text-xs text-muted-foreground focus:outline-none"
+          >
+            {nameEditable ? <Pencil /> : <PencilOff />}
+          </button>
+        </div>
+        <label className="grid w-max self-end">
+          {t("private")}
+          <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
+        </label>
+      </div>
       {components}
     </CardWrapper>
   ));
 
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
-  const { t } = useTranslation();
 
   useEffect(() => {
     if (pdfRedirect) {
@@ -106,7 +129,7 @@ function OwnerRecipe({ pdfRedirect }: { pdfRedirect: boolean }) {
     <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
       <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
         <div className="py-2">
-          <SaveChanges />
+          <SaveChanges privateRecipe={isPrivate} />
           <SaveNew />
           <DeleteRecipe />
         </div>
