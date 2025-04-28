@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
   const token = searchParams.get("token")?.trim();
 
   const body: TiltRequest = await req.json();
+  console.log(body);
   const { Beer, Temp, SG, Color } = body;
 
   if (!token || !Temp || !SG || !Color) {
