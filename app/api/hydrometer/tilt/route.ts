@@ -27,11 +27,39 @@ type TiltRequest = {
   Timepoint?: number | string;
 };
 
+function parseFormData(formData: string): TiltRequest {
+  const params = new URLSearchParams(formData);
+  const result: Record<string, any> = {};
+
+  for (const [key, value] of params.entries()) {
+    const trimmedValue = value.trim();
+    const num = Number(trimmedValue);
+
+    result[key] = !isNaN(num) && trimmedValue !== "" ? num : trimmedValue;
+  }
+
+  return result as TiltRequest;
+}
+
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token")?.trim();
-  console.log(req, req.body);
-  const body: TiltRequest = await req.json();
+
+  const contentType = req.headers.get("content-type") || "";
+
+  let body: TiltRequest;
+
+  if (contentType.includes("application/json")) {
+    body = await req.json();
+  } else if (contentType.includes("application/x-www-form-urlencoded")) {
+    const formData = await req.text();
+    body = parseFormData(formData);
+  } else {
+    return NextResponse.json(
+      { error: "Unsupported content type" },
+      { status: 415 }
+    );
+  }
 
   const { Beer, Temp, SG, Color } = body;
 
