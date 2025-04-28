@@ -40,6 +40,7 @@ function SaveNew() {
     notes,
     stabilizers,
     stabilizerType,
+    recipeNameProps,
   } = useRecipe();
 
   const {
@@ -56,7 +57,7 @@ function SaveNew() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const [recipeName, setRecipeName] = useState("");
+  const [recipeName, setRecipeName] = useState(recipeNameProps.value);
 
   const createRecipe = async () => {
     setIsSubmitting(true); // Start loading
