@@ -30,9 +30,9 @@ type TiltRequest = {
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token")?.trim();
-
+  console.log(req, req.body);
   const body: TiltRequest = await req.json();
-  console.log(body, "test");
+
   const { Beer, Temp, SG, Color } = body;
 
   if (!token || !Temp || !SG || !Color) {
