@@ -27,6 +27,17 @@ function AdditionalDetails({
     <div className="joyride-goFerm grid grid-cols-2 gap-2">
       <label className="grid gap-1">
         <span className="flex items-center gap-1">
+          {t("yeastAmount")}
+          <Tooltip body={t("tipText.yeastAmount")} />
+        </span>
+        <InputWithUnits
+          value={yeastAmount}
+          text="g"
+          handleChange={changeYeastAmount}
+        />
+      </label>
+      <label className="grid gap-1">
+        <span className="flex items-center gap-1">
           {t("goFermType")}
           <Tooltip body={t("tipText.goFerm")} />
         </span>
@@ -42,17 +53,6 @@ function AdditionalDetails({
             ))}
           </SelectContent>
         </Select>
-      </label>
-      <label className="grid gap-1">
-        <span className="flex items-center gap-1">
-          {t("yeastAmount")}
-          <Tooltip body={t("tipText.yeastAmount")} />
-        </span>
-        <InputWithUnits
-          value={yeastAmount}
-          text="g"
-          handleChange={changeYeastAmount}
-        />
       </label>
     </div>
   );
