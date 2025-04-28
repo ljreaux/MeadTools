@@ -38,7 +38,6 @@ function SaveNew() {
     sulfite,
     campden,
     notes,
-    recipeNameProps,
     stabilizers,
     stabilizerType,
   } = useRecipe();
@@ -91,7 +90,7 @@ function SaveNew() {
     const advanced = false;
 
     const body = {
-      name: recipeNameProps.value,
+      name: recipeName,
       recipeData,
       yanFromSource: JSON.stringify(providedYan),
       yanContribution,
