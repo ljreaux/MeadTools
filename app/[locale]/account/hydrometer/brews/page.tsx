@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
@@ -21,11 +21,15 @@ import {
 import { useISpindel } from "@/components/providers/ISpindelProvider";
 
 function Brews() {
-  const { brews } = useISpindel();
+  const { brews, fetchBrews } = useISpindel();
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  useEffect(() => {
+    fetchBrews();
+  }, []);
 
   if (!brews) return null;
 
@@ -123,7 +127,7 @@ function Brews() {
           )}
         </>
       ) : (
-        <p>{t("iSpindelDashboard.noBrews")}</p>
+        <p className="text-center my-4">{t("iSpindelDashboard.noBrews")}</p>
       )}
     </>
   );

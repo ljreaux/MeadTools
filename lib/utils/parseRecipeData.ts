@@ -2,10 +2,16 @@ export const parseRecipeData = (recipe: {
   recipeData: string;
   nutrientData: string;
   yanContribution: string;
+  yanFromSource: string;
+  nuteInfo: string;
 }) => {
   const recipeData = JSON.parse(recipe.recipeData);
   const nutrientData = JSON.parse(recipe.nutrientData);
   const yanContribution = JSON.parse(recipe.yanContribution);
+
+  const yanFromSource = JSON.parse(recipe.yanFromSource);
+  const nuteInfo = JSON.parse(recipe.nuteInfo);
+
   const getSelectedSchedule = (schedule: string) => {
     switch (schedule) {
       case "tbe":
@@ -32,6 +38,8 @@ export const parseRecipeData = (recipe: {
     recipeData,
     nutrientData,
     yanContribution,
+    yanFromSource,
+    nuteInfo,
     getSelectedSchedule,
   };
 };

@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 function Sulfite() {
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
+  const [stabilizerType, setStabilizerType] = useState("kMeta");
 
   const [sulfite, setSulfite] = useState({
     batchSize: (1).toLocaleString(currentLocale),
@@ -36,11 +37,14 @@ function Sulfite() {
       }));
   };
 
+  const multiplier = stabilizerType === "kMeta" ? 570 : 674;
+
   const sulfiteAmount =
     sulfite.units === "gallons"
       ? (parseNumber(sulfite.batchSize) * 3.785 * parseNumber(sulfite.ppm)) /
-        570
-      : (parseNumber(sulfite.batchSize) * parseNumber(sulfite.ppm)) / 570;
+        multiplier
+      : (parseNumber(sulfite.batchSize) * parseNumber(sulfite.ppm)) /
+        multiplier;
 
   const campden =
     sulfite.units !== "gallons"
@@ -104,12 +108,24 @@ function Sulfite() {
         <TableRow>
           <TableCell colSpan={3}>
             <span className="grid items-center justify-center gap-2 sm:text-2xl text-center">
-              <p>
+              <div className="flex gap-2">
                 {sulfiteAmount.toLocaleString(currentLocale, {
                   maximumFractionDigits: 3,
                 })}
-                g {t("kMeta")}
-              </p>
+                g
+                <Select
+                  value={stabilizerType}
+                  onValueChange={setStabilizerType}
+                >
+                  <SelectTrigger>
+                    <SelectValue></SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kMeta"> {t("kMeta")}</SelectItem>
+                    <SelectItem value="naMeta">{t("naMeta")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <p>{t("accountPage.or")}</p>
               <p className="flex item-center justify-center gap-2">
                 {campden.toLocaleString(currentLocale)} {t("campden")}

@@ -55,6 +55,7 @@ export interface RecipeData {
     pH?: boolean;
     phReading?: string;
   };
+  stabilizerType?: string;
 }
 
 export type NotesType = { id: string; content: [string, string] }[];
@@ -179,6 +180,8 @@ export interface Recipe extends RecipeData {
   public_username?: string | null;
   setIngredientsToTarget: (og: number, volume: number) => void;
   fillToNearest: (id: string) => void;
+  stabilizerType: string;
+  setStabilizerType: (val: string) => void;
 }
 
 export const blankIngredient: IngredientDetails = {

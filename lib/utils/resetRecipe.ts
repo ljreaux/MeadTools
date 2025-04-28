@@ -9,6 +9,8 @@ export const resetRecipe = () => {
     "primaryNotes",
     "secondaryNotes",
     "addingStabilizers",
+    "numberOfAdditions",
+    "stabilizerType",
   ];
 
   itemsToRemove.forEach((item) => localStorage.removeItem(item));

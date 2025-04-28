@@ -6,6 +6,7 @@ const useStabilizers = () => {
   const [volumeUnits, setVolumeUnits] = useState<"gal" | "lit">("gal");
   const [abv, setAbv] = useState(12);
 
+  const [stabilizerType, setStabilizerType] = useState("kMeta");
   const [phReading, setPhReading] = useState(3.6);
   const [sorbate, setSorbate] = useState(0);
   const [sulfite, setSulfite] = useState(0);
@@ -36,10 +37,12 @@ const useStabilizers = () => {
     if (ph == 3.8) ppm = 98;
     if (ph >= 3.9) ppm = 123;
 
+    const multiplier = stabilizerType === "kMeta" ? 570 : 674;
+
     const sulfite =
       volumeUnits == "gal"
-        ? (volume * 3.785 * ppm) / 570
-        : (volume * ppm) / 570;
+        ? (volume * 3.785 * ppm) / multiplier
+        : (volume * ppm) / multiplier;
     setSulfite(sulfite);
 
     const campden =
@@ -47,7 +50,7 @@ const useStabilizers = () => {
         ? (ppm / 75) * (volume / 3.785)
         : (ppm / 75) * volume;
     setCampden(campden);
-  }, [abv, volume, phReading]);
+  }, [abv, volume, phReading, stabilizerType]);
 
   useEffect(() => {
     if (firstMount) return;
@@ -72,6 +75,8 @@ const useStabilizers = () => {
     setPhReading,
     takingReading,
     setTakingReading,
+    stabilizerType,
+    setStabilizerType,
   };
 };
 

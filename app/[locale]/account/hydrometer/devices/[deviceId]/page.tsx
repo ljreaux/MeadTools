@@ -28,10 +28,11 @@ import {
 import { useISpindel } from "@/components/providers/ISpindelProvider";
 import LogTable from "@/components/ispindel/LogTable";
 import RecentLogsForm from "@/components/ispindel/RecentLogsForm";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 function Device() {
   const params = useParams();
+  const router = useRouter();
 
   const deviceId = params.deviceId as string;
   const { t } = useTranslation();
@@ -73,7 +74,6 @@ function Device() {
 
     fetchLogs(start_date, end_date, deviceId).then((logs) => {
       setLogs(logs);
-      if (logs.length > 0) setShowTable(true);
     });
   }, []);
 
@@ -253,7 +253,13 @@ function Device() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button onClick={() => deleteDevice(device.id)}>
+              <Button
+                onClick={() =>
+                  deleteDevice(device.id).then(() => {
+                    router.push("/account/hydrometer/devices");
+                  })
+                }
+              >
                 {t("iSpindelDashboard.deleteDevice")}
               </Button>
             </AlertDialogAction>

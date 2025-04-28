@@ -41,9 +41,16 @@ function SaveRecipe() {
     notes,
     recipeNameProps,
     stabilizers,
+    stabilizerType,
   } = useRecipe();
 
-  const { fullData, yanContributions } = useNutrients();
+  const {
+    fullData,
+    yanContributions,
+    otherNutrientName: otherNameState,
+    providedYan,
+    maxGpl,
+  } = useNutrients();
 
   const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
 
@@ -66,8 +73,16 @@ function SaveRecipe() {
       sulfite,
       campden,
       stabilizers,
+      stabilizerType,
     });
-    const nutrientData = JSON.stringify(fullData);
+
+    const otherNutrientName =
+      otherNameState.value.length > 0 ? otherNameState.value : undefined;
+
+    const nutrientData = JSON.stringify({
+      ...fullData,
+      otherNutrientName,
+    });
     const yanContribution = JSON.stringify(yanContributions);
 
     const primaryNotes = notes.primary.map((note) => note.content).flat();
@@ -77,11 +92,11 @@ function SaveRecipe() {
     const body = {
       name: recipeNameProps.value,
       recipeData,
-      yanFromSource: null,
+      yanFromSource: JSON.stringify(providedYan),
       yanContribution,
       nutrientData,
       advanced,
-      nuteInfo: null,
+      nuteInfo: JSON.stringify(maxGpl),
       primaryNotes,
       secondaryNotes,
       private: checked,
@@ -89,7 +104,6 @@ function SaveRecipe() {
 
     try {
       await fetchAuthenticatedPost("/api/recipes", body);
-
       resetRecipe();
       toast({
         description: "Recipe created successfully.",

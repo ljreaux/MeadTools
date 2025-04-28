@@ -57,8 +57,6 @@ function LogTable({
     "gravity",
     "iSpindelDashboard.calculatedGravity",
     "temperature",
-    "iSpindelDashboard.angle",
-    "iSpindelDashboard.batteryLevel",
     "desktop.editOrDelete",
   ];
 

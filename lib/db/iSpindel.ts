@@ -3,16 +3,16 @@ import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
 
 export type LogType = {
-  id: string;
+  id?: string;
   brew_id: string | null;
   device_id: string;
-  angle: number;
+  angle?: number;
   temperature: number;
-  temp_units: "C" | "F";
-  battery: number;
+  temp_units?: "C" | "F";
+  battery?: number;
   gravity: number;
-  interval: number;
-  dateTime: Date;
+  interval?: number;
+  dateTime?: Date;
   calculated_gravity: number | null;
 };
 
@@ -107,8 +107,8 @@ export async function createLog(log: LogType) {
     device_id: log.device_id,
     angle: log.angle || 0,
     temperature: log.temperature,
-    temp_units: log.temp_units,
-    battery: log.battery,
+    temp_units: log.temp_units || "F",
+    battery: log.battery || 0,
     gravity: log.gravity,
     interval: log.interval || 0,
     calculated_gravity: log.calculated_gravity,

@@ -38,6 +38,7 @@ function RecipeView({
     addingStabilizers,
     recipeNameProps,
     public_username,
+    stabilizerType,
   } = recipeData;
 
   const { t, i18n } = useTranslation();
@@ -261,7 +262,7 @@ function RecipeView({
                     <p>
                       {`${sulfite.toLocaleString(currentLocale, {
                         maximumFractionDigits: 3,
-                      })}g ${t("PDF.kmeta")} ${t(
+                      })}g ${t(`PDF.${stabilizerType}`)} ${t(
                         "accountPage.or"
                       )} ${campden.toLocaleString(currentLocale, {
                         maximumFractionDigits: 3,
@@ -321,7 +322,6 @@ function RecipeView({
                 </thead>
                 <tbody>
                   {notes.primary.map((note, i) => {
-                    console.log(note.content[0].includes("\n"));
                     return (
                       <tr key={note.id}>
                         <td>

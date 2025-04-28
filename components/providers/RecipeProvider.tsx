@@ -39,8 +39,6 @@ export default function RecipeProvider({
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
   const [firstMount, setFirstMount] = useState(true);
-  const [preferredUnits, setPreferredUnits] = useState("US");
-
   const [recipeData, setRecipeData] = useState({
     ...initialData,
     ingredients: initialData.ingredients.map((ing) => ({
@@ -60,6 +58,7 @@ export default function RecipeProvider({
   const [totalForAbv, setTotalForAbv] = useState(1);
   const [delle, setDelle] = useState(0);
 
+  const [stabilizerType, setStabilizerType] = useState("kmeta");
   const [addingStabilizers, setAddingStabilizers] = useState(
     initialData?.stabilizers?.adding ?? false
   );
@@ -70,6 +69,8 @@ export default function RecipeProvider({
     initialData?.stabilizers?.phReading ?? "3.6"
   );
   const [recipeName, setRecipeName] = useState(providedName || "");
+
+  const [numberOfAdditions, setNumberOfAdditions] = useState("1");
 
   const addIngredient = () => {
     setRecipeData((prev) => ({
@@ -496,6 +497,21 @@ export default function RecipeProvider({
         })),
       };
       setRecipeData(parsedWithAdditiveIds);
+    } else {
+      const preferredUnits = localStorage.getItem("units");
+      if (preferredUnits) {
+        const units: UnitType =
+          preferredUnits === "US"
+            ? {
+                weight: "lbs",
+                volume: "gal",
+              }
+            : {
+                weight: "kg",
+                volume: "liter",
+              };
+        setRecipeData((prev) => ({ ...prev, units }));
+      }
     }
 
     // get notes data
@@ -534,6 +550,11 @@ export default function RecipeProvider({
     const parsedStabilizers = JSON.parse(storedStabilizers) as
       | { adding: boolean; pH: boolean; phReading: string }
       | false;
+
+    const stabilizerType = localStorage.getItem("stabilizerType");
+    if (stabilizerType) {
+      setStabilizerType(stabilizerType);
+    }
     if (parsedStabilizers) {
       setAddingStabilizers(parsedStabilizers.adding);
       setTakingPh(parsedStabilizers.pH);
@@ -542,6 +563,11 @@ export default function RecipeProvider({
     const storedName = localStorage.getItem("recipeName");
     if (storedName) {
       setRecipeName(storedName);
+    }
+
+    const storedAdds = localStorage.getItem("numberOfAdditions");
+    if (storedAdds) {
+      setNumberOfAdditions(storedAdds);
     }
   };
 
@@ -646,10 +672,6 @@ export default function RecipeProvider({
     fetchAdditives();
 
     retrieveStoredData();
-    const units = localStorage.getItem("units");
-    if (units) {
-      setPreferredUnits(units);
-    }
 
     setFirstMount(false);
   }, []);
@@ -809,10 +831,12 @@ export default function RecipeProvider({
       if (ph == 3.8) ppm = 98;
       if (ph >= 3.9) ppm = 123;
 
+      const multiplier = stabilizerType === "kmeta" ? 570 : 674;
+
       const sulfite =
         volumeUnits == "gal"
-          ? (volume * 3.785 * ppm) / 570
-          : (volume * ppm) / 570;
+          ? (volume * 3.785 * ppm) / multiplier
+          : (volume * ppm) / multiplier;
 
       const campden =
         volumeUnits !== "gal"
@@ -839,24 +863,8 @@ export default function RecipeProvider({
     recipeData.ABV,
     recipeData.volume,
     addingStabilizers,
+    stabilizerType,
   ]);
-
-  // default to users preferred units when recipe is reset. The abv check is required to ensure it doesn't change the state of the recipe if there is data in local storage.
-  useEffect(() => {
-    if (recipeData.ABV < 1) {
-      const units: UnitType =
-        preferredUnits === "US"
-          ? {
-              weight: "lbs",
-              volume: "gal",
-            }
-          : {
-              weight: "kg",
-              volume: "liter",
-            };
-      setRecipeData((prev) => ({ ...prev, units }));
-    }
-  }, [preferredUnits]);
 
   useEffect(() => {
     localStorage.setItem("recipeData", JSON.stringify(recipeData));
@@ -871,6 +879,7 @@ export default function RecipeProvider({
         phReading,
       })
     );
+    localStorage.setItem("stabilizerType", stabilizerType);
   }, [
     recipeData,
     primaryNotes,
@@ -879,6 +888,7 @@ export default function RecipeProvider({
     takingPh,
     phReading,
     recipeName,
+    stabilizerType,
   ]);
 
   return (
@@ -943,6 +953,8 @@ export default function RecipeProvider({
         },
         setIngredientsToTarget,
         fillToNearest,
+        stabilizerType,
+        setStabilizerType,
       }}
     >
       <NutrientProvider
@@ -955,7 +967,7 @@ export default function RecipeProvider({
             }
           ),
           offset: recipeData.offset,
-          numberOfAdditions: "1",
+          numberOfAdditions,
           units: recipeData.units.volume,
         }}
         storeData
