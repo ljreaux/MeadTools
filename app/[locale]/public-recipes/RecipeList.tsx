@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
+import { parseNumber } from "@/lib/utils/validateInput";
 
 interface Recipe {
   id: number;
@@ -27,8 +28,8 @@ function parseRecipeData(recipeData: string) {
   try {
     const parsedData = JSON.parse(recipeData);
     return {
-      OG: parsedData.OG.toFixed(3) || "N/A",
-      FG: parsedData.FG.toFixed(3) || "N/A",
+      OG: parseNumber(parsedData.OG)?.toFixed(3) || "N/A",
+      FG: parseNumber(parsedData.FG)?.toFixed(3) || "N/A",
     };
   } catch (error) {
     console.error("Error parsing recipeData:", error);
