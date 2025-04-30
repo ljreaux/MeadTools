@@ -190,7 +190,7 @@ function Setup() {
             <AccordionItem value="cloud">
               <AccordionTrigger>RAPT Cloud</AccordionTrigger>
               <AccordionContent>
-                <div>
+                <div className="grid gap-4">
                   <p>
                     MeadTools has support for the RAPT Pill through the RAPT
                     Cloud Custom Web Hooks
