@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { parseNumber } from "@/lib/utils/validateInput";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 
 interface Recipe {
   id: number;
@@ -38,12 +39,15 @@ function parseRecipeData(recipeData: string) {
 }
 
 export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
+  const searchParams = useSearchParams();
+  const pathName = usePathname();
+  const { replace } = useRouter();
   const { t } = useTranslation();
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const filteredRecipes = recipes.filter((recipe) => {
+    const searchTerm = searchParams.get("query") ?? "";
     return (
       recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recipe.public_username?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -75,10 +79,16 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
       <div className="mb-4 flex items-center w-full max-w-[50%] rounded-md relative">
         <Input
           placeholder={t("searchPlaceholder")}
-          value={searchTerm}
+          defaultValue={searchParams.get("query")?.toString()}
           onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1); // Reset to the first page on search
+            const params = new URLSearchParams(searchParams);
+            if (e.target.value) {
+              params.set("query", e.target.value);
+            } else {
+              params.delete("query");
+            }
+            replace(`${pathName}?${params.toString()}`);
+            setCurrentPage(1);
           }}
           className="flex-1 pr-8 focus:ring-0 placeholder-ellipsis placeholder:text-muted-foreground"
         />
