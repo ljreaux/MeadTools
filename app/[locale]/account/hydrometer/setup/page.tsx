@@ -39,7 +39,7 @@ function Setup() {
 
   const pillPayload = `{
     "token": "${hydrometerToken ?? "Please generate a token"}",
-    "name": @device_name,
+    "name": "@device_name",
     "gravity": @gravity,
     "temperature": @temperature,
     "temp_units": "${tempUnits}",
