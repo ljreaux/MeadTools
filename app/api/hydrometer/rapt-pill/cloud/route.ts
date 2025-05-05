@@ -12,6 +12,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
+  console.log(body);
+
   if (!body || !body.token) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
@@ -24,6 +26,8 @@ export async function POST(req: NextRequest) {
     const newDevice = { userId, device_name: body.name };
     const device = await registerDevice(newDevice);
     const { brew_id } = device;
+
+    console.log(newDevice, device, brew_id);
 
     const gravity = body.gravity;
 
@@ -41,6 +45,7 @@ export async function POST(req: NextRequest) {
     };
 
     const log = await createLog(data);
+    console.log(log);
     return NextResponse.json(log, { status: 200 });
   } catch (error) {
     console.error("Error logging:", error);
