@@ -2,9 +2,9 @@
 import { useParams } from "next/navigation";
 import { useFetchData } from "@/hooks/useFetchData";
 import YeastEditForm from "@/components/admin/YeastEditForm";
-import { Yeast } from "../page";
 import Loading from "@/components/loading";
 import Link from "next/link";
+import { Yeast } from "@/types/admin";
 
 export default function YeastEditPage() {
   const { id } = useParams();

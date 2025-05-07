@@ -24,14 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-
-export type Ingredient = {
-  id: number;
-  name: string;
-  sugar_content: string | number;
-  water_content: string | number;
-  category: string | number;
-};
+import { Ingredient } from "@/types/admin";
 
 interface Props {
   ingredient: Ingredient;

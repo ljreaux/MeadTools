@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteUser, getUserById, updateUser } from "@/lib/db/users";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
+import bcrypt from "bcrypt";
+import ShortUniqueId from "short-unique-id";
 
 export async function GET(
   req: NextRequest,
@@ -50,7 +52,22 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const updates = await req.json();
+    const data = await req.json();
+    let password: string | undefined;
+    let hydro_token: string | undefined;
+    const { randomUUID } = new ShortUniqueId();
+
+    if (data.password) {
+      password = await bcrypt.hash(data.password, 10);
+    }
+    if (data.updateToken) {
+      hydro_token = randomUUID(10);
+    }
+    const updates = Object.fromEntries(
+      Object.entries({ ...data, password, hydro_token }).filter(
+        ([key, value]) => value !== undefined && key !== "updateToken"
+      )
+    );
 
     const updatedUser = await updateUser(Number(id), updates);
     return NextResponse.json(updatedUser);

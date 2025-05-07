@@ -2,18 +2,9 @@
 import Loading from "@/components/loading";
 import { PaginatedTable } from "@/components/PaginatedTable";
 import { useFetchData } from "@/hooks/useFetchData";
+import { Yeast } from "@/types/admin";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-export type Yeast = {
-  id: number;
-  brand: string;
-  name: string;
-  nitrogen_requirement: string;
-  tolerance: string | number;
-  low_temp: string | number;
-  high_temp: string | number;
-};
 
 function YeastDashboard() {
   const router = useRouter();
@@ -42,6 +33,7 @@ function YeastDashboard() {
         ]}
         pageSize={10}
         onRowClick={(yeast) => router.push(`/admin/yeasts/${yeast.id}`)}
+        searchKey={["name", "brand", "nitrogen_requirement"]}
       />
     </div>
   );

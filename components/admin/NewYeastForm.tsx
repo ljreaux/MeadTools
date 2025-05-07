@@ -14,16 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-type Yeast = {
-  id: number;
-  brand: string;
-  name: string;
-  nitrogen_requirement: string;
-  tolerance: string | number;
-  low_temp: string | number;
-  high_temp: string | number;
-};
+import { Yeast } from "@/types/admin";
 
 const initialFormData: Omit<Yeast, "id"> = {
   brand: "",

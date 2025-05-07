@@ -24,35 +24,35 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Yeast } from "@/types/admin";
+import { User } from "@/types/admin";
+import { Checkbox } from "../ui/Checkbox";
 
 interface Props {
-  yeast: Yeast;
+  user: User;
 }
 
-const BRAND_OPTIONS = [
-  "Lalvin",
-  "Red Star",
-  "Mangrove Jack",
-  "Fermentis",
-  "Other",
-];
-const NITROGEN_OPTIONS = ["Low", "Medium", "High", "Very High"];
-
-export default function YeastEditForm({ yeast }: Props) {
+export default function UserEditForm({ user }: Props) {
   const { toast } = useToast();
   const router = useRouter();
-  const [formData, setFormData] = useState({ ...yeast });
+  const [formData, setFormData] = useState({
+    email: user.email,
+    public_username: user.public_username ?? "",
+    role: user.role,
+    password: "",
+    updateToken: false,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name: keyof Yeast, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, updateToken: checked }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,22 +71,27 @@ export default function YeastEditForm({ yeast }: Props) {
     }
 
     try {
-      const res = await fetch(`/api/yeasts/${yeast.id}`, {
+      const payload = {
+        ...formData,
+        password: formData.password || undefined,
+      };
+
+      const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
-      toast({ title: "Success", description: "Yeast updated successfully!" });
+      toast({ title: "Success", description: "User updated successfully!" });
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Failed to update yeast.",
+        description: err.message || "Failed to update user.",
         variant: "destructive",
       });
     } finally {
@@ -107,7 +112,7 @@ export default function YeastEditForm({ yeast }: Props) {
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/yeasts/${yeast.id}`, {
+      const res = await fetch(`/api/users/${user.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -116,12 +121,12 @@ export default function YeastEditForm({ yeast }: Props) {
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
-      toast({ title: "Deleted", description: "Yeast was deleted." });
-      router.push("/admin/yeasts");
+      toast({ title: "Deleted", description: "User was deleted." });
+      router.push("/admin/users");
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Failed to delete yeast.",
+        description: err.message || "Failed to delete user.",
         variant: "destructive",
       });
     } finally {
@@ -131,73 +136,69 @@ export default function YeastEditForm({ yeast }: Props) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      {/* Brand select */}
+      {/* Email */}
       <div className="space-y-1">
-        <Label htmlFor="brand">Brand</Label>
-        <Select
-          value={formData.brand}
-          onValueChange={(val) => handleSelectChange("brand", val)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a brand" />
-          </SelectTrigger>
-          <SelectContent>
-            {BRAND_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Name input */}
-      <div className="space-y-1">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="name"
-          name="name"
-          value={formData.name}
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
           onChange={handleChange}
         />
       </div>
 
-      {/* Nitrogen requirement select */}
+      {/* Public Username */}
       <div className="space-y-1">
-        <Label htmlFor="nitrogen_requirement">Nitrogen Requirement</Label>
+        <Label htmlFor="public_username">Public Username</Label>
+        <Input
+          id="public_username"
+          name="public_username"
+          value={formData.public_username}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* Password (optional) */}
+      <div className="space-y-1">
+        <Label htmlFor="password">New Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+        />
+      </div>
+
+      {/* Role select */}
+      <div className="space-y-1">
+        <Label htmlFor="role">Role</Label>
         <Select
-          value={formData.nitrogen_requirement}
+          value={formData.role}
           onValueChange={(val) =>
-            handleSelectChange("nitrogen_requirement", val)
+            setFormData((prev) => ({ ...prev, role: val as "user" | "admin" }))
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select nitrogen level" />
+            <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            {NITROGEN_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
+            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Other inputs */}
-      {["tolerance", "low_temp", "high_temp"].map((key) => (
-        <div key={key} className="space-y-1">
-          <Label htmlFor={key}>
-            {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-          </Label>
-          <Input
-            id={key}
-            name={key}
-            value={formData[key as keyof Yeast]}
-            onChange={handleChange}
-          />
-        </div>
-      ))}
+      {/* Generate new hydro token */}
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="updateToken"
+          checked={formData.updateToken}
+          onCheckedChange={handleCheckboxChange}
+        />
+        <Label htmlFor="updateToken">Generate new hydro token</Label>
+      </div>
 
       <div className="flex gap-4">
         <Button type="submit" disabled={isSaving}>
@@ -214,8 +215,8 @@ export default function YeastEditForm({ yeast }: Props) {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm deletion</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete <strong>{yeast.name}</strong>?
-                This action cannot be undone.
+                Are you sure you want to delete <strong>{user.email}</strong>?
+                This cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

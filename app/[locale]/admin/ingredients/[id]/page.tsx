@@ -3,8 +3,8 @@ import { useParams } from "next/navigation";
 import { useFetchData } from "@/hooks/useFetchData";
 import Loading from "@/components/loading";
 import Link from "next/link";
-import { Ingredient } from "../page";
 import IngredientEditForm from "@/components/admin/IngredientEditForm";
+import { Ingredient } from "@/types/admin";
 
 export default function IngredientEditPage() {
   const { id } = useParams();

@@ -13,14 +13,7 @@ import {
   SelectItem,
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-
-export type Ingredient = {
-  id: number;
-  name: string;
-  sugar_content: string | number;
-  water_content: string | number;
-  category: string;
-};
+import { Ingredient } from "@/types/admin";
 
 const CATEGORY_OPTIONS = [
   "sugar",

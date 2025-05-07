@@ -2,16 +2,9 @@
 import Loading from "@/components/loading";
 import { PaginatedTable } from "@/components/PaginatedTable";
 import { useFetchData } from "@/hooks/useFetchData";
+import { Ingredient } from "@/types/admin";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-export type Ingredient = {
-  id: number;
-  name: string;
-  sugar_content: string | number;
-  water_content: string | number;
-  category: string | number;
-};
 
 function IngredientDashboard() {
   const router = useRouter();
@@ -46,6 +39,7 @@ function IngredientDashboard() {
         onRowClick={(ingredient) =>
           router.push(`/admin/ingredients/${ingredient.id}`)
         }
+        searchKey={["name", "category"]}
       />
     </div>
   );
