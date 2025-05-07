@@ -10,6 +10,17 @@ export async function getAllIngredients() {
   }
 }
 
+export async function getIngredientById(id: number) {
+  try {
+    return await prisma.ingredients.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error("Error fetching ingredient by ID:", error);
+    throw new Error("Could not fetch ingredient by ID");
+  }
+}
+
 // Fetch ingredients by category
 export async function getIngredientsByCategory(category: string) {
   try {
