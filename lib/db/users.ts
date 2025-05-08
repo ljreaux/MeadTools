@@ -7,6 +7,9 @@ export async function getAllUsers() {
       id: true,
       email: true,
       role: true,
+      google_id: true,
+      public_username: true,
+      hydro_token: true,
     },
   });
 }
@@ -69,6 +72,8 @@ export async function updateUser(
     password: string;
     role: string;
     public_username: string;
+    google_id: string;
+    hydro_token: string;
   }>
 ) {
   return await prisma.users.update({
@@ -79,6 +84,9 @@ export async function updateUser(
 
 // Delete a user
 export async function deleteUser(id: number) {
+  if (id === 1) {
+    throw new Error("Cannot Delete MeadTools Admin");
+  }
   return await prisma.users.delete({
     where: { id },
   });
