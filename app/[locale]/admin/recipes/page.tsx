@@ -16,7 +16,6 @@ function RecipesDashboard() {
 
   if (!recipes) return null;
 
-  console.log(recipes.recipes);
   return (
     <div>
       <h1 className="text-2xl">Recipes</h1>

@@ -18,8 +18,6 @@ export default function IngredientEditPage() {
   if (error) return <p>Error: {error.message}</p>;
   if (!additive) return null;
 
-  console.log(additive);
-
   return (
     <div>
       <div className="flex items-center justify-between">
