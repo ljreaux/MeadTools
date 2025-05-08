@@ -6,6 +6,7 @@ import { useState } from "react";
 import { PasswordInput } from "./PasswordInput";
 import { LoadingButton } from "./ui/LoadingButton";
 import Tooltip from "./Tooltips";
+import { useRouter } from "next/navigation";
 
 function AuthForm({
   formText,
@@ -31,6 +32,7 @@ function AuthForm({
     public_username: "",
   });
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +101,17 @@ function AuthForm({
       >
         {formText}
       </LoadingButton>
+      {formType !== "register" && (
+        <button
+          onClick={() => router.push("/reset")}
+          className="text-sm text-muted-foreground hover:text-foreground underline self-center col-span-full"
+        >
+          {t(
+            "accountPage.buttonMessage.forgotPassword",
+            "Forgot your password?"
+          )}
+        </button>
+      )}
     </form>
   );
 }

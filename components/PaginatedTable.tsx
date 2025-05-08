@@ -104,20 +104,24 @@ export function PaginatedTable<T>({
               className={onRowClick ? "cursor-pointer hover:bg-muted" : ""}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
             >
-              {columns.map((col) => (
-                <TableCell
-                  key={String(col.key)}
-                  className={
-                    item[col.key] == null ? "text-muted-foreground" : ""
-                  }
-                >
-                  {col.render
-                    ? col.render(item)
-                    : item[col.key] == null
-                      ? "—"
-                      : String(item[col.key])}
-                </TableCell>
-              ))}
+              {columns.map((col) => {
+                const isEmpty =
+                  item[col.key] === null ||
+                  item[col.key] === undefined ||
+                  item[col.key] === "";
+                return (
+                  <TableCell
+                    key={String(col.key)}
+                    className={isEmpty ? "text-muted-foreground" : ""}
+                  >
+                    {col.render
+                      ? col.render(item)
+                      : isEmpty
+                        ? "—"
+                        : String(item[col.key])}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableBody>

@@ -114,6 +114,14 @@ model yeasts {
   high_temp            Decimal @db.Decimal
 }
 
+model additives {
+  id        String        @id @default(uuid()) @db.Uuid
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  name      String
+  dosage    Float         @default(0)
+  unit      additive_unit
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -152,4 +160,20 @@ enum temp_units {
   F
   C
   K
+}
+
+enum additive_unit {
+  g
+  ml
+  tsp
+  oz
+  units
+  mg
+  kg
+  lbs
+  liters
+  fl_oz    @map("fl oz")
+  quarts
+  gal
+  tbsp
 }

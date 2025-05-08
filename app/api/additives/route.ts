@@ -1,40 +1,63 @@
+import prisma from "@/lib/prisma";
+import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const name = searchParams.get("name"); // Get the `name` query parameter
+  const name = searchParams.get("name");
 
-  const additiveDosage = [
-    { name: "FT Rouge", dosage: "1.3", unit: "g" },
-    { name: "Opti-Red", dosage: "1", unit: "g" },
-    { name: "FT Blanc Soft", dosage: "0.2", unit: "g" },
-    { name: "Opti-White", dosage: "1.9", unit: "g" },
-    { name: "Tannin Complex", dosage: "0.2", unit: "g" },
-    { name: "Tannin Riche Extra", dosage: "0.2", unit: "g" },
-    { name: "Bentonite", dosage: "6", unit: "g" },
-    { name: "Chitosan", dosage: "6", unit: "ml" },
-    { name: "Kieselsol", dosage: "1", unit: "ml" },
-    { name: "Sparkolloid", dosage: "0.6", unit: "g" },
-    { name: "Pectic Enzyme", dosage: "0.4", unit: "tsp" },
-    { name: "Lallzyme EX-V", dosage: "0.075", unit: "g" },
-    { name: "Lallzyme EX", dosage: "0.1", unit: "g" },
-    { name: "Lallzyme C-Max", dosage: "0.06", unit: "g" },
-    { name: "Oak Chips", dosage: "0.25", unit: "oz" },
-    { name: "Oak Spirals", dosage: "1", unit: "units" },
-    { name: "Oak Cubes", dosage: "0.5", unit: "oz" },
-  ];
+  try {
+    const additives = await prisma.additives.findMany({
+      where: name
+        ? {
+            name: {
+              equals: name,
+              mode: "insensitive",
+            },
+          }
+        : undefined,
+      orderBy: { name: "asc" },
+    });
 
-  let result;
-  if (name) {
-    // Filter additives by name (case-insensitive)
-    result = additiveDosage.filter(
-      (additive) => additive.name.toLowerCase() === name.toLowerCase()
+    return NextResponse.json(additives);
+  } catch (err) {
+    console.error("Failed to fetch additives:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch additives" },
+      { status: 500 }
     );
-  } else {
-    // Return all additives if no name is provided
-    result = additiveDosage;
   }
+}
 
-  // Respond with JSON
-  return NextResponse.json(result);
+export async function POST(req: NextRequest) {
+  const adminOrResponse = await verifyAdmin(req);
+  if (adminOrResponse instanceof NextResponse) return adminOrResponse;
+
+  try {
+    const body = await req.json();
+    const { name, dosage, unit } = body;
+
+    if (!name || dosage == null || !unit) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const additive = await prisma.additives.create({
+      data: {
+        name,
+        dosage: parseFloat(String(dosage)),
+        unit: unit === "fl oz" ? "fl_oz" : unit,
+      },
+    });
+
+    return NextResponse.json(additive);
+  } catch (error: any) {
+    console.error("Error creating additive:", error);
+    return NextResponse.json(
+      { error: "Failed to create additive" },
+      { status: 500 }
+    );
+  }
 }

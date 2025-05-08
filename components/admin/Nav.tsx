@@ -17,6 +17,8 @@ const navLinks = [
   { label: "Yeasts", to: `${baseRoute}/yeasts` },
   { label: "Ingredients", to: `${baseRoute}/ingredients` },
   { label: "Users", to: `${baseRoute}/users` },
+  { label: "Recipes", to: `${baseRoute}/recipes` },
+  { label: "Additives", to: `${baseRoute}/additives` },
 ];
 
 export default function AdminNav() {

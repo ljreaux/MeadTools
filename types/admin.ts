@@ -24,3 +24,26 @@ export type Yeast = {
   low_temp: string | number;
   high_temp: string | number;
 };
+
+export type Recipe = {
+  id: number;
+  name: string;
+  nuteInfo: string;
+  nutrientData: string;
+  recipeData: string;
+  primaryNotes: [string, string][];
+  secondaryNotes: [string, string][];
+  private: boolean;
+  public_username?: string;
+  user_id: number;
+  users: { public_username?: string };
+  yanContribution?: string;
+  yanFromSource?: string;
+};
+
+export type Additive = {
+  id: string;
+  name: string;
+  dosage: number;
+  unit: string;
+};
