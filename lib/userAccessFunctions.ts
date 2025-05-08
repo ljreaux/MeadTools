@@ -29,6 +29,14 @@ export async function verifyUser(req: NextRequest) {
       return NextResponse.json({ error: "Token missing" }, { status: 401 });
     }
 
+    if (!ACCESS_TOKEN_SECRET) {
+      console.error("ACCESS_TOKEN_SECRET is not set in environment variables.");
+      return NextResponse.json(
+        { error: "Server misconfiguration" },
+        { status: 500 }
+      );
+    }
+
     let userId: number | string | null = null;
     // Try verifying as a custom token
     try {
