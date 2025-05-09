@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import lodash from "lodash";
+import Fuse from "fuse.js";
+
 function useSuggestions<T extends { [key: string]: any }>(
   items: T[],
   query: string,
@@ -10,32 +12,42 @@ function useSuggestions<T extends { [key: string]: any }>(
   const [suggestions, setSuggestions] = useState<T[]>([]);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
 
-  const getMatchingItems = (query: string) => {
-    if (query.length === 0) return [];
-    return items?.filter((item) =>
-      t(lodash.camelCase(item[key]?.toString()))
-        .toLowerCase()
-        .includes(query.toLowerCase())
-    );
-  };
+  // Memoize translated search keys
+  const fuse = useMemo(() => {
+    const listWithTranslatedKeys = items.map((item) => ({
+      ...item,
+      __translated: t(lodash.camelCase(item[key]?.toString())),
+    }));
+
+    return new Fuse(listWithTranslatedKeys, {
+      keys: ["__translated"],
+      includeScore: true,
+      threshold: 0.4, // adjust fuzziness here
+    });
+  }, [items, key, t]);
 
   useEffect(() => {
-    if (query.length > 0) {
-      setIsDropdownVisible(true);
-      setSuggestions(getMatchingItems(query));
-    } else {
+    if (query.trim().length === 0) {
       setIsDropdownVisible(false);
+      setSuggestions([]);
+      return;
     }
-  }, [query, items]);
+
+    const results = fuse.search(query);
+    const matched = results.map((r) => r.item);
+
+    setIsDropdownVisible(true);
+    setSuggestions(matched);
+  }, [query, fuse]);
 
   useEffect(() => {
     if (
       suggestions[0] &&
       t(lodash.camelCase(suggestions[0][key]?.toString())) === query
     ) {
-      setIsDropdownVisible(false); // Close if the exact match is found
+      setIsDropdownVisible(false);
     }
-  }, [suggestions, key, query]);
+  }, [suggestions, key, query, t]);
 
   return {
     suggestions,
