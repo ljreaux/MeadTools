@@ -90,6 +90,7 @@ export async function PATCH(
     }
 
     if (userId && (recipe.user_id === userId || isAdmin)) {
+      console.log(Object.keys(body));
       const updatedRecipe = await updateRecipe(recipeId.toString(), body);
 
       return NextResponse.json(updatedRecipe);

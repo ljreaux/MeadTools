@@ -69,8 +69,9 @@ function SaveChanges({ privateRecipe }: { privateRecipe: boolean }) {
       campden,
       stabilizers,
       stabilizerType,
-      private: privateRecipe,
     });
+
+    console.log(recipeData);
 
     const otherNutrientName =
       otherNameState.value.length > 0 ? otherNameState.value : undefined;
@@ -95,6 +96,7 @@ function SaveChanges({ privateRecipe }: { privateRecipe: boolean }) {
       nuteInfo: JSON.stringify(maxGpl),
       primaryNotes,
       secondaryNotes,
+      private: privateRecipe,
     };
     try {
       await fetchAuthenticatedPatch(`/api/recipes/${recipeId}`, body);
