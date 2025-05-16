@@ -71,8 +71,6 @@ function SaveChanges({ privateRecipe }: { privateRecipe: boolean }) {
       stabilizerType,
     });
 
-    console.log(recipeData);
-
     const otherNutrientName =
       otherNameState.value.length > 0 ? otherNameState.value : undefined;
 
