@@ -106,23 +106,19 @@ function RecipeBuilder() {
       {card}
 
       <div className="flex py-12 gap-4 w-11/12 max-w-[1000px] items-center justify-center">
-        <Button
-          variant={"secondary"}
-          onClick={back}
-          className="w-full"
-          disabled={currentStepIndex === 0}
-        >
-          {t("buttonLabels.back")}
-        </Button>
+        {currentStepIndex === 0 || (
+          <Button variant={"secondary"} onClick={back} className="w-full">
+            {t("buttonLabels.back")}
+          </Button>
+        )}
 
-        <Button
-          className="w-full"
-          variant={"secondary"}
-          onClick={next}
-          disabled={currentStepIndex === cards.length - 1}
-        >
-          {t("buttonLabels.next")}
-        </Button>
+        {currentStepIndex === cards.length - 1 ? (
+          <SaveRecipe bottom />
+        ) : (
+          <Button className="w-full" variant={"secondary"} onClick={next}>
+            {t("buttonLabels.next")}
+          </Button>
+        )}
       </div>
     </div>
   );
