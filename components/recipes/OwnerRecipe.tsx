@@ -85,8 +85,14 @@ const cardConfig = [
   },
 ];
 
-function OwnerRecipe({ pdfRedirect }: { pdfRedirect: boolean }) {
-  const [isPrivate, setIsPrivate] = useState(false);
+function OwnerRecipe({
+  pdfRedirect,
+  privateRecipe,
+}: {
+  pdfRedirect: boolean;
+  privateRecipe?: boolean;
+}) {
+  const [isPrivate, setIsPrivate] = useState(privateRecipe ?? false);
   const [nameEditable, setNameEditable] = useState(false);
   const recipe = useRecipe();
   const { t } = useTranslation();

@@ -4,6 +4,7 @@ export const parseRecipeData = (recipe: {
   yanContribution: string;
   yanFromSource: string;
   nuteInfo: string;
+  private?: boolean;
 }) => {
   const recipeData = JSON.parse(recipe.recipeData);
   const nutrientData = JSON.parse(recipe.nutrientData);
@@ -11,6 +12,7 @@ export const parseRecipeData = (recipe: {
 
   const yanFromSource = JSON.parse(recipe.yanFromSource);
   const nuteInfo = JSON.parse(recipe.nuteInfo);
+  const privateRecipe = JSON.parse(JSON.stringify(recipe.private));
 
   const getSelectedSchedule = (schedule: string) => {
     switch (schedule) {
@@ -41,5 +43,6 @@ export const parseRecipeData = (recipe: {
     yanFromSource,
     nuteInfo,
     getSelectedSchedule,
+    privateRecipe,
   };
 };

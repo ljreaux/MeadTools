@@ -107,6 +107,7 @@ const RecipePage = ({ id }: { id: string }) => {
     yanContribution,
     yanFromSource,
     nuteInfo,
+    privateRecipe,
   } = parseRecipeData(recipe);
 
   return (
@@ -129,7 +130,14 @@ const RecipePage = ({ id }: { id: string }) => {
       }}
     >
       <>
-        {isOwner ? <OwnerRecipe pdfRedirect={pdfRedirect} /> : <PublicRecipe />}
+        {isOwner ? (
+          <OwnerRecipe
+            pdfRedirect={pdfRedirect}
+            privateRecipe={privateRecipe}
+          />
+        ) : (
+          <PublicRecipe />
+        )}
       </>
     </SavedRecipeProvider>
   );
