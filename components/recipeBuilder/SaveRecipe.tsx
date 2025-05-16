@@ -21,8 +21,10 @@ import {
 
 import { Save } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
+import { Button } from "../ui/button";
+import { cn } from "@/lib/utils";
 
-function SaveRecipe() {
+function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -124,13 +126,26 @@ function SaveRecipe() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="joyride-saveRecipe relative group flex flex-col items-center">
-          <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
-            <Save />
-          </button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            {t("recipeForm.submit")}
-          </span>
+        <div
+          className={cn(
+            "joyride-saveRecipe relative group flex flex-col items-center",
+            { "w-full": bottom }
+          )}
+        >
+          {bottom ? (
+            <Button variant={"secondary"} className="w-full">
+              <Save />
+            </Button>
+          ) : (
+            <>
+              <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
+                <Save />
+              </button>
+              <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                {t("recipeForm.submit")}
+              </span>
+            </>
+          )}
         </div>
       </DialogTrigger>
       <DialogContent>
