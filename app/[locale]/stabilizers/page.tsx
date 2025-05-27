@@ -146,7 +146,7 @@ const Stabilizers = () => {
                 </div>{" "}
                 <p>{t("accountPage.or")}</p>{" "}
                 <p className="flex items-center justify-center gap-2">
-                  {Math.round(campden * 10) / 10} {t("list.campden")}
+                  {Math.round(campden * 10) / 10} {t("campden")}
                   <Tooltip body={t("tipText.campden")} />
                 </p>
               </TableCell>
