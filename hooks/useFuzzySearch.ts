@@ -1,5 +1,5 @@
 import Fuse from "fuse.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface FuzzySearchProps<T> {
   data: T[];
@@ -35,18 +35,18 @@ export const useFuzzySearch = <T>({
   const end = start + pageSize;
   const pageData = filteredData ? filteredData.slice(start, end) : [];
 
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
+
   return {
     page: page + 1,
-    nextPage: () => setPage(page + 1),
-    prevPage: () => setPage(page - 1),
+    nextPage: () => setPage((prev) => prev + 1),
+    prevPage: () => setPage((prev) => prev - 1),
     searchValue: search,
-    search: (val: string) => {
-      setSearch(val);
-      setPage(0);
-    },
+    search: (val: string) => setSearch(val),
     clearSearch: () => {
       setSearch("");
-      setPage(0);
     },
     totalPages,
     pageData,
