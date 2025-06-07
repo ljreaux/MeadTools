@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import Loading from "@/components/loading";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, LucideX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -34,6 +34,8 @@ import {
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import LanguageSwitcher from "@/components/ui/language-switcher";
 import { LoadingButton } from "@/components/ui/LoadingButton";
+import { cn } from "@/lib/utils";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 
 type Recipe = {
   id: number;
@@ -66,6 +68,26 @@ function Account() {
   const [data, setData] = useState<UserData | null>(null);
   const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
 
+  const searchKey = "name";
+  const pageSize = 5;
+  const {
+    filteredData,
+    pageData,
+    searchValue,
+    search,
+    clearSearch,
+    page,
+    nextPage,
+    prevPage,
+    totalPages,
+    start,
+    end,
+  } = useFuzzySearch({
+    data: data?.recipes ?? [],
+    pageSize,
+    searchKey,
+  });
+
   const deleteIndividualRecipe = async (id: number) => {
     try {
       await deleteRecipe(id.toString());
@@ -93,9 +115,9 @@ function Account() {
     }
   }, []);
 
-  if (!data) return <Loading />;
+  if (!data || !filteredData) return <Loading />;
 
-  const { user, recipes } = data;
+  const { user } = data;
 
   return (
     <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px] relative">
@@ -116,9 +138,40 @@ function Account() {
       </p>
       <div className="my-6">
         <h2 className="text-2xl">{t("accountPage.myRecipes")}</h2>
+        {searchKey && filteredData.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="search" className="text-sm font-medium">
+              Search:
+            </label>
+            <div className="relative max-w-sm">
+              <Input
+                id="search"
+                value={searchValue}
+                onChange={(e) => {
+                  search(e.target.value);
+                }}
+                placeholder={`Search ${
+                  Array.isArray(searchKey)
+                    ? searchKey.map((key) => String(key)).join(", ")
+                    : String(searchKey)
+                }`}
+                className="pr-8"
+              />
+              {searchValue && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <LucideX />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap gap-4 justify-center py-6">
-          {recipes.length > 0 ? (
-            recipes.map((rec) => (
+          {pageData.length > 0 ? (
+            pageData.map((rec) => (
               <RecipeCard
                 recipe={rec}
                 key={rec.id}
@@ -132,6 +185,28 @@ function Account() {
           )}
         </div>
       </div>
+      {filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
+          <span>
+            Showing{" "}
+            {filteredData.length === 0
+              ? "0"
+              : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
+          </span>
+
+          <div className="flex items-center gap-4">
+            <Button disabled={page === 1} onClick={nextPage}>
+              Previous
+            </Button>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <Button disabled={page >= totalPages} onClick={prevPage}>
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -149,28 +224,28 @@ const RecipeCard = ({
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleDelete = async () => {
-    setIsDeleting(true); // Set loading state to true
+    setIsDeleting(true);
     try {
       await deleteRecipe();
     } catch (err) {
       console.error("Error deleting recipe:", err);
     } finally {
-      setIsDeleting(false); // Reset loading state
+      setIsDeleting(false);
     }
   };
 
   return (
-    <div className="grid text-center gap-1 p-4 rounded-xl border-secondary border">
-      <h2 className="text-2xl">{recipe.name}</h2>
+    <div className="grid text-center gap-1 p-4 rounded-xl border-secondary border max-w-96">
+      <h2 className="text-2xl text-ellipsis">{recipe.name}</h2>
       <span className="w-full flex gap-1">
         <Link
-          className={buttonVariants({ variant: "secondary" })}
+          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
           href={`recipes/${recipe.id}`}
         >
           {t("accountPage.viewRecipe")}
         </Link>
         <Link
-          className={buttonVariants({ variant: "secondary" })}
+          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
           href={`recipes/${recipe.id}?pdf=true`}
         >
           {t("PDF.title")}
