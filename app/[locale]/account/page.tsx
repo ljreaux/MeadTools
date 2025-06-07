@@ -195,13 +195,13 @@ function Account() {
           </span>
 
           <div className="flex items-center gap-4">
-            <Button disabled={page === 1} onClick={nextPage}>
+            <Button disabled={page === 1} onClick={prevPage}>
               Previous
             </Button>
             <span>
               Page {page} of {totalPages}
             </span>
-            <Button disabled={page >= totalPages} onClick={prevPage}>
+            <Button disabled={page >= totalPages} onClick={nextPage}>
               Next
             </Button>
           </div>
