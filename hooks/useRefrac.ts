@@ -7,9 +7,10 @@ const useRefrac = () => {
   const [og, setOg] = useState("1.1");
   const [ogUnits, setOgUnits] = useState<"SG" | "Brix">("SG");
   const [fg, setFg] = useState("8.5");
+  const [fgUnits, setFgUnits] = useState<"SG" | "Brix">("Brix");
 
   const ogBrix = ogUnits === "Brix" ? parseNumber(og) : toBrix(parseNumber(og));
-  const fgBrix = parseNumber(fg);
+  const fgBrix = fgUnits === "Brix" ? parseNumber(fg) : toBrix(parseNumber(fg));
 
   const correctedFg = refracCalc(ogBrix, fgBrix, parseNumber(correctionFactor));
 
@@ -18,6 +19,14 @@ const useRefrac = () => {
       setOg(toBrix(parseNumber(og)).toFixed(2));
     } else {
       setOg(toSG(parseNumber(og)).toFixed(3));
+    }
+  };
+
+  const changeFgUnits = () => {
+    if (fgUnits === "SG") {
+      setFg(toBrix(parseNumber(fg)).toFixed(2));
+    } else {
+      setFg(toSG(parseNumber(fg)).toFixed(3));
     }
   };
 
@@ -51,6 +60,13 @@ const useRefrac = () => {
         if (isValidNumber(e.target.value)) {
           setFg(e.target.value);
         }
+      },
+    },
+    fgUnitProps: {
+      value: fgUnits,
+      onValueChange: (val: string) => {
+        setFgUnits(val as "SG" | "Brix");
+        changeFgUnits();
       },
     },
     correctedFg,
