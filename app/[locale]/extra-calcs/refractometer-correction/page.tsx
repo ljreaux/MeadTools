@@ -23,6 +23,7 @@ function RefractometerCorrection() {
     ogProps,
     ogUnitProps,
     fgProps,
+    fgUnitProps,
     correctedFg,
     correctedBrix,
   } = useRefrac();
@@ -80,9 +81,31 @@ function RefractometerCorrection() {
               />
             </TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell>{t("fgInBrix")} </TableCell>
-            <TableCell colSpan={2}>
+          <TableRow
+            className={cn({
+              "bg-destructive": fgUnitProps.value === "SG",
+            })}
+          >
+            <TableCell>
+              <div className="flex items-center gap-2">
+                {t("fgInBrix")}{" "}
+                {fgUnitProps.value === "SG" && (
+                  <Tooltip body={t("fgWarning")} />
+                )}
+              </div>
+            </TableCell>
+            <TableCell className="p-1 md:p-4">
+              <Select name="units" {...fgUnitProps}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SG">{t("SG")}</SelectItem>
+                  <SelectItem value="Brix">{t("BRIX")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell>
               <span className="flex">
                 <Input
                   inputMode="decimal"
