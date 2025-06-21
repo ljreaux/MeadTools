@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export default function TaplistOsAnnouncement() {
   return (
-    <div className="w-full flex justify-center items-center sm:pt-24 pt-[6rem] relative">
+    <div className="w-full flex justify-center items-center sm:py-24 py-[6rem] relative">
       <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-5 w-11/12 max-w-[1000px] border border-border shadow">
         <h1 className="text-2xl font-bold">MeadTools Taplist OS v1.0</h1>
 
