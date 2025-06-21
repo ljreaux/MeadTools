@@ -142,7 +142,7 @@ export function HydrometerData({
 
   const abvMax = Math.max(...data.map((d) => d.abv));
   const abvTicks = [];
-  for (let i = 0; i <= abvMax + 0.5; i += 2) {
+  for (let i = 0; i <= abvMax + 0.5; i += 0.5) {
     abvTicks.push(i);
   }
 
@@ -280,13 +280,11 @@ export function HydrometerData({
               />
               {showBattery && (
                 <YAxis
-                  domain={[3.5, 4.2]}
                   dataKey={"battery"}
                   yAxisId={"battery"}
                   tickFormatter={(val) => val.toFixed(2)}
                   mirror
                   padding={yPadding}
-                  unit={"V"}
                   hide={!checkObj.battery}
                 />
               )}
@@ -341,7 +339,6 @@ export function HydrometerData({
                   strokeWidth={2}
                   dot={false}
                   yAxisId={"battery"}
-                  unit={"V"}
                   hide={!checkObj.battery}
                 />
               )}

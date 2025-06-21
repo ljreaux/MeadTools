@@ -115,12 +115,7 @@ function Setup() {
       <TabsContent value="pill">
         <div>
           <h2 className="my-4 text-2xl text-center">{t("rapt.heading")}</h2>
-          <Accordion
-            type="single"
-            defaultValue="bluetooth"
-            collapsible
-            className="w-full"
-          >
+          <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="bluetooth">
               <AccordionTrigger>Bluetooth</AccordionTrigger>
               <AccordionContent>
