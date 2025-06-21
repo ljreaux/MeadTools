@@ -179,30 +179,27 @@ function Account() {
               />
             ))
           ) : (
-            <p className="mr-auto">
-              You currently do not have any saved recipes.
-            </p>
+            <p className="mr-auto">{t("account.noRecipes")}</p>
           )}
         </div>
       </div>
       {filteredData.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
           <span>
-            Showing{" "}
-            {filteredData.length === 0
-              ? "0"
-              : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
+            {t("pagination.showing", {
+              start: start + 1,
+              end: Math.min(end, filteredData.length),
+              total: filteredData.length,
+            })}
           </span>
 
           <div className="flex items-center gap-4">
             <Button disabled={page === 1} onClick={prevPage}>
-              Previous
+              {t("pagination.previous")}
             </Button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
+            <span>{t("pagination.pageInfo", { page, totalPages })}</span>
             <Button disabled={page >= totalPages} onClick={nextPage}>
-              Next
+              {t("pagination.next")}
             </Button>
           </div>
         </div>
@@ -339,7 +336,7 @@ const SettingsDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Account Settings</DialogTitle>
+          <DialogTitle>{t("account.accountSettings")}</DialogTitle>
         </DialogHeader>
         <div className="w-full grid gap-4">
           <label className="w-full flex gap-4 items-center p-1">
@@ -369,7 +366,7 @@ const SettingsDialog = ({
           </label>
           <div className="grid gap-2 border border-secondary p-3 rounded-md">
             <label>
-              Update public username
+              {t("account.updateUsername")}
               <Input
                 type="text"
                 placeholder="Enter a public username"
