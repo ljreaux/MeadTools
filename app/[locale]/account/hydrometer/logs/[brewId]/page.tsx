@@ -66,10 +66,11 @@ function Brew() {
   // Fetch brew and logs when the component mounts or brewId changes
   useEffect(() => {
     const fetchBrewData = async () => {
-      const currentBrew = brews.find((b) => b.id === brewId);
-      setBrew(currentBrew);
+      const currentBrew = brews?.find((b) => b.id === brewId);
 
-      if (brewId) {
+      setBrew(currentBrew ?? null);
+
+      if (brewId && currentBrew) {
         const logsData = await getBrewLogs(brewId as string);
         setLogs(logsData);
       }
