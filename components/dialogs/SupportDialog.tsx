@@ -28,7 +28,7 @@ function SupportDialog() {
 
   const splitText = (text: string) => {
     const paragraphs = text.split("\n");
-    return paragraphs.map((p, i) => <p key={i}>{p}</p>);
+    return paragraphs.map((p, i) => <span key={i}>{p}</span>);
   };
 
   const handleCancel = () => {

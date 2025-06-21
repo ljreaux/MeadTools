@@ -69,10 +69,16 @@ export const extraLinks = [
     path: "/contact",
     label: "additionalLinks.contact",
   },
+  // {
+  //   path: "/desktop",
+  //   label: "additionalLinks.desktop",
+  // },
+
   {
-    path: "/desktop",
-    label: "additionalLinks.desktop",
+    path: "/taplist",
+    label: "additionalLinks.taplist",
   },
+
   {
     path: "/yeasts",
     label: "yeasts",

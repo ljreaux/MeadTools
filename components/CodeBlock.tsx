@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { useTheme } from "next-themes";
@@ -21,6 +21,11 @@ export default function CopyableCodeBlock({
 }: CopyableCodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleCopy = async () => {
     try {
@@ -31,6 +36,8 @@ export default function CopyableCodeBlock({
       console.error("Failed to copy text:", err);
     }
   };
+
+  if (!mounted) return null; // prevent SSR mismatch
 
   return (
     <div className="relative">
