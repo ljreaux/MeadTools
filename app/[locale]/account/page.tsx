@@ -69,7 +69,11 @@ function Account() {
   const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
 
   const searchKey = "name";
-  const pageSize = 5;
+  const [pageSize, setPageSize] = useState(5);
+  const options = [5, 10, 20, 50].map((num) => ({
+    value: num,
+    label: `${num} items`,
+  }));
   const {
     filteredData,
     pageData,
@@ -187,11 +191,30 @@ function Account() {
       </div>
       {filteredData.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
-          <span>
-            Showing{" "}
-            {filteredData.length === 0
-              ? "0"
-              : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
+          <span className="flex gap-4 items-center">
+            <p>
+              Showing{" "}
+              {filteredData.length === 0
+                ? "0"
+                : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
+            </p>
+            <span className="max-w-max sm:block hidden">
+              <Select
+                defaultValue={options[0].value.toString()}
+                onValueChange={(val) => setPageSize(parseInt(val))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value.toString()}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </span>
           </span>
 
           <div className="flex items-center gap-4">
