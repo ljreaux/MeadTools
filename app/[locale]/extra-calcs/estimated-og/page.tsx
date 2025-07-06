@@ -32,7 +32,7 @@ function EstimatedOG() {
         {t("ogHeading")}{" "}
         <Tooltip
           body={t("tipText.estOG")}
-          link="http://www.woodlandbrew.com/2013/02/abv-without-og.html"
+          link="/woodlandbrew-abv-without-og"
         />
       </h1>
 

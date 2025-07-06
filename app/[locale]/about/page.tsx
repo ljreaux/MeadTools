@@ -78,7 +78,7 @@ async function About({ params }: { params: Promise<{ locale: string }> }) {
       links: [
         {
           text: t("about.sourcesList.eight.one.linkText"),
-          href: "http://www.woodlandbrew.com/2013/02/abv-without-og.html",
+          href: "/woodlandbrew-abv-without-og",
         },
       ],
     },
