@@ -512,6 +512,7 @@ export default function RecipeProvider({
               };
         setRecipeData((prev) => ({ ...prev, units }));
       }
+      setFirstMount(false);
     }
 
     // get notes data
@@ -672,8 +673,6 @@ export default function RecipeProvider({
     fetchAdditives();
 
     retrieveStoredData();
-
-    setFirstMount(false);
   }, []);
 
   useEffect(() => {
