@@ -1,4 +1,4 @@
-import { createIngredient, getIngredients } from "@/lib/db/bjcp-ingredients";
+import { createIngredients, getIngredients } from "@/lib/db/bjcp-ingredients";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const newIngredient = await createIngredient(body);
+    const newIngredient = await createIngredients(body);
 
     return NextResponse.json(newIngredient, { status: 201 });
   } catch (error: any) {
