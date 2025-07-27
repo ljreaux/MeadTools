@@ -5,12 +5,28 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
   try {
     const ingredients = await getIngredients();
-    return NextResponse.json(ingredients);
+
+    return new NextResponse(JSON.stringify(ingredients), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*", // Change "*" to your domain if needed
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   } catch (error) {
     console.error("Error fetching ingredients:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch ingredients" },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: "Failed to fetch ingredients" }),
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET,OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      }
     );
   }
 }
