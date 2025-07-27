@@ -156,6 +156,16 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model BjcpIngredient {
+  id        String   @id @default(uuid()) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+  label     String?  @unique
+  category  String?
+  value     String?  @unique
+
+  @@map("bjcp-ingredients")
+}
+
 enum temp_units {
   F
   C
