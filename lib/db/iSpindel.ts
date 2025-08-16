@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
+import nodemailer from "nodemailer";
 
 export type LogType = {
   id?: string;
@@ -99,6 +100,178 @@ export async function updateBrewGravity(brewId: string, gravity: number) {
     console.error("Error updating gravity:", error);
     throw new Error("Error updating gravity.");
   }
+}
+
+const escapeHtml = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+export async function sendEmailUpdate(brewId: string | null) {
+  try {
+    if (!brewId) return;
+
+    const brew = await prisma.brews.findUnique({
+      where: { id: brewId },
+      select: {
+        id: true,
+        name: true,
+        latest_gravity: true,
+        requested_email_alerts: true,
+        sb_alert_sent: true,
+        fg_alert_sent: true,
+        users: { select: { email: true, public_username: true } },
+        logs: {
+          orderBy: { datetime: "asc" },
+          take: 1,
+          select: { calculated_gravity: true, gravity: true },
+        },
+      },
+    });
+    if (!brew) return;
+
+    const oldestLog = brew.logs[0];
+    const latest = brew.latest_gravity;
+    if (!oldestLog || latest == null) return;
+
+    const og = oldestLog.calculated_gravity ?? oldestLog.gravity;
+    if (og == null) return;
+
+    const offset = 1.005; // FG threshold
+    const sugarBreak = (2 * (og - 1)) / 3 + offset; // your current SB math w/ offset
+    const atOrBelowSB = latest <= sugarBreak;
+    const atOrBelowFG = latest <= offset;
+
+    const to = brew.users?.email;
+    if (!to || !brew.requested_email_alerts) return;
+
+    const displayName =
+      brew.users?.public_username?.trim() || brew.users?.email || "there";
+    const brewLabel = brew.name ?? "Unnamed Brew";
+
+    if (!brew.fg_alert_sent && atOrBelowFG && brew.requested_email_alerts) {
+      const subject = `Brew Update: ${brewLabel} reached final gravity`;
+      const text = `Hello ${displayName},
+
+Your brew "${brewLabel}" is approaching final gravity (FG).
+
+Original Gravity: ${og}
+Current Gravity: ${latest}
+FG Threshold (offset): ${offset.toFixed(3)}
+
+If fermentation is complete, consider cold-crashing, stabilizing, or packaging as desired.
+
+This is an automated notification from MeadTools.`;
+
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+          <div style="background-color:#cb9f52;color:white;padding:16px;font-size:20px;font-weight:bold;">
+            MeadTools Final Gravity Alert
+          </div>
+          <div style="padding:20px;">
+            <p style="font-size:16px;">Hello ${escapeHtml(displayName)},</p>
+            <p style="font-size:16px;">
+              Your brew <strong>${escapeHtml(brewLabel)}</strong> appears to have reached final gravity (FG).
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+              <tr><td style="padding:8px;border:1px solid #ccc;">Original Gravity</td><td style="padding:8px;border:1px solid #ccc;">${Number(og).toFixed(3)}</td></tr>
+              <tr><td style="padding:8px;border:1px solid #ccc;">Current Gravity</td><td style="padding:8px;border:1px solid #ccc;">${Number(latest).toFixed(3)}</td></tr>
+            </table>
+             <p style="margin-top:20px;font-size:14px;color:#555;">
+              This is an automated notification from MeadTools.
+            </p>
+          </div>
+        </div>
+      `;
+
+      await sendEmail({ to, subject, text, html });
+
+      await prisma.brews.update({
+        where: { id: brew.id },
+        data: { fg_alert_sent: true },
+      });
+
+      return; // don't also send the sugar-break email on the same run
+    }
+
+    if (!brew.sb_alert_sent && atOrBelowSB && brew.requested_email_alerts) {
+      const subject = `Brew Alert: ${brewLabel} approaching 1/3 sugar break`;
+      const text = `Hello ${displayName},
+
+Your brew "${brewLabel}" is approaching the 1/3 sugar break.
+
+Original Gravity: ${og}
+Current Gravity: ${latest}
+Sugar Break Threshold: ${sugarBreak.toFixed(3)}
+
+This is an automated notification from MeadTools.`;
+
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+          <div style="background-color:#cb9f52;color:white;padding:16px;font-size:20px;font-weight:bold;">
+            MeadTools Brew Alert
+          </div>
+          <div style="padding:20px;">
+            <p style="font-size:16px;">Hello ${escapeHtml(displayName)},</p>
+            <p style="font-size:16px;">
+              Your brew <strong>${escapeHtml(brewLabel)}</strong> is approaching the 1/3 sugar break.
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+              <tr><td style="padding:8px;border:1px solid #ccc;">Original Gravity</td><td style="padding:8px;border:1px solid #ccc;">${Number(og).toFixed(3)}</td></tr>
+              <tr><td style="padding:8px;border:1px solid #ccc;">Current Gravity</td><td style="padding:8px;border:1px solid #ccc;">${Number(latest).toFixed(3)}</td></tr>
+              <tr><td style="padding:8px;border:1px solid #ccc;">Sugar Break</td><td style="padding:8px;border:1px solid #ccc;">${Number(sugarBreak).toFixed(3)}</td></tr>
+            </table>
+            <p style="margin-top:20px;font-size:14px;color:#555;">
+              This is an automated notification from MeadTools.
+            </p>
+          </div>
+        </div>
+      `;
+
+      await sendEmail({ to, subject, text, html });
+
+      await prisma.brews.update({
+        where: { id: brew.id },
+        data: { sb_alert_sent: true },
+      });
+    }
+  } catch (error) {
+    console.error("Error sending email update:", error);
+  }
+}
+
+// Dumb transport: reusable for both emails
+export async function sendEmail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}) {
+  const user = process.env.EMAIL_USER!;
+  const pass = process.env.EMAIL_PASS!;
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.office365.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: { name: "MeadTools Alerts", address: user },
+    to,
+    subject,
+    text,
+    html,
+  });
 }
 
 export async function createLog(log: LogType) {

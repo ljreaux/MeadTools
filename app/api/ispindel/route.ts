@@ -2,6 +2,7 @@ import {
   calcGravity,
   createLog,
   registerDevice,
+  sendEmailUpdate,
   updateBrewGravity,
   verifyToken,
 } from "@/lib/db/iSpindel";
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
     const data = { ...body, calculated_gravity, brew_id, device_id: device.id };
 
     const log = await createLog(data);
+    await sendEmailUpdate(brew_id);
+
     return NextResponse.json(log, { status: 200 });
   } catch (error) {
     console.error("Error logging:", error);
