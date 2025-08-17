@@ -1,6 +1,7 @@
 import {
   createLog,
   registerDevice,
+  sendEmailUpdate,
   updateBrewGravity,
   verifyToken,
 } from "@/lib/db/iSpindel";
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     const gravity = body.gravity;
 
     if (!!brew_id) await updateBrewGravity(brew_id, gravity);
+    await sendEmailUpdate(brew_id);
 
     const data = {
       ...body,

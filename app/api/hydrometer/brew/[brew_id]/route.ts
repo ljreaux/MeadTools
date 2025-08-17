@@ -1,5 +1,9 @@
 import { verifyUser } from "@/lib/userAccessFunctions";
-import { addRecipeToBrew, deleteBrew } from "@/lib/db/iSpindel";
+import {
+  addRecipeToBrew,
+  deleteBrew,
+  receiveBrewAlerts,
+} from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
@@ -14,7 +18,15 @@ export async function PATCH(
 
   const { brew_id } = await params; // Resolve params as Promise
   const body = await req.json();
-  const { recipe_id } = body;
+  const { recipe_id, requested_email_alerts } = body;
+
+  if (brew_id && !recipe_id) {
+    await receiveBrewAlerts(brew_id, requested_email_alerts);
+    return NextResponse.json(
+      { message: `Brew ${brew_id} will now receive email alerts.` },
+      { status: 200 }
+    );
+  }
 
   if (!brew_id || !recipe_id) {
     return NextResponse.json(

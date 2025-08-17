@@ -4,6 +4,7 @@ import {
   updateBrewGravity,
   createLog,
   startBrew,
+  sendEmailUpdate,
 } from "@/lib/db/iSpindel";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { NextRequest, NextResponse } from "next/server";
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (brew_id) await updateBrewGravity(brew_id, parseNumber(SG));
+    await sendEmailUpdate(brew_id);
 
     const log = await createLog({
       brew_id,
