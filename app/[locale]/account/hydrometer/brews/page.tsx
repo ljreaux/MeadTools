@@ -19,6 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useISpindel } from "@/components/providers/ISpindelProvider";
+import { toast } from "@/hooks/use-toast";
+import Tooltip from "@/components/Tooltips";
+import { Switch } from "@/components/ui/switch";
 
 function Brews() {
   const { brews, fetchBrews } = useISpindel();
@@ -64,6 +67,10 @@ function Brews() {
                 <TableHead>{t("iSpindelDashboard.brews.endDate")}</TableHead>
                 <TableHead>{t("iSpindelDashboard.brews.latestGrav")}</TableHead>
                 <TableHead>{t("iSpindelDashboard.brews.recipeLink")}</TableHead>
+                <TableHead>
+                  {t("iSpindelDashboard.receiveEmailAlerts")}
+                  <Tooltip body={t("tipText.emailAlerts")} />
+                </TableHead>
               </TableRow>
               <TableRow>
                 <TableCell colSpan={5}>
@@ -143,6 +150,7 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
   });
 
   const formatDate = (date: Date) => formatter.format(new Date(date));
+  const { updateEmailAlerts } = useISpindel();
 
   return (
     <>
@@ -175,8 +183,53 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
               </a>
             )}
           </TableCell>
+          <TableCell>
+            <DynamicCheckbox
+              initialChecked={brew.requested_email_alerts}
+              updateFn={updateEmailAlerts}
+              brew_id={brew.id}
+            ></DynamicCheckbox>
+          </TableCell>
         </TableRow>
       ))}
     </>
+  );
+};
+
+const DynamicCheckbox = ({
+  initialChecked,
+  updateFn,
+  brew_id,
+}: {
+  initialChecked: boolean;
+  updateFn: (str: string, bool: boolean) => Promise<void>;
+  brew_id: string;
+}) => {
+  const [checked, setChecked] = useState(initialChecked);
+
+  return (
+    <div className="w-full flex items-center justify-center">
+      <Switch
+        checked={checked}
+        onCheckedChange={async (val: boolean) => {
+          try {
+            setChecked(val);
+            await updateFn(brew_id, val);
+
+            const msg = val
+              ? "You will receive email alerts for this brew."
+              : "You will no longer receive email alerts for this brew.";
+
+            toast({ description: msg });
+          } catch {
+            toast({
+              description: "Something went wrong",
+              variant: "destructive",
+            });
+            setChecked(!val);
+          }
+        }}
+      ></Switch>
+    </div>
   );
 };

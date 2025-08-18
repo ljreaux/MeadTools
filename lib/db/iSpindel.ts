@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
+import nodemailer from "nodemailer";
 
 export type LogType = {
   id?: string;
@@ -99,6 +100,261 @@ export async function updateBrewGravity(brewId: string, gravity: number) {
     console.error("Error updating gravity:", error);
     throw new Error("Error updating gravity.");
   }
+}
+
+const escapeHtml = (s: string) =>
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+type AlertKind = "fg" | "sb";
+
+function buildEmail({
+  kind,
+  displayName,
+  brewLabel,
+  og,
+  latest,
+  threshold,
+}: {
+  kind: AlertKind;
+  displayName: string;
+  brewLabel: string;
+  og: number;
+  latest: number;
+  threshold: number;
+}) {
+  const isFG = kind === "fg";
+
+  const subject = isFG
+    ? `Brew Update: ${brewLabel} reached final gravity`
+    : `Brew Alert: ${brewLabel} approaching 1/3 sugar break`;
+
+  const text = isFG
+    ? `Hello ${displayName},
+
+Your brew "${brewLabel}" is approaching final gravity (FG).
+
+Original Gravity: ${og}
+Current Gravity: ${latest}
+FG: ${threshold.toFixed(3)}
+
+If fermentation is complete, consider cold-crashing, stabilizing, or packaging.
+
+This is an automated notification from MeadTools.`
+    : `Hello ${displayName},
+
+Your brew "${brewLabel}" is approaching the 1/3 sugar break.
+
+Original Gravity: ${og}
+Current Gravity: ${latest}
+Sugar Break: ${threshold.toFixed(3)}
+
+This is an automated notification from MeadTools.`;
+
+  const thirdRow = isFG
+    ? ""
+    : `<tr style="background:#fafafa;">
+                  <td style="padding:10px 12px;border:1px solid #ddd;">Sugar Break</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${threshold.toFixed(3)}</td>
+                </tr>`;
+
+  const logoUrl = "https://meadtools.com/assets/full-logo.png";
+  const brandGold = "#cb9f52";
+
+  const html = `
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+    ${isFG ? "Final gravity reached" : "Approaching 1/3 sugar break"} for ${escapeHtml(brewLabel)}.
+  </div>
+
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background:${brandGold};padding:28px 16px;border-top-left-radius:10px;border-top-right-radius:10px;">
+              <div style="font:700 24px/1.3 Arial,Helvetica,sans-serif;color:#fff;letter-spacing:0.5px;">
+                ${isFG ? "Final Gravity Alert" : "Brew Alert"}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:22px 22px 8px 22px;font:16px/1.5 Arial,Helvetica,sans-serif;color:#222;">
+              <p style="margin:0 0 12px 0;">Hello <strong>${escapeHtml(displayName)}</strong>,</p>
+              <p style="margin:0 0 16px 0;">
+                ${
+                  isFG
+                    ? `Your brew <strong>${escapeHtml(brewLabel)}</strong> is approaching final gravity (FG).`
+                    : `Your brew <strong>${escapeHtml(brewLabel)}</strong> is approaching the 1/3 sugar break.`
+                }
+              </p>
+            </td>
+          </tr>
+
+          <!-- Metrics Table -->
+          <tr>
+            <td style="padding:0 22px 6px 22px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #ddd;border-collapse:collapse;font:15px/1.45 Arial,Helvetica,sans-serif;">
+                <tr style="background:#fafafa;">
+                  <td style="padding:10px 12px;border:1px solid #ddd;">Original Gravity</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${og.toFixed(3)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 12px;border:1px solid #ddd;">Current Gravity</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${latest.toFixed(3)}</td>
+                </tr>
+                ${thirdRow}
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+            <tr>
+              <td style="padding:18px 22px 22px 22px;font:13px/1.5 Arial,Helvetica,sans-serif;color:#6b7280;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <!-- Left column: text + links -->
+                    <td align="left" style="font:13px/1.5 Arial,Helvetica,sans-serif;color:#6b7280;">
+                      <div style="margin-bottom:6px;">This is an automated notification from MeadTools.</div>
+                      <a href="https://meadtools.com/account/hydrometer/brews" 
+                        style="color:#222;text-decoration:underline;">Manage brews</a> ·
+                      <a href="https://meadtools.com" 
+                        style="color:#222;text-decoration:underline;">Open MeadTools</a>
+                    </td>
+
+                    <!-- Right column: logo -->
+                    <td align="right" valign="middle">
+                      <img src="${logoUrl}" alt="MeadTools" width="120" 
+                          style="display:block;width:120px;height:auto;margin-left:auto;">
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+`;
+  return { subject, text, html };
+}
+
+export async function sendEmailUpdate(brewId: string | null) {
+  if (!brewId) return;
+  try {
+    const brew = await prisma.brews.findUnique({
+      where: { id: brewId },
+      select: {
+        id: true,
+        name: true,
+        latest_gravity: true,
+        requested_email_alerts: true,
+        sb_alert_sent: true,
+        fg_alert_sent: true,
+        users: { select: { email: true, public_username: true } },
+        logs: {
+          orderBy: { datetime: "asc" },
+          take: 1,
+          select: { calculated_gravity: true, gravity: true },
+        },
+      },
+    });
+    if (!brew) return;
+
+    const oldestLog = brew.logs[0];
+    const latest = brew.latest_gravity;
+    if (!oldestLog || latest == null) return;
+
+    const og = oldestLog.calculated_gravity ?? oldestLog.gravity;
+    if (og == null) return;
+
+    const offset = 1.005;
+    const sugarBreak = (2 * (og - 1)) / 3 + offset;
+
+    const atOrBelowFG = latest <= offset;
+    const atOrBelowSB = latest <= sugarBreak;
+
+    const to = brew.users?.email;
+    if (!to || !brew.requested_email_alerts) return;
+
+    const displayName =
+      brew.users?.public_username?.trim() || brew.users?.email || "there";
+    const brewLabel = brew.name ?? "Unnamed Brew";
+
+    // Final gravity alert
+    if (!brew.fg_alert_sent && atOrBelowFG) {
+      const { subject, text, html } = buildEmail({
+        kind: "fg",
+        displayName,
+        brewLabel,
+        og,
+        latest,
+        threshold: offset,
+      });
+      await sendEmail({ to, subject, text, html });
+      await prisma.brews.update({
+        where: { id: brew.id },
+        data: { fg_alert_sent: true },
+      });
+      return;
+    }
+
+    // Sugar break alert
+    if (!brew.sb_alert_sent && atOrBelowSB) {
+      const { subject, text, html } = buildEmail({
+        kind: "sb",
+        displayName,
+        brewLabel,
+        og,
+        latest,
+        threshold: sugarBreak,
+      });
+      await sendEmail({ to, subject, text, html });
+      await prisma.brews.update({
+        where: { id: brew.id },
+        data: { sb_alert_sent: true },
+      });
+    }
+  } catch (error) {
+    console.error("Error sending email update:", error);
+  }
+}
+
+export async function sendEmail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}) {
+  const user = process.env.EMAIL_USER!;
+  const pass = process.env.EMAIL_PASS!;
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.office365.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: { name: "MeadTools Alerts", address: user },
+    to,
+    subject,
+    text,
+    html,
+  });
 }
 
 export async function createLog(log: LogType) {
@@ -343,6 +599,21 @@ export async function addRecipeToBrew(
   } catch (error) {
     console.error(error);
     throw new Error("Error adding recipe to brew.");
+  }
+}
+
+export async function receiveBrewAlerts(
+  brew_id: string,
+  requested_email_alerts: boolean
+) {
+  try {
+    return await prisma.brews.update({
+      where: { id: brew_id },
+      data: { requested_email_alerts },
+    });
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error allowing email updates.");
   }
 }
 

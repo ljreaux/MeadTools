@@ -39,6 +39,7 @@ export interface ISpindelContext {
   recipes: any[];
   linkBrew: (recipeId: string, brewId: string) => Promise<void>;
   getBrewLogs: (brewsId: string) => Promise<any[]>;
+  updateEmailAlerts: (brewId: string, requested: boolean) => Promise<any>;
 }
 
 const HydroContext = createContext<ISpindelContext | null>(null);
@@ -316,6 +317,20 @@ export const ISpindelProvider = ({
     }
   };
 
+  const updateEmailAlerts = async (
+    brew_id: string,
+    requested_email_alerts: boolean
+  ) => {
+    try {
+      await fetchAuthenticatedPatch(`/api/hydrometer/brew/${brew_id}`, {
+        brew_id,
+        requested_email_alerts,
+      });
+    } catch (error) {
+      console.error("Failed to request email updates", error);
+    }
+  };
+
   const getBrewLogs = async (brews_id: string) => {
     try {
       const response = await fetchAuthenticatedData(
@@ -351,6 +366,7 @@ export const ISpindelProvider = ({
     recipes,
     linkBrew,
     getBrewLogs,
+    updateEmailAlerts,
   };
 
   return (

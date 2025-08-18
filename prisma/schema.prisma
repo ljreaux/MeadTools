@@ -10,17 +10,20 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model brews {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  start_date     DateTime  @default(now()) @db.Timestamptz(6)
-  end_date       DateTime? @db.Timestamptz(6)
-  user_id        Int?
-  latest_gravity Float?    @db.Real
-  recipe_id      Int?
-  name           String?
-  recipes        recipes?  @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users          users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  devices        devices[]
-  logs           logs[]
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  start_date            DateTime  @default(now()) @db.Timestamptz(6)
+  end_date              DateTime? @db.Timestamptz(6)
+  user_id               Int?
+  latest_gravity        Float?    @db.Real
+  recipe_id             Int?
+  name                  String?
+  requested_email_alerts Boolean?   @default(false)
+  sb_alert_sent             Boolean?   @default(false)
+  fg_alert_sent             Boolean?   @default(false)
+  recipes               recipes?  @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                 users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  devices               devices[]
+  logs                  logs[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

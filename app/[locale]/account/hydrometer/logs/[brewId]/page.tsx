@@ -30,6 +30,8 @@ import { useParams, useRouter } from "next/navigation";
 
 import { HydrometerData } from "@/components/ispindel/HydrometerData";
 import { calcABV } from "@/lib/utils/unitConverter";
+import Tooltip from "@/components/Tooltips";
+import { Switch } from "@/components/ui/switch";
 const transformData = (logs: any[]) => {
   const og = logs[0]?.calculated_gravity || logs[0]?.gravity;
   return logs.map((log) => {
@@ -54,12 +56,14 @@ function Brew() {
   });
   const formatDate = (date: Date) => formatter.format(new Date(date));
 
-  const { brews, deleteBrew, getBrewLogs, updateBrewName } = useISpindel();
+  const { brews, deleteBrew, getBrewLogs, updateBrewName, updateEmailAlerts } =
+    useISpindel();
 
   const [brew, setBrew] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [checked, setChecked] = useState(false);
 
   const brewId = params.brewId || "";
 
@@ -73,6 +77,7 @@ function Brew() {
       if (brewId && currentBrew) {
         const logsData = await getBrewLogs(brewId as string);
         setLogs(logsData);
+        setChecked(currentBrew.requested_email_alerts);
       }
     };
 
@@ -169,6 +174,33 @@ function Brew() {
               )}
             </>
           )}
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="flex">
+            <p>{t("iSpindelDashboard.receiveEmailAlerts")}</p>
+            <Tooltip body={t("tipText.emailAlerts")} />
+          </div>
+          <Switch
+            checked={checked}
+            onCheckedChange={async (val: boolean) => {
+              try {
+                setChecked(val);
+                await updateEmailAlerts(brew.id, val);
+
+                const msg = val
+                  ? "You will receive email alerts for this brew."
+                  : "You will no longer receive email alerts for this brew.";
+
+                toast({ description: msg });
+              } catch {
+                toast({
+                  description: "Something went wrong",
+                  variant: "destructive",
+                });
+                setChecked(!val);
+              }
+            }}
+          ></Switch>
         </div>
 
         {brew?.recipe_id ? (
