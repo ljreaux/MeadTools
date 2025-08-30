@@ -80,6 +80,12 @@ function RecipeView({
     "g DAP",
     `g ${otherNutrientName.value}`,
   ];
+  const labels = [
+    "nutrients.fermO",
+    "nutrients.fermK",
+    "nutrients.dap",
+    "other.label",
+  ];
   const goFermKeys = {
     "Go-Ferm": "nuteResults.gfTypes.gf",
     protect: "nuteResults.gfTypes.gfProtect",
@@ -219,28 +225,36 @@ function RecipeView({
                 <td>{t(`nuteSchedules.${selected?.schedule}`)}</td>
                 <td>{inputs.numberOfAdditions.value}</td>
                 <td>
-                  {nutrientAdditions.perAddition.map((nute, i) =>
-                    nute > 0 ? (
-                      <p key={`nute ${i}`}>
-                        {nute.toLocaleString(currentLocale, {
-                          maximumFractionDigits: 3,
-                        })}
-                        {nuteNames[i]}
-                      </p>
-                    ) : null
-                  )}
+                  {nutrientAdditions.perAddition.map((nute, i) => {
+                    const shouldShow = selected.selectedNutrients.includes(
+                      t(labels[i])
+                    );
+                    if (shouldShow)
+                      return (
+                        <p key={`nute ${i}`}>
+                          {Math.max(nute, 0).toLocaleString(currentLocale, {
+                            maximumFractionDigits: 3,
+                          })}
+                          {nuteNames[i]}
+                        </p>
+                      );
+                  })}
                 </td>
                 <td>
-                  {nutrientAdditions.totalGrams.map((nute, i) =>
-                    nute > 0 ? (
-                      <p key={`nute ${i}`}>
-                        {nute.toLocaleString(currentLocale, {
-                          maximumFractionDigits: 3,
-                        })}
-                        {nuteNames[i]}
-                      </p>
-                    ) : null
-                  )}
+                  {nutrientAdditions.totalGrams.map((nute, i) => {
+                    const shouldShow = selected.selectedNutrients.includes(
+                      t(labels[i])
+                    );
+                    if (shouldShow)
+                      return (
+                        <p key={`nute ${i}`}>
+                          {Math.max(nute, 0).toLocaleString(currentLocale, {
+                            maximumFractionDigits: 3,
+                          })}
+                          {nuteNames[i]}
+                        </p>
+                      );
+                  })}
                 </td>
               </tr>
             </tbody>
