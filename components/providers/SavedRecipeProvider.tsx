@@ -444,7 +444,7 @@ export default function SavedRecipeProvider({
     setRecipeData((prev) => {
       const newAdditives = prev.additives.map((add) => ({
         ...add,
-        amount: (parseNumber(add.amount || "0") * scale * 1000).toLocaleString(
+        amount: (parseNumber(add.amount || "0") * scale).toLocaleString(
           currentLocale,
           { maximumFractionDigits: 3 }
         ),
