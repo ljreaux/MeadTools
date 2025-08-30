@@ -3,6 +3,7 @@ import InputWithUnits from "./InputWithUnits";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
 import { NutrientType } from "@/types/nutrientTypes";
+import { cn } from "@/lib/utils";
 
 const goFermKeys = {
   "Go-Ferm": "nuteResults.gfTypes.gf",
@@ -19,6 +20,7 @@ function Results({ useNutrients }: { useNutrients: () => NutrientType }) {
     goFermType,
     remainingYan,
     otherNutrientName,
+    selected,
   } = useNutrients();
 
   const labels = [
@@ -34,15 +36,31 @@ function Results({ useNutrients }: { useNutrients: () => NutrientType }) {
       <h2>{t("nuteAmounts")}</h2>
       <div className="joyride-nuteResults grid grid-cols-2 gap-2 border-b border-muted-foreground py-6">
         {nutrientAdditions.totalGrams.map((add, i) => {
-          const isInvalid = add <= 0 || isNaN(add);
-          const perAdd = nutrientAdditions.perAddition[i];
-          if (isInvalid) return null;
+          const perAdd = Math.max(nutrientAdditions.perAddition[i], 0);
+          const shouldShow = selected.selectedNutrients.includes(t(labels[i]));
+          if (!shouldShow) return null;
+
+          const flag = add <= 0;
+          console.log(labels[i], flag);
+
           return (
-            <label key={labels[i]} className="space-y-2">
-              {labels[i] !== "other.label"
-                ? t(labels[i])
-                : otherNutrientName.value}
-              <InputWithUnits value={add.toFixed(3)} text="g total" disabled />
+            <label
+              key={labels[i]}
+              className={cn("space-y-2 p-2", {
+                "bg-[rgb(255,204,0)] text-black rounded-md": flag,
+              })}
+            >
+              <span className="flex items-center">
+                {labels[i] !== "other.label"
+                  ? t(labels[i])
+                  : otherNutrientName.value}
+                {flag && <Tooltip body={t("nutrientWarning")} />}
+              </span>
+              <InputWithUnits
+                value={Math.max(add, 0).toFixed(3)}
+                text="g total"
+                disabled
+              />
               <InputWithUnits value={perAdd.toFixed(3)} text="g" disabled />
             </label>
           );
