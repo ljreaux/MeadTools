@@ -9,7 +9,7 @@ const goFermKeys = {
   "Go-Ferm": "nuteResults.gfTypes.gf",
   protect: "nuteResults.gfTypes.gfProtect",
   "sterol-flash": "nuteResults.gfTypes.gfSterol",
-  none: "nuteResults.gfTypes.none",
+  none: "nuteResults.gfTypes.none"
 };
 
 function Results({ useNutrients }: { useNutrients: () => NutrientType }) {
@@ -20,14 +20,14 @@ function Results({ useNutrients }: { useNutrients: () => NutrientType }) {
     goFermType,
     remainingYan,
     otherNutrientName,
-    selected,
+    selected
   } = useNutrients();
 
   const labels = [
     "nutrients.fermO",
     "nutrients.fermK",
     "nutrients.dap",
-    "other.label",
+    "other.label"
   ];
 
   const goFermLabel = t(goFermKeys[goFermType.value]) || t(goFermType.value);
@@ -41,13 +41,12 @@ function Results({ useNutrients }: { useNutrients: () => NutrientType }) {
           if (!shouldShow) return null;
 
           const flag = add <= 0;
-          console.log(labels[i], flag);
 
           return (
             <label
               key={labels[i]}
               className={cn("space-y-2 p-2", {
-                "bg-[rgb(255,204,0)] text-black rounded-md": flag,
+                "bg-[rgb(255,204,0)] text-black rounded-md": flag
               })}
             >
               <span className="flex items-center">
