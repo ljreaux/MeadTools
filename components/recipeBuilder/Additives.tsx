@@ -8,10 +8,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 import { isValidNumber } from "@/lib/utils/validateInput";
 import DragList from "../ui/DragList";
+import lodash from "lodash";
 
 const units = [
   { value: "g", label: "G" },
@@ -26,7 +27,7 @@ const units = [
   { value: "gal", label: "GALS" },
   { value: "tsp", label: "TSP" },
   { value: "tbsp", label: "TBSP" },
-  { value: "units", label: "UNITS" },
+  { value: "units", label: "UNITS" }
 ];
 
 function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
@@ -39,7 +40,7 @@ function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
     addAdditive,
     removeAdditive,
     additiveList,
-    updateAdditives,
+    updateAdditives
   } = useRecipe();
 
   return (
@@ -95,7 +96,7 @@ const AdditiveLine = ({
   changeAdditive,
   changeUnit,
   changeAmount,
-  remove,
+  remove
 }: {
   additiveList: Additive[];
   add: AdditiveType;
@@ -119,6 +120,9 @@ const AdditiveLine = ({
           setQuery={(val) => changeAdditive(val)}
           keyName="name"
           onSelect={handleAdditiveSelect}
+          renderItem={(item) => {
+            return t(lodash.camelCase(item.name));
+          }}
         />
       </label>
       <label className="col-span-2">
