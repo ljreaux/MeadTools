@@ -4,13 +4,13 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import InputWithUnits from "./InputWithUnits";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { Input } from "../ui/input";
 import { NutrientType } from "@/types/nutrientTypes";
+import SearchableInput from "../ui/SearchableInput";
 
 function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
     yeastList,
     setYeastName,
     setNitrogenRequirement,
-    targetYAN,
+    targetYAN
   } = useNutrients();
 
   return (
@@ -49,33 +49,21 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
       </div>
       <div>
         <label>
-          {t("yeastStrain")}
+          <span className="flex items-center">
+            {t("yeastStrain")}
+            <Tooltip body={t("yeastSearch")} />
+          </span>
 
-          {selected.yeastBrand !== "Other" ? (
-            <Select
-              defaultValue={selected.yeastStrain}
-              onValueChange={setYeastName}
-            >
-              <SelectTrigger>
-                <span>{selected.yeastStrain}</span>
-              </SelectTrigger>
-              <SelectContent>
-                {yeastList
-                  .filter((yeast) => yeast.brand === selected.yeastBrand)
-                  .map((yeast) => (
-                    <SelectItem key={yeast.id} value={yeast.name}>
-                      {yeast.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              value={selected.yeastDetails.name}
-              onChange={(e) => setYeastName(e.target.value)}
-              onFocus={(e) => e.target.select()}
-            />
-          )}
+          <SearchableInput
+            items={yeastList.sort()}
+            query={selected.yeastDetails.name}
+            setQuery={(yeast) => setYeastName(yeast)}
+            keyName="name"
+            onSelect={(yeast) => {
+              setYeastBrand(yeast.brand);
+              setYeastName(yeast.name);
+            }}
+          />
         </label>
       </div>
       <div>

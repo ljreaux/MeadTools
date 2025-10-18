@@ -1,8 +1,6 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from "react";
 import { Input } from "../ui/input";
 import useSuggestions from "@/hooks/useSuggestions";
-import { useTranslation } from "react-i18next";
-import lodash from "lodash";
 import { X } from "lucide-react";
 
 type SearchableInputProps<T> = {
@@ -11,6 +9,7 @@ type SearchableInputProps<T> = {
   setQuery: (val: string) => void;
   keyName: keyof T;
   onSelect: (item: T) => void;
+  renderItem?: (item: T) => React.ReactNode;
 };
 
 function SearchableInput<T extends { [key: string]: any }>({
@@ -19,10 +18,11 @@ function SearchableInput<T extends { [key: string]: any }>({
   setQuery,
   keyName,
   onSelect,
+  renderItem
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const { t } = useTranslation();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
 
@@ -130,7 +130,9 @@ function SearchableInput<T extends { [key: string]: any }>({
                   handleSelect(suggestion);
                 }}
               >
-                {t(lodash.camelCase(suggestion[keyName]?.toString()))}
+                {renderItem
+                  ? renderItem(suggestion)
+                  : String(suggestion[keyName] ?? "")}
               </li>
             );
           })}

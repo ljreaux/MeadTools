@@ -7,6 +7,8 @@ import SearchableInput from "../ui/SearchableInput";
 import { useTranslation } from "react-i18next";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
 import DragList from "../ui/DragList";
+import Tooltip from "../Tooltips";
+import lodash from "lodash";
 
 function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
   const { t } = useTranslation();
@@ -23,7 +25,7 @@ function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
     ingredientList,
     units,
     fillToNearest,
-    setIngredients,
+    setIngredients
   } = useRecipe();
 
   if (loadingIngredients) {
@@ -90,7 +92,7 @@ const IngredientLine = ({
   updateBrix,
   toggleChecked,
   fillToNearest,
-  index,
+  index
 }: {
   ing: IngredientDetails;
   deleteFn: () => void;
@@ -114,15 +116,19 @@ const IngredientLine = ({
     <div
       className={`joyride-ingredient-${index + 1} grid grid-cols-2 gap-2 py-6`}
     >
-      {" "}
       <label>
-        {t("ingredient")}
+        <span className="flex items-center">
+          {t("ingredient")} <Tooltip body={t("ingredientTooltip")} />
+        </span>
         <SearchableInput
           items={ingredientList}
           query={ing.name}
           setQuery={(value) => changeIng(value)}
           keyName="name"
           onSelect={handleIngredientSelect}
+          renderItem={(item) => {
+            return t(lodash.camelCase(item.name));
+          }}
         />
       </label>
       {/* Other fields */}
