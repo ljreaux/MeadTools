@@ -4,7 +4,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
-  useState,
+  useState
 } from "react";
 import {
   Additive,
@@ -17,7 +17,7 @@ import {
   IngredientDetails,
   initialData,
   Recipe,
-  RecipeData,
+  RecipeData
 } from "@/types/recipeDataTypes";
 import { calcABV, toBrix, toSG } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
@@ -31,7 +31,7 @@ const RecipeContext = createContext<Recipe | undefined>(undefined);
 
 export default function SavedRecipeProvider({
   children,
-  recipe,
+  recipe
 }: {
   children: ReactNode;
   // for saved user recipes
@@ -59,12 +59,12 @@ export default function SavedRecipeProvider({
     ...recipe.recipeData,
     additives: recipe.recipeData.additives.map((add) => ({
       ...add,
-      id: genRandomId(),
+      id: genRandomId()
     })),
     ingredients: recipe.recipeData.ingredients.map((ing) => ({
       ...ing,
-      id: genRandomId(),
-    })),
+      id: genRandomId()
+    }))
   };
 
   const [recipeData, setRecipeData] = useState(
@@ -72,8 +72,8 @@ export default function SavedRecipeProvider({
       ...initialData,
       ingredients: initialData.ingredients.map((ing) => ({
         ...ing,
-        id: genRandomId(),
-      })),
+        id: genRandomId()
+      }))
     }
   );
   const [ingredientList, setIngredientList] = useState<Ingredient[]>([]);
@@ -117,7 +117,7 @@ export default function SavedRecipeProvider({
   const addIngredient = () => {
     setRecipeData((prev) => ({
       ...prev,
-      ingredients: [...prev.ingredients, blankIngredient],
+      ingredients: [...prev.ingredients, blankIngredient]
     }));
   };
 
@@ -126,7 +126,7 @@ export default function SavedRecipeProvider({
       ...prev,
       ingredients: prev.ingredients.filter((ing) => {
         return id !== ing.id;
-      }),
+      })
     }));
   };
 
@@ -145,10 +145,10 @@ export default function SavedRecipeProvider({
         name: translatedName, // Use the translated name
         brix:
           parseNumber(foundIng.sugar_content).toLocaleString(currentLocale, {
-            maximumFractionDigits: 2,
+            maximumFractionDigits: 2
           }) || "0",
         secondary: false,
-        category: foundIng.category || "water",
+        category: foundIng.category || "water"
       } as IngredientDetails;
 
       setRecipeData((prev) => ({
@@ -163,13 +163,13 @@ export default function SavedRecipeProvider({
                   parseNumber(ing.details[0]),
                   parseNumber(changed.brix)
                 ).toLocaleString(currentLocale, {
-                  maximumFractionDigits: 3,
-                }),
-              ],
+                  maximumFractionDigits: 3
+                })
+              ]
             };
           }
           return ing;
-        }),
+        })
       }));
     } else {
       setRecipeData((prev) => ({
@@ -178,18 +178,18 @@ export default function SavedRecipeProvider({
           if (index === i) {
             return {
               ...ing,
-              name, // Use the translated name
+              name // Use the translated name
             };
           }
           return ing;
-        }),
+        })
       }));
     }
   };
   const updateAdditives = (additives: AdditiveType[]) => {
     setRecipeData((prev) => ({
       ...prev,
-      additives,
+      additives
     }));
   };
   const changeAdditive = (id: string, name: string) => {
@@ -206,15 +206,15 @@ export default function SavedRecipeProvider({
           multiplier *
           totalVolume
         ).toLocaleString(currentLocale, {
-          maximumFractionDigits: 3,
+          maximumFractionDigits: 3
         }),
         unit: foundAdd.unit,
-        id,
+        id
       };
 
       setRecipeData((prev) => ({
         ...prev,
-        additives: prev.additives.map((add) => (add.id == id ? changed : add)),
+        additives: prev.additives.map((add) => (add.id == id ? changed : add))
       }));
     } else {
       setRecipeData((prev) => ({
@@ -223,11 +223,11 @@ export default function SavedRecipeProvider({
           if (add.id == id) {
             return {
               ...add,
-              name, // Use the translated name
+              name // Use the translated name
             };
           }
           return add;
-        }),
+        })
       }));
     }
   };
@@ -237,7 +237,7 @@ export default function SavedRecipeProvider({
       ...prev,
       additives: prev.additives.map((add) =>
         add.id === id ? { ...add, unit } : add
-      ),
+      )
     }));
   };
 
@@ -246,7 +246,7 @@ export default function SavedRecipeProvider({
       ...prev,
       additives: prev.additives.map((add) =>
         add.id === id ? { ...add, amount } : add
-      ),
+      )
     }));
   };
 
@@ -254,7 +254,7 @@ export default function SavedRecipeProvider({
     setRecipeData((prev) => {
       return {
         ...prev,
-        additives: [...prev.additives, { ...blankAdditive, id: genRandomId() }],
+        additives: [...prev.additives, { ...blankAdditive, id: genRandomId() }]
       };
     });
   };
@@ -262,7 +262,7 @@ export default function SavedRecipeProvider({
   const removeAdditive = (id: string) => {
     setRecipeData((prev) => ({
       ...prev,
-      additives: prev.additives.filter((item) => item.id !== id),
+      additives: prev.additives.filter((item) => item.id !== id)
     }));
   };
   const changeVolumeUnits = (unit: string) => {
@@ -270,8 +270,8 @@ export default function SavedRecipeProvider({
       ...prev,
       units: {
         ...prev.units,
-        volume: unit as "gal" | "liter",
-      },
+        volume: unit as "gal" | "liter"
+      }
     }));
   };
 
@@ -280,8 +280,8 @@ export default function SavedRecipeProvider({
       ...prev,
       units: {
         ...prev.units,
-        weight: unit as "lbs" | "kg",
-      },
+        weight: unit as "lbs" | "kg"
+      }
     }));
   };
 
@@ -315,15 +315,15 @@ export default function SavedRecipeProvider({
             parseNumber(weight),
             parseNumber(ing.brix)
           ).toLocaleString(currentLocale, {
-            maximumFractionDigits: 3,
-          }),
-        ] as [string, string],
+            maximumFractionDigits: 3
+          })
+        ] as [string, string]
       };
       setRecipeData((prev) => ({
         ...prev,
         ingredients: prev.ingredients.map((ing) =>
           id === ing.id ? updatedIngredient : ing
-        ),
+        )
       }));
     }
   };
@@ -341,16 +341,16 @@ export default function SavedRecipeProvider({
             parseNumber(volume),
             parseNumber(ing.brix)
           ).toLocaleString(currentLocale, {
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 3
           }),
-          volume,
-        ] as [string, string],
+          volume
+        ] as [string, string]
       };
       setRecipeData((prev) => ({
         ...prev,
         ingredients: prev.ingredients.map((ing) =>
           id === ing.id ? updatedIngredient : ing
-        ),
+        )
       }));
     }
   };
@@ -369,9 +369,9 @@ export default function SavedRecipeProvider({
                     parseNumber(ing.details[0]),
                     parseNumber(brix)
                   ).toLocaleString(currentLocale, {
-                    maximumFractionDigits: 3,
-                  }),
-                ] as [string, string],
+                    maximumFractionDigits: 3
+                  })
+                ] as [string, string]
               }
             : ing
         );
@@ -385,7 +385,7 @@ export default function SavedRecipeProvider({
       ...prev,
       ingredients: prev.ingredients.map((ing) =>
         ing.id === id ? { ...ing, secondary: isChecked } : ing
-      ),
+      )
     }));
   };
 
@@ -401,8 +401,8 @@ export default function SavedRecipeProvider({
       ...prev,
       stabilizers: {
         ...prev.stabilizers,
-        adding: val,
-      },
+        adding: val
+      }
     }));
   };
 
@@ -412,8 +412,8 @@ export default function SavedRecipeProvider({
       ...prev,
       stabilizers: {
         ...prev.stabilizers,
-        pH: val,
-      },
+        pH: val
+      }
     }));
   };
 
@@ -424,8 +424,8 @@ export default function SavedRecipeProvider({
         ...prev,
         stabilizers: {
           ...prev.stabilizers,
-          phReading: ph,
-        },
+          phReading: ph
+        }
       }));
     }
   };
@@ -436,7 +436,7 @@ export default function SavedRecipeProvider({
     const newIngredients = recipeData.ingredients.map((ing) => {
       const newDetails = ing.details.map((det) =>
         (parseNumber(det || "0") * scale).toLocaleString(currentLocale, {
-          maximumFractionDigits: 3,
+          maximumFractionDigits: 3
         })
       ) as [string, string];
       return { ...ing, details: newDetails };
@@ -447,7 +447,7 @@ export default function SavedRecipeProvider({
         amount: (parseNumber(add.amount || "0") * scale).toLocaleString(
           currentLocale,
           { maximumFractionDigits: 3 }
-        ),
+        )
       }));
 
       return { ...prev, ingredients: newIngredients, additives: newAdditives };
@@ -555,7 +555,7 @@ export default function SavedRecipeProvider({
       .map((ing) => {
         return [toSG(parseNumber(ing.brix)).toPrecision(6), ing.details[1]] as [
           string,
-          string,
+          string
         ];
       });
     const primaryBlendArr = recipeData.ingredients
@@ -563,7 +563,7 @@ export default function SavedRecipeProvider({
       .map((ing) => {
         return [toSG(parseNumber(ing.brix)).toPrecision(6), ing.details[1]] as [
           string,
-          string,
+          string
         ];
       });
 
@@ -577,16 +577,16 @@ export default function SavedRecipeProvider({
     const { blendedValue: backFG, totalVolume } = blendValues([
       [
         recipeData.FG,
-        primaryVol.toLocaleString(currentLocale, { maximumFractionDigits: 3 }),
+        primaryVol.toLocaleString(currentLocale, { maximumFractionDigits: 3 })
       ],
       [
         secondaryVal.toLocaleString(currentLocale, {
-          maximumFractionDigits: 3,
+          maximumFractionDigits: 3
         }),
         secondaryVol.toLocaleString(currentLocale, {
-          maximumFractionDigits: 3,
-        }),
-      ],
+          maximumFractionDigits: 3
+        })
+      ]
     ]);
 
     setBacksweetenedFG(backFG);
@@ -603,7 +603,7 @@ export default function SavedRecipeProvider({
       .toLocaleString(currentLocale);
 
     const volume = primaryVol.toLocaleString(currentLocale, {
-      maximumFractionDigits: 3,
+      maximumFractionDigits: 3
     });
     const OG = Math.round(primaryVal * 1000) / 1000;
 
@@ -611,7 +611,7 @@ export default function SavedRecipeProvider({
       ...prev,
       volume,
       OG,
-      offset,
+      offset
     }));
   }, [recipeData.ingredients, recipeData.FG]);
 
@@ -637,10 +637,10 @@ export default function SavedRecipeProvider({
           ...ing,
           details: [
             updatedWeight.toLocaleString(currentLocale, {
-              maximumFractionDigits: 3,
+              maximumFractionDigits: 3
             }),
-            ing.details[1],
-          ] as [string, string],
+            ing.details[1]
+          ] as [string, string]
         };
       });
       setRecipeData({ ...recipeData, ingredients: updatedIngredients });
@@ -663,9 +663,9 @@ export default function SavedRecipeProvider({
           details: [
             ing.details[0],
             updatedVolume.toLocaleString(currentLocale, {
-              maximumFractionDigits: 3,
-            }),
-          ] as [string, string],
+              maximumFractionDigits: 3
+            })
+          ] as [string, string]
         };
       });
       setRecipeData({ ...recipeData, ingredients: updatedIngredients });
@@ -716,14 +716,14 @@ export default function SavedRecipeProvider({
         ...prev,
         sulfite,
         sorbate,
-        campden,
+        campden
       }));
     } else {
       setRecipeData((prev) => ({
         ...prev,
         sulfite: 0,
         sorbate: 0,
-        campden: 0,
+        campden: 0
       }));
     }
   }, [
@@ -731,7 +731,7 @@ export default function SavedRecipeProvider({
     recipeData.units,
     recipeData.ABV,
     recipeData.volume,
-    addingStabilizers,
+    addingStabilizers
   ]);
   function calculateHoneyAndWater(
     desiredOG: number,
@@ -768,8 +768,8 @@ export default function SavedRecipeProvider({
           target.honeyVolume,
           parseNumber(blankIngredient.brix)
         ).toFixed(3),
-        target.honeyVolume.toFixed(3),
-      ] as [string, string],
+        target.honeyVolume.toFixed(3)
+      ] as [string, string]
     };
     const water = {
       id: genRandomId(),
@@ -782,12 +782,12 @@ export default function SavedRecipeProvider({
           target.waterVolume,
           parseNumber(blankIngredient.brix)
         ).toFixed(3),
-        target.waterVolume.toFixed(3),
-      ] as [string, string],
+        target.waterVolume.toFixed(3)
+      ] as [string, string]
     };
     setRecipeData((prev) => ({
       ...prev,
-      ingredients: [water, honey],
+      ingredients: [water, honey]
     }));
   };
   const fillToNearest = (id: string) => {
@@ -845,30 +845,30 @@ export default function SavedRecipeProvider({
         setSecondaryNotes,
         notes: {
           primary: primaryNotes,
-          secondary: secondaryNotes,
+          secondary: secondaryNotes
         },
         editPrimaryNote: {
           text: editPrimaryNoteText,
-          details: editPrimaryNoteDetails,
+          details: editPrimaryNoteDetails
         },
         addPrimaryNote,
         removePrimaryNote,
         editSecondaryNote: {
           text: editSecondaryNoteText,
-          details: editSecondaryNoteDetails,
+          details: editSecondaryNoteDetails
         },
         addSecondaryNote,
         removeSecondaryNote,
         recipeNameProps: {
           value: recipeName,
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-            setRecipeName(e.target.value),
+            setRecipeName(e.target.value)
         },
         public_username: recipe.users.public_username,
         fillToNearest,
         setIngredientsToTarget,
         stabilizerType,
-        setStabilizerType,
+        setStabilizerType
       }}
     >
       <SavedNutrientProvider
@@ -876,6 +876,17 @@ export default function SavedRecipeProvider({
         storedYanContribution={recipe.yanContribution}
         storedProvidedYan={recipe.yanFromSource}
         storedMaxGpl={recipe.nuteInfo}
+        recipeData={{
+          volume: recipeData.volume,
+
+          sg: (1 + recipeData.OG - parseNumber(recipeData.FG)).toLocaleString(
+            currentLocale,
+            { maximumFractionDigits: 3 }
+          ),
+          offset: recipeData.offset,
+          numberOfAdditions: "1",
+          units: recipeData.units.volume
+        }}
       >
         {children}
       </SavedNutrientProvider>
