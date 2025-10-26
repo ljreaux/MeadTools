@@ -5,12 +5,14 @@ interface FuzzySearchProps<T> {
   data: T[];
   pageSize: number;
   searchKey: keyof T | (keyof T)[];
+  sortBy?: ((fieldOne: T, fieldTwo: T) => number)[];
 }
 
 export const useFuzzySearch = <T>({
   data,
   pageSize,
   searchKey,
+  sortBy
 }: FuzzySearchProps<T>) => {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
@@ -18,15 +20,21 @@ export const useFuzzySearch = <T>({
     ? searchKey.map(String)
     : [String(searchKey)];
 
-  const filteredData =
+  let filteredData =
     searchKey && search
       ? new Fuse(data || [], {
           keys,
-          threshold: 0.4,
+          threshold: 0.4
         })
           .search(search)
           .map((r) => r.item)
       : data;
+
+  if (sortBy) {
+    sortBy.forEach((fn) => {
+      filteredData = filteredData.sort(fn);
+    });
+  }
 
   const totalPages = filteredData
     ? Math.ceil(filteredData.length / pageSize)
@@ -52,6 +60,6 @@ export const useFuzzySearch = <T>({
     pageData,
     filteredData,
     start,
-    end,
+    end
   };
 };
