@@ -9,27 +9,38 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import Loading from "@/components/loading";
-import { Settings, LogOut, LucideX } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  ArrowUpAZ,
+  ArrowDownAZ,
+  Hash,
+  RotateCcw,
+  SortAsc,
+  SortDesc,
+  LogOut,
+  LucideX,
+  Settings
+} from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import LanguageSwitcher from "@/components/ui/language-switcher";
@@ -61,6 +72,8 @@ type UserData = {
   recipes: Recipe[];
 };
 
+type SortType = "asc" | "dec" | "clear";
+
 function Account() {
   const { t } = useTranslation();
   const { fetchAuthenticatedData, logout, deleteRecipe, isLoggedIn } =
@@ -72,8 +85,17 @@ function Account() {
   const [pageSize, setPageSize] = useState(5);
   const options = [5, 10, 20, 50].map((num) => ({
     value: num,
-    label: `${num} items`,
+    label: `${num} items`
   }));
+
+  const [sortBy, setSortBy] = useState<
+    Record<string, (fieldOne: Recipe, fieldTwo: Recipe) => number>
+  >({});
+  const [sortField, setSortField] = useState<"default" | "name" | "id">(
+    "default"
+  );
+  const [sortDir, setSortDir] = useState<"asc" | "dec">("asc");
+
   const {
     filteredData,
     pageData,
@@ -85,12 +107,59 @@ function Account() {
     prevPage,
     totalPages,
     start,
-    end,
+    end
   } = useFuzzySearch({
     data: data?.recipes ?? [],
     pageSize,
     searchKey,
+    sortBy: Object.values(sortBy)
   });
+
+  const nameAlpha = (a: Recipe, b: Recipe) => {
+    return a.name.localeCompare(b.name);
+  };
+
+  const nameReverse = (a: Recipe, b: Recipe) => {
+    return b.name.localeCompare(a.name);
+  };
+
+  const sortAlphabetically = (filtering: SortType) => {
+    const copy = { ...sortBy };
+    if (filtering === "asc") {
+      delete copy.nameReverse;
+      setSortBy({ ...copy, nameAlpha });
+    } else if (filtering === "dec") {
+      delete copy.nameAlpha;
+      setSortBy({ ...copy, nameReverse });
+    } else {
+      delete copy.nameReverse;
+      delete copy.nameAlpha;
+      setSortBy({ ...copy });
+    }
+  };
+
+  const recipeId = (a: Recipe, b: Recipe) => {
+    return a.id - b.id;
+  };
+
+  const recipeIdReverse = (a: Recipe, b: Recipe) => {
+    return b.id - a.id;
+  };
+
+  const sortById = (filtering: SortType) => {
+    const copy = { ...sortBy };
+    if (filtering === "asc") {
+      delete copy.recipeIdReverse;
+      setSortBy({ ...copy, recipeId });
+    } else if (filtering === "dec") {
+      delete copy.recipeId;
+      setSortBy({ ...copy, recipeIdReverse });
+    } else {
+      delete copy.recipeIdReverse;
+      delete copy.recipeId;
+      setSortBy({ ...copy });
+    }
+  };
 
   const deleteIndividualRecipe = async (id: number) => {
     try {
@@ -99,7 +168,7 @@ function Account() {
         prev
           ? {
               ...prev,
-              recipes: prev.recipes.filter((r) => r.id !== id),
+              recipes: prev.recipes.filter((r) => r.id !== id)
             }
           : null
       );
@@ -107,6 +176,22 @@ function Account() {
       console.error("Error deleting recipe:", err);
     }
   };
+
+  useEffect(() => {
+    if (sortField === "default") {
+      sortAlphabetically("clear");
+      sortById("clear");
+      return;
+    }
+
+    if (sortField === "name") {
+      sortById("clear");
+      sortAlphabetically(sortDir);
+    } else if (sortField === "id") {
+      sortAlphabetically("clear");
+      sortById(sortDir);
+    }
+  }, [sortField, sortDir]);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -143,33 +228,97 @@ function Account() {
       <div className="my-6">
         <h2 className="text-2xl">{t("accountPage.myRecipes")}</h2>
         {searchKey && filteredData.length > 0 && (
-          <div className="flex items-center gap-2">
-            <label htmlFor="search" className="text-sm font-medium">
-              Search:
-            </label>
-            <div className="relative max-w-sm">
-              <Input
-                id="search"
-                value={searchValue}
-                onChange={(e) => {
-                  search(e.target.value);
-                }}
-                placeholder={`Search ${
-                  Array.isArray(searchKey)
-                    ? searchKey.map((key) => String(key)).join(", ")
-                    : String(searchKey)
-                }`}
-                className="pr-8"
-              />
-              {searchValue && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <LucideX />
-                </button>
-              )}
+          <div className="flex items center sm:justify-between flex-wrap sm:flex-nowrap gap-2">
+            <div className="flex items-center gap-2">
+              <label htmlFor="search" className="text-sm font-medium">
+                Search:
+              </label>
+              <div className="relative max-w-sm">
+                <Input
+                  id="search"
+                  value={searchValue}
+                  onChange={(e) => {
+                    search(e.target.value);
+                  }}
+                  placeholder={`Search ${
+                    Array.isArray(searchKey)
+                      ? searchKey.map((key) => String(key)).join(", ")
+                      : String(searchKey)
+                  }`}
+                  className="pr-8"
+                />
+                {searchValue && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <LucideX />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <label className="text-sm font-medium">Sort</label>
+
+              {/* Field selector */}
+              <Select
+                value={sortField}
+                onValueChange={(v) =>
+                  setSortField(v as "default" | "name" | "id")
+                }
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="name">
+                    <span className="inline-flex items-center gap-2">
+                      <ArrowUpAZ className="h-4 w-4" /> Name
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="id">
+                    <span className="inline-flex items-center gap-2">
+                      <Hash className="h-4 w-4" /> ID
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Direction toggle */}
+              <ToggleGroup
+                type="single"
+                value={sortDir}
+                onValueChange={(v) => v && setSortDir(v as "asc" | "dec")}
+                className="ml-1"
+              >
+                <ToggleGroupItem value="asc" aria-label="Ascending">
+                  {sortField === "name" ? (
+                    <ArrowUpAZ className="h-4 w-4" />
+                  ) : (
+                    <SortAsc className="h-4 w-4" />
+                  )}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="dec" aria-label="Descending">
+                  {sortField === "name" ? (
+                    <ArrowDownAZ className="h-4 w-4" />
+                  ) : (
+                    <SortDesc className="h-4 w-4" />
+                  )}
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              {/* Reset button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSortField("default")}
+                title="Reset sort"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}
@@ -238,7 +387,7 @@ export default Account;
 
 const RecipeCard = ({
   recipe,
-  deleteRecipe,
+  deleteRecipe
 }: {
   recipe: Recipe;
   deleteRecipe: () => Promise<void>;
@@ -287,7 +436,7 @@ const RecipeCard = ({
 
 const CreateUsernamePopup = ({
   isDialogOpen,
-  closeDialog,
+  closeDialog
 }: {
   isDialogOpen: boolean;
   closeDialog: () => void;
@@ -331,7 +480,7 @@ const CreateUsernamePopup = ({
 };
 
 const SettingsDialog = ({
-  username: public_username,
+  username: public_username
 }: {
   username: string | null;
 }) => {
