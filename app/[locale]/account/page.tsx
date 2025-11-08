@@ -227,101 +227,99 @@ function Account() {
       </p>
       <div className="my-6">
         <h2 className="text-2xl">{t("accountPage.myRecipes")}</h2>
-        {searchKey && filteredData.length > 0 && (
-          <div className="flex items center sm:justify-between flex-wrap sm:flex-nowrap gap-2">
-            <div className="flex items-center gap-2">
-              <label htmlFor="search" className="text-sm font-medium">
-                Search:
-              </label>
-              <div className="relative max-w-sm">
-                <Input
-                  id="search"
-                  value={searchValue}
-                  onChange={(e) => {
-                    search(e.target.value);
-                  }}
-                  placeholder={`Search ${
-                    Array.isArray(searchKey)
-                      ? searchKey.map((key) => String(key)).join(", ")
-                      : String(searchKey)
-                  }`}
-                  className="pr-8"
-                />
-                {searchValue && (
-                  <button
-                    type="button"
-                    onClick={clearSearch}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <LucideX />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-              <label className="text-sm font-medium">Sort</label>
-
-              {/* Field selector */}
-              <Select
-                value={sortField}
-                onValueChange={(v) =>
-                  setSortField(v as "default" | "name" | "id")
-                }
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
-                  <SelectItem value="name">
-                    <span className="inline-flex items-center gap-2">
-                      <ArrowUpAZ className="h-4 w-4" /> Name
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="id">
-                    <span className="inline-flex items-center gap-2">
-                      <Hash className="h-4 w-4" /> ID
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Direction toggle */}
-              <ToggleGroup
-                type="single"
-                value={sortDir}
-                onValueChange={(v) => v && setSortDir(v as "asc" | "dec")}
-                className="ml-1"
-              >
-                <ToggleGroupItem value="asc" aria-label="Ascending">
-                  {sortField === "name" ? (
-                    <ArrowUpAZ className="h-4 w-4" />
-                  ) : (
-                    <SortAsc className="h-4 w-4" />
-                  )}
-                </ToggleGroupItem>
-                <ToggleGroupItem value="dec" aria-label="Descending">
-                  {sortField === "name" ? (
-                    <ArrowDownAZ className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  )}
-                </ToggleGroupItem>
-              </ToggleGroup>
-
-              {/* Reset button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSortField("default")}
-                title="Reset sort"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+        <div className="flex items center sm:justify-between flex-wrap sm:flex-nowrap gap-2">
+          <div className="flex items-center gap-2">
+            <label htmlFor="search" className="text-sm font-medium">
+              Search:
+            </label>
+            <div className="relative max-w-sm">
+              <Input
+                id="search"
+                value={searchValue}
+                onChange={(e) => {
+                  search(e.target.value);
+                }}
+                placeholder={`Search ${
+                  Array.isArray(searchKey)
+                    ? searchKey.map((key) => String(key)).join(", ")
+                    : String(searchKey)
+                }`}
+                className="pr-8"
+              />
+              {searchValue && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <LucideX />
+                </button>
+              )}
             </div>
           </div>
-        )}
+
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <label className="text-sm font-medium">Sort</label>
+
+            {/* Field selector */}
+            <Select
+              value={sortField}
+              onValueChange={(v) =>
+                setSortField(v as "default" | "name" | "id")
+              }
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="name">
+                  <span className="inline-flex items-center gap-2">
+                    <ArrowUpAZ className="h-4 w-4" /> Name
+                  </span>
+                </SelectItem>
+                <SelectItem value="id">
+                  <span className="inline-flex items-center gap-2">
+                    <Hash className="h-4 w-4" /> ID
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Direction toggle */}
+            <ToggleGroup
+              type="single"
+              value={sortDir}
+              onValueChange={(v) => v && setSortDir(v as "asc" | "dec")}
+              className="ml-1"
+            >
+              <ToggleGroupItem value="asc" aria-label="Ascending">
+                {sortField === "name" ? (
+                  <ArrowUpAZ className="h-4 w-4" />
+                ) : (
+                  <SortAsc className="h-4 w-4" />
+                )}
+              </ToggleGroupItem>
+              <ToggleGroupItem value="dec" aria-label="Descending">
+                {sortField === "name" ? (
+                  <ArrowDownAZ className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )}
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            {/* Reset button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSortField("default")}
+              title="Reset sort"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-4 justify-center py-6">
           {pageData.length > 0 ? (
             pageData.map((rec) => (
@@ -332,9 +330,7 @@ function Account() {
               />
             ))
           ) : (
-            <p className="mr-auto">
-              You currently do not have any saved recipes.
-            </p>
+            <p className="mr-auto">{t("accountPage.noRecipes")}</p>
           )}
         </div>
       </div>
@@ -342,10 +338,11 @@ function Account() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
           <span className="flex gap-4 items-center">
             <p>
-              Showing{" "}
-              {filteredData.length === 0
-                ? "0"
-                : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
+              {t("pagination.showing", {
+                start: start + 1,
+                end: Math.min(end, filteredData.length),
+                total: filteredData.length
+              })}
             </p>
             <span className="max-w-max sm:block hidden">
               <Select
@@ -368,13 +365,11 @@ function Account() {
 
           <div className="flex items-center gap-4">
             <Button disabled={page === 1} onClick={prevPage}>
-              Previous
+              {t("pagination.previous")}
             </Button>
-            <span>
-              Page {page} of {totalPages}
-            </span>
+            <span>{t("pagination.pageInfo", { page, totalPages })}</span>
             <Button disabled={page >= totalPages} onClick={nextPage}>
-              Next
+              {t("pagination.next")}
             </Button>
           </div>
         </div>
@@ -511,7 +506,7 @@ const SettingsDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Account Settings</DialogTitle>
+          <DialogTitle>{t("account.accountSettings")}</DialogTitle>
         </DialogHeader>
         <div className="w-full grid gap-4">
           <label className="w-full flex gap-4 items-center p-1">
@@ -541,7 +536,7 @@ const SettingsDialog = ({
           </label>
           <div className="grid gap-2 border border-secondary p-3 rounded-md">
             <label>
-              Update public username
+              {t("account.updateUsername")}
               <Input
                 type="text"
                 placeholder="Enter a public username"
