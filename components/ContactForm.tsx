@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import Spinner from "./ui/spinner";
+import { Spinner } from "./ui/spinner";
 
 const ContactUs = () => {
   const { toast } = useToast();
@@ -25,14 +25,14 @@ const ContactUs = () => {
     const payload = {
       user_name: formData.get("user_name") as string,
       user_email: formData.get("user_email") as string,
-      message: formData.get("message") as string,
+      message: formData.get("message") as string
     };
 
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
@@ -43,7 +43,7 @@ const ContactUs = () => {
       } else {
         toast({
           description: result.error || t("error"),
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -109,7 +109,7 @@ const ContactUs = () => {
           disabled={disabled}
           className="px-10"
         >
-          {disabled ? <Spinner variant="small" /> : t("send")}
+          {disabled ? <Spinner /> : t("send")}
         </Button>
       </div>
     </form>
