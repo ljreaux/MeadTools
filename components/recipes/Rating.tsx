@@ -69,10 +69,13 @@ export default function Rating({
             role="img"
             aria-label={tooltipLabel}
           >
-            <div className="flex gap-1">
+            <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="relative w-5 h-5">
-                  <Beer className="absolute text-border" strokeWidth={1.5} />
+                <div key={i} className="relative sm:w-5 sm:h-5 h-3 w-3">
+                  <Beer
+                    className="absolute text-border sm:w-5 sm:h-5 h-3 w-3"
+                    strokeWidth={1.5}
+                  />
                 </div>
               ))}
             </div>
@@ -94,11 +97,14 @@ export default function Rating({
           role="img"
           aria-label={tooltipLabel}
         >
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             {fills.map((targetFill, i) => (
-              <div key={i} className="relative w-5 h-5">
+              <div key={i} className="relative sm:w-5 sm:h-5 h-3 w-3">
                 {/* Base (muted) mug */}
-                <Beer className="absolute text-border" strokeWidth={1.5} />
+                <Beer
+                  className="absolute text-border sm:w-5 sm:h-5 h-3 w-3"
+                  strokeWidth={1.5}
+                />
                 {/* Animated fill overlay */}
                 <div
                   className="absolute overflow-hidden text-accent-foreground transition-[width] ease-in-out"
@@ -109,7 +115,10 @@ export default function Rating({
                     transitionDuration: `${TRANSITION_MS}ms`
                   }}
                 >
-                  <Beer className="text-accent-foreground" strokeWidth={1.5} />
+                  <Beer
+                    className="text-accent-foreground sm:w-5 sm:h-5 h-3 w-3"
+                    strokeWidth={1.5}
+                  />
                 </div>
               </div>
             ))}

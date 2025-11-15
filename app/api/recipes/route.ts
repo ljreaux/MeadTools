@@ -4,20 +4,27 @@ import { createRecipe, getAllRecipes } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 
 export async function GET(req: NextRequest) {
-  const userId = await verifyUser(req);
-  let isAdmin = false;
-
   try {
-    if (typeof userId === "number") isAdmin = await requireAdmin(userId);
+    const userOrResponse = await verifyUser(req);
+    if (userOrResponse instanceof NextResponse) {
+      // Not logged in / invalid token, etc.
+      return userOrResponse;
+    }
 
-    let recipes = await getAllRecipes();
-    if (!isAdmin) recipes = recipes.filter((rec) => !rec.private);
+    const isAdmin = await requireAdmin(userOrResponse);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden – admin access required." },
+        { status: 403 }
+      );
+    }
 
+    const recipes = await getAllRecipes();
     return NextResponse.json({ recipes });
   } catch (error: any) {
-    console.error("Error fetching recipes:", error);
+    console.error("Error fetching recipes (admin):", error);
     return NextResponse.json(
-      { error: "Failed to fetch recipes" }, // Override with consistent error message
+      { error: "Failed to fetch recipes" },
       { status: 500 }
     );
   }
@@ -41,7 +48,7 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      privateRecipe,
+      privateRecipe
     } = body;
 
     if (!name || !recipeData) {
@@ -62,7 +69,7 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      private: privateRecipe || false,
+      private: privateRecipe || false
     });
 
     return NextResponse.json({ recipe }, { status: 201 });

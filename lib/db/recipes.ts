@@ -12,6 +12,7 @@ interface RecipeData {
   private?: boolean;
 }
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 function concatNotes(notes: string[]): string[][] {
   const newNotes = [];
@@ -55,7 +56,6 @@ export async function getAllRecipes() {
 
     if (recipes.length === 0) return [];
 
-    // Collect recipe IDs and fetch ratings in one grouped query
     const recipeIds = recipes.map((r) => r.id);
 
     const ratingRows = await prisma.recipe_ratings.groupBy({
@@ -65,7 +65,6 @@ export async function getAllRecipes() {
       _count: { rating: true }
     });
 
-    // Map recipe_id -> { avg, count }
     const ratingMap = new Map<number, { avg: number | null; count: number }>(
       ratingRows.map((r) => [
         r.recipe_id,
@@ -73,13 +72,12 @@ export async function getAllRecipes() {
       ])
     );
 
-    // Shape the final payload
     const parsedRecipes = recipes.map((rec) => {
       const primaryNotes = concatNotes(rec.primaryNotes || []);
       const secondaryNotes = concatNotes(rec.secondaryNotes || []);
       const r = ratingMap.get(rec.id);
-      const averageRating = r?.avg ?? 0; // number | 0 if none
-      const numberOfRatings = r?.count ?? 0; // 0 if none
+      const averageRating = r?.avg ?? 0;
+      const numberOfRatings = r?.count ?? 0;
 
       return {
         ...rec,
@@ -96,6 +94,159 @@ export async function getAllRecipes() {
     console.error("Error fetching recipes:", error);
     throw new Error("Database error");
   }
+}
+
+/**
+ * Public-facing recipes only (non-private).
+ * Same shape as getAllRecipes, but filtered at the DB level.
+ */
+export async function getPublicRecipes() {
+  try {
+    const recipes = await prisma.recipes.findMany({
+      where: { private: false },
+      include: {
+        users: { select: { public_username: true } }
+      }
+    });
+
+    if (recipes.length === 0) return [];
+
+    const recipeIds = recipes.map((r) => r.id);
+
+    const ratingRows = await prisma.recipe_ratings.groupBy({
+      by: ["recipe_id"],
+      where: { recipe_id: { in: recipeIds } },
+      _avg: { rating: true },
+      _count: { rating: true }
+    });
+
+    const ratingMap = new Map<number, { avg: number | null; count: number }>(
+      ratingRows.map((r) => [
+        r.recipe_id,
+        { avg: r._avg.rating, count: r._count.rating }
+      ])
+    );
+
+    const parsedRecipes = recipes.map((rec) => {
+      const primaryNotes = concatNotes(rec.primaryNotes || []);
+      const secondaryNotes = concatNotes(rec.secondaryNotes || []);
+      const r = ratingMap.get(rec.id);
+      const averageRating = r?.avg ?? 0;
+      const numberOfRatings = r?.count ?? 0;
+
+      return {
+        ...rec,
+        primaryNotes,
+        secondaryNotes,
+        public_username: rec.users?.public_username || "",
+        averageRating,
+        numberOfRatings
+      };
+    });
+
+    return parsedRecipes;
+  } catch (error) {
+    console.error("Error fetching public recipes:", error);
+    throw new Error("Database error");
+  }
+}
+
+export async function getPublicRecipesPage(opts: {
+  page?: number;
+  limit?: number;
+  query?: string;
+}) {
+  const page = Math.max(1, Number(opts.page) || 1);
+  const take = Math.min(Math.max(Number(opts.limit) || 10, 1), 50); // clamp 1–50
+  const skip = (page - 1) * take;
+  const query = (opts.query ?? "").trim();
+
+  const where: Prisma.recipesWhereInput = {
+    private: false
+  };
+
+  if (query) {
+    where.AND = [
+      {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          {
+            users: {
+              public_username: { contains: query, mode: "insensitive" }
+            }
+          }
+        ]
+      }
+    ];
+  }
+
+  const [recipes, totalCount] = await prisma.$transaction([
+    prisma.recipes.findMany({
+      where,
+      skip,
+      take,
+      include: {
+        users: { select: { public_username: true } }
+      },
+      orderBy: {
+        id: "desc" // or created_at: "desc" if you have it
+      }
+    }),
+    prisma.recipes.count({ where })
+  ]);
+
+  if (totalCount === 0) {
+    return {
+      recipes: [] as any[],
+      totalCount: 0,
+      totalPages: 0,
+      page,
+      limit: take
+    };
+  }
+
+  const recipeIds = recipes.map((r) => r.id);
+
+  const ratingRows = await prisma.recipe_ratings.groupBy({
+    by: ["recipe_id"],
+    where: { recipe_id: { in: recipeIds } },
+    _avg: { rating: true },
+    _count: { rating: true }
+  });
+
+  const ratingMap = new Map<number, { avg: number | null; count: number }>(
+    ratingRows.map((r) => [
+      r.recipe_id,
+      { avg: r._avg.rating, count: r._count.rating }
+    ])
+  );
+
+  const parsedRecipes = recipes.map((rec) => {
+    const primaryNotes = concatNotes(rec.primaryNotes || []);
+    const secondaryNotes = concatNotes(rec.secondaryNotes || []);
+    const r = ratingMap.get(rec.id);
+    const averageRating = r?.avg ?? 0;
+    const numberOfRatings = r?.count ?? 0;
+
+    return {
+      ...rec,
+      primaryNotes,
+      secondaryNotes,
+      public_username: rec.users?.public_username || "",
+      averageRating,
+      numberOfRatings
+    };
+  });
+
+  const totalPages = Math.ceil(totalCount / take);
+
+  return {
+    recipes: parsedRecipes,
+    totalCount,
+    totalPages,
+    page,
+    limit: take
+  };
 }
 
 export async function createRecipe(data: RecipeData) {
