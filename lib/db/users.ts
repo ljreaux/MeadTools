@@ -9,22 +9,22 @@ export async function getAllUsers() {
       role: true,
       google_id: true,
       public_username: true,
-      hydro_token: true,
-    },
+      hydro_token: true
+    }
   });
 }
 
 // Get a user by ID
 export async function getUserById(id: number) {
   return await prisma.users.findUnique({
-    where: { id },
+    where: { id }
   });
 }
 
 export async function getUserByEmail(email: string) {
   try {
     const user = await prisma.users.findUnique({
-      where: { email },
+      where: { email }
     });
 
     return user;
@@ -41,7 +41,7 @@ export async function getUserByGoogleId(google_id?: string) {
 
   try {
     const user = await prisma.users.findFirst({
-      where: { google_id },
+      where: { google_id }
     });
 
     return user;
@@ -58,9 +58,11 @@ export async function createUser(data: {
   role?: string;
   google_id?: string;
   public_username?: string;
+  google_avatar_url?: string;
+  show_google_avatar: boolean;
 }) {
   return await prisma.users.create({
-    data,
+    data
   });
 }
 
@@ -78,7 +80,7 @@ export async function updateUser(
 ) {
   return await prisma.users.update({
     where: { id },
-    data: fields,
+    data: fields
   });
 }
 
@@ -88,6 +90,6 @@ export async function deleteUser(id: number) {
     throw new Error("Cannot Delete MeadTools Admin");
   }
   return await prisma.users.delete({
-    where: { id },
+    where: { id }
   });
 }

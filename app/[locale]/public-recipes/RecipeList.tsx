@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import Rating from "@/components/recipes/Rating";
 
 interface Recipe {
   id: number;
@@ -23,6 +24,8 @@ interface Recipe {
   secondaryNotes: string[] | null;
   private: boolean;
   public_username: string | null;
+  averageRating?: number;
+  numberOfRatings?: number;
 }
 
 function parseRecipeData(recipeData: string) {
@@ -30,7 +33,7 @@ function parseRecipeData(recipeData: string) {
     const parsedData = JSON.parse(recipeData);
     return {
       OG: parseNumber(parsedData.OG)?.toFixed(3) || "N/A",
-      FG: parseNumber(parsedData.FG)?.toFixed(3) || "N/A",
+      FG: parseNumber(parsedData.FG)?.toFixed(3) || "N/A"
     };
   } catch (error) {
     console.error("Error parsing recipeData:", error);
@@ -103,16 +106,29 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
               <li key={recipe.id}>
                 <Link
                   href={`/recipes/${recipe.id}`}
-                  className="block p-4 rounded-lg bg-card transition-colors border border-border shadow-sm hover:bg-muted-foreground group"
+                  className="group block p-4 rounded-lg bg-card transition-colors border border-border shadow-sm hover:bg-muted-foreground"
                 >
-                  <h2 className="text-xl font-semibold text-card-foreground">
-                    {recipe.name}
-                  </h2>
+                  {/* Header row: title + rating (stack on mobile, split on sm+) */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <h2 className="text-xl font-semibold text-card-foreground">
+                      {recipe.name}
+                    </h2>
+
+                    {/* Rating: smaller, flush-left on mobile, pinned right on sm+ */}
+                    <div className="sm:shrink-0  self-start sm:self-auto -ml-1 sm:ml-0 relative z-10">
+                      <Rating
+                        averageRating={recipe.averageRating ?? 0}
+                        numberOfRatings={recipe.numberOfRatings ?? 0}
+                      />
+                    </div>
+                  </div>
+
                   {recipe.public_username && (
                     <p className="text-muted-foreground text-sm group-hover:text-foreground">
                       {t("byUser", { public_username: recipe.public_username })}
                     </p>
                   )}
+
                   <p className="text-muted-foreground text-sm group-hover:text-foreground">
                     {t("OG")}: {OG}, {t("FG")}: {FG}
                   </p>

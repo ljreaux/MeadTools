@@ -24,7 +24,7 @@ export async function getAllRecipesForUser(userId: number) {
   try {
     const recipes = await prisma.recipes.findMany({
       where: { user_id: userId },
-      include: { users: { select: { public_username: true } } },
+      include: { users: { select: { public_username: true } } }
     });
 
     const parsedRecipes = recipes.map((rec) => {
@@ -34,7 +34,7 @@ export async function getAllRecipesForUser(userId: number) {
         ...rec,
         primaryNotes,
         secondaryNotes,
-        public_username: rec.users?.public_username || null,
+        public_username: rec.users?.public_username || null
       };
     });
 
@@ -49,25 +49,52 @@ export async function getAllRecipes() {
   try {
     const recipes = await prisma.recipes.findMany({
       include: {
-        users: { select: { public_username: true } },
-      },
+        users: { select: { public_username: true } }
+      }
     });
 
+    if (recipes.length === 0) return [];
+
+    // Collect recipe IDs and fetch ratings in one grouped query
+    const recipeIds = recipes.map((r) => r.id);
+
+    const ratingRows = await prisma.recipe_ratings.groupBy({
+      by: ["recipe_id"],
+      where: { recipe_id: { in: recipeIds } },
+      _avg: { rating: true },
+      _count: { rating: true }
+    });
+
+    // Map recipe_id -> { avg, count }
+    const ratingMap = new Map<number, { avg: number | null; count: number }>(
+      ratingRows.map((r) => [
+        r.recipe_id,
+        { avg: r._avg.rating, count: r._count.rating }
+      ])
+    );
+
+    // Shape the final payload
     const parsedRecipes = recipes.map((rec) => {
-      const primaryNotes = concatNotes(rec.primaryNotes || []); // Handle null arrays
-      const secondaryNotes = concatNotes(rec.secondaryNotes || []); // Handle null arrays
+      const primaryNotes = concatNotes(rec.primaryNotes || []);
+      const secondaryNotes = concatNotes(rec.secondaryNotes || []);
+      const r = ratingMap.get(rec.id);
+      const averageRating = r?.avg ?? 0; // number | 0 if none
+      const numberOfRatings = r?.count ?? 0; // 0 if none
+
       return {
         ...rec,
         primaryNotes,
         secondaryNotes,
-        public_username: rec.users?.public_username || "", // Fallback for null
+        public_username: rec.users?.public_username || "",
+        averageRating,
+        numberOfRatings
       };
     });
 
     return parsedRecipes;
   } catch (error) {
-    console.error("Error fetching all recipes:", error);
-    throw new Error("Could not fetch recipes");
+    console.error("Error fetching recipes:", error);
+    throw new Error("Database error");
   }
 }
 
@@ -84,8 +111,8 @@ export async function createRecipe(data: RecipeData) {
       nuteInfo: data.nuteInfo,
       primaryNotes: data.primaryNotes || [],
       secondaryNotes: data.secondaryNotes || [],
-      private: data.private || false,
-    },
+      private: data.private || false
+    }
   });
 }
 
@@ -93,15 +120,44 @@ export async function getRecipeInfo(recipeId: number) {
   try {
     const recipe = await prisma.recipes.findUnique({
       where: { id: recipeId },
-      include: { users: { select: { public_username: true } } },
+      include: {
+        users: { select: { public_username: true } },
+        comments: {
+          where: { parent_id: null, deleted_at: null },
+          orderBy: { created_at: "asc" },
+          include: {
+            author: { select: { id: true, public_username: true } },
+            replies: {
+              where: { deleted_at: null },
+              orderBy: { created_at: "asc" },
+              include: {
+                author: { select: { id: true, public_username: true } }
+              }
+            }
+          }
+        },
+        ratings: {
+          select: { rating: true, user_id: true }
+        }
+      }
     });
-    if (recipe)
-      return {
-        ...recipe,
-        primaryNotes: concatNotes(recipe?.primaryNotes),
-        secondaryNotes: concatNotes(recipe?.secondaryNotes),
-        public_username: recipe.users?.public_username || null,
-      };
+
+    if (!recipe) return null;
+
+    const avgRating =
+      recipe.ratings.length > 0
+        ? recipe.ratings.reduce((a, r) => a + r.rating, 0) /
+          recipe.ratings.length
+        : null;
+
+    return {
+      ...recipe,
+      primaryNotes: concatNotes(recipe.primaryNotes),
+      secondaryNotes: concatNotes(recipe.secondaryNotes),
+      public_username: recipe.users?.public_username || null,
+      averageRating: avgRating,
+      commentCount: recipe.comments.length
+    };
   } catch (error) {
     console.error("Error fetching recipe info:", error);
     throw new Error("Database error");
@@ -117,12 +173,12 @@ export const verifyRecipeId = async (params: Promise<{ id: string }>) => {
 export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
   return prisma.recipes.update({
     where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer
-    data: fields,
+    data: fields
   });
 }
 
 export async function deleteRecipe(id: string) {
   return prisma.recipes.delete({
-    where: { id: Number(id) },
+    where: { id: Number(id) }
   });
 }

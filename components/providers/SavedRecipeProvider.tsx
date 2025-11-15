@@ -49,6 +49,8 @@ export default function SavedRecipeProvider({
     };
     yanFromSource?: string[];
     nuteInfo?: string[];
+    averageRating: number;
+    numberOfRatings: number;
   };
 }) {
   const { t, i18n } = useTranslation();
@@ -113,6 +115,8 @@ export default function SavedRecipeProvider({
     recipe.recipeData?.stabilizers?.phReading ?? "3.6"
   );
   const [recipeName, setRecipeName] = useState(recipe.name || "");
+  const [avgRating, setAvgRating] = useState(recipe.averageRating);
+  const [numRatings, setNumRatings] = useState(recipe.numberOfRatings);
 
   const addIngredient = () => {
     setRecipeData((prev) => ({
@@ -868,7 +872,16 @@ export default function SavedRecipeProvider({
         fillToNearest,
         setIngredientsToTarget,
         stabilizerType,
-        setStabilizerType
+        setStabilizerType,
+        averageRating: avgRating,
+        numberOfRatings: numRatings,
+        setRatingStats: (stats: {
+          averageRating: number;
+          numberOfRatings: number;
+        }) => {
+          setAvgRating(stats.averageRating);
+          setNumRatings(stats.numberOfRatings);
+        }
       }}
     >
       <SavedNutrientProvider

@@ -66,7 +66,7 @@ const RecipePage = ({ id }: { id: string }) => {
         toast({
           title: "Unauthorized",
           description: "You are not authorized to view this recipe.",
-          variant: "destructive",
+          variant: "destructive"
         });
         setRedirected(true); // Prevent further redirects
         router.push("/account");
@@ -74,7 +74,7 @@ const RecipePage = ({ id }: { id: string }) => {
         toast({
           title: "Recipe Not Found",
           description: "The requested recipe does not exist.",
-          variant: "destructive",
+          variant: "destructive"
         });
         setRedirected(true); // Prevent further redirects
         router.push("/account");
@@ -82,7 +82,7 @@ const RecipePage = ({ id }: { id: string }) => {
         toast({
           title: "Error",
           description: "An error occurred while fetching the recipe.",
-          variant: "destructive",
+          variant: "destructive"
         });
         setRedirected(true); // Prevent further redirects
         router.push("/account");
@@ -108,6 +108,8 @@ const RecipePage = ({ id }: { id: string }) => {
     yanFromSource,
     nuteInfo,
     privateRecipe,
+    averageRating,
+    numberOfRatings
   } = parseRecipeData(recipe);
 
   return (
@@ -121,12 +123,14 @@ const RecipePage = ({ id }: { id: string }) => {
             ...nutrientData.selected,
             selectedNutrients: getSelectedSchedule(
               nutrientData.selected.schedule
-            ),
-          },
+            )
+          }
         },
         yanContribution,
         yanFromSource,
         nuteInfo,
+        averageRating,
+        numberOfRatings
       }}
     >
       <>
@@ -134,6 +138,7 @@ const RecipePage = ({ id }: { id: string }) => {
           <OwnerRecipe
             pdfRedirect={pdfRedirect}
             privateRecipe={privateRecipe}
+            recipeId={recipe.id}
           />
         ) : (
           <PublicRecipe />

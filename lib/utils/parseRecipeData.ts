@@ -5,6 +5,8 @@ export const parseRecipeData = (recipe: {
   yanFromSource: string;
   nuteInfo: string;
   private?: boolean;
+  averageRating?: number;
+  ratings: any[];
 }) => {
   const recipeData = JSON.parse(recipe.recipeData);
   const nutrientData = JSON.parse(recipe.nutrientData);
@@ -44,5 +46,7 @@ export const parseRecipeData = (recipe: {
     nuteInfo,
     getSelectedSchedule,
     privateRecipe,
+    averageRating: recipe.averageRating ?? 0,
+    numberOfRatings: recipe.ratings.length
   };
 };

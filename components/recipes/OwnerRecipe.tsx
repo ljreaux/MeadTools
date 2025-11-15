@@ -28,6 +28,8 @@ import DeleteRecipe from "./DeleteRecipe";
 import { useEffect, useState } from "react";
 import { Pencil, PencilOff } from "lucide-react";
 import { Switch } from "../ui/switch";
+import Rating from "./Rating";
+import CommentsSection from "./comments/CommentsSection";
 
 const cardConfig = [
   {
@@ -37,8 +39,8 @@ const cardConfig = [
       <Units key="units" useRecipe={useRecipe} />,
       <Ingredients key="ingredients" useRecipe={useRecipe} />,
       <IngredientResults key="ingredientResults" useRecipe={useRecipe} />,
-      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />,
-    ],
+      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />
+    ]
   },
   {
     key: "card 2",
@@ -46,51 +48,53 @@ const cardConfig = [
     components: [
       <VolumeInputs key="volumeInputs" disabled useNutrients={useNutrients} />,
       <YeastDetails key="yeastDetails" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />,
-    ],
+      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
       <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />,
-    ],
+      <Results key="results" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 4",
     heading: "stabilizersHeading",
     tooltip: {
       body: "tipText.stabilizers",
-      link: "https://meadmaking.wiki/en/process/stabilization",
+      link: "https://meadmaking.wiki/en/process/stabilization"
     },
-    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />],
+    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<Additives key="additives" useRecipe={useRecipe} />],
+    components: [<Additives key="additives" useRecipe={useRecipe} />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<Notes key="notes" useRecipe={useRecipe} />],
+    components: [<Notes key="notes" useRecipe={useRecipe} />]
   },
   {
     key: "card 7",
     heading: "PDF.title",
     components: [
-      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />,
-    ],
-  },
+      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />
+    ]
+  }
 ];
 
 function OwnerRecipe({
   pdfRedirect,
   privateRecipe,
+  recipeId
 }: {
   pdfRedirect: boolean;
   privateRecipe?: boolean;
+  recipeId: number;
 }) {
   const [isPrivate, setIsPrivate] = useState(privateRecipe ?? false);
   const [nameEditable, setNameEditable] = useState(false);
@@ -100,6 +104,7 @@ function OwnerRecipe({
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
       <Heading text={heading} toolTipProps={tooltip} />
+
       <div className="flex gap-4">
         <div className="relative flex-1">
           <input
@@ -119,7 +124,12 @@ function OwnerRecipe({
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
         </label>
       </div>
+      <Rating
+        averageRating={recipe.averageRating ?? 0}
+        numberOfRatings={recipe.numberOfRatings ?? 0}
+      />
       {components}
+      {!privateRecipe && <CommentsSection recipeId={recipeId} />}
     </CardWrapper>
   ));
 
@@ -141,7 +151,6 @@ function OwnerRecipe({
         </div>
       </RecipeCalculatorSideBar>
       {card}
-
       <div className="flex py-12 gap-4 w-11/12 max-w-[1000px] items-center justify-center">
         <div className="flex py-12 gap-4 w-11/12 max-w-[1000px] items-center justify-center">
           {currentStepIndex === 0 || (
@@ -167,7 +176,7 @@ export default OwnerRecipe;
 
 const Heading = ({
   text,
-  toolTipProps,
+  toolTipProps
 }: {
   text: string;
   toolTipProps?: { body: string; link: string };
