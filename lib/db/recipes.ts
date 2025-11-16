@@ -10,6 +10,7 @@ interface RecipeData {
   primaryNotes?: string[];
   secondaryNotes?: string[];
   private?: boolean;
+  lastActivityEmailAt?: Date | null;
 }
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -262,7 +263,8 @@ export async function createRecipe(data: RecipeData) {
       nuteInfo: data.nuteInfo,
       primaryNotes: data.primaryNotes || [],
       secondaryNotes: data.secondaryNotes || [],
-      private: data.private || false
+      private: data.private || false,
+      lastActivityEmailAt: data.lastActivityEmailAt
     }
   });
 }

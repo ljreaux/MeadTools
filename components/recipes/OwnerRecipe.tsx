@@ -90,13 +90,16 @@ const cardConfig = [
 function OwnerRecipe({
   pdfRedirect,
   privateRecipe,
+  emailNotifications,
   recipeId
 }: {
   pdfRedirect: boolean;
   privateRecipe?: boolean;
+  emailNotifications?: boolean;
   recipeId: number;
 }) {
   const [isPrivate, setIsPrivate] = useState(privateRecipe ?? false);
+  const [notify, setNotify] = useState(emailNotifications ?? false);
   const [nameEditable, setNameEditable] = useState(false);
   const recipe = useRecipe();
   const { t } = useTranslation();
@@ -123,6 +126,15 @@ function OwnerRecipe({
           {t("private")}
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
         </label>
+        {!isPrivate && (
+          <label className="grid">
+            <span className="flex items-center">
+              {t("notify")}
+              <Tooltip body={t("tiptext.notify")} />
+            </span>
+            <Switch checked={notify} onCheckedChange={setNotify} />
+          </label>
+        )}
       </div>
       <Rating
         averageRating={recipe.averageRating ?? 0}
@@ -145,7 +157,7 @@ function OwnerRecipe({
     <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
       <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
         <div className="py-2">
-          <SaveChanges privateRecipe={isPrivate} />
+          <SaveChanges privateRecipe={isPrivate} emailNotifications={notify} />
           <SaveNew />
           <DeleteRecipe />
         </div>

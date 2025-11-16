@@ -1,13 +1,6 @@
-export const parseRecipeData = (recipe: {
-  recipeData: string;
-  nutrientData: string;
-  yanContribution: string;
-  yanFromSource: string;
-  nuteInfo: string;
-  private?: boolean;
-  averageRating?: number;
-  ratings: any[];
-}) => {
+import { RecipeApiResponse } from "@/hooks/useRecipeQuery";
+
+export const parseRecipeData = (recipe: RecipeApiResponse) => {
   const recipeData = JSON.parse(recipe.recipeData);
   const nutrientData = JSON.parse(recipe.nutrientData);
   const yanContribution = JSON.parse(recipe.yanContribution);
@@ -15,6 +8,9 @@ export const parseRecipeData = (recipe: {
   const yanFromSource = JSON.parse(recipe.yanFromSource);
   const nuteInfo = JSON.parse(recipe.nuteInfo);
   const privateRecipe = JSON.parse(JSON.stringify(recipe.private));
+  const emailNotifications = !!JSON.parse(
+    JSON.stringify(recipe.lastActivityEmailAt)
+  );
 
   const getSelectedSchedule = (schedule: string) => {
     switch (schedule) {
@@ -47,6 +43,7 @@ export const parseRecipeData = (recipe: {
     getSelectedSchedule,
     privateRecipe,
     averageRating: recipe.averageRating ?? 0,
-    numberOfRatings: recipe.ratings.length
+    numberOfRatings: recipe.ratings.length,
+    emailNotifications
   };
 };

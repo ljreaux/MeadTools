@@ -34,23 +34,29 @@ export default function SavedRecipeProvider({
   recipe
 }: {
   children: ReactNode;
-  // for saved user recipes
   recipe: {
     id: number;
     name: string;
+
     recipeData: RecipeData;
     nutrientData: FullNutrientData;
+
     primaryNotes: [string, string][];
     secondaryNotes: [string, string][];
-    user_id: string;
+
+    user_id: number | null;
+
     yanContribution: string[];
-    users: {
-      public_username: string | null;
-    };
     yanFromSource?: string[];
     nuteInfo?: string[];
+
+    users?: {
+      public_username: string | null;
+    } | null;
+
     averageRating: number;
     numberOfRatings: number;
+    emailNotifications: boolean;
   };
 }) {
   const { t, i18n } = useTranslation();
@@ -868,7 +874,7 @@ export default function SavedRecipeProvider({
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setRecipeName(e.target.value)
         },
-        public_username: recipe.users.public_username,
+        public_username: recipe.users?.public_username,
         fillToNearest,
         setIngredientsToTarget,
         stabilizerType,

@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      privateRecipe
+      privateRecipe,
+      lastActivityEmailAt
     } = body;
 
     if (!name || !recipeData) {
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      private: privateRecipe || false
+      private: privateRecipe || false,
+      lastActivityEmailAt
     });
 
     return NextResponse.json({ recipe }, { status: 201 });

@@ -15,13 +15,25 @@ import { cn } from "@/lib/utils";
 function SaveChanges({
   privateRecipe,
   bottom,
+  emailNotifications
 }: {
   privateRecipe: boolean;
   bottom?: boolean;
+  emailNotifications?: boolean;
 }) {
   const { t } = useTranslation();
   const params = useParams(); // Get URL parameters
   const recipeId = params?.id; // Extract recipeId from URL
+
+  const setLastActivityEmailAt = (privateRecipe: boolean, notify?: boolean) => {
+    // If the user is opting OUT → store NULL
+    if (privateRecipe || !notify) return null;
+
+    // If opting IN → set to yesterday to allow immediate notification
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    return yesterday;
+  };
 
   const {
     ingredients,
@@ -38,7 +50,7 @@ function SaveChanges({
     notes,
     recipeNameProps,
     stabilizers,
-    stabilizerType,
+    stabilizerType
   } = useRecipe();
 
   const {
@@ -46,7 +58,7 @@ function SaveChanges({
     yanContributions,
     otherNutrientName: otherNameState,
     providedYan,
-    maxGpl,
+    maxGpl
   } = useNutrients();
 
   const { fetchAuthenticatedPatch } = useAuth();
@@ -58,7 +70,7 @@ function SaveChanges({
       toast({
         title: "Error",
         description: "Recipe ID is missing.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -76,7 +88,7 @@ function SaveChanges({
       sulfite,
       campden,
       stabilizers,
-      stabilizerType,
+      stabilizerType
     });
 
     const otherNutrientName =
@@ -84,7 +96,7 @@ function SaveChanges({
 
     const nutrientData = JSON.stringify({
       ...fullData,
-      otherNutrientName,
+      otherNutrientName
     });
     const yanContribution = JSON.stringify(yanContributions);
 
@@ -103,19 +115,23 @@ function SaveChanges({
       primaryNotes,
       secondaryNotes,
       private: privateRecipe,
+      lastActivityEmailAt: setLastActivityEmailAt(
+        privateRecipe,
+        emailNotifications
+      )
     };
     try {
       await fetchAuthenticatedPatch(`/api/recipes/${recipeId}`, body);
 
       toast({
-        description: "Recipe updated successfully.",
+        description: "Recipe updated successfully."
       });
     } catch (error: any) {
       console.error("Error updating recipe:", error.message);
       toast({
         title: "Error",
         description: "There was an error updating your recipe",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -123,7 +139,7 @@ function SaveChanges({
   return (
     <div
       className={cn("relative group flex flex-col items-center", {
-        "w-full": bottom,
+        "w-full": bottom
       })}
     >
       {bottom ? (

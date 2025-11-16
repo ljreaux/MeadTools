@@ -16,13 +16,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import { Save } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+import Tooltip from "../Tooltips";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
@@ -43,7 +44,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
     notes,
     recipeNameProps,
     stabilizers,
-    stabilizerType,
+    stabilizerType
   } = useRecipe();
 
   const {
@@ -51,14 +52,25 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
     yanContributions,
     otherNutrientName: otherNameState,
     providedYan,
-    maxGpl,
+    maxGpl
   } = useNutrients();
 
   const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
 
   const [checked, setChecked] = useState(false);
+  const [notify, setNotify] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
   const { toast } = useToast();
+
+  const setLastActivityEmailAt = (privateRecipe: boolean, notify: boolean) => {
+    // If the user is opting OUT → store NULL
+    if (privateRecipe || !notify) return null;
+
+    // If opting IN → set to yesterday to allow immediate notification
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    return yesterday;
+  };
 
   const createRecipe = async () => {
     setIsSubmitting(true); // Start loading
@@ -75,7 +87,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       sulfite,
       campden,
       stabilizers,
-      stabilizerType,
+      stabilizerType
     });
 
     const otherNutrientName =
@@ -83,7 +95,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
 
     const nutrientData = JSON.stringify({
       ...fullData,
-      otherNutrientName,
+      otherNutrientName
     });
     const yanContribution = JSON.stringify(yanContributions);
 
@@ -102,13 +114,14 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       primaryNotes,
       secondaryNotes,
       private: checked,
+      lastActivityEmailAt: setLastActivityEmailAt(checked, notify)
     };
 
     try {
       await fetchAuthenticatedPost("/api/recipes", body);
       resetRecipe();
       toast({
-        description: "Recipe created successfully.",
+        description: "Recipe created successfully."
       });
       router.push("/account");
     } catch (error: any) {
@@ -116,7 +129,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       toast({
         title: "Error",
         description: "There was an error creating your recipe",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false); // End loading
@@ -161,6 +174,15 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
                 {t("private")}
                 <Switch checked={checked} onCheckedChange={setChecked} />
               </label>
+              {!checked && (
+                <label className="grid">
+                  <span className="flex items-center">
+                    {t("notify")}
+                    <Tooltip body={t("tiptext.notify")} />
+                  </span>
+                  <Switch checked={notify} onCheckedChange={setNotify} />
+                </label>
+              )}
             </div>
           ) : (
             <Link
