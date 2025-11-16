@@ -1,7 +1,13 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from "react";
-import { Input } from "../ui/input";
-import useSuggestions from "@/hooks/useSuggestions";
 import { X } from "lucide-react";
+import useSuggestions from "@/hooks/useSuggestions";
+
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
 
 type SearchableInputProps<T> = {
   items: T[];
@@ -12,7 +18,7 @@ type SearchableInputProps<T> = {
   renderItem?: (item: T) => React.ReactNode;
 };
 
-function SearchableInput<T extends { [key: string]: any }>({
+function SearchableInput<T extends Record<string, any>>({
   items,
   query,
   setQuery,
@@ -29,6 +35,7 @@ function SearchableInput<T extends { [key: string]: any }>({
   const { suggestions } = useSuggestions(items, query, keyName);
   const visibleSuggestions = query.trim() === "" ? items : suggestions;
 
+  // click-outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -41,6 +48,7 @@ function SearchableInput<T extends { [key: string]: any }>({
         setHighlightIndex(-1);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -62,7 +70,7 @@ function SearchableInput<T extends { [key: string]: any }>({
       e.preventDefault();
       const selected = visibleSuggestions[highlightIndex];
       onSelect(selected);
-      setQuery(selected[keyName]);
+      setQuery(String(selected[keyName] ?? ""));
       setDropdownOpen(false);
       setHighlightIndex(-1);
     } else if (e.key === "Escape") {
@@ -73,15 +81,26 @@ function SearchableInput<T extends { [key: string]: any }>({
 
   const handleSelect = (item: T) => {
     onSelect(item);
-    setQuery(item[keyName]);
+    setQuery(String(item[keyName] ?? ""));
     setDropdownOpen(false);
     setHighlightIndex(-1);
   };
 
+  const handleClearOrClose = () => {
+    if (query) {
+      setQuery("");
+      setHighlightIndex(-1);
+      setDropdownOpen(true); // keep list open but reset
+    } else {
+      setDropdownOpen(false);
+      setHighlightIndex(-1);
+    }
+  };
+  const listboxId = "searchable-input-listbox";
   return (
     <div className="relative">
-      <div className="relative">
-        <Input
+      <InputGroup>
+        <InputGroupInput
           ref={inputRef}
           value={query}
           onChange={(e) => {
@@ -94,35 +113,43 @@ function SearchableInput<T extends { [key: string]: any }>({
             setDropdownOpen(true);
           }}
           onKeyDown={handleKeyDown}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={dropdownOpen}
+          aria-controls={dropdownOpen ? listboxId : undefined}
         />
-        {(dropdownOpen || query) && (
-          <button
-            type="button"
-            onClick={() => {
-              if (query) {
-                setQuery("");
-              } else {
-                setDropdownOpen(false);
-              }
-            }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
+
+        <InputGroupAddon align="inline-end">
+          {(dropdownOpen || query) && (
+            <InputGroupButton
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              className="rounded-full"
+              onClick={handleClearOrClose}
+              aria-label={query ? "Clear search" : "Close suggestions"}
+            >
+              <X className="h-3 w-3" />
+            </InputGroupButton>
+          )}
+        </InputGroupAddon>
+      </InputGroup>
 
       {dropdownOpen && visibleSuggestions.length > 0 && (
         <ul
+          id={listboxId}
           ref={dropdownRef}
-          className="absolute z-10 mt-1 w-full bg-background border border-input rounded-md shadow-sm max-h-60 overflow-auto"
+          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-input bg-background text-sm shadow-sm"
+          role="listbox"
         >
           {visibleSuggestions.map((suggestion, index) => {
             const isHighlighted = index === highlightIndex;
             return (
               <li
                 key={index}
-                className={`px-3 py-2 text-sm text-foreground cursor-pointer ${
+                role="option"
+                aria-selected={isHighlighted}
+                className={`cursor-pointer px-3 py-2 text-foreground ${
                   isHighlighted ? "bg-muted" : "hover:bg-muted"
                 }`}
                 onMouseDown={(e) => {
