@@ -64,7 +64,7 @@ const cardConfig = [
     heading: "stabilizersHeading",
     tooltip: {
       body: "tipText.stabilizers",
-      link: "https://meadmaking.wiki/en/process/stabilization"
+      link: "https://wiki.meadtools.com/en/process/stabilization"
     },
     components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />]
   },

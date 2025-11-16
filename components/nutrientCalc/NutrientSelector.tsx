@@ -5,7 +5,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
@@ -16,7 +16,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "../ui/dialog";
 import { isValidNumber } from "@/lib/utils/validateInput";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ import { Switch } from "../ui/switch";
 import { NutrientType } from "@/types/nutrientTypes";
 
 function NutrientSelector({
-  useNutrients,
+  useNutrients
 }: {
   useNutrients: () => NutrientType;
 }) {
@@ -36,7 +36,7 @@ function NutrientSelector({
     otherYanContribution,
     otherNutrientName,
     maxGpl,
-    editMaxGpl,
+    editMaxGpl
   } = useNutrients();
   // Handle the change of selected nutrients
   const handleNutrientChange = (nutrient: string) => {
@@ -57,14 +57,14 @@ function NutrientSelector({
         {t("selectNutes")}
         <Tooltip
           body={t("tipText.preferredSchedule")}
-          link="https://meadmaking.wiki/en/process/nutrient_schedules"
+          link="https://wiki.meadtools.com/en/process/nutrient_schedules"
         />
       </h3>
       <div className="joyride-nutrientSwitches grid sm:grid-cols-2">
         {[
           { value: "Fermaid O", label: "nutrients.fermO" },
           { value: "Fermaid K", label: "nutrients.fermK" },
-          { value: "DAP", label: "nutrients.dap" },
+          { value: "DAP", label: "nutrients.dap" }
         ].map((label, i) => (
           <LabeledCheckbox
             key={label.value + i}
@@ -143,7 +143,7 @@ const SettingsDialog = ({
   providedYan,
   adjustAllowed,
   setAdjustAllowed,
-  tutorialClassFlag,
+  tutorialClassFlag
 }: {
   maxGpl: {
     value: string;
@@ -242,7 +242,7 @@ const SettingsDialog = ({
 const LabeledCheckbox = ({
   index,
   label,
-  useNutrients,
+  useNutrients
 }: {
   useNutrients: () => NutrientType;
   index: number;
@@ -259,7 +259,7 @@ const LabeledCheckbox = ({
     providedYan,
     updateProvidedYan,
     adjustAllowed,
-    setAdjustAllowed,
+    setAdjustAllowed
   } = useNutrients();
   const handleNutrientChange = (nutrient: string) => {
     const prevSelected = selected?.selectedNutrients || [];
@@ -288,7 +288,7 @@ const LabeledCheckbox = ({
             if (isValidNumber(value)) {
               editMaxGpl(index, value);
             }
-          },
+          }
         }}
         yanContribution={{
           value: yanContributions[index],
@@ -297,7 +297,7 @@ const LabeledCheckbox = ({
             if (isValidNumber(value)) {
               editYanContribution(index, value);
             }
-          },
+          }
         }}
         providedYan={{
           value: providedYan[index],
@@ -306,7 +306,7 @@ const LabeledCheckbox = ({
             if (isValidNumber(value)) {
               updateProvidedYan(index, e.target.value);
             }
-          },
+          }
         }}
         adjustAllowed={adjustAllowed}
         setAdjustAllowed={setAdjustAllowed}

@@ -1,42 +1,65 @@
 import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { PopoverContent, PopoverTrigger, Popover } from "./ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from "./ui/tooltip";
+import { Button } from "./ui/button";
 
-export default function Tooltip({
+export default function TooltipHelper({
   body,
   link,
-  links,
+  links
 }: {
   body: string;
   link?: string;
   links?: string[][];
 }) {
   const { t } = useTranslation();
-  return (
-    <Popover>
-      <PopoverTrigger className="hover:text-background hover:bg-foreground transition-colors data-[state=open]:text-background data-[state=open]:bg-foreground rounded-sm px-1">
-        <Info className="w-4" />
-      </PopoverTrigger>
 
-      <PopoverContent>
-        {body}
-        {link && (
-          <a href={link} className="underline" target="_blank">
-            {t("tipText.linkText")}
-          </a>
-        )}
-        {links &&
-          links.map((linkArr) => (
-            <a
-              href={linkArr[0]}
-              className="underline"
-              target="_blank"
-              key={linkArr[0]}
-            >
-              {linkArr[1]}
-            </a>
-          ))}
-      </PopoverContent>
-    </Popover>
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            aria-label="More info"
+            className="p-1 h-fit mx-1"
+          >
+            <Info className="w-4 h-4" />
+          </Button>
+        </TooltipTrigger>
+
+        <TooltipContent className="space-y-2 max-w-xs leading-snug text-sm">
+          {/* Body + inline link */}
+          <p>
+            {body}{" "}
+            {link && (
+              <a href={link} target="_blank" className="underline">
+                {t("tipText.linkText")}
+              </a>
+            )}
+          </p>
+
+          {/* Extra links below the paragraph */}
+          {links && links.length > 0 && (
+            <div className="space-y-1">
+              {links.map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  className="underline block text-sm"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
