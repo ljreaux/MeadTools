@@ -41,7 +41,7 @@ export type RecipeApiResponse = {
 type RecipeResponse = { recipe: RecipeApiResponse };
 
 // What the hook returns: raw API fields + parsed fields from parseRecipeData
-export type RecipeWithParsedFields = RecipeApiResponse &
+type RecipeWithParsedFields = RecipeApiResponse &
   ReturnType<typeof parseRecipeData>;
 
 async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {

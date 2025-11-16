@@ -2,13 +2,13 @@ import { verifyAdmin } from "@/lib/userAccessFunctions";
 import {
   deleteIngredient,
   getIngredientById,
-  updateIngredient,
+  updateIngredient
 } from "@/lib/db/ingredients";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/yeasts/:id
 export async function GET(
-  req: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -65,7 +65,7 @@ export async function DELETE(
     const deletedIngredient = await deleteIngredient(id);
 
     return NextResponse.json({
-      message: `${deletedIngredient.name} has been deleted`,
+      message: `${deletedIngredient.name} has been deleted`
     });
   } catch (error: any) {
     return NextResponse.json(

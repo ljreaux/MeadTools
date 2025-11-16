@@ -17,7 +17,7 @@ type PerPageSelectProps = {
   className?: string;
 };
 
-export function PerPageSelect({
+export default function PerPageSelect({
   value,
   onChange,
   allowedValues = [10, 20, 50],

@@ -24,7 +24,7 @@ import {
 
 import Rating from "@/components/recipes/Rating";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { PerPageSelect } from "@/components/pagination/PerPageSelect";
+import PerPageSelect from "@/components/pagination/PerPageSelect";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 interface Recipe {

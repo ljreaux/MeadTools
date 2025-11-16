@@ -4,7 +4,7 @@ import { verifyAdmin } from "@/lib/userAccessFunctions";
 
 // GET /api/yeasts/:id
 export async function GET(
-  req: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -58,7 +58,7 @@ export async function DELETE(
     const { id } = await params;
     const deletedYeast = await deleteYeast(id);
     return NextResponse.json({
-      message: `${deletedYeast.name} has been deleted.`,
+      message: `${deletedYeast.name} has been deleted.`
     });
   } catch (error: any) {
     console.error("Error deleting yeast:", error);

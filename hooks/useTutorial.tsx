@@ -5,7 +5,7 @@ import Joyride, { CallBackProps, Step } from "react-joyride";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-export type SpecialStepCallbacks = {
+type SpecialStepCallbacks = {
   [stepIndex: number]: () => void;
 };
 
@@ -38,26 +38,26 @@ export function useTutorial(
       zIndex: 10000,
       primaryColor: "hsl(var(--primary))",
       textColor: "hsl(var(--foreground))",
-      width: 500,
+      width: 500
     },
     tooltip: {
       backgroundColor: "hsl(var(--card))",
       border: "none",
       boxShadow: "none",
-      maxWidth: "70vw",
+      maxWidth: "70vw"
     },
     tooltipContainer: {
       backgroundColor: "transparent",
       borderRadius: "var(--radius)",
       padding: "1rem",
       border: "none",
-      boxShadow: "none",
+      boxShadow: "none"
     },
     tooltipContent: {
       backgroundColor: "transparent",
       padding: 0,
       border: "none",
-      boxShadow: "none",
+      boxShadow: "none"
     },
     buttonNext: {
       backgroundColor: "hsl(var(--background))",
@@ -66,7 +66,7 @@ export function useTutorial(
       padding: "0.5rem 1rem",
       borderRadius: "var(--radius)",
       fontWeight: 500,
-      cursor: "pointer",
+      cursor: "pointer"
     },
     buttonBack: {
       backgroundColor: "hsl(var(--background))",
@@ -75,7 +75,7 @@ export function useTutorial(
       padding: "0.5rem 1rem",
       borderRadius: "var(--radius)",
       fontWeight: 500,
-      cursor: "pointer",
+      cursor: "pointer"
     },
     buttonSkip: {
       backgroundColor: "hsl(var(--background))",
@@ -84,8 +84,8 @@ export function useTutorial(
       padding: "0.5rem 1rem",
       borderRadius: "var(--radius)",
       fontWeight: 500,
-      cursor: "pointer",
-    },
+      cursor: "pointer"
+    }
   };
 
   const TutorialComponent: React.FC = () => {
@@ -106,7 +106,7 @@ export function useTutorial(
         disableOverlayClose
         locale={{
           back: t("buttonLabels.back"),
-          next: t("buttonLabels.next"),
+          next: t("buttonLabels.next")
         }}
         hideCloseButton
         disableScrolling={false}
@@ -116,6 +116,6 @@ export function useTutorial(
 
   return {
     TutorialComponent,
-    sidebarOpen,
+    sidebarOpen
   };
 }

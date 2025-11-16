@@ -15,7 +15,7 @@ import CommentInput from "./CommentInput";
 import { CommentItem } from "./CommentItem";
 import { Separator } from "@/components/ui/separator";
 
-export type CommentWithAuthor = {
+type CommentWithAuthor = {
   id: string;
   recipe_id: number;
   user_id: number;

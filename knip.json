@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["app/**/page.tsx", "app/**/layout.tsx"],
+  "project": [
+    "components/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    ".next/**",
+    "next.config.ts",
+    "tailwind.config.ts",
+    "postcss.config.js",
+    "middleware.ts"
+  ],
+
+  "ignoreDependencies": [
+    "i18next-browser-languagedetector",
+    "i18next-http-backend"
+  ]
+}

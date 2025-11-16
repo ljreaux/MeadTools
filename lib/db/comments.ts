@@ -53,14 +53,14 @@ export async function setRating(input: {
 
 const MAX_COMMENT_LENGTH = 10_000;
 
-export type CreateCommentInput = {
+type CreateCommentInput = {
   recipe_id: number; // FK -> recipes.id
   user_id: number; // FK -> users.id (provided by the route after auth)
   comment: string; // markdown text
   parent_id?: string | null; // FK -> comments.id (uuid) for replies
 };
 
-export type CreatedComment = {
+type CreatedComment = {
   id: string; // uuid
   recipe_id: number;
   user_id: number;
@@ -175,21 +175,6 @@ export async function createComment(
   return created;
 }
 
-export type CommentRow = {
-  id: string;
-  recipe_id: number;
-  user_id: number;
-  parent_id: string | null;
-  comment: string;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at: Date | null;
-  author: {
-    public_username: string | null;
-    avatarUrl: string | null; // what the UI will actually use
-  } | null;
-};
-
 export async function updateComment(input: {
   id: string;
   user_id: number;
@@ -282,7 +267,7 @@ export async function deleteComment(input: {
   return deleted;
 }
 
-export type RootCommentRow = {
+type RootCommentRow = {
   id: string;
   recipe_id: number;
   user_id: number;
@@ -370,7 +355,7 @@ export async function listRootCommentsForRecipe(opts: {
   return { data, nextCursor, totalCount };
 }
 
-export type ReplyRow = {
+type ReplyRow = {
   id: string;
   recipe_id: number;
   user_id: number;

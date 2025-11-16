@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
 
-export interface ISpindelContext {
+interface ISpindelContext {
   deviceList: any[];
   logs: any[];
   setLogs: (logs: any[]) => void;
@@ -45,7 +45,7 @@ export interface ISpindelContext {
 const HydroContext = createContext<ISpindelContext | null>(null);
 
 export const ISpindelProvider = ({
-  children,
+  children
 }: {
   children: React.ReactNode;
 }) => {
@@ -53,7 +53,7 @@ export const ISpindelProvider = ({
     fetchAuthenticatedData,
     fetchAuthenticatedPost,
     fetchAuthenticatedPatch,
-    user,
+    user
   } = useAuth();
   const [loading, setLoading] = useState(false);
   const [deviceList, setDeviceList] = useState<any[]>([]);
@@ -153,7 +153,7 @@ export const ISpindelProvider = ({
         "/api/hydrometer/brew",
         {
           device_id: id,
-          brew_name: brewName,
+          brew_name: brewName
         }
       );
       setBrews([...brews, brew]);
@@ -169,7 +169,7 @@ export const ISpindelProvider = ({
     try {
       const [, device] = await fetchAuthenticatedPatch("/api/hydrometer/brew", {
         device_id: deviceId,
-        brew_id: brewId,
+        brew_id: brewId
       });
 
       setDeviceList((prev) =>
@@ -292,7 +292,7 @@ export const ISpindelProvider = ({
     try {
       const response = await fetchAuthenticatedPatch("/api/hydrometer/brew", {
         brew_id: id,
-        brew_name,
+        brew_name
       });
       // Optionally update the local state if needed
       setBrews((prev) =>
@@ -310,7 +310,7 @@ export const ISpindelProvider = ({
   const linkBrew = async (recipe_id: string, brew_id: string) => {
     try {
       await fetchAuthenticatedPatch(`/api/hydrometer/brew/${brew_id}`, {
-        recipe_id,
+        recipe_id
       });
     } catch (error) {
       console.error("Failed to link brew to recipe:", error);
@@ -324,7 +324,7 @@ export const ISpindelProvider = ({
     try {
       await fetchAuthenticatedPatch(`/api/hydrometer/brew/${brew_id}`, {
         brew_id,
-        requested_email_alerts,
+        requested_email_alerts
       });
     } catch (error) {
       console.error("Failed to request email updates", error);
@@ -366,7 +366,7 @@ export const ISpindelProvider = ({
     recipes,
     linkBrew,
     getBrewLogs,
-    updateEmailAlerts,
+    updateEmailAlerts
   };
 
   return (

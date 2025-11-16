@@ -15,17 +15,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 
-export type Additive = {
+type Additive = {
   id: string;
   name: string;
   dosage: number;
@@ -45,7 +45,7 @@ const UNIT_OPTIONS = [
   "fl oz",
   "quarts",
   "gal",
-  "tbsp",
+  "tbsp"
 ];
 
 interface Props {
@@ -57,7 +57,7 @@ export default function AdditiveEditForm({ additive }: Props) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     ...additive,
-    unit: additive.unit === "fl_oz" ? "fl oz" : additive.unit,
+    unit: additive.unit === "fl_oz" ? "fl oz" : additive.unit
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -76,7 +76,7 @@ export default function AdditiveEditForm({ additive }: Props) {
       toast({
         title: "Error",
         description: "No token found in localStorage.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setIsSaving(false);
       return;
@@ -87,12 +87,12 @@ export default function AdditiveEditForm({ additive }: Props) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           ...formData,
-          dosage: parseFloat(String(formData.dosage)),
-        }),
+          dosage: parseFloat(String(formData.dosage))
+        })
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -102,7 +102,7 @@ export default function AdditiveEditForm({ additive }: Props) {
       toast({
         title: "Error",
         description: err.message || "Failed to update additive.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -115,7 +115,7 @@ export default function AdditiveEditForm({ additive }: Props) {
       toast({
         title: "Error",
         description: "No token found in localStorage.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -125,8 +125,8 @@ export default function AdditiveEditForm({ additive }: Props) {
       const res = await fetch(`/api/additives/${additive.id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -137,7 +137,7 @@ export default function AdditiveEditForm({ additive }: Props) {
       toast({
         title: "Error",
         description: err.message || "Failed to delete additive.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsDeleting(false);

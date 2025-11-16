@@ -317,12 +317,6 @@ export async function getRecipeInfo(recipeId: number) {
   }
 }
 
-export const verifyRecipeId = async (params: Promise<{ id: string }>) => {
-  const { id } = await params;
-  const recipeId = parseInt(id);
-  return recipeId;
-};
-
 export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
   return prisma.recipes.update({
     where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer

@@ -390,11 +390,7 @@ export async function getLogsForBrew(brew_id: string, userId?: number) {
   }
 }
 
-export async function updateLog(
-  id: string,
-  deviceId: string,
-  data: Partial<LogType>
-) {
+export async function updateLog(id: string, _: string, data: Partial<LogType>) {
   try {
     return await prisma.logs.update({
       where: { id },
