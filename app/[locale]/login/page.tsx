@@ -1,10 +1,12 @@
 "use client";
+
 import AuthForm from "@/components/AuthForm";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 
 function Login() {
   const { t } = useTranslation();
@@ -18,7 +20,7 @@ function Login() {
     if (user) {
       router.push("/account");
     }
-  }, [user]);
+  }, [user, router]);
 
   if (!isMounted) {
     return null;
@@ -48,10 +50,12 @@ function Login() {
           className="relative w-64 h-14 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
           aria-label={t("accountPage.buttonMessage.googleLogin")}
         >
-          <img
+          <Image
             src={googleLogo}
             alt=""
-            className="absolute inset-0 w-full h-full object-contain"
+            fill
+            className="object-contain"
+            sizes="256px"
           />
           <span className="sr-only">
             {t("accountPage.buttonMessage.googleLogin")}

@@ -1,4 +1,5 @@
 import prisma from "../prisma";
+import { notifyRecipeOwnerOfActivity } from "./activityEmailUpdates";
 
 function sanitizeRating(n: number): 1 | 2 | 3 | 4 | 5 {
   const r = Math.round(Number(n));
@@ -32,6 +33,15 @@ export async function setRating(input: {
 
   const averageRating = Number((agg._avg.rating ?? 0).toFixed(2));
   const numberOfRatings = count;
+
+  notifyRecipeOwnerOfActivity({
+    recipeId: recipe_id,
+    kind: "rating",
+    ratingValue: userRating,
+    actorUserId: user_id
+  }).catch((err) =>
+    console.error("Failed to send recipe activity email:", err)
+  );
 
   return {
     recipe_id,
@@ -111,7 +121,7 @@ export async function createComment(
   const parent_id = input.parent_id ?? null;
   const comment = sanitizeBody(input.comment);
 
-  // Validate references (and prevent cross-recipe replies)
+  // Validate references
   const [recipe, user, parent] = await Promise.all([
     prisma.recipes.findUnique({
       where: { id: recipe_id },
@@ -138,7 +148,6 @@ export async function createComment(
     }
   }
 
-  // Create the comment
   const created = await prisma.comments.create({
     data: { recipe_id, user_id, parent_id, comment },
     select: {
@@ -152,6 +161,17 @@ export async function createComment(
     }
   });
 
+  // Fire email asynchronously (non-blocking)
+  notifyRecipeOwnerOfActivity({
+    recipeId: recipe_id,
+    kind: "comment",
+    commentSnippet: comment,
+    actorUserId: user_id
+  }).catch((err) =>
+    console.error("Failed to send recipe activity email:", err)
+  );
+
+  /** 3. Immediately return comment */
   return created;
 }
 

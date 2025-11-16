@@ -79,6 +79,7 @@ model recipes {
   primaryNotes    String[]
   secondaryNotes  String[]
   private         Boolean   @default(false)
+  lastActivityEmailAt DateTime? @db.Timestamptz(6)
   brews           brews[]
   devices         devices[]
   users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

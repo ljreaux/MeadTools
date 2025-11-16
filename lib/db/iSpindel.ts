@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
-import nodemailer from "nodemailer";
+import { escapeHtml, sendEmail } from "./emailHelpers";
 
 export type LogType = {
   id?: string;
@@ -21,7 +21,7 @@ export async function getHydrometerToken(userId: number) {
   try {
     return await prisma.users.findUnique({
       where: { id: userId },
-      select: { hydro_token: true },
+      select: { hydro_token: true }
     });
   } catch (error) {
     console.error("Error fetching recipes for user:", error);
@@ -32,7 +32,7 @@ export async function getHydrometerToken(userId: number) {
 export async function getDevicesForUser(userId: number) {
   try {
     return await prisma.devices.findMany({
-      where: { user_id: userId },
+      where: { user_id: userId }
     });
   } catch (error) {
     console.error("Error fetching devices for user:", error);
@@ -47,11 +47,11 @@ export async function verifyToken(token: string | undefined) {
   try {
     const userId = await prisma.users.findFirst({
       where: {
-        hydro_token: token,
+        hydro_token: token
       },
       select: {
-        id: true,
-      },
+        id: true
+      }
     });
     if (!userId) {
       return NextResponse.json({ error: "Invalid token" }, { status: 404 });
@@ -65,21 +65,21 @@ export async function verifyToken(token: string | undefined) {
 
 export async function registerDevice({
   device_name,
-  userId,
+  userId
 }: {
   device_name: string;
   userId: number;
 }) {
   try {
     const found = await prisma.devices.findFirst({
-      where: { device_name, user_id: userId },
+      where: { device_name, user_id: userId }
     });
 
     const isRegistered = !!found;
     if (isRegistered) return found;
 
     return await prisma.devices.create({
-      data: { device_name, user_id: userId },
+      data: { device_name, user_id: userId }
     });
   } catch (error) {
     console.error("Error registering device:", error);
@@ -94,20 +94,13 @@ export async function updateBrewGravity(brewId: string, gravity: number) {
   try {
     return await prisma.brews.update({
       where: { id: brewId },
-      data: { latest_gravity: gravity },
+      data: { latest_gravity: gravity }
     });
   } catch (error) {
     console.error("Error updating gravity:", error);
     throw new Error("Error updating gravity.");
   }
 }
-
-const escapeHtml = (s: string) =>
-  s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 
 type AlertKind = "fg" | "sb";
 
@@ -117,7 +110,7 @@ function buildEmail({
   brewLabel,
   og,
   latest,
-  threshold,
+  threshold
 }: {
   kind: AlertKind;
   displayName: string;
@@ -261,9 +254,9 @@ export async function sendEmailUpdate(brewId: string | null) {
         logs: {
           orderBy: { datetime: "asc" },
           take: 1,
-          select: { calculated_gravity: true, gravity: true },
-        },
-      },
+          select: { calculated_gravity: true, gravity: true }
+        }
+      }
     });
     if (!brew) return;
 
@@ -295,12 +288,12 @@ export async function sendEmailUpdate(brewId: string | null) {
         brewLabel,
         og,
         latest,
-        threshold: offset,
+        threshold: offset
       });
       await sendEmail({ to, subject, text, html });
       await prisma.brews.update({
         where: { id: brew.id },
-        data: { fg_alert_sent: true },
+        data: { fg_alert_sent: true }
       });
       return;
     }
@@ -313,48 +306,17 @@ export async function sendEmailUpdate(brewId: string | null) {
         brewLabel,
         og,
         latest,
-        threshold: sugarBreak,
+        threshold: sugarBreak
       });
       await sendEmail({ to, subject, text, html });
       await prisma.brews.update({
         where: { id: brew.id },
-        data: { sb_alert_sent: true },
+        data: { sb_alert_sent: true }
       });
     }
   } catch (error) {
     console.error("Error sending email update:", error);
   }
-}
-
-export async function sendEmail({
-  to,
-  subject,
-  text,
-  html,
-}: {
-  to: string;
-  subject: string;
-  text: string;
-  html?: string;
-}) {
-  const user = process.env.EMAIL_USER!;
-  const pass = process.env.EMAIL_PASS!;
-
-  const transporter = nodemailer.createTransport({
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    auth: { user, pass },
-  });
-
-  await transporter.sendMail({
-    from: { name: "MeadTools Alerts", address: user },
-    to,
-    subject,
-    text,
-    html,
-  });
 }
 
 export async function createLog(log: LogType) {
@@ -367,12 +329,12 @@ export async function createLog(log: LogType) {
     battery: log.battery || 0,
     gravity: log.gravity,
     interval: log.interval || 0,
-    calculated_gravity: log.calculated_gravity,
+    calculated_gravity: log.calculated_gravity
   };
 
   try {
     return await prisma.logs.create({
-      data,
+      data
     });
   } catch (error) {
     console.error("Error creating log:", error);
@@ -391,9 +353,9 @@ export async function getLogs(
         device_id: deviceId,
         datetime: {
           gte: beginDate,
-          lte: endDate,
-        },
-      },
+          lte: endDate
+        }
+      }
     });
   } catch (error) {
     console.error("Error fetching logs:", error);
@@ -408,9 +370,9 @@ export async function getLogsForBrew(brew_id: string, userId?: number) {
       where: { id: brew_id },
       include: {
         logs: {
-          orderBy: { datetime: "asc" },
-        },
-      },
+          orderBy: { datetime: "asc" }
+        }
+      }
     });
 
     if (!brewWithLogs) {
@@ -436,7 +398,7 @@ export async function updateLog(
   try {
     return await prisma.logs.update({
       where: { id },
-      data,
+      data
     });
   } catch (error) {
     console.error("Error updating log:", error);
@@ -447,7 +409,7 @@ export async function updateLog(
 export async function deleteLog(logId: string, device_id: string) {
   try {
     return await prisma.logs.delete({
-      where: { id: logId, device_id },
+      where: { id: logId, device_id }
     });
   } catch (error) {
     console.error(error);
@@ -464,8 +426,8 @@ export async function deleteLogsInRange(
     const logsToDelete = await prisma.logs.findMany({
       where: {
         device_id,
-        datetime: { gte: startDate, lte: endDate },
-      },
+        datetime: { gte: startDate, lte: endDate }
+      }
     });
 
     if (logsToDelete.length === 0) {
@@ -475,7 +437,7 @@ export async function deleteLogsInRange(
     const logIdsToDelete = logsToDelete.map((log: { id: string }) => log.id);
 
     return await prisma.logs.deleteMany({
-      where: { id: { in: logIdsToDelete } },
+      where: { id: { in: logIdsToDelete } }
     });
   } catch (error) {
     console.error("Error deleting logs in range:", error);
@@ -489,7 +451,7 @@ export async function createHydrometerToken(userId: number) {
   try {
     await prisma.users.update({
       where: { id: userId },
-      data: { hydro_token: token },
+      data: { hydro_token: token }
     });
     return { token };
   } catch (err) {
@@ -501,7 +463,7 @@ export async function createHydrometerToken(userId: number) {
 export async function getBrews(user_id: number) {
   try {
     const brews = await prisma.brews.findMany({
-      where: { user_id },
+      where: { user_id }
     });
 
     return brews.sort((a, b) => {
@@ -527,7 +489,7 @@ export async function startBrew(
 ) {
   try {
     const currentDevice = await prisma.devices.findFirst({
-      where: { id: device_id },
+      where: { id: device_id }
     });
     const hasActiveBrew = typeof currentDevice?.brew_id === "string";
 
@@ -539,13 +501,13 @@ export async function startBrew(
       data: {
         user_id,
         name: brew_name,
-        start_date: new Date(),
-      },
+        start_date: new Date()
+      }
     });
 
     const device = await prisma.devices.update({
       where: { id: device_id },
-      data: { brew_id: brew.id },
+      data: { brew_id: brew.id }
     });
 
     return [brew, device];
@@ -559,12 +521,12 @@ export async function endBrew(id: string, brew_id: string, user_id: number) {
   try {
     const brew = await prisma.brews.update({
       where: { user_id, id: brew_id },
-      data: { end_date: new Date() },
+      data: { end_date: new Date() }
     });
 
     const device = await prisma.devices.update({
       where: { id },
-      data: { brew_id: null },
+      data: { brew_id: null }
     });
 
     return [brew, device];
@@ -578,7 +540,7 @@ export async function setBrewName(id: string, name: string, user_id: number) {
   try {
     return await prisma.brews.update({
       where: { user_id, id },
-      data: { name },
+      data: { name }
     });
   } catch (error) {
     console.error(error);
@@ -594,7 +556,7 @@ export async function addRecipeToBrew(
   try {
     return await prisma.brews.update({
       where: { user_id, id },
-      data: { recipe_id },
+      data: { recipe_id }
     });
   } catch (error) {
     console.error(error);
@@ -609,7 +571,7 @@ export async function receiveBrewAlerts(
   try {
     return await prisma.brews.update({
       where: { id: brew_id },
-      data: { requested_email_alerts },
+      data: { requested_email_alerts }
     });
   } catch (error) {
     console.error(error);
@@ -623,34 +585,34 @@ export async function deleteBrew(brew_id: string, user_id: number) {
     const device = await prisma.devices.findFirst({
       where: {
         user_id,
-        brew_id,
-      },
+        brew_id
+      }
     });
 
     if (device) {
       // Detach the device from the brew
       await prisma.devices.update({
         where: { id: device.id, user_id },
-        data: { brew_id: null },
+        data: { brew_id: null }
       });
 
       // Delete logs associated with this brew and device
       await prisma.logs.deleteMany({
         where: {
           brew_id,
-          device_id: device.id,
-        },
+          device_id: device.id
+        }
       });
     } else {
       // Delete logs associated with this brew only
       await prisma.logs.deleteMany({
-        where: { brew_id },
+        where: { brew_id }
       });
     }
 
     // Delete the brew
     const deleted_brew = await prisma.brews.delete({
-      where: { id: brew_id, user_id },
+      where: { id: brew_id, user_id }
     });
 
     if (!deleted_brew) {
@@ -660,7 +622,7 @@ export async function deleteBrew(brew_id: string, user_id: number) {
     return {
       message: `Your brew "${
         deleted_brew.name || deleted_brew.id
-      }" has been successfully deleted along with all of its logs.`,
+      }" has been successfully deleted along with all of its logs.`
     };
   } catch (error) {
     console.error("Error deleting brew:", error);
@@ -678,7 +640,7 @@ export async function updateCoefficients(
 
     return await prisma.devices.update({
       where: { id, user_id },
-      data: { coefficients },
+      data: { coefficients }
     });
   } catch (error) {
     console.error("Error updating coefficients:", error);
@@ -692,22 +654,22 @@ export async function deleteDevice(device_id: string, user_id: number) {
     await prisma.logs.deleteMany({
       where: {
         device_id,
-        brew_id: null,
-      },
+        brew_id: null
+      }
     });
 
     // Set device_id to null for logs associated with the device
     await prisma.logs.updateMany({
       where: { device_id },
-      data: { device_id: null },
+      data: { device_id: null }
     });
 
     // Delete the device belonging to the user
     await prisma.devices.deleteMany({
       where: {
         id: device_id,
-        user_id,
-      },
+        user_id
+      }
     });
 
     return { message: `Device ${device_id} deleted successfully.` };
