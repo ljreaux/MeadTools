@@ -183,7 +183,7 @@ export interface Recipe extends RecipeData {
   fillToNearest: (id: string) => void;
   stabilizerType: string;
   setStabilizerType: (val: string) => void;
-  ratingStats: {
+  ratingStats?: {
     averageRating: number;
     numberOfRatings: number;
     userRating: number | null;

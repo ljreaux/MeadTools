@@ -122,7 +122,7 @@ export default function RateRecipe() {
   const recipeId = Number(params.id);
 
   // userRating from provider is the canonical value
-  const userRating = ratingStats.userRating ?? 0;
+  const userRating = ratingStats?.userRating ?? 0;
 
   // local draft value while the popover is open
   const [draftRating, setDraftRating] = useState<number>(userRating);
