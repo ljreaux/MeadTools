@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
 import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
@@ -15,15 +14,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import { FilePlus } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
+import TooltipHelper from "../Tooltips";
+import {
+  useCreateRecipeMutation,
+  buildRecipePayload
+} from "@/hooks/useRecipeQuery";
 
 function SaveNew() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     ingredients,
@@ -40,7 +45,7 @@ function SaveNew() {
     notes,
     stabilizers,
     stabilizerType,
-    recipeNameProps,
+    recipeNameProps
   } = useRecipe();
 
   const {
@@ -48,20 +53,21 @@ function SaveNew() {
     yanContributions,
     otherNutrientName: otherNameState,
     providedYan,
-    maxGpl,
+    maxGpl
   } = useNutrients();
 
-  const { fetchAuthenticatedPost } = useAuth();
-
-  const [checked, setChecked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // email notifications
   const [recipeName, setRecipeName] = useState(recipeNameProps.value);
 
+  const createRecipeMutation = useCreateRecipeMutation();
+
   const createRecipe = async () => {
-    setIsSubmitting(true); // Start loading
-    const recipeData = JSON.stringify({
+    const body = buildRecipePayload({
+      name: recipeName,
+      privateRecipe: checked,
+      notify,
+
       ingredients,
       OG,
       volume,
@@ -75,50 +81,29 @@ function SaveNew() {
       campden,
       stabilizers,
       stabilizerType,
+
+      notes,
+      fullData,
+      yanContributions,
+      otherNutrientNameValue: otherNameState.value,
+      providedYan,
+      maxGpl
     });
-
-    const otherNutrientName =
-      otherNameState.value.length > 0 ? otherNameState.value : undefined;
-
-    const nutrientData = JSON.stringify({
-      ...fullData,
-      otherNutrientName,
-    });
-    const yanContribution = JSON.stringify(yanContributions);
-
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
-
-    const body = {
-      name: recipeName,
-      recipeData,
-      yanFromSource: JSON.stringify(providedYan),
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: JSON.stringify(maxGpl),
-      primaryNotes,
-      secondaryNotes,
-      private: checked,
-    };
 
     try {
-      await fetchAuthenticatedPost("/api/recipes", body);
+      await createRecipeMutation.mutateAsync(body);
 
       toast({
-        description: "Recipe created successfully.",
+        description: "Recipe created successfully."
       });
       router.push("/account");
     } catch (error: any) {
-      console.error("Error creating recipe:", error.message);
+      console.error("Error creating recipe:", error?.message ?? error);
       toast({
         title: "Error",
         description: "There was an error creating your recipe",
-        variant: "destructive",
+        variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false); // End loading
     }
   };
 
@@ -134,6 +119,7 @@ function SaveNew() {
           </span>
         </div>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("changesForm.saveAs")}</DialogTitle>
@@ -146,17 +132,28 @@ function SaveNew() {
                 onChange={(e) => setRecipeName(e.target.value)}
               />
             </label>
+
             <label className="grid">
               {t("private")}
               <Switch checked={checked} onCheckedChange={setChecked} />
             </label>
+
+            {!checked && (
+              <label className="grid">
+                <span className="flex items-center gap-1">
+                  {t("notify")}
+                  <TooltipHelper body={t("tiptext.notify")} />
+                </span>
+                <Switch checked={notify} onCheckedChange={setNotify} />
+              </label>
+            )}
           </div>
         </DialogHeader>
 
         <DialogFooter>
           <LoadingButton
             onClick={createRecipe}
-            loading={isSubmitting}
+            loading={createRecipeMutation.isPending}
             variant="secondary"
           >
             {t("SUBMIT")}

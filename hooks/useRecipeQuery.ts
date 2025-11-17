@@ -1,10 +1,11 @@
-// hooks/useRecipeQuery.ts (or lib/db/useRecipeQuery.ts)
-
-import { useQuery } from "@tanstack/react-query";
+// hooks/useRecipeQuery.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetchWithAuth } from "@/lib/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 import { parseRecipeData } from "@/lib/utils/parseRecipeData";
+import { useAuthToken } from "@/lib/useAuthToken";
 
+// --- Raw API shape from /api/recipes/:id ---
 export type RecipeApiResponse = {
   id: number;
   name: string;
@@ -19,31 +20,173 @@ export type RecipeApiResponse = {
 
   private: boolean;
 
-  // from concatNotes(...) in getRecipeInfo
+  // from concatNotes(...)
   primaryNotes: [string, string][];
   secondaryNotes: [string, string][];
 
-  // denormalized owner info
+  // owner info
   public_username: string | null;
 
   // activity/email
-  lastActivityEmailAt: string | null; // comes over JSON as string
+  lastActivityEmailAt: string | null;
 
   // social
-  comments: any[]; // you can refine this later if you want
+  comments: any[];
   ratings: Array<{ rating: number; user_id: number }>;
 
   averageRating: number | null;
   commentCount: number;
 };
 
-// Top-level API shape
 type RecipeResponse = { recipe: RecipeApiResponse };
 
-// What the hook returns: raw API fields + parsed fields from parseRecipeData
-type RecipeWithParsedFields = RecipeApiResponse &
+// --- Shared payload shape for create/update ---
+type BaseRecipePayload = {
+  name: string;
+  recipeData: string;
+  yanFromSource: string;
+  yanContribution: string;
+  nutrientData: string;
+  advanced: boolean;
+  nuteInfo: string;
+  primaryNotes: string[];
+  secondaryNotes: string[];
+  private: boolean;
+  // send as ISO string or null over the wire
+  lastActivityEmailAt: string | null;
+};
+
+export type UpdateRecipePayload = BaseRecipePayload;
+export type CreateRecipePayload = BaseRecipePayload;
+
+// --- Parsed shape returned by useRecipeQuery ---
+export type RecipeWithParsedFields = RecipeApiResponse &
   ReturnType<typeof parseRecipeData>;
 
+export function getLastActivityEmailAt(
+  isPrivate: boolean,
+  notify?: boolean
+): string | null {
+  if (isPrivate || !notify) return null;
+
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return yesterday.toISOString();
+}
+
+// --- Helper to build create/update payloads from providers ---
+
+type BuildRecipePayloadArgs = {
+  name: string;
+  privateRecipe: boolean;
+  notify?: boolean;
+
+  // recipe data
+  ingredients: any;
+  OG: any;
+  volume: any;
+  ABV: any;
+  FG: any;
+  offset: any;
+  units: any;
+  additives: any;
+  sorbate: any;
+  sulfite: any;
+  campden: any;
+  stabilizers?: any;
+  stabilizerType?: any;
+
+  // notes
+  notes: {
+    primary: Array<{ content: string[] }>;
+    secondary: Array<{ content: string[] }>;
+  };
+
+  // nutrient data
+  fullData: any;
+  yanContributions: any;
+  otherNutrientNameValue?: string;
+  providedYan: any;
+  maxGpl: any;
+};
+
+export function buildRecipePayload(
+  args: BuildRecipePayloadArgs
+): BaseRecipePayload {
+  const {
+    name,
+    privateRecipe,
+    notify,
+
+    ingredients,
+    OG,
+    volume,
+    ABV,
+    FG,
+    offset,
+    units,
+    additives,
+    sorbate,
+    sulfite,
+    campden,
+    stabilizers,
+    stabilizerType,
+
+    notes,
+    fullData,
+    yanContributions,
+    otherNutrientNameValue,
+    providedYan,
+    maxGpl
+  } = args;
+
+  const recipeData = JSON.stringify({
+    ingredients,
+    OG,
+    volume,
+    ABV,
+    FG,
+    offset,
+    units,
+    additives,
+    sorbate,
+    sulfite,
+    campden,
+    stabilizers,
+    stabilizerType
+  });
+
+  const otherNutrientName =
+    otherNutrientNameValue && otherNutrientNameValue.length > 0
+      ? otherNutrientNameValue
+      : undefined;
+
+  const nutrientData = JSON.stringify({
+    ...fullData,
+    otherNutrientName
+  });
+
+  const yanContribution = JSON.stringify(yanContributions);
+
+  const primaryNotes = notes.primary.map((note) => note.content).flat();
+  const secondaryNotes = notes.secondary.map((note) => note.content).flat();
+  const advanced = false;
+
+  return {
+    name,
+    recipeData,
+    yanFromSource: JSON.stringify(providedYan),
+    yanContribution,
+    nutrientData,
+    advanced,
+    nuteInfo: JSON.stringify(maxGpl),
+    primaryNotes,
+    secondaryNotes,
+    private: privateRecipe,
+    lastActivityEmailAt: getLastActivityEmailAt(privateRecipe, notify)
+  };
+}
+
+// Public endpoint (no auth header)
 async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
   const res = await fetch(`/api/recipes/${id}`);
 
@@ -59,45 +202,126 @@ async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
 
 export function useRecipeQuery(id: string, isLoggedIn: boolean) {
   const fetchWithAuth = useFetchWithAuth();
+  const token = useAuthToken();
+
+  // Logged-out: we don't care about token
+  // Logged-in: don't run the query until we actually *have* a token
+  const hasToken = !!token;
+  const enabled = !isLoggedIn || hasToken;
 
   return useQuery<RecipeWithParsedFields>({
     queryKey: qk.recipe(id),
+    enabled, // ⬅️ this is the key part
 
     queryFn: async () => {
-      let baseRecipe: RecipeApiResponse;
+      let base: RecipeApiResponse;
 
-      // 🔓 Not logged in at all → always use public endpoint
       if (!isLoggedIn) {
-        baseRecipe = await fetchPublicRecipe(id);
+        // Public user → public endpoint
+        base = await fetchPublicRecipe(id);
       } else {
-        // 🔐 Logged in → try authed endpoint first
-        try {
-          const json = await fetchWithAuth<RecipeResponse>(
-            `/api/recipes/${id}`
-          );
-          baseRecipe = json.recipe;
-        } catch (err: any) {
-          // If your fetchWithAuth throws a special NO_TOKEN error when token
-          // isn't ready, treat it like a public request instead of blowing up.
-          if (err.code === "NO_TOKEN") {
-            baseRecipe = await fetchPublicRecipe(id);
-          } else {
-            // Real HTTP errors (403/404/500) bubble up with status
-            throw err;
-          }
-        }
+        // Logged-in user → authed endpoint with Authorization header
+        const json = await fetchWithAuth<RecipeResponse>(`/api/recipes/${id}`);
+        base = json.recipe;
       }
 
-      // Parse all the JSON blobs + derive extra fields
-      const parsed = parseRecipeData(baseRecipe);
+      // Parse JSON blobs into shaped data
+      const parsed = parseRecipeData(base);
 
-      // Return merged object: DB fields + parsed fields + helpers
+      // Merge raw + parsed into a single object for the client
       return {
-        ...baseRecipe,
+        ...base,
         ...parsed
       };
     },
 
     retry: false
+  });
+}
+
+// PATCH /api/recipes/:id
+export function useUpdateRecipeMutation() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      body
+    }: {
+      id: string;
+      body: UpdateRecipePayload;
+    }) => {
+      return await fetchWithAuth<RecipeResponse>(`/api/recipes/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+    },
+    onSuccess: (_data, variables) => {
+      // refresh this specific recipe
+      queryClient.invalidateQueries({ queryKey: qk.recipe(variables.id) });
+    }
+  });
+}
+
+// POST /api/recipes
+export function useCreateRecipeMutation() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...qk.recipesList, "create"],
+    mutationFn: async (body: CreateRecipePayload) => {
+      return await fetchWithAuth<RecipeResponse>("/api/recipes", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    },
+    onSuccess: () => {
+      // refresh any lists that show recipes
+      queryClient.invalidateQueries({ queryKey: qk.recipesList });
+    }
+  });
+}
+
+export function useRateRecipeMutation() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [...qk.recipesList, "rate"],
+    mutationFn: async ({
+      recipeId,
+      rating
+    }: {
+      recipeId: number;
+      rating: number;
+    }) => {
+      // Response shape kept loose so it still works
+      // with your existing setRatingStats(res.rating)
+      return await fetchWithAuth<{ rating: any }>(
+        `/api/recipes/${recipeId}/ratings`,
+        {
+          method: "POST",
+          body: JSON.stringify({ rating }),
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    },
+    onSuccess: (_data, variables) => {
+      // Make sure recipe details + lists stay fresh
+      queryClient.invalidateQueries({
+        queryKey: qk.recipe(String(variables.recipeId))
+      });
+      queryClient.invalidateQueries({ queryKey: qk.recipesList });
+    }
   });
 }

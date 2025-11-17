@@ -56,6 +56,7 @@ export default function SavedRecipeProvider({
 
     averageRating: number;
     numberOfRatings: number;
+    userRating: number | null;
     emailNotifications: boolean;
   };
 }) {
@@ -121,9 +122,35 @@ export default function SavedRecipeProvider({
     recipe.recipeData?.stabilizers?.phReading ?? "3.6"
   );
   const [recipeName, setRecipeName] = useState(recipe.name || "");
-  const [avgRating, setAvgRating] = useState(recipe.averageRating);
-  const [numRatings, setNumRatings] = useState(recipe.numberOfRatings);
+  const [ratingStats, setRatingStats] = useState<{
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+  }>({
+    averageRating: recipe.averageRating,
+    numberOfRatings: recipe.numberOfRatings,
+    userRating: recipe.userRating
+  });
 
+  useEffect(() => {
+    setRatingStats((prev) => {
+      // Avoid pointless updates if nothing changed
+      if (
+        prev.averageRating === recipe.averageRating &&
+        prev.numberOfRatings === recipe.numberOfRatings &&
+        prev.userRating === recipe.userRating
+      ) {
+        return prev;
+      }
+
+      return {
+        averageRating: recipe.averageRating,
+        numberOfRatings: recipe.numberOfRatings,
+        userRating: recipe.userRating
+      };
+    });
+  }, [recipe.averageRating, recipe.numberOfRatings, recipe.userRating]);
+  console.log("ratingStats.userRating in provider: ", ratingStats.userRating);
   const addIngredient = () => {
     setRecipeData((prev) => ({
       ...prev,
@@ -879,15 +906,8 @@ export default function SavedRecipeProvider({
         setIngredientsToTarget,
         stabilizerType,
         setStabilizerType,
-        averageRating: avgRating,
-        numberOfRatings: numRatings,
-        setRatingStats: (stats: {
-          averageRating: number;
-          numberOfRatings: number;
-        }) => {
-          setAvgRating(stats.averageRating);
-          setNumRatings(stats.numberOfRatings);
-        }
+        ratingStats,
+        setRatingStats
       }}
     >
       <SavedNutrientProvider
@@ -903,7 +923,7 @@ export default function SavedRecipeProvider({
             { maximumFractionDigits: 3 }
           ),
           offset: recipeData.offset,
-          numberOfAdditions: "1",
+          numberOfAdditions: recipe.nutrientData.inputs.numberOfAdditions,
           units: recipeData.units.volume
         }}
       >

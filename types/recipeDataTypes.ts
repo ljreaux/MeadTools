@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { Dispatch, SetStateAction } from "react";
 
 export const genRandomId = () => nanoid(8);
 
@@ -182,12 +183,18 @@ export interface Recipe extends RecipeData {
   fillToNearest: (id: string) => void;
   stabilizerType: string;
   setStabilizerType: (val: string) => void;
-  averageRating?: number;
-  numberOfRatings?: number;
-  setRatingStats?: (stats: {
+  ratingStats: {
     averageRating: number;
     numberOfRatings: number;
-  }) => void;
+    userRating: number | null;
+  };
+  setRatingStats?: Dispatch<
+    SetStateAction<{
+      averageRating: number;
+      numberOfRatings: number;
+      userRating: number | null;
+    }>
+  >;
 }
 
 export const blankIngredient: IngredientDetails = {

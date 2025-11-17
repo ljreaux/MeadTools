@@ -1,9 +1,8 @@
 "use client";
 
-import { useAuth } from "../providers/AuthProvider";
 import { useTranslation } from "react-i18next";
-
 import { useParams } from "next/navigation";
+
 import { useRecipe } from "../providers/SavedRecipeProvider";
 import { useNutrients } from "../providers/SavedNutrientProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
+
+import {
+  getLastActivityEmailAt,
+  useUpdateRecipeMutation,
+  type UpdateRecipePayload
+} from "@/hooks/useRecipeQuery";
+import { Spinner } from "../ui/spinner";
 
 function SaveChanges({
   privateRecipe,
@@ -22,18 +28,11 @@ function SaveChanges({
   emailNotifications?: boolean;
 }) {
   const { t } = useTranslation();
-  const params = useParams(); // Get URL parameters
-  const recipeId = params?.id; // Extract recipeId from URL
+  const params = useParams();
+  const recipeId = params?.id as string | undefined;
 
-  const setLastActivityEmailAt = (privateRecipe: boolean, notify?: boolean) => {
-    // If the user is opting OUT → store NULL
-    if (privateRecipe || !notify) return null;
-
-    // If opting IN → set to yesterday to allow immediate notification
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    return yesterday;
-  };
+  const { toast } = useToast();
+  const updateRecipeMutation = useUpdateRecipeMutation();
 
   const {
     ingredients,
@@ -61,11 +60,7 @@ function SaveChanges({
     maxGpl
   } = useNutrients();
 
-  const { fetchAuthenticatedPatch } = useAuth();
-
-  const { toast } = useToast();
-
-  const updateRecipe = async () => {
+  const handleSaveClick = () => {
     if (!recipeId) {
       toast({
         title: "Error",
@@ -98,13 +93,14 @@ function SaveChanges({
       ...fullData,
       otherNutrientName
     });
+
     const yanContribution = JSON.stringify(yanContributions);
 
     const primaryNotes = notes.primary.map((note) => note.content).flat();
     const secondaryNotes = notes.secondary.map((note) => note.content).flat();
     const advanced = false;
 
-    const body = {
+    const body: UpdateRecipePayload = {
       name: recipeNameProps.value,
       recipeData,
       yanFromSource: JSON.stringify(providedYan),
@@ -115,26 +111,35 @@ function SaveChanges({
       primaryNotes,
       secondaryNotes,
       private: privateRecipe,
-      lastActivityEmailAt: setLastActivityEmailAt(
+      lastActivityEmailAt: getLastActivityEmailAt(
         privateRecipe,
         emailNotifications
       )
     };
-    try {
-      await fetchAuthenticatedPatch(`/api/recipes/${recipeId}`, body);
 
-      toast({
-        description: "Recipe updated successfully."
-      });
-    } catch (error: any) {
-      console.error("Error updating recipe:", error.message);
-      toast({
-        title: "Error",
-        description: "There was an error updating your recipe",
-        variant: "destructive"
-      });
-    }
+    updateRecipeMutation.mutate(
+      { id: recipeId, body },
+      {
+        onSuccess: () => {
+          toast({
+            description: "Recipe updated successfully."
+          });
+        },
+        onError: (error: any) => {
+          console.error("Error updating recipe:", error);
+          toast({
+            title: "Error",
+            description: "There was an error updating your recipe",
+            variant: "destructive"
+          });
+        }
+      }
+    );
   };
+
+  const isSaving = updateRecipeMutation.isPending;
+
+  const icon = isSaving ? <Spinner /> : <Save />;
 
   return (
     <div
@@ -143,16 +148,22 @@ function SaveChanges({
       })}
     >
       {bottom ? (
-        <Button variant={"secondary"} className="w-full" onClick={updateRecipe}>
-          <Save />
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={handleSaveClick}
+          disabled={isSaving}
+        >
+          {icon}
         </Button>
       ) : (
         <>
           <button
-            className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors"
-            onClick={updateRecipe}
+            className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors disabled:opacity-60"
+            onClick={handleSaveClick}
+            disabled={isSaving}
           >
-            <Save />
+            {icon}
           </button>
           <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
             {t("changesForm.submit")}

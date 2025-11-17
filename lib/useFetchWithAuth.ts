@@ -1,4 +1,3 @@
-// lib/useFetchWithAuth.ts
 "use client";
 import { useAuthToken } from "./useAuthToken";
 

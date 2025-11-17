@@ -1,4 +1,3 @@
-// components/recipes/RecipeClient.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -70,7 +69,12 @@ const RecipePage = () => {
   }
 
   const ownerId = recipe.user_id;
-  const userId = user?.id ? parseInt(user.id, 10) : null;
+  const userId = user?.id ? Number(user.id) : null;
+
+  const userRating =
+    userId == null
+      ? null
+      : (recipe.ratings.find((r) => r.user_id === userId)?.rating ?? null);
   const isOwner = userId === ownerId;
 
   const {
@@ -89,7 +93,8 @@ const RecipePage = () => {
         ...nutrientData.selected,
         selectedNutrients: getSelectedSchedule(nutrientData.selected.schedule)
       }
-    }
+    },
+    userRating
     // everything else (recipeData, yanContribution, etc.) is already on `recipe`
   };
 

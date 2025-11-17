@@ -31,8 +31,8 @@ function PublicRecipe() {
           </p>
         )}
         <Rating
-          averageRating={recipeData.averageRating ?? 0}
-          numberOfRatings={recipeData.numberOfRatings ?? 0}
+          averageRating={recipeData.ratingStats.averageRating ?? 0}
+          numberOfRatings={recipeData.ratingStats.numberOfRatings ?? 0}
         />
         <RateRecipe />
         <PrintableIframe

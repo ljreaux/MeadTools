@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      privateRecipe,
+      private: privateRecipe,
       lastActivityEmailAt
     } = body;
 

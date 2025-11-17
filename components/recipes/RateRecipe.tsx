@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Beer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,12 +14,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Spinner } from "../ui/spinner";
 import { toast } from "@/hooks/use-toast";
+import { useRateRecipeMutation } from "@/hooks/useRecipeQuery";
 
 type RatingPickerProps = {
   value: number; // 0..5
-  onChange: (v: number) => void; // commit selected rating
-  size?: number; // px for each mug (default 20)
-  animateMs?: number; // width animation duration
+  onChange: (v: number) => void;
+  size?: number;
+  animateMs?: number;
 };
 
 function RatingPicker({
@@ -30,13 +31,11 @@ function RatingPicker({
 }: RatingPickerProps) {
   const [hover, setHover] = useState<number | null>(null);
 
-  // what we visually show (hover preview wins)
   const display = hover ?? value;
 
   const fills = useMemo(() => {
     const safe = Math.min(Math.max(display, 0), 5);
     return Array.from({ length: 5 }, (_, i) => {
-      // integer selection: 0 or 1 per mug (full mugs up to display)
       const diff = safe - i;
       return diff >= 1 ? 1 : 0;
     });
@@ -47,7 +46,7 @@ function RatingPicker({
     height: size,
     lineHeight: 0
   };
-  const VISUAL_COMP = 1.15; // same horizontal overshoot as your display Rating
+  const VISUAL_COMP = 1.15;
 
   const commit = useCallback((n: number) => onChange(n), [onChange]);
 
@@ -96,10 +95,7 @@ function RatingPicker({
             onFocus={() => setHover(null)}
             onClick={() => commit(index)}
           >
-            {/* Base (unfilled) — border gray to match cards */}
             <Beer className="absolute inset-0 text-border" strokeWidth={1.5} />
-
-            {/* Filled overlay — same style as your Rating component */}
             <span
               className="absolute inset-y-0 left-0 overflow-hidden transition-[width] ease-in-out pointer-events-none"
               style={{
@@ -120,37 +116,54 @@ function RatingPicker({
 }
 
 export default function RateRecipe() {
-  const { setRatingStats } = useRecipe(); // available if you need recipe.id later
-  const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
-  const [rating, setRating] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const { ratingStats, setRatingStats } = useRecipe();
+  const { isLoggedIn } = useAuth();
   const params = useParams();
-  const recipeId = Number(params.id); // convert from string
+  const recipeId = Number(params.id);
 
-  const handleClick = async () => {
-    try {
-      setLoading(true);
+  // userRating from provider is the canonical value
+  const userRating = ratingStats.userRating ?? 0;
 
-      const res = await fetchAuthenticatedPost(
-        `/api/recipes/${recipeId}/ratings`,
-        { rating }
-      );
-      setRatingStats?.(res.rating);
+  // local draft value while the popover is open
+  const [draftRating, setDraftRating] = useState<number>(userRating);
+  const [open, setOpen] = useState(false);
 
-      toast({
-        description: `Thanks for your ${rating} mug rating.`
-      });
-    } catch {
-      toast({
-        description: "Something went wrong",
-        variant: "destructive"
-      });
-    } finally {
-      setOpen(false);
-      setLoading(false);
+  const rateMutation = useRateRecipeMutation();
+  const isLoading = rateMutation.isPending;
+
+  // When the popover opens, initialize the draft from the current userRating
+  useEffect(() => {
+    if (open) {
+      setDraftRating(userRating);
     }
+  }, [open, userRating]);
+
+  const handleClick = () => {
+    if (!recipeId || draftRating < 1) return;
+
+    rateMutation.mutate(
+      { recipeId, rating: draftRating },
+      {
+        onSuccess: (data) => {
+          // assuming API returns { rating: { averageRating, numberOfRatings, userRating } }
+          setRatingStats?.((prev) => ({
+            ...prev,
+            ...(data as any).rating
+          }));
+
+          toast({
+            description: `Thanks for your ${draftRating} mug rating.`
+          });
+          setOpen(false);
+        },
+        onError: () => {
+          toast({
+            description: "Something went wrong",
+            variant: "destructive"
+          });
+        }
+      }
+    );
   };
 
   return (
@@ -166,14 +179,18 @@ export default function RateRecipe() {
           </div>
         ) : (
           <div className="grid items-center gap-3">
-            <RatingPicker value={rating} onChange={setRating} size={22} />
+            <RatingPicker
+              value={draftRating}
+              onChange={setDraftRating}
+              size={22}
+            />
             <Button
               size="sm"
               variant="secondary"
               onClick={handleClick}
-              disabled={rating < 1}
+              disabled={draftRating < 1 || isLoading}
             >
-              {loading ? <Spinner /> : "Save"}
+              {isLoading ? <Spinner /> : "Save"}
             </Button>
           </div>
         )}

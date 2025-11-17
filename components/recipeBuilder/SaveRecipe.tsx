@@ -24,10 +24,21 @@ import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import Tooltip from "../Tooltips";
+import {
+  getLastActivityEmailAt,
+  useCreateRecipeMutation
+} from "@/hooks/useRecipeQuery";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { toast } = useToast();
+  const { isLoggedIn } = useAuth();
+
+  const createRecipeMutation = useCreateRecipeMutation();
+
+  const [checked, setChecked] = useState(false); // private toggle
+  const [notify, setNotify] = useState(false); // email notify toggle
 
   const {
     ingredients,
@@ -55,25 +66,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
     maxGpl
   } = useNutrients();
 
-  const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
-
-  const [checked, setChecked] = useState(false);
-  const [notify, setNotify] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
-  const { toast } = useToast();
-
-  const setLastActivityEmailAt = (privateRecipe: boolean, notify: boolean) => {
-    // If the user is opting OUT → store NULL
-    if (privateRecipe || !notify) return null;
-
-    // If opting IN → set to yesterday to allow immediate notification
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    return yesterday;
-  };
-
-  const createRecipe = async () => {
-    setIsSubmitting(true); // Start loading
+  const handleCreateRecipe = () => {
     const recipeData = JSON.stringify({
       ingredients,
       OG,
@@ -114,27 +107,29 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       primaryNotes,
       secondaryNotes,
       private: checked,
-      lastActivityEmailAt: setLastActivityEmailAt(checked, notify)
+      lastActivityEmailAt: getLastActivityEmailAt(checked, notify)
     };
 
-    try {
-      await fetchAuthenticatedPost("/api/recipes", body);
-      resetRecipe();
-      toast({
-        description: "Recipe created successfully."
-      });
-      router.push("/account");
-    } catch (error: any) {
-      console.error("Error creating recipe:", error.message);
-      toast({
-        title: "Error",
-        description: "There was an error creating your recipe",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false); // End loading
-    }
+    createRecipeMutation.mutate(body, {
+      onSuccess: () => {
+        resetRecipe();
+        toast({
+          description: "Recipe created successfully."
+        });
+        router.push("/account");
+      },
+      onError: (error: any) => {
+        console.error("Error creating recipe:", error?.message ?? error);
+        toast({
+          title: "Error",
+          description: "There was an error creating your recipe",
+          variant: "destructive"
+        });
+      }
+    });
   };
+
+  const isSubmitting = createRecipeMutation.isPending;
 
   return (
     <Dialog>
@@ -146,12 +141,15 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
           )}
         >
           {bottom ? (
-            <Button variant={"secondary"} className="w-full">
+            <Button variant="secondary" className="w-full">
               <Save />
             </Button>
           ) : (
             <>
-              <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
+              <button
+                className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors"
+                type="button"
+              >
                 <Save />
               </button>
               <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -161,6 +159,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
           )}
         </div>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("recipeForm.title")}</DialogTitle>
@@ -193,10 +192,11 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
             </Link>
           )}
         </DialogHeader>
+
         {isLoggedIn && (
           <DialogFooter>
             <LoadingButton
-              onClick={createRecipe}
+              onClick={handleCreateRecipe}
               loading={isSubmitting}
               variant="secondary"
             >
