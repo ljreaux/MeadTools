@@ -137,8 +137,8 @@ function OwnerRecipe({
         )}
       </div>
       <Rating
-        averageRating={recipe.averageRating ?? 0}
-        numberOfRatings={recipe.numberOfRatings ?? 0}
+        averageRating={recipe.ratingStats?.averageRating ?? 0}
+        numberOfRatings={recipe.ratingStats?.numberOfRatings ?? 0}
       />
       {components}
       {!privateRecipe && <CommentsSection recipeId={recipeId} />}
