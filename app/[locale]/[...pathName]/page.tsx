@@ -1,19 +1,27 @@
 import { notFound } from "next/navigation";
 import "@/app/atom-one-dark.css";
 
+async function loadPostModule(pathToFile: string) {
+  // Try .mdx first
+  try {
+    return await import(`@/content/${pathToFile}.mdx`);
+  } catch {
+    // Fallback to .md
+    return await import(`@/content/${pathToFile}.md`);
+  }
+}
+
 export default async function Page({
-  params,
+  params
 }: {
-  params: Promise<{ pathName: string[]; locale: string }>;
+  params: Promise<{ pathName: string[] }>;
 }) {
-  const { pathName, locale } = await params;
+  const { pathName } = await params;
   const pathToFile = pathName.join("/");
 
   try {
-    if (locale !== "de") throw new Error("This is a german only page.");
-    const { default: Post } = await import(
-      `@/germanOnlyPages/${pathToFile}.mdx`
-    );
+    const mod = await loadPostModule(pathToFile);
+    const Post = mod.default;
 
     return (
       <section className="w-full flex justify-center items-center sm:pt-24 pt-[6rem]">
