@@ -66,7 +66,7 @@ function SaveNew() {
     const body = buildRecipePayload({
       name: recipeName,
       privateRecipe: checked,
-      notify,
+      emailNotifications: notify,
 
       ingredients,
       OG,

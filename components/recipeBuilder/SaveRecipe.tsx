@@ -24,10 +24,7 @@ import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import Tooltip from "../Tooltips";
-import {
-  getLastActivityEmailAt,
-  useCreateRecipeMutation
-} from "@/hooks/useRecipeQuery";
+import { useCreateRecipeMutation } from "@/hooks/useRecipeQuery";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
@@ -107,7 +104,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       primaryNotes,
       secondaryNotes,
       private: checked,
-      lastActivityEmailAt: getLastActivityEmailAt(checked, notify)
+      activityEmailsEnabled: notify
     };
 
     createRecipeMutation.mutate(body, {

@@ -80,11 +80,13 @@ model recipes {
   secondaryNotes  String[]
   private         Boolean   @default(false)
   lastActivityEmailAt DateTime? @db.Timestamptz(6)
+  activityEmailsEnabled Boolean @default(false)
   brews           brews[]
   devices         devices[]
   users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   comments        comments[]
   ratings         recipe_ratings[]
+  daily_activity  recipe_daily_activity[]
 }
 
 model users {
@@ -223,6 +225,30 @@ model recipe_ratings {
   @@unique([recipe_id, user_id])   // one rating per user per recipe
   @@index([recipe_id])
   @@index([user_id])
+}
+
+model recipe_daily_activity {
+  id           Int       @id @default(autoincrement())
+  recipe_id    Int
+
+  /// Logical “day” for the summary (no time-of-day component)
+  summary_date DateTime  @db.Date
+
+  /// JSON blob of activity/changes for that day (shape is up to you)
+  changes      Json?
+
+  /// Has this summary been emailed yet?
+  emailed      Boolean   @default(false)
+
+  /// When this record was created
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  recipe       recipes   @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@unique([recipe_id, summary_date])  // one row per recipe per day
+  @@index([recipe_id])
+  @@index([summary_date, emailed])
 }
 
 enum temp_units {

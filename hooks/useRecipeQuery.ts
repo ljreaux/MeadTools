@@ -27,15 +27,13 @@ export type RecipeApiResponse = {
   // owner info
   public_username: string | null;
 
-  // activity/email
-  lastActivityEmailAt: string | null;
-
   // social
   comments: any[];
   ratings: Array<{ rating: number; user_id: number }>;
 
   averageRating: number | null;
   commentCount: number;
+  activityEmailsEnabled: boolean;
 };
 
 type RecipeResponse = { recipe: RecipeApiResponse };
@@ -52,8 +50,7 @@ type BaseRecipePayload = {
   primaryNotes: string[];
   secondaryNotes: string[];
   private: boolean;
-  // send as ISO string or null over the wire
-  lastActivityEmailAt: string | null;
+  activityEmailsEnabled: boolean;
 };
 
 export type UpdateRecipePayload = BaseRecipePayload;
@@ -73,12 +70,10 @@ export function getLastActivityEmailAt(
   return yesterday.toISOString();
 }
 
-// --- Helper to build create/update payloads from providers ---
-
 type BuildRecipePayloadArgs = {
   name: string;
   privateRecipe: boolean;
-  notify?: boolean;
+  emailNotifications: boolean; // 👈 instead of notify?
 
   // recipe data
   ingredients: any;
@@ -115,8 +110,7 @@ export function buildRecipePayload(
   const {
     name,
     privateRecipe,
-    notify,
-
+    emailNotifications, // 👈
     ingredients,
     OG,
     volume,
@@ -130,7 +124,6 @@ export function buildRecipePayload(
     campden,
     stabilizers,
     stabilizerType,
-
     notes,
     fullData,
     yanContributions,
@@ -182,10 +175,9 @@ export function buildRecipePayload(
     primaryNotes,
     secondaryNotes,
     private: privateRecipe,
-    lastActivityEmailAt: getLastActivityEmailAt(privateRecipe, notify)
+    activityEmailsEnabled: emailNotifications // 👈 opt-in flag
   };
 }
-
 // Public endpoint (no auth header)
 async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
   const res = await fetch(`/api/recipes/${id}`);

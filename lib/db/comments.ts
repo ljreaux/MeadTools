@@ -1,5 +1,5 @@
 import prisma from "../prisma";
-import { notifyRecipeOwnerOfActivity } from "./activityEmailUpdates";
+import { logRecipeActivity } from "./activityEmailUpdates";
 
 function sanitizeRating(n: number): 1 | 2 | 3 | 4 | 5 {
   const r = Math.round(Number(n));
@@ -15,11 +15,10 @@ export async function setRating(input: {
   const { recipe_id, user_id } = input;
   const userRating = sanitizeRating(input.rating);
 
-  // Upsert the rating, then recompute stats atomically
   const [, agg, count] = await prisma.$transaction([
     prisma.recipe_ratings.upsert({
-      where: { recipe_id_user_id: { recipe_id, user_id } }, // composite unique
-      update: { rating: userRating }, // @updatedAt handled by Prisma if present
+      where: { recipe_id_user_id: { recipe_id, user_id } },
+      update: { rating: userRating },
       create: { recipe_id, user_id, rating: userRating }
     }),
     prisma.recipe_ratings.aggregate({
@@ -34,13 +33,24 @@ export async function setRating(input: {
   const averageRating = Number((agg._avg.rating ?? 0).toFixed(2));
   const numberOfRatings = count;
 
-  notifyRecipeOwnerOfActivity({
+  // 🔹 Fetch username for the activity log
+  const rater = await prisma.users.findUnique({
+    where: { id: user_id },
+    select: { public_username: true }
+  });
+
+  // 🔹 Log daily activity (for the summary email)
+  logRecipeActivity({
     recipeId: recipe_id,
-    kind: "rating",
-    ratingValue: userRating,
-    actorUserId: user_id
+    event: {
+      type: "rating",
+      rating: userRating,
+      userId: user_id,
+      username: rater?.public_username ?? null,
+      createdAt: new Date().toISOString()
+    }
   }).catch((err) =>
-    console.error("Failed to send recipe activity email:", err)
+    console.error("Failed to log recipe rating activity:", err)
   );
 
   return {
@@ -50,7 +60,6 @@ export async function setRating(input: {
     userRating
   };
 }
-
 const MAX_COMMENT_LENGTH = 10_000;
 
 type CreateCommentInput = {
@@ -127,7 +136,13 @@ export async function createComment(
       where: { id: recipe_id },
       select: { id: true }
     }),
-    prisma.users.findUnique({ where: { id: user_id }, select: { id: true } }),
+    prisma.users.findUnique({
+      where: { id: user_id },
+      select: {
+        id: true,
+        public_username: true // ⬅️ grab this if you want it in the activity log
+      }
+    }),
     parent_id
       ? prisma.comments.findUnique({
           where: { id: parent_id },
@@ -161,17 +176,25 @@ export async function createComment(
     }
   });
 
-  // Fire email asynchronously (non-blocking)
-  notifyRecipeOwnerOfActivity({
-    recipeId: recipe_id,
-    kind: "comment",
-    commentSnippet: comment,
-    actorUserId: user_id
-  }).catch((err) =>
-    console.error("Failed to send recipe activity email:", err)
-  );
+  const MAX_SNIPPET_LEN = 200;
+  const snippet =
+    comment.length > MAX_SNIPPET_LEN
+      ? comment.slice(0, MAX_SNIPPET_LEN).trimEnd() + "…"
+      : comment;
 
-  /** 3. Immediately return comment */
+  logRecipeActivity({
+    recipeId: recipe_id,
+    event: {
+      type: "comment",
+      commentId: created.id,
+      snippet,
+      userId: user_id,
+      username: user.public_username ?? null,
+      createdAt: created.created_at.toISOString()
+    }
+  }).catch((err) => console.error("Failed to log recipe daily activity:", err));
+
+  // Immediately return comment
   return created;
 }
 

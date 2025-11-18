@@ -12,7 +12,6 @@ import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 
 import {
-  getLastActivityEmailAt,
   useUpdateRecipeMutation,
   type UpdateRecipePayload
 } from "@/hooks/useRecipeQuery";
@@ -111,10 +110,7 @@ function SaveChanges({
       primaryNotes,
       secondaryNotes,
       private: privateRecipe,
-      lastActivityEmailAt: getLastActivityEmailAt(
-        privateRecipe,
-        emailNotifications
-      )
+      activityEmailsEnabled: emailNotifications ?? false
     };
 
     updateRecipeMutation.mutate(

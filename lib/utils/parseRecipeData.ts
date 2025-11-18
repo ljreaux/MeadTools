@@ -8,8 +8,9 @@ export const parseRecipeData = (recipe: RecipeApiResponse) => {
   const yanFromSource = JSON.parse(recipe.yanFromSource);
   const nuteInfo = JSON.parse(recipe.nuteInfo);
   const privateRecipe = JSON.parse(JSON.stringify(recipe.private));
+  console.log(recipe);
   const emailNotifications = !!JSON.parse(
-    JSON.stringify(recipe.lastActivityEmailAt)
+    JSON.stringify(recipe.activityEmailsEnabled)
   );
 
   const getSelectedSchedule = (schedule: string) => {

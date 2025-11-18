@@ -150,7 +150,7 @@ export default function SavedRecipeProvider({
       };
     });
   }, [recipe.averageRating, recipe.numberOfRatings, recipe.userRating]);
-  console.log("ratingStats.userRating in provider: ", ratingStats.userRating);
+
   const addIngredient = () => {
     setRecipeData((prev) => ({
       ...prev,
