@@ -15,9 +15,16 @@ import {
   Rainbow,
   Pipette,
   Atom,
-  Hexagon,
+  Hexagon
 } from "lucide-react";
 import { extraCalculatorLinks } from "@/lib/navigation";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 function ExtraCalcsSideBar() {
   const { t } = useTranslation();
@@ -25,7 +32,7 @@ function ExtraCalcsSideBar() {
 
   const toggleSidebar = () => setIsOpen((prev) => !prev);
 
-  const icons = [
+  const icons: JSX.Element[] = [
     <Beer key="beer" />,
     <Percent key="percent" />,
     <Scale key="scale" />,
@@ -35,13 +42,13 @@ function ExtraCalcsSideBar() {
     <Rainbow key="rainbow" />,
     <Thermometer key="thermometer" />,
     <Blend key="blend" />,
-    <Hexagon key="hex" />,
+    <Hexagon key="hex" />
   ];
 
   const links = extraCalculatorLinks.map((link, i) => ({
     ...link,
     icon: icons[i],
-    label: t(link.label),
+    label: t(link.label)
   }));
 
   return (
@@ -51,17 +58,20 @@ function ExtraCalcsSideBar() {
       }`}
     >
       {/* Toggle Button */}
-      <button
+      <Button
+        type="button"
+        size="icon"
+        variant="secondary"
         onClick={toggleSidebar}
-        className="absolute -top-5 right-0 flex items-center justify-center w-8 h-8 bg-background text-foreground border border-foreground rounded-md z-50"
+        className="absolute -top-5 right-0 z-50 flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground"
         aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
       >
         {isOpen ? (
-          <ChevronUp className="w-5 h-5" />
+          <ChevronUp className="h-5 w-5" />
         ) : (
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="h-5 w-5" />
         )}
-      </button>
+      </Button>
 
       {/* Sidebar Content */}
       <nav
@@ -71,7 +81,7 @@ function ExtraCalcsSideBar() {
       >
         {links.map((link, idx) => (
           <NavItem
-            key={idx}
+            key={link.path ?? idx}
             link={link.path}
             icon={link.icon}
             label={link.label}
@@ -85,27 +95,28 @@ function ExtraCalcsSideBar() {
 function NavItem({
   link,
   icon,
-  label,
+  label
 }: {
   link: string;
   icon: JSX.Element;
   label: string;
 }) {
   return (
-    <div className="relative group flex flex-col items-center">
-      {/* Icon Link */}
-      <Link
-        href={link}
-        className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors"
-      >
-        {icon}
-      </Link>
-
-      {/* Hover Label */}
-      <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          size="icon"
+          variant="outline"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+        >
+          <Link href={link}>{icon}</Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="whitespace-nowrap">
         {label}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

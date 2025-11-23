@@ -1,26 +1,40 @@
 import { notFound } from "next/navigation";
 import "@/app/atom-one-dark.css";
 
-async function loadPostModule(pathToFile: string) {
-  // Try .mdx first
+async function loadPostModule(pathToFile: string, locale: string) {
+  const localizedPath =
+    locale !== "en" ? `${pathToFile}-${locale}` : pathToFile;
+
+  // First try localized .mdx / .md
+  try {
+    return await import(`@/content/${localizedPath}.mdx`);
+  } catch {}
+  try {
+    return await import(`@/content/${localizedPath}.md`);
+  } catch {}
+
+  // Fallback to default locale file (English)
   try {
     return await import(`@/content/${pathToFile}.mdx`);
-  } catch {
-    // Fallback to .md
+  } catch {}
+  try {
     return await import(`@/content/${pathToFile}.md`);
-  }
+  } catch {}
+
+  // Nothing found
+  throw new Error(`Content not found for: ${pathToFile}`);
 }
 
 export default async function Page({
   params
 }: {
-  params: Promise<{ pathName: string[] }>;
+  params: Promise<{ pathName: string[]; locale: string }>;
 }) {
-  const { pathName } = await params;
+  const { pathName, locale } = await params;
   const pathToFile = pathName.join("/");
 
   try {
-    const mod = await loadPostModule(pathToFile);
+    const mod = await loadPostModule(pathToFile, locale);
     const Post = mod.default;
 
     return (

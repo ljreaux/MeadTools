@@ -1,32 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Loading from "@/components/loading";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth } from "@/hooks/useAuth"; // ← update this path
 import { ReactNode } from "react";
 
 function Account({ children }: { children: ReactNode }) {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
-
-    if (!isLoggedIn) {
-      timeout = setTimeout(() => {
-        router.push("/login");
-      }, 3000);
-    } else {
-      setIsChecking(false);
+    if (!loading && !isLoggedIn) {
+      router.replace("/login");
     }
+  }, [loading, isLoggedIn, router]);
 
-    return () => clearTimeout(timeout);
-  }, [isLoggedIn, router]);
-
-  if (isChecking || !isLoggedIn) {
+  if (loading) {
     return <Loading />;
+  }
+
+  if (!isLoggedIn) {
+    return null;
   }
 
   return (
