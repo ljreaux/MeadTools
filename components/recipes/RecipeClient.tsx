@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
 import OwnerRecipe from "@/components/recipes/OwnerRecipe";
@@ -10,6 +9,7 @@ import PublicRecipe from "@/components/recipes/PublicRecipe";
 import Loading from "@/components/loading";
 import SavedRecipeProvider from "../providers/SavedRecipeProvider";
 import { useRecipeQuery } from "@/hooks/useRecipeQuery";
+import { useAuth } from "@/hooks/useAuth";
 
 const RecipePage = () => {
   const params = useParams<{ id: string }>();

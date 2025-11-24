@@ -7,13 +7,11 @@ import {
   useState
 } from "react";
 import {
-  Additive,
   AdditiveType,
   blankAdditive,
   blankIngredient,
   blankNote,
   genRandomId,
-  Ingredient,
   IngredientDetails,
   initialData,
   Recipe,
@@ -26,6 +24,8 @@ import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { SavedNutrientProvider } from "./SavedNutrientProvider";
 import { FullNutrientData } from "@/types/nutrientTypes";
+import { useIngredientsQuery } from "@/hooks/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/useAdditivesQuery";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 
@@ -85,10 +85,10 @@ export default function SavedRecipeProvider({
       }))
     }
   );
-  const [ingredientList, setIngredientList] = useState<Ingredient[]>([]);
-  const [loadingIngredients, setLoadingIngredients] = useState(true);
-  const [additiveList, setAdditiveList] = useState<Additive[]>([]);
-  const [loadingAdditives, setLoadingAdditives] = useState(true);
+  const { data: ingredientList = [], isLoading: loadingIngredients } =
+    useIngredientsQuery();
+  const { data: additiveList = [], isLoading: loadingAdditives } =
+    useAdditivesQuery();
   const [primaryNotes, setPrimaryNotes] = useState(
     recipe.primaryNotes.map((note) => {
       const content = note;
@@ -556,33 +556,6 @@ export default function SavedRecipeProvider({
 
   // fetch initial ingredient data
   useEffect(() => {
-    const fetchIngredients = async () => {
-      try {
-        const response = await fetch("/api/ingredients");
-        const data = await response.json();
-        setIngredientList(data);
-        setLoadingIngredients(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingIngredients(false);
-      }
-    };
-    const fetchAdditives = async () => {
-      try {
-        const response = await fetch("/api/additives");
-        const data = await response.json();
-
-        setAdditiveList(data);
-        setLoadingAdditives(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingAdditives(false);
-      }
-    };
-
-    fetchIngredients();
-    fetchAdditives();
-
     setFirstMount(false);
   }, []);
 

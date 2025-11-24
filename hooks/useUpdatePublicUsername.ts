@@ -1,53 +1,33 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { qk } from "@/lib/db/queryKeys";
 import type { AccountInfo, AuthUser } from "@/lib/api/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 
 export function useUpdatePublicUsername() {
-  const { data: session } = useSession();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const fetchWithAuth = useFetchWithAuth();
 
   return useMutation({
     mutationFn: async (username: string) => {
-      const accessToken =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-      const nextAuthAccessToken = (session as any)?.accessToken ?? null;
+      const data = await fetchWithAuth<{ public_username?: string }>(
+        "/api/auth/account-info",
+        {
+          method: "PATCH",
+          body: JSON.stringify({ public_username: username })
+        }
+      );
 
-      const res = await fetch("/api/auth/account-info", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(nextAuthAccessToken || accessToken
-            ? { Authorization: `Bearer ${nextAuthAccessToken || accessToken}` }
-            : {})
-        },
-        body: JSON.stringify({ public_username: username })
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(
-          data.error ||
-            t(
-              "auth.username.error.description",
-              "An error occurred while updating your username."
-            )
-        );
-      }
-
-      return data; // should include public_username
+      return data;
     },
+
     onSuccess: (updatedUser) => {
-      // Update full account info cache
+      // Update full account info (includes recipes)
       queryClient.setQueryData<AccountInfo | undefined>(
         qk.accountInfo,
         (old) => {
@@ -62,8 +42,8 @@ export function useUpdatePublicUsername() {
         }
       );
 
-      // Update lightweight auth cache
-      queryClient.setQueryData<any>(qk.authMe, (old: AuthUser) => {
+      // Update lightweight auth cache (from useAuth)
+      queryClient.setQueryData<AuthUser | null>(qk.authMe, (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -79,10 +59,18 @@ export function useUpdatePublicUsername() {
         )
       });
     },
+
     onError: (error: any) => {
+      const message =
+        error?.message ??
+        t(
+          "auth.username.error.description",
+          "An error occurred while updating your username."
+        );
+
       toast({
         title: t("auth.username.error.title", "Update Failed"),
-        description: error.message,
+        description: message,
         variant: "destructive"
       });
     }

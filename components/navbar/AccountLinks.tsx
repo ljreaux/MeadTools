@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { useAuth } from "../providers/AuthProvider";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 
@@ -8,13 +7,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { CircleUserIcon } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
 
 function AccountLinks() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useLogout();
   const { t } = useTranslation();
   const router = useRouter();
   return (
@@ -39,12 +41,7 @@ function AccountLinks() {
                 {t("iSpindelDashboard.manage")}
               </p>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-            >
+            <DropdownMenuItem onClick={logout}>
               <p className="text-center w-full"> {t("account.logout")}</p>
             </DropdownMenuItem>
           </>

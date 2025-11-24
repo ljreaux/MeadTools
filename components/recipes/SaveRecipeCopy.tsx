@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Input } from "../ui/input";
@@ -26,6 +25,7 @@ import {
   useCreateRecipeMutation,
   buildRecipePayload
 } from "@/hooks/useRecipeQuery";
+import { useAuth } from "@/hooks/useAuth";
 
 function SaveRecipeCopy() {
   const { t } = useTranslation();

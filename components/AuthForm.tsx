@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 function AuthForm({
   formText,
   authFunction,
-  formType,
+  formType
 }: {
   formText: string;
   authFunction: (
@@ -29,7 +29,7 @@ function AuthForm({
   }>({
     email: "",
     password: "",
-    public_username: "",
+    public_username: ""
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();

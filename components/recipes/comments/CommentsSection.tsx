@@ -9,11 +9,11 @@ import {
   useDeleteComment
 } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
-import { useAuthToken } from "@/lib/useAuthToken";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuthToken } from "@/hooks/useAuthToken";
 import CommentInput from "./CommentInput";
 import { CommentItem } from "./CommentItem";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 type CommentWithAuthor = {
   id: string;

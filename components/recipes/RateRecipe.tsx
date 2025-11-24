@@ -8,13 +8,13 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@/components/ui/popover";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useRecipe } from "@/components/providers/SavedRecipeProvider";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Spinner } from "../ui/spinner";
 import { toast } from "@/hooks/use-toast";
 import { useRateRecipeMutation } from "@/hooks/useRecipeQuery";
+import { useAuth } from "@/hooks/useAuth";
 
 type RatingPickerProps = {
   value: number; // 0..5

@@ -1,9 +1,9 @@
 // hooks/useRecipeQuery.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFetchWithAuth } from "@/lib/useFetchWithAuth";
+import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 import { parseRecipeData } from "@/lib/utils/parseRecipeData";
-import { useAuthToken } from "@/lib/useAuthToken";
+import { useAuthToken } from "@/hooks/useAuthToken";
 
 // --- Raw API shape from /api/recipes/:id ---
 export type RecipeApiResponse = {

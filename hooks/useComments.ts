@@ -4,7 +4,7 @@ import {
   useMutation,
   useQueryClient
 } from "@tanstack/react-query";
-import { useFetchWithAuth } from "@/lib/useFetchWithAuth";
+import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 
 /**
