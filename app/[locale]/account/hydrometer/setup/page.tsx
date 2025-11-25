@@ -285,7 +285,7 @@ function Setup() {
 
 export default Setup;
 
-export const UrlCopyField = ({
+const UrlCopyField = ({
   buttonDetails
 }: {
   buttonDetails: { url: string; buttonText: string };

@@ -10,7 +10,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -22,7 +22,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 
 import { useISpindel } from "@/components/providers/ISpindelProvider";
@@ -45,7 +45,7 @@ function Device() {
     endBrew,
     updateCoeff,
     brews,
-    deleteDevice,
+    deleteDevice
   } = useISpindel();
 
   const [device, setDevice] = useState<any>(null);
@@ -73,7 +73,7 @@ function Device() {
     const end_date = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
 
     fetchLogs(start_date, end_date, deviceId).then((logs) => {
-      setLogs(logs);
+      setLogs(logs!);
     });
   }, []);
 
@@ -103,7 +103,7 @@ function Device() {
         description: t(
           "Please fill in all coefficients with valid number values."
         ),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
     updateCoeff(device.id, coefficients.map(Number));

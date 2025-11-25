@@ -15,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { useISpindel } from "@/components/providers/ISpindelProvider";
 import LogTable from "@/components/ispindel/LogTable";
@@ -23,7 +23,7 @@ import LogTable from "@/components/ispindel/LogTable";
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
+  CollapsibleTrigger
 } from "@radix-ui/react-collapsible";
 import { ArrowDownUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -42,7 +42,7 @@ const transformData = (logs: any[]) => {
       temperature: log.temperature,
       gravity: sg,
       battery: log.battery,
-      abv: Math.max(abv, 0),
+      abv: Math.max(abv, 0)
     };
   });
 };
@@ -52,7 +52,7 @@ function Brew() {
   const router = useRouter();
   const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
     dateStyle: "short",
-    timeStyle: "short",
+    timeStyle: "short"
   });
   const formatDate = (date: Date) => formatter.format(new Date(date));
 
@@ -76,7 +76,7 @@ function Brew() {
 
       if (brewId && currentBrew) {
         const logsData = await getBrewLogs(brewId as string);
-        setLogs(logsData);
+        setLogs(logsData!);
         setChecked(currentBrew.requested_email_alerts);
       }
     };
@@ -99,7 +99,7 @@ function Brew() {
       console.error("Error updating brew name:", error);
       toast({
         description: t("Failed to update brew name."),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -114,7 +114,7 @@ function Brew() {
       console.error("Error deleting brew:", error);
       toast({
         description: t("Failed to delete brew."),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -195,7 +195,7 @@ function Brew() {
               } catch {
                 toast({
                   description: "Something went wrong",
-                  variant: "destructive",
+                  variant: "destructive"
                 });
                 setChecked(!val);
               }
