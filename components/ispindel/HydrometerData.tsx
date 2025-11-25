@@ -1,3 +1,4 @@
+"use client";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { saveAs } from "file-saver";
 import { useGenerateImage } from "recharts-to-png";

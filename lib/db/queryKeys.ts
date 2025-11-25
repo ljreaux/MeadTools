@@ -14,10 +14,9 @@ export const qk = {
   // Full account info (user + recipes from /api/auth/account-info)
   accountInfo: ["auth", "account-info"] as const,
 
-  ingredients: (category?: string) =>
-    category
-      ? (["ingredients", { category }] as const)
-      : (["ingredients"] as const),
+  ingredients: ["ingredients"] as const,
+  additives: ["additives"] as const,
 
-  additives: ["additives"] as const
+  // Hydrometer dashboard
+  hydrometerInfo: ["hydrometer", "info"] as const
 };

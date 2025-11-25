@@ -1,55 +1,111 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LoadingButton } from "@/components/ui/LoadingButton";
-import { toast } from "@/hooks/use-toast";
+"use client";
+
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { useISpindel } from "../providers/ISpindelProvider";
-import { CircleCheck, Clipboard } from "lucide-react";
+import { Copy, CopyCheck } from "lucide-react";
+import { useState } from "react";
+import {
+  useHydrometerInfo,
+  useGenerateHydrometerToken
+} from "@/hooks/useHydrometerInfo";
 
 function TokenGen() {
-  const { hydrometerToken, tokenLoading, getNewHydrometerToken } =
-    useISpindel();
   const { t } = useTranslation();
+  const { toast } = useToast();
 
-  const handleClick = async () => {
-    if (hydrometerToken) {
-      navigator.clipboard.writeText(hydrometerToken);
+  // Fetch current hydrometer info (including existing token)
+  const { data } = useHydrometerInfo();
+  const hydrometerToken = data?.hydro_token ?? "";
+
+  // Mutation to generate a new token
+  const { mutateAsync: generateToken, isPending: tokenLoading } =
+    useGenerateHydrometerToken();
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyClick = async () => {
+    if (!hydrometerToken) return;
+    try {
+      await navigator.clipboard.writeText(hydrometerToken);
+
+      setCopied(true);
       toast({
         description: (
           <div className="flex items-center justify-center gap-2">
-            <CircleCheck className="text-xl text-green-500" />
+            <CopyCheck className="text-xl text-green-500" />
             {t("iSpindelDashboard.copyToken")}
           </div>
+        )
+      });
+
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast({
+        description: t(
+          "iSpindelDashboard.copyError",
+          "Failed to copy to clipboard."
         ),
+        variant: "destructive"
       });
     }
   };
 
+  const handleGenerateClick = async () => {
+    if (tokenLoading) return;
+    await generateToken();
+    setCopied(false); // reset icon after generating new token
+  };
+
   return (
-    <div className="flex gap-0 flex-nowrap max-w-[500px] w-full">
-      <LoadingButton
-        loading={tokenLoading}
-        onClick={getNewHydrometerToken}
-        className="rounded-r-none h-10 w-[150px]" // Fixed width
-        style={{ minWidth: "150px" }} // Ensures width consistency
-      >
-        {t("iSpindelDashboard.genToken")}
-      </LoadingButton>
-      <Input
+    <InputGroup className="max-w-[500px] w-full">
+      <InputGroupAddon>
+        <InputGroupButton
+          type="button"
+          onClick={handleGenerateClick}
+          disabled={tokenLoading}
+          variant="default"
+        >
+          {tokenLoading
+            ? t("iSpindelDashboard.genToken.loading", "Generating...")
+            : t("iSpindelDashboard.genToken")}
+        </InputGroupButton>
+      </InputGroupAddon>
+
+      <InputGroupInput
         readOnly
-        disabled
-        value={hydrometerToken ?? ""}
-        placeholder="Please Generate Token"
-        className="text-center border-collapse rounded-none border-x-0 h-10" // Matches button height
+        value={hydrometerToken}
+        placeholder={t(
+          "iSpindelDashboard.placeholder.generateToken",
+          "Please generate token"
+        )}
+        className="text-center"
       />
-      <Button
-        value={"copy to clipboard"}
-        className="rounded-l-none h-10" // Matches button height
-        onClick={handleClick}
-      >
-        <Clipboard />
-      </Button>
-    </div>
+
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          type="button"
+          onClick={handleCopyClick}
+          disabled={!hydrometerToken}
+          size="icon-xs"
+          className="flex items-center justify-center"
+        >
+          {copied ? (
+            <CopyCheck className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+          <span className="sr-only">
+            {t("iSpindelDashboard.copyToken.sr", "Copy token to clipboard")}
+          </span>
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
   );
 }
 

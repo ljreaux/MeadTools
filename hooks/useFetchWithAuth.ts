@@ -1,37 +1,44 @@
 "use client";
+
+import { useCallback } from "react";
 import { useAuthToken } from "./useAuthToken";
 
 export function useFetchWithAuth() {
   const token = useAuthToken();
 
-  return async function fetchWithAuth<T>(
-    url: string,
-    init?: RequestInit
-  ): Promise<T> {
-    if (!token) {
-      const err: any = new Error("You must be logged in.");
-      err.code = "NO_TOKEN"; // 👈 tag it so callers can special-case
-      throw err;
-    }
-
-    const r = await fetch(url, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers || {}),
-        Authorization: `Bearer ${token}`
+  const fetchWithAuth = useCallback(
+    async function fetchWithAuth<T>(
+      url: string,
+      init?: RequestInit
+    ): Promise<T> {
+      if (!token) {
+        const err: any = new Error("You must be logged in.");
+        err.code = "NO_TOKEN";
+        throw err;
       }
-    });
 
-    const json = await r.json().catch(() => null);
+      const response = await fetch(url, {
+        ...init,
+        headers: {
+          "Content-Type": "application/json",
+          ...(init?.headers || {}),
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    if (!r.ok) {
-      const err: any = new Error(json?.error || `HTTP ${r.status}`);
-      err.status = r.status; // 👈 keep status for callers like RecipePage
-      err.body = json;
-      throw err;
-    }
+      const json = await response.json().catch(() => null);
 
-    return json as T;
-  };
+      if (!response.ok) {
+        const err: any = new Error(json?.error || `HTTP ${response.status}`);
+        err.status = response.status;
+        err.body = json;
+        throw err;
+      }
+
+      return json as T;
+    },
+    [token]
+  );
+
+  return fetchWithAuth;
 }
