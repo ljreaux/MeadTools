@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,21 +29,21 @@ import LogTable from "@/components/ispindel/LogTable";
 import RecentLogsForm from "@/components/ispindel/RecentLogsForm";
 import { useParams, useRouter } from "next/navigation";
 
-// Transitional: still using provider for logs only
-import { useISpindel } from "@/components/providers/ISpindelProvider";
-
-// New hooks
 import {
   useHydrometerInfo,
   type Device
 } from "@/hooks/reactQuery/useHydrometerInfo";
 import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
 import { useHydrometerDeviceMutations } from "@/hooks/reactQuery/useHydrometerDeviceMutations";
+import { useDeviceLogs } from "@/hooks/reactQuery/useHydrometerLogs";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/db/queryKeys";
 
 function DevicePage() {
   const params = useParams();
   const router = useRouter();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const deviceId = params.deviceId as string;
 
@@ -68,33 +68,41 @@ function DevicePage() {
     isDeletingDevice
   } = useHydrometerDeviceMutations();
 
-  // --- Transitional: logs still from provider ---
-  const { fetchLogs, logs, setLogs } = useISpindel();
-
+  // --- Local state for coeffs + file name ---
   const [coefficients, setCoefficients] = useState<string[]>(["", "", "", ""]);
   const [showTable, setShowTable] = useState(false);
   const [fileName, setFileName] = useState("");
 
-  // Initialize coefficients from device
-  useEffect(() => {
-    if (device?.coefficients && device.coefficients.length === 4) {
-      setCoefficients(device.coefficients.map((c) => String(c)));
-    }
-  }, [device]);
+  // Initialize coefficients from device (only once at mount / device change)
+  if (
+    device &&
+    device.coefficients &&
+    device.coefficients.length === 4 &&
+    coefficients.every((c) => c === "")
+  ) {
+    setCoefficients(device.coefficients.map((c) => String(c)));
+  }
 
-  // Initial logs fetch (last 24h)
-  useEffect(() => {
+  // --- Date range state: “since yesterday” is just the initial value ---
+  const [dateRange, setDateRange] = useState(() => {
     const from = new Date();
     const to = new Date();
     from.setDate(from.getDate() - 1);
 
-    const start_date = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
-    const end_date = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
+    const start = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
+    const end = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
 
-    fetchLogs(start_date, end_date, deviceId).then((logsRes: any) => {
-      if (logsRes) setLogs(logsRes);
-    });
-  }, [deviceId]);
+    return { start, end };
+  });
+  const {
+    data: deviceLogs = [],
+    isLoading: logsLoading,
+    isError: logsError
+  } = useDeviceLogs({
+    deviceId,
+    startDate: dateRange.start,
+    endDate: dateRange.end
+  });
 
   const updateCoefficients = (index: number, value: string) => {
     setCoefficients((prev) => {
@@ -114,7 +122,6 @@ function DevicePage() {
     return true;
   };
 
-  // --- NEW: Submit coefficients using the mutation hook ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!device) return;
@@ -214,7 +221,6 @@ function DevicePage() {
             </Button>
           )}
         </div>
-
         {/* Coefficients editor */}
         <div className="flex flex-col items-center justify-center sm:col-start-1">
           {showTable ? (
@@ -288,14 +294,36 @@ function DevicePage() {
             </Button>
           )}
         </div>
-
-        <RecentLogsForm deviceId={device.id} />
+        <RecentLogsForm
+          deviceId={device.id}
+          onRangeChange={({ startISO, endISO }) => {
+            setDateRange({ start: startISO, end: endISO });
+          }}
+        />{" "}
       </div>
 
+      {/* Logs table */}
       <div className="max-w-full mt-4">
+        {logsLoading && (
+          <p className="text-center text-sm mb-2">{t("loading", "Loading…")}</p>
+        )}
+        {logsError && (
+          <p className="text-center text-sm mb-2 text-destructive">
+            {t(
+              "iSpindelDashboard.logsError",
+              "Unable to load logs for this device."
+            )}
+          </p>
+        )}
         <LogTable
-          logs={logs}
-          removeLog={(id) => setLogs(logs.filter((log: any) => log.id !== id))}
+          logs={deviceLogs}
+          removeLog={(id) => {
+            queryClient.setQueryData(
+              qk.hydrometerDeviceLogs(deviceId, dateRange.start, dateRange.end),
+              (old: any[] | undefined) =>
+                (old ?? []).filter((log) => log.id !== id)
+            );
+          }}
           deviceId={deviceId}
         />
       </div>

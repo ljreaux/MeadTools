@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import LogTable from "@/components/ispindel/LogTable";
 
 import {
@@ -28,7 +27,10 @@ import {
 import { ArrowDownUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
-import { HydrometerData } from "@/components/ispindel/HydrometerData";
+import {
+  HydrometerData,
+  TempUnits
+} from "@/components/ispindel/HydrometerData";
 import { calcABV } from "@/lib/utils/unitConverter";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
@@ -38,6 +40,9 @@ import {
   useDeleteBrew,
   useUpdateBrewName
 } from "@/hooks/reactQuery/useBrews";
+import { useBrewLogs } from "@/hooks/reactQuery/useHydrometerLogs";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/db/queryKeys";
 
 const transformData = (logs: any[]) => {
   const og = logs[0]?.calculated_gravity || logs[0]?.gravity;
@@ -58,6 +63,7 @@ function Brew() {
   const params = useParams();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
     dateStyle: "short",
@@ -65,40 +71,27 @@ function Brew() {
   });
   const formatDate = (date: Date | string) => formatter.format(new Date(date));
 
-  // Still using the provider for logs only
-  const { getBrewLogs } = useISpindel();
-
   const brewId = (params.brewId as string) || "";
 
-  // New: read a single brew from the React Query cache
+  // Single brew from React Query cache + fetch
   const { brew, isLoading, isError } = useBrewById(brewId);
 
-  // New: mutation for email alerts
+  // Logs for this brew (React Query)
+  const {
+    data: logs = [],
+    isLoading: logsLoading,
+    isError: logsError
+  } = useBrewLogs(brewId);
+
+  // Mutations
   const { mutateAsync: updateEmailAlerts, isPending: isUpdatingEmail } =
     useUpdateEmailAlerts();
-
-  // New: mutations for delete + rename
   const { mutateAsync: deleteBrew, isPending: isDeleting } = useDeleteBrew();
   const { mutateAsync: updateBrewName, isPending: isRenaming } =
     useUpdateBrewName();
 
-  const [logs, setLogs] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [checked, setChecked] = useState(false);
-
-  // Fetch brew logs when we have a brew & id
-  useEffect(() => {
-    const fetchBrewData = async () => {
-      if (!brewId || !brew) return;
-
-      const logsData = await getBrewLogs(brewId);
-      setLogs(logsData || []);
-      setChecked(brew.requested_email_alerts);
-    };
-
-    fetchBrewData();
-  }, [brewId, brew]);
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileName(e.target.value);
@@ -150,7 +143,7 @@ function Brew() {
     );
   }
 
-  const chartData = transformData(logs);
+  const chartData = logs.length > 0 ? transformData(logs) : [];
 
   return (
     <div className="flex flex-col items-center justify-center w-full">
@@ -214,12 +207,11 @@ function Brew() {
             <Tooltip body={t("tipText.emailAlerts")} />
           </div>
           <Switch
-            checked={checked}
+            checked={brew.requested_email_alerts}
             disabled={isUpdatingEmail}
             onCheckedChange={async (val: boolean) => {
               if (!brew) return;
               try {
-                setChecked(val);
                 await updateEmailAlerts({
                   brewId: brew.id,
                   requested: val
@@ -235,7 +227,6 @@ function Brew() {
                   description: "Something went wrong",
                   variant: "destructive"
                 });
-                setChecked((prev) => !prev);
               }
             }}
           />
@@ -256,11 +247,28 @@ function Brew() {
         )}
       </div>
 
+      {/* Chart */}
       {logs.length > 0 && (
-        <HydrometerData chartData={chartData} tempUnits={logs[0]?.temp_units} />
+        <HydrometerData
+          chartData={chartData}
+          tempUnits={logs[0]?.temp_units as TempUnits}
+        />
       )}
 
+      {/* Logs table */}
       <div className="max-w-full">
+        {logsLoading && (
+          <p className="text-center text-sm mb-2">{t("loading", "Loading…")}</p>
+        )}
+        {logsError && (
+          <p className="text-center text-sm mb-2 text-destructive">
+            {t(
+              "iSpindelDashboard.logsError",
+              "Unable to load logs for this brew."
+            )}
+          </p>
+        )}
+
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex items-center justify-center">
             <CollapsibleTrigger asChild>
@@ -274,7 +282,13 @@ function Brew() {
           <CollapsibleContent className="max-w-full">
             <LogTable
               logs={[...logs].reverse()}
-              removeLog={(id) => setLogs(logs.filter((log) => log.id !== id))}
+              removeLog={(id) => {
+                queryClient.setQueryData(
+                  qk.hydrometerBrewLogs(brewId),
+                  (old: any[] | undefined) =>
+                    (old ?? []).filter((log) => log.id !== id)
+                );
+              }}
               deviceId={logs[0]?.device_id || ""}
             />
           </CollapsibleContent>

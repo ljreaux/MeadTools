@@ -36,8 +36,10 @@ export function useHydrometerBrews() {
       return { brew, device };
     },
     onSuccess: () => {
-      // For now, just refresh the hydrometer info cache
+      // Device card needs updated brew_id / status
       queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      // Brew list (Brews table, useBrewById, etc.) needs the new/updated brew
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
     }
   });
 
@@ -59,13 +61,17 @@ export function useHydrometerBrews() {
       return { brew, device };
     },
     onSuccess: () => {
+      // Device no longer has an active brew
       queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      // Brew list should reflect end_date / status change
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
     }
   });
 
   return {
     startBrew: (deviceId: string, brewName: string | null) =>
       startBrewMutation.mutateAsync({ deviceId, brewName }),
+
     endBrew: (deviceId: string, brewId: string | null) =>
       endBrewMutation.mutateAsync({ deviceId, brewId }),
 

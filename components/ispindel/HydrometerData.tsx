@@ -41,6 +41,8 @@ type FileData = {
   battery?: number;
 };
 
+export type TempUnits = "C" | "F" | "K";
+
 export function HydrometerData({
   chartData,
   name,
@@ -48,7 +50,7 @@ export function HydrometerData({
 }: {
   chartData: FileData[];
   name?: string;
-  tempUnits: "C" | "F";
+  tempUnits: TempUnits;
 }) {
   const [gravityUnits, setGravityUnits] = useState("SG");
 
