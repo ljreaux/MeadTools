@@ -24,7 +24,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger
-} from "@radix-ui/react-collapsible";
+} from "@/components/ui/collapsible";
 import { ArrowDownUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -32,6 +32,13 @@ import { HydrometerData } from "@/components/ispindel/HydrometerData";
 import { calcABV } from "@/lib/utils/unitConverter";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
+import {
+  useBrewById,
+  useUpdateEmailAlerts,
+  useDeleteBrew,
+  useUpdateBrewName
+} from "@/hooks/useBrews";
+
 const transformData = (logs: any[]) => {
   const og = logs[0]?.calculated_gravity || logs[0]?.gravity;
   return logs.map((log) => {
@@ -46,43 +53,52 @@ const transformData = (logs: any[]) => {
     };
   });
 };
+
 function Brew() {
   const params = useParams();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
   const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
     dateStyle: "short",
     timeStyle: "short"
   });
-  const formatDate = (date: Date) => formatter.format(new Date(date));
+  const formatDate = (date: Date | string) => formatter.format(new Date(date));
 
-  const { brews, deleteBrew, getBrewLogs, updateBrewName, updateEmailAlerts } =
-    useISpindel();
+  // Still using the provider for logs only
+  const { getBrewLogs } = useISpindel();
 
-  const [brew, setBrew] = useState<any>(null);
+  const brewId = (params.brewId as string) || "";
+
+  // New: read a single brew from the React Query cache
+  const { brew, isLoading, isError } = useBrewById(brewId);
+
+  // New: mutation for email alerts
+  const { mutateAsync: updateEmailAlerts, isPending: isUpdatingEmail } =
+    useUpdateEmailAlerts();
+
+  // New: mutations for delete + rename
+  const { mutateAsync: deleteBrew, isPending: isDeleting } = useDeleteBrew();
+  const { mutateAsync: updateBrewName, isPending: isRenaming } =
+    useUpdateBrewName();
+
   const [logs, setLogs] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [fileName, setFileName] = useState("");
   const [checked, setChecked] = useState(false);
 
-  const brewId = params.brewId || "";
-
-  // Fetch brew and logs when the component mounts or brewId changes
+  // Fetch brew logs when we have a brew & id
   useEffect(() => {
     const fetchBrewData = async () => {
-      const currentBrew = brews?.find((b) => b.id === brewId);
+      if (!brewId || !brew) return;
 
-      setBrew(currentBrew ?? null);
-
-      if (brewId && currentBrew) {
-        const logsData = await getBrewLogs(brewId as string);
-        setLogs(logsData!);
-        setChecked(currentBrew.requested_email_alerts);
-      }
+      const logsData = await getBrewLogs(brewId);
+      setLogs(logsData || []);
+      setChecked(brew.requested_email_alerts);
     };
 
     fetchBrewData();
-  }, [brewId, brews]);
+  }, [brewId, brew]);
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileName(e.target.value);
@@ -92,8 +108,7 @@ function Brew() {
     if (!brew || !fileName.trim()) return;
 
     try {
-      await updateBrewName(brew.id, fileName);
-      setBrew((prev: any) => ({ ...prev, name: fileName }));
+      await updateBrewName({ brewId: brew.id, name: fileName });
       toast({ description: t("Brew name updated successfully.") });
     } catch (error) {
       console.error("Error updating brew name:", error);
@@ -119,6 +134,22 @@ function Brew() {
     }
   };
 
+  if (isLoading && !brew) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("loading", "Loading…")}</p>
+      </div>
+    );
+  }
+
+  if (isError || !brew) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("iSpindelDashboard.brewError", "Unable to load this brew.")}</p>
+      </div>
+    );
+  }
+
   const chartData = transformData(logs);
 
   return (
@@ -127,7 +158,7 @@ function Brew() {
         <h1>{t("iSpindelDashboard.brews.details")}:</h1>
 
         <div>
-          {brew?.name ? (
+          {brew.name ? (
             <p>Name: {brew.name}</p>
           ) : (
             <AlertDialog>
@@ -150,6 +181,7 @@ function Brew() {
                   <AlertDialogAction asChild>
                     <Button
                       variant={"secondary"}
+                      disabled={isRenaming}
                       onClick={handleUpdateBrewName}
                     >
                       {t("iSpindelDashboard.addBrewName")}
@@ -175,6 +207,7 @@ function Brew() {
             </>
           )}
         </div>
+
         <div className="flex gap-2 items-center">
           <div className="flex">
             <p>{t("iSpindelDashboard.receiveEmailAlerts")}</p>
@@ -182,10 +215,15 @@ function Brew() {
           </div>
           <Switch
             checked={checked}
+            disabled={isUpdatingEmail}
             onCheckedChange={async (val: boolean) => {
+              if (!brew) return;
               try {
                 setChecked(val);
-                await updateEmailAlerts(brew.id, val);
+                await updateEmailAlerts({
+                  brewId: brew.id,
+                  requested: val
+                });
 
                 const msg = val
                   ? "You will receive email alerts for this brew."
@@ -197,13 +235,13 @@ function Brew() {
                   description: "Something went wrong",
                   variant: "destructive"
                 });
-                setChecked(!val);
+                setChecked((prev) => !prev);
               }
             }}
-          ></Switch>
+          />
         </div>
 
-        {brew?.recipe_id ? (
+        {brew.recipe_id ? (
           <Button asChild className={buttonVariants({ variant: "default" })}>
             <a href={`/recipes/${brew.recipe_id}`}>
               {t("iSpindelDashboard.brews.open")}
@@ -260,7 +298,7 @@ function Brew() {
             <AlertDialogFooter>
               <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
               <AlertDialogAction asChild>
-                <Button onClick={handleDeleteBrew}>
+                <Button onClick={handleDeleteBrew} disabled={isDeleting}>
                   {t("iSpindelDashboard.deleteBrew")}
                 </Button>
               </AlertDialogAction>

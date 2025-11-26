@@ -52,25 +52,42 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {
-    return userOrResponse; // Return error response if the user is not verified
+    return userOrResponse; // Not verified
   }
   const userId = userOrResponse;
-  const body = await req.json(); // Expecting the request body to be parsed correctly
-  const { device_id, brew_id, brew_name } = body;
 
-  if (!device_id || !brew_id) {
+  const body = await req.json();
+  const { device_id, brew_id, brew_name } = body as {
+    device_id?: string;
+    brew_id?: string;
+    brew_name?: string | null;
+  };
+
+  // brew_id is ALWAYS required for both paths
+  if (!brew_id) {
+    return NextResponse.json({ error: "Missing brew_id" }, { status: 400 });
+  }
+
+  const isRename = typeof brew_name === "string" && brew_name.trim().length > 0;
+
+  // Ending a brew requires a device_id
+  if (!isRename && !device_id) {
     return NextResponse.json(
-      { error: "Missing device_id, brew_id, or brew_name" },
+      { error: "Missing device_id for ending brew" },
       { status: 400 }
     );
   }
+
   try {
     let res;
-    if (!brew_name) {
-      res = await endBrew(device_id, brew_id, userId);
+    if (isRename) {
+      // Rename-only path: no device required
+      res = await setBrewName(brew_id, brew_name!, userId);
     } else {
-      res = await setBrewName(brew_id, brew_name, userId);
+      // End brew path
+      res = await endBrew(device_id!, brew_id, userId);
     }
+
     return NextResponse.json(res, { status: 200 });
   } catch (error) {
     console.error("Error updating brew:", error);

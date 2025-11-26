@@ -21,15 +21,11 @@ import {
 import { toast } from "@/hooks/use-toast";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
-import {
-  useHydrometerBrews,
-  useUpdateEmailAlerts,
-  Brew
-} from "@/hooks/useBrews";
+import { useBrews, useUpdateEmailAlerts, Brew } from "@/hooks/useBrews";
 
 function Brews() {
   const { t } = useTranslation();
-  const { data: brews = [], isLoading, isError } = useHydrometerBrews();
+  const { data: brews = [], isLoading, isError } = useBrews();
 
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(5);

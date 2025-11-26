@@ -405,7 +405,72 @@ export async function getLogsForBrew(brew_id: string, userId?: number) {
   }
 }
 
-export async function updateLog(id: string, _: string, data: Partial<LogType>) {
+export async function updateLog(
+  id: string,
+  _deviceId: string,
+  raw: Partial<LogType>
+) {
+  // Build a clean `data` object for Prisma
+  const data: any = {};
+
+  // Numeric fields that might come in as strings
+  const numericFields: (keyof LogType)[] = [
+    "angle",
+    "temperature",
+    "battery",
+    "gravity",
+    "interval",
+    "calculated_gravity"
+  ];
+
+  for (const [key, value] of Object.entries(raw)) {
+    if (value === undefined || value === null || value === "") continue;
+
+    // Coerce numeric stuff
+    if (numericFields.includes(key as keyof LogType)) {
+      const num =
+        typeof value === "number"
+          ? value
+          : Number((value as string).replace(",", "."));
+
+      if (!Number.isFinite(num)) {
+        // Skip invalid numeric values instead of corrupting data
+        continue;
+      }
+
+      data[key] = num;
+      continue;
+    }
+
+    // Map TS `dateTime` -> DB `datetime`
+    if (key === "dateTime") {
+      const d = new Date(value as any);
+      if (!Number.isNaN(d.getTime())) {
+        data.datetime = d;
+      }
+      continue;
+    }
+
+    if (key === "temp_units") {
+      if (value === "C" || value === "F") {
+        data.temp_units = value;
+      }
+      continue;
+    }
+
+    // Never let these be updated by this endpoint
+    if (key === "id" || key === "device_id" || key === "brew_id") {
+      continue;
+    }
+
+    // Any other safe scalar fields could be passed through here if you add them
+    data[key] = value;
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw new Error("No valid fields to update");
+  }
+
   try {
     return await prisma.logs.update({
       where: { id },
