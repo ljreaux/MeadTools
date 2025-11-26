@@ -21,5 +21,6 @@ export const qk = {
   additives: ["additives"] as const,
 
   // Hydrometer dashboard
-  hydrometerInfo: ["hydrometer", "info"] as const
+  hydrometerInfo: ["hydrometer", "info"] as const,
+  hydrometerBrews: ["hydrometer", "brews"] as const
 };

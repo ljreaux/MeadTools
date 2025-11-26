@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
@@ -8,7 +8,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,25 +16,39 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import { toast } from "@/hooks/use-toast";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
+import {
+  useHydrometerBrews,
+  useUpdateEmailAlerts,
+  Brew
+} from "@/hooks/useBrews";
 
 function Brews() {
-  const { brews, fetchBrews } = useISpindel();
   const { t } = useTranslation();
+  const { data: brews = [], isLoading, isError } = useHydrometerBrews();
 
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  useEffect(() => {
-    fetchBrews();
-  }, []);
+  if (isLoading) {
+    return <div className="text-center my-4">{t("loading", "Loading…")}</div>;
+  }
 
-  if (!brews) return null;
+  if (isError) {
+    return (
+      <div className="text-center my-4">
+        {t("error.generic", "Something went wrong loading brews.")}
+      </div>
+    );
+  }
+
+  if (!brews || brews.length === 0) {
+    return <p className="text-center my-4">{t("iSpindelDashboard.noBrews")}</p>;
+  }
 
   const totalItems = brews.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -49,92 +63,87 @@ function Brews() {
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(0); // Reset to the first page
+    setCurrentPage(0);
   };
 
   return (
     <>
-      {brews.length > 0 ? (
-        <>
-          <h2 className="my-4 text-2xl">
-            {t("iSpindelDashboard.brews.label")}
-          </h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("iSpindelDashboard.nameOrId")}</TableHead>
-                <TableHead>{t("iSpindelDashboard.brews.startDate")}</TableHead>
-                <TableHead>{t("iSpindelDashboard.brews.endDate")}</TableHead>
-                <TableHead>{t("iSpindelDashboard.brews.latestGrav")}</TableHead>
-                <TableHead>{t("iSpindelDashboard.brews.recipeLink")}</TableHead>
-                <TableHead>
-                  {t("iSpindelDashboard.receiveEmailAlerts")}
-                  <Tooltip body={t("tipText.emailAlerts")} />
-                </TableHead>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={5}>
-                  <label htmlFor="itemCount" className="flex flex-col gap-4">
-                    {t("iSpindelDashboard.pagination")}
-                    <Select
-                      value={itemsPerPage.toString()}
-                      onValueChange={(val) =>
-                        handleItemsPerPageChange(parseInt(val, 10))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[5, 10, 20].map((value) => (
-                          <SelectItem key={value} value={value.toString()}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <BrewRow currentItems={currentItems} />
-            </TableBody>
-          </Table>
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
+      <h2 className="my-4 text-2xl">{t("iSpindelDashboard.brews.label")}</h2>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("iSpindelDashboard.nameOrId")}</TableHead>
+            <TableHead>{t("iSpindelDashboard.brews.startDate")}</TableHead>
+            <TableHead>{t("iSpindelDashboard.brews.endDate")}</TableHead>
+            <TableHead>{t("iSpindelDashboard.brews.latestGrav")}</TableHead>
+            <TableHead>{t("iSpindelDashboard.brews.recipeLink")}</TableHead>
+            <TableHead>
+              {t("iSpindelDashboard.receiveEmailAlerts")}
+              <Tooltip body={t("tipText.emailAlerts")} />
+            </TableHead>
+          </TableRow>
+          <TableRow>
+            <TableCell colSpan={5}>
+              <label htmlFor="itemCount" className="flex flex-col gap-4">
+                {t("iSpindelDashboard.pagination")}
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(val) =>
+                    handleItemsPerPageChange(parseInt(val, 10))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 20].map((value) => (
+                      <SelectItem key={value} value={value.toString()}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            </TableCell>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          <BrewRow currentItems={currentItems} />
+        </TableBody>
+      </Table>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+            className={buttonVariants({ variant: "secondary" })}
+          >
+            {t("buttonLabels.back")}
+          </button>
+          <div className="mx-2 flex gap-2">
+            {Array.from({ length: totalPages }, (_, index) => (
               <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 0}
-                className={buttonVariants({ variant: "secondary" })}
+                key={index}
+                onClick={() => handlePageChange(index)}
+                className={buttonVariants({
+                  variant: index === currentPage ? "default" : "secondary"
+                })}
               >
-                {t("buttonLabels.back")}
+                {index + 1}
               </button>
-              <div className="mx-2 flex gap-2">
-                {Array.from({ length: totalPages }, (_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handlePageChange(index)}
-                    className={buttonVariants({
-                      variant: index === currentPage ? "default" : "secondary",
-                    })}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages - 1}
-                className={buttonVariants({ variant: "secondary" })}
-              >
-                {t("buttonLabels.next")}
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="text-center my-4">{t("iSpindelDashboard.noBrews")}</p>
+            ))}
+          </div>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages - 1}
+            className={buttonVariants({ variant: "secondary" })}
+          >
+            {t("buttonLabels.next")}
+          </button>
+        </div>
       )}
     </>
   );
@@ -142,15 +151,16 @@ function Brews() {
 
 export default Brews;
 
-const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
+const BrewRow = ({ currentItems }: { currentItems: Brew[] }) => {
   const { i18n, t } = useTranslation();
   const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
     dateStyle: "short",
-    timeStyle: "short",
+    timeStyle: "short"
   });
 
-  const formatDate = (date: Date) => formatter.format(new Date(date));
-  const { updateEmailAlerts } = useISpindel();
+  const formatDate = (date: string | Date) => formatter.format(new Date(date));
+
+  const { mutateAsync: updateEmailAlerts } = useUpdateEmailAlerts();
 
   return (
     <>
@@ -186,9 +196,11 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
           <TableCell>
             <DynamicCheckbox
               initialChecked={brew.requested_email_alerts}
-              updateFn={updateEmailAlerts}
+              updateFn={(id, val) =>
+                updateEmailAlerts({ brewId: id, requested: val })
+              }
               brew_id={brew.id}
-            ></DynamicCheckbox>
+            />
           </TableCell>
         </TableRow>
       ))}
@@ -199,10 +211,10 @@ const BrewRow = ({ currentItems }: { currentItems: any[] }) => {
 const DynamicCheckbox = ({
   initialChecked,
   updateFn,
-  brew_id,
+  brew_id
 }: {
   initialChecked: boolean;
-  updateFn: (str: string, bool: boolean) => Promise<void>;
+  updateFn: (id: string, val: boolean) => Promise<unknown>;
   brew_id: string;
 }) => {
   const [checked, setChecked] = useState(initialChecked);
@@ -224,12 +236,12 @@ const DynamicCheckbox = ({
           } catch {
             toast({
               description: "Something went wrong",
-              variant: "destructive",
+              variant: "destructive"
             });
             setChecked(!val);
           }
         }}
-      ></Switch>
+      />
     </div>
   );
 };

@@ -4,9 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/db/queryKeys";
 import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
 
+export type Device = {
+  id: string;
+  device_name: string | null;
+  brew_id: string | null;
+  recipe_id: number | null;
+  coefficients: number[];
+  brews: {
+    id: string;
+    name: string | null;
+  } | null;
+};
+
 export type HydrometerInfo = {
   hydro_token?: string | null;
-  devices?: any[];
+  devices?: Device[];
 };
 
 export function useHydrometerInfo() {

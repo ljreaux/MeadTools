@@ -32,7 +32,22 @@ export async function getHydrometerToken(userId: number) {
 export async function getDevicesForUser(userId: number) {
   try {
     return await prisma.devices.findMany({
-      where: { user_id: userId }
+      where: { user_id: userId },
+      orderBy: [{ device_name: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        device_name: true,
+        brew_id: true,
+        recipe_id: true,
+        coefficients: true,
+        // include the *active* brew this device is attached to
+        brews: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
     });
   } catch (error) {
     console.error("Error fetching devices for user:", error);
@@ -458,19 +473,15 @@ export async function createHydrometerToken(userId: number) {
 
 export async function getBrews(user_id: number) {
   try {
-    const brews = await prisma.brews.findMany({
-      where: { user_id }
-    });
+    return await prisma.brews.findMany({
+      where: { user_id },
+      orderBy: [
+        // 1. Active brews (end_date = null) first, then most recently finished
+        { end_date: "desc" },
 
-    return brews.sort((a, b) => {
-      const endDateA = a.end_date || new Date();
-      const endDateB = b.end_date || new Date();
-
-      if (endDateA < endDateB) return 1;
-      if (endDateA > endDateB) return -1;
-
-      // If end dates are the same, sort by start date
-      return a.start_date < b.start_date ? -1 : 1;
+        // 2. Within same end_date bucket, oldest started first
+        { start_date: "asc" }
+      ]
     });
   } catch (error) {
     console.error("Error fetching brews:", error);
