@@ -17,6 +17,13 @@
     "users": {
       "public_username": "MeadTools Admin"
     },
-    "public_username": "MeadTools Admin"
+    "public_username": "MeadTools Admin",
+    "averageRating": 0,
+    "numberOfRatings": 0,
+    "emailNotifications": false,
+    "ratings": [],
+    "comments": [],
+    "commentCount": 0,
+    "activityEmailsEnabled": false
   }
 }

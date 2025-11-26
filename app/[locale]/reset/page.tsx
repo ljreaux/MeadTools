@@ -1,50 +1,64 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
+async function requestPasswordReset(email: string) {
+  const res = await fetch("/api/auth/request-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result.error || "Failed to send reset link.");
+  }
+
+  return result;
+}
+
 export default function ResetRequestPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/request-reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || "Failed to send reset link.");
-      }
-
+  const resetMutation = useMutation({
+    mutationFn: requestPasswordReset,
+    onSuccess: () => {
       toast({
         title: "Success",
-        description: "Check your email for a reset link.",
+        description: "Check your email for a reset link."
       });
       setEmail("");
-    } catch (err: any) {
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("error.generic", "Something went wrong.");
+
       toast({
         title: "Error",
-        description: err.message || "Something went wrong.",
-        variant: "destructive",
+        description: message,
+        variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    resetMutation.mutate(email);
   };
+
+  const loading = resetMutation.isPending;
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">

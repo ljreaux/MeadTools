@@ -44,7 +44,7 @@ export const parseRecipeData = (recipe: RecipeApiResponse) => {
     getSelectedSchedule,
     privateRecipe,
     averageRating: recipe.averageRating ?? 0,
-    numberOfRatings: recipe.ratings.length,
+    numberOfRatings: recipe?.ratings?.length ?? 0,
     emailNotifications,
     ratings: recipe.ratings
   };

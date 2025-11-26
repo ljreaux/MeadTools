@@ -2,11 +2,33 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useTranslation } from "react-i18next";
+
+type ResetPayload = {
+  token: string;
+  password: string;
+};
+
+async function resetPassword({ token, password }: ResetPayload) {
+  const res = await fetch("/api/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password })
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(result.error || "Failed to reset password.");
+  }
+
+  return result;
+}
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
@@ -17,16 +39,35 @@ export default function ResetPasswordPage() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const resetMutation = useMutation({
+    mutationFn: resetPassword,
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Password updated. Please log in."
+      });
+      router.push("/login");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Failed to reset password.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
       toast({
         title: "Error",
         description: "Missing or invalid reset token.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -35,42 +76,15 @@ export default function ResetPasswordPage() {
       toast({
         title: "Error",
         description: "Passwords do not match.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || "Failed to reset password.");
-      }
-
-      toast({
-        title: "Success",
-        description: "Password updated. Please log in.",
-      });
-
-      router.push("/login");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    resetMutation.mutate({ token, password });
   };
+
+  const loading = resetMutation.isPending;
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
