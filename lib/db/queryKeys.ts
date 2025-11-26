@@ -19,6 +19,7 @@ export const qk = {
       ? (["ingredients", { category }] as const)
       : (["ingredients"] as const),
   additives: ["additives"] as const,
+  yeasts: ["yeasts"] as const,
 
   // Hydrometer dashboard
   hydrometerInfo: ["hydrometer", "info"] as const,

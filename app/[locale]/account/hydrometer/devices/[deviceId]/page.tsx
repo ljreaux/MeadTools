@@ -91,7 +91,7 @@ function DevicePage() {
     const start_date = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
     const end_date = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
 
-    fetchLogs(start_date, end_date, deviceId).then((logsRes) => {
+    fetchLogs(start_date, end_date, deviceId).then((logsRes: any) => {
       if (logsRes) setLogs(logsRes);
     });
   }, [deviceId]);
