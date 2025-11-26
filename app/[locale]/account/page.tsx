@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import { useLogout } from "@/hooks/useLogout";
-import { useUpdatePublicUsername } from "@/hooks/useUpdatePublicUsername";
-import { useAccountInfo } from "@/hooks/useAccountInfo";
-import { useDeleteRecipe } from "@/hooks/useDeleteRecipe";
+import { useLogout } from "@/hooks/reactQuery/useLogout";
+import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
+import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
+import { useDeleteRecipe } from "@/hooks/reactQuery/useDeleteRecipe";
 
 import {
   AlertDialog,
@@ -52,7 +52,7 @@ import LanguageSwitcher from "@/components/ui/language-switcher";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
-import { RecipeApiResponse } from "@/hooks/useRecipeQuery";
+import { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
 
 type SortType = "asc" | "dec" | "clear";
 

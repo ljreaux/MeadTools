@@ -1,8 +1,8 @@
 "use client";
 
 import AuthForm from "@/components/AuthForm";
-import { useAuth } from "@/hooks/useAuth";
-import { useLoginWithCredentials } from "@/hooks/useLoginWithCredentials";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useLoginWithCredentials } from "@/hooks/reactQuery/useLoginWithCredentials";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

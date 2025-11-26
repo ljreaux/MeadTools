@@ -16,8 +16,11 @@ import {
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useHydrometerInfo, type Device } from "@/hooks/useHydrometerInfo";
-import { useHydrometerBrews } from "@/hooks/useHydrometerBrews";
+import {
+  useHydrometerInfo,
+  type Device
+} from "@/hooks/reactQuery/useHydrometerInfo";
+import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
 
 function Devices() {
   const { t } = useTranslation();

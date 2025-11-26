@@ -1,4 +1,4 @@
-import { RecipeApiResponse } from "@/hooks/useRecipeQuery";
+import { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
 
 export type AuthUser = {
   id: string | number;
@@ -21,7 +21,6 @@ export type AccountInfo = {
   recipes: RecipeApiResponse[];
 };
 
-// 🔹 Lightweight user for `useAuth`
 export async function fetchAccountInfo(
   token: string | null,
   nextAuthAccessToken?: string | null
@@ -49,7 +48,6 @@ export async function fetchAccountInfo(
   };
 }
 
-// 🔹 Full account info (user + recipes) for account page
 export async function fetchFullAccountInfo(
   token: string | null,
   nextAuthAccessToken?: string | null

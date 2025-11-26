@@ -24,8 +24,8 @@ import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { blendValues } from "@/lib/utils/blendValues";
 import lodash from "lodash";
 import { useTranslation } from "react-i18next";
-import { useIngredientsQuery } from "@/hooks/useIngredientsQuery";
-import { useAdditivesQuery } from "@/hooks/useAdditivesQuery";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 

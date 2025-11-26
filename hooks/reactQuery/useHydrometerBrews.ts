@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 
 type StartBrewArgs = {

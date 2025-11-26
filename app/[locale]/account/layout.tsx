@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Loading from "@/components/loading";
-import { useAuth } from "@/hooks/useAuth"; // ← update this path
+import { useAuth } from "@/hooks/auth/useAuth"; // ← update this path
 import { ReactNode } from "react";
 
 function Account({ children }: { children: ReactNode }) {

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/db/queryKeys";
-import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 
 export type Device = {
   id: string;

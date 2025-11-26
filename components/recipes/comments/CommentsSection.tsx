@@ -7,13 +7,13 @@ import {
   useCreateComment,
   useUpdateComment,
   useDeleteComment
-} from "@/hooks/useComments";
+} from "@/hooks/reactQuery/useComments";
 import { Button } from "@/components/ui/button";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import CommentInput from "./CommentInput";
 import { CommentItem } from "./CommentItem";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 type CommentWithAuthor = {
   id: string;

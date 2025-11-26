@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { useBrewById, useLinkBrewToRecipe } from "@/hooks/useBrews";
-import { useAccountInfo } from "@/hooks/useAccountInfo";
+import { useBrewById, useLinkBrewToRecipe } from "@/hooks/reactQuery/useBrews";
+import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
 
 function LinkBrew() {
   const { t } = useTranslation();

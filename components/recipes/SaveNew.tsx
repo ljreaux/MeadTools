@@ -23,7 +23,7 @@ import TooltipHelper from "../Tooltips";
 import {
   useCreateRecipeMutation,
   buildRecipePayload
-} from "@/hooks/useRecipeQuery";
+} from "@/hooks/reactQuery/useRecipeQuery";
 
 function SaveNew() {
   const { t } = useTranslation();

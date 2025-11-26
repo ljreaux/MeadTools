@@ -24,8 +24,8 @@ import TooltipHelper from "../Tooltips";
 import {
   useCreateRecipeMutation,
   buildRecipePayload
-} from "@/hooks/useRecipeQuery";
-import { useAuth } from "@/hooks/useAuth";
+} from "@/hooks/reactQuery/useRecipeQuery";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 function SaveRecipeCopy() {
   const { t } = useTranslation();

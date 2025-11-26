@@ -1,4 +1,4 @@
-import { RecipeApiResponse } from "@/hooks/useRecipeQuery";
+import { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
 
 export const parseRecipeData = (recipe: RecipeApiResponse) => {
   const recipeData = JSON.parse(recipe.recipeData);

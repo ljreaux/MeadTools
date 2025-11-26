@@ -16,7 +16,7 @@ import {
 import { Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
-import { useDeleteRecipe } from "@/hooks/useDeleteRecipe";
+import { useDeleteRecipe } from "@/hooks/reactQuery/useDeleteRecipe";
 import { useRouter } from "next/navigation";
 
 export default function DeleteRecipe() {

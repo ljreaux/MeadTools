@@ -11,8 +11,8 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { CircleUserIcon } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useLogout } from "@/hooks/useLogout";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useLogout } from "@/hooks/reactQuery/useLogout";
 
 function AccountLinks() {
   const { user } = useAuth();

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useAuthToken } from "@/hooks/useAuthToken";
-import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
-import { useAccountInfo } from "@/hooks/useAccountInfo";
+import { useAuthToken } from "@/hooks/auth/useAuthToken";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
 
 interface ISpindelContext {
   deviceList: any[];

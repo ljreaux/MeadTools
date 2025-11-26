@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   useUpdateRecipeMutation,
   type UpdateRecipePayload
-} from "@/hooks/useRecipeQuery";
+} from "@/hooks/reactQuery/useRecipeQuery";
 import { Spinner } from "../ui/spinner";
 
 function SaveChanges({

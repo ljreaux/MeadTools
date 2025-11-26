@@ -21,7 +21,11 @@ import {
 import { toast } from "@/hooks/use-toast";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
-import { useBrews, useUpdateEmailAlerts, Brew } from "@/hooks/useBrews";
+import {
+  useBrews,
+  useUpdateEmailAlerts,
+  Brew
+} from "@/hooks/reactQuery/useBrews";
 
 function Brews() {
   const { t } = useTranslation();

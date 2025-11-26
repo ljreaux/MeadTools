@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { useIngredientsQuery } from "@/hooks/useIngredientsQuery";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 
 type Sugar =
   | {

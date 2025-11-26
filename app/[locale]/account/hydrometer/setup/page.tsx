@@ -30,7 +30,7 @@ import {
   InputGroupText
 } from "@/components/ui/input-group";
 import { useToast } from "@/hooks/use-toast";
-import { useHydrometerInfo } from "@/hooks/useHydrometerInfo";
+import { useHydrometerInfo } from "@/hooks/reactQuery/useHydrometerInfo";
 
 function Setup() {
   const { t } = useTranslation();

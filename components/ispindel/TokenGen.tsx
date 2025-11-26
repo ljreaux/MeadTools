@@ -13,7 +13,7 @@ import { useState } from "react";
 import {
   useHydrometerInfo,
   useGenerateHydrometerToken
-} from "@/hooks/useHydrometerInfo";
+} from "@/hooks/reactQuery/useHydrometerInfo";
 
 function TokenGen() {
   const { t } = useTranslation();

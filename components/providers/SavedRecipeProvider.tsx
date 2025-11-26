@@ -24,8 +24,8 @@ import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { SavedNutrientProvider } from "./SavedNutrientProvider";
 import { FullNutrientData } from "@/types/nutrientTypes";
-import { useIngredientsQuery } from "@/hooks/useIngredientsQuery";
-import { useAdditivesQuery } from "@/hooks/useAdditivesQuery";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 

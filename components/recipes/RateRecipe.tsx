@@ -13,8 +13,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Spinner } from "../ui/spinner";
 import { toast } from "@/hooks/use-toast";
-import { useRateRecipeMutation } from "@/hooks/useRecipeQuery";
-import { useAuth } from "@/hooks/useAuth";
+import { useRateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 type RatingPickerProps = {
   value: number; // 0..5

@@ -37,7 +37,7 @@ import {
   useUpdateEmailAlerts,
   useDeleteBrew,
   useUpdateBrewName
-} from "@/hooks/useBrews";
+} from "@/hooks/reactQuery/useBrews";
 
 const transformData = (logs: any[]) => {
   const og = logs[0]?.calculated_gravity || logs[0]?.gravity;

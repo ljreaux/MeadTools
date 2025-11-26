@@ -23,8 +23,8 @@ import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import Tooltip from "../Tooltips";
-import { useCreateRecipeMutation } from "@/hooks/useRecipeQuery";
-import { useAuth } from "@/hooks/useAuth";
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();

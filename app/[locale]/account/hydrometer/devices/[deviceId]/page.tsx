@@ -33,9 +33,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useISpindel } from "@/components/providers/ISpindelProvider";
 
 // New hooks
-import { useHydrometerInfo, type Device } from "@/hooks/useHydrometerInfo";
-import { useHydrometerBrews } from "@/hooks/useHydrometerBrews";
-import { useHydrometerDeviceMutations } from "@/hooks/useHydrometerDeviceMutations";
+import {
+  useHydrometerInfo,
+  type Device
+} from "@/hooks/reactQuery/useHydrometerInfo";
+import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
+import { useHydrometerDeviceMutations } from "@/hooks/reactQuery/useHydrometerDeviceMutations";
 
 function DevicePage() {
   const params = useParams();

@@ -5,7 +5,7 @@ import { qk } from "@/lib/db/queryKeys";
 import type { AccountInfo, AuthUser } from "@/lib/api/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { useFetchWithAuth } from "@/hooks/useFetchWithAuth";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 
 export function useUpdatePublicUsername() {
   const queryClient = useQueryClient();

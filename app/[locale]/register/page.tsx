@@ -1,8 +1,8 @@
 "use client";
 
 import AuthForm from "@/components/AuthForm";
-import { useAuth } from "@/hooks/useAuth";
-import { useRegister } from "@/hooks/useRegister";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useRegister } from "@/hooks/reactQuery/useRegister";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
