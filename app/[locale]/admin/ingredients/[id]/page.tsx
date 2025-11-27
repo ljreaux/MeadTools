@@ -1,22 +1,40 @@
 "use client";
+
 import { useParams } from "next/navigation";
-import { useFetchData } from "@/hooks/useFetchData";
 import Loading from "@/components/loading";
 import Link from "next/link";
 import IngredientEditForm from "@/components/admin/IngredientEditForm";
-import { Ingredient } from "@/types/admin";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import type { Ingredient } from "@/types/recipeDataTypes";
 
 export default function IngredientEditPage() {
-  const { id } = useParams();
-  const {
-    data: ingredient,
-    loading,
-    error,
-  } = useFetchData<Ingredient>(`/api/ingredients/${id}`);
+  const params = useParams();
+  const id = params.id;
 
-  if (loading) return <Loading />;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!ingredient) return null;
+  const {
+    data: ingredients,
+    isLoading,
+    isError,
+    error
+  } = useIngredientsQuery(); // shared cache with the list page
+
+  if (isLoading) return <Loading />;
+
+  if (isError) {
+    const message =
+      (error as Error)?.message || "An error has occurred while loading.";
+    return <p>Error: {message}</p>;
+  }
+
+  if (!ingredients) return null;
+
+  const ingredient: Ingredient | undefined = ingredients.find(
+    (ing) => ing.id === id
+  );
+
+  if (!ingredient) {
+    return <p>Ingredient not found.</p>;
+  }
 
   return (
     <div>

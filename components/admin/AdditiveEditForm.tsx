@@ -24,13 +24,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "../ui/select";
-
-type Additive = {
-  id: string;
-  name: string;
-  dosage: number;
-  unit: string;
-};
+import { Additive } from "@/types/recipeDataTypes";
 
 const UNIT_OPTIONS = [
   "g",

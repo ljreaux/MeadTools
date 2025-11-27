@@ -34,6 +34,7 @@ export type AdditiveType = {
 };
 
 export type Additive = {
+  id: string;
   name: string;
   dosage: string;
   unit: string;

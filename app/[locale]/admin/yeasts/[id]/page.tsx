@@ -1,22 +1,33 @@
 "use client";
+
 import { useParams } from "next/navigation";
-import { useFetchData } from "@/hooks/useFetchData";
-import YeastEditForm from "@/components/admin/YeastEditForm";
-import Loading from "@/components/loading";
 import Link from "next/link";
-import { Yeast } from "@/types/admin";
+import Loading from "@/components/loading";
+import YeastEditForm from "@/components/admin/YeastEditForm";
+import { Yeast } from "@/types/nutrientTypes";
+import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 
 export default function YeastEditPage() {
-  const { id } = useParams();
-  const {
-    data: yeast,
-    loading,
-    error,
-  } = useFetchData<Yeast>(`/api/yeasts/${id}`);
+  const params = useParams();
+  const idParam = params.id as string;
+  const id = Number(idParam);
 
-  if (loading) return <Loading />;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!yeast) return null;
+  const { data: yeasts, isLoading, isError, error } = useYeastsQuery();
+
+  if (isLoading) return <Loading />;
+
+  if (isError) {
+    const msg = (error as Error)?.message || "An error has occurred.";
+    return <p>Error: {msg}</p>;
+  }
+
+  if (!yeasts) return null;
+
+  const yeast: Yeast | undefined = yeasts.find((y) => y.id === id);
+
+  if (!yeast) {
+    return <p>Yeast not found.</p>;
+  }
 
   return (
     <div>

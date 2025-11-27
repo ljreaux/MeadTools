@@ -15,16 +15,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
-import { Ingredient } from "@/types/admin";
+import { Ingredient } from "@/types/recipeDataTypes";
 
 interface Props {
   ingredient: Ingredient;
@@ -36,7 +36,7 @@ const CATEGORY_OPTIONS = [
   "juice",
   "fruit",
   "vegetable",
-  "dried fruit",
+  "dried fruit"
 ].sort((a, b) => a.localeCompare(b));
 export default function IngredientEditForm({ ingredient }: Props) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
       toast({
         title: "Error",
         description: "No token found in localStorage.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setIsSaving(false);
       return;
@@ -70,9 +70,9 @@ export default function IngredientEditForm({ ingredient }: Props) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -82,7 +82,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
       toast({
         title: "Error",
         description: err.message || "Failed to update ingredient.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -95,7 +95,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
       toast({
         title: "Error",
         description: "No token found in localStorage.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -105,8 +105,8 @@ export default function IngredientEditForm({ ingredient }: Props) {
       const res = await fetch(`/api/ingredients/${ingredient.id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -117,7 +117,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
       toast({
         title: "Error",
         description: err.message || "Failed to delete ingredient.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsDeleting(false);
