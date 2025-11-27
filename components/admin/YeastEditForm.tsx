@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -10,7 +12,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 import {
   AlertDialog,
@@ -21,10 +23,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Yeast } from "@/types/admin";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
+import { Yeast } from "@/types/nutrientTypes";
 
 interface Props {
   yeast: Yeast;
@@ -35,16 +39,64 @@ const BRAND_OPTIONS = [
   "Red Star",
   "Mangrove Jack",
   "Fermentis",
-  "Other",
+  "Other"
 ];
 const NITROGEN_OPTIONS = ["Low", "Medium", "High", "Very High"];
 
 export default function YeastEditForm({ yeast }: Props) {
   const { toast } = useToast();
   const router = useRouter();
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({ ...yeast });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: Yeast) => {
+      return await fetchWithAuth<Yeast>(`/api/yeasts/${yeast.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.yeasts });
+      toast({
+        title: "Success",
+        description: "Yeast updated successfully!"
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update yeast.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      // assume API returns some JSON, but we don't care about the shape
+      await fetchWithAuth<unknown>(`/api/yeasts/${yeast.id}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.yeasts });
+      toast({ title: "Deleted", description: "Yeast was deleted." });
+      router.push("/admin/yeasts");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete yeast.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const isSaving = updateMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,76 +109,11 @@ export default function YeastEditForm({ yeast }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/yeasts/${yeast.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "Yeast updated successfully!" });
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to update yeast.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    await updateMutation.mutateAsync(formData);
   };
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/yeasts/${yeast.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Deleted", description: "Yeast was deleted." });
-      router.push("/admin/yeasts");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete yeast.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    await deleteMutation.mutateAsync();
   };
 
   return (

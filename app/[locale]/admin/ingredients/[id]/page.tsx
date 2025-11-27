@@ -29,7 +29,7 @@ export default function IngredientEditPage() {
   if (!ingredients) return null;
 
   const ingredient: Ingredient | undefined = ingredients.find(
-    (ing) => ing.id === id
+    (ing) => Number(ing.id) === Number(id)
   );
 
   if (!ingredient) {

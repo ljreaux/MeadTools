@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -11,8 +13,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
+
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
 
 const UNIT_OPTIONS = [
   "g",
@@ -27,18 +32,54 @@ const UNIT_OPTIONS = [
   "fl oz",
   "quarts",
   "gal",
-  "tbsp",
+  "tbsp"
 ];
+
+type NewAdditivePayload = {
+  name: string;
+  dosage: number;
+  unit: string;
+};
 
 export default function NewAdditiveForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
     name: "",
     dosage: "",
-    unit: "",
+    unit: ""
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createAdditive = useMutation({
+    mutationFn: async (payload: NewAdditivePayload) => {
+      // If your API expects fl_oz instead of "fl oz", normalize here:
+      const normalizedUnit = payload.unit === "fl oz" ? "fl_oz" : payload.unit;
+
+      return await fetchWithAuth("/api/additives", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          unit: normalizedUnit
+        })
+      });
+    },
+    onSuccess: () => {
+      // Make sure the admin additives list refetches
+      queryClient.invalidateQueries({ queryKey: qk.additives });
+      toast({ title: "Success", description: "Additive created." });
+      router.push("/admin/additives");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to create additive.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,45 +88,22 @@ export default function NewAdditiveForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    const dosageNum = parseFloat(String(formData.dosage));
+    if (Number.isNaN(dosageNum)) {
       toast({
         title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
+        description: "Dosage must be a valid number.",
+        variant: "destructive"
       });
-      setIsSubmitting(false);
       return;
     }
 
-    try {
-      const res = await fetch("/api/additives", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          dosage: parseFloat(String(formData.dosage)),
-        }),
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "Additive created." });
-      router.push("/admin/additives");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to create additive.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await createAdditive.mutateAsync({
+      name: formData.name,
+      dosage: dosageNum,
+      unit: formData.unit
+    });
   };
 
   return (
@@ -98,6 +116,7 @@ export default function NewAdditiveForm() {
           name="name"
           value={formData.name}
           onChange={handleChange}
+          disabled={createAdditive.isPending}
         />
       </div>
 
@@ -111,6 +130,7 @@ export default function NewAdditiveForm() {
           onChange={handleChange}
           type="number"
           step="any"
+          disabled={createAdditive.isPending}
         />
       </div>
 
@@ -122,6 +142,7 @@ export default function NewAdditiveForm() {
           onValueChange={(val) =>
             setFormData((prev) => ({ ...prev, unit: val }))
           }
+          disabled={createAdditive.isPending}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a unit" />
@@ -136,8 +157,8 @@ export default function NewAdditiveForm() {
         </Select>
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Creating..." : "Create Additive"}
+      <Button type="submit" disabled={createAdditive.isPending}>
+        {createAdditive.isPending ? "Creating..." : "Create Additive"}
       </Button>
     </form>
   );

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { qk } from "@/lib/db/queryKeys";
 import { useFetchWithAuth } from "../auth/useFetchWithAuth";
 
-type User = {
+export type User = {
   id: number;
   email: string;
   google_id?: string;

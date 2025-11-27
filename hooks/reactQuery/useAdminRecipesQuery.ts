@@ -3,10 +3,10 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { qk } from "@/lib/db/queryKeys";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
-import type { Recipe } from "@/types/admin";
+import { RecipeApiResponse } from "./useRecipeQuery";
 
 type AdminRecipesPage = {
-  recipes: Recipe[];
+  recipes: RecipeApiResponse[];
   totalCount: number;
   totalPages: number;
   page: number;

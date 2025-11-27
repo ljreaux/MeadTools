@@ -10,7 +10,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 import {
   AlertDialog,
@@ -21,11 +21,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "@/types/admin";
 import { Checkbox } from "../ui/Checkbox";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
+import { User } from "@/hooks/reactQuery/useAdminUsersQuery";
 
 interface Props {
   user: User;
@@ -34,15 +37,16 @@ interface Props {
 export default function UserEditForm({ user }: Props) {
   const { toast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const fetchWithAuth = useFetchWithAuth();
+
   const [formData, setFormData] = useState({
     email: user.email,
     public_username: user.public_username ?? "",
     role: user.role,
     password: "",
-    updateToken: false,
+    updateToken: false
   });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -55,84 +59,65 @@ export default function UserEditForm({ user }: Props) {
     setFormData((prev) => ({ ...prev, updateToken: checked }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      const payload = {
-        ...formData,
-        password: formData.password || undefined,
+  const updateUserMutation = useMutation({
+    mutationFn: async (payload: typeof formData) => {
+      const body = {
+        ...payload,
+        password: payload.password || undefined
       };
 
-      const res = await fetch(`/api/users/${user.id}`, {
+      await fetchWithAuth<unknown>(`/api/users/${user.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body)
       });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "User updated successfully!" });
-    } catch (err: any) {
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "User updated successfully!"
+      });
+      queryClient.invalidateQueries({ queryKey: qk.adminUsers });
+    },
+    onError: (err: any) => {
       toast({
         title: "Error",
-        description: err.message || "Failed to update user.",
-        variant: "destructive",
+        description: err?.message || "Failed to update user.",
+        variant: "destructive"
       });
-    } finally {
-      setIsSaving(false);
     }
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async () => {
+      await fetchWithAuth<unknown>(`/api/users/${user.id}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Deleted", description: "User was deleted." });
+      queryClient.invalidateQueries({ queryKey: qk.adminUsers });
+      router.push("/admin/users");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to delete user.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateUserMutation.mutateAsync(formData);
   };
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/users/${user.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Deleted", description: "User was deleted." });
-      router.push("/admin/users");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete user.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    await deleteUserMutation.mutateAsync();
   };
+
+  const isSaving = updateUserMutation.isPending;
+  const isDeleting = deleteUserMutation.isPending;
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>

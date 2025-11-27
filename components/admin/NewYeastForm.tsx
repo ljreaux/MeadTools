@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,20 +13,20 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Yeast } from "@/types/admin";
+import { Yeast } from "@/types/nutrientTypes";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
 
 const initialFormData: Omit<Yeast, "id"> = {
-  brand: "",
+  brand: "Lalvin",
   name: "",
-  nitrogen_requirement: "",
+  nitrogen_requirement: "Low",
   tolerance: "",
   low_temp: "",
-  high_temp: "",
+  high_temp: ""
 };
 
 const BRAND_OPTIONS = [
@@ -30,15 +34,43 @@ const BRAND_OPTIONS = [
   "Red Star",
   "Mangrove Jack",
   "Fermentis",
-  "Other",
+  "Other"
 ];
 const NITROGEN_OPTIONS = ["Low", "Medium", "High", "Very High"];
 
 export default function NewYeastForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState(initialFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { mutateAsync: createYeast, isPending: isSubmitting } = useMutation({
+    mutationFn: async (payload: Omit<Yeast, "id">) => {
+      return await fetchWithAuth<Yeast>("/api/yeasts", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Yeast created successfully!"
+      });
+      // clear form + refresh yeast list
+      setFormData(initialFormData);
+      queryClient.invalidateQueries({ queryKey: qk.yeasts });
+      router.push("/admin/yeasts");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to create yeast.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,43 +83,7 @@ export default function NewYeastForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/yeasts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "Yeast created successfully!" });
-      setFormData(initialFormData);
-      router.push("/admin/yeasts");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to create yeast.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await createYeast(formData);
   };
 
   return (
@@ -96,6 +92,7 @@ export default function NewYeastForm() {
         <h2 className="text-2xl font-bold mb-2">Add New Yeast</h2>
         <Link href={"/admin/yeasts"}>Back to All Yeasts</Link>
       </div>
+
       <div className="space-y-1">
         <Label htmlFor="brand">Brand</Label>
         <Select
