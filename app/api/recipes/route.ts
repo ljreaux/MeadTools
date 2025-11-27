@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRecipe, getAllRecipes } from "@/lib/db/recipes";
-
+import { createRecipe } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
+import { getAdminRecipesPage } from "@/lib/db/recipes";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,8 +19,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const recipes = await getAllRecipes();
-    return NextResponse.json({ recipes });
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page") ?? "1");
+    const limit = Number(searchParams.get("limit") ?? "20");
+    const query = searchParams.get("query") ?? "";
+
+    const result = await getAdminRecipesPage({ page, limit, query });
+
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching recipes (admin):", error);
     return NextResponse.json(

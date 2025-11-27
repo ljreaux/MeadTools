@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
@@ -26,6 +26,7 @@ import Rating from "@/components/recipes/Rating";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import PerPageSelect from "@/components/pagination/PerPageSelect";
 import { parseNumber } from "@/lib/utils/validateInput";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 interface Recipe {
   id: number;
@@ -74,6 +75,7 @@ type Props = {
   pageSize: number;
   allowedPageSizes: number[];
 };
+
 export default function RecipeList({
   recipes,
   page,
@@ -89,6 +91,36 @@ export default function RecipeList({
 
   const hasPrev = page > 1;
   const hasNext = page < totalPages;
+
+  // --- Search state + debounce ---
+  const [searchInput, setSearchInput] = useState(query ?? "");
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
+
+  // Keep local input in sync if the URL/query prop changes (e.g. via back/forward)
+  useEffect(() => {
+    setSearchInput(query ?? "");
+  }, [query]);
+
+  // When the debounced value changes, update the URL (which triggers a new server fetch)
+  useEffect(() => {
+    // If the debounced value matches the current query param, nothing to do
+    if ((debouncedSearch ?? "").trim() === (query ?? "").trim()) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    const trimmed = debouncedSearch.trim();
+    if (trimmed) {
+      params.set("query", trimmed);
+    } else {
+      params.delete("query");
+    }
+
+    // Always reset to first page when the search changes
+    params.delete("page");
+
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [debouncedSearch, query, pathname, router, searchParams]);
 
   const buildHref = (opts: { page?: number; query?: string }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -126,6 +158,7 @@ export default function RecipeList({
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   };
+
   // Build a small window of page numbers around the current page
   const windowSize = 3;
   const startPage = Math.max(1, page - 2);
@@ -139,13 +172,33 @@ export default function RecipeList({
     <div className="space-y-6">
       {/* Search + per-page control */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        {/* Search: GET form so it round-trips to the server with ?query=... */}
-        <form method="GET" className="w-full sm:max-w-[50%]" autoComplete="off">
+        {/* Search: debounced client-side update of ?query= */}
+        <form
+          className="w-full sm:max-w-[50%]"
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Immediate search on enter/click, using current input
+            const params = new URLSearchParams(searchParams.toString());
+            const trimmed = searchInput.trim();
+
+            if (trimmed) {
+              params.set("query", trimmed);
+            } else {
+              params.delete("query");
+            }
+            params.delete("page");
+
+            const qs = params.toString();
+            router.replace(qs ? `${pathname}?${qs}` : pathname);
+          }}
+        >
           <InputGroup>
             <InputGroupInput
               name="query"
               placeholder={t("searchPlaceholder")}
-              defaultValue={query}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -164,9 +217,7 @@ export default function RecipeList({
           </InputGroup>
         </form>
 
-        {/* Per-page selector:
-          - full width under search on mobile
-          - inline on the right on desktop */}
+        {/* Per-page selector */}
         <div className="w-full sm:w-auto sm:flex sm:justify-end">
           <PerPageSelect
             value={pageSize}
@@ -236,7 +287,7 @@ export default function RecipeList({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination (unchanged) */}
       {totalPages > 0 && (
         <div className="space-y-1">
           <Pagination>
@@ -369,7 +420,6 @@ export default function RecipeList({
             </PaginationContent>
           </Pagination>
 
-          {/* Page info: desktop only, below pagination */}
           <p className="mt-1 text-[11px] text-muted-foreground text-center hidden sm:block">
             {t("pagination.pageInfo", { page, totalPages })}
           </p>

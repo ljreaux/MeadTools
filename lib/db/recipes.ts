@@ -47,124 +47,24 @@ export async function getAllRecipesForUser(userId: number) {
   }
 }
 
-export async function getAllRecipes() {
-  try {
-    const recipes = await prisma.recipes.findMany({
-      include: {
-        users: { select: { public_username: true } }
-      }
-    });
-
-    if (recipes.length === 0) return [];
-
-    const recipeIds = recipes.map((r) => r.id);
-
-    const ratingRows = await prisma.recipe_ratings.groupBy({
-      by: ["recipe_id"],
-      where: { recipe_id: { in: recipeIds } },
-      _avg: { rating: true },
-      _count: { rating: true }
-    });
-
-    const ratingMap = new Map<number, { avg: number | null; count: number }>(
-      ratingRows.map((r) => [
-        r.recipe_id,
-        { avg: r._avg.rating, count: r._count.rating }
-      ])
-    );
-
-    const parsedRecipes = recipes.map((rec) => {
-      const primaryNotes = concatNotes(rec.primaryNotes || []);
-      const secondaryNotes = concatNotes(rec.secondaryNotes || []);
-      const r = ratingMap.get(rec.id);
-      const averageRating = r?.avg ?? 0;
-      const numberOfRatings = r?.count ?? 0;
-
-      return {
-        ...rec,
-        primaryNotes,
-        secondaryNotes,
-        public_username: rec.users?.public_username || "",
-        averageRating,
-        numberOfRatings
-      };
-    });
-
-    return parsedRecipes;
-  } catch (error) {
-    console.error("Error fetching recipes:", error);
-    throw new Error("Database error");
-  }
-}
-
-/**
- * Public-facing recipes only (non-private).
- * Same shape as getAllRecipes, but filtered at the DB level.
- */
-export async function getPublicRecipes() {
-  try {
-    const recipes = await prisma.recipes.findMany({
-      where: { private: false },
-      include: {
-        users: { select: { public_username: true } }
-      }
-    });
-
-    if (recipes.length === 0) return [];
-
-    const recipeIds = recipes.map((r) => r.id);
-
-    const ratingRows = await prisma.recipe_ratings.groupBy({
-      by: ["recipe_id"],
-      where: { recipe_id: { in: recipeIds } },
-      _avg: { rating: true },
-      _count: { rating: true }
-    });
-
-    const ratingMap = new Map<number, { avg: number | null; count: number }>(
-      ratingRows.map((r) => [
-        r.recipe_id,
-        { avg: r._avg.rating, count: r._count.rating }
-      ])
-    );
-
-    const parsedRecipes = recipes.map((rec) => {
-      const primaryNotes = concatNotes(rec.primaryNotes || []);
-      const secondaryNotes = concatNotes(rec.secondaryNotes || []);
-      const r = ratingMap.get(rec.id);
-      const averageRating = r?.avg ?? 0;
-      const numberOfRatings = r?.count ?? 0;
-
-      return {
-        ...rec,
-        primaryNotes,
-        secondaryNotes,
-        public_username: rec.users?.public_username || "",
-        averageRating,
-        numberOfRatings
-      };
-    });
-
-    return parsedRecipes;
-  } catch (error) {
-    console.error("Error fetching public recipes:", error);
-    throw new Error("Database error");
-  }
-}
-
-export async function getPublicRecipesPage(opts: {
+type RecipesPageOpts = {
   page?: number;
   limit?: number;
   query?: string;
-}) {
+  onlyPublic?: boolean; // if true => private: false, otherwise all recipes
+};
+
+async function getRecipesPageBase(opts: RecipesPageOpts) {
   const page = Math.max(1, Number(opts.page) || 1);
-  const take = Math.min(Math.max(Number(opts.limit) || 10, 1), 50); // clamp 1–50
+  const take = Math.min(Math.max(Number(opts.limit) || 10, 1), 50); // 1–50
   const skip = (page - 1) * take;
   const query = (opts.query ?? "").trim();
 
-  const where: Prisma.recipesWhereInput = {
-    private: false
-  };
+  const where: Prisma.recipesWhereInput = {};
+
+  if (opts.onlyPublic) {
+    where.private = false;
+  }
 
   if (query) {
     where.AND = [
@@ -248,6 +148,24 @@ export async function getPublicRecipesPage(opts: {
     page,
     limit: take
   };
+}
+
+// PUBLIC: just a thin wrapper that forces onlyPublic = true
+export async function getPublicRecipesPage(opts: {
+  page?: number;
+  limit?: number;
+  query?: string;
+}) {
+  return getRecipesPageBase({ ...opts, onlyPublic: true });
+}
+
+// ADMIN: all recipes (public + private)
+export async function getAdminRecipesPage(opts: {
+  page?: number;
+  limit?: number;
+  query?: string;
+}) {
+  return getRecipesPageBase({ ...opts, onlyPublic: false });
 }
 
 export async function createRecipe(data: RecipeData) {

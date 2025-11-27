@@ -39,5 +39,9 @@ export const qk = {
     ["hydrometer", "logs", "brew", brewId] as const,
 
   // Prefix for invalidating all brew-log queries
-  hydrometerBrewLogsPrefix: ["hydrometer", "logs", "brew"] as const
+  hydrometerBrewLogsPrefix: ["hydrometer", "logs", "brew"] as const,
+
+  adminUsers: ["admin", "users"] as const,
+  adminRecipes: (page: number, limit: number, query: string) =>
+    ["admin", "recipes", { page, limit, query }] as const
 };
