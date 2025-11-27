@@ -25,11 +25,13 @@ function PublicRecipe() {
         <h1 className="text-3xl text-center">
           {recipeData.recipeNameProps.value}
         </h1>
-        {recipeData.public_username && (
-          <p className="w-full text-right">
-            {t("byUser", { public_username: recipeData.public_username })}
-          </p>
-        )}
+
+        <p className="w-full text-right">
+          {t("byUser", {
+            public_username: recipeData.public_username ?? "Anonymous"
+          })}
+        </p>
+
         <Rating
           averageRating={recipeData.ratingStats?.averageRating ?? 0}
           numberOfRatings={recipeData.ratingStats?.numberOfRatings ?? 0}

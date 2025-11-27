@@ -9,7 +9,8 @@ export async function getAllUsers() {
       role: true,
       google_id: true,
       public_username: true,
-      hydro_token: true
+      hydro_token: true,
+      active: true
     }
   });
 }
@@ -17,14 +18,14 @@ export async function getAllUsers() {
 // Get a user by ID
 export async function getUserById(id: number) {
   return await prisma.users.findUnique({
-    where: { id }
+    where: { id, active: true }
   });
 }
 
 export async function getUserByEmail(email: string) {
   try {
     const user = await prisma.users.findUnique({
-      where: { email }
+      where: { email, active: true }
     });
 
     return user;
@@ -72,7 +73,8 @@ export async function deleteUser(id: number) {
   if (id === 1) {
     throw new Error("Cannot Delete MeadTools Admin");
   }
-  return await prisma.users.delete({
-    where: { id }
+  return await prisma.users.update({
+    where: { id },
+    data: { active: false }
   });
 }

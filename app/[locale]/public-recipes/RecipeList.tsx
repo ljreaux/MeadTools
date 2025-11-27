@@ -265,13 +265,14 @@ export default function RecipeList({
                   </CardHeader>
 
                   <CardContent className="space-y-1 text-sm">
-                    {recipe.public_username && (
-                      <p className="text-muted-foreground group-hover:text-foreground">
-                        {t("byUser", {
-                          public_username: recipe.public_username
-                        })}
-                      </p>
-                    )}
+                    <p className="text-muted-foreground group-hover:text-foreground">
+                      {t("byUser", {
+                        public_username: !!recipe.public_username
+                          ? recipe.public_username
+                          : "Anonymous"
+                      })}
+                    </p>
+
                     <p className="text-muted-foreground group-hover:text-foreground">
                       {t("OG")}: {OG}, {t("FG")}: {FG}
                     </p>

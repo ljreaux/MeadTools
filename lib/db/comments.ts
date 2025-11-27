@@ -96,14 +96,16 @@ type DbAuthor = {
   public_username: string | null;
   google_avatar_url: string | null;
   show_google_avatar: boolean;
+  active: boolean;
 } | null;
 
 function toPublicAuthor(author: DbAuthor) {
   if (!author) return null;
   return {
-    public_username: author.public_username,
+    public_username: author.active ? author.public_username : null,
+    active: author.active,
     avatarUrl:
-      author.show_google_avatar && author.google_avatar_url
+      author.show_google_avatar && author.google_avatar_url && author.active
         ? author.google_avatar_url
         : null
   };
@@ -252,9 +254,10 @@ export async function updateComment(input: {
 
 export async function deleteComment(input: {
   id: string;
-  user_id: number;
+  user_id: number; // the ID of the user making the request
+  isAdmin?: boolean; // <-- NEW optional flag
 }): Promise<{ id: string; deleted_at: Date | null }> {
-  const { id, user_id } = input;
+  const { id, user_id, isAdmin = false } = input;
 
   const existing = await prisma.comments.findUnique({
     where: { id },
@@ -269,11 +272,12 @@ export async function deleteComment(input: {
     throw new Error("Comment not found.");
   }
 
-  if (existing.user_id !== user_id) {
+  // 🔐 Only block deletion if the user is NOT an admin AND does not own the comment
+  if (!isAdmin && existing.user_id !== user_id) {
     throw new Error("You can only delete your own comments.");
   }
 
-  // Make delete idempotent: if already deleted, just return the existing timestamp
+  // Idempotent: already deleted
   if (existing.deleted_at) {
     return { id: existing.id, deleted_at: existing.deleted_at };
   }
@@ -303,6 +307,7 @@ type RootCommentRow = {
   author: {
     public_username: string | null;
     avatarUrl: string | null;
+    active: boolean;
   } | null;
 };
 
@@ -344,7 +349,8 @@ export async function listRootCommentsForRecipe(opts: {
           select: {
             public_username: true,
             google_avatar_url: true,
-            show_google_avatar: true
+            show_google_avatar: true,
+            active: true
           }
         }
       }
@@ -438,7 +444,8 @@ export async function listRepliesForParent(opts: {
           select: {
             public_username: true,
             google_avatar_url: true,
-            show_google_avatar: true
+            show_google_avatar: true,
+            active: true
           }
         }
       }
@@ -464,9 +471,11 @@ export async function listRepliesForParent(opts: {
     reply_count: c._count.replies, // 👈 here
     author: c.author
       ? {
-          public_username: c.author.public_username,
+          public_username: c.author.active ? c.author.public_username : null,
           avatarUrl:
-            c.author.show_google_avatar && c.author.google_avatar_url
+            c.author.show_google_avatar &&
+            c.author.google_avatar_url &&
+            c.author.active
               ? c.author.google_avatar_url
               : null
         }

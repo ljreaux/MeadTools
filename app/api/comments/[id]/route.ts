@@ -1,6 +1,6 @@
 // app/api/comments/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { verifyUser } from "@/lib/userAccessFunctions";
+import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { updateComment, deleteComment } from "@/lib/db/comments";
 
 export async function PATCH(
@@ -48,12 +48,13 @@ export async function DELETE(
     if (userOrResponse instanceof NextResponse) {
       return userOrResponse;
     }
-
+    const isAdmin = await requireAdmin(userOrResponse);
     const { id } = await context.params;
 
     const result = await deleteComment({
       id,
-      user_id: userOrResponse
+      user_id: userOrResponse,
+      isAdmin
     });
 
     return NextResponse.json({ deleted: result }, { status: 200 });

@@ -32,7 +32,8 @@ function UserDashboard() {
           { key: "public_username", header: "Username" },
           { key: "email", header: "Email" },
           { key: "hydro_token", header: "Hydrometer Token" },
-          { key: "role", header: "Role" }
+          { key: "role", header: "Role" },
+          { key: "active", header: "Active" }
         ]}
         pageSize={10}
         onRowClick={(user) => router.push(`/admin/users/${user.id}`)}

@@ -11,6 +11,7 @@ export type User = {
   hydro_token: string;
   public_username?: string;
   role: "user" | "admin";
+  active: boolean;
 };
 
 export function useAdminUsersQuery() {

@@ -44,6 +44,7 @@ type CommentRowProps = {
   depth: number;
   isLoggedIn: boolean;
   currentUserId: number | null;
+  isAdmin: boolean;
   order: "asc" | "desc";
   // global reply state from parent
   replyingTo: CommentNode | null;
@@ -62,6 +63,7 @@ function CommentRow({
   depth,
   isLoggedIn,
   currentUserId,
+  isAdmin = false,
   order,
   replyingTo,
   setReplyingTo,
@@ -84,7 +86,9 @@ function CommentRow({
   const isReplyTarget = replyingTo?.id === comment.id;
   const canReply = isLoggedIn && depth < MAX_DEPTH;
   const canEdit =
-    !!currentUserId && comment.user_id === currentUserId && isLoggedIn;
+    !!currentUserId &&
+    (comment.user_id === currentUserId || isAdmin) &&
+    isLoggedIn;
 
   const handleToggleReply = () => {
     if (!canReply) return;
@@ -165,6 +169,7 @@ function CommentRow({
                 depth={depth + 1}
                 isLoggedIn={isLoggedIn}
                 currentUserId={currentUserId}
+                isAdmin={isAdmin}
                 order={order}
                 replyingTo={replyingTo}
                 setReplyingTo={setReplyingTo}
@@ -217,6 +222,7 @@ export default function CommentsSection({ recipeId }: { recipeId: number }) {
 
   const { user } = useAuth();
   const currentUserId = user ? Number(user.id) : null;
+  const isAdmin = user?.role === "admin";
 
   // Top-level comment text
   const [rootText, setRootText] = useState("");
@@ -348,6 +354,7 @@ export default function CommentsSection({ recipeId }: { recipeId: number }) {
                     depth={0}
                     isLoggedIn={isLoggedIn}
                     currentUserId={currentUserId}
+                    isAdmin={isAdmin}
                     order={order}
                     replyingTo={replyingTo}
                     setReplyingTo={setReplyingTo}

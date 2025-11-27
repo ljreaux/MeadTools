@@ -107,7 +107,9 @@ function RecipeView({
                 ? recipeNameProps.value
                 : t("PDF.pageTitle")}
             </h1>
-            {public_username && <p>{t("byUser", { public_username })}</p>}
+            <p>
+              {t("byUser", { public_username: public_username ?? "Anonymous" })}
+            </p>
           </span>
         </header>
         <section>

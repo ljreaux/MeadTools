@@ -99,6 +99,7 @@ model users {
   public_username String?   @db.VarChar(50)
   google_avatar_url String?   @db.Text
   show_google_avatar Boolean  @default(false)
+  active         Boolean @default(true)
   brews           brews[]
   devices         devices[]
   recipes         recipes[]

@@ -87,7 +87,7 @@ async function getRecipesPageBase(opts: RecipesPageOpts) {
       skip,
       take,
       include: {
-        users: { select: { public_username: true } }
+        users: { select: { public_username: true, active: true } }
       },
       orderBy: {
         id: "desc" // or created_at: "desc" if you have it
@@ -133,7 +133,9 @@ async function getRecipesPageBase(opts: RecipesPageOpts) {
       ...rec,
       primaryNotes,
       secondaryNotes,
-      public_username: rec.users?.public_username || "",
+      public_username: rec.users?.active
+        ? (rec.users?.public_username ?? "")
+        : "",
       averageRating,
       numberOfRatings
     };
@@ -192,21 +194,13 @@ export async function getRecipeInfo(recipeId: number) {
     const recipe = await prisma.recipes.findUnique({
       where: { id: recipeId },
       include: {
-        users: { select: { public_username: true } },
-        comments: {
-          where: { parent_id: null, deleted_at: null },
-          orderBy: { created_at: "asc" },
-          include: {
-            author: { select: { id: true, public_username: true } },
-            replies: {
-              where: { deleted_at: null },
-              orderBy: { created_at: "asc" },
-              include: {
-                author: { select: { id: true, public_username: true } }
-              }
-            }
+        users: {
+          select: {
+            public_username: true,
+            active: true
           }
         },
+
         ratings: {
           select: { rating: true, user_id: true }
         }
@@ -221,20 +215,28 @@ export async function getRecipeInfo(recipeId: number) {
           recipe.ratings.length
         : null;
 
+    // Mask the recipe owner’s username if the user is inactive
+    const ownerUsername =
+      recipe.users && recipe.users.active ? recipe.users.public_username : null;
+
     return {
       ...recipe,
+      users: recipe.users
+        ? {
+            ...recipe.users,
+            public_username: ownerUsername
+          }
+        : null,
       primaryNotes: concatNotes(recipe.primaryNotes),
       secondaryNotes: concatNotes(recipe.secondaryNotes),
-      public_username: recipe.users?.public_username || null,
-      averageRating: avgRating,
-      commentCount: recipe.comments.length
+      public_username: ownerUsername,
+      averageRating: avgRating
     };
   } catch (error) {
     console.error("Error fetching recipe info:", error);
     throw new Error("Database error");
   }
 }
-
 export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
   return prisma.recipes.update({
     where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer
