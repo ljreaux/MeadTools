@@ -110,14 +110,20 @@ function renderSpoilerNodes(children: React.ReactNode): React.ReactNode {
     return result;
   }
 
-  // Case 3: a React element - recurse into its children (except <code>)
+  // --- Case 3: a React element - recurse into its children (except <code>)
   if (React.isValidElement(children) && children.props?.children) {
-    if (children.type === "code") {
-      return children;
+    // Narrow the element so TS knows it has a `children` prop
+    type WithChildren = { children?: React.ReactNode };
+
+    const el = children as React.ReactElement<WithChildren>;
+
+    // Don't recurse into <code> – we want raw text there
+    if (el.type === "code") {
+      return el;
     }
 
-    return React.cloneElement(children, {
-      children: renderSpoilerNodes(children.props.children)
+    return React.cloneElement<WithChildren>(el, {
+      children: renderSpoilerNodes(el.props.children)
     });
   }
 
