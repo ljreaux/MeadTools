@@ -9,7 +9,6 @@ import {
   useDeleteComment
 } from "@/hooks/reactQuery/useComments";
 import { Button } from "@/components/ui/button";
-import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import CommentInput from "./CommentInput";
 import { CommentItem } from "./CommentItem";
 import { Separator } from "@/components/ui/separator";
@@ -217,10 +216,7 @@ export default function CommentsSection({ recipeId }: { recipeId: number }) {
   const updateComment = useUpdateComment(recipeId);
   const deleteComment = useDeleteComment(recipeId);
 
-  const token = useAuthToken();
-  const isLoggedIn = !!token;
-
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const currentUserId = user ? Number(user.id) : null;
   const isAdmin = user?.role === "admin";
 

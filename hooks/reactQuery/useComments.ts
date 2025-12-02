@@ -65,6 +65,7 @@ export function useCommentThread(
 export function useCreateComment(recipeId: number) {
   const qc = useQueryClient();
   const fetchWithAuth = useFetchWithAuth();
+  const baseKey = qk.comments(recipeId); // e.g. ["comments", recipeId]
 
   return useMutation({
     mutationFn: (body: { comment: string; parent_id?: string | null }) =>
@@ -78,10 +79,10 @@ export function useCreateComment(recipeId: number) {
 
     onMutate: async (vars) => {
       // Cancel all comment queries for this recipe
-      await qc.cancelQueries({ queryKey: ["comments"], exact: false });
+      await qc.cancelQueries({ queryKey: baseKey, exact: false });
 
       const prevEntries = qc.getQueriesData<any>({
-        queryKey: ["comments"]
+        queryKey: baseKey
       });
 
       const optimistic = {
@@ -93,7 +94,6 @@ export function useCreateComment(recipeId: number) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         deleted_at: null,
-        // roots have reply_count, replies usually don't
         reply_count: 0,
         author: { public_username: "You", avatarUrl: null }
       };
@@ -104,10 +104,9 @@ export function useCreateComment(recipeId: number) {
         const parts = key as (string | number)[];
         const [root0, maybeRecipeId, type, maybeParentId] = parts;
 
-        if (root0 !== "comments") continue;
-        if (maybeRecipeId !== recipeId) continue;
+        if (root0 !== baseKey[0] || maybeRecipeId !== recipeId) continue;
 
-        // Root list
+        // 1) New root comment → prepend to the "roots" list
         if (!vars.parent_id && type === "roots") {
           const first = data.pages[0];
           qc.setQueryData(key, {
@@ -120,34 +119,28 @@ export function useCreateComment(recipeId: number) {
           continue;
         }
 
-        // If this is a roots query and we're replying to a root,
-        // bump reply_count on that root. (We do NOT decrement on delete.)
-        if (vars.parent_id && type === "roots") {
-          const nextPages = data.pages.map((page: any) => ({
+        // 2) Reply (to root OR to a reply)
+        if (vars.parent_id) {
+          let nextPages = data.pages.map((page: any) => ({
             ...page,
             data: page.data.map((c: any) =>
+              // bump reply_count on *any* comment that is the parent
               c.id === vars.parent_id
                 ? { ...c, reply_count: (c.reply_count ?? 0) + 1 }
                 : c
             )
           }));
-          qc.setQueryData(key, { ...data, pages: nextPages });
-        }
 
-        // Thread query for this parent: add optimistic reply to the top
-        if (
-          vars.parent_id &&
-          type === "thread" &&
-          maybeParentId === vars.parent_id
-        ) {
-          const first = data.pages[0];
-          qc.setQueryData(key, {
-            ...data,
-            pages: [
+          // If this query is the thread for that parent, also prepend the reply
+          if (type === "thread" && maybeParentId === vars.parent_id) {
+            const first = nextPages[0];
+            nextPages = [
               { ...first, data: [optimistic, ...first.data] },
-              ...data.pages.slice(1)
-            ]
-          });
+              ...nextPages.slice(1)
+            ];
+          }
+
+          qc.setQueryData(key, { ...data, pages: nextPages });
         }
       }
 
@@ -164,14 +157,14 @@ export function useCreateComment(recipeId: number) {
     onSettled: (_data, _error, vars) => {
       // Always refetch roots (for canonical reply_count, etc.)
       qc.invalidateQueries({
-        queryKey: ["comments", recipeId, "roots"],
+        queryKey: [...baseKey, "roots"],
         exact: false
       });
 
       // If this was a reply, also refetch that thread
       if (vars.parent_id) {
         qc.invalidateQueries({
-          queryKey: ["comments", recipeId, "thread", vars.parent_id],
+          queryKey: [...baseKey, "thread", vars.parent_id],
           exact: false
         });
       }

@@ -2,8 +2,6 @@
 
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import {
   ButtonGroup,
@@ -12,6 +10,7 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import type { CommentNode } from "./CommentsSection";
 import CommentInput from "./CommentInput";
+import { MarkdownPreview } from "./MarkdownPreview"; // ⬅️ adjust path if needed
 
 type CommentItemProps = {
   comment: CommentNode;
@@ -75,7 +74,7 @@ export function CommentItem({
           <AvatarFallback>{initial}</AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 space-y-1">
+        <div className="flex-1 min-w-0 space-y-1">
           <header className="flex flex-wrap items-baseline gap-2 text-xs text-muted-foreground">
             <span className="font-medium text-foreground text-sm">
               {username}
@@ -117,11 +116,11 @@ export function CommentItem({
               />
             </div>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {comment.comment}
-              </ReactMarkdown>
-            </div>
+            <MarkdownPreview
+              text={comment.comment}
+              className="prose-sm mt-1"
+              minHeight={0}
+            />
           )}
 
           {/* Actions */}

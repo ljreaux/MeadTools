@@ -11,17 +11,23 @@ import {
   TooltipProvider
 } from "./ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { cn } from "@/lib/utils";
+
+type TooltipVariant = "default" | "warning" | "destructive" | "muted";
 
 type TooltipHelperProps = {
   body: string;
   link?: string;
   links?: string[][];
+  /** Controls the color of the trigger icon */
+  variant?: TooltipVariant;
 };
 
 export default function TooltipHelper({
   body,
   link,
-  links
+  links,
+  variant = "default"
 }: TooltipHelperProps) {
   const { t } = useTranslation();
   const [isTouch, setIsTouch] = useState(false);
@@ -75,13 +81,22 @@ export default function TooltipHelper({
     </div>
   );
 
+  const iconColor =
+    variant === "warning"
+      ? "text-warning"
+      : variant === "destructive"
+        ? "text-destructive"
+        : variant === "muted"
+          ? "text-muted-foreground"
+          : "";
+
   const trigger = (
     <Button
       variant="ghost"
       aria-label={t("tipText.ariaLabel", { defaultValue: "More info" })}
       className="p-1 h-fit mx-1"
     >
-      <Info className="w-4 h-4" />
+      <Info className={cn("w-4 h-4", iconColor)} />
     </Button>
   );
 
@@ -100,7 +115,7 @@ export default function TooltipHelper({
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-        <TooltipContent>{content}</TooltipContent>
+        <TooltipContent className="z-[1000]">{content}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

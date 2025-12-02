@@ -30,7 +30,7 @@ const calcAmountPerBottle = (numberOfBottles: number, totalSugar: number) =>
 
 const usePrimingSugar = () => {
   // 🔁 Fetch sugar ingredients via React Query
-  const { data: ingredientData } = useIngredientsQuery("sugar");
+  const { data: ingredientData, isLoading } = useIngredientsQuery("sugar");
 
   // Derived sugar definitions from ingredients
   const sugars: Sugar = useMemo(() => {
@@ -123,6 +123,7 @@ const usePrimingSugar = () => {
   }, [temp, vols, volume, volumeUnits, tempUnits]);
 
   return {
+    ingredientsLoading: isLoading,
     tempProps: {
       value: temp,
       onChange: handleTempChange

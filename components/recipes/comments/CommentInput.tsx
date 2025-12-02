@@ -19,16 +19,16 @@ import {
   Quote,
   FileText,
   Pencil,
-  Send
+  Send,
+  EyeOff
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { MarkdownPreview } from "./MarkdownPreview";
 
 type Props = {
   isLoggedIn: boolean;
@@ -36,11 +36,8 @@ type Props = {
   setText: (s: string) => void;
   submit: () => void;
   maxChars?: number;
-  /** Optional label for the submit action, e.g. "Save" when editing */
   submitLabel?: string;
-  /** Optional cancel handler – if provided, a Cancel button will be shown */
   onCancel?: () => void;
-  /** Autofocus the textarea when in "write" mode */
   autoFocus?: boolean;
 };
 
@@ -107,7 +104,7 @@ export default function CommentInputGroup({
       const { start: a } = replace(
         start,
         end,
-        "```ts\n" + (picked || "code") + "\n```"
+        "```\n" + (picked || "code") + "\n```"
       );
       setSel(a + 4, a + 4 + (picked ? picked.length : 4));
     } else {
@@ -151,6 +148,11 @@ export default function CommentInputGroup({
     setSel(a, b);
   };
 
+  const spoiler = () => {
+    // discord-style: ||spoiler||
+    wrap("||", "||", "spoiler");
+  };
+
   const count = text.length;
   const over = count > maxChars;
   const near = count >= maxChars * 0.9;
@@ -164,7 +166,7 @@ export default function CommentInputGroup({
     // Submit on Cmd/Ctrl + Enter
     if (hasMod && e.key === "Enter") {
       e.preventDefault();
-      if (!text.trim() || count > maxChars) return; // respect disabled state
+      if (!text.trim() || count > maxChars) return;
       submit();
       return;
     }
@@ -197,15 +199,11 @@ export default function CommentInputGroup({
           aria-describedby="comment-count"
         />
       ) : (
-        <div className="prose prose-invert max-w-none p-3 min-h-[120px] text-left w-full">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {text || "_Nothing to preview…_"}
-          </ReactMarkdown>
-        </div>
+        <MarkdownPreview text={text} className="w-full p-3" minHeight={120} />
       )}
 
       <InputGroupAddon align="block-end" className="gap-1">
-        {/* Preview/Edit toggle isolated on the left */}
+        {/* Preview/Edit toggle */}
         {mode === "preview" ? (
           <InputGroupButton
             size="icon-xs"
@@ -231,7 +229,7 @@ export default function CommentInputGroup({
           className="!h-4 mx-1 sm:flex hidden"
         />
 
-        {/* Formatting toolbar (only in Write, only on >= sm) */}
+        {/* Formatting toolbar (Write mode only, ≥ sm) */}
         {mode === "write" && (
           <>
             <Tooltip>
@@ -338,12 +336,26 @@ export default function CommentInputGroup({
               </TooltipTrigger>
               <TooltipContent>Code / Code block</TooltipContent>
             </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <InputGroupButton
+                  className="sm:flex hidden"
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label="Spoiler"
+                  onClick={spoiler}
+                >
+                  <EyeOff className="h-4 w-4" />
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Spoiler</TooltipContent>
+            </Tooltip>
           </>
         )}
 
         <div className="ml-auto" />
 
-        {/* Cancel button when editing/replying inline */}
         {onCancel && (
           <Button
             type="button"
@@ -363,7 +375,7 @@ export default function CommentInputGroup({
               over
                 ? "text-destructive"
                 : near
-                  ? "text-amber-500"
+                  ? "text-warning"
                   : "text-muted-foreground"
             }`}
           >
