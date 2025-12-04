@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 

@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
-import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useBrewById, useLinkBrewToRecipe } from "@/hooks/reactQuery/useBrews";

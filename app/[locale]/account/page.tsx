@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
@@ -381,7 +381,7 @@ const RecipeCard = ({
   deleteRecipe: () => Promise<void>;
 }) => {
   const { t } = useTranslation();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);

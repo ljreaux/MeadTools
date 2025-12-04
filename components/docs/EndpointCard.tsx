@@ -1,10 +1,9 @@
 "use client";
 import { useTheme } from "next-themes";
-import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
-  oneLight,
+  oneLight
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 interface Endpoint {
@@ -49,7 +48,7 @@ export default function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
               customStyle={{
                 fontSize: "0.9rem",
                 padding: "1rem",
-                whiteSpace: "pre-wrap",
+                whiteSpace: "pre-wrap"
               }}
             >
               {JSON.stringify(endpoint.request, null, 2)}
@@ -68,7 +67,7 @@ export default function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
               customStyle={{
                 fontSize: "0.9rem",
                 padding: "1rem",
-                whiteSpace: "pre-wrap",
+                whiteSpace: "pre-wrap"
               }}
             >
               {JSON.stringify(endpoint.response, null, 2)}

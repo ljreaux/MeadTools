@@ -1,4 +1,3 @@
-import React from "react";
 import PrintableIframe from "../recipeBuilder/PrintableIframe";
 import { useRecipe } from "../providers/SavedRecipeProvider";
 import { useNutrients } from "../providers/SavedNutrientProvider";

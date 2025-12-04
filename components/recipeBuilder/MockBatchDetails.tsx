@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-  AlertDialogCancel,
+  AlertDialogCancel
 } from "../ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
@@ -22,7 +22,7 @@ function MockBatchDetails({ useRecipe }: { useRecipe: () => Recipe }) {
   const { setIngredientsToTarget } = useRecipe();
   const [{ og, volume }, setOgAndVolume] = useState({
     og: "",
-    volume: "",
+    volume: ""
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);

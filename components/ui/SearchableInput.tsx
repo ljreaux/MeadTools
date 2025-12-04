@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, KeyboardEvent } from "react";
+import { useRef, useEffect, useState, KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
 

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
+  PopoverTrigger
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { add, format } from "date-fns";
@@ -12,7 +12,7 @@ import { de, enUS } from "date-fns/locale";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
-  ChevronRight,
+  ChevronRight
 } from "lucide-react";
 import { Clock } from "lucide-react";
 import * as React from "react";
@@ -23,7 +23,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
 import { DayPicker } from "react-day-picker";
 import { useTranslation } from "react-i18next";
@@ -235,7 +235,7 @@ function genMonths(
 ) {
   return Array.from({ length: 12 }, (_, i) => ({
     value: i,
-    label: format(new Date(2021, i), "MMMM", { locale }),
+    label: format(new Date(2021, i), "MMMM", { locale })
   }));
 }
 
@@ -243,7 +243,7 @@ function genYears(yearRange = 50) {
   const today = new Date();
   return Array.from({ length: yearRange * 2 + 1 }, (_, i) => ({
     value: today.getFullYear() - yearRange + i,
-    label: (today.getFullYear() - yearRange + i).toString(),
+    label: (today.getFullYear() - yearRange + i).toString()
   }));
 }
 
@@ -263,7 +263,7 @@ function Calendar({
       locale = {
         options,
         localize,
-        formatLong,
+        formatLong
       };
     }
     return genMonths(locale);
@@ -307,17 +307,15 @@ function Calendar({
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
-        ...classNames,
+        ...classNames
       }}
       components={{
-        // @ts-expect-error got this from a trusted source, it appears to work properly
         Chevron: ({ ...props }) =>
           props.orientation === "left" ? (
             <ChevronLeft className="w-4 h-4" />
           ) : (
             <ChevronRight className="w-4 h-4" />
           ),
-        // @ts-expect-error got this from a trusted source, it appears to work properly
         MonthCaption: ({ calendarMonth }) => {
           return (
             <div className="inline-flex gap-2">
@@ -364,7 +362,7 @@ function Calendar({
               </Select>
             </div>
           );
-        },
+        }
       }}
       {...props}
     />
@@ -591,7 +589,7 @@ const TimePicker = React.forwardRef<TimePickerRef, TimePickerProps>(
         minuteRef: minuteRef.current,
         hourRef: hourRef.current,
         secondRef: secondRef.current,
-        periodRef: periodRef.current,
+        periodRef: periodRef.current
       }),
       [minuteRef, hourRef, secondRef]
     );
@@ -741,7 +739,7 @@ const DateTimePicker = React.forwardRef<
       ref,
       () => ({
         ...buttonRef.current,
-        value,
+        value
       }),
       [value]
     );
@@ -752,7 +750,7 @@ const DateTimePicker = React.forwardRef<
         `PPP HH:mm${!granularity || granularity === "second" ? ":ss" : ""}`,
       hour12:
         displayFormat?.hour12 ??
-        `PP h:mm${!granularity || granularity === "second" ? ":ss" : ""} b`,
+        `PP h:mm${!granularity || granularity === "second" ? ":ss" : ""} b`
     };
     const { i18n } = useTranslation();
     const defaultLocale = i18n.resolvedLanguage?.includes("de") ? de : enUS;
@@ -763,7 +761,7 @@ const DateTimePicker = React.forwardRef<
         ...enUS,
         options,
         localize,
-        formatLong,
+        formatLong
       };
     }
 
@@ -787,7 +785,7 @@ const DateTimePicker = React.forwardRef<
                   ? initHourFormat.hour24
                   : initHourFormat.hour12,
                 {
-                  locale: loc,
+                  locale: loc
                 }
               )
             ) : (

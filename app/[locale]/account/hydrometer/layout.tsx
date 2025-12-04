@@ -1,6 +1,5 @@
 import Nav from "@/components/ispindel/Nav";
 import initTranslations from "@/lib/i18n";
-import React from "react";
 
 async function Layout({
   children,

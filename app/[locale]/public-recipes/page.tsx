@@ -1,4 +1,3 @@
-import React from "react";
 import RecipeList from "./RecipeList";
 import initTranslations from "@/lib/i18n";
 import { getPublicRecipesPage } from "@/lib/db/recipes";

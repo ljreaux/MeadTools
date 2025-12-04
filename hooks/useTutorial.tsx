@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Joyride, { CallBackProps, Step } from "react-joyride";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 
 type SpecialStepCallbacks = {

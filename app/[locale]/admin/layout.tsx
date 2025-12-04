@@ -2,7 +2,6 @@
 import AdminNav from "@/components/admin/Nav";
 import Loading from "@/components/loading";
 import { useAdminRoute } from "@/hooks/useAdminRoute";
-import React from "react";
 
 function AdminDashboard({ children }: { children: React.ReactNode }) {
   const loading = useAdminRoute();
