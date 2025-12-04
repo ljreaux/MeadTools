@@ -1,26 +1,30 @@
 "use client";
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import { useTranslation } from "react-i18next";
-
-import useStabilizers from "@/hooks/useStabilizers";
 import Tooltip from "@/components/Tooltips";
 
-const Stabilizers = () => {
+import useStabilizers from "@/hooks/useStabilizers";
+import {
+  isValidNumber,
+  normalizeNumberString
+} from "@/lib/utils/validateInput";
+import { useTranslation } from "react-i18next";
+
+function Stabilizers() {
+  const { t, i18n } = useTranslation();
+  const currentLocale = i18n.resolvedLanguage;
+
   const {
     setVolume,
     volume,
@@ -36,126 +40,213 @@ const Stabilizers = () => {
     takingReading,
     setTakingReading,
     stabilizerType,
-    setStabilizerType,
+    setStabilizerType
   } = useStabilizers();
 
-  const { t } = useTranslation();
+  // Displays
+  const sorbateDisplay = normalizeNumberString(sorbate, 3, currentLocale);
+  const sulfiteDisplay = normalizeNumberString(sulfite, 3, currentLocale);
+  const campdenDisplay = normalizeNumberString(
+    Math.round(campden * 10) / 10,
+    1,
+    currentLocale
+  );
+
   return (
-    <div className="w-full flex justify-center items-center sm:pt-24 pt-[6rem] relative">
-      <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[650px]">
-        <h1 className="sm:text-3xl text-xl text-center">
-          {t("calculators.extraCalcs.stabilizers")}
-        </h1>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-none">
-              <TableCell>{t("batchSize")}</TableCell>
-              <TableCell>{t("UNITS")}:</TableCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>
-                <Input
-                  value={volume.toString()}
-                  onChange={(e) => setVolume(Number(e.target.value))}
-                  type="number"
-                  step={0.001}
-                  onFocus={(e) => e.target.select()}
-                />
-              </TableCell>
-              <TableCell>
-                <Select
-                  onValueChange={(val) => {
-                    setVolumeUnits(val as "gal" | "lit");
-                  }}
-                  value={volumeUnits}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gal">{t("GAL")}</SelectItem>
-                    <SelectItem value="lit">{t("LIT")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-            </TableRow>
-            <TableRow className="border-none">
-              <TableCell>{t("ABV")}:</TableCell>
-              <TableCell>
-                <span className="flex gap-4 py-4 text-center flex-col sm:flex-row">
-                  <p>{t("pH")}</p>
+    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+      {/* Heading */}
+      <h1 className="sm:text-3xl text-xl text-center text-foreground">
+        {t("calculators.extraCalcs.stabilizers")}
+      </h1>
+
+      {/* Inputs */}
+      <div className="flex flex-col gap-6">
+        {/* Batch size + units */}
+        <div className="space-y-2">
+          <label htmlFor="volume" className="text-sm font-medium">
+            {t("batchSize")}
+          </label>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="volume"
+              inputMode="decimal"
+              type="text"
+              onFocus={(e) => e.target.select()}
+              value={volume.toString()}
+              onChange={(e) => {
+                if (!isValidNumber(e.target.value)) return;
+                const num = Number(e.target.value || "0");
+                setVolume(num);
+              }}
+              className="h-full text-lg"
+            />
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Select
+                value={volumeUnits}
+                onValueChange={(val) => setVolumeUnits(val as "gal" | "lit")}
+              >
+                <SelectTrigger className="p-2 border-none mr-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gal">{t("GAL")}</SelectItem>
+                  <SelectItem value="lit">{t("LIT")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
+
+        {/* ABV */}
+        <div className="space-y-2">
+          <label htmlFor="abv" className="text-sm font-medium">
+            {t("ABV")}
+          </label>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="abv"
+              inputMode="decimal"
+              type="text"
+              onFocus={(e) => e.target.select()}
+              value={abv.toString()}
+              onChange={(e) => {
+                if (!isValidNumber(e.target.value)) return;
+                const num = Number(e.target.value || "0");
+                setAbv(num);
+              }}
+              className="h-full text-lg"
+            />
+            <InputGroupAddon
+              className="px-2 text-xs sm:text-sm"
+              align="inline-end"
+            >
+              %
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
+
+        {/* pH + "taking reading" toggle */}
+        <div className="space-y-2">
+          <div className="flex items-center  gap-4">
+            <label htmlFor="phReading" className="text-sm font-medium">
+              {t("pH")}
+            </label>
+
+            <div className="flex items-center gap-2 text-xs sm:text-sm">
+              <Select
+                value={takingReading ? "yes" : "no"}
+                onValueChange={(val) => setTakingReading(val === "yes")}
+              >
+                <SelectTrigger className="h-8 w-[88px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="phReading"
+              inputMode="decimal"
+              type="text"
+              onFocus={(e) => e.target.select()}
+              value={phReading.toString()}
+              onChange={(e) => {
+                if (!isValidNumber(e.target.value)) return;
+                const num = Number(e.target.value || "0");
+                setPhReading(num);
+              }}
+              disabled={!takingReading}
+              className="h-full text-lg"
+            />
+            <InputGroupAddon
+              className="px-2 text-xs sm:text-sm"
+              align="inline-end"
+            >
+              pH
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="mt-2 w-full flex flex-col gap-6">
+        {/* Sorbate line */}
+        <div className="flex justify-center">
+          <div className="text-center">
+            <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+              {sorbateDisplay}
+              <span className="ml-1">g</span>
+            </p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("kSorb")}
+            </p>
+          </div>
+        </div>
+
+        {/* --- NEW: AND label between sorbate and sulfite --- */}
+        <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
+          {t("AND")}
+        </p>
+
+        {/* Sulfite section – styled like the Sulfite calculator */}
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center w-full p-2 gap-2 sm:gap-6">
+            {/* Left: grams of stabilizer */}
+            <div className="flex-1 flex justify-center sm:justify-end">
+              <div className="text-center sm:mr-3">
+                <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                  {sulfiteDisplay} g
+                </p>
+
+                <div className="mt-1 flex items-center justify-center gap-2 text-xs sm:text-sm">
                   <Select
-                    value={takingReading ? "yes" : "no"}
-                    onValueChange={(val) => setTakingReading(val === "yes")}
+                    value={stabilizerType}
+                    onValueChange={setStabilizerType}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </span>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>
-                <Input
-                  value={abv}
-                  onChange={(e) => setAbv(Number(e.target.value))}
-                  type="number"
-                  step={0.01}
-                  onFocus={(e) => e.target.select()}
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  value={phReading}
-                  onChange={(e) => setPhReading(Number(e.target.value))}
-                  type="number"
-                  step={0.01}
-                  onFocus={(e) => e.target.select()}
-                  disabled={!takingReading}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell>
-                {sorbate.toFixed(3)}g {t("kSorb")}
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center gap-2 justify-center">
-                  {sulfite.toFixed(3)}g{" "}
-                  <Select
-                    value={stabilizerType}
-                    onValueChange={setStabilizerType}
-                  >
-                    <SelectTrigger className="w-max">
-                      <SelectValue></SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="kMeta"> {t("kMeta")}</SelectItem>
+                      <SelectItem value="kMeta">{t("kMeta")}</SelectItem>
                       <SelectItem value="naMeta">{t("naMeta")}</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>{" "}
-                <p>{t("accountPage.or")}</p>{" "}
-                <p className="flex items-center justify-center gap-2">
-                  {Math.round(campden * 10) / 10} {t("campden")}
+                </div>
+              </div>
+            </div>
+
+            {/* Center "or" */}
+            <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
+              {t("accountPage.or")}
+            </p>
+
+            {/* Right: campden tablets */}
+            <div className="flex-1 flex justify-center sm:justify-start">
+              <div className="text-center sm:ml-3">
+                <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                  {campdenDisplay}
+                </p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground flex items-center justify-center gap-1">
+                  {t("campden")}
                   <Tooltip body={t("tipText.campden")} />
                 </p>
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default Stabilizers;
