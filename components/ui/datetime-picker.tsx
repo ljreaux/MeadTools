@@ -1,5 +1,5 @@
-import { Button, buttonVariants } from "@/components/ui/button";
-import type { CalendarProps } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -9,11 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { add, format } from "date-fns";
 import { de, enUS } from "date-fns/locale";
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight
-} from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { Clock } from "lucide-react";
 import * as React from "react";
 import { useImperativeHandle, useRef } from "react";
@@ -25,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { DayPicker } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 
 // ---------- utils start ----------
@@ -230,145 +225,7 @@ function display12HourValue(hours: number) {
   return `0${hours % 12}`;
 }
 
-function genMonths(
-  locale: Pick<Locale, "options" | "localize" | "formatLong">
-) {
-  return Array.from({ length: 12 }, (_, i) => ({
-    value: i,
-    label: format(new Date(2021, i), "MMMM", { locale })
-  }));
-}
-
-function genYears(yearRange = 50) {
-  const today = new Date();
-  return Array.from({ length: yearRange * 2 + 1 }, (_, i) => ({
-    value: today.getFullYear() - yearRange + i,
-    label: (today.getFullYear() - yearRange + i).toString()
-  }));
-}
-
 // ---------- utils end ----------
-
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  yearRange = 50,
-  ...props
-}: CalendarProps & { yearRange?: number }) {
-  const MONTHS = React.useMemo(() => {
-    let locale = enUS;
-    const { options, localize, formatLong } = props.locale || {};
-    if (options && localize && formatLong) {
-      locale = {
-        options,
-        localize,
-        formatLong
-      };
-    }
-    return genMonths(locale);
-  }, []);
-
-  const YEARS = React.useMemo(() => genYears(yearRange), []);
-
-  return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
-        nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-        ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell:
-          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-        ),
-        day_range_end: "day-range-end",
-        day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
-        ...classNames
-      }}
-      components={{
-        Chevron: ({ ...props }) =>
-          props.orientation === "left" ? (
-            <ChevronLeft className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          ),
-        MonthCaption: ({ calendarMonth }) => {
-          return (
-            <div className="inline-flex gap-2">
-              <Select
-                defaultValue={calendarMonth.date.getMonth().toString()}
-                onValueChange={(value) => {
-                  const newDate = new Date(calendarMonth.date);
-                  newDate.setMonth(Number.parseInt(value, 10));
-                  props.onMonthChange?.(newDate);
-                }}
-              >
-                <SelectTrigger className="gap-1 p-0 border-none w-fit focus:bg-accent focus:text-accent-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((month) => (
-                    <SelectItem
-                      key={month.value}
-                      value={month.value.toString()}
-                    >
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                defaultValue={calendarMonth.date.getFullYear().toString()}
-                onValueChange={(value) => {
-                  const newDate = new Date(calendarMonth.date);
-                  newDate.setFullYear(Number.parseInt(value, 10));
-                  props.onMonthChange?.(newDate);
-                }}
-              >
-                <SelectTrigger className="gap-1 p-0 border-none w-fit focus:bg-accent focus:text-accent-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {YEARS.map((year) => (
-                    <SelectItem key={year.value} value={year.value.toString()}>
-                      {year.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          );
-        }
-      }}
-      {...props}
-    />
-  );
-}
-Calendar.displayName = "Calendar";
 
 interface PeriodSelectorProps {
   period: Period;
@@ -705,7 +562,7 @@ const DateTimePicker = React.forwardRef<
       value,
       onChange,
       hourCycle = 24,
-      yearRange = 50,
+
       disabled = false,
       displayFormat,
       granularity = "second",
@@ -800,7 +657,6 @@ const DateTimePicker = React.forwardRef<
             month={month}
             onSelect={(d) => handleSelect(d)}
             onMonthChange={handleSelect}
-            yearRange={yearRange}
             locale={locale}
             {...props}
           />
