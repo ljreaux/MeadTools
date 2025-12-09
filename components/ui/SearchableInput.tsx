@@ -99,7 +99,7 @@ function SearchableInput<T extends Record<string, any>>({
   const listboxId = "searchable-input-listbox";
   return (
     <div className="relative">
-      <InputGroup>
+      <InputGroup className="h-12">
         <InputGroupInput
           ref={inputRef}
           value={query}
@@ -117,6 +117,7 @@ function SearchableInput<T extends Record<string, any>>({
           aria-autocomplete="list"
           aria-expanded={dropdownOpen}
           aria-controls={dropdownOpen ? listboxId : undefined}
+          className="h-full text-lg relative"
         />
 
         <InputGroupAddon align="inline-end">

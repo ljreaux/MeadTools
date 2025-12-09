@@ -49,7 +49,7 @@ function TempCorrection() {
   );
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("tempCorrectionHeading")}
@@ -100,6 +100,7 @@ function TempCorrection() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 name="deg"
                 value={tempObj.tempUnits}
@@ -144,7 +145,7 @@ function TempCorrection() {
       </div>
 
       {/* Corrected SG + Brix display */}
-      <div className="mt-4 w-full max-w-2xl mx-auto flex flex-col gap-3">
+      <div className="mt-4 w-full max-w-3xl mx-auto flex flex-col gap-3">
         <div className="flex items-center w-full p-2">
           {/* Left: corrected SG */}
           <div className="flex-1 flex justify-end">

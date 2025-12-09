@@ -44,7 +44,7 @@ function EstimatedOG() {
   const estBrixDisplay = normalizeNumberString(toBrix(estOG), 2, currentLocale);
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading with Tooltip */}
       <h1 className="sm:text-3xl text-xl text-center flex items-center justify-center gap-2">
         {t("ogHeading")}{" "}
@@ -112,7 +112,7 @@ function EstimatedOG() {
       </div>
 
       {/* Result display (SG + Brix) */}
-      <div className="mt-4 w-full max-w-2xl mx-auto flex flex-col gap-3">
+      <div className="mt-4 w-full max-w-3xl mx-auto flex flex-col gap-3">
         <h2 className="sm:text-2xl text-xl font-semibold text-center">
           {t("estimatedOG")}
         </h2>

@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   isValidNumber,
   parseNumber,
@@ -68,7 +69,7 @@ function Sulfite() {
   const campdenDisplay = normalizeNumberString(campden, 2, currentLocale);
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("sulfiteHeading")}
@@ -95,6 +96,7 @@ function Sulfite() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 value={sulfite.units}
                 onValueChange={(val) =>
@@ -139,7 +141,7 @@ function Sulfite() {
       </div>
 
       {/* Results – split like other pages, stacked on mobile */}
-      <div className="mt-auto w-full max-w-2xl mx-auto">
+      <div className="mt-auto w-full max-w-3xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center w-full p-2 gap-2 sm:gap-6">
           {/* Left: grams of stabilizer */}
           <div className="flex-1 flex justify-center sm:justify-end">

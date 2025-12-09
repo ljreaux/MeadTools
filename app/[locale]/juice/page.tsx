@@ -45,7 +45,7 @@ function Juice() {
   const totalSugarDisplay = normalizeNumberString(totalSugar, 3, currentLocale);
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("juiceHeading")}
@@ -76,6 +76,7 @@ function Juice() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select value={sugarUnits} onValueChange={setSugarUnits}>
                 <SelectTrigger className="p-2 border-none mr-2">
                   <SelectValue />
@@ -112,6 +113,7 @@ function Juice() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 value={servingSizeUnits}
                 onValueChange={setServingSizeUnits}

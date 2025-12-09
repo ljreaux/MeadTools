@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   isValidNumber,
   parseNumber,
@@ -54,7 +55,7 @@ function Sorbate() {
   );
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("sorbateHeading")}
@@ -81,6 +82,7 @@ function Sorbate() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 value={sorbate.units}
                 onValueChange={(val) =>

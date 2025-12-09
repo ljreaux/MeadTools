@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import useBrix from "@/hooks/useBrix";
 import {
   isValidNumber,
@@ -35,7 +36,7 @@ export default function Brix() {
   const displayUnit = showingBrix ? t("BRIX") : t("SG");
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       <h1 className="sm:text-3xl text-xl text-center">{t("brixHeading")}</h1>
 
       {/* Input + units */}
@@ -61,6 +62,7 @@ export default function Brix() {
             align="inline-end"
             className="px-1 text-xs sm:text-sm whitespace-nowrap"
           >
+            <Separator orientation="vertical" className="h-12" />
             <Select value={units} onValueChange={setUnits}>
               <SelectTrigger className="p-2 border-none mr-2">
                 <SelectValue placeholder={t("SG")} />

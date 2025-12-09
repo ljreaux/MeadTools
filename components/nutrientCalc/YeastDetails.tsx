@@ -5,7 +5,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import InputWithUnits from "./InputWithUnits";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
 import { NutrientType } from "@/types/nutrientTypes";
@@ -18,21 +17,23 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
     setYeastBrand,
     yeastList,
     setYeastName,
-    setNitrogenRequirement,
-    targetYAN
+    setNitrogenRequirement
   } = useNutrients();
 
   return (
-    <div className="joyride-yeastDetails grid sm:grid-cols-2 gap-2 border-b border-muted-foreground py-6">
-      <div>
-        <label>
-          {t("yeastBrand")}
-          <Select
-            defaultValue={selected.yeastBrand}
-            onValueChange={setYeastBrand}
-          >
-            <SelectTrigger>
-              <span>{selected.yeastBrand}</span>
+    <div className="joyride-yeastDetails flex flex-col gap-4">
+      <h3 className="text-base font-semibold">{t("yeastDetails")}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Yeast brand */}
+        <div className="grid gap-1">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1 mb-1">
+              {t("yeastBrand")}
+            </span>
+          </label>
+          <Select value={selected.yeastBrand} onValueChange={setYeastBrand}>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder={selected.yeastBrand} />
             </SelectTrigger>
             <SelectContent>
               {Array.from(new Set(yeastList.map((yeast) => yeast.brand))).map(
@@ -44,14 +45,16 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
               )}
             </SelectContent>
           </Select>
-        </label>
-      </div>
-      <div>
-        <label>
-          <span className="flex items-center">
-            {t("yeastStrain")}
-            <Tooltip body={t("yeastSearch")} />
-          </span>
+        </div>
+
+        {/* Yeast strain (searchable) */}
+        <div className="grid gap-1">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1">
+              {t("yeastStrain")}
+              <Tooltip body={t("yeastSearch")} />
+            </span>
+          </label>
 
           <SearchableInput
             items={yeastList.sort()}
@@ -63,19 +66,22 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
               setYeastName(yeast.name);
             }}
           />
-        </label>
-      </div>
-      <div>
-        <label className="grid gap-1">
-          <span className="flex items-center sm:gap-1">
-            {t("n2Requirement.label")}
-            <Tooltip body={t("tipText.nitrogenRequirements")} />
-          </span>
+        </div>
+
+        {/* Nitrogen requirement */}
+        <div className="grid gap-1 col-span-full">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1">
+              {t("n2Requirement.label")}
+              <Tooltip body={t("tipText.nitrogenRequirements")} />
+            </span>
+          </label>
+
           <Select
             value={selected.yeastNitrogenRequirement}
             onValueChange={setNitrogenRequirement}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-12">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -93,16 +99,7 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
               </SelectItem>
             </SelectContent>
           </Select>
-        </label>
-      </div>
-      <div>
-        <span className="grid gap-1">
-          <span className="flex items-center sm:gap-1">
-            {t("targetYan")}
-            <Tooltip body={t("tipText.yan")} />
-          </span>
-          <InputWithUnits value={targetYAN} text={"PPM"} disabled />
-        </span>
+        </div>
       </div>
     </div>
   );

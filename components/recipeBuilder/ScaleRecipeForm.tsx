@@ -1,5 +1,9 @@
 import { FormEvent, useState } from "react";
-import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
+import {
+  isValidNumber,
+  parseNumber,
+  normalizeNumberString
+} from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
@@ -7,11 +11,11 @@ import { Recipe } from "@/types/recipeDataTypes";
 
 function ScaleRecipeForm({ useRecipe }: { useRecipe: () => Recipe }) {
   const { t, i18n } = useTranslation();
-  const currentLocale = i18n.language;
+  const locale = i18n.language;
   const {
     scaleRecipe,
     totalVolume,
-    units: { volume },
+    units: { volume }
   } = useRecipe();
   const [scaled, setScaled] = useState("0.000");
 
@@ -26,15 +30,18 @@ function ScaleRecipeForm({ useRecipe }: { useRecipe: () => Recipe }) {
       onSubmit={scale}
     >
       <h3 className="col-span-full">{t("scale.title")}</h3>
-      <label>
+
+      {/* Current volume (output style) */}
+      <label className="grid gap-1">
         {t("scale.current")}
-        <InputWithUnits
-          value={totalVolume.toLocaleString(currentLocale)}
-          disabled
-          text={volume}
-        />
+        <p className="text-2xl font-medium tracking-tight">
+          {normalizeNumberString(totalVolume, 3, locale)}
+          <span className="text-muted-foreground text-lg ml-1">{volume}</span>
+        </p>
       </label>
-      <label className="grid">
+
+      {/* Target volume (editable) */}
+      <label className="grid gap-1">
         {t("scale.target")}
         <InputWithUnits
           value={scaled}
@@ -45,6 +52,7 @@ function ScaleRecipeForm({ useRecipe }: { useRecipe: () => Recipe }) {
           className="mt-auto"
         />
       </label>
+
       <Button className="col-span-full" variant="secondary" type="submit">
         {t("scale.title")}
       </Button>

@@ -78,7 +78,7 @@
     "label": "Benutzerkonto",
     "login": "Anmelden/Registrieren",
     "logout": "Abmelden",
-    "noRecipes": "Sie haben derzeit keine gespeicherten Rezepte.",
+    "noRecipes": "Due hast derzeit keine gespeicherten Rezepte.",
     "updateUsername": "Öffentlichen Benutzernamen aktualisieren"
   },
   "accountPage": {
@@ -119,7 +119,7 @@
     "desktop": "MeadTools Desktop",
     "juice": "Saftrechner",
     "label": "Weiterführende Links",
-    "taplist": "MeadTools Zapfliste",
+    "taplist": "MeadTools Taplist",
     "tutorial": "Tutorial"
   },
   "additives": {
@@ -137,7 +137,7 @@
     "loginError": "Du hast nicht die nötigen Berechtigungen, um dieses Rezept anzuzeigen. Bitte melde Dich an oder kontaktiere den Ersteller des Rezepts um sicherzugehen, dass das Rezept öffentlich zugänglich ist.",
     "notCurrentUser": "Dies ist das Rezept eines anderen Benutzers. Du musst eine Kopie davon machen, um Änderungen vorzunehmen."
   },
-  "AND": "Und",
+  "AND": "und",
   "appleJuice": "Apfelsaft",
   "apples": "Apfel",
   "apricot": "Aprikose",
@@ -160,6 +160,7 @@
   },
   "backToList": "Zurück zur öffentlichen Rezeptliste",
   "banana": "Banane",
+  "batchDetails": "Chargendetails",
   "batchSize": "Ansatzmenge:",
   "beet": "Rüben",
   "belgianCandiSyrup": "Belgischer Candis-Sirup",
@@ -312,7 +313,7 @@
     "yeastTableCaption": "Eine Liste aller Hefen."
   },
   "desktopDeprecated": {
-    "body": "Die Desktop-App wird nicht mehr gewartet. Bitte verwenden Sie in Zukunft die Webversion. Vorhandene Desktop-Installationen können weiterhin ausgeführt werden, erhalten jedoch keine Updates oder Sicherheitsupdates.",
+    "body": "Die Desktop-App wird nicht mehr gewartet. Bitte verwende in Zukunft die Webversion. Vorhandene Desktop-Installationen können weiterhin benutzt werden, erhalten jedoch keine Updates oder Sicherheitsupdates mehr.",
     "exportData": "Daten vom Desktop exportieren",
     "hideLegacy": "Alte Downloads ausblenden",
     "hydroAlt": "Datentabelle für manuelle Hydrometer",
@@ -320,7 +321,7 @@
     "migrationGuide": "Migrationsleitfaden",
     "nextSteps": "Wie geht es weiter?",
     "nextStepsBody": "Wir konzentrieren unsere Bemühungen auf die Web-App, damit wir Funktionen schneller bereitstellen und alles synchron halten können.",
-    "openWeb": "Öffnen Sie MeadTools Web",
+    "openWeb": "MeadTools Web öffnen",
     "pillAlt": "RAPT-Pillendiagramm",
     "showLegacy": "Alte Downloads anzeigen (nicht unterstützt)",
     "title": "MeadTools Desktop ist veraltet",
@@ -356,9 +357,9 @@
     }
   },
   "FG": "FG",
-  "fgInBrix": "Geben Sie FG ein:",
+  "fgInBrix": "Gib die FG ein:",
   "fgLabel": "FG eingeben:",
-  "fgWarning": "Refraktometer-SG-Messwerte sind bekanntermaßen ungenau. Verwenden Sie daher die Brix-Skala Ihres Refraktometers.",
+  "fgWarning": "Refraktometer-SG-Messwerte sind bekanntermaßen ungenau. Verwende daher die Brix-Skala Ihres Refraktometers.",
   "figs": "Feige",
   "figsDried": "Feige, getrocknet",
   "FLOZ": "fl oz",
@@ -429,8 +430,8 @@
     "enter": "Bitte den Dateinamen eingeben",
     "genToken": "Token generieren",
     "home": {
-      "features": "Mit MeadTools können Sie Brauvorgänge verfolgen, mit einem Brauvorgang verknüpfte Protokolle anzeigen/bearbeiten/löschen, interaktive Diagramme Ihrer Protokolle anzeigen und Ihren Brauvorgang mit einem MeadTools-Rezept verknüpfen.",
-      "subtitle": "Derzeit werden iSpindel-, Tilt- und RAPT Pill-Geräte unterstützt. Weitere Informationen zur Einrichtung dieser Geräte finden Sie auf <a>der Einrichtungsseite</a> .",
+      "features": "Mit MeadTools kannst Du Ansätze verfolgen, mit einem Ansatz verknüpfte Protokolle anzeigen/bearbeiten/löschen, interaktive Diagramme Deiner Protokolle anzeigen und Deinen Ansatz mit einem MeadTools-Rezept verknüpfen.",
+      "subtitle": "Derzeit werden iSpindel-, Tilt- und RAPT Pill-Geräte unterstützt. Weitere Informationen zur Einrichtung dieser Geräte findest Du auf <a>der Einrichtungsseite</a> .",
       "welcome": "Willkommen beim drahtlosen Hydrometer-Dashboard von MeadTools"
     },
     "label": "Kabelloses Hydrometer-Dashboard",
@@ -440,7 +441,7 @@
     "nav": {
       "brews": "Gebräue",
       "device": "Geräteliste",
-      "home": "Heim",
+      "home": "Startseite",
       "setup": "Aufsetzen"
     },
     "noBrews": "Noch keine Gebräue.",
@@ -450,7 +451,7 @@
       "info": "     Das obige Token wird zusammen mit dem iSpindel-Namen verwendet, um deine Geräte zu identifizieren und sie mit deinem Konto zu verknüpfen. Bitte stelle sicher, dass du für jedes deiner Geräte einen anderen iSpindel-Namen hast, um Überschneidungen bei der Datenprotokollierung zu vermeiden. Wenn du dein Token neu generierst, musst du es auf ALL deinen Geräten aktualisieren, damit deine Protokolle gespeichert werden.",
       "serviceType": "Diensttyp: HTTPS-Post",
       "tilt": {
-        "title": "Neigung einrichten"
+        "title": "Tilt einrichten"
       },
       "title": "iSpindel einrichten"
     },
@@ -595,7 +596,7 @@
   "message": "Nachricht:",
   "MG": "mg",
   "ML": "ml",
-  "mobileChartMessage": "Bitte verwenden Sie zum Anzeigen dieses Diagramms das Querformat oder ein größeres Gerät.",
+  "mobileChartMessage": "Bitte verwende zum Anzeigen dieses Diagramms das Querformat oder ein größeres Gerät.",
   "molasses": "Melasse",
   "mulberry": "Maulbeere",
   "n2Requirement": {
@@ -622,7 +623,7 @@
     "subtitleTwo": "Sekundäre Notizen",
     "title": "Notizen Hinzufügen"
   },
-  "notify": "Erhalten Sie Aktivitäts-E-Mails?",
+  "notify": "Aktivitäts-E-Mails erhalten?",
   "numberOfAdditions": "Anzahl an Nährstoffgaben",
   "numOfPages": "Seite {{start_page}} von {{end_page}}",
   "nuteAmounts": "Nährstoffmengen",
@@ -693,7 +694,7 @@
     "pageInfo": "Seite {{page}} von {{totalPages}}",
     "perPage": "Anzahl pro Seite: ",
     "previous": "Vorherige",
-    "showing": "Anzeige {{start}} – {{end}} von {{total}}"
+    "showing": "Zeige {{start}} – {{end}} von {{total}}"
   },
   "papaya": "Papaya",
   "passionFruit": "Maracuja",
@@ -765,11 +766,11 @@
   "QUARTS": "Quart",
   "raisins": "Rosinen",
   "rapt": {
-    "credits": "Diese App wurde in Zusammenarbeit mit TooL entwickelt und wäre ohne seine Arbeit zur Dekodierung des Bluetooth-Signals der RAPT Pill nicht möglich gewesen. Das Repository finden Sie <a>hier</a> .",
+    "credits": "Diese App wurde in Zusammenarbeit mit TooL entwickelt und wäre ohne seine Arbeit zur Dekodierung des Bluetooth-Signals der RAPT Pill nicht möglich gewesen. Das Repository findest Du <a>hier</a> .",
     "description": "MeadTools unterstützt RAPT Pill derzeit über Bluetooth mit der MeadTools Pill Desktop-App. RAPT Cloud-Unterstützung ist für die nahe Zukunft geplant.",
-    "heading": "RAPT-Pille einrichten",
-    "macos_note": "Wenn Sie macOS verwenden, können Sie <a>dieser Anleitung</a> folgen, um nicht signierte Apps zuzulassen.",
-    "warning": "Die MeadTools Pill App steht unten zum Download bereit. Sie ist nicht signiert, daher wird Ihr System Sie beim ersten Öffnen warnen."
+    "heading": "RAPT Pill einrichten",
+    "macos_note": "Wenn Du macOS verwendest, kannst Du <a>dieser Anleitung</a> folgen, um nicht signierte Apps zuzulassen.",
+    "warning": "Die MeadTools Pill App steht unten zum Download bereit. Sie ist nicht signiert, daher wird Dein System Dich beim ersten Öffnen warnen."
   },
   "raspberry": "Himbeere",
   "recipeBuilder": {
@@ -821,7 +822,7 @@
   "resetAll": "Alles zurücksetzen",
   "results": "Ergebnisse",
   "rhubarb": "Rhabarber",
-  "sampleChartLabel": "Unten sehen Sie ein Beispieldiagramm mit iSpindel-Daten von Silentrob.",
+  "sampleChartLabel": "Unten siehst Du ein Beispieldiagramm mit iSpindel-Daten von Silentrob.",
   "sampleSize": "Probenmenge (ml):",
   "SAVE": "Speichern",
   "saveCopy": "Eine Kopie dieses Rezepts speichern",
@@ -874,7 +875,7 @@
   "tilt": {
     "instructions": {
       "note": "Fügen Sie den Link in das Feld „Benutzerdefinierte Cloud-URL“ für die Protokollierung durch Drittanbieter in der Tilt 2-App ein. Die App muss aktiv und in der Nähe des Fermenters sein, damit die Protokollierung kontinuierlich funktioniert.",
-      "recommendation": "Wenn dieses Setup für Sie nicht funktioniert, ziehen Sie die Verwendung eines <a>TiltPi</a> in Betracht.",
+      "recommendation": "Wenn dieses Setup für Dich nicht funktioniert, ziehe die Verwendung eines <a>TiltPi</a> in Betracht.",
       "text": "Der obige Token dient zur Identifizierung Ihres Tilt-Geräts mit Ihrem Konto. Der Gerätename wird auf die Farbe Ihres Tilt-Hydrometers eingestellt. Die Verwendung zweier Hydrometer mit derselben Farbe funktioniert daher nicht. Um Ihr Hydrometer einzurichten, generieren Sie Ihren Token und kopieren Sie anschließend die Cloud-URL in die Tilt 2 App oder TiltPi. Bei Verwendung von Tilt 2 müssen Sie möglicherweise „Benutzerdefinierte Cloud-URL verwenden“ in den Einstellungen aktivieren. MeadTools beginnt automatisch mit der Protokollierung basierend auf dem von Ihnen festgelegten Biernamen. Wenn Sie Ihren Token zurücksetzen, kopieren Sie unbedingt Ihre neue Cloud-URL in Tilt 2/TiltPi."
     }
   },
@@ -895,14 +896,14 @@
     "campden": "Hinweis: Campden-Tabletten werden größtenteils nur noch in den USA als Alternative zu Kaliumdisulfitpulver verwendet. Campden-Tabletten variieren etwas in der Menge an freiem SO2, die sie enthalten. MeadTools geht bei der Berechnung davon aus, dass eine Campden-Tablette 75PPM freies SO2 enthält.",
     "delleUnits": "Delle-Einheiten sind eine Maßeinheit für mikrobielle Stabilität. Je höher die Zahl, desto wahrscheinlicher ist der Met/Wein stabil, ohne weitere Zusätze oder Stabilisierungsmethoden zu benötigen. Delle-Einheiten werden Anhand von Restzucker und Alkoholgehalt berechnet. 73 Delle-Einheiten werden von den meisten als stabil angesehen, aber der Wert variiert. Alkoholtoleranz wird bei der Dell-Stabilität NICHT berücksichtigt. Mehr dazu: ",
     "desiredDetailsForm": "In diesem Teil erhältst Du die Daten für einen Ausgangsmost mit der gewünschten anfänglichen spezifischen Dichte (\"OG\") und dem gewünschten Volumen. Wenn Du dieses Formular verwendest, nachdem Du andere Zutaten eingegeben hast, werden alle Zutaten außer einem Honigdatensatz und einem Wasserdatensatz gelöscht.",
-    "emailAlerts": "Dadurch werden Warnmeldungen an die E-Mail-Adresse gesendet, die Sie gespeichert haben, wenn sich dieses Gebräu der 1/3-Zuckergrenze nähert und wenn es sich 1.000 nähert",
+    "emailAlerts": "Dadurch werden Warnmeldungen an die E-Mail-Adresse gesendet, die Du gespeichert hast, wenn sich dieses Gebräu der 1/3-Zuckergrenze nähert und wenn es sich 1.000 nähert",
     "estimatedFg": "Wenn du nicht vor hast, die Gärung vorzeitig zu beenden, ist es vermutlich am besten, dieses Feld bei 0.996 zu belassen. Diese Schätzung wird für die meisten Rezepte genau genug sein.",
     "estOG": "Die ursprüngliche Formel befindet sich leider auf einer Website, die nicht mehr funktioniert. Ich habe den ursprünglichen Blog-Artikel auf dieser Website aufbewahrt.  ",
     "goFerm": "Die GoFerm-Sorte verändert die Menge an Wasser, die für die Rehydration benötigt wird und beeinträchtigt die Effektivität von Fermaid O.",
     "linkText": "hier.",
     "maxGpl": "Diese Werte errechnet sich basierend auf dem Nährstoffplan, den du dir aussuchst. Sie sind veränderbar, aber das ist nicht empfohlen, wenn du nicht genau weisst, was du tust.",
     "nitrogenRequirements": "Hängt vom verwendeten Hefestamm ab. Wenn deine Hefe nicht in dieser Liste ist und du ihren Stickstoffbedarf nicht kennst, nimm am besten \"Andere: Andere Hefe mit mittlerem Stickstoffbedarf\". Dieser Wert kann verändert werden, wenn du eine Hefe benutzen willst, die einen besonderen Bedarf hat.",
-    "numberOfAdditions": "Gestaffelte Nährstoffgaben sind nützlich, um während der Gärung Temperaturspitzen zu vermeiden, die deine Hefe unnötigt stressen. Vier Nährstoffgaben sind vermutlich die geläufigste Vorgehensweise, aber ich persönlich bevorzuge drei Gaben oder manchmal sogar nur eine einzige.",
+    "numberOfAdditions": "Gestaffelte Nährstoffzugaben sind hilfreich, um Temperaturspitzen während der Gärung zu vermeiden, die die Hefe stressen können. Vier Nährstoffzugaben sind wahrscheinlich das gängigste Vorgehen, ich persönlich verwende jedoch in den meisten Fällen drei oder nur eine Zugabe. Liegt Ihre Stammwürze über 1,080, sollten Sie wahrscheinlich mehr als eine Zugabe vornehmen.",
     "nutrientSg": "Dies ist die Differenz an SG (\"Specific Gravity\" = spezifische Dichte), die die FG (\"Final Gravity\" = finale Dichte) berücksichtigt. Wenn zum Beispiel deine OG (\"Original Gravity\" = ursprüngliche Dichte) als 1.100 angegebene ist und deine FG als 1.010, wird dieses Feld 1.090 anzeigen. Dieses Feld kann verändert werden.",
     "offsetPpm": "Manche Ansätze beinhalten bereits einige YAN (\"Yeast Assimilable Nitrogen\" = Von der Hefe verwendbarer Stickstoff). Dieser Rechner geht automatisch von 25ppm pro Pfund Frucht je Gallone aus.Dieser Wert kann verändert werden.",
     "ogSeriousWarning": "Dieses Gebräu wird wahrscheinlich bei über 1.000 fertig gären, selbst bei schrittweiser Fütterung und richtiger Ernährung. Wenn Ihr OG über 1.170 liegt, kann es sein, dass die Gärung nicht richtig beginnt.",
@@ -996,6 +997,7 @@
   "watermelon": "Wassermelone",
   "yeastAmount": "Hefemenge",
   "yeastBrand": "Hefehersteller",
+  "yeastDetails": "Hefedetails",
   "yeasts": "Hefetabelle",
   "yeastSearch": "Wenn Sie eine Hefe aus der Liste auswählen, werden die Informationen automatisch ausgefüllt. Wenn Sie eine Hefe auswählen, die nicht der von Ihnen ausgewählten Marke entspricht, wird die Marke automatisch aktualisiert. Sie können auch benutzerdefinierte Hefen eingeben, müssen dann aber die anderen Werte selbst anpassen.",
   "yeastStrain": "Hefesorte",

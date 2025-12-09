@@ -40,7 +40,7 @@ function BenchTrials() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <div className="flex items-center justify-center gap-2">
         <h1 className="sm:text-3xl text-xl text-center text-foreground">
@@ -71,6 +71,7 @@ function BenchTrials() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 name="trialBatchUnits"
                 value={batchDetails.units}
