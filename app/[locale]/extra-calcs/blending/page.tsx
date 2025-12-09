@@ -52,7 +52,7 @@ function Blending() {
   );
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("blendingHeading")}
@@ -108,7 +108,7 @@ function Blending() {
       </div>
 
       {/* Results – split like other pages */}
-      <div className="w-full max-w-2xl mx-auto flex flex-col gap-3">
+      <div className="w-full max-w-3xl mx-auto flex flex-col gap-3">
         <div className="flex items-center w-full p-2">
           {/* Left: blended value */}
           <div className="flex-1 flex justify-end">

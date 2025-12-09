@@ -21,7 +21,7 @@ export default function AbvLine({
   return (
     <div
       className={cn(
-        "w-full max-w-2xl mx-auto flex items-center rounded-md p-2",
+        "w-full max-w-3xl mx-auto flex items-center rounded-md p-2",
         {
           "bg-destructive": Number(abvDisplay) < 0 || Number(abvDisplay) > 23
         }

@@ -47,8 +47,7 @@ const cardConfig = [
     heading: "nutesHeading",
     components: [
       <VolumeInputs key="volumeInputs" disabled useNutrients={useNutrients} />,
-      <YeastDetails key="yeastDetails" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+      <YeastDetails key="yeastDetails" useNutrients={useNutrients} />
     ]
   },
   {
@@ -56,7 +55,8 @@ const cardConfig = [
     heading: "nuteResults.label",
     components: [
       <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />
+      <Results key="results" useNutrients={useNutrients} />,
+      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
     ]
   },
   {

@@ -1,4 +1,3 @@
-import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -8,7 +7,7 @@ import {
 } from "../ui/select";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { Settings } from "lucide-react";
+import { Pencil, PencilOff, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +20,13 @@ import { isValidNumber } from "@/lib/utils/validateInput";
 import { cn } from "@/lib/utils";
 import { Switch } from "../ui/switch";
 import { NutrientType } from "@/types/nutrientTypes";
+import { Separator } from "../ui/separator";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "../ui/input-group";
 
 function NutrientSelector({
   useNutrients
@@ -37,29 +43,35 @@ function NutrientSelector({
     maxGpl,
     editMaxGpl
   } = useNutrients();
-  // Handle the change of selected nutrients
+
   const handleNutrientChange = (nutrient: string) => {
     const prevSelected = selected?.selectedNutrients || [];
 
     if (prevSelected?.includes(nutrient)) {
-      // If the nutrient is already selected, remove it
       setSelectedNutrients(prevSelected.filter((item) => item !== nutrient));
     } else {
-      // If the nutrient is not selected, add it
       setSelectedNutrients([...prevSelected, nutrient]);
     }
   };
 
+  const warnNumberOfAdditions =
+    Number(inputs.sg.value) > 1.08 && inputs.numberOfAdditions.value === "1";
+
   return (
-    <div className="border-b border-muted-foreground py-6">
-      <h3 className="flex items-center gap-1">
-        {t("selectNutes")}
-        <Tooltip
-          body={t("tipText.preferredSchedule")}
-          link="https://wiki.meadtools.com/en/process/nutrient_schedules"
-        />
-      </h3>
-      <div className="joyride-nutrientSwitches grid sm:grid-cols-2">
+    <>
+      {/* Header + helper tooltip, consistent with other sections */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h3 className="flex items-center gap-1">
+          {t("selectNutes")}
+          <Tooltip
+            body={t("tipText.preferredSchedule")}
+            link="https://wiki.meadtools.com/en/process/nutrient_schedules"
+          />
+        </h3>
+      </div>
+
+      {/* Nutrient toggles */}
+      <div className="joyride-nutrientSwitches grid sm:grid-cols-2 gap-2">
         {[
           { value: "Fermaid O", label: "nutrients.fermO" },
           { value: "Fermaid K", label: "nutrients.fermK" },
@@ -72,52 +84,102 @@ function NutrientSelector({
             useNutrients={useNutrients}
           />
         ))}
+
+        {/* “Other” switch stays, but gets same pill styling */}
         <label className="flex items-center gap-2">
           <Switch
             checked={selected.selectedNutrients?.includes("Other")}
             onCheckedChange={() => handleNutrientChange("Other")}
           />
-          {t("other.label")}
+          <span>{t("other.label")}</span>
         </label>
+
         {selected.selectedNutrients?.includes("Other") && (
-          <div className="grid grid-cols-2 gap-2 w-full col-span-2 py-6">
-            <h3 className="col-span-2"> Other Nutrient Details</h3>
-            <label className="space-y-2 col-span-2">
-              Name
-              <Input {...otherNutrientName} />
+          <div className="grid grid-cols-2 gap-4 w-full col-span-2 py-6">
+            <h3 className="col-span-2">
+              {t("other.detailsHeading", "Other Nutrient Details")}
+            </h3>
+
+            {/* Name */}
+            <label className="grid gap-1 col-span-2">
+              <span className="text-sm font-medium">
+                {t("other.nameLabel", "Name")}
+              </span>
+
+              <InputGroup className="h-12">
+                <InputGroupInput
+                  {...otherNutrientName}
+                  inputMode="text"
+                  onFocus={(e) => e.target.select()}
+                  className="text-lg"
+                />
+              </InputGroup>
             </label>
-            <label className="space-y-2">
-              YAN Contribution
-              <div className="relative">
-                <Input {...otherYanContribution} />
-                <p className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
-                  PPM YAN
-                </p>
-              </div>
+
+            {/* YAN Contribution */}
+            <label className="grid gap-1">
+              <span className="text-sm font-medium">
+                {t("other.yanContribution", "YAN Contribution")}
+              </span>
+
+              <InputGroup className="h-12">
+                <InputGroupInput
+                  {...otherYanContribution}
+                  inputMode="decimal"
+                  onFocus={(e) => e.target.select()}
+                  className="text-lg"
+                />
+                <InputGroupAddon
+                  align="inline-end"
+                  className="px-2 text-xs sm:text-sm whitespace-nowrap mr-1"
+                >
+                  {t("PPM")} YAN
+                </InputGroupAddon>
+              </InputGroup>
             </label>
-            <label className="space-y-2">
-              Max g/L
-              <div className="relative">
-                <Input
+
+            {/* Max g/L */}
+            <label className="grid gap-1">
+              <span className="text-sm font-medium">
+                {t("other.maxGpl", "Max g/L")}
+              </span>
+
+              <InputGroup className="h-12">
+                <InputGroupInput
                   value={maxGpl[3]}
                   onChange={(e) => editMaxGpl(3, e.target.value)}
+                  inputMode="decimal"
+                  onFocus={(e) => e.target.select()}
+                  className="text-lg"
                 />
-                <p className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
+                <InputGroupAddon
+                  align="inline-end"
+                  className="px-2 text-xs sm:text-sm whitespace-nowrap mr-1"
+                >
                   g/L
-                </p>
-              </div>
+                </InputGroupAddon>
+              </InputGroup>
             </label>
           </div>
         )}
       </div>
+
+      {/* Number of additions – your warning logic is good */}
       <div>
-        <label className="joyride-numOfAdditions grid gap-1">
+        <label className="joyride-numOfAdditions grid gap-1 mt-4">
           <span className="flex items-center gap-1">
             {t("numberOfAdditions")}
-            <Tooltip body={t("tipText.numberOfAdditions")} />
+            <Tooltip
+              body={t("tipText.numberOfAdditions")}
+              variant={warnNumberOfAdditions ? "warning" : undefined}
+            />
           </span>
           <Select {...inputs.numberOfAdditions}>
-            <SelectTrigger>
+            <SelectTrigger
+              className={cn("h-12", {
+                "border-warning ring-warning/40": warnNumberOfAdditions
+              })}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -130,7 +192,9 @@ function NutrientSelector({
           </Select>
         </label>
       </div>
-    </div>
+
+      <Separator className="my-2" />
+    </>
   );
 }
 
@@ -161,6 +225,7 @@ const SettingsDialog = ({
   tutorialClassFlag?: boolean;
 }) => {
   const { t } = useTranslation();
+
   return (
     <Dialog>
       <DialogTrigger
@@ -170,66 +235,99 @@ const SettingsDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adjust Nutrient Settings</DialogTitle>
-          <DialogDescription>
-            <div className="p-2">
-              <label className="space-y-2">
-                YAN Contribution
-                <div className="relative">
-                  <Input
-                    {...yanContribution}
-                    onFocus={(e) => e.target.select()}
-                    inputMode="decimal"
-                  />
-                  <p className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
-                    PPM YAN
-                  </p>
-                </div>
-              </label>
-            </div>
-            <div className="p-2">
-              <label className="space-y-2">
-                Max g/L
-                <div className="relative">
-                  <Input
-                    {...maxGpl}
-                    onFocus={(e) => e.target.select()}
-                    inputMode="decimal"
-                  />
-                  <span className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
-                    g/L
+          <DialogTitle>
+            {t("other.settingsTitle", "Adjust Nutrient Settings")}
+          </DialogTitle>
+
+          <DialogDescription asChild>
+            <div className="flex flex-col gap-4 pt-2">
+              {/* YAN Contribution */}
+              <div className="px-2">
+                <label className="grid gap-1 text-sm font-medium">
+                  <span>
+                    {t("other.settingsYanContribution", "YAN Contribution")}
                   </span>
-                </div>
-              </label>
-            </div>
-            <div
-              className={cn(
-                adjustAllowed && "bg-destructive",
-                "flex gap-2 items-center p-2 rounded-md transition-colors"
-              )}
-            >
-              <label className="space-y-2 w-full">
-                Provided YAN
-                <div className="relative">
-                  <Input
-                    {...providedYan}
-                    onFocus={(e) => e.target.select()}
-                    inputMode="decimal"
-                    disabled={!adjustAllowed}
-                  />
-                  <p className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
-                    PPM YAN
+                  <InputGroup className="h-12">
+                    <InputGroupInput
+                      {...yanContribution}
+                      onFocus={(e) => e.target.select()}
+                      inputMode="decimal"
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <span>PPM YAN</span>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </label>
+              </div>
+
+              {/* Max g/L */}
+              <div className="px-2">
+                <label className="grid gap-1 text-sm font-medium">
+                  <span>{t("other.settingsMaxGpl", "Max g/L")}</span>
+                  <InputGroup className="h-12">
+                    <InputGroupInput
+                      {...maxGpl}
+                      onFocus={(e) => e.target.select()}
+                      inputMode="decimal"
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <span>g/L</span>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </label>
+              </div>
+
+              {/* Provided YAN + inline adjust toggle inside the same input group */}
+              <div className="px-2">
+                <label className="grid gap-1 text-sm font-medium w-full">
+                  <span>{t("other.settingsProvidedYan", "Provided YAN")}</span>
+
+                  <InputGroup className="h-12">
+                    {/* Left addon – adjust toggle as an input-group button */}
+                    <InputGroupAddon align="inline-start">
+                      <InputGroupButton
+                        size="icon-xs"
+                        aria-pressed={adjustAllowed}
+                        aria-label={t(
+                          "other.settingsAdjustValue",
+                          "Toggle adjusting provided YAN"
+                        )}
+                        onClick={() => setAdjustAllowed(!adjustAllowed)}
+                      >
+                        {adjustAllowed ? <Pencil /> : <PencilOff />}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+
+                    {/* Main input */}
+                    <InputGroupInput
+                      {...providedYan}
+                      onFocus={(e) => e.target.select()}
+                      inputMode="decimal"
+                      readOnly={!adjustAllowed}
+                      data-warning={adjustAllowed ? "true" : undefined}
+                    />
+
+                    {/* Right addon – units + mobile tooltip */}
+                    <InputGroupAddon align="inline-end">
+                      <span>PPM YAN</span>
+                      <span className={cn("sm:hidden")}>
+                        <Tooltip body={t("tipText.adjustYanValue")} />
+                      </span>
+                    </InputGroupAddon>
+                  </InputGroup>
+
+                  {/* Desktop-only helper text (same content as tooltip),
+                      always rendered but hidden via `invisible` when not adjusting */}
+                  <p
+                    className={cn(
+                      "hidden sm:block mt-1 text-xs text-warning",
+                      !adjustAllowed && "invisible"
+                    )}
+                  >
+                    {t("tipText.adjustYanValue")}
                   </p>
-                </div>
-              </label>
-              <label className="flex gap-1">
-                Adjust Value
-                <Switch
-                  checked={adjustAllowed}
-                  onCheckedChange={setAdjustAllowed}
-                />
-                <Tooltip body={t("tipText.adjustYanValue")} />
-              </label>
+                </label>
+              </div>
             </div>
           </DialogDescription>
         </DialogHeader>

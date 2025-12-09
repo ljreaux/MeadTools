@@ -23,7 +23,7 @@ const InputWithUnits = ({
   className
 }: InputWithUnitsProps) => {
   return (
-    <InputGroup className={cn(className)}>
+    <InputGroup className={cn("h-12", className)}>
       <InputGroupInput
         disabled={disabled}
         value={value}
@@ -31,6 +31,7 @@ const InputWithUnits = ({
         onChange={handleChange}
         inputMode="decimal"
         onFocus={(e) => e.target.select()}
+        className="h-full text-lg relative"
       />
       <InputGroupAddon align="inline-end">
         <InputGroupText>{text}</InputGroupText>

@@ -29,7 +29,7 @@ export default function AbvCalculator() {
   const abv = useAbv(OG, FG);
   const inputArr = [t("OG"), t("FG")];
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       <h1 className="sm:text-3xl text-xl text-center">{t("abvHeading")}</h1>
 
       {/* Inputs */}

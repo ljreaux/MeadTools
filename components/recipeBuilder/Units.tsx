@@ -7,18 +7,19 @@ import {
 } from "../ui/select";
 import { useTranslation } from "react-i18next";
 import { Recipe } from "@/types/recipeDataTypes";
+import { Separator } from "../ui/separator";
 
 function Units({ useRecipe }: { useRecipe: () => Recipe }) {
   const { units, changeVolumeUnits, changeWeightUnits } = useRecipe();
   const { t } = useTranslation();
   return (
-    <div className="joyride-units grid grid-cols-2 gap-2 border-b border-muted-foreground py-6">
-      <h2 className="col-span-2">{t("UNITS")}</h2>
+    <div className="joyride-units grid grid-cols-2 gap-2">
+      <h3 className="text-base font-semibold col-span-full">{t("UNITS")}</h3>
 
-      <label>
+      <label className="grid gap-1">
         {t("recipeBuilder.labels.weight")}
         <Select value={units.weight} onValueChange={changeWeightUnits}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12">
             <SelectValue />
           </SelectTrigger>
 
@@ -28,10 +29,10 @@ function Units({ useRecipe }: { useRecipe: () => Recipe }) {
           </SelectContent>
         </Select>
       </label>
-      <label>
+      <label className="grid gap-1">
         {t("nuteVolume")}
         <Select value={units.volume} onValueChange={changeVolumeUnits}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -40,6 +41,7 @@ function Units({ useRecipe }: { useRecipe: () => Recipe }) {
           </SelectContent>
         </Select>
       </label>
+      <Separator className="col-span-2 my-4" />
     </div>
   );
 }

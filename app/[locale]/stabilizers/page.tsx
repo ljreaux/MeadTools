@@ -20,6 +20,7 @@ import {
   normalizeNumberString
 } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
+import { Separator } from "@/components/ui/separator";
 
 function Stabilizers() {
   const { t, i18n } = useTranslation();
@@ -53,7 +54,7 @@ function Stabilizers() {
   );
 
   return (
-    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("calculators.extraCalcs.stabilizers")}
@@ -85,6 +86,7 @@ function Stabilizers() {
               align="inline-end"
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
+              <Separator orientation="vertical" className="h-12" />
               <Select
                 value={volumeUnits}
                 onValueChange={(val) => setVolumeUnits(val as "gal" | "lit")}
@@ -199,7 +201,7 @@ function Stabilizers() {
         </p>
 
         {/* Sulfite section – styled like the Sulfite calculator */}
-        <div className="w-full max-w-2xl mx-auto">
+        <div className="w-full max-w-3xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center w-full p-2 gap-2 sm:gap-6">
             {/* Left: grams of stabilizer */}
             <div className="flex-1 flex justify-center sm:justify-end">

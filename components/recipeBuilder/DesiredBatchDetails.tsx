@@ -1,7 +1,13 @@
+"use client";
+
 import { useState } from "react";
 import { useRecipe } from "../providers/RecipeProvider";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { Input } from "../ui/input";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 import { Button } from "../ui/button";
 import {
   AlertDialog,
@@ -13,19 +19,23 @@ import {
   AlertDialogAction,
   AlertDialogCancel
 } from "../ui/alert-dialog";
-import { useTranslation } from "react-i18next";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent
+} from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import Tooltip from "../Tooltips";
 import { ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function DesiredBatchDetails() {
   const { t } = useTranslation();
-  const { setIngredientsToTarget } = useRecipe();
-  const [{ og, volume }, setOgAndVolume] = useState({
-    og: "",
-    volume: ""
-  });
+  const { setIngredientsToTarget, units } = useRecipe();
+
+  const [{ og, volume }, setOgAndVolume] = useState({ og: "", volume: "" });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = () => {
     setIngredientsToTarget(parseNumber(og), parseNumber(volume));
@@ -34,59 +44,81 @@ function DesiredBatchDetails() {
   };
 
   return (
-    <div className="border-b border-muted-foreground py-6">
-      {/* Collapsible Header */}
-      <div
-        className="flex items-center justify-between cursor-pointer w-max"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        <h3 className="flex items-center">
-          {t("initialDetails.title")}
-          <Tooltip body={t("tipText.desiredDetailsForm")} />
-        </h3>
-        <ChevronDown
-          className={`w-5 h-5 transform transition-transform ${
-            isCollapsed ? "" : "rotate-180"
-          }`}
-        />
-      </div>
-
-      {/* Collapsible Content */}
-      {!isCollapsed && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsDialogOpen(true);
-          }}
-          className="joyride-initialDetails grid gap-1 mt-4"
+    <div>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        {/* HEADER */}
+        <CollapsibleTrigger
+          className="flex w-full items-center justify-between cursor-pointer"
+          asChild
         >
-          <label className="mb-4">
-            <Input
+          <span>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              {t("initialDetails.title")}
+              <Tooltip body={t("tipText.desiredDetailsForm")} />
+            </h3>
+
+            <ChevronDown
+              className={`h-5 w-5 transition-transform duration-200 ${
+                open ? "rotate-180" : ""
+              }`}
+            />
+          </span>
+        </CollapsibleTrigger>
+
+        {/* CONTENT */}
+        <CollapsibleContent className="mt-4 grid gap-4 joyride-initialDetails">
+          {/* OG Input */}
+          <InputGroup className="h-12">
+            <InputGroupInput
+              placeholder={t("placeholder.og", "Enter OG")}
               value={og}
-              placeholder="Enter OG"
               onChange={(e) => {
                 if (isValidNumber(e.target.value))
-                  setOgAndVolume({ volume, og: e.target.value });
+                  setOgAndVolume({ og: e.target.value, volume });
               }}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="text-lg"
             />
-          </label>
-          <label className="mb-4">
-            <Input
+            <InputGroupAddon
+              align="inline-end"
+              className="mr-1 text-xs sm:text-sm"
+            >
+              {t("SG")}
+            </InputGroupAddon>
+          </InputGroup>
+
+          {/* Volume Input */}
+          <InputGroup className="h-12">
+            <InputGroupInput
+              placeholder={t("placeholder.volume", "Enter Volume")}
               value={volume}
-              placeholder="Enter Volume"
               onChange={(e) => {
                 if (isValidNumber(e.target.value))
                   setOgAndVolume({ og, volume: e.target.value });
               }}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="text-lg"
             />
-          </label>
-          <Button type="submit" className="max-w-24">
+            <InputGroupAddon
+              align="inline-end"
+              className="mr-1 text-xs sm:text-sm"
+            >
+              {units.volume}
+            </InputGroupAddon>
+          </InputGroup>
+
+          <Button
+            type="button"
+            onClick={() => setIsDialogOpen(true)}
+            className="max-w-24"
+          >
             {t("SUBMIT")}
           </Button>
-        </form>
-      )}
-
-      {/* Confirmation Dialog */}
+        </CollapsibleContent>
+      </Collapsible>
+      {/* CONFIRMATION DIALOG */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -95,16 +127,16 @@ function DesiredBatchDetails() {
               {t("calculateDetailsDialog")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>
-              {t("cancel")}
-            </AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button onClick={handleSubmit}>{t("SUBMIT")}</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>{" "}
+      <Separator className="my-2" />
     </div>
   );
 }
