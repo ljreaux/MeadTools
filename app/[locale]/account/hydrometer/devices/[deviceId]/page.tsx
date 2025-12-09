@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -22,69 +22,96 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import LogTable from "@/components/ispindel/LogTable";
 import RecentLogsForm from "@/components/ispindel/RecentLogsForm";
 import { useParams, useRouter } from "next/navigation";
 
-function Device() {
+import {
+  useHydrometerInfo,
+  type Device
+} from "@/hooks/reactQuery/useHydrometerInfo";
+import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
+import { useHydrometerDeviceMutations } from "@/hooks/reactQuery/useHydrometerDeviceMutations";
+import { useDeviceLogs } from "@/hooks/reactQuery/useHydrometerLogs";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/db/queryKeys";
+
+function DevicePage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const deviceId = params.deviceId as string;
-  const { t } = useTranslation();
-  const {
-    deviceList,
-    fetchLogs,
-    logs,
-    setLogs,
-    startBrew,
-    endBrew,
-    updateCoeff,
-    brews,
-    deleteDevice,
-  } = useISpindel();
 
-  const [device, setDevice] = useState<any>(null);
+  // --- Device + brew info ---
+  const {
+    data: hydroInfo,
+    isLoading: infoLoading,
+    isError: infoError
+  } = useHydrometerInfo();
+
+  const device: Device | undefined =
+    hydroInfo?.devices?.find((d) => d.id === deviceId) ?? undefined;
+
+  // --- Start / end brew mutations ---
+  const { startBrew, endBrew, isStarting, isEnding } = useHydrometerBrews();
+
+  // --- Device-level mutations (coeffs + delete) ---
+  const {
+    updateCoefficients: updateDeviceCoefficients,
+    deleteDevice,
+    isUpdatingCoefficients,
+    isDeletingDevice
+  } = useHydrometerDeviceMutations();
+
+  // --- Local state for coeffs + file name ---
   const [coefficients, setCoefficients] = useState<string[]>(["", "", "", ""]);
   const [showTable, setShowTable] = useState(false);
   const [fileName, setFileName] = useState("");
 
-  // Get the current device from the device list
-  useEffect(() => {
-    setDevice(deviceList.find((device) => device.id === deviceId));
-  }, [deviceId, deviceList]);
+  // Initialize coefficients from device (only once at mount / device change)
+  if (
+    device &&
+    device.coefficients &&
+    device.coefficients.length === 4 &&
+    coefficients.every((c) => c === "")
+  ) {
+    setCoefficients(device.coefficients.map((c) => String(c)));
+  }
 
-  // Initialize coefficients when the device is loaded
-  useEffect(() => {
-    if (device?.coefficients?.length === 4) {
-      setCoefficients(device.coefficients);
-    }
-  }, [device]);
-  useEffect(() => {
+  // --- Date range state: “since yesterday” is just the initial value ---
+  const [dateRange, setDateRange] = useState(() => {
     const from = new Date();
     const to = new Date();
     from.setDate(from.getDate() - 1);
 
-    const start_date = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
-    const end_date = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
+    const start = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
+    const end = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();
 
-    fetchLogs(start_date, end_date, deviceId).then((logs) => {
-      setLogs(logs);
-    });
-  }, []);
+    return { start, end };
+  });
+  const {
+    data: deviceLogs = [],
+    isLoading: logsLoading,
+    isError: logsError
+  } = useDeviceLogs({
+    deviceId,
+    startDate: dateRange.start,
+    endDate: dateRange.end
+  });
 
-  // Update coefficients locally
   const updateCoefficients = (index: number, value: string) => {
-    const newCoefficients = [...coefficients];
-    newCoefficients[index] = value;
-    setCoefficients(newCoefficients);
+    setCoefficients((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
   };
 
-  // Validate coefficients
   const validateCoefficients = (arr: string[]) => {
     if (
       arr.length < 4 ||
@@ -95,30 +122,54 @@ function Device() {
     return true;
   };
 
-  // Handle coefficient submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!device) return;
+
     if (!validateCoefficients(coefficients)) {
       return toast({
         description: t(
           "Please fill in all coefficients with valid number values."
         ),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
-    updateCoeff(device.id, coefficients.map(Number));
+
+    await updateDeviceCoefficients({
+      deviceId: device.id,
+      coefficients: coefficients.map((c) => Number(c))
+    });
+
     setShowTable(false);
   };
 
-  const brewName = brews.find((brew) => brew?.id === device?.brew_id)?.name;
+  const brewName = device?.brews?.name ?? null;
 
-  if (!device) return null;
+  if (infoLoading) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("loading", "Loading…")}</p>
+      </div>
+    );
+  }
+
+  if (infoError || !device) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>
+          {t("iSpindelDashboard.deviceError", "Unable to load this device.")}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
       <div className="grid items-center justify-center sm:grid-cols-2">
+        {/* Device name + start/end brew */}
         <div className="flex flex-col items-center justify-center gap-4 my-2">
           <p>{device.device_name}</p>
+
           {!device.brew_id ? (
             <AlertDialog>
               <AlertDialogTrigger
@@ -142,10 +193,15 @@ function Device() {
                   <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                   <AlertDialogAction asChild>
                     <Button
-                      variant={"secondary"}
-                      onClick={() => startBrew(device.id, fileName)}
+                      variant="secondary"
+                      disabled={isStarting}
+                      onClick={async () => {
+                        await startBrew(device.id, fileName || null);
+                      }}
                     >
-                      {t("iSpindelDashboard.startBrew")}
+                      {isStarting
+                        ? t("iSpindelDashboard.starting", "Starting…")
+                        : t("iSpindelDashboard.startBrew")}
                     </Button>
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -153,13 +209,19 @@ function Device() {
             </AlertDialog>
           ) : (
             <Button
-              variant={"destructive"}
-              onClick={() => endBrew(device.id, device.brew_id)}
+              variant="destructive"
+              disabled={isEnding}
+              onClick={async () => {
+                await endBrew(device.id, device.brew_id);
+              }}
             >
-              {t("iSpindelDashboard.endBrew", { brew_name: brewName })}
+              {isEnding
+                ? t("iSpindelDashboard.ending", "Ending…")
+                : t("iSpindelDashboard.endBrew", { brew_name: brewName })}
             </Button>
           )}
         </div>
+        {/* Coefficients editor */}
         <div className="flex flex-col items-center justify-center sm:col-start-1">
           {showTable ? (
             <form onSubmit={handleSubmit}>
@@ -175,10 +237,10 @@ function Device() {
                       <Input
                         value={coefficients[0]}
                         onChange={(e) => updateCoefficients(0, e.target.value)}
-                      ></Input>
+                      />
                     </TableCell>
                     <TableCell>
-                      &#215; angle<sup>3</sup> +
+                      × angle<sup>3</sup> +
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -186,10 +248,10 @@ function Device() {
                       <Input
                         value={coefficients[1]}
                         onChange={(e) => updateCoefficients(1, e.target.value)}
-                      ></Input>
+                      />
                     </TableCell>
                     <TableCell>
-                      &#215; angle<sup>2</sup> +
+                      × angle<sup>2</sup> +
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -197,28 +259,34 @@ function Device() {
                       <Input
                         value={coefficients[2]}
                         onChange={(e) => updateCoefficients(2, e.target.value)}
-                      ></Input>
+                      />
                     </TableCell>
-                    <TableCell>&#215; angle +</TableCell>
+                    <TableCell>× angle +</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>
                       <Input
                         value={coefficients[3]}
                         onChange={(e) => updateCoefficients(3, e.target.value)}
-                      ></Input>
+                      />
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
-              <Button type="submit">{t("Submit")}</Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setShowTable(false)}
-              >
-                {t("Cancel")}
-              </Button>
+              <div className="mt-2 flex gap-2">
+                <Button type="submit" disabled={isUpdatingCoefficients}>
+                  {isUpdatingCoefficients
+                    ? t("saving", "Saving…")
+                    : t("Submit")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowTable(false)}
+                >
+                  {t("Cancel")}
+                </Button>
+              </div>
             </form>
           ) : (
             <Button onClick={() => setShowTable(true)}>
@@ -226,15 +294,41 @@ function Device() {
             </Button>
           )}
         </div>
-        <RecentLogsForm deviceId={device.id} />
+        <RecentLogsForm
+          deviceId={device.id}
+          onRangeChange={({ startISO, endISO }) => {
+            setDateRange({ start: startISO, end: endISO });
+          }}
+        />{" "}
       </div>
-      <div className="max-w-full">
+
+      {/* Logs table */}
+      <div className="max-w-full mt-4">
+        {logsLoading && (
+          <p className="text-center text-sm mb-2">{t("loading", "Loading…")}</p>
+        )}
+        {logsError && (
+          <p className="text-center text-sm mb-2 text-destructive">
+            {t(
+              "iSpindelDashboard.logsError",
+              "Unable to load logs for this device."
+            )}
+          </p>
+        )}
         <LogTable
-          logs={logs}
-          removeLog={(id) => setLogs(logs.filter((log) => log.id !== id))}
+          logs={deviceLogs}
+          removeLog={(id) => {
+            queryClient.setQueryData(
+              qk.hydrometerDeviceLogs(deviceId, dateRange.start, dateRange.end),
+              (old: any[] | undefined) =>
+                (old ?? []).filter((log) => log.id !== id)
+            );
+          }}
           deviceId={deviceId}
         />
       </div>
+
+      {/* Delete device */}
       <AlertDialog>
         <AlertDialogTrigger
           className={buttonVariants({ variant: "destructive" })}
@@ -254,13 +348,15 @@ function Device() {
             <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button
-                onClick={() =>
-                  deleteDevice(device.id).then(() => {
-                    router.push("/account/hydrometer/devices");
-                  })
-                }
+                disabled={isDeletingDevice}
+                onClick={async () => {
+                  await deleteDevice(device.id);
+                  router.push("/account/hydrometer/devices");
+                }}
               >
-                {t("iSpindelDashboard.deleteDevice")}
+                {isDeletingDevice
+                  ? t("iSpindelDashboard.deleting", "Deleting…")
+                  : t("iSpindelDashboard.deleteDevice")}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -270,4 +366,4 @@ function Device() {
   );
 }
 
-export default Device;
+export default DevicePage;

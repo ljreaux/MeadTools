@@ -1,150 +1,431 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
-import { parseNumber } from "@/lib/utils/validateInput";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from "@/components/ui/pagination";
+
+import Rating from "@/components/recipes/Rating";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import PerPageSelect from "@/components/pagination/PerPageSelect";
+import { parseNumber } from "@/lib/utils/validateInput";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 interface Recipe {
   id: number;
   user_id: number;
   name: string;
-  recipeData: string; // JSON string containing OG, FG, etc.
+  recipeData: string;
   yanFromSource: string | null;
   yanContribution: string;
   nutrientData: string;
   advanced: boolean;
   nuteInfo: string | null;
-  primaryNotes: string[] | null;
-  secondaryNotes: string[] | null;
+  primaryNotes: string[][] | null;
+  secondaryNotes: string[][] | null;
   private: boolean;
   public_username: string | null;
+  averageRating?: number;
+  numberOfRatings?: number;
 }
 
 function parseRecipeData(recipeData: string) {
   try {
     const parsedData = JSON.parse(recipeData);
-    return {
-      OG: parseNumber(parsedData.OG)?.toFixed(3) || "N/A",
-      FG: parseNumber(parsedData.FG)?.toFixed(3) || "N/A",
-    };
+
+    const rawOG = parsedData.OG;
+    const rawFG = parsedData.FG;
+
+    const ogNum = parseNumber(rawOG);
+    const fgNum = parseNumber(rawFG);
+
+    const OG = Number.isFinite(ogNum) ? ogNum.toFixed(3) : "N/A";
+    const FG = Number.isFinite(fgNum) ? fgNum.toFixed(3) : "N/A";
+
+    return { OG, FG };
   } catch (error) {
     console.error("Error parsing recipeData:", error);
     return { OG: "N/A", FG: "N/A" };
   }
 }
 
-export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
-  const searchParams = useSearchParams();
-  const pathName = usePathname();
-  const { replace } = useRouter();
+type Props = {
+  recipes: Recipe[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+  query: string;
+  pageSize: number;
+  allowedPageSizes: number[];
+};
+
+export default function RecipeList({
+  recipes,
+  page,
+  totalPages,
+  query,
+  pageSize,
+  allowedPageSizes
+}: Props) {
   const { t } = useTranslation();
-  const itemsPerPage = 10;
-  const [currentPage, setCurrentPage] = useState(1);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const filteredRecipes = recipes.filter((recipe) => {
-    const searchTerm = searchParams.get("query") ?? "";
-    return (
-      recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.public_username?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const hasPrev = page > 1;
+  const hasNext = page < totalPages;
 
-  const totalPages = Math.ceil(filteredRecipes.length / itemsPerPage);
+  // --- Search state + debounce ---
+  const [searchInput, setSearchInput] = useState(query ?? "");
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
 
-  const currentRecipes = filteredRecipes.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Keep local input in sync if the URL/query prop changes (e.g. via back/forward)
+  useEffect(() => {
+    setSearchInput(query ?? "");
+  }, [query]);
+
+  // When the debounced value changes, update the URL (which triggers a new server fetch)
+  useEffect(() => {
+    // If the debounced value matches the current query param, nothing to do
+    if ((debouncedSearch ?? "").trim() === (query ?? "").trim()) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    const trimmed = debouncedSearch.trim();
+    if (trimmed) {
+      params.set("query", trimmed);
+    } else {
+      params.delete("query");
+    }
+
+    // Always reset to first page when the search changes
+    params.delete("page");
+
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [debouncedSearch, query, pathname, router, searchParams]);
+
+  const buildHref = (opts: { page?: number; query?: string }) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    const nextQuery =
+      opts.query != null && opts.query.trim() !== ""
+        ? opts.query.trim()
+        : query;
+
+    if (nextQuery) {
+      params.set("query", nextQuery);
+    } else {
+      params.delete("query");
+    }
+
+    if (opts.page && opts.page > 1) {
+      params.set("page", String(opts.page));
+    } else {
+      params.delete("page");
+    }
+
+    return {
+      pathname,
+      query: Object.fromEntries(params.entries())
+    };
+  };
+
+  const handlePageSizeChange = (nextSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.set("pageSize", String(nextSize));
+    // reset to first page when page size changes
+    params.delete("page");
+
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  };
+
+  // Build a small window of page numbers around the current page
+  const windowSize = 3;
+  const startPage = Math.max(1, page - 2);
+  const endPage = Math.min(totalPages, startPage + windowSize - 1);
+  const pageNumbers = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i
   );
-
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
 
   return (
     <div className="space-y-6">
-      {/* Search Input */}
-      <div className="mb-4 flex items-center w-full max-w-[50%] rounded-md relative">
-        <Input
-          placeholder={t("searchPlaceholder")}
-          defaultValue={searchParams.get("query")?.toString()}
-          onChange={(e) => {
-            const params = new URLSearchParams(searchParams);
-            if (e.target.value) {
-              params.set("query", e.target.value);
+      {/* Search + per-page control */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        {/* Search: debounced client-side update of ?query= */}
+        <form
+          className="w-full sm:max-w-[50%]"
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            // Immediate search on enter/click, using current input
+            const params = new URLSearchParams(searchParams.toString());
+            const trimmed = searchInput.trim();
+
+            if (trimmed) {
+              params.set("query", trimmed);
             } else {
               params.delete("query");
             }
-            replace(`${pathName}?${params.toString()}`);
-            setCurrentPage(1);
+            params.delete("page");
+
+            const qs = params.toString();
+            router.replace(qs ? `${pathname}?${qs}` : pathname);
           }}
-          className="flex-1 pr-8 focus:ring-0 placeholder-ellipsis placeholder:text-muted-foreground"
-        />
-        <Search className="text-muted-foreground absolute right-2" />
+        >
+          <InputGroup>
+            <InputGroupInput
+              name="query"
+              placeholder={t("searchPlaceholder")}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              type="search"
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                type="submit"
+                size="icon-xs"
+                variant="ghost"
+                aria-label={t("searchPlaceholder")}
+              >
+                <Search className="p-1" />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </form>
+
+        {/* Per-page selector */}
+        <div className="w-full sm:w-auto sm:flex sm:justify-end">
+          <PerPageSelect
+            value={pageSize}
+            allowedValues={allowedPageSizes}
+            onChange={handlePageSizeChange}
+            className="w-full sm:w-auto"
+            label={t("pagination.perPage")}
+          />
+        </div>
       </div>
-      {/* Recipe List */}
-      <ul className="space-y-4">
-        {currentRecipes.length > 0 ? (
-          currentRecipes.map((recipe) => {
+
+      {/* Recipe cards */}
+      <div className="space-y-4">
+        {recipes.length > 0 ? (
+          recipes.map((recipe) => {
             const { OG, FG } = parseRecipeData(recipe.recipeData);
             return (
-              <li key={recipe.id}>
-                <Link
-                  href={`/recipes/${recipe.id}`}
-                  className="block p-4 rounded-lg bg-card transition-colors border border-border shadow-sm hover:bg-muted-foreground group"
-                >
-                  <h2 className="text-xl font-semibold text-card-foreground">
-                    {recipe.name}
-                  </h2>
-                  {recipe.public_username && (
-                    <p className="text-muted-foreground text-sm group-hover:text-foreground">
-                      {t("byUser", { public_username: recipe.public_username })}
+              <Card
+                key={recipe.id}
+                className="group border-border hover:bg-muted/60 transition-colors"
+              >
+                <Link href={`/recipes/${recipe.id}`}>
+                  <CardHeader className="flex flex-row items-start justify-between gap-2 pb-1">
+                    <div className="flex flex-col gap-1 sm:gap-0">
+                      <CardTitle className="text-xl font-semibold text-card-foreground">
+                        {recipe.name}
+                      </CardTitle>
+
+                      {/* Mobile: rating under title */}
+                      <div className="sm:hidden">
+                        <Rating
+                          averageRating={recipe.averageRating ?? 0}
+                          numberOfRatings={recipe.numberOfRatings ?? 0}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Desktop: rating to the right */}
+                    <div className="hidden sm:block sm:shrink-0">
+                      <Rating
+                        averageRating={recipe.averageRating ?? 0}
+                        numberOfRatings={recipe.numberOfRatings ?? 0}
+                      />
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-1 text-sm">
+                    <p className="text-muted-foreground group-hover:text-foreground">
+                      {t("byUser", {
+                        public_username: !!recipe.public_username
+                          ? recipe.public_username
+                          : "Anonymous"
+                      })}
                     </p>
-                  )}
-                  <p className="text-muted-foreground text-sm group-hover:text-foreground">
-                    {t("OG")}: {OG}, {t("FG")}: {FG}
-                  </p>
+
+                    <p className="text-muted-foreground group-hover:text-foreground">
+                      {t("OG")}: {OG}, {t("FG")}: {FG}
+                    </p>
+                  </CardContent>
                 </Link>
-              </li>
+              </Card>
             );
           })
         ) : (
-          <li>{t("noRecipesFound") || "No recipes found."}</li>
+          <p className="text-sm text-muted-foreground">
+            {t("noRecipesFound") || "No recipes found."}
+          </p>
         )}
-      </ul>
-
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center">
-        <Button
-          onClick={handlePrevious}
-          disabled={currentPage === 1}
-          variant="secondary"
-        >
-          {t("buttonLabels.back")}
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          {t("numOfPages", { start_page: currentPage, end_page: totalPages })}
-        </span>
-        <Button
-          onClick={handleNext}
-          disabled={currentPage === totalPages}
-          variant="secondary"
-        >
-          {t("buttonLabels.next")}
-        </Button>
       </div>
+
+      {/* Pagination (unchanged) */}
+      {totalPages > 0 && (
+        <div className="space-y-1">
+          <Pagination>
+            <PaginationContent>
+              {/* Previous */}
+              <PaginationItem>
+                {hasPrev ? (
+                  <PaginationPrevious
+                    href={buildHref({ page: page - 1 })}
+                    aria-label={t("pagination.previous")}
+                  >
+                    {t("pagination.previous")}
+                  </PaginationPrevious>
+                ) : (
+                  <PaginationPrevious
+                    href={buildHref({ page: 1 })}
+                    aria-disabled="true"
+                    className="pointer-events-none opacity-50"
+                    aria-label={t("pagination.previous")}
+                  >
+                    {t("pagination.previous")}
+                  </PaginationPrevious>
+                )}
+              </PaginationItem>
+
+              {/* Mobile: compact page input */}
+              <PaginationItem className="sm:hidden w-full">
+                <form
+                  method="GET"
+                  className="flex items-center justify-center w-full"
+                  autoComplete="off"
+                >
+                  {query && <input type="hidden" name="query" value={query} />}
+
+                  <InputGroup className="h-7">
+                    <InputGroupInput
+                      type="number"
+                      name="page"
+                      min={1}
+                      max={totalPages}
+                      defaultValue={page}
+                      className="h-7 px-1 text-center text-xs"
+                    />
+
+                    <InputGroupAddon
+                      className="px-1 text-[11px] text-muted-foreground select-none"
+                      align="inline-end"
+                    >
+                      / {totalPages}
+                    </InputGroupAddon>
+                  </InputGroup>
+                </form>
+              </PaginationItem>
+
+              {/* Desktop: full numbered pagination */}
+              {/* First page */}
+              <PaginationItem className="hidden sm:list-item">
+                <PaginationLink
+                  href={buildHref({ page: 1 })}
+                  isActive={page === 1}
+                  aria-current={page === 1 ? "page" : undefined}
+                >
+                  1
+                </PaginationLink>
+              </PaginationItem>
+
+              {/* Ellipsis before window */}
+              {startPage > 2 && (
+                <PaginationItem className="hidden sm:list-item">
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              {/* Middle window (skip 1 and last) */}
+              {pageNumbers.map((p) => {
+                if (p === 1 || p === totalPages) return null;
+                return (
+                  <PaginationItem key={p} className="hidden sm:list-item">
+                    <PaginationLink
+                      href={buildHref({ page: p })}
+                      isActive={p === page}
+                      aria-current={p === page ? "page" : undefined}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              {/* Ellipsis after window */}
+              {endPage < totalPages - 1 && (
+                <PaginationItem className="hidden sm:list-item">
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              {/* Last page */}
+              {totalPages > 1 && (
+                <PaginationItem className="hidden sm:list-item">
+                  <PaginationLink
+                    href={buildHref({ page: totalPages })}
+                    isActive={page === totalPages}
+                    aria-current={page === totalPages ? "page" : undefined}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+
+              {/* Next */}
+              <PaginationItem>
+                {hasNext ? (
+                  <PaginationNext
+                    href={buildHref({ page: page + 1 })}
+                    aria-label={t("pagination.next")}
+                  >
+                    {t("pagination.next")}
+                  </PaginationNext>
+                ) : (
+                  <PaginationNext
+                    href={buildHref({ page: totalPages })}
+                    aria-disabled="true"
+                    className="pointer-events-none opacity-50"
+                    aria-label={t("pagination.next")}
+                  >
+                    {t("pagination.next")}
+                  </PaginationNext>
+                )}
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+
+          <p className="mt-1 text-[11px] text-muted-foreground text-center hidden sm:block">
+            {t("pagination.pageInfo", { page, totalPages })}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

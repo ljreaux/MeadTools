@@ -1,4 +1,5 @@
 "use client";
+import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import { toBrix } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import {
@@ -10,15 +11,14 @@ import {
   NutrientType,
   ScheduleType,
   VolumeUnits,
-  Yeast,
-  YeastBrand,
+  YeastBrand
 } from "@/types/nutrientTypes";
 import {
   createContext,
   useContext,
   useState,
   ReactNode,
-  useEffect,
+  useEffect
 } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -27,7 +27,7 @@ const NutrientContext = createContext<NutrientType | undefined>(undefined);
 export const NutrientProvider = ({
   children,
   recipeData,
-  storeData,
+  storeData
 }: {
   children: ReactNode;
   recipeData?: {
@@ -41,9 +41,9 @@ export const NutrientProvider = ({
 }) => {
   const { i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
-  // state variables
-  const [yeastList, setYeastList] = useState<Yeast[]>([]);
-  const [loadingYeasts, setLoadingYeasts] = useState(true);
+
+  const { data, isPending: loadingYeasts } = useYeastsQuery();
+  const yeastList = data ?? [];
 
   const [fullData, setFullData] = useState<FullNutrientData>(initialFullData);
 
@@ -55,7 +55,7 @@ export const NutrientProvider = ({
   const [goFerm, setGoFerm] = useState({
     type: "Go-Ferm" as GoFermType,
     amount: 0,
-    water: 0,
+    water: 0
   });
   const [targetYAN, setTargetYAN] = useState(0);
   const [nutrientAdditions, setNutrientAdditions] = useState<{
@@ -63,14 +63,14 @@ export const NutrientProvider = ({
     perAddition: number[];
   }>({
     totalGrams: [],
-    perAddition: [],
+    perAddition: []
   });
 
   const [yanContributions, setYanContributions] = useState([
     "40",
     "100",
     "210",
-    "0",
+    "0"
   ]);
   const [otherNutrientName, setOtherNutrientName] = useState("");
   const [remainingYan, setRemainingYan] = useState(0);
@@ -94,7 +94,7 @@ export const NutrientProvider = ({
     const goFermWater = goFerm * waterMultiplier;
     return {
       amount: Math.round(goFerm * 100) / 100,
-      water: Math.round(goFermWater * 100) / 100,
+      water: Math.round(goFermWater * 100) / 100
     };
   };
   const changeGfType = (type: GoFermType) => {
@@ -106,9 +106,9 @@ export const NutrientProvider = ({
         goFerm: {
           water: prev.outputs.goFerm?.water || 0,
           amount: prev.outputs.goFerm?.amount || 0,
-          type,
-        },
-      },
+          type
+        }
+      }
     }));
   };
 
@@ -118,7 +118,7 @@ export const NutrientProvider = ({
     if (isValidNumber(value)) {
       setFullData((prev) => ({
         ...prev,
-        inputs: { ...prev.inputs, volume: value },
+        inputs: { ...prev.inputs, volume: value }
       }));
     }
   };
@@ -128,7 +128,7 @@ export const NutrientProvider = ({
     if (isValidNumber(value)) {
       setFullData((prev) => ({
         ...prev,
-        inputs: { ...prev.inputs, sg: value },
+        inputs: { ...prev.inputs, sg: value }
       }));
     }
   };
@@ -138,7 +138,7 @@ export const NutrientProvider = ({
     if (isValidNumber(value)) {
       setFullData((prev) => ({
         ...prev,
-        inputs: { ...prev.inputs, offset: value },
+        inputs: { ...prev.inputs, offset: value }
       }));
     }
   };
@@ -163,8 +163,8 @@ export const NutrientProvider = ({
         ...prev,
         outputs: {
           ...prev.outputs,
-          yeastAmount: amount,
-        },
+          yeastAmount: amount
+        }
       }));
     }
   };
@@ -174,7 +174,7 @@ export const NutrientProvider = ({
       localStorage.setItem("numberOfAdditions", value);
       setFullData((prev) => ({
         ...prev,
-        inputs: { ...prev.inputs, numberOfAdditions: value },
+        inputs: { ...prev.inputs, numberOfAdditions: value }
       }));
     }
   };
@@ -190,8 +190,8 @@ export const NutrientProvider = ({
         ...prev.selected,
         yeastBrand: brand,
         yeastStrain: firstYeast ? firstYeast.name : prev.selected.yeastStrain,
-        yeastDetails: firstYeast || prev.selected.yeastDetails,
-      },
+        yeastDetails: firstYeast || prev.selected.yeastDetails
+      }
     }));
   };
 
@@ -203,8 +203,8 @@ export const NutrientProvider = ({
         selected: {
           ...prev.selected,
           yeastStrain: name,
-          yeastDetails: yeast,
-        },
+          yeastDetails: yeast
+        }
       }));
     } else {
       setFullData((prev) => ({
@@ -216,9 +216,9 @@ export const NutrientProvider = ({
             ...prev.selected.yeastDetails,
             id: 103,
             brand: "Other",
-            name,
-          },
-        },
+            name
+          }
+        }
       }));
     }
   };
@@ -230,9 +230,9 @@ export const NutrientProvider = ({
         ...prev.selected,
         yeastDetails: {
           ...prev.selected.yeastDetails,
-          nitrogen_requirement: req,
-        },
-      },
+          nitrogen_requirement: req
+        }
+      }
     }));
   };
 
@@ -241,8 +241,8 @@ export const NutrientProvider = ({
       ...prev,
       selected: {
         ...prev.selected,
-        volumeUnits: unit, // Update the volumeUnits field when changed
-      },
+        volumeUnits: unit // Update the volumeUnits field when changed
+      }
     }));
   };
 
@@ -284,8 +284,8 @@ export const NutrientProvider = ({
       selected: {
         ...prev.selected,
         selectedNutrients: nutrients,
-        schedule: schedule, // Set the schedule based on selected nutrients
-      },
+        schedule: schedule // Set the schedule based on selected nutrients
+      }
     }));
   };
 
@@ -301,54 +301,6 @@ export const NutrientProvider = ({
     setYanContributions(copyArr);
   };
 
-  // fetch initial yeast data
-  useEffect(() => {
-    const fetchYeasts = async () => {
-      try {
-        const response = await fetch("/api/yeasts");
-        const data = await response.json();
-        setYeastList(data);
-        setLoadingYeasts(false);
-      } catch (error) {
-        console.error("Error fetching yeast list:", error);
-        setLoadingYeasts(false);
-      }
-    };
-
-    const getStoredData = () => {
-      const storedData = localStorage.getItem("nutrientData") || "false";
-      const parsedData = JSON.parse(storedData);
-      if (parsedData) {
-        setFullData(parsedData);
-        if (parsedData?.outputs?.goFerm) {
-          setGoFerm(parsedData.outputs.goFerm);
-        }
-      }
-
-      const storedYan = localStorage.getItem("yanContribution") || "false";
-      const parsedYan = JSON.parse(storedYan) as number[] | false;
-      if (parsedYan) {
-        setYanContributions(parsedYan.map(String));
-      }
-
-      const storedOtherName = localStorage.getItem("otherNutrientName");
-      if (storedOtherName) {
-        setOtherNutrientName(storedOtherName);
-      }
-
-      const storedSelectedGpl = localStorage.getItem("selectedGpl") || "false";
-      const parsedSelectedGpl = JSON.parse(storedSelectedGpl) as
-        | string[]
-        | false;
-      if (parsedSelectedGpl) {
-        setSelectedGpl(parsedSelectedGpl);
-      }
-    };
-
-    if (storeData) getStoredData();
-    fetchYeasts();
-  }, []);
-
   // set Nitrogen requirement in global state
   useEffect(() => {
     setFullData((prev) => {
@@ -356,8 +308,8 @@ export const NutrientProvider = ({
         ...prev,
         selected: {
           ...prev.selected,
-          n2Requirement: fullData.selected.yeastDetails.nitrogen_requirement,
-        },
+          n2Requirement: fullData.selected.yeastDetails.nitrogen_requirement
+        }
       };
     });
   }, [fullData.selected.yeastDetails]);
@@ -387,7 +339,7 @@ export const NutrientProvider = ({
     setGoFerm((prev) => ({ ...prev, ...gf }));
     setYeastAmount(
       yeastAmount.toLocaleString(currentLocale, {
-        maximumFractionDigits: 2,
+        maximumFractionDigits: 2
       })
     );
     setFullData((prev) => ({
@@ -397,14 +349,14 @@ export const NutrientProvider = ({
         yeastAmount: yeastAmount,
         goFerm: {
           type: prev.outputs.goFerm?.type || "Go-Ferm",
-          ...gf,
-        },
-      },
+          ...gf
+        }
+      }
     }));
   }, [
     fullData.inputs.volume,
     fullData.inputs.sg,
-    fullData.selected.volumeUnits,
+    fullData.selected.volumeUnits
   ]);
   useEffect(() => {
     const gf = calculateGoFerm(goFerm.type, parseNumber(yeastAmount));
@@ -416,9 +368,9 @@ export const NutrientProvider = ({
         ...prev.outputs,
         goFerm: {
           type: prev.outputs.goFerm?.type || "Go-Ferm",
-          ...gf,
-        },
-      },
+          ...gf
+        }
+      }
     }));
   }, [yeastAmount, goFerm.type]);
 
@@ -512,7 +464,7 @@ export const NutrientProvider = ({
     fullData.inputs.numberOfAdditions,
     yanContributions,
     nuteArr,
-    adjustAllowed,
+    adjustAllowed
   ]);
 
   useEffect(() => {
@@ -566,7 +518,7 @@ export const NutrientProvider = ({
         "Fermaid O": "0.45",
         "Fermaid K": "0.5",
         DAP: "0.96",
-        Other: "1",
+        Other: "1"
       };
 
       // Ensure arr has a fixed order corresponding to "Fermaid O", "Fermaid K", "DAP", "Other"
@@ -582,7 +534,7 @@ export const NutrientProvider = ({
     fullData.selected.schedule,
     fullData.inputs.sg,
     yanContributions,
-    nuteArr,
+    nuteArr
   ]);
 
   useEffect(() => {
@@ -592,8 +544,8 @@ export const NutrientProvider = ({
         inputs: { ...prev.inputs, ...recipeData },
         selected: {
           ...prev.selected,
-          volumeUnits: recipeData.units as VolumeUnits,
-        },
+          volumeUnits: recipeData.units as VolumeUnits
+        }
       }));
   }, [recipeData]);
 
@@ -624,16 +576,16 @@ export const NutrientProvider = ({
       offset: { value: fullData.inputs.offset, onChange: setOffset },
       numberOfAdditions: {
         value: fullData.inputs.numberOfAdditions,
-        onValueChange: setNumberOfAdditions,
+        onValueChange: setNumberOfAdditions
       },
       volumeUnits: {
         value: fullData.selected.volumeUnits,
-        onChange: setVolumeUnits,
-      },
+        onChange: setVolumeUnits
+      }
     },
     selected: {
       ...fullData.selected,
-      yeastNitrogenRequirement: fullData.selected.n2Requirement,
+      yeastNitrogenRequirement: fullData.selected.n2Requirement
     },
     setVolume,
     setSG,
@@ -650,21 +602,21 @@ export const NutrientProvider = ({
     changeYeastAmount,
     goFermType: {
       value: goFerm.type,
-      onChange: changeGfType,
+      onChange: changeGfType
     },
     goFerm: {
       amount: goFerm.amount,
-      water: goFerm.water,
+      water: goFerm.water
     },
     nutrientAdditions,
     setNitrogenRequirement,
     otherYanContribution: {
       value: yanContributions[3],
-      onChange: setOtherYanContribution,
+      onChange: setOtherYanContribution
     },
     otherNutrientName: {
       value: otherNutrientName,
-      onChange: changeNutrientName,
+      onChange: changeNutrientName
     },
     editMaxGpl,
     editYanContribution,
@@ -678,7 +630,7 @@ export const NutrientProvider = ({
     },
     adjustAllowed,
     setAdjustAllowed,
-    fullData,
+    fullData
   };
 
   return (

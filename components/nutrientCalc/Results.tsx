@@ -1,4 +1,3 @@
-import React from "react";
 import InputWithUnits from "./InputWithUnits";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";

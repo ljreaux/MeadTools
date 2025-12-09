@@ -6,9 +6,10 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { useTheme } from "next-themes";
 import {
   oneDark,
-  oneLight,
+  oneLight
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { Copy, CopyCheck } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface CopyableCodeBlockProps {
   text: string;
@@ -17,7 +18,7 @@ interface CopyableCodeBlockProps {
 
 export default function CopyableCodeBlock({
   text,
-  language = "json",
+  language = "json"
 }: CopyableCodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const { resolvedTheme } = useTheme();
@@ -26,6 +27,16 @@ export default function CopyableCodeBlock({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+
+      toast({
+        description: (
+          <div className="flex items-center justify-center gap-2">
+            <CopyCheck className="text-xl text-green-500" />
+            Copied to clipboard
+          </div>
+        )
+      });
+
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
       console.error("Failed to copy text:", err);
@@ -40,7 +51,7 @@ export default function CopyableCodeBlock({
         variant="ghost"
         size="sm"
       >
-        {copied ? <CopyCheck /> : <Copy />}
+        {copied ? <CopyCheck className="text-green-500" /> : <Copy />}
       </Button>
 
       <SyntaxHighlighter
@@ -50,7 +61,7 @@ export default function CopyableCodeBlock({
           fontSize: "0.9rem",
           margin: 0,
           padding: "1rem",
-          whiteSpace: "pre-wrap",
+          whiteSpace: "pre-wrap"
         }}
       >
         {text}

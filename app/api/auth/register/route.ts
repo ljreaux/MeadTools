@@ -21,20 +21,25 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         {
-          error: "A user by that email already exists",
+          error: "A user by that email already exists"
         },
         { status: 400 }
       );
     }
 
     const password = await bcrypt.hash(unhashed, 10);
-    const newUser = await createUser({ email, password, public_username });
+    const newUser = await createUser({
+      email,
+      password,
+      public_username,
+      show_google_avatar: false
+    });
 
     const accessToken = jwt.sign({ id: newUser.id }, ACCESS_TOKEN_SECRET, {
-      expiresIn: "1w",
+      expiresIn: "1w"
     });
     const refreshToken = jwt.sign({ id: newUser.id }, REFRESH_TOKEN_SECRET, {
-      expiresIn: "2w",
+      expiresIn: "2w"
     });
 
     return NextResponse.json({
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
       accessToken,
       refreshToken,
       role: newUser.role,
-      email,
+      email
     });
   } catch (error) {
     console.error("Error registering user:", error);

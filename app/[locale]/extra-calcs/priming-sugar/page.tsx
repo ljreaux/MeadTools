@@ -1,18 +1,23 @@
 "use client";
-import { Input } from "@/components/ui/input";
+
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import usePrimingSugar from "@/hooks/usePrimingSugar";
-import { cn } from "@/lib/utils";
-
-import React from "react";
-import { useTranslation } from "react-i18next";
 import PrimingSugarTable from "@/components/extraCalcs/PrimingSugarTable";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { PrimingSugarSkeleton } from "@/components/extraCalcs/PrimingSugarSkeleton";
 
 function PrimingSugar() {
   const { t } = useTranslation();
@@ -25,70 +30,129 @@ function PrimingSugar() {
     primingSugarAmounts,
     tempInvalid,
     volsInvalid,
+    ingredientsLoading
   } = usePrimingSugar();
 
   return (
-    <>
+    <div className="flex flex-col gap-8 h-full w-full max-w-2xl mx-auto">
+      {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("primingSugarHeading")}
       </h1>
-      <div className="grid sm:grid-cols-2 gap-1">
-        <label className={cn("p-2", tempInvalid && "bg-destructive")}>
-          {t("enterTemp")}
-          <Input
-            {...tempProps}
-            type="number"
-            onFocus={(e) => e.target.select()}
-          />
-          {tempInvalid && <p>{t("tempInvalid")}</p>}
-        </label>
-        <label className="p-2">
-          {t("tempUnits")}
-          <Select {...tempUnitProps}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="C">C</SelectItem>
-              <SelectItem value="F">F</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <label
-          className={cn("col-span-full p-2", volsInvalid && "bg-destructive")}
-        >
-          {t("co2Vol")}
-          <Input
-            {...volsProps}
-            type="number"
-            onFocus={(e) => e.target.select()}
-          />
-          {volsInvalid && <p>{t("volInvalid")}</p>}
-        </label>
-        <label className="p-2">
-          {t("brewVolume")}
-          <Input
-            {...volumeProps}
-            type="number"
-            onFocus={(e) => e.target.select()}
-          />
-        </label>
-        <label className="p-2">
-          {t("volumeUnits")}
-          <Select {...volumeUnitProps}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gal">{t("GAL")}</SelectItem>
-              <SelectItem value="lit">{t("LIT")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </label>
-        <div className="border-b border-muted-foreground col-span-full" />
+
+      {/* Inputs */}
+      <div className="flex flex-col gap-6">
+        {/* Temperature + units */}
+        <div className="space-y-2 relative">
+          <label htmlFor="temp" className="text-sm font-medium">
+            {t("enterTemp")}
+          </label>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="temp"
+              type="number"
+              {...tempProps}
+              aria-invalid={tempInvalid || undefined}
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
+            />
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Select {...tempUnitProps}>
+                <SelectTrigger className="p-2 border-none mr-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="C">C</SelectItem>
+                  <SelectItem value="F">F</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
+
+          {/* Absolutely positioned error text – matches refractometer pattern */}
+          <p
+            className={cn(
+              "absolute top-full left-0 text-xs text-destructive",
+              !tempInvalid && "invisible"
+            )}
+          >
+            {t("tempInvalid")}
+          </p>
+        </div>
+
+        {/* Desired CO2 volumes */}
+        <div className="space-y-2 relative">
+          <label htmlFor="co2Vol" className="text-sm font-medium">
+            {t("co2Vol")}
+          </label>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="co2Vol"
+              type="number"
+              {...volsProps}
+              aria-invalid={volsInvalid || undefined}
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
+            />
+          </InputGroup>
+
+          <p
+            className={cn(
+              "absolute top-full left-0 text-xs text-destructive",
+              !volsInvalid && "invisible"
+            )}
+          >
+            {t("volInvalid")}
+          </p>
+        </div>
+
+        {/* Brew volume + units */}
+        <div className="space-y-2">
+          <label htmlFor="brewVolume" className="text-sm font-medium">
+            {t("brewVolume")}
+          </label>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              id="brewVolume"
+              type="number"
+              {...volumeProps}
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
+            />
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Select {...volumeUnitProps}>
+                <SelectTrigger className="p-2 border-none mr-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gal">{t("GAL")}</SelectItem>
+                  <SelectItem value="lit">{t("LIT")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
       </div>
-      <PrimingSugarTable primingSugar={primingSugarAmounts}></PrimingSugarTable>
-    </>
+
+      {/* Divider between form + table */}
+      <Separator className="my-2" />
+
+      {/* Table / Skeleton */}
+      {ingredientsLoading ? (
+        <PrimingSugarSkeleton />
+      ) : (
+        <PrimingSugarTable primingSugar={primingSugarAmounts} />
+      )}
+    </div>
   );
 }
 

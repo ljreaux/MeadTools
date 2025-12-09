@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import lodash from "lodash";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,7 @@ import { Recipe } from "@/types/recipeDataTypes";
 import { parseNumber } from "@/lib/utils/validateInput";
 function RecipeView({
   nutrientData,
-  recipeData,
+  recipeData
 }: {
   nutrientData: NutrientType;
   recipeData: Recipe;
@@ -20,7 +21,7 @@ function RecipeView({
     yeastAmount,
     nutrientAdditions,
     remainingYan,
-    otherNutrientName,
+    otherNutrientName
   } = nutrientData;
   const {
     units,
@@ -38,7 +39,7 @@ function RecipeView({
     addingStabilizers,
     recipeNameProps,
     public_username,
-    stabilizerType,
+    stabilizerType
   } = recipeData;
 
   const { t, i18n } = useTranslation();
@@ -78,19 +79,19 @@ function RecipeView({
     "g Fermaid O",
     "g Fermaid K",
     "g DAP",
-    `g ${otherNutrientName.value}`,
+    `g ${otherNutrientName.value}`
   ];
   const labels = [
     "nutrients.fermO",
     "nutrients.fermK",
     "nutrients.dap",
-    "other.label",
+    "other.label"
   ];
   const goFermKeys = {
     "Go-Ferm": "nuteResults.gfTypes.gf",
     protect: "nuteResults.gfTypes.gfProtect",
     "sterol-flash": "nuteResults.gfTypes.gfSterol",
-    none: "nuteResults.gfTypes.none",
+    none: "nuteResults.gfTypes.none"
   };
 
   const goFermLabel = t(goFermKeys[goFermType.value]) || t(goFermType.value);
@@ -99,14 +100,16 @@ function RecipeView({
     <div className="pdf-page">
       <div className="page-one">
         <header>
-          <img src="/pdf-logo.png" />
+          <img src="/pdf-logo.png" alt="meadtools logo" />
           <span>
             <h1>
               {recipeNameProps.value
                 ? recipeNameProps.value
                 : t("PDF.pageTitle")}
             </h1>
-            {public_username && <p>{t("byUser", { public_username })}</p>}
+            <p>
+              {t("byUser", { public_username: public_username ?? "Anonymous" })}
+            </p>
           </span>
         </header>
         <section>
@@ -160,12 +163,12 @@ function RecipeView({
                   <p>
                     {OG.toLocaleString(currentLocale, {
                       maximumFractionDigits: 3,
-                      minimumFractionDigits: 3,
+                      minimumFractionDigits: 3
                     })}
                   </p>
                   <p>
                     {toBrix(OG).toLocaleString(currentLocale, {
-                      maximumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     })}
                   </p>
                 </td>
@@ -175,14 +178,14 @@ function RecipeView({
                       currentLocale,
                       {
                         maximumFractionDigits: 3,
-                        minimumFractionDigits: 3,
+                        minimumFractionDigits: 3
                       }
                     )}
                   </p>
                   <p>{`${toBrix(parseNumber(backsweetenedFG)).toLocaleString(
                     currentLocale,
                     {
-                      maximumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     }
                   )} ${t("BRIX")}`}</p>
                 </td>
@@ -200,7 +203,7 @@ function RecipeView({
                 <td>
                   <p>
                     {ABV.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     })}
                     %
                   </p>
@@ -233,7 +236,7 @@ function RecipeView({
                       return (
                         <p key={`nute ${i}`}>
                           {Math.max(nute, 0).toLocaleString(currentLocale, {
-                            maximumFractionDigits: 3,
+                            maximumFractionDigits: 3
                           })}
                           {nuteNames[i]}
                         </p>
@@ -249,7 +252,7 @@ function RecipeView({
                       return (
                         <p key={`nute ${i}`}>
                           {Math.max(nute, 0).toLocaleString(currentLocale, {
-                            maximumFractionDigits: 3,
+                            maximumFractionDigits: 3
                           })}
                           {nuteNames[i]}
                         </p>
@@ -275,15 +278,15 @@ function RecipeView({
                   <td>
                     <p>
                       {`${sulfite.toLocaleString(currentLocale, {
-                        maximumFractionDigits: 3,
+                        maximumFractionDigits: 3
                       })}g ${t(`PDF.${stabilizerType}`)} ${t(
                         "accountPage.or"
                       )} ${campden.toLocaleString(currentLocale, {
-                        maximumFractionDigits: 3,
+                        maximumFractionDigits: 3
                       })} ${t("campden")}`}
                     </p>
                     <p>{`${sorbate.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 3,
+                      maximumFractionDigits: 3
                     })}g ${t("PDF.ksorb")}`}</p>
                   </td>
                 )}
@@ -357,7 +360,7 @@ function RecipeView({
       {showPageTwo && (
         <div className="page-two">
           <div className="img-container">
-            <img src="/pdf-logo.png" />
+            <img src="/pdf-logo.png" alt="meadtools logo" />
           </div>
           <section className="secondary-section">
             {secondary.length > 0 && (

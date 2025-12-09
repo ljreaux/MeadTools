@@ -1,23 +1,30 @@
 import { ChangeEvent } from "react";
-import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText
+} from "@/components/ui/input-group";
+
+type InputWithUnitsProps = {
+  value: number | string;
+  text: string;
+  disabled?: boolean;
+  handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+  className?: string;
+};
 
 const InputWithUnits = ({
   value,
   text,
   disabled,
   handleChange,
-  className,
-}: {
-  value: number | string;
-  text: string;
-  disabled?: boolean;
-  handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
-}) => {
+  className
+}: InputWithUnitsProps) => {
   return (
-    <div className={cn("relative", className)}>
-      <Input
+    <InputGroup className={cn(className)}>
+      <InputGroupInput
         disabled={disabled}
         value={value}
         readOnly={disabled}
@@ -25,10 +32,10 @@ const InputWithUnits = ({
         inputMode="decimal"
         onFocus={(e) => e.target.select()}
       />
-      <p className="absolute top-1/2 -translate-y-1/2 right-2 text-muted-foreground">
-        {text}
-      </p>
-    </div>
+      <InputGroupAddon align="inline-end">
+        <InputGroupText>{text}</InputGroupText>
+      </InputGroupAddon>
+    </InputGroup>
   );
 };
 

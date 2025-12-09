@@ -1,4 +1,3 @@
-import React from "react";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
@@ -21,7 +20,7 @@ function Notes({ useRecipe }: { useRecipe: () => Recipe }) {
     addPrimaryNote,
     addSecondaryNote,
     setPrimaryNotes,
-    setSecondaryNotes,
+    setSecondaryNotes
   } = useRecipe();
   return (
     <div>
@@ -41,12 +40,12 @@ function Notes({ useRecipe }: { useRecipe: () => Recipe }) {
                     noteProps={{
                       value: note.content[0],
                       onChange: (e) =>
-                        editPrimaryNote.text(note.id, e.target.value),
+                        editPrimaryNote.text(note.id, e.target.value)
                     }}
                     detailProps={{
                       value: note.content[1],
                       onChange: (e) =>
-                        editPrimaryNote.details(note.id, e.target.value),
+                        editPrimaryNote.details(note.id, e.target.value)
                     }}
                   />
                 );
@@ -79,12 +78,12 @@ function Notes({ useRecipe }: { useRecipe: () => Recipe }) {
                     noteProps={{
                       value: note.content[0],
                       onChange: (e) =>
-                        editSecondaryNote.text(note.id, e.target.value),
+                        editSecondaryNote.text(note.id, e.target.value)
                     }}
                     detailProps={{
                       value: note.content[1],
                       onChange: (e) =>
-                        editSecondaryNote.details(note.id, e.target.value),
+                        editSecondaryNote.details(note.id, e.target.value)
                     }}
                   />
                 );
@@ -112,7 +111,7 @@ const Note = ({
   noteProps,
   detailProps,
 
-  remove,
+  remove
 }: {
   noteProps: TextAreaProps;
   detailProps: TextAreaProps;

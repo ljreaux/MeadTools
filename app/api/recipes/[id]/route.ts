@@ -135,7 +135,7 @@ export async function DELETE(
     if (userId && (recipe.user_id === userId || isAdmin)) {
       const deletedRecipe = await deleteRecipe(id);
       return NextResponse.json({
-        message: `${deletedRecipe.name} has been deleted.`,
+        message: `${deletedRecipe.name} has been deleted.`
       });
     } else {
       return NextResponse.json(

@@ -9,7 +9,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from "@/components/ui/form";
 import { Button, buttonVariants } from "@/components/ui/button";
 
@@ -24,49 +24,60 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { format } from "date-fns";
 import { de, enUS } from "date-fns/locale";
-import { useISpindel } from "../providers/ISpindelProvider";
 import { toast } from "@/hooks/use-toast";
+import { useDeleteLogsInRange } from "@/hooks/reactQuery/useHydrometerLogs";
 
 const FormSchema = z.object({
   start_date: z.date(),
-  end_date: z.date(),
+  end_date: z.date()
 });
+
 const DEFAULT_VALUE = {
   start_date: new Date(),
-  end_date: new Date(),
+  end_date: new Date()
 };
 
 const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
   const [open, setOpen] = useState(false);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     defaultValues: DEFAULT_VALUE,
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(FormSchema)
   });
+
   const { t, i18n } = useTranslation();
-  const { deleteLogsInRange } = useISpindel();
+  const deleteLogsInRange = useDeleteLogsInRange();
 
   async function onSubmit({
     start_date,
-    end_date,
+    end_date
   }: z.infer<typeof FormSchema>) {
     try {
-      const deleted = await deleteLogsInRange(start_date, end_date, deviceId);
+      await deleteLogsInRange.mutateAsync({
+        startDate: start_date,
+        endDate: end_date,
+        deviceId
+      });
 
-      if (deleted === "Logs deleted successfully.") {
-        toast({ description: deleted });
-      } else {
-        toast({ variant: "destructive", description: deleted });
-      }
+      toast({
+        description: t(
+          "iSpindelDashboard.deleteLogsSuccess",
+          "Logs deleted Successfully."
+        )
+      });
     } catch (error) {
       console.error("Error deleting logs:", error);
       toast({
         variant: "destructive",
-        description: t("iSpindelDashboard.deleteLogsError"),
+        description: t(
+          "iSpindelDashboard.deleteLogsError",
+          "Failed to delete logs in range."
+        )
       });
     } finally {
       setOpen(false);
@@ -77,11 +88,11 @@ const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
 
   const formattedDates = {
     start_date: format(form.getValues("start_date"), `PP h:mm b`, {
-      locale,
+      locale
     }),
     end_date: format(form.getValues("end_date"), `PP h:mm b`, {
-      locale,
-    }),
+      locale
+    })
   };
 
   return (
@@ -91,6 +102,7 @@ const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
         className="flex flex-col row-span-2 row-start-1 mt-4 space-y-4 sm:col-start-2 sm:mt-0"
       >
         <h1>{t("iSpindelDashboard.logDeleteRange")}</h1>
+
         <FormField
           control={form.control}
           name="start_date"
@@ -110,6 +122,7 @@ const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="end_date"
@@ -158,4 +171,5 @@ const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
     </Form>
   );
 };
+
 export default LogBatchDeleteForm;

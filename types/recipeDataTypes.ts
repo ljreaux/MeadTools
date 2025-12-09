@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { Dispatch, SetStateAction } from "react";
 
 export const genRandomId = () => nanoid(8);
 
@@ -33,6 +34,7 @@ export type AdditiveType = {
 };
 
 export type Additive = {
+  id: string;
   name: string;
   dosage: string;
   unit: string;
@@ -64,7 +66,7 @@ export const blankAdditive: AdditiveType = {
   name: "",
   amount: "",
   unit: "g",
-  id: genRandomId(),
+  id: genRandomId()
 };
 
 export const initialData: RecipeData = {
@@ -75,7 +77,7 @@ export const initialData: RecipeData = {
       brix: "0.00",
       details: ["0", "0.000"],
       secondary: false,
-      category: "water",
+      category: "water"
     },
     {
       id: genRandomId(),
@@ -83,8 +85,8 @@ export const initialData: RecipeData = {
       brix: "79.60",
       details: ["0", "0.000"],
       secondary: false,
-      category: "sugar",
-    },
+      category: "sugar"
+    }
   ],
   OG: 1.0,
   volume: "0",
@@ -93,7 +95,7 @@ export const initialData: RecipeData = {
   offset: "0",
   units: {
     weight: "lbs",
-    volume: "gal",
+    volume: "gal"
   },
   additives: [blankAdditive],
   sorbate: 0,
@@ -102,8 +104,8 @@ export const initialData: RecipeData = {
   stabilizers: {
     adding: false,
     pH: false,
-    phReading: "3.6",
-  },
+    phReading: "3.6"
+  }
 };
 
 export interface Recipe extends RecipeData {
@@ -182,6 +184,18 @@ export interface Recipe extends RecipeData {
   fillToNearest: (id: string) => void;
   stabilizerType: string;
   setStabilizerType: (val: string) => void;
+  ratingStats?: {
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+  };
+  setRatingStats?: Dispatch<
+    SetStateAction<{
+      averageRating: number;
+      numberOfRatings: number;
+      userRating: number | null;
+    }>
+  >;
 }
 
 export const blankIngredient: IngredientDetails = {
@@ -190,10 +204,10 @@ export const blankIngredient: IngredientDetails = {
   brix: "79.6",
   details: ["0", "0"],
   secondary: false,
-  category: "sugar",
+  category: "sugar"
 };
 
 export const blankNote: { id: string; content: [string, string] } = {
   id: genRandomId(),
-  content: ["", ""],
+  content: ["", ""]
 };

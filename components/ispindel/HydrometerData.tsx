@@ -1,3 +1,4 @@
+"use client";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { saveAs } from "file-saver";
 import { useGenerateImage } from "recharts-to-png";
@@ -7,7 +8,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
 import {
   ChartConfig,
@@ -15,7 +16,7 @@ import {
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
-  ChartTooltipContent,
+  ChartTooltipContent
 } from "@/components/ui/chart";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,7 +24,7 @@ import {
   SelectItem,
   SelectValue,
   SelectContent,
-  SelectTrigger,
+  SelectTrigger
 } from "@/components/ui/select";
 import { useCallback, useState } from "react";
 
@@ -40,16 +41,16 @@ type FileData = {
   battery?: number;
 };
 
-export const description = "A multiple line chart";
+export type TempUnits = "C" | "F" | "K";
 
 export function HydrometerData({
   chartData,
   name,
-  tempUnits,
+  tempUnits
 }: {
   chartData: FileData[];
   name?: string;
-  tempUnits: "C" | "F";
+  tempUnits: TempUnits;
 }) {
   const [gravityUnits, setGravityUnits] = useState("SG");
 
@@ -61,24 +62,24 @@ export function HydrometerData({
   const chartConfig = {
     temperature: {
       label: t("temperature"),
-      color: "hsl(var(--chart-1))",
+      color: "hsl(var(--chart-1))"
     },
     gravity: {
       label: gravityUnits === "Brix" ? t("BRIX") : t("nuteSgLabel"),
-      color: "hsl(var(--chart-2))",
+      color: "hsl(var(--chart-2))"
     },
     signalStrength: {
       label: t("iSpindelDashboard.signalStrength"),
-      color: "hsl(var(--chart-3))",
+      color: "hsl(var(--chart-3))"
     },
     battery: {
       label: t("iSpindelDashboard.batteryLevel"),
-      color: "hsl(var(--chart-4))",
+      color: "hsl(var(--chart-4))"
     },
     abv: {
       label: t("ABV"),
-      color: "hsl(var(--chart-5))",
-    },
+      color: "hsl(var(--chart-5))"
+    }
   } satisfies ChartConfig;
   const showSignalStrength = !!data[0].signalStrength;
   const showBattery = !!data[0].battery;
@@ -88,14 +89,14 @@ export function HydrometerData({
     showSignalStrength || showBattery ? { left: 45, right: 60 } : undefined;
   const beginDate = new Date(data[0].date).toLocaleDateString(lang, {
     month: "long",
-    day: "numeric",
+    day: "numeric"
   });
   const endDate = new Date(data[data.length - 1].date).toLocaleDateString(
     lang,
     {
       month: "long",
       day: "numeric",
-      year: "numeric",
+      year: "numeric"
     }
   );
 
@@ -104,7 +105,7 @@ export function HydrometerData({
     gravity: false,
     signalStrength: false,
     battery: false,
-    abv: false,
+    abv: false
   };
 
   const initialChecked = Object.keys(chartConfig).reduce(
@@ -148,7 +149,7 @@ export function HydrometerData({
 
   const [getDivJpeg, { ref }] = useGenerateImage<HTMLDivElement>({
     quality: 0.8,
-    type: "image/png",
+    type: "image/png"
   });
 
   const handleDivDownload = useCallback(async () => {
@@ -203,7 +204,7 @@ export function HydrometerData({
                     temperature:
                       currentTempUnits === "F"
                         ? toCelsius(obj.temperature!)
-                        : toFahrenheit(obj.temperature!),
+                        : toFahrenheit(obj.temperature!)
                   }))
                 );
               }}
@@ -226,7 +227,7 @@ export function HydrometerData({
               data={data}
               margin={{
                 left: 12,
-                right: 12,
+                right: 12
               }}
             >
               <CartesianGrid vertical={false} stroke="hsl(210, 13%, 35%)" />
@@ -237,7 +238,7 @@ export function HydrometerData({
                   new Date(value).toLocaleString(lang, {
                     month: "short",
                     weekday: "short",
-                    day: "numeric",
+                    day: "numeric"
                   })
                 }
                 minTickGap={50}
@@ -246,7 +247,7 @@ export function HydrometerData({
               <YAxis
                 domain={[
                   (dataMin: number) => roundToNearest005(dataMin - 0.005),
-                  (dataMax: number) => roundToNearest005(dataMax + 0.005),
+                  (dataMax: number) => roundToNearest005(dataMax + 0.005)
                 ]}
                 ticks={generateTicks(dataMin, dataMax, 0.005)}
                 allowDecimals
@@ -311,7 +312,7 @@ export function HydrometerData({
 
                       const dateString = date.toLocaleString(lang, {
                         timeStyle: "medium",
-                        dateStyle: "short",
+                        dateStyle: "short"
                       });
 
                       return dateString;

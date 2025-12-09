@@ -39,43 +39,70 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          prompt: "select_account",
-        },
-      },
-    }),
+          prompt: "select_account"
+        }
+      }
+    })
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Only care about Google sign-ins
+      const isGoogle = account?.provider === "google";
+
+      // Safely grab the Google picture, if any
+      const googleImage =
+        (profile as any)?.picture || (user as any)?.image || null;
+
       let existingUser = await prisma.users.findUnique({
-        where: { email: user.email },
+        where: { email: user.email! }
       });
 
       if (!existingUser) {
+        // Make sure createUser accepts google_avatar_url + show_google_avatar
         existingUser = await createUser({
           email: user.email!,
-          google_id: profile?.sub,
-          role: "user", // or set a default role
+          google_id: isGoogle ? (profile as any)?.sub : undefined,
+          role: "user",
+          google_avatar_url: googleImage,
+          // Leave opt-in false by default
+          show_google_avatar: false
         });
-      } else if (account?.provider === "google" && !existingUser.google_id) {
-        await prisma.users.update({
-          where: { email: user.email },
-          data: { google_id: profile?.sub },
-        });
+      } else {
+        // Keep custom user row in sync when they log in with Google
+        const updateData: any = {};
+
+        if (isGoogle && !existingUser.google_id) {
+          updateData.google_id = (profile as any)?.sub;
+        }
+
+        // Always refresh stored avatar if we got a picture
+        if (googleImage) {
+          updateData.google_avatar_url = googleImage;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          existingUser = await prisma.users.update({
+            where: { email: user.email! },
+            data: updateData
+          });
+        }
       }
 
       return true;
     },
+
     async session({ session, token }) {
       if (token) {
         session.user = {
           id: token.id,
           email: token.email,
-          role: token.role || "user",
+          role: token.role || "user"
         };
-        session.accessToken = token.accessToken; // Attach the accessToken
+        session.accessToken = token.accessToken;
       }
       return session;
     },
+
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
@@ -84,14 +111,14 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (account?.access_token) {
-        token.accessToken = account.access_token; // Store access token from provider
+        token.accessToken = account.access_token;
       }
 
       return token;
-    },
+    }
   },
   secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: "jwt", // Use JWTs for session management
-  },
+    strategy: "jwt" // Use JWTs for session management
+  }
 };

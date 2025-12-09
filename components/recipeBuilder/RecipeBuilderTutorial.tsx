@@ -39,8 +39,8 @@ const cardConfig = [
       <MockBatchDetails key="batch-details" useRecipe={useRecipe} />,
       <Ingredients key="ingredients" useRecipe={useRecipe} />,
       <IngredientResults key="ingredientResults" useRecipe={useRecipe} />,
-      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />,
-    ],
+      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />
+    ]
   },
   {
     key: "card 2",
@@ -48,43 +48,43 @@ const cardConfig = [
     components: [
       <VolumeInputs key="volumeInputs" disabled useNutrients={useNutrients} />,
       <YeastDetails key="yeastDetails" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />,
-    ],
+      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
       <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />,
-    ],
+      <Results key="results" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 4",
     heading: "stabilizersHeading",
     tooltip: {
       body: "tipText.stabilizers",
-      link: "https://meadmaking.wiki/en/process/stabilization",
+      link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />],
+    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<Additives key="additives" useRecipe={useRecipe} />],
+    components: [<Additives key="additives" useRecipe={useRecipe} />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<Notes key="notes" useRecipe={useRecipe} />],
+    components: [<Notes key="notes" useRecipe={useRecipe} />]
   },
   {
     key: "card 7",
     heading: "PDF.title",
     components: [
-      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />,
-    ],
-  },
+      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />
+    ]
+  }
 ];
 
 function RecipeBuilderTutorial() {
@@ -122,13 +122,13 @@ function RecipeBuilderTutorial() {
           : step.placement,
       content:
         typeof step.content === "string" ? t(step.content) : step.content,
-      hideFooter: typeof step.content !== "string" && true,
+      hideFooter: typeof step.content !== "string" && true
     }));
   const specialCallbacks = {
     [currentTutorialSteps.length - 1]: () => {
       const isNextStep = !!stepCards[currentStepIndex + 1];
       if (isNextStep) next();
-    },
+    }
   };
   useEffect(() => {
     const currentSteps = transformSteps(stepCards[currentStepIndex]);
@@ -181,7 +181,7 @@ export default RecipeBuilderTutorial;
 
 const Heading = ({
   text,
-  toolTipProps,
+  toolTipProps
 }: {
   text: string;
   toolTipProps?: { body: string; link: string };

@@ -1,6 +1,13 @@
 "use client";
-import { useAuth } from "@/components/providers/AuthProvider";
-import React, { useEffect, useState } from "react";
+
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import Link from "next/link";
+import { useLogout } from "@/hooks/reactQuery/useLogout";
+import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
+import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
+import { useDeleteRecipe } from "@/hooks/reactQuery/useDeleteRecipe";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +25,8 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
-import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
 import Loading from "@/components/loading";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -47,38 +52,18 @@ import LanguageSwitcher from "@/components/ui/language-switcher";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
-
-type Recipe = {
-  id: number;
-  user_id: number;
-  name: string;
-  recipeData: string;
-  yanFromSource: string | null;
-  yanContribution: string;
-  nutrientData: string;
-  nuteInfo: string | null;
-  primaryNotes: [string, string][];
-  secondaryNotes: [string, string][];
-};
-
-type UserData = {
-  user: {
-    id: number;
-    google_id: string | null;
-    hydro_token: string | null;
-    public_username: string | null;
-    email: string;
-  };
-  recipes: Recipe[];
-};
+import { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
 
 type SortType = "asc" | "dec" | "clear";
 
 function Account() {
   const { t } = useTranslation();
-  const { fetchAuthenticatedData, logout, deleteRecipe, isLoggedIn } =
-    useAuth();
-  const [data, setData] = useState<UserData | null>(null);
+
+  const { logout } = useLogout();
+
+  // new account info hook (user + recipes)
+  const { data, isLoading, isError, error } = useAccountInfo();
+
   const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
 
   const searchKey = "name";
@@ -89,12 +74,20 @@ function Account() {
   }));
 
   const [sortBy, setSortBy] = useState<
-    Record<string, (fieldOne: Recipe, fieldTwo: Recipe) => number>
+    Record<
+      string,
+      (fieldOne: RecipeApiResponse, fieldTwo: RecipeApiResponse) => number
+    >
   >({});
   const [sortField, setSortField] = useState<"default" | "name" | "id">(
     "default"
   );
   const [sortDir, setSortDir] = useState<"asc" | "dec">("asc");
+
+  const deleteRecipeMutation = useDeleteRecipe();
+
+  // Pull recipes from React Query result
+  const recipes = data?.recipes ?? [];
 
   const {
     filteredData,
@@ -109,17 +102,17 @@ function Account() {
     start,
     end
   } = useFuzzySearch({
-    data: data?.recipes ?? [],
+    data: recipes,
     pageSize,
     searchKey,
     sortBy: Object.values(sortBy)
   });
 
-  const nameAlpha = (a: Recipe, b: Recipe) => {
+  const nameAlpha = (a: RecipeApiResponse, b: RecipeApiResponse) => {
     return a.name.localeCompare(b.name);
   };
 
-  const nameReverse = (a: Recipe, b: Recipe) => {
+  const nameReverse = (a: RecipeApiResponse, b: RecipeApiResponse) => {
     return b.name.localeCompare(a.name);
   };
 
@@ -138,11 +131,11 @@ function Account() {
     }
   };
 
-  const recipeId = (a: Recipe, b: Recipe) => {
+  const recipeId = (a: RecipeApiResponse, b: RecipeApiResponse) => {
     return a.id - b.id;
   };
 
-  const recipeIdReverse = (a: Recipe, b: Recipe) => {
+  const recipeIdReverse = (a: RecipeApiResponse, b: RecipeApiResponse) => {
     return b.id - a.id;
   };
 
@@ -163,15 +156,8 @@ function Account() {
 
   const deleteIndividualRecipe = async (id: number) => {
     try {
-      await deleteRecipe(id.toString());
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              recipes: prev.recipes.filter((r) => r.id !== id)
-            }
-          : null
-      );
+      await deleteRecipeMutation.mutateAsync(id);
+      // cache update happens in useDeleteRecipe.onSuccess
     } catch (err) {
       console.error("Error deleting recipe:", err);
     }
@@ -193,18 +179,25 @@ function Account() {
     }
   }, [sortField, sortDir]);
 
+  // Open "create username" dialog if user is missing one
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchAuthenticatedData("/api/auth/account-info")
-        .then((data) => {
-          setData(data);
-          setUsernameDialogOpen(data.user.public_username === null);
-        })
-        .catch((error) => console.error(error));
+    if (!isLoading && data?.user.public_username == null) {
+      setUsernameDialogOpen(true);
     }
-  }, []);
+  }, [isLoading, data?.user.public_username]);
 
-  if (!data || !filteredData) return <Loading />;
+  if (isLoading || !data) return <Loading />;
+
+  if (isError) {
+    console.error("Error loading account info:", error);
+    return (
+      <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
+        <p className="text-destructive text-center">
+          {t("accountPage.error", "Error loading account information.")}
+        </p>
+      </div>
+    );
+  }
 
   const { user } = data;
 
@@ -384,11 +377,11 @@ const RecipeCard = ({
   recipe,
   deleteRecipe
 }: {
-  recipe: Recipe;
+  recipe: RecipeApiResponse;
   deleteRecipe: () => Promise<void>;
 }) => {
   const { t } = useTranslation();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -438,7 +431,7 @@ const CreateUsernamePopup = ({
 }) => {
   const { t } = useTranslation();
   const [username, setUsername] = useState("");
-  const { updatePublicUsername } = useAuth();
+  const updateUsernameMutation = useUpdatePublicUsername();
   return (
     <AlertDialog open={isDialogOpen} onOpenChange={closeDialog}>
       <AlertDialogContent>
@@ -462,7 +455,7 @@ const CreateUsernamePopup = ({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
-              updatePublicUsername(username);
+              updateUsernameMutation.mutate(username);
               closeDialog();
             }}
           >
@@ -480,7 +473,7 @@ const SettingsDialog = ({
   username: string | null;
 }) => {
   const [username, setUsername] = useState(public_username || "");
-  const { updatePublicUsername } = useAuth();
+  const updateUsernameMutation = useUpdatePublicUsername();
   const [preferredUnits, setPreferredUnits] = useState<string | undefined>(
     undefined
   );
@@ -546,7 +539,7 @@ const SettingsDialog = ({
             </label>
             <Button
               variant="secondary"
-              onClick={() => updatePublicUsername(username)}
+              onClick={() => updateUsernameMutation.mutate(username)}
             >
               {t("SUBMIT")}
             </Button>

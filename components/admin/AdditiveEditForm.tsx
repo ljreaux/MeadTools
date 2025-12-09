@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -15,22 +17,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 
-export type Additive = {
-  id: string;
-  name: string;
-  dosage: number;
-  unit: string;
-};
+import { Additive } from "@/types/recipeDataTypes";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
 
 const UNIT_OPTIONS = [
   "g",
@@ -45,7 +44,7 @@ const UNIT_OPTIONS = [
   "fl oz",
   "quarts",
   "gal",
-  "tbsp",
+  "tbsp"
 ];
 
 interface Props {
@@ -55,12 +54,62 @@ interface Props {
 export default function AdditiveEditForm({ additive }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const fetchWithAuth = useFetchWithAuth();
+
   const [formData, setFormData] = useState({
     ...additive,
-    unit: additive.unit === "fl_oz" ? "fl oz" : additive.unit,
+    // normalize fl_oz -> "fl oz" for the UI
+    unit: additive.unit === "fl_oz" ? "fl oz" : additive.unit
   });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      // normalize back if needed
+      const payload = {
+        ...data,
+        unit: data.unit === "fl oz" ? "fl_oz" : data.unit,
+        dosage: parseFloat(String(data.dosage))
+      };
+
+      return await fetchWithAuth<Additive>(`/api/additives/${additive.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Additive updated." });
+      // keep list views in sync
+      queryClient.invalidateQueries({ queryKey: qk.additives });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to update additive.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await fetchWithAuth<unknown>(`/api/additives/${additive.id}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Deleted", description: "Additive was deleted." });
+      queryClient.invalidateQueries({ queryKey: qk.additives });
+      router.push("/admin/additives");
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to delete additive.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -69,80 +118,11 @@ export default function AdditiveEditForm({ additive }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/additives/${additive.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          dosage: parseFloat(String(formData.dosage)),
-        }),
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "Additive updated." });
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to update additive.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    await updateMutation.mutateAsync(formData);
   };
 
-  const handleDelete = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/additives/${additive.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Deleted", description: "Additive was deleted." });
-      router.push("/admin/additives");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete additive.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const isSaving = updateMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -212,10 +192,13 @@ export default function AdditiveEditForm({ additive }: Props) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleDelete}
+                onClick={() => deleteMutation.mutate()}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeleting}
               >
                 Delete
               </AlertDialogAction>

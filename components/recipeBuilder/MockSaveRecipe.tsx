@@ -1,11 +1,11 @@
 "use client";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import { Save } from "lucide-react";

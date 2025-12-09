@@ -1,4 +1,3 @@
-import React from "react";
 import { Switch } from "../ui/switch";
 import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
@@ -10,7 +9,7 @@ import {
   SelectContent,
   SelectTrigger,
   SelectValue,
-  SelectItem,
+  SelectItem
 } from "../ui/select";
 
 function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
@@ -26,7 +25,7 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
     sulfite,
     campden,
     stabilizerType,
-    setStabilizerType,
+    setStabilizerType
   } = useRecipe();
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -10,7 +10,7 @@ import {
   Pipette,
   Scale,
   NotebookPen,
-  FileText,
+  FileText
 } from "lucide-react";
 import lodash from "lodash";
 
@@ -18,7 +18,7 @@ function RecipeCalculatorSideBar({
   goTo,
   children,
   cardNumber,
-  forceOpen,
+  forceOpen
 }: {
   goTo: (pageNum: number) => void;
   children: JSX.Element;
@@ -38,33 +38,33 @@ function RecipeCalculatorSideBar({
     {
       label: t("recipeBuilder.homeHeading"),
       pageNumber: 1,
-      icon: <CookingPot />,
+      icon: <CookingPot />
     },
     {
       label: t("nutesHeading"),
       pageNumber: 2,
-      icon: <SmartphoneCharging />,
+      icon: <SmartphoneCharging />
     },
     {
       label: t("stabilizersHeading"),
       pageNumber: 4,
-      icon: <Pipette />,
+      icon: <Pipette />
     },
     {
       label: t("additivesHeading"),
       pageNumber: 5,
-      icon: <Scale />,
+      icon: <Scale />
     },
     {
       label: t("notes.title"),
       pageNumber: 6,
-      icon: <NotebookPen />,
+      icon: <NotebookPen />
     },
     {
       label: t("PDF.title"),
       pageNumber: 7,
-      icon: <FileText />,
-    },
+      icon: <FileText />
+    }
   ];
 
   return (
@@ -113,7 +113,7 @@ function NavItem({
   icon,
   label,
   isActive,
-  tutorialClassName,
+  tutorialClassName
 }: {
   clickFn: () => void;
   icon: JSX.Element;

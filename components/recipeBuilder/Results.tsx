@@ -1,4 +1,3 @@
-import React from "react";
 import { Input } from "../ui/input";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
@@ -16,14 +15,14 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
     volume,
     ABV,
     delle,
-    units,
+    units
   } = useRecipe();
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
   const backgroundColor = {
     warning: "bg-[rgb(255,204,0)] text-black",
     destructive: "bg-destructive",
-    default: "p-0",
+    default: "p-0"
   };
   const ogWarningClass: keyof typeof backgroundColor =
     OG > 1.16 ? "destructive" : OG > 1.125 ? "warning" : "default";
@@ -72,7 +71,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
         <Input
           disabled
           value={backsweetenedFG.toLocaleString(currentLocale, {
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 3
           })}
         />
       </label>
@@ -91,7 +90,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
         <InputWithUnits
           disabled
           value={totalVolume.toLocaleString(currentLocale, {
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 3
           })}
           text={units.volume}
         />
@@ -117,7 +116,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
         <InputWithUnits
           disabled
           value={ABV.toLocaleString(currentLocale, {
-            maximumFractionDigits: 2,
+            maximumFractionDigits: 2
           })}
           text={t("recipeBuilder.percent")}
         />
@@ -127,7 +126,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           {t("recipeBuilder.resultsLabels.delle")}
           <Tooltip
             body={t("tipText.delleUnits")}
-            link="https://meadmaking.wiki/en/process/stabilization#via-yeast-alcohol-tolerance"
+            link="https://wiki.meadtools.com/en/process/stabilization#via-yeast-alcohol-tolerance"
           />
         </span>
         <InputWithUnits disabled value={delle.toFixed()} text={t("DU")} />

@@ -1,22 +1,18 @@
 "use client";
+
 import { useParams } from "next/navigation";
 import Loading from "@/components/loading";
 import Link from "next/link";
-import { User } from "@/types/admin";
 import UserEditForm from "@/components/admin/UserEditForm";
-import { useAdminFetchData } from "@/hooks/useAdminFetchData";
+import { useAdminUserById } from "@/hooks/reactQuery/useAdminUsersQuery";
 
 export default function UserEditPage() {
   const { id } = useParams();
-  const {
-    data: user,
-    loading,
-    error,
-  } = useAdminFetchData<User>(`/api/users/${id}`);
+  const { user, isLoading, isError, error } = useAdminUserById(id as string);
 
-  if (loading) return <Loading />;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!user) return null;
+  if (isLoading) return <Loading />;
+  if (isError) return <p>Error: {String(error)}</p>;
+  if (!user) return <p>User not found.</p>;
 
   return (
     <div>
@@ -24,6 +20,7 @@ export default function UserEditPage() {
         <h2 className="text-2xl font-bold mb-6">Edit User</h2>
         <Link href={"/admin/users"}>Back to All Users</Link>
       </div>
+
       <UserEditForm user={user} />
     </div>
   );

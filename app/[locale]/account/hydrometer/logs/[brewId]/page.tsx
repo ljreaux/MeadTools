@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,23 +15,35 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import LogTable from "@/components/ispindel/LogTable";
 
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
-} from "@radix-ui/react-collapsible";
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
 import { ArrowDownUp } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
-import { HydrometerData } from "@/components/ispindel/HydrometerData";
+import {
+  HydrometerData,
+  TempUnits
+} from "@/components/ispindel/HydrometerData";
 import { calcABV } from "@/lib/utils/unitConverter";
 import Tooltip from "@/components/Tooltips";
 import { Switch } from "@/components/ui/switch";
+import {
+  useBrewById,
+  useUpdateEmailAlerts,
+  useDeleteBrew,
+  useUpdateBrewName
+} from "@/hooks/reactQuery/useBrews";
+import { useBrewLogs } from "@/hooks/reactQuery/useHydrometerLogs";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/db/queryKeys";
+
 const transformData = (logs: any[]) => {
   const og = logs[0]?.calculated_gravity || logs[0]?.gravity;
   return logs.map((log) => {
@@ -42,47 +54,44 @@ const transformData = (logs: any[]) => {
       temperature: log.temperature,
       gravity: sg,
       battery: log.battery,
-      abv: Math.max(abv, 0),
+      abv: Math.max(abv, 0)
     };
   });
 };
+
 function Brew() {
   const params = useParams();
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
     dateStyle: "short",
-    timeStyle: "short",
+    timeStyle: "short"
   });
-  const formatDate = (date: Date) => formatter.format(new Date(date));
+  const formatDate = (date: Date | string) => formatter.format(new Date(date));
 
-  const { brews, deleteBrew, getBrewLogs, updateBrewName, updateEmailAlerts } =
-    useISpindel();
+  const brewId = (params.brewId as string) || "";
 
-  const [brew, setBrew] = useState<any>(null);
-  const [logs, setLogs] = useState<any[]>([]);
+  // Single brew from React Query cache + fetch
+  const { brew, isLoading, isError } = useBrewById(brewId);
+
+  // Logs for this brew (React Query)
+  const {
+    data: logs = [],
+    isLoading: logsLoading,
+    isError: logsError
+  } = useBrewLogs(brewId);
+
+  // Mutations
+  const { mutateAsync: updateEmailAlerts, isPending: isUpdatingEmail } =
+    useUpdateEmailAlerts();
+  const { mutateAsync: deleteBrew, isPending: isDeleting } = useDeleteBrew();
+  const { mutateAsync: updateBrewName, isPending: isRenaming } =
+    useUpdateBrewName();
+
   const [isOpen, setIsOpen] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [checked, setChecked] = useState(false);
-
-  const brewId = params.brewId || "";
-
-  // Fetch brew and logs when the component mounts or brewId changes
-  useEffect(() => {
-    const fetchBrewData = async () => {
-      const currentBrew = brews?.find((b) => b.id === brewId);
-
-      setBrew(currentBrew ?? null);
-
-      if (brewId && currentBrew) {
-        const logsData = await getBrewLogs(brewId as string);
-        setLogs(logsData);
-        setChecked(currentBrew.requested_email_alerts);
-      }
-    };
-
-    fetchBrewData();
-  }, [brewId, brews]);
 
   const handleFileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileName(e.target.value);
@@ -92,14 +101,13 @@ function Brew() {
     if (!brew || !fileName.trim()) return;
 
     try {
-      await updateBrewName(brew.id, fileName);
-      setBrew((prev: any) => ({ ...prev, name: fileName }));
+      await updateBrewName({ brewId: brew.id, name: fileName });
       toast({ description: t("Brew name updated successfully.") });
     } catch (error) {
       console.error("Error updating brew name:", error);
       toast({
         description: t("Failed to update brew name."),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -114,12 +122,28 @@ function Brew() {
       console.error("Error deleting brew:", error);
       toast({
         description: t("Failed to delete brew."),
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
 
-  const chartData = transformData(logs);
+  if (isLoading && !brew) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("loading", "Loading…")}</p>
+      </div>
+    );
+  }
+
+  if (isError || !brew) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("iSpindelDashboard.brewError", "Unable to load this brew.")}</p>
+      </div>
+    );
+  }
+
+  const chartData = logs.length > 0 ? transformData(logs) : [];
 
   return (
     <div className="flex flex-col items-center justify-center w-full">
@@ -127,7 +151,7 @@ function Brew() {
         <h1>{t("iSpindelDashboard.brews.details")}:</h1>
 
         <div>
-          {brew?.name ? (
+          {brew.name ? (
             <p>Name: {brew.name}</p>
           ) : (
             <AlertDialog>
@@ -150,6 +174,7 @@ function Brew() {
                   <AlertDialogAction asChild>
                     <Button
                       variant={"secondary"}
+                      disabled={isRenaming}
                       onClick={handleUpdateBrewName}
                     >
                       {t("iSpindelDashboard.addBrewName")}
@@ -175,17 +200,22 @@ function Brew() {
             </>
           )}
         </div>
+
         <div className="flex gap-2 items-center">
           <div className="flex">
             <p>{t("iSpindelDashboard.receiveEmailAlerts")}</p>
             <Tooltip body={t("tipText.emailAlerts")} />
           </div>
           <Switch
-            checked={checked}
+            checked={brew.requested_email_alerts}
+            disabled={isUpdatingEmail}
             onCheckedChange={async (val: boolean) => {
+              if (!brew) return;
               try {
-                setChecked(val);
-                await updateEmailAlerts(brew.id, val);
+                await updateEmailAlerts({
+                  brewId: brew.id,
+                  requested: val
+                });
 
                 const msg = val
                   ? "You will receive email alerts for this brew."
@@ -195,15 +225,14 @@ function Brew() {
               } catch {
                 toast({
                   description: "Something went wrong",
-                  variant: "destructive",
+                  variant: "destructive"
                 });
-                setChecked(!val);
               }
             }}
-          ></Switch>
+          />
         </div>
 
-        {brew?.recipe_id ? (
+        {brew.recipe_id ? (
           <Button asChild className={buttonVariants({ variant: "default" })}>
             <a href={`/recipes/${brew.recipe_id}`}>
               {t("iSpindelDashboard.brews.open")}
@@ -218,11 +247,28 @@ function Brew() {
         )}
       </div>
 
+      {/* Chart */}
       {logs.length > 0 && (
-        <HydrometerData chartData={chartData} tempUnits={logs[0]?.temp_units} />
+        <HydrometerData
+          chartData={chartData}
+          tempUnits={logs[0]?.temp_units as TempUnits}
+        />
       )}
 
+      {/* Logs table */}
       <div className="max-w-full">
+        {logsLoading && (
+          <p className="text-center text-sm mb-2">{t("loading", "Loading…")}</p>
+        )}
+        {logsError && (
+          <p className="text-center text-sm mb-2 text-destructive">
+            {t(
+              "iSpindelDashboard.logsError",
+              "Unable to load logs for this brew."
+            )}
+          </p>
+        )}
+
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <div className="flex items-center justify-center">
             <CollapsibleTrigger asChild>
@@ -236,7 +282,13 @@ function Brew() {
           <CollapsibleContent className="max-w-full">
             <LogTable
               logs={[...logs].reverse()}
-              removeLog={(id) => setLogs(logs.filter((log) => log.id !== id))}
+              removeLog={(id) => {
+                queryClient.setQueryData(
+                  qk.hydrometerBrewLogs(brewId),
+                  (old: any[] | undefined) =>
+                    (old ?? []).filter((log) => log.id !== id)
+                );
+              }}
               deviceId={logs[0]?.device_id || ""}
             />
           </CollapsibleContent>
@@ -260,7 +312,7 @@ function Brew() {
             <AlertDialogFooter>
               <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
               <AlertDialogAction asChild>
-                <Button onClick={handleDeleteBrew}>
+                <Button onClick={handleDeleteBrew} disabled={isDeleting}>
                   {t("iSpindelDashboard.deleteBrew")}
                 </Button>
               </AlertDialogAction>

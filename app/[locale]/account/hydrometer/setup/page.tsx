@@ -1,21 +1,17 @@
 "use client";
-import { LoadingButton } from "@/components/ui/LoadingButton";
-import { Input } from "@/components/ui/input";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Trans, useTranslation } from "react-i18next";
-import { toast } from "@/hooks/use-toast";
-import { CircleCheck, Clipboard } from "lucide-react";
+import { Copy, CopyCheck } from "lucide-react";
 import TokenGen from "@/components/ispindel/TokenGen";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import { useOS } from "@/hooks/useOS";
 import { cn } from "@/lib/utils";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
+  AccordionTrigger
 } from "@/components/ui/accordion";
 import CopyableCodeBlock from "@/components/CodeBlock";
 import { useState } from "react";
@@ -24,14 +20,25 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText
+} from "@/components/ui/input-group";
+import { useToast } from "@/hooks/use-toast";
+import { useHydrometerInfo } from "@/hooks/reactQuery/useHydrometerInfo";
 
 function Setup() {
   const { t } = useTranslation();
   const displayUrl =
     process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const { hydrometerToken } = useISpindel();
+
+  const { data } = useHydrometerInfo();
+  const hydrometerToken = data?.hydro_token;
   const { currentButton, otherButtons } = useOS();
   const [tempUnits, setTempUnits] = useState("F");
 
@@ -55,6 +62,8 @@ function Setup() {
           <TabsTrigger value="pill">RAPT Pill</TabsTrigger>
         </TabsList>
       </div>
+
+      {/* iSpindel tab */}
       <TabsContent value="iSpindel">
         <div className="flex flex-col items-center justify-center gap-6">
           <h2 className="my-4 text-2xl">
@@ -62,21 +71,26 @@ function Setup() {
           </h2>
           <TokenGen />
           <p>{t("iSpindelDashboard.setup.info")}</p>
-          <UrlCopyButton
+
+          <UrlCopyField
             buttonDetails={{
               url: displayUrl,
-              buttonText: "iSpindelDashboard.buttonText.server",
+              buttonText: "iSpindelDashboard.buttonText.server"
             }}
           />
-          <UrlCopyButton
+
+          <UrlCopyField
             buttonDetails={{
               url: "/api/ispindel",
-              buttonText: "iSpindelDashboard.buttonText.path",
+              buttonText: "iSpindelDashboard.buttonText.path"
             }}
           />
+
           <p>{t("iSpindelDashboard.setup.serviceType")}</p>
         </div>
       </TabsContent>
+
+      {/* Tilt tab */}
       <TabsContent value="tilt">
         <div className="flex flex-col items-center justify-center gap-6">
           <h2 className="my-4 text-2xl">
@@ -84,10 +98,10 @@ function Setup() {
           </h2>
           <TokenGen />
           {hydrometerToken && (
-            <UrlCopyButton
+            <UrlCopyField
               buttonDetails={{
                 url: `${displayUrl}/api/hydrometer/tilt?token=${hydrometerToken}`,
-                buttonText: "cloudUrl",
+                buttonText: "cloudUrl"
               }}
             />
           )}
@@ -106,12 +120,14 @@ function Setup() {
                   >
                     TiltPi
                   </a>
-                ),
+                )
               }}
             />
           </p>
         </div>
       </TabsContent>
+
+      {/* RAPT Pill tab */}
       <TabsContent value="pill">
         <div>
           <h2 className="my-4 text-2xl text-center">{t("rapt.heading")}</h2>
@@ -134,7 +150,7 @@ function Setup() {
                             target="_blank"
                             rel="noopener noreferrer"
                           />
-                        ),
+                        )
                       }}
                     />
                   </p>
@@ -150,10 +166,11 @@ function Setup() {
                             target="_blank"
                             rel="noopener noreferrer"
                           />
-                        ),
+                        )
                       }}
                     />
                   </p>
+
                   {currentButton && (
                     <a
                       href={currentButton.href}
@@ -165,6 +182,7 @@ function Setup() {
                       {currentButton.logo} {t("download")} {currentButton.os}
                     </a>
                   )}
+
                   <div className="flex flex-wrap items-center justify-center my-4">
                     {otherButtons.map((button) => (
                       <a
@@ -182,6 +200,7 @@ function Setup() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+
             <AccordionItem value="cloud">
               <AccordionTrigger>RAPT Cloud</AccordionTrigger>
               <AccordionContent>
@@ -197,6 +216,7 @@ function Setup() {
                         href="https://app.rapt.io/integration/webhooks/list"
                         target="_blank"
                         className="underline"
+                        rel="noopener noreferrer"
                       >
                         RAPT Portal
                       </a>
@@ -220,20 +240,22 @@ function Setup() {
                     <li>Add your device in the Devices tab.</li>
                   </ol>
                 </div>
+
                 <div className="grid gap-4 py-2">
-                  <UrlCopyButton
+                  <UrlCopyField
                     buttonDetails={{
                       url: pillCloudUrl,
-                      buttonText: "cloudUrl",
+                      buttonText: "cloudUrl"
                     }}
                   />
                   <TokenGen />
                 </div>
+
                 <div className="grid gap-4">
                   <div className="w-full flex justify-between items-center px-2">
                     <h2 className="text-2xl">Payload</h2>
-                    <label>
-                      Temperature Units
+                    <label className="flex items-center gap-2">
+                      {t("rapt.tempUnitsLabel", "Temperature Units")}
                       <Select
                         name="deg"
                         onValueChange={setTempUnits}
@@ -249,7 +271,8 @@ function Setup() {
                       </Select>
                     </label>
                   </div>
-                  <CopyableCodeBlock text={pillPayload}></CopyableCodeBlock>
+
+                  <CopyableCodeBlock text={pillPayload} />
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -262,49 +285,74 @@ function Setup() {
 
 export default Setup;
 
-const UrlCopyButton = ({
-  buttonDetails,
+const UrlCopyField = ({
+  buttonDetails
 }: {
   buttonDetails: { url: string; buttonText: string };
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
 
   const handleClick = async () => {
-    navigator.clipboard.writeText(buttonDetails.url);
-    toast({
-      description: (
-        <div className="flex items-center justify-center gap-2">
-          <CircleCheck className="text-xl text-green-500" />
-          {t("iSpindelDashboard.copyToken")}
-        </div>
-      ),
-    });
+    try {
+      await navigator.clipboard.writeText(buttonDetails.url);
+
+      setCopied(true);
+      toast({
+        description: (
+          <div className="flex items-center justify-center gap-2">
+            <CopyCheck className="text-xl text-green-500" />
+            {t("iSpindelDashboard.copyToken")}
+          </div>
+        )
+      });
+
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast({
+        description: t(
+          "iSpindelDashboard.copyError",
+          "Failed to copy to clipboard."
+        ),
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <div className="flex gap-0 flex-nowrap max-w-[500px] w-full">
-      <LoadingButton
-        disabled
-        className="rounded-r-none h-10" // Ensures consistent height
-        variant={"secondary"}
-        loading={false}
-      >
-        {t(buttonDetails.buttonText)}
-      </LoadingButton>
-      <Input
+    <InputGroup className="max-w-[500px] w-full">
+      <InputGroupAddon>
+        <InputGroupText>{t(buttonDetails.buttonText)}</InputGroupText>
+      </InputGroupAddon>
+
+      <InputGroupInput
         readOnly
-        disabled
         value={buttonDetails.url}
-        placeholder="Please Generate Token"
-        className="text-center border-collapse rounded-none border-x-0 h-10" // Matches button height
+        placeholder={t(
+          "iSpindelDashboard.placeholder.generateToken",
+          "Please generate token"
+        )}
+        className="text-center"
       />
-      <Button
-        value={"copy to clipboard"}
-        className="rounded-l-none h-10" // Matches button height
-        onClick={handleClick}
-      >
-        <Clipboard />
-      </Button>
-    </div>
+
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          type="button"
+          onClick={handleClick}
+          className="flex items-center justify-center"
+          size="icon-xs"
+        >
+          {copied ? (
+            <CopyCheck className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+          <span className="sr-only">
+            {t("iSpindelDashboard.copyUrl", "Copy URL to clipboard")}
+          </span>
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
   );
 };

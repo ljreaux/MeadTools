@@ -1,47 +1,105 @@
 "use client";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
+
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { useBrewById, useLinkBrewToRecipe } from "@/hooks/reactQuery/useBrews";
+import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
+
 function LinkBrew() {
-  const { recipes, brews, linkBrew } = useISpindel();
-  const { brewId } = useParams();
-  const router = useRouter();
   const { t } = useTranslation();
-  const [brew, setBrew] = useState(brews.find((brew) => brew.id === brewId));
+  const router = useRouter();
+
+  const params = useParams();
+  const brewId = params.brewId as string;
+
+  const {
+    brew,
+    isLoading: brewsLoading,
+    isError: brewsError
+  } = useBrewById(brewId);
+
+  const {
+    data: accountInfo,
+    isLoading: accountLoading,
+    isError: accountError
+  } = useAccountInfo();
+
+  const recipes = accountInfo?.recipes ?? [];
+
+  const linkMutation = useLinkBrewToRecipe();
+
+  const isLoading = brewsLoading || accountLoading;
+  const isError = brewsError || accountError;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("loading", "Loading…")}</p>
+      </div>
+    );
+  }
+
+  if (isError || !brew) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>
+          {t(
+            "iSpindelDashboard.brews.linkError",
+            "Unable to load brew or recipes."
+          )}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <h2>{t("iSpindelDashboard.brews.link")}</h2>
+      <h2 className="text-2xl mb-4">{t("iSpindelDashboard.brews.link")}</h2>
+
       <div className="flex justify-evenly gap-4 flex-wrap">
-        {recipes.map((rec) => {
-          const isCurrentRecipe = rec.id === brew?.recipe_id;
+        {recipes.map((rec: any) => {
+          const isCurrentRecipe = rec.id === brew.recipe_id;
+
           return (
-            <div key={rec.id} className="text-center">
-              <p>{rec.name}</p>
-              <div className="flex gap-2">
+            <div key={rec.id} className="text-center border rounded-lg p-3">
+              <p className="font-medium mb-2">{rec.name}</p>
+
+              <div className="flex gap-2 justify-center">
                 <Button
                   onClick={() => router.push(`/recipes/${rec.id}`)}
-                  variant={"secondary"}
+                  variant="secondary"
                 >
                   {t("accountPage.viewRecipe")}
                 </Button>
 
                 <Button
-                  onClick={() =>
-                    linkBrew(rec.id, brewId as string)
-                      .then((res) => {
-                        setBrew(res);
-                        router.replace("/account/hydrometer/brews");
-                      })
-                      .catch((err) => console.error(err))
-                  }
-                  disabled={isCurrentRecipe}
+                  disabled={isCurrentRecipe || linkMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      await linkMutation.mutateAsync({
+                        brewId,
+                        recipeId: rec.id
+                      });
+                      router.replace("/account/hydrometer/brews");
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
                 >
                   {t("iSpindelDashboard.brews.link")}
                 </Button>
               </div>
+
+              {isCurrentRecipe && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t(
+                    "iSpindelDashboard.brews.currentRecipe",
+                    "This recipe is already linked to this brew."
+                  )}
+                </p>
+              )}
             </div>
           );
         })}

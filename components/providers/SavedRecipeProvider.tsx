@@ -7,13 +7,11 @@ import {
   useState
 } from "react";
 import {
-  Additive,
   AdditiveType,
   blankAdditive,
   blankIngredient,
   blankNote,
   genRandomId,
-  Ingredient,
   IngredientDetails,
   initialData,
   Recipe,
@@ -26,6 +24,8 @@ import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { SavedNutrientProvider } from "./SavedNutrientProvider";
 import { FullNutrientData } from "@/types/nutrientTypes";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 
@@ -34,21 +34,30 @@ export default function SavedRecipeProvider({
   recipe
 }: {
   children: ReactNode;
-  // for saved user recipes
   recipe: {
     id: number;
     name: string;
+
     recipeData: RecipeData;
     nutrientData: FullNutrientData;
+
     primaryNotes: [string, string][];
     secondaryNotes: [string, string][];
-    user_id: string;
+
+    user_id: number | null;
+
     yanContribution: string[];
-    users: {
-      public_username: string | null;
-    };
     yanFromSource?: string[];
     nuteInfo?: string[];
+
+    users?: {
+      public_username: string | null;
+    } | null;
+
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+    emailNotifications: boolean;
   };
 }) {
   const { t, i18n } = useTranslation();
@@ -76,10 +85,10 @@ export default function SavedRecipeProvider({
       }))
     }
   );
-  const [ingredientList, setIngredientList] = useState<Ingredient[]>([]);
-  const [loadingIngredients, setLoadingIngredients] = useState(true);
-  const [additiveList, setAdditiveList] = useState<Additive[]>([]);
-  const [loadingAdditives, setLoadingAdditives] = useState(true);
+  const { data: ingredientList = [], isLoading: loadingIngredients } =
+    useIngredientsQuery();
+  const { data: additiveList = [], isLoading: loadingAdditives } =
+    useAdditivesQuery();
   const [primaryNotes, setPrimaryNotes] = useState(
     recipe.primaryNotes.map((note) => {
       const content = note;
@@ -113,6 +122,34 @@ export default function SavedRecipeProvider({
     recipe.recipeData?.stabilizers?.phReading ?? "3.6"
   );
   const [recipeName, setRecipeName] = useState(recipe.name || "");
+  const [ratingStats, setRatingStats] = useState<{
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+  }>({
+    averageRating: recipe.averageRating,
+    numberOfRatings: recipe.numberOfRatings,
+    userRating: recipe.userRating
+  });
+
+  useEffect(() => {
+    setRatingStats((prev) => {
+      // Avoid pointless updates if nothing changed
+      if (
+        prev.averageRating === recipe.averageRating &&
+        prev.numberOfRatings === recipe.numberOfRatings &&
+        prev.userRating === recipe.userRating
+      ) {
+        return prev;
+      }
+
+      return {
+        averageRating: recipe.averageRating,
+        numberOfRatings: recipe.numberOfRatings,
+        userRating: recipe.userRating
+      };
+    });
+  }, [recipe.averageRating, recipe.numberOfRatings, recipe.userRating]);
 
   const addIngredient = () => {
     setRecipeData((prev) => ({
@@ -519,33 +556,6 @@ export default function SavedRecipeProvider({
 
   // fetch initial ingredient data
   useEffect(() => {
-    const fetchIngredients = async () => {
-      try {
-        const response = await fetch("/api/ingredients");
-        const data = await response.json();
-        setIngredientList(data);
-        setLoadingIngredients(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingIngredients(false);
-      }
-    };
-    const fetchAdditives = async () => {
-      try {
-        const response = await fetch("/api/additives");
-        const data = await response.json();
-
-        setAdditiveList(data);
-        setLoadingAdditives(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingAdditives(false);
-      }
-    };
-
-    fetchIngredients();
-    fetchAdditives();
-
     setFirstMount(false);
   }, []);
 
@@ -864,11 +874,13 @@ export default function SavedRecipeProvider({
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setRecipeName(e.target.value)
         },
-        public_username: recipe.users.public_username,
+        public_username: recipe.users?.public_username,
         fillToNearest,
         setIngredientsToTarget,
         stabilizerType,
-        setStabilizerType
+        setStabilizerType,
+        ratingStats,
+        setRatingStats
       }}
     >
       <SavedNutrientProvider
@@ -884,7 +896,7 @@ export default function SavedRecipeProvider({
             { maximumFractionDigits: 3 }
           ),
           offset: recipeData.offset,
-          numberOfAdditions: "1",
+          numberOfAdditions: recipe.nutrientData.inputs.numberOfAdditions,
           units: recipeData.units.volume
         }}
       >

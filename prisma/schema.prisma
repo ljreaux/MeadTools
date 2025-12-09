@@ -79,9 +79,14 @@ model recipes {
   primaryNotes    String[]
   secondaryNotes  String[]
   private         Boolean   @default(false)
+  lastActivityEmailAt DateTime? @db.Timestamptz(6)
+  activityEmailsEnabled Boolean @default(false)
   brews           brews[]
   devices         devices[]
   users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments        comments[]
+  ratings         recipe_ratings[]
+  daily_activity  recipe_daily_activity[]
 }
 
 model users {
@@ -92,9 +97,14 @@ model users {
   role            String?   @default("user") @db.VarChar(255)
   hydro_token     String?   @unique
   public_username String?   @db.VarChar(50)
+  google_avatar_url String?   @db.Text
+  show_google_avatar Boolean  @default(false)
+  active         Boolean @default(true)
   brews           brews[]
   devices         devices[]
   recipes         recipes[]
+  comments        comments[]
+  ratings         recipe_ratings[]
 }
 
 model User {
@@ -167,6 +177,79 @@ model BjcpIngredient {
   value     String?  @unique
 
   @@map("bjcp-ingredients")
+}
+
+model comments {
+  id          String    @id @default(uuid()) @db.Uuid
+
+  // FKs to your existing tables (both Int in your schema)
+  recipe_id   Int
+  user_id     Int
+
+  // Self-reference for replies (null = top-level)
+  parent_id   String?   @db.Uuid
+
+  // Content
+  comment     String    @db.Text
+
+  // Timestamps
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @updatedAt
+
+  // Soft delete so replies can live on after a parent is removed
+  deleted_at  DateTime?
+
+  // Relations
+  recipe      recipes   @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  author      users     @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  parent      comments? @relation("CommentToReplies", fields: [parent_id], references: [id], onDelete: SetNull)
+  replies     comments[] @relation("CommentToReplies")
+
+  @@index([recipe_id, created_at])
+  @@index([parent_id, created_at])
+}
+
+model recipe_ratings {
+  id         String   @id @default(uuid()) @db.Uuid
+
+  recipe_id  Int
+  user_id    Int
+  rating     Int      @db.SmallInt
+
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt
+
+  recipe     recipes  @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@unique([recipe_id, user_id])   // one rating per user per recipe
+  @@index([recipe_id])
+  @@index([user_id])
+}
+
+model recipe_daily_activity {
+  id           Int       @id @default(autoincrement())
+  recipe_id    Int
+
+  /// Logical “day” for the summary (no time-of-day component)
+  summary_date DateTime  @db.Date
+
+  /// JSON blob of activity/changes for that day (shape is up to you)
+  changes      Json?
+
+  /// Has this summary been emailed yet?
+  emailed      Boolean   @default(false)
+
+  /// When this record was created
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  recipe       recipes   @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+
+  @@unique([recipe_id, summary_date])  // one row per recipe per day
+  @@index([recipe_id])
+  @@index([summary_date, emailed])
 }
 
 enum temp_units {

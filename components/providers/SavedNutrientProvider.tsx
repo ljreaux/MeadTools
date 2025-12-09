@@ -1,4 +1,5 @@
 "use client";
+import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import { toBrix } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import {
@@ -9,7 +10,6 @@ import {
   NutrientType,
   ScheduleType,
   VolumeUnits,
-  Yeast,
   YeastBrand
 } from "@/types/nutrientTypes";
 import {
@@ -46,9 +46,9 @@ export const SavedNutrientProvider = ({
 }) => {
   const { i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
-  // state variables
-  const [yeastList, setYeastList] = useState<Yeast[]>([]);
-  const [loadingYeasts, setLoadingYeasts] = useState(true);
+
+  const { data, isPending: loadingYeasts } = useYeastsQuery();
+  const yeastList = data ?? [];
 
   const [fullData, setFullData] = useState<FullNutrientData>(storedFullData);
 
@@ -311,23 +311,6 @@ export const SavedNutrientProvider = ({
     copyArr[index] = value;
     setYanContributions(copyArr);
   };
-
-  // fetch initial yeast data
-  useEffect(() => {
-    const fetchYeasts = async () => {
-      try {
-        const response = await fetch("/api/yeasts");
-        const data = await response.json();
-        setYeastList(data);
-        setLoadingYeasts(false);
-      } catch (error) {
-        console.error("Error fetching yeast list:", error);
-        setLoadingYeasts(false);
-      }
-    };
-
-    fetchYeasts();
-  }, []);
 
   // set Nitrogen requirement in global state
   useEffect(() => {

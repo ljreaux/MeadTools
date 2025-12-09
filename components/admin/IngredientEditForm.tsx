@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -15,20 +17,23 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
-import { Ingredient } from "@/types/admin";
+import { Ingredient } from "@/types/recipeDataTypes";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
 
 interface Props {
   ingredient: Ingredient;
 }
+
 const CATEGORY_OPTIONS = [
   "sugar",
   "other",
@@ -36,11 +41,15 @@ const CATEGORY_OPTIONS = [
   "juice",
   "fruit",
   "vegetable",
-  "dried fruit",
+  "dried fruit"
 ].sort((a, b) => a.localeCompare(b));
+
 export default function IngredientEditForm({ ingredient }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({ ...ingredient });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -54,35 +63,30 @@ export default function IngredientEditForm({ ingredient }: Props) {
     e.preventDefault();
     setIsSaving(true);
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSaving(false);
-      return;
-    }
-
     try {
-      const res = await fetch(`/api/ingredients/${ingredient.id}`, {
+      await fetchWithAuth(`/api/ingredients/${ingredient.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          // if these are stored as numbers in DB, coerce here
+          sugar_content: formData.sugar_content
+            ? Number(formData.sugar_content)
+            : null,
+          water_content: formData.water_content
+            ? Number(formData.water_content)
+            : null
+        })
       });
 
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      // Refresh cached ingredient list
+      queryClient.invalidateQueries({ queryKey: qk.ingredients() });
 
       toast({ title: "Success", description: "Ingredient updated." });
     } catch (err: any) {
       toast({
         title: "Error",
         description: err.message || "Failed to update ingredient.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -90,26 +94,14 @@ export default function IngredientEditForm({ ingredient }: Props) {
   };
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/ingredients/${ingredient.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      await fetchWithAuth(`/api/ingredients/${ingredient.id}`, {
+        method: "DELETE"
       });
 
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      // Remove from list cache
+      queryClient.invalidateQueries({ queryKey: qk.ingredients() });
 
       toast({ title: "Deleted", description: "Ingredient was deleted." });
       router.push("/admin/ingredients");
@@ -117,7 +109,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
       toast({
         title: "Error",
         description: err.message || "Failed to delete ingredient.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsDeleting(false);
@@ -134,7 +126,7 @@ export default function IngredientEditForm({ ingredient }: Props) {
           <Input
             id={key}
             name={key}
-            value={formData[key as keyof Ingredient]}
+            value={String(formData[key as keyof Ingredient] ?? "")}
             onChange={handleChange}
           />
         </div>

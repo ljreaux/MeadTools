@@ -4,25 +4,25 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "../ui/alert-dialog";
 import { buttonVariants } from "../ui/button";
 import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogDescription,
-  AlertDialogTitle,
+  AlertDialogTitle
 } from "@radix-ui/react-alert-dialog";
-import { useToast } from "@/hooks/use-toast";
 import { Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../providers/AuthProvider";
 import { useParams } from "next/navigation";
+import { useDeleteRecipe } from "@/hooks/reactQuery/useDeleteRecipe";
+import { useRouter } from "next/navigation";
 
 export default function DeleteRecipe() {
-  const { toast } = useToast();
   const { t } = useTranslation();
-  const { deleteRecipe } = useAuth();
+  const deleteRecipeMutation = useDeleteRecipe();
+  const router = useRouter();
   const params = useParams();
   const recipeId = params?.id;
 
@@ -52,12 +52,8 @@ export default function DeleteRecipe() {
               className={buttonVariants({ variant: "destructive" })}
               onClick={() => {
                 if (recipeId && typeof recipeId === "string") {
-                  deleteRecipe(recipeId);
-                  toast({
-                    title: "Recipe Deleted",
-                    description: `Recipe has been deleted.`,
-                  });
-                  window.location.href = "/account"; // Redirect back to account page
+                  deleteRecipeMutation.mutate(Number(recipeId));
+                  router.push("/account"); // Redirect back to account page
                 }
               }}
             >

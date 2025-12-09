@@ -1,4 +1,5 @@
 "use client";
+
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,25 +11,53 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { useISpindel } from "@/components/providers/ISpindelProvider";
 import Link from "next/link";
+import {
+  useHydrometerInfo,
+  type Device
+} from "@/hooks/reactQuery/useHydrometerInfo";
+import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
 
 function Devices() {
-  const { deviceList } = useISpindel();
-
   const { t } = useTranslation();
-  if (!deviceList) return <div> {t("noDevices")}</div>;
+  const { data, isLoading, isError } = useHydrometerInfo();
+
+  const deviceList: Device[] = data?.devices ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("loading", "Loading…")}</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("error.generic", "Something went wrong loading devices.")}</p>
+      </div>
+    );
+  }
+
+  if (!deviceList || deviceList.length === 0) {
+    return (
+      <div className="flex items-center justify-center my-4">
+        <p>{t("noDevices")}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center gap-4 my-4 text-center">
-      <div className="flex gap-2">
-        {deviceList.length === 0 && <p>{t("noDevices")}</p>}
-        {deviceList?.map((dev) => {
-          return dev ? <DeviceCard device={dev} key={dev.id} /> : null;
-        })}
+      <div className="flex gap-2 flex-wrap justify-center">
+        {deviceList.map((dev) =>
+          dev ? <DeviceCard device={dev} key={dev.id} /> : null
+        )}
       </div>
     </div>
   );
@@ -36,28 +65,34 @@ function Devices() {
 
 export default Devices;
 
-type DeviceType = {
-  id: string;
-  device_name: string;
-  brew_id: string | null;
-  recipe_id: string | null;
-  coefficients: number[];
-};
-
-const DeviceCard = ({ device }: { device: DeviceType }) => {
-  const { startBrew, endBrew, brews } = useISpindel();
-
+const DeviceCard = ({ device }: { device: Device }) => {
   const { t } = useTranslation();
   const [fileName, setFileName] = useState("");
+
+  const { startBrew, endBrew, isStarting, isEnding } = useHydrometerBrews();
+
   const updateFileName = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileName(e.target.value);
   };
 
-  const brewName = brews.find((brew) => brew.id === device.brew_id)?.name;
+  // Name for the active brew from the joined relation
+  const brewName = device.brews?.name ?? null;
+
+  const handleStart = async () => {
+    await startBrew(device.id, fileName || null);
+    setFileName("");
+  };
+
+  const handleEnd = async () => {
+    await endBrew(device.id, device.brew_id);
+  };
 
   return (
-    <div key={device.id} className="flex flex-col gap-2">
-      <h2>{device.device_name}</h2>
+    <div className="flex flex-col gap-2 border rounded-lg p-3">
+      <h2 className="font-semibold">
+        {device.device_name ?? t("unnamedDevice", "Unnamed device")}
+      </h2>
+
       <div className="grid gap-1">
         <Link
           className={buttonVariants({ variant: "secondary" })}
@@ -70,37 +105,52 @@ const DeviceCard = ({ device }: { device: DeviceType }) => {
           <AlertDialog>
             <AlertDialogTrigger
               className={buttonVariants({ variant: "secondary" })}
+              disabled={isStarting}
             >
-              {t("iSpindelDashboard.startBrew")}
+              {isStarting
+                ? t("iSpindelDashboard.startBrew.loading", "Starting…")
+                : t("iSpindelDashboard.startBrew")}
             </AlertDialogTrigger>
-            <AlertDialogContent className="z-[1000] w-11/12">
+            <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>
                   {t("iSpindelDashboard.addBrewName")}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="flex flex-col gap-2">
-                  <Input value={fileName} onChange={updateFileName} />
+                  <Input
+                    value={fileName}
+                    onChange={updateFileName}
+                    placeholder={t(
+                      "iSpindelDashboard.brewNamePlaceholder",
+                      "Optional brew name"
+                    )}
+                  />
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction asChild>
                   <Button
-                    variant={"secondary"}
-                    onClick={() => startBrew(device.id, fileName)}
+                    variant="secondary"
+                    onClick={handleStart}
+                    disabled={isStarting}
                   >
-                    {t("iSpindelDashboard.startBrew")}
+                    {isStarting
+                      ? t("iSpindelDashboard.startBrew.loading", "Starting…")
+                      : t("iSpindelDashboard.startBrew")}
                   </Button>
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         ) : (
-          <Button
-            variant={"destructive"}
-            onClick={() => endBrew(device.id, device.brew_id)}
-          >
-            {t("iSpindelDashboard.endBrew", { brew_name: brewName })}
+          <Button variant="destructive" onClick={handleEnd} disabled={isEnding}>
+            {isEnding
+              ? t("iSpindelDashboard.endBrew.loading", "Ending…")
+              : t("iSpindelDashboard.endBrew", {
+                  brew_name:
+                    brewName ?? t("iSpindelDashboard.unknownBrew", "your brew")
+                })}
           </Button>
         )}
       </div>

@@ -1,6 +1,5 @@
 "use client";
-import React, { useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Input } from "../ui/input";
@@ -15,16 +14,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import { Save } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
+import TooltipHelper from "../Tooltips";
+import {
+  useCreateRecipeMutation,
+  buildRecipePayload
+} from "@/hooks/reactQuery/useRecipeQuery";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 function SaveRecipeCopy() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { toast } = useToast();
 
   const {
     ingredients,
@@ -39,21 +45,33 @@ function SaveRecipeCopy() {
     sulfite,
     campden,
     notes,
-    recipeNameProps,
+    stabilizers,
+    stabilizerType,
+    recipeNameProps
   } = useRecipe();
 
-  const { fullData, yanContributions } = useNutrients();
+  const {
+    fullData,
+    yanContributions,
+    otherNutrientName: otherNameState,
+    providedYan,
+    maxGpl
+  } = useNutrients();
 
-  const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
+  const { isLoggedIn } = useAuth();
 
-  const [checked, setChecked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
-  const { toast } = useToast();
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // email notifications
   const [recipeName, setRecipeName] = useState(recipeNameProps.value);
 
+  const createRecipeMutation = useCreateRecipeMutation();
+
   const createRecipe = async () => {
-    setIsSubmitting(true); // Start loading
-    const recipeData = JSON.stringify({
+    const body = buildRecipePayload({
+      name: recipeName,
+      privateRecipe: checked,
+      emailNotifications: notify,
+
       ingredients,
       OG,
       volume,
@@ -65,42 +83,31 @@ function SaveRecipeCopy() {
       sorbate,
       sulfite,
       campden,
-    });
-    const nutrientData = JSON.stringify(fullData);
-    const yanContribution = JSON.stringify(yanContributions);
+      stabilizers,
+      stabilizerType,
 
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
-    const body = {
-      name: recipeName,
-      recipeData,
-      yanFromSource: null,
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: null,
-      primaryNotes,
-      secondaryNotes,
-      private: checked,
-    };
+      notes,
+      fullData,
+      yanContributions,
+      otherNutrientNameValue: otherNameState.value,
+      providedYan,
+      maxGpl
+    });
 
     try {
-      await fetchAuthenticatedPost("/api/recipes", body);
+      await createRecipeMutation.mutateAsync(body);
 
       toast({
-        description: "Recipe created successfully.",
+        description: "Recipe created successfully."
       });
       router.push("/account");
     } catch (error: any) {
-      console.error("Error creating recipe:", error.message);
+      console.error("Error creating recipe:", error?.message ?? error);
       toast({
         title: "Error",
         description: "There was an error creating your recipe",
-        variant: "destructive",
+        variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false); // End loading
     }
   };
 
@@ -111,9 +118,11 @@ function SaveRecipeCopy() {
           <Save />
         </Button>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("saveCopy")}</DialogTitle>
+
           {isLoggedIn ? (
             <div className="space-y-4">
               <label>
@@ -123,10 +132,21 @@ function SaveRecipeCopy() {
                   onChange={(e) => setRecipeName(e.target.value)}
                 />
               </label>
+
               <label className="grid">
                 {t("private")}
                 <Switch checked={checked} onCheckedChange={setChecked} />
               </label>
+
+              {!checked && (
+                <label className="grid">
+                  <span className="flex items-center gap-1">
+                    {t("notify")}
+                    <TooltipHelper body={t("tiptext.notify")} />
+                  </span>
+                  <Switch checked={notify} onCheckedChange={setNotify} />
+                </label>
+              )}
             </div>
           ) : (
             <Link
@@ -137,11 +157,12 @@ function SaveRecipeCopy() {
             </Link>
           )}
         </DialogHeader>
+
         {isLoggedIn && (
           <DialogFooter>
             <LoadingButton
               onClick={createRecipe}
-              loading={isSubmitting}
+              loading={createRecipeMutation.isPending}
               variant="secondary"
             >
               {t("SUBMIT")}

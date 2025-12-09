@@ -35,8 +35,8 @@ const cardConfig = [
       <DesiredBatchDetails key="batch details" />,
       <Ingredients key="ingredients" useRecipe={useRecipe} />,
       <IngredientResults key="ingredientResults" useRecipe={useRecipe} />,
-      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />,
-    ],
+      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />
+    ]
   },
   {
     key: "card 2",
@@ -44,43 +44,43 @@ const cardConfig = [
     components: [
       <VolumeInputs key="volumeInputs" disabled useNutrients={useNutrients} />,
       <YeastDetails key="yeastDetails" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />,
-    ],
+      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
       <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />,
-    ],
+      <Results key="results" useNutrients={useNutrients} />
+    ]
   },
   {
     key: "card 4",
     heading: "stabilizersHeading",
     tooltip: {
       body: "tipText.stabilizers",
-      link: "https://meadmaking.wiki/en/process/stabilization",
+      link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />],
+    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<Additives key="additives" useRecipe={useRecipe} />],
+    components: [<Additives key="additives" useRecipe={useRecipe} />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<Notes key="notes" useRecipe={useRecipe} />],
+    components: [<Notes key="notes" useRecipe={useRecipe} />]
   },
   {
     key: "card 7",
     heading: "PDF.title",
     components: [
-      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />,
-    ],
-  },
+      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />
+    ]
+  }
 ];
 
 function RecipeBuilder() {
@@ -128,7 +128,7 @@ export default RecipeBuilder;
 
 const Heading = ({
   text,
-  toolTipProps,
+  toolTipProps
 }: {
   text: string;
   toolTipProps?: { body: string; link: string };

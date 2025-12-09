@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRecipe, getAllRecipes } from "@/lib/db/recipes";
-
+import { createRecipe } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
+import { getAdminRecipesPage } from "@/lib/db/recipes";
 
 export async function GET(req: NextRequest) {
-  const userId = await verifyUser(req);
-  let isAdmin = false;
-
   try {
-    if (typeof userId === "number") isAdmin = await requireAdmin(userId);
+    const userOrResponse = await verifyUser(req);
+    if (userOrResponse instanceof NextResponse) {
+      // Not logged in / invalid token, etc.
+      return userOrResponse;
+    }
 
-    let recipes = await getAllRecipes();
-    if (!isAdmin) recipes = recipes.filter((rec) => !rec.private);
+    const isAdmin = await requireAdmin(userOrResponse);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Forbidden – admin access required." },
+        { status: 403 }
+      );
+    }
 
-    return NextResponse.json({ recipes });
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get("page") ?? "1");
+    const limit = Number(searchParams.get("limit") ?? "20");
+    const query = searchParams.get("query") ?? "";
+
+    const result = await getAdminRecipesPage({ page, limit, query });
+
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
-    console.error("Error fetching recipes:", error);
+    console.error("Error fetching recipes (admin):", error);
     return NextResponse.json(
-      { error: "Failed to fetch recipes" }, // Override with consistent error message
+      { error: "Failed to fetch recipes" },
       { status: 500 }
     );
   }
@@ -41,7 +54,8 @@ export async function POST(req: NextRequest) {
       nuteInfo,
       primaryNotes,
       secondaryNotes,
-      privateRecipe,
+      private: privateRecipe,
+      lastActivityEmailAt
     } = body;
 
     if (!name || !recipeData) {
@@ -63,6 +77,7 @@ export async function POST(req: NextRequest) {
       primaryNotes,
       secondaryNotes,
       private: privateRecipe || false,
+      lastActivityEmailAt
     });
 
     return NextResponse.json({ recipe }, { status: 201 });

@@ -21,21 +21,6 @@ export const toSG = (gravityReading: number) => {
   );
 };
 
-export const transformData = (logs: any[]) => {
-  const og = logs[0]?.calculated_gravity || logs[0]?.gravity;
-  return logs.map((log) => {
-    const sg = log.calculated_gravity || log.gravity;
-    const abv = Math.round(calcABV(og, sg) * 1000) / 1000;
-    return {
-      date: log.datetime,
-      temperature: log.temperature,
-      gravity: sg,
-      battery: log.battery,
-      abv: Math.max(abv, 0),
-    };
-  });
-};
-
 export function calcSb(SG: number) {
   const afterDecimal = SG - 1;
   return 1 + Math.round((afterDecimal * 2000) / 3) / 1000;

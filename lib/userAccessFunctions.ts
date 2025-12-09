@@ -45,7 +45,7 @@ export async function verifyUser(req: NextRequest) {
 
       // Fetch the user by custom ID
       const user = await prisma.users.findUnique({
-        where: { id: userId },
+        where: { id: userId }
       });
 
       if (!user) {
@@ -64,7 +64,7 @@ export async function verifyUser(req: NextRequest) {
 
       if (session?.user?.email) {
         const user = await prisma.users.findUnique({
-          where: { email: session.user.email },
+          where: { email: session.user.email }
         });
 
         if (user) {
@@ -76,7 +76,7 @@ export async function verifyUser(req: NextRequest) {
       if (session?.user?.id) {
         const user = await prisma.users.findUnique({
           // @ts-expect-error Works fine, but throws a ts error
-          where: { google_id: session.user.id as string }, // Assuming profile.sub is mapped to google_id
+          where: { google_id: session.user.id as string } // Assuming profile.sub is mapped to google_id
         });
 
         if (user) {

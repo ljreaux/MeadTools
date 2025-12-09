@@ -1,10 +1,9 @@
-import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "../ui/select";
 import { useTranslation } from "react-i18next";
 import { Recipe } from "@/types/recipeDataTypes";

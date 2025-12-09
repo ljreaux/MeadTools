@@ -1,6 +1,9 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { useEffect, useState } from "react";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 
 type Sugar =
   | {
@@ -16,17 +19,40 @@ const bottleSizes = [
   { size: 22, label: "22 oz" },
   { size: 11.1586, label: "330 ml" },
   { size: 16.907, label: "500 ml" },
-  { size: 25.3605, label: "750 ml" },
+  { size: 25.3605, label: "750 ml" }
 ].map((item) => ({
   ...item,
-  size: item.size * ozToGal,
+  size: item.size * ozToGal
 }));
 
 const calcAmountPerBottle = (numberOfBottles: number, totalSugar: number) =>
   numberOfBottles > 0 ? totalSugar / numberOfBottles : 0;
 
 const usePrimingSugar = () => {
-  const [sugars, setSugars] = useState<Sugar>(null);
+  // 🔁 Fetch sugar ingredients via React Query
+  const { data: ingredientData, isLoading } = useIngredientsQuery("sugar");
+
+  // Derived sugar definitions from ingredients
+  const sugars: Sugar = useMemo(() => {
+    if (!ingredientData) return null;
+
+    return ingredientData
+      .map((sugar) => ({
+        label: sugar.name,
+        amount: 100 / parseFloat(sugar.sugar_content)
+      }))
+      .sort((a, b) => {
+        const isPriority = (label: string) =>
+          label === "Table Sugar" || label === "Corn Sugar";
+
+        const aPri = isPriority(a.label);
+        const bPri = isPriority(b.label);
+
+        if (aPri && !bPri) return -1;
+        if (!aPri && bPri) return 1;
+        return a.label.localeCompare(b.label);
+      });
+  }, [ingredientData]);
 
   const [temp, setTemp] = useState("68");
   const [tempUnits, setTempUnits] = useState<"C" | "F">("F");
@@ -40,7 +66,7 @@ const usePrimingSugar = () => {
 
   const [primingSugar, setPrimingSugar] = useState({
     sugar: 0,
-    parsedVolume: 0,
+    parsedVolume: 0
   });
 
   const calcPrimingSugar = (temp: string, vols: string, volume: string) => {
@@ -62,7 +88,7 @@ const usePrimingSugar = () => {
 
     return {
       sugar,
-      parsedVolume,
+      parsedVolume
     };
   };
 
@@ -93,45 +119,20 @@ const usePrimingSugar = () => {
   };
 
   useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/ingredients?category=sugar");
-      const data = await res.json();
-      const sugars = data
-        .map((sugar: { name: string; sugar_content: string }) => ({
-          label: sugar.name,
-          amount: 100 / parseFloat(sugar.sugar_content),
-        }))
-        .sort(
-          (
-            a: { label: string; amount: number },
-            b: { label: string; amount: number }
-          ) => {
-            if (a.label === "Table Sugar" || a.label === "Corn Sugar") {
-              return -1;
-            }
-            if (b.label === "Table Sugar" || b.label === "Corn Sugar") {
-              return 1;
-            }
-          }
-        );
-      setSugars(sugars);
-    })();
-  }, []);
-
-  useEffect(() => {
     setPrimingSugar(calcPrimingSugar(temp, vols, volume));
-  }, [temp, vols, volume]);
+  }, [temp, vols, volume, volumeUnits, tempUnits]);
 
   return {
+    ingredientsLoading: isLoading,
     tempProps: {
       value: temp,
-      onChange: handleTempChange,
+      onChange: handleTempChange
     },
     tempInvalid,
 
     volsProps: {
       value: vols,
-      onChange: handleVolsChange,
+      onChange: handleVolsChange
     },
     volsInvalid,
 
@@ -139,7 +140,7 @@ const usePrimingSugar = () => {
       value: volume,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
         if (isValidNumber(e.target.value)) setVolume(e.target.value);
-      },
+      }
     },
     volumeUnitProps: {
       onValueChange: (val: string) => {
@@ -150,7 +151,7 @@ const usePrimingSugar = () => {
           setVolume((parseNumber(volume) * 3.78541).toString());
         }
       },
-      value: volumeUnits,
+      value: volumeUnits
     },
     tempUnitProps: {
       onValueChange: (val: string) => {
@@ -161,8 +162,9 @@ const usePrimingSugar = () => {
           setTemp(toCelsius(parseNumber(temp)).toString());
         }
       },
-      value: tempUnits,
+      value: tempUnits
     },
+
     primingSugarAmounts: sugars?.map((sugar) => {
       const totalSugar = sugar.amount * primingSugar.sugar;
 
@@ -174,11 +176,11 @@ const usePrimingSugar = () => {
 
           return {
             label,
-            amount: calcAmountPerBottle(numberOfBottles, totalSugar),
+            amount: calcAmountPerBottle(numberOfBottles, totalSugar)
           };
-        }),
+        })
       };
-    }),
+    })
   };
 };
 

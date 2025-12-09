@@ -1,4 +1,3 @@
-import React from "react";
 import PrintableIframe from "./PrintableIframe";
 import RecipeView from "./RecipeView";
 import { Recipe } from "@/types/recipeDataTypes";
@@ -6,7 +5,7 @@ import { NutrientType } from "@/types/nutrientTypes";
 
 function PDF({
   useRecipe,
-  useNutrients,
+  useNutrients
 }: {
   useNutrients: () => NutrientType;
   useRecipe: () => Recipe;
