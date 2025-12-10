@@ -45,3 +45,5 @@ next-env.d.ts
 
 # workspace files
 .vscode/*
+
+locales/
