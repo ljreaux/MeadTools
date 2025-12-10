@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "i18nexus pull && next dev --webpack",
-    "build": "prisma generate && next build --webpack",
+    "dev": "i18nexus pull && concurrently \"next dev --webpack\" \"i18nexus listen\"",
+    "build": "i18nexus pull && prisma generate && next build --webpack",
     "start": "i18nexus pull && next start",
     "lint": "next lint",
     "check:unused-exports": "knip"
@@ -103,6 +103,7 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.2",
     "i18nexus-cli": "^3.5.0",
