@@ -1,7 +1,6 @@
 import { Ingredient, IngredientDetails, Recipe } from "@/types/recipeDataTypes";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
-import Loading from "../loading";
 import SearchableInput from "../ui/SearchableInput";
 import { useTranslation } from "react-i18next";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
@@ -10,6 +9,8 @@ import Tooltip from "../Tooltips";
 import lodash from "lodash";
 import { Separator } from "../ui/separator";
 import { Trash } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
+import SortableItem from "../ui/SortableItem";
 
 function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
   } = useRecipe();
 
   if (loadingIngredients) {
-    return <Loading />;
+    return <IngredientsSkeleton />;
   }
 
   return (
@@ -128,9 +129,9 @@ const IngredientLine = ({
   };
 
   return (
-    <div className={`joyride-ingredient-${index + 1} grid gap-1`}>
+    <div className={`joyride-ingredient-${index + 1} grid gap-1 py-2`}>
       {/* Top-right delete button */}
-      <div className="flex justify-end mt-2">
+      <div className="flex justify-end mb-1">
         <Button onClick={deleteFn} variant="destructive" size="sm">
           <Trash className="h-4 w-4" />
         </Button>
@@ -168,8 +169,8 @@ const IngredientLine = ({
         </label>
       </div>
 
-      {/* Row 2: Weight + Volume (already equal widths) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Row 2: Weight + Volume */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
         <label className="grid gap-1">
           <span className="text-sm font-medium">
             {t("recipeBuilder.labels.weight")}
@@ -197,8 +198,8 @@ const IngredientLine = ({
         </label>
       </div>
 
-      {/* Row 3: Secondary + fill to next (no delete here) */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between my-2">
+      {/* Row 3: Secondary + fill to next */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mt-3">
         <label
           className={`joyride-secondary-${index + 1} inline-flex items-center gap-2 text-sm`}
         >
@@ -212,6 +213,88 @@ const IngredientLine = ({
         >
           {t("toNextVolume", { volumeUnit: units.volume })}
         </Button>
+      </div>
+    </div>
+  );
+};
+
+/* SKELETONS */
+
+const IngredientsSkeleton = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="py-6">
+      <div className="grid gap-4">
+        <h3 className="text-base font-semibold">
+          {t("recipeBuilder.labels.ingredients")}
+        </h3>
+
+        <div>
+          {Array.from({ length: 2 }).map((_, i) => (
+            <SortableIngredientSkeleton key={i} id={`skeleton-${i}`} />
+          ))}
+        </div>
+
+        {/* Add new button skeleton: matches default button height (h-10) */}
+        <Skeleton className="h-10 w-full rounded-lg col-span-full" />
+      </div>
+
+      <Separator className="mt-4" />
+    </div>
+  );
+};
+
+const SortableIngredientSkeleton = ({ id }: { id: string }) => {
+  // Outer shell mirrors SortableItem (flex row, bg, rounding, margin).
+  return (
+    <SortableItem id={id}>
+      <IngredientLineSkeleton />
+    </SortableItem>
+  );
+};
+
+const IngredientLineSkeleton = () => {
+  return (
+    <div className="grid gap-1 py-2">
+      {/* Top-right delete button – matches sm button height (h-9) */}
+      <div className="flex justify-end mb-1">
+        {/* <Button variant="ghost" size="sm"> */}
+        <Skeleton className="w-10 h-9 rounded-lg" />
+        {/* </Button> */}
+      </div>
+
+      {/* Row 1: Ingredient + Brix (both h-12 via InputGroup) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-1">
+          <Skeleton className="h-5 w-1/2 mb-0.5" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </div>
+        <div className="grid gap-1">
+          <Skeleton className="h-5 w-1/3 mb-0.5" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </div>
+      </div>
+
+      {/* Row 2: Weight + Volume */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        <div className="grid gap-1">
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </div>
+        <div className="grid gap-1">
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </div>
+      </div>
+
+      {/* Row 3: Secondary + fill to next */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mt-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-5 w-9 rounded-full" />
+        </div>
+        <Skeleton className="h-10 w-40 rounded-lg" />
       </div>
     </div>
   );
