@@ -6,13 +6,13 @@ import { Suspense } from "react";
 import Loading from "../../components/loading";
 import BottomBar from "@/components/navbar/BottomBar";
 import KofiButton from "@/components/KofiSupportButton";
-import DesktopDialog from "@/components/dialogs/DesktopDialog";
+
 import SupportDialog from "@/components/dialogs/SupportDialog";
 import TutorialDialog from "@/components/dialogs/TutorialDialog";
 
 export default async function Layout({
   children,
-  params,
+  params
 }: Readonly<{
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -32,7 +32,6 @@ export default async function Layout({
         <BottomBar />
         <KofiButton />
         <TutorialDialog />
-        <DesktopDialog />
         <SupportDialog />
       </Providers>
     </TranslationsProvider>
