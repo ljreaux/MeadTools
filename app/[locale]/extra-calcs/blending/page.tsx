@@ -78,7 +78,7 @@ function Blending() {
                   value={val}
                   onChange={(e) => handleChange(e, rowIndex, 0)}
                   onFocus={(e) => e.target.select()}
-                  className="text-lg"
+                  className="text-lg h-12"
                 />
               </div>
 
@@ -96,7 +96,7 @@ function Blending() {
                   value={vol}
                   onChange={(e) => handleChange(e, rowIndex, 1)}
                   onFocus={(e) => e.target.select()}
-                  className="text-lg"
+                  className="text-lg h-12"
                 />
               </div>
             </div>

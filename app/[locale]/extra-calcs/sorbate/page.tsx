@@ -1,5 +1,6 @@
 "use client";
 
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 import {
   InputGroup,
   InputGroupInput,
@@ -89,7 +90,7 @@ function Sorbate() {
                   setSorbate((prev) => ({ ...prev, units: val }))
                 }
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue placeholder={t("GAL")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -107,22 +108,11 @@ function Sorbate() {
             {t("ABV")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="abv"
-              inputMode="decimal"
-              value={sorbate.abv}
-              onFocus={(e) => e.target.select()}
-              onChange={handleChange}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              align="inline-end"
-              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-            >
-              %
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={sorbate.abv}
+            handleChange={handleChange}
+            text="%"
+          />
         </div>
       </div>
 

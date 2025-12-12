@@ -22,6 +22,7 @@ import {
   parseNumber,
   normalizeNumberString
 } from "@/lib/utils/validateInput";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function TempCorrection() {
   const { t, i18n } = useTranslation();
@@ -106,7 +107,7 @@ function TempCorrection() {
                 value={tempObj.tempUnits}
                 onValueChange={setTempUnits}
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-16">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -124,23 +125,11 @@ function TempCorrection() {
             {t("calTemp")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="calTemp"
-              inputMode="decimal"
-              value={tempObj.calTemp}
-              onFocus={(e) => e.target.select()}
-              onChange={handleChange}
-              className="h-full text-lg"
-            />
-
-            <InputGroupAddon
-              align="inline-end"
-              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-            >
-              {tempObj.tempUnits === "F" ? t("FAR") : t("CEL")}
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={tempObj.calTemp}
+            handleChange={handleChange}
+            text={tempObj.tempUnits === "F" ? t("FAR") : t("CEL")}
+          />
         </div>
       </div>
 

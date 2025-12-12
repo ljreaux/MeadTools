@@ -18,6 +18,7 @@ import PrimingSugarTable from "@/components/extraCalcs/PrimingSugarTable";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PrimingSugarSkeleton } from "@/components/extraCalcs/PrimingSugarSkeleton";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function PrimingSugar() {
   const { t } = useTranslation();
@@ -63,7 +64,7 @@ function PrimingSugar() {
             >
               <Separator orientation="vertical" className="h-12" />
               <Select {...tempUnitProps}>
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -91,16 +92,11 @@ function PrimingSugar() {
             {t("co2Vol")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="co2Vol"
-              type="number"
-              {...volsProps}
-              aria-invalid={volsInvalid || undefined}
-              onFocus={(e) => e.target.select()}
-              className="h-full text-lg"
-            />
-          </InputGroup>
+          <InputWithUnits
+            value={volsProps.value}
+            handleChange={volsProps.onChange}
+            text={t("vols")}
+          />
 
           <p
             className={cn(
@@ -132,7 +128,7 @@ function PrimingSugar() {
             >
               <Separator orientation="vertical" className="h-12" />
               <Select {...volumeUnitProps}>
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

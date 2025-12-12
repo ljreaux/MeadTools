@@ -72,7 +72,7 @@ function VolumeInputs({
               onValueChange={inputs.volumeUnits.onChange}
               disabled={disabled}
             >
-              <SelectTrigger className="p-2 border-none mr-2">
+              <SelectTrigger className="p-2 border-none mr-2 w-20">
                 <SelectValue />
               </SelectTrigger>
 
