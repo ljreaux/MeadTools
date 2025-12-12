@@ -25,6 +25,13 @@ import {
   buildRecipePayload
 } from "@/hooks/reactQuery/useRecipeQuery";
 
+import { Button } from "../ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+
 function SaveNew() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -110,13 +117,23 @@ function SaveNew() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="relative group flex flex-col items-center my-2">
-          <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
-            <FilePlus />
-          </button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            {t("changesForm.saveAs")}
-          </span>
+        <div className="relative flex flex-col items-center my-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                aria-label={t("changesForm.saveAs")}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+              >
+                <FilePlus />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="whitespace-nowrap">
+              {t("changesForm.saveAs")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </DialogTrigger>
 

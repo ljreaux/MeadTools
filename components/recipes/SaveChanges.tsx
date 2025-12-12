@@ -17,6 +17,12 @@ import {
 } from "@/hooks/reactQuery/useRecipeQuery";
 import { Spinner } from "../ui/spinner";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+
 function SaveChanges({
   privateRecipe,
   bottom,
@@ -139,7 +145,7 @@ function SaveChanges({
 
   return (
     <div
-      className={cn("relative group flex flex-col items-center", {
+      className={cn("relative flex flex-col items-center", {
         "w-full": bottom
       })}
     >
@@ -149,22 +155,29 @@ function SaveChanges({
           className="w-full"
           onClick={handleSaveClick}
           disabled={isSaving}
+          aria-label={t("changesForm.submit")}
         >
           {icon}
         </Button>
       ) : (
-        <>
-          <button
-            className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors disabled:opacity-60"
-            onClick={handleSaveClick}
-            disabled={isSaving}
-          >
-            {icon}
-          </button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={handleSaveClick}
+              disabled={isSaving}
+              aria-label={t("changesForm.submit")}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12 disabled:opacity-60"
+            >
+              {icon}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="whitespace-nowrap">
             {t("changesForm.submit")}
-          </span>
-        </>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
