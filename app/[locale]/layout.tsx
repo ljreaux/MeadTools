@@ -9,6 +9,7 @@ import KofiButton from "@/components/KofiSupportButton";
 
 import SupportDialog from "@/components/dialogs/SupportDialog";
 import TutorialDialog from "@/components/dialogs/TutorialDialog";
+import { BannerStack } from "@/components/ui/banner";
 
 export default async function Layout({
   children,
@@ -28,11 +29,14 @@ export default async function Layout({
     >
       <Providers>
         <Navbar t={t} />
+        <div className="fixed top-20 left-0 right-0 z-[50]">
+          <BannerStack max={3} />
+        </div>
         <Suspense fallback={<Loading />}>{children}</Suspense>
         <BottomBar />
         <KofiButton />
-        <TutorialDialog />
         <SupportDialog />
+        <TutorialDialog />
       </Providers>
     </TranslationsProvider>
   );

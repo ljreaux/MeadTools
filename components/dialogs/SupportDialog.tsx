@@ -1,65 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
+import { useBanner } from "@/components/ui/banner"; // <- adjust import path to wherever BannerProvider lives
 
 function SupportDialog() {
   const { t } = useTranslation();
-  const [isDialogOpen, setDialogOpen] = useState(false);
+  const { showBanner, dismissBanner } = useBanner();
 
-  // Check local storage for visibility condition
   useEffect(() => {
     const hasSeenSupportDialog = localStorage.getItem("hasSeenSupportDialog");
-    if (!hasSeenSupportDialog) {
-      setDialogOpen(true);
-      localStorage.setItem("hasSeenSupportDialog", "true");
-    }
-  }, []);
+    if (hasSeenSupportDialog) return;
 
-  const splitText = (text: string) => {
-    const paragraphs = text.split("\n");
-    return paragraphs.map((p, i) => <span key={i}>{p}</span>);
-  };
+    localStorage.setItem("hasSeenSupportDialog", "true");
 
-  const handleCancel = () => {
-    setDialogOpen(false);
-  };
+    const id = showBanner({
+      title: t("donate.dialog.title"),
+      description: (
+        <span className="text-sm opacity-90">
+          {t("donate.dialog.content").split("\n").filter(Boolean).join(" ")}
+        </span>
+      ),
+      variant: "default",
+      dismissible: true,
+      duration: 10000,
+      action: {
+        label: t("donate.dialog.support"),
+        onClick: () => {
+          window.open("https://ko-fi.com/meadtools", "_blank");
+          dismissBanner(id);
+        }
+      }
+    });
+    void id;
+  }, [showBanner, dismissBanner, t]);
 
-  const handleSupport = () => {
-    setDialogOpen(false);
-    window.open("https://ko-fi.com/meadtools", "_blank");
-  };
-
-  return (
-    <AlertDialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-      <AlertDialogContent className="z-[1010] overflow-y-scroll max-h-screen">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("donate.dialog.title")}</AlertDialogTitle>
-          <AlertDialogDescription className="flex flex-col gap-2">
-            {splitText(t("donate.dialog.content"))}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>
-            {t("donate.dialog.cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={handleSupport}>
-            {t("donate.dialog.support")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
+  return null;
 }
 
 export default SupportDialog;
