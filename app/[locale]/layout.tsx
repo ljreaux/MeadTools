@@ -29,7 +29,7 @@ export default async function Layout({
     >
       <Providers>
         <Navbar t={t} />
-        <div className="fixed top-20 left-0 right-0 z-[50]">
+        <div className="fixed top-20 left-0 right-0 z-[2000]">
           <BannerStack max={3} />
         </div>
         <Suspense fallback={<Loading />}>{children}</Suspense>

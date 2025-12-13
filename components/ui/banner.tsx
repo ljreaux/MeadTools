@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
+import {
+  X,
+  Info,
+  AlertTriangle,
+  CheckCircle2,
+  AlertOctagon
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -29,37 +35,79 @@ export type BannerInput = {
 type BannerItem = BannerInput & {
   id: string;
   createdAt: number;
+  closing?: boolean; // used for exit animation
 };
 
 type BannerContextValue = {
   banners: BannerItem[];
   showBanner: (input: BannerInput) => string;
-  dismissBanner: (id: string) => void;
+  requestDismiss: (id: string) => void;
+  dismissBanner: (id: string) => void; // hard remove (rarely needed directly)
   clearBanners: () => void;
 };
 
 const BannerContext = React.createContext<BannerContextValue | null>(null);
 
+const EXIT_MS = 180;
+
 function id() {
-  // stable enough for UI
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 export function BannerProvider({ children }: { children: React.ReactNode }) {
   const [banners, setBanners] = React.useState<BannerItem[]>([]);
-  const timers = React.useRef(new Map<string, number>());
 
-  const dismissBanner = React.useCallback((bannerId: string) => {
-    setBanners((prev) => prev.filter((b) => b.id !== bannerId));
-    const t = timers.current.get(bannerId);
-    if (t) window.clearTimeout(t);
-    timers.current.delete(bannerId);
+  // timers:
+  // - autoDismiss: when duration hits, we requestDismiss (animate out)
+  // - finalize: after EXIT_MS, we actually remove from state
+  const autoDismissTimers = React.useRef(new Map<string, number>());
+  const finalizeTimers = React.useRef(new Map<string, number>());
+
+  const clearAllTimersFor = React.useCallback((bannerId: string) => {
+    const a = autoDismissTimers.current.get(bannerId);
+    if (a) window.clearTimeout(a);
+    autoDismissTimers.current.delete(bannerId);
+
+    const f = finalizeTimers.current.get(bannerId);
+    if (f) window.clearTimeout(f);
+    finalizeTimers.current.delete(bannerId);
   }, []);
+
+  const dismissBanner = React.useCallback(
+    (bannerId: string) => {
+      setBanners((prev) => prev.filter((b) => b.id !== bannerId));
+      clearAllTimersFor(bannerId);
+    },
+    [clearAllTimersFor]
+  );
+
+  const requestDismiss = React.useCallback(
+    (bannerId: string) => {
+      // mark as closing (idempotent)
+      setBanners((prev) =>
+        prev.map((b) => (b.id === bannerId ? { ...b, closing: true } : b))
+      );
+
+      // finalize removal after exit animation
+      if (!finalizeTimers.current.has(bannerId)) {
+        const t = window.setTimeout(() => dismissBanner(bannerId), EXIT_MS);
+        finalizeTimers.current.set(bannerId, t);
+      }
+
+      // if it was going to auto-dismiss later, cancel that (we're dismissing now)
+      const a = autoDismissTimers.current.get(bannerId);
+      if (a) window.clearTimeout(a);
+      autoDismissTimers.current.delete(bannerId);
+    },
+    [dismissBanner]
+  );
 
   const clearBanners = React.useCallback(() => {
     setBanners([]);
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current.clear();
+    autoDismissTimers.current.forEach((t) => window.clearTimeout(t));
+    finalizeTimers.current.forEach((t) => window.clearTimeout(t));
+    autoDismissTimers.current.clear();
+    finalizeTimers.current.clear();
   }, []);
 
   const showBanner = React.useCallback(
@@ -70,6 +118,7 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
         createdAt: Date.now(),
         variant: input.variant ?? "default",
         dismissible: input.dismissible ?? true,
+        closing: false,
         ...input
       };
 
@@ -77,29 +126,34 @@ export function BannerProvider({ children }: { children: React.ReactNode }) {
 
       const duration = input.duration ?? 0;
       if (duration > 0) {
-        const timeout = window.setTimeout(
-          () => dismissBanner(bannerId),
-          duration
-        );
-        timers.current.set(bannerId, timeout);
+        const t = window.setTimeout(() => requestDismiss(bannerId), duration);
+        autoDismissTimers.current.set(bannerId, t);
       }
 
       return bannerId;
     },
-    [dismissBanner]
+    [requestDismiss]
   );
 
   // cleanup on unmount
   React.useEffect(() => {
     return () => {
-      timers.current.forEach((t) => window.clearTimeout(t));
-      timers.current.clear();
+      autoDismissTimers.current.forEach((t) => window.clearTimeout(t));
+      finalizeTimers.current.forEach((t) => window.clearTimeout(t));
+      autoDismissTimers.current.clear();
+      finalizeTimers.current.clear();
     };
   }, []);
 
   const value = React.useMemo(
-    () => ({ banners, showBanner, dismissBanner, clearBanners }),
-    [banners, showBanner, dismissBanner, clearBanners]
+    () => ({
+      banners,
+      showBanner,
+      requestDismiss,
+      dismissBanner,
+      clearBanners
+    }),
+    [banners, showBanner, requestDismiss, dismissBanner, clearBanners]
   );
 
   return (
@@ -113,26 +167,16 @@ export function useBanner() {
   return ctx;
 }
 
-/**
- * Place this wherever you want vertically.
- * - Full width by default
- * - Not fixed / not positioned: you control placement with parent layout
- *
- * Example placement:
- *   <div className="sticky top-24 z-50">
- *     <BannerStack />
- *   </div>
- */
 export function BannerStack({
   className,
   max,
   containerClassName
 }: {
-  className?: string; // per-banner wrapper classes (rare)
-  containerClassName?: string; // stack wrapper classes
-  max?: number; // max banners to render
+  className?: string;
+  containerClassName?: string;
+  max?: number;
 }) {
-  const { banners, dismissBanner } = useBanner();
+  const { banners, requestDismiss } = useBanner();
   const visible = typeof max === "number" ? banners.slice(0, max) : banners;
 
   if (visible.length === 0) return null;
@@ -144,7 +188,7 @@ export function BannerStack({
           <Banner
             key={b.id}
             banner={b}
-            onDismiss={() => dismissBanner(b.id)}
+            onDismiss={() => requestDismiss(b.id)}
             className={className}
           />
         ))}
@@ -163,6 +207,7 @@ function Banner({
   className?: string;
 }) {
   const variant = banner.variant ?? "default";
+
   const variantClasses: Record<BannerVariant, string> = {
     default: "bg-background text-foreground border-foreground/20",
     destructive:
@@ -171,53 +216,39 @@ function Banner({
     warning: "bg-secondary text-foreground border-foreground/20"
   };
 
+  const iconMap: Record<BannerVariant, React.ReactNode> = {
+    default: <Info className="h-4 w-4" />,
+    destructive: <AlertOctagon className="h-4 w-4" />,
+    success: <CheckCircle2 className="h-4 w-4" />,
+    warning: <AlertTriangle className="h-4 w-4" />
+  };
+
+  // enter animation: start "not entered", then flip true on next frame
+  const [entered, setEntered] = React.useState(false);
+  React.useEffect(() => {
+    const raf = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(raf);
+  }, []);
+
+  const isExiting = banner.closing === true;
+
   return (
     <div
       role="status"
       className={cn(
-        "w-full",
-        "px-4 py-2",
-        "flex items-center gap-3",
-        "rounded-none",
-        "border-y",
-        "z-[2000]",
+        "w-full relative px-4 py-3 flex flex-col gap-2 border-y rounded-none z-[2000]",
         variantClasses[variant],
+
+        // animation
+        "transition-all duration-200 will-change-transform",
+        !entered ? "opacity-0 -translate-y-2" : "",
+        entered && !isExiting ? "opacity-100 translate-y-0" : "",
+        isExiting ? "opacity-0 -translate-y-2" : "",
+
         className
       )}
     >
-      <div className="min-w-0 flex-1">
-        {banner.title ? (
-          <div className="text-sm font-medium leading-5 truncate">
-            {banner.title}
-          </div>
-        ) : null}
-        {banner.description ? (
-          <div
-            className={cn("text-sm opacity-90", banner.title ? "mt-0.5" : "")}
-          >
-            {banner.description}
-          </div>
-        ) : null}
-      </div>
-
-      {banner.action ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            banner.action?.onClick();
-          }}
-          className={cn(
-            "shrink-0",
-            // keep secondary looking like your site (your secondary is bg-background)
-            variant === "destructive" ? "bg-background text-foreground" : ""
-          )}
-        >
-          {banner.action.label}
-        </Button>
-      ) : null}
-
+      {/* Dismiss (top-right) */}
       {banner.dismissible !== false ? (
         <Button
           type="button"
@@ -225,10 +256,55 @@ function Banner({
           size="icon"
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="shrink-0 mr-4"
+          className="absolute right-2 top-2"
         >
           <X className="h-4 w-4" />
         </Button>
+      ) : null}
+
+      {/* Scrollable content */}
+      <div
+        className={cn(
+          "min-w-0 max-h-[30vh] sm:max-h-[22vh] overflow-y-auto pr-6",
+          "scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-muted-foreground/40"
+        )}
+      >
+        <div className="flex items-start gap-2">
+          <div className="mt-[2px] shrink-0">{iconMap[variant]}</div>
+
+          <div className="min-w-0 flex-1">
+            {banner.title ? (
+              <div className="text-sm font-medium leading-5">
+                {banner.title}
+              </div>
+            ) : null}
+
+            {banner.description ? (
+              <div
+                className={cn("text-sm opacity-90", banner.title ? "mt-1" : "")}
+              >
+                {banner.description}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom action row */}
+      {banner.action ? (
+        <div className="pt-1">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => banner.action?.onClick()}
+            className={cn(
+              variant === "destructive" ? "bg-background text-foreground" : ""
+            )}
+          >
+            {banner.action.label}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
