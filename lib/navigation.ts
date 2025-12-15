@@ -57,6 +57,10 @@ export const extraCalculatorLinks = [
   {
     path: "/extra-calcs/priming-sugar",
     label: "primingSugarHeading"
+  },
+  {
+    path: "/extra-calcs/bottling",
+    label: "calculators.extraCalcs.bottling"
   }
 ];
 
