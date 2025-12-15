@@ -5,6 +5,8 @@ import {
   useContext,
   useEffect,
   useState
+  // useRef,
+  // useMemo
 } from "react";
 import {
   AdditiveType,
@@ -26,6 +28,8 @@ import { SavedNutrientProvider } from "./SavedNutrientProvider";
 import { FullNutrientData } from "@/types/nutrientTypes";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
+
+// import { useBanner } from "@/components/ui/banner";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 
@@ -553,6 +557,145 @@ export default function SavedRecipeProvider({
   const removeSecondaryNote = (id: string) => {
     setSecondaryNotes((prev) => prev.filter((note) => note.id !== id));
   };
+
+  // ---------------------------------------------
+  // Unsaved-changes banner logic (TEMPORARILY DISABLED)
+  // This logic was working correctly but is commented
+  // out to simplify provider refactoring.
+  // ---------------------------------------------
+  // const { showBanner, dismissBanner } = useBanner();
+
+  // const bannerIdRef = useRef<string | null>(null);
+  // const dismissedRef = useRef(false);
+  // const prevDirtyRef = useRef(false);
+
+  // // We only start dirty tracking after initial/derived state has settled
+  // const dirtyReadyRef = useRef(false);
+
+  // // Normalize away random ids so comparisons are stable (no unused _id vars)
+  // const normalize = (r: RecipeData) => ({
+  //   ...r,
+  //   ingredients: (r.ingredients ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   }),
+  //   additives: (r.additives ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   })
+  // });
+
+  // const normalizeNotes = (notes: { id: string; content: [string, string] }[]) =>
+  //   (notes ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   });
+
+  // type Snapshot = {
+  //   recipeData: any;
+  //   recipeName: string;
+  //   primaryNotes: any;
+  //   secondaryNotes: any;
+  //   stabilizerType: string;
+  //   addingStabilizers: boolean;
+  //   takingPh: boolean;
+  //   phReading: string;
+  // };
+
+  // const initialSnapshotRef = useRef<Snapshot | null>(null);
+
+  // const currentSnapshot = useMemo<Snapshot>(() => {
+  //   return {
+  //     recipeData: normalize(recipeData),
+  //     recipeName,
+  //     primaryNotes: normalizeNotes(primaryNotes),
+  //     secondaryNotes: normalizeNotes(secondaryNotes),
+  //     stabilizerType,
+  //     addingStabilizers,
+  //     takingPh,
+  //     phReading
+  //   };
+  // }, [
+  //   recipeData,
+  //   recipeName,
+  //   primaryNotes,
+  //   secondaryNotes,
+  //   stabilizerType,
+  //   addingStabilizers,
+  //   takingPh,
+  //   phReading
+  // ]);
+
+  // const isDirty = useMemo(() => {
+  //   const init = initialSnapshotRef.current;
+  //   if (!init) return false;
+  //   return !lodash.isEqual(init, currentSnapshot);
+  // }, [currentSnapshot]);
+
+  // // Capture baseline ONCE after everything settles (double RAF)
+  // useEffect(() => {
+  //   if (dirtyReadyRef.current) return;
+
+  //   const raf1 = requestAnimationFrame(() => {
+  //     const raf2 = requestAnimationFrame(() => {
+  //       initialSnapshotRef.current = currentSnapshot;
+  //       dirtyReadyRef.current = true;
+  //       prevDirtyRef.current = false;
+  //       dismissedRef.current = false;
+  //     });
+
+  //     // cleanup nested RAF
+  //     return () => cancelAnimationFrame(raf2);
+  //   });
+
+  //   return () => cancelAnimationFrame(raf1);
+  //   // IMPORTANT: run once. currentSnapshot is read when RAF fires.
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+
+  // // Drive banner from transitions clean <-> dirty
+  // useEffect(() => {
+  //   if (!dirtyReadyRef.current) return;
+
+  //   const wasDirty = prevDirtyRef.current;
+  //   const nowDirty = isDirty;
+
+  //   prevDirtyRef.current = nowDirty;
+
+  //   // Became clean -> remove banner and reset dismissal
+  //   if (wasDirty && !nowDirty) {
+  //     if (bannerIdRef.current) {
+  //       dismissBanner(bannerIdRef.current);
+  //       bannerIdRef.current = null;
+  //     }
+  //     dismissedRef.current = false;
+  //     return;
+  //   }
+
+  //   // Became dirty -> show (one) banner (even if they dismissed a previous dirty cycle)
+  //   if (!wasDirty && nowDirty) {
+  //     dismissedRef.current = false;
+  //     if (bannerIdRef.current) return;
+
+  //     const bannerId = showBanner({
+  //       title: "Unsaved changes",
+  //       description: (
+  //         <span className="text-sm opacity-90">
+  //           You have unsaved changes on this recipe. Make sure to save before
+  //           leaving.
+  //         </span>
+  //       ),
+  //       variant: "warning",
+  //       dismissible: true,
+  //       duration: 0
+  //     });
+
+  //     bannerIdRef.current = bannerId;
+  //   }
+  // }, [isDirty, showBanner, dismissBanner]);
 
   // fetch initial ingredient data
   useEffect(() => {

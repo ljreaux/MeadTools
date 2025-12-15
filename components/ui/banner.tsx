@@ -213,7 +213,7 @@ function Banner({
     destructive:
       "bg-destructive text-destructive-foreground border-destructive/40",
     success: "bg-foreground text-background border-foreground/20",
-    warning: "bg-secondary text-foreground border-foreground/20"
+    warning: "bg-warning text-foreground border-foreground/20"
   };
 
   const iconMap: Record<BannerVariant, React.ReactNode> = {

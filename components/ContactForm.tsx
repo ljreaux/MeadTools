@@ -63,31 +63,29 @@ const ContactUs = () => {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="grid w-full gap-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="grid w-full gap-4">
       {/* Name */}
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="user_name"
-          className="font-medium text-sm text-foreground"
-        >
-          {t("name")}
-        </label>
+
+      <label
+        htmlFor="user_name"
+        className="font-medium text-sm text-foreground"
+      >
+        {t("name")}
         <Input
           id="user_name"
           name="user_name"
           required
           disabled={sendMessage.isPending}
         />
-      </div>
+      </label>
 
       {/* Email */}
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="user_email"
-          className="font-medium text-sm text-foreground"
-        >
-          {t("email")}
-        </label>
+
+      <label
+        htmlFor="user_email"
+        className="font-medium text-sm text-foreground"
+      >
+        {t("email")}
         <Input
           id="user_email"
           name="user_email"
@@ -95,35 +93,27 @@ const ContactUs = () => {
           required
           disabled={sendMessage.isPending}
         />
-      </div>
+      </label>
 
-      {/* Message */}
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="message"
-          className="font-medium text-sm text-foreground"
-        >
-          {t("message")}
-        </label>
+      <label htmlFor="message" className="font-medium text-sm text-foreground">
+        {t("message")}
         <Textarea
           id="message"
           name="message"
           required
           disabled={sendMessage.isPending}
         />
-      </div>
+      </label>
 
       {/* Submit Button */}
-      <div className="flex justify-center">
-        <Button
-          variant="secondary"
-          type="submit"
-          disabled={sendMessage.isPending}
-          className="px-10"
-        >
-          {sendMessage.isPending ? <Spinner /> : t("send")}
-        </Button>
-      </div>
+
+      <Button
+        variant="secondary"
+        type="submit"
+        disabled={sendMessage.isPending}
+      >
+        {sendMessage.isPending ? <Spinner /> : t("send")}
+      </Button>
     </form>
   );
 };

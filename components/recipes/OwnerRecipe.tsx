@@ -19,17 +19,14 @@ import Additives from "../recipeBuilder/Additives";
 import Notes from "../recipeBuilder/Notes";
 import PDF from "../recipeBuilder/PDF";
 import IngredientResults from "../recipeBuilder/Results";
-import Tooltip from "../Tooltips";
 import { useRecipe } from "../providers/SavedRecipeProvider";
 import { useNutrients } from "../providers/SavedNutrientProvider";
 import SaveChanges from "./SaveChanges";
 import SaveNew from "./SaveNew";
 import DeleteRecipe from "./DeleteRecipe";
 import { useEffect, useState } from "react";
-import { Pencil, PencilOff } from "lucide-react";
-import { Switch } from "../ui/switch";
-import Rating from "./Rating";
 import CommentsSection from "./comments/CommentsSection";
+import RecipeCardHeader from "./RecipeCardHeader";
 
 const cardConfig = [
   {
@@ -106,41 +103,20 @@ function OwnerRecipe({
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
-      <Heading text={heading} toolTipProps={tooltip} />
-
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <input
-            {...recipe.recipeNameProps}
-            disabled={!nameEditable}
-            className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-2xl shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          <button
-            onClick={() => setNameEditable(!nameEditable)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 -translate-x-1/2 text-xs text-muted-foreground focus:outline-none"
-          >
-            {nameEditable ? <Pencil /> : <PencilOff />}
-          </button>
-        </div>
-        <label className="grid w-max self-end">
-          {t("private")}
-          <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
-        </label>
-        {!isPrivate && (
-          <label className="grid">
-            <span className="flex items-center">
-              {t("notify")}
-              <Tooltip body={t("tiptext.notify")} />
-            </span>
-            <Switch checked={notify} onCheckedChange={setNotify} />
-          </label>
-        )}
-      </div>
-      <Rating
-        averageRating={recipe.ratingStats?.averageRating ?? 0}
-        numberOfRatings={recipe.ratingStats?.numberOfRatings ?? 0}
+      <RecipeCardHeader
+        heading={heading}
+        tooltip={tooltip}
+        recipe={recipe}
+        nameEditable={nameEditable}
+        setNameEditable={setNameEditable}
+        isPrivate={isPrivate}
+        setIsPrivate={setIsPrivate}
+        notify={notify}
+        setNotify={setNotify}
       />
+
       {components}
+
       {!privateRecipe && <CommentsSection recipeId={recipeId} />}
     </CardWrapper>
   ));
@@ -163,43 +139,24 @@ function OwnerRecipe({
         </div>
       </RecipeCalculatorSideBar>
       {card}
-      <div className="flex py-12 gap-4 w-11/12 max-w-[1000px] items-center justify-center">
-        <div className="flex py-12 gap-4 w-11/12 max-w-[1000px] items-center justify-center">
-          {currentStepIndex === 0 || (
-            <Button variant={"secondary"} onClick={back} className="w-full">
-              {t("buttonLabels.back")}
-            </Button>
-          )}
 
-          {currentStepIndex === cards.length - 1 ? (
-            <SaveChanges privateRecipe={isPrivate} bottom />
-          ) : (
-            <Button className="w-full" variant={"secondary"} onClick={next}>
-              {t("buttonLabels.next")}
-            </Button>
-          )}
-        </div>
+      <div className="flex py-12 gap-4 w-11/12 max-w-[1200px] items-center justify-center">
+        {currentStepIndex === 0 || (
+          <Button variant="secondary" onClick={back} className="w-full">
+            {t("buttonLabels.back")}
+          </Button>
+        )}
+
+        {currentStepIndex === cards.length - 1 ? (
+          <SaveChanges privateRecipe={isPrivate} bottom />
+        ) : (
+          <Button variant="secondary" onClick={next} className="w-full">
+            {t("buttonLabels.next")}
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
 export default OwnerRecipe;
-
-const Heading = ({
-  text,
-  toolTipProps
-}: {
-  text: string;
-  toolTipProps?: { body: string; link: string };
-}) => {
-  const { t } = useTranslation();
-  return (
-    <h1 className="text-3xl text-center">
-      {t(text)}{" "}
-      {toolTipProps && (
-        <Tooltip {...toolTipProps} body={t(toolTipProps.body)} />
-      )}
-    </h1>
-  );
-};

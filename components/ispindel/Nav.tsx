@@ -11,6 +11,8 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,6 +70,12 @@ const Nav = () => {
 
           {/* keep this > navbar z (yours is 51; bump if needed) */}
           <SheetContent side="left" className="w-72 pt-10 z-[51]">
+            <SheetHeader>
+              <SheetTitle>
+                {t("hydrometerDashboard.nav.menu", "Wireless Hydrometer Menu")}
+              </SheetTitle>
+            </SheetHeader>
+
             <div className="grid gap-1">
               {navLinks.map((l) => (
                 <SheetClose asChild key={l.key}>

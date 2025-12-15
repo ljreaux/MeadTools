@@ -3,6 +3,7 @@
 import AuthForm from "@/components/AuthForm";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRegister } from "@/hooks/reactQuery/useRegister";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,28 +14,30 @@ import { signIn } from "next-auth/react";
 function Register() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
-  // New auth hook (React Query + next-auth)
   const { user } = useAuth();
-
-  // Custom credentials register mutation
   const registerMutation = useRegister();
 
+  // avoid hydration issues with next-themes
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  // if already logged in, bounce to account
+  useEffect(() => {
     if (user) {
-      router.push("/account");
+      router.replace("/account");
     }
   }, [user, router]);
 
   if (!isMounted) return null;
 
-  const googleLogo =
-    (theme || resolvedTheme) === "dark"
-      ? "/assets/web_dark_rd_ctn.svg"
-      : "/assets/web_light_rd_ctn.svg";
+  const isDark = resolvedTheme === "dark";
+  const googleLogo = isDark
+    ? "/assets/web_dark_rd_ctn.svg"
+    : "/assets/web_light_rd_ctn.svg";
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
@@ -47,42 +50,36 @@ function Register() {
             password,
             public_username
           });
-          // optional explicit redirect; useAuth will also pick this up
-          // router.push("/account");
         }}
       />
 
-      <button
-        onClick={() => router.push("/login")}
-        className="font-bold underline transition-all text-foreground hover:text-sidebar"
-      >
+      <Button onClick={() => router.push("/login")} variant="link">
         {t("accountPage.buttonMessage.login")}
-      </button>
+      </Button>
 
-      <div className="flex flex-col items-center space-y-2">
-        <span className="text-lg">{t("accountPage.or")}</span>
-
-        <button
-          onClick={() =>
-            signIn("google", {
-              callbackUrl: "/account"
-            })
-          }
-          className="relative w-64 h-14 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label={t("accountPage.buttonMessage.googleLogin")}
-        >
-          <Image
-            src={googleLogo}
-            alt=""
-            fill
-            className="object-contain"
-            sizes="256px"
-          />
-          <span className="sr-only">
-            {t("accountPage.buttonMessage.googleLogin")}
-          </span>
-        </button>
+      <div className="flex flex-col items-center mt-6">
+        <span className="text-sm text-muted-foreground leading-none">
+          {t("accountPage.or")}
+        </span>
       </div>
+
+      <button
+        onClick={() =>
+          signIn("google", {
+            callbackUrl: "/account"
+          })
+        }
+        className="relative w-64 h-14 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <Image
+          src={googleLogo}
+          alt={t("accountPage.buttonMessage.googleLogin")}
+          fill
+          className="object-cover"
+          sizes="256px"
+          priority
+        />
+      </button>
     </div>
   );
 }

@@ -9,13 +9,14 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 function Login() {
   const { t } = useTranslation();
   const { isLoggedIn, loading } = useAuth();
   const loginMutation = useLoginWithCredentials();
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
   // avoid hydration issues with next-themes
@@ -34,10 +35,10 @@ function Login() {
     return null;
   }
 
-  const googleLogo =
-    (theme || resolvedTheme) === "dark"
-      ? "/assets/web_dark_rd_ctn.svg"
-      : "/assets/web_light_rd_ctn.svg";
+  const isDark = resolvedTheme === "dark"; // use resolvedTheme only
+  const googleLogo = isDark
+    ? "/assets/web_dark_rd_ctn.svg"
+    : "/assets/web_light_rd_ctn.svg";
 
   // Adapter so AuthForm gets the old-style signature
   const handleCredentialsLogin = async (
@@ -56,32 +57,28 @@ function Login() {
         authFunction={handleCredentialsLogin}
       />
 
-      <button
-        onClick={() => router.push("/register")}
-        className="font-bold underline transition-all text-foreground hover:text-sidebar"
-      >
+      <Button onClick={() => router.push("/register")} variant="link">
         {t("accountPage.buttonMessage.register")}
-      </button>
+      </Button>
 
-      <div className="flex flex-col items-center space-y-2">
-        <span className="text-lg">{t("accountPage.or")}</span>
-        <button
-          onClick={() => signIn("google")}
-          className="relative w-64 h-14 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label={t("accountPage.buttonMessage.googleLogin")}
-        >
-          <Image
-            src={googleLogo}
-            alt=""
-            fill
-            className="object-contain"
-            sizes="256px"
-          />
-          <span className="sr-only">
-            {t("accountPage.buttonMessage.googleLogin")}
-          </span>
-        </button>
+      <div className="flex flex-col items-center mt-6">
+        <span className="text-sm text-muted-foreground leading-none">
+          {t("accountPage.or")}
+        </span>
       </div>
+      <button
+        onClick={() => signIn("google")}
+        className="relative w-64 h-14 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <Image
+          src={googleLogo}
+          alt={t("accountPage.buttonMessage.googleLogin")}
+          fill
+          className="object-cover" // <— key change from contain
+          sizes="256px"
+          priority
+        />
+      </button>
     </div>
   );
 }

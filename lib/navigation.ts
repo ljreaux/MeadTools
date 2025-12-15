@@ -4,11 +4,11 @@ export const mainCalcs = [
     label: "calculators.recipes"
   },
   {
-    path: "/nute-calc/",
+    path: "/nute-calc",
     label: "calculators.nutes"
   },
   {
-    path: "/stabilizers/",
+    path: "/stabilizers",
     label: "calculators.extraCalcs.stabilizers"
   },
   {
@@ -19,7 +19,7 @@ export const mainCalcs = [
 
 export const extraCalculatorLinks = [
   {
-    path: "/extra-calcs/",
+    path: "/extra-calcs",
     label: "calculators.extraCalcs.abv"
   },
   {
