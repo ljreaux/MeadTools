@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import Tooltip from "@/components/Tooltips";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Brews() {
   const { t, i18n } = useTranslation();
@@ -64,13 +65,14 @@ function Brews() {
   } = useFuzzySearch({
     data: brews,
     pageSize,
-    // brew is uuid; name can be null; including id lets you paste a uuid and find it
     searchKey: ["name", "id"]
   });
 
-  if (isLoading) {
-    return <div className="text-center my-4">{t("loading", "Loading…")}</div>;
-  }
+  const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
+  const formatDate = (date: string | Date) => formatter.format(new Date(date));
 
   if (isError) {
     return (
@@ -80,22 +82,9 @@ function Brews() {
     );
   }
 
-  if (!filteredData || filteredData.length === 0) {
-    return (
-      <div className="text-center my-4">
-        {searchValue
-          ? t("noResults", "No results found.")
-          : t("iSpindelDashboard.noBrews")}
-      </div>
-    );
-  }
-
-  const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-    dateStyle: "short",
-    timeStyle: "short"
-  });
-
-  const formatDate = (date: string | Date) => formatter.format(new Date(date));
+  // NOTE: during loading we still render the full layout, but with skeletons
+  const showEmptyState =
+    !isLoading && (!filteredData || filteredData.length === 0);
 
   return (
     <div className="space-y-4">
@@ -108,6 +97,7 @@ function Brews() {
             value={searchValue}
             onChange={(e) => search(e.target.value)}
             placeholder={t("iSpindelDashboard.searchBrews", "Search brews")}
+            disabled={isLoading}
           />
           <InputGroupAddon>
             <Search />
@@ -117,6 +107,7 @@ function Brews() {
               title={t("clear", "Clear")}
               onClick={clearSearch}
               className={cn({ hidden: searchValue.length === 0 })}
+              disabled={isLoading}
             >
               <X />
             </InputGroupButton>
@@ -128,82 +119,114 @@ function Brews() {
             {t("pagination.perPage", "Per page:")}
           </span>
 
-          <Select
-            value={String(pageSize)}
-            onValueChange={(val) => setPageSize(parseInt(val, 10))}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 20, 50].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoading ? (
+            <Skeleton className="h-9 w-[120px]" />
+          ) : (
+            <Select
+              value={String(pageSize)}
+              onValueChange={(val) => setPageSize(parseInt(val, 10))}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {/* sticky first column */}
-              <TableHead
-                className={cn(
-                  "sticky left-0 z-10 bg-card border-r",
-                  "min-w-24 sm:min-w-60"
+      {/* Empty state (only after load) */}
+      {showEmptyState ? (
+        <div className="text-center my-4">
+          {searchValue
+            ? t("noResults", "No results found.")
+            : t("iSpindelDashboard.noBrews")}
+        </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className={cn(
+                      "sticky left-0 z-10 bg-card border-r",
+                      "min-w-24 sm:min-w-60"
+                    )}
+                  >
+                    {t("iSpindelDashboard.nameOrId")}
+                  </TableHead>
+
+                  <TableHead>
+                    {t("iSpindelDashboard.brews.startDate")}
+                  </TableHead>
+                  <TableHead>{t("iSpindelDashboard.brews.endDate")}</TableHead>
+                  <TableHead>
+                    {t("iSpindelDashboard.brews.latestGrav")}
+                  </TableHead>
+
+                  <TableHead>
+                    <span className="inline-flex items-center gap-1">
+                      {t("iSpindelDashboard.receiveEmailAlerts")}
+                      <Tooltip body={t("tipText.emailAlerts")} />
+                    </span>
+                  </TableHead>
+
+                  <TableHead>
+                    {t("iSpindelDashboard.brews.recipeLink")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {isLoading ? (
+                  <BrewsTableSkeleton rows={pageSize} />
+                ) : (
+                  pageData.map((brew) => (
+                    <BrewRow
+                      key={brew.id}
+                      brew={brew}
+                      formatDate={formatDate}
+                    />
+                  ))
                 )}
-              >
-                {t("iSpindelDashboard.nameOrId")}
-              </TableHead>
+              </TableBody>
+            </Table>
+          </div>
 
-              <TableHead>{t("iSpindelDashboard.brews.startDate")}</TableHead>
-              <TableHead>{t("iSpindelDashboard.brews.endDate")}</TableHead>
-              <TableHead>{t("iSpindelDashboard.brews.latestGrav")}</TableHead>
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <AccountPagination
+              page={page}
+              totalPages={totalPages}
+              canPrev={page > 1}
+              canNext={page < totalPages}
+              onPrev={prevPage}
+              onNext={nextPage}
+              onGoTo={goToPage}
+            />
+          )}
 
-              <TableHead>
-                <span className="inline-flex items-center gap-1">
-                  {t("iSpindelDashboard.receiveEmailAlerts")}
-                  <Tooltip body={t("tipText.emailAlerts")} />
-                </span>
-              </TableHead>
-
-              {/* moved to end */}
-              <TableHead>{t("iSpindelDashboard.brews.recipeLink")}</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {pageData.map((brew) => (
-              <BrewRow key={brew.id} brew={brew} formatDate={formatDate} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <AccountPagination
-          page={page}
-          totalPages={totalPages}
-          canPrev={page > 1}
-          canNext={page < totalPages}
-          onPrev={prevPage}
-          onNext={nextPage}
-          onGoTo={goToPage}
-        />
+          {/* Optional: small skeleton hint where pagination will appear */}
+          {isLoading && (
+            <div className="flex justify-center pt-2">
+              <Skeleton className="h-10 w-[260px]" />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 export default Brews;
-
-/* ---------------------------------- */
 
 function BrewRow({
   brew,
@@ -225,7 +248,6 @@ function BrewRow({
 
   return (
     <TableRow>
-      {/* sticky first column */}
       <TableCell
         className={cn(
           "sticky left-0 z-10 bg-card border-r font-medium text-muted-foreground truncate",
@@ -299,5 +321,50 @@ function BrewRow({
         )}
       </TableCell>
     </TableRow>
+  );
+}
+
+function BrewsTableSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {/* sticky first column (MATCH header sizing) */}
+          <TableCell
+            className={cn(
+              "sticky left-0 z-10 bg-card border-r",
+              "min-w-24 sm:min-w-60",
+              "max-w-24 sm:max-w-60",
+              "truncate" // match real cell behavior
+            )}
+          >
+            <Skeleton className="h-4 w-full max-w-[10rem] sm:max-w-[14rem]" />
+          </TableCell>
+
+          <TableCell>
+            <Skeleton className="h-4 w-full max-w-[8rem]" />
+          </TableCell>
+
+          <TableCell>
+            <Skeleton className="h-4 w-full max-w-[8rem]" />
+          </TableCell>
+
+          <TableCell>
+            <Skeleton className="h-4 w-full max-w-[5rem]" />
+          </TableCell>
+
+          <TableCell>
+            <div className="w-full flex items-center">
+              <Skeleton className="w-9 h-5 rounded-full" />
+            </div>
+          </TableCell>
+
+          <TableCell>
+            {/* button-ish */}
+            <Skeleton className="h-8 w-[96px] rounded-md" />{" "}
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
   );
 }

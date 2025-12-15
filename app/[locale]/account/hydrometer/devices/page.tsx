@@ -42,9 +42,9 @@ import {
   type Device
 } from "@/hooks/reactQuery/useHydrometerInfo";
 import { useHydrometerBrews } from "@/hooks/reactQuery/useHydrometerBrews";
-import Loading from "@/components/loading";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type DeviceRow = Device & { name: string };
 
@@ -89,8 +89,6 @@ function Devices() {
     searchKey
   });
 
-  if (isLoading) return <Loading />;
-
   if (isError) {
     console.error("Error loading devices:", error);
     return (
@@ -103,13 +101,14 @@ function Devices() {
     );
   }
 
+  // Empty state only AFTER loading
+  const showEmptyState = !isLoading && rows.length === 0;
+
   return (
     <div className="my-6">
-      {/* Header */}
-
       <h2 className="text-2xl">{t("iSpindelDashboard.nav.device")}</h2>
 
-      {rows.length === 0 ? (
+      {showEmptyState ? (
         <div className="flex items-center justify-center my-10">
           <p>{t("noDevices")}</p>
         </div>
@@ -134,6 +133,7 @@ function Devices() {
                         "iSpindelDashboard.devices.searchPlaceholder",
                         "Search devices"
                       )}
+                      disabled={isLoading}
                     />
                     <InputGroupAddon>
                       <Search />
@@ -143,6 +143,7 @@ function Devices() {
                         title={t("clear", "Clear")}
                         onClick={clearSearch}
                         className={cn({ hidden: searchValue.length === 0 })}
+                        disabled={isLoading}
                       >
                         <X />
                       </InputGroupButton>
@@ -156,27 +157,35 @@ function Devices() {
                     {t("pagination.perPage", "Per page:")}
                   </span>
 
-                  <Select
-                    value={String(pageSize)}
-                    onValueChange={(val) => setPageSize(parseInt(val))}
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pageOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isLoading ? (
+                    <Skeleton className="h-9 w-[140px]" />
+                  ) : (
+                    <Select
+                      value={String(pageSize)}
+                      onValueChange={(val) => setPageSize(parseInt(val, 10))}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pageOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={String(opt.value)}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>
           }
           footer={
-            filteredData.length > 0 ? (
+            isLoading ? (
+              <div className="mt-4 flex justify-center">
+                <Skeleton className="h-10 w-[260px]" />
+              </div>
+            ) : filteredData.length > 0 ? (
               <div className="mt-4 flex flex-col gap-2">
                 <AccountPagination
                   page={page}
@@ -192,7 +201,9 @@ function Devices() {
           }
         >
           <div className="flex flex-wrap justify-center gap-4 py-2">
-            {pageData.length > 0 ? (
+            {isLoading ? (
+              <DevicesGridSkeleton cards={pageSize} />
+            ) : pageData.length > 0 ? (
               pageData.map((dev) => <DeviceCard device={dev} key={dev.id} />)
             ) : (
               <p className="w-full text-center mt-6">
@@ -210,6 +221,8 @@ function Devices() {
 }
 
 export default Devices;
+
+/* ---------------------------------- */
 
 const DeviceCard = ({ device }: { device: Device }) => {
   const { t } = useTranslation();
@@ -234,7 +247,6 @@ const DeviceCard = ({ device }: { device: Device }) => {
       </h3>
 
       <div className="grid gap-2">
-        {/* Joined “view details + start/end” group */}
         <ButtonGroup className="w-full">
           <Button
             asChild
@@ -317,3 +329,29 @@ const DeviceCard = ({ device }: { device: Device }) => {
     </div>
   );
 };
+
+/* ---------------------------------- */
+
+function DevicesGridSkeleton({ cards = 5 }: { cards?: number }) {
+  return (
+    <>
+      {Array.from({ length: cards }).map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col gap-2 border rounded-lg p-3 w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none"
+        >
+          {/* title */}
+          <Skeleton className="h-5 w-2/3 mx-auto" />
+
+          {/* button group row */}
+          <div className="grid gap-2">
+            <div className="flex w-full">
+              <Skeleton className="h-9 w-1/2 rounded-r-none" />
+              <Skeleton className="h-9 w-1/2 rounded-l-none" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}

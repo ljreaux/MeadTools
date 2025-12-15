@@ -11,6 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   AlertDialog,
@@ -78,22 +79,20 @@ function Brew() {
   });
   const formatDate = (date: Date | string) => formatter.format(new Date(date));
 
-  // brew + logs
   const { brew, isLoading, isError } = useBrewById(brewId);
+
   const {
     data: logs = [],
     isLoading: logsLoading,
     isError: logsError
   } = useBrewLogs(brewId);
 
-  // mutations
   const { mutateAsync: updateEmailAlerts, isPending: isUpdatingEmail } =
     useUpdateEmailAlerts();
   const { mutateAsync: deleteBrew, isPending: isDeleting } = useDeleteBrew();
   const { mutateAsync: updateBrewName, isPending: isRenaming } =
     useUpdateBrewName();
 
-  // local ui state
   const [renameOpen, setRenameOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -130,10 +129,57 @@ function Brew() {
     }
   };
 
+  // Initial load skeleton (brew missing)
   if (isLoading && !brew) {
     return (
-      <div className="flex items-center justify-center my-4">
-        <p>{t("loading", "Loading…")}</p>
+      <div className="w-full space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-[260px] sm:w-[340px]" />
+            <Skeleton className="h-4 w-[220px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-[160px]" />
+            <Skeleton className="h-9 w-[160px]" />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-5 w-[220px]" />
+          <Skeleton className="h-6 w-10 rounded-full" />
+        </div>
+
+        <Separator />
+
+        <HydrometerData chartData={[]} tempUnits={"F"} loading />
+
+        <div className="space-y-2 min-w-0">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-[160px]" />
+              <Skeleton className="h-4 w-[260px]" />
+            </div>
+            <div className="flex justify-center sm:justify-end">
+              <Skeleton className="h-9 w-[160px]" />
+            </div>
+            <div className="sm:col-span-2 min-w-0 pt-2">
+              <div className="w-full max-w-full min-w-0">
+                <LogTable
+                  logs={[]}
+                  loading
+                  skeletonRows={5}
+                  removeLog={() => {}}
+                  deviceId=""
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 flex justify-center sm:justify-end">
+          <Skeleton className="h-9 w-[170px]" />
+        </div>
       </div>
     );
   }
@@ -147,10 +193,11 @@ function Brew() {
   }
 
   const chartData = logs.length > 0 ? transformData(logs) : [];
+  const tableLogs = logsLoading ? [] : [...logs].reverse();
 
   return (
     <div className="w-full space-y-6">
-      {/* Header: brew name + actions (matches device page pattern) */}
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold leading-tight">
@@ -174,7 +221,6 @@ function Brew() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Rename (only show if missing name, like your original) */}
           {!brew.name && (
             <AlertDialog open={renameOpen} onOpenChange={setRenameOpen}>
               <AlertDialogTrigger
@@ -218,7 +264,6 @@ function Brew() {
             </AlertDialog>
           )}
 
-          {/* Recipe/link action (like device page: secondary actions on right) */}
           {brew.recipe_id ? (
             <Link
               href={`/recipes/${brew.recipe_id}`}
@@ -237,7 +282,7 @@ function Brew() {
         </div>
       </div>
 
-      {/* Email alerts row (same vibe as device page) */}
+      {/* Email alerts */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <p className="text-sm font-medium">
@@ -276,14 +321,15 @@ function Brew() {
 
       <Separator />
 
-      {/* Chart */}
-      {logs.length > 0 && (
-        <HydrometerData
-          chartData={chartData}
-          tempUnits={logs[0]?.temp_units as TempUnits}
-        />
-      )}
-      {/* Logs (collapsible, but scroll matches DevicePage / LogTable) */}
+      {/* Chart: now component-owned loading */}
+      <HydrometerData
+        loading={logsLoading}
+        chartData={chartData}
+        name={brew.name?.trim() ? brew.name : undefined}
+        tempUnits={(logs[0]?.temp_units as TempUnits) || "F"}
+      />
+
+      {/* Logs */}
       <div className="space-y-2 min-w-0">
         <Collapsible open={logsOpen} onOpenChange={setLogsOpen}>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
@@ -310,13 +356,7 @@ function Brew() {
 
             <div className="sm:col-span-2 min-w-0">
               <CollapsibleContent className="pt-2 space-y-2 min-w-0">
-                {logsLoading && (
-                  <p className="text-center text-sm">
-                    {t("loading", "Loading…")}
-                  </p>
-                )}
-
-                {logsError && (
+                {!logsLoading && logsError && (
                   <p className="text-center text-sm text-destructive">
                     {t(
                       "iSpindelDashboard.logsError",
@@ -325,10 +365,11 @@ function Brew() {
                   </p>
                 )}
 
-                {/* Critical: allow LogTable's own overflow wrapper to work */}
                 <div className="w-full max-w-full min-w-0">
                   <LogTable
-                    logs={[...logs].reverse()}
+                    logs={tableLogs}
+                    loading={logsLoading}
+                    skeletonRows={5}
                     removeLog={(id) => {
                       queryClient.setQueryData(
                         qk.hydrometerBrewLogs(brewId),
@@ -345,7 +386,7 @@ function Brew() {
         </Collapsible>
       </div>
 
-      {/* Delete brew (same placement as device page) */}
+      {/* Delete */}
       <div className="pt-2 flex justify-center sm:justify-end">
         <AlertDialog>
           <AlertDialogTrigger

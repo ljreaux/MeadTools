@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { saveAs } from "file-saver";
 import { useGenerateImage } from "recharts-to-png";
@@ -32,10 +32,10 @@ import {
 } from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { toBrix } from "@/lib/utils/unitConverter";
 import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
-// import ChartDownload from "./ChartDownload";
 
 import {
   Dialog,
@@ -61,114 +61,92 @@ export type TempUnits = "C" | "F" | "K";
 export function HydrometerData({
   chartData,
   name,
-  tempUnits
+  tempUnits,
+  loading
 }: {
   chartData: FileData[];
   name?: string;
   tempUnits: TempUnits;
+  loading?: boolean;
 }) {
   const { i18n, t } = useTranslation();
   const lang = i18n.resolvedLanguage || "en-US";
+  const isLoading = !!loading;
 
-  const [gravityUnits, setGravityUnits] = useState("SG");
-  const [data, setData] = useState(chartData);
-  const [currentTempUnits, setCurrentTempUnits] = useState(tempUnits);
-
+  // ---------- state (hooks must always run) ----------
+  const [gravityUnits, setGravityUnits] = useState<"SG" | "Brix">("SG");
+  const [data, setData] = useState<FileData[]>(chartData);
+  const [currentTempUnits, setCurrentTempUnits] =
+    useState<TempUnits>(tempUnits);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const chartConfig = {
-    temperature: {
-      label: t("temperature"),
-      color: "hsl(var(--chart-1))"
-    },
-    gravity: {
-      label: gravityUnits === "Brix" ? t("BRIX") : t("nuteSgLabel"),
-      color: "hsl(var(--chart-2))"
-    },
-    signalStrength: {
-      label: t("iSpindelDashboard.signalStrength"),
-      color: "hsl(var(--chart-3))"
-    },
-    battery: {
-      label: t("iSpindelDashboard.batteryLevel"),
-      color: "hsl(var(--chart-4))"
-    },
-    abv: {
-      label: t("ABV"),
-      color: "hsl(var(--chart-5))"
+  const chartConfig = useMemo(
+    () =>
+      ({
+        temperature: {
+          label: t("temperature"),
+          color: "hsl(var(--chart-1))"
+        },
+        gravity: {
+          label: gravityUnits === "Brix" ? t("BRIX") : t("nuteSgLabel"),
+          color: "hsl(var(--chart-2))"
+        },
+        signalStrength: {
+          label: t("iSpindelDashboard.signalStrength"),
+          color: "hsl(var(--chart-3))"
+        },
+        battery: {
+          label: t("iSpindelDashboard.batteryLevel"),
+          color: "hsl(var(--chart-4))"
+        },
+        abv: {
+          label: t("ABV"),
+          color: "hsl(var(--chart-5))"
+        }
+      }) satisfies ChartConfig,
+    [t, gravityUnits]
+  );
+
+  const initialChecked = useMemo(() => {
+    const keys = Object.keys(chartConfig);
+    return keys.reduce(
+      (acc, key) => {
+        acc[key] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>
+    );
+  }, [chartConfig]);
+
+  const [checkObj, setCheckObj] =
+    useState<Record<string, boolean>>(initialChecked);
+
+  // keep checkObj in sync if chartConfig keys ever change
+  useEffect(() => {
+    setCheckObj((prev) => {
+      const next = { ...prev };
+      for (const k of Object.keys(initialChecked)) {
+        if (typeof next[k] !== "boolean") next[k] = true;
+      }
+      return next;
+    });
+  }, [initialChecked]);
+
+  // keep local data synced with incoming props
+  useEffect(() => {
+    // if user is currently viewing Brix, convert the incoming chartData too
+    if (gravityUnits === "Brix") {
+      setData(chartData.map((d) => ({ ...d, gravity: toBrix(d.gravity) })));
+    } else {
+      setData(chartData);
     }
-  } satisfies ChartConfig;
+  }, [chartData, gravityUnits]);
 
-  const showSignalStrength = !!data[0]?.signalStrength;
-  const showBattery = !!data[0]?.battery;
+  useEffect(() => {
+    setCurrentTempUnits(tempUnits);
+  }, [tempUnits]);
 
-  const yPadding =
-    showSignalStrength || showBattery ? { bottom: 15 } : undefined;
-  const xPadding =
-    showSignalStrength || showBattery ? { left: 45, right: 60 } : undefined;
-
-  const beginDate = useMemo(
-    () =>
-      new Date(data[0].date).toLocaleDateString(lang, {
-        month: "long",
-        day: "numeric"
-      }),
-    [data, lang]
-  );
-
-  const endDate = useMemo(
-    () =>
-      new Date(data[data.length - 1].date).toLocaleDateString(lang, {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-      }),
-    [data, lang]
-  );
-
-  const defaultChecked = {
-    temperature: false,
-    gravity: false,
-    signalStrength: false,
-    battery: false,
-    abv: false
-  };
-
-  const initialChecked = Object.keys(chartConfig).reduce(
-    (acc, key) => {
-      acc[key] = true;
-      return acc;
-    },
-    {} as { [key: string]: boolean }
-  );
-
-  const [checkObj, setCheckObj] = useState<{ [key: string]: boolean }>(
-    initialChecked || defaultChecked
-  );
-
-  const roundToNearest005 = (value: number) =>
-    Math.round(value / 0.005) * 0.005;
-
-  const generateTicks = (
-    dataMin: number,
-    dataMax: number,
-    interval: number
-  ) => {
-    const ticks: number[] = [];
-    const min = roundToNearest005(dataMin - interval);
-    const max = roundToNearest005(dataMax + interval);
-
-    for (let i = min; i <= max; i += interval) ticks.push(i);
-    return ticks;
-  };
-
-  const dataMin = Math.min(...data.map((d) => d.gravity));
-  const dataMax = Math.max(...data.map((d) => d.gravity));
-
-  const abvMax = Math.max(...data.map((d) => d.abv));
-  const abvTicks: number[] = [];
-  for (let i = 0; i <= abvMax + 0.5; i += 0.5) abvTicks.push(i);
-
+  // image generation hooks must always run
   const [getDivJpeg, { ref }] = useGenerateImage<HTMLDivElement>({
     quality: 0.8,
     type: "image/png"
@@ -179,27 +157,96 @@ export function HydrometerData({
     type: "image/png"
   });
 
+  // ---------- safe derived values ----------
+  const hasData = data.length > 0;
+
+  const showSignalStrength = !!data[0]?.signalStrength;
+  const showBattery = !!data[0]?.battery;
+
+  const yPadding = useMemo(
+    () => (showSignalStrength || showBattery ? { bottom: 15 } : undefined),
+    [showSignalStrength, showBattery]
+  );
+
+  const xPadding = useMemo(
+    () =>
+      showSignalStrength || showBattery ? { left: 45, right: 60 } : undefined,
+    [showSignalStrength, showBattery]
+  );
+
+  const beginDate = useMemo(() => {
+    if (!hasData) return "";
+    return new Date(data[0].date).toLocaleDateString(lang, {
+      month: "long",
+      day: "numeric"
+    });
+  }, [hasData, data, lang]);
+
+  const endDate = useMemo(() => {
+    if (!hasData) return "";
+    return new Date(data[data.length - 1].date).toLocaleDateString(lang, {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+  }, [hasData, data, lang]);
+
+  const roundToNearest005 = useCallback(
+    (value: number) => Math.round(value / 0.005) * 0.005,
+    []
+  );
+
+  const generateTicks = useCallback(
+    (dataMin: number, dataMax: number, interval: number) => {
+      const ticks: number[] = [];
+      const min = roundToNearest005(dataMin - interval);
+      const max = roundToNearest005(dataMax + interval);
+      for (let i = min; i <= max; i += interval) ticks.push(i);
+      return ticks;
+    },
+    [roundToNearest005]
+  );
+
+  const dataMin = useMemo(() => {
+    if (!hasData) return 0;
+    return Math.min(...data.map((d) => d.gravity));
+  }, [hasData, data]);
+
+  const dataMax = useMemo(() => {
+    if (!hasData) return 0;
+    return Math.max(...data.map((d) => d.gravity));
+  }, [hasData, data]);
+
+  const abvTicks = useMemo(() => {
+    if (!hasData) return [];
+    const abvMax = Math.max(...data.map((d) => d.abv));
+    const ticks: number[] = [];
+    for (let i = 0; i <= abvMax + 0.5; i += 0.5) ticks.push(i);
+    return ticks;
+  }, [hasData, data]);
+
+  // ---------- handlers ----------
   const handleDivDownload = useCallback(async () => {
+    if (!hasData) return;
     const jpeg = await getDivJpeg();
     if (jpeg) saveAs(jpeg, `${beginDate}-${endDate}.png`);
-  }, [getDivJpeg, beginDate, endDate]);
+  }, [getDivJpeg, beginDate, endDate, hasData]);
 
   const handleMobileDownload = useCallback(async () => {
+    if (!hasData) return;
     const png = await getMobilePng();
     if (png) saveAs(png, `${beginDate}-${endDate}.png`);
-  }, [getMobilePng, beginDate, endDate]);
-  if (!data.length) return null;
+  }, [getMobilePng, beginDate, endDate, hasData]);
 
   const handleGravityUnits = (val: string) => {
-    const dataWithBrix = chartData.map((d) => ({
-      ...d,
-      gravity: toBrix(d.gravity)
-    }));
+    const next = val === "Brix" ? "Brix" : "SG";
+    setGravityUnits(next);
 
-    if (val === "SG") setData(chartData);
-    else if (val === "Brix") setData(dataWithBrix);
-
-    setGravityUnits(val);
+    if (next === "Brix") {
+      setData(chartData.map((d) => ({ ...d, gravity: toBrix(d.gravity) })));
+    } else {
+      setData(chartData);
+    }
   };
 
   const handleTempUnits = (val: string) => {
@@ -209,7 +256,6 @@ export function HydrometerData({
       prev.map((obj) => {
         if (typeof obj.temperature !== "number") return obj;
 
-        // convert from CURRENT -> NEXT
         const nextTemp =
           currentTempUnits === nextUnits
             ? obj.temperature
@@ -221,9 +267,41 @@ export function HydrometerData({
       })
     );
 
-    setCurrentTempUnits(nextUnits);
+    setCurrentTempUnits(nextUnits as TempUnits);
   };
 
+  // ---------- skeleton / empty returns (AFTER hooks) ----------
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-[1240px] self-center">
+        <CardHeader className="space-y-2">
+          <Skeleton className="h-6 w-[220px]" />
+          <Skeleton className="h-4 w-[260px]" />
+
+          <div className="block sm:hidden pt-2">
+            <Skeleton className="h-9 w-full" />
+          </div>
+
+          <div className="hidden sm:flex gap-2">
+            <Skeleton className="h-9 w-[180px]" />
+            <Skeleton className="h-9 w-[180px]" />
+          </div>
+        </CardHeader>
+
+        <CardContent className="hidden sm:block">
+          <Skeleton className="h-[320px] w-full rounded-md" />
+        </CardContent>
+
+        <CardFooter className="hidden sm:block">
+          <Skeleton className="h-10 w-full my-4" />
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  if (!hasData) return null;
+
+  // ---------- subcomponent (safe now because hasData) ----------
   const MobileModalChart = () => (
     <div className="h-full w-full">
       <ChartContainer
@@ -253,7 +331,6 @@ export function HydrometerData({
             }
           />
 
-          {/* Visible axes: SG/Brix (left) */}
           <YAxis
             dataKey={"gravity"}
             yAxisId={"gravity"}
@@ -271,7 +348,6 @@ export function HydrometerData({
             }
           />
 
-          {/* Visible axes: ABV (right) */}
           <YAxis
             dataKey={"abv"}
             yAxisId={"abv"}
@@ -281,7 +357,6 @@ export function HydrometerData({
             unit={"%"}
           />
 
-          {/* Hidden axis: Temperature (exists so the temp line can render correctly) */}
           <YAxis
             dataKey={"temperature"}
             yAxisId={"temperature"}
@@ -309,7 +384,6 @@ export function HydrometerData({
             }
           />
 
-          {/* Lines: SG/Brix + ABV + Temperature */}
           <Line
             dataKey="gravity"
             type="monotone"
@@ -318,7 +392,6 @@ export function HydrometerData({
             dot={false}
             yAxisId={"gravity"}
           />
-
           <Line
             dataKey="abv"
             type="monotone"
@@ -328,7 +401,6 @@ export function HydrometerData({
             yAxisId={"abv"}
             unit={"%"}
           />
-
           <Line
             dataKey="temperature"
             type="monotone"
@@ -343,6 +415,7 @@ export function HydrometerData({
     </div>
   );
 
+  // ---------- real render ----------
   return (
     <Card className="w-full max-w-[1240px] self-center">
       <CardContent ref={ref} className="bg-inherit">
@@ -352,7 +425,7 @@ export function HydrometerData({
             {beginDate} - {endDate}
           </CardDescription>
 
-          {/* MOBILE: button -> fullscreen modal */}
+          {/* MOBILE */}
           <div className="block sm:hidden pt-2">
             <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
               <DialogTrigger asChild>
@@ -401,6 +474,7 @@ export function HydrometerData({
                           </SelectContent>
                         </Select>
                       </div>
+
                       <div className="w-full flex p-3">
                         <Button
                           onClick={handleMobileDownload}
@@ -411,7 +485,9 @@ export function HydrometerData({
                       </div>
                     </div>
                   </div>
+
                   <Separator />
+
                   <div className="flex-1 w-screen my-4" ref={mobileRef}>
                     <MobileModalChart />
                   </div>
@@ -420,7 +496,7 @@ export function HydrometerData({
             </Dialog>
           </div>
 
-          {/* DESKTOP selects (keep your original) */}
+          {/* DESKTOP selects */}
           <CardContent className="hidden sm:flex gap-2">
             <Select onValueChange={handleGravityUnits} value={gravityUnits}>
               <SelectTrigger>
@@ -444,7 +520,7 @@ export function HydrometerData({
           </CardContent>
         </CardHeader>
 
-        {/* DESKTOP chart (your original) */}
+        {/* DESKTOP chart (keep your existing block here; your longer desktop chart can be pasted back in) */}
         <CardContent className="hidden sm:block">
           <ChartContainer config={chartConfig}>
             <LineChart
@@ -466,31 +542,38 @@ export function HydrometerData({
                 minTickGap={50}
                 padding={xPadding}
               />
+
               <YAxis
                 domain={[
-                  (dataMin: number) => roundToNearest005(dataMin - 0.005),
-                  (dataMax: number) => roundToNearest005(dataMax + 0.005)
+                  (v: number) => roundToNearest005(v - 0.005),
+                  (v: number) => roundToNearest005(v + 0.005)
                 ]}
                 ticks={generateTicks(dataMin, dataMax, 0.005)}
                 allowDecimals
                 tickMargin={8}
                 dataKey={"gravity"}
                 yAxisId={"gravity"}
-                tickFormatter={(val) => val.toFixed(3)}
+                tickFormatter={(val) =>
+                  gravityUnits === "Brix"
+                    ? Number(val).toFixed(2)
+                    : Number(val).toFixed(3)
+                }
                 padding={yPadding}
                 hide={!checkObj.gravity}
               />
+
               <YAxis
                 domain={["dataMin - 5", "dataMax + 5"]}
                 orientation="right"
                 dataKey={"temperature"}
                 yAxisId={"temperature"}
                 tickCount={10}
-                tickFormatter={(val) => val.toFixed()}
+                tickFormatter={(val) => Number(val).toFixed()}
                 padding={yPadding}
                 unit={`°${currentTempUnits}`}
                 hide={!checkObj.temperature}
               />
+
               <YAxis
                 domain={[0, "dataMax + 0.5"]}
                 orientation="right"
@@ -501,30 +584,7 @@ export function HydrometerData({
                 unit={"%"}
                 hide={!checkObj.abv}
               />
-              {showBattery && (
-                <YAxis
-                  dataKey={"battery"}
-                  yAxisId={"battery"}
-                  tickFormatter={(val) => val.toFixed(2)}
-                  mirror
-                  padding={yPadding}
-                  hide={!checkObj.battery}
-                />
-              )}
-              {showSignalStrength && (
-                <YAxis
-                  orientation="right"
-                  dataKey={"signalStrength"}
-                  yAxisId={"signalStrength"}
-                  tickCount={10}
-                  tickFormatter={(val) => val.toFixed()}
-                  mirror
-                  tickMargin={10}
-                  padding={yPadding}
-                  unit={"dB"}
-                  hide={!checkObj.signalStrength}
-                />
-              )}
+
               <ChartTooltip
                 cursor={false}
                 content={
@@ -539,29 +599,7 @@ export function HydrometerData({
                   />
                 }
               />
-              {showSignalStrength && (
-                <Line
-                  dataKey="signalStrength"
-                  type="monotone"
-                  stroke="var(--color-signalStrength)"
-                  strokeWidth={2}
-                  dot={false}
-                  yAxisId={"signalStrength"}
-                  unit={"dB"}
-                  hide={!checkObj.signalStrength}
-                />
-              )}
-              {showBattery && (
-                <Line
-                  dataKey="battery"
-                  type="monotone"
-                  stroke="var(--color-battery)"
-                  strokeWidth={2}
-                  dot={false}
-                  yAxisId={"battery"}
-                  hide={!checkObj.battery}
-                />
-              )}
+
               <Line
                 dataKey="abv"
                 type="monotone"
@@ -591,12 +629,13 @@ export function HydrometerData({
                 yAxisId={"gravity"}
                 hide={!checkObj.gravity}
               />
+
               <ChartLegend
                 content={
                   <ChartLegendContent
                     checkObj={checkObj}
                     updateCheckObj={(newCheckObj: {
-                      checkObj: { [key: string]: boolean };
+                      checkObj: Record<string, boolean>;
                     }) => setCheckObj(newCheckObj.checkObj)}
                   />
                 }
@@ -607,7 +646,6 @@ export function HydrometerData({
       </CardContent>
 
       <CardFooter className="hidden sm:block">
-        {/* <ChartDownload data={data} /> */}
         <Button onClick={handleDivDownload} className="w-full my-4">
           {t("downloadPNG")}
         </Button>

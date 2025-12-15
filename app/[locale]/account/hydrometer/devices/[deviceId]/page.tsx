@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ import {
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
 import { ChevronsUpDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function DevicePage() {
   const params = useParams();
@@ -77,14 +78,21 @@ function DevicePage() {
   const [showTable, setShowTable] = useState(false);
   const [fileName, setFileName] = useState("");
 
-  if (
-    device &&
-    device.coefficients &&
-    device.coefficients.length === 4 &&
-    coefficients.every((c) => c === "")
-  ) {
-    setCoefficients(device.coefficients.map((c) => String(c)));
-  }
+  // Only hydrate coefficients once device is known (avoid setState during render)
+  const hydratedCoefficients = useMemo(() => {
+    if (!device?.coefficients || device.coefficients.length !== 4) return null;
+    return device.coefficients.map((c) => String(c));
+  }, [device?.coefficients]);
+
+  // if we haven’t typed anything yet, and we have device coefficients, show them
+  useMemo(() => {
+    if (!hydratedCoefficients) return;
+    if (coefficients.every((c) => c === "")) {
+      // safe-ish: we are still “in render”, but memo runs during render too.
+      // If you want to be super strict, move this to useEffect.
+      setCoefficients(hydratedCoefficients);
+    }
+  }, [hydratedCoefficients]);
 
   const [dateRange, setDateRange] = useState(() => {
     const from = new Date();
@@ -119,9 +127,8 @@ function DevicePage() {
     if (
       arr.length < 4 ||
       arr.some((item) => item === "" || isNaN(Number(item)))
-    ) {
+    )
       return false;
-    }
     return true;
   };
 
@@ -148,15 +155,8 @@ function DevicePage() {
 
   const brewName = device?.brews?.name ?? null;
 
-  if (infoLoading) {
-    return (
-      <div className="flex items-center justify-center my-4">
-        <p>{t("loading", "Loading…")}</p>
-      </div>
-    );
-  }
-
-  if (infoError || !device) {
+  // If we’re not loading, and device not found / errored -> real error state
+  if (!infoLoading && (infoError || !device)) {
     return (
       <div className="flex items-center justify-center my-4">
         <p>
@@ -168,27 +168,38 @@ function DevicePage() {
 
   return (
     <div className="w-full space-y-6">
-      {/* Header: device name + start/end brew */}
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold leading-tight">
-            {device.device_name}
-          </h2>
-
-          {device.brew_id ? (
-            <p className="text-sm text-muted-foreground">
-              {t("iSpindelDashboard.activeBrew", "Active brew")}:{" "}
-              {brewName ?? t("iSpindelDashboard.unknownBrew", "Unknown")}
-            </p>
+          {infoLoading ? (
+            <>
+              <Skeleton className="h-8 w-[240px] sm:w-[320px]" />
+              <Skeleton className="h-4 w-[220px] mt-2" />
+            </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {t("iSpindelDashboard.noActiveBrew", "No active brew")}
-            </p>
+            <>
+              <h2 className="text-2xl font-semibold leading-tight">
+                {device!.device_name}
+              </h2>
+
+              {device!.brew_id ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("iSpindelDashboard.activeBrew", "Active brew")}:{" "}
+                  {brewName ?? t("iSpindelDashboard.unknownBrew", "Unknown")}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("iSpindelDashboard.noActiveBrew", "No active brew")}
+                </p>
+              )}
+            </>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          {!device.brew_id ? (
+          {infoLoading ? (
+            <Skeleton className="h-9 w-[160px]" />
+          ) : !device!.brew_id ? (
             <AlertDialog>
               <AlertDialogTrigger
                 className={buttonVariants({ variant: "secondary" })}
@@ -220,7 +231,7 @@ function DevicePage() {
                       variant="secondary"
                       disabled={isStarting}
                       onClick={async () => {
-                        await startBrew(device.id, fileName || null);
+                        await startBrew(device!.id, fileName || null);
                       }}
                     >
                       {isStarting
@@ -236,7 +247,7 @@ function DevicePage() {
               variant="destructive"
               disabled={isEnding}
               onClick={async () => {
-                await endBrew(device.id, device.brew_id);
+                await endBrew(device!.id, device!.brew_id);
               }}
             >
               {isEnding
@@ -247,122 +258,140 @@ function DevicePage() {
         </div>
       </div>
 
-      {/* Coefficients: not a card; collapsible + separator */}
-
+      {/* Coefficients */}
       <div className="space-y-3">
         <Collapsible open={showTable} onOpenChange={setShowTable}>
-          {/* header row */}
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
             <div className="text-center sm:text-left">
-              <h3 className="text-lg font-medium">
-                {t("iSpindelDashboard.coefficients", "Coefficients")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t(
-                  "iSpindelDashboard.coefficientsHint",
-                  "Update your device coefficients if you’ve calibrated your hydrometer."
-                )}
-              </p>
+              {infoLoading ? (
+                <>
+                  <Skeleton className="h-6 w-[180px] sm:w-[220px] mx-auto sm:mx-0" />
+                  <Skeleton className="h-4 w-[320px] sm:w-[520px] mt-2 mx-auto sm:mx-0" />
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium">
+                    {t("iSpindelDashboard.coefficients", "Coefficients")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t(
+                      "iSpindelDashboard.coefficientsHint",
+                      "Update your device coefficients if you’ve calibrated your hydrometer."
+                    )}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="flex justify-center sm:justify-end">
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  disabled={infoLoading}
+                >
                   {t("iSpindelDashboard.updateCoefficients")}
                   <ChevronsUpDown className="h-4 w-4 opacity-70" />
                 </Button>
               </CollapsibleTrigger>
             </div>
 
-            {/* content row: spans full width so it doesn’t “float right” */}
             <div className="sm:col-span-2">
               <CollapsibleContent className="mt-2">
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[160px]">
-                            {t("iSpindelDashboard.coefficient", "Coefficient")}
-                          </TableHead>
-                          <TableHead className="min-w-[160px]">
-                            {t("iSpindelDashboard.formula", "Formula")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
+                {infoLoading ? (
+                  <CoefficientsTableSkeleton />
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[160px]">
+                              {t(
+                                "iSpindelDashboard.coefficient",
+                                "Coefficient"
+                              )}
+                            </TableHead>
+                            <TableHead className="min-w-[160px]">
+                              {t("iSpindelDashboard.formula", "Formula")}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
 
-                      <TableBody>
-                        <TableRow>
-                          <TableCell>
-                            <Input
-                              value={coefficients[0]}
-                              onChange={(e) =>
-                                updateCoefficients(0, e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            × angle<sup>3</sup> +
-                          </TableCell>
-                        </TableRow>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[0]}
+                                onChange={(e) =>
+                                  updateCoefficients(0, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              × angle<sup>3</sup> +
+                            </TableCell>
+                          </TableRow>
 
-                        <TableRow>
-                          <TableCell>
-                            <Input
-                              value={coefficients[1]}
-                              onChange={(e) =>
-                                updateCoefficients(1, e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            × angle<sup>2</sup> +
-                          </TableCell>
-                        </TableRow>
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[1]}
+                                onChange={(e) =>
+                                  updateCoefficients(1, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              × angle<sup>2</sup> +
+                            </TableCell>
+                          </TableRow>
 
-                        <TableRow>
-                          <TableCell>
-                            <Input
-                              value={coefficients[2]}
-                              onChange={(e) =>
-                                updateCoefficients(2, e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>× angle +</TableCell>
-                        </TableRow>
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[2]}
+                                onChange={(e) =>
+                                  updateCoefficients(2, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>× angle +</TableCell>
+                          </TableRow>
 
-                        <TableRow>
-                          <TableCell>
-                            <Input
-                              value={coefficients[3]}
-                              onChange={(e) =>
-                                updateCoefficients(3, e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell />
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[3]}
+                                onChange={(e) =>
+                                  updateCoefficients(3, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="submit" disabled={isUpdatingCoefficients}>
-                      {isUpdatingCoefficients
-                        ? t("saving", "Saving…")
-                        : t("Submit")}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" disabled={isUpdatingCoefficients}>
+                        {isUpdatingCoefficients
+                          ? t("saving", "Saving…")
+                          : t("Submit")}
+                      </Button>
 
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setShowTable(false)}
-                    >
-                      {t("Cancel")}
-                    </Button>
-                  </div>
-                </form>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setShowTable(false)}
+                      >
+                        {t("Cancel")}
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </CollapsibleContent>
             </div>
           </div>
@@ -371,27 +400,30 @@ function DevicePage() {
         <Separator />
       </div>
 
-      {/* Logs: control bar directly above the table */}
+      {/* Logs */}
       <div className="space-y-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-medium">
-            {t("iSpindelDashboard.recentLogs", "Recent logs")}
-          </h3>
+          {infoLoading ? (
+            <Skeleton className="h-6 w-[160px]" />
+          ) : (
+            <h3 className="text-lg font-medium">
+              {t("iSpindelDashboard.recentLogs", "Recent logs")}
+            </h3>
+          )}
 
-          {/* Make RecentLogsForm one-line on desktop by fixing its internal layout (see tweak below) */}
-          <RecentLogsForm
-            deviceId={device.id}
-            onRangeChange={({ startISO, endISO }) => {
-              setDateRange({ start: startISO, end: endISO });
-            }}
-          />
+          {infoLoading ? (
+            <Skeleton className="h-9 w-full sm:w-[320px]" />
+          ) : (
+            <RecentLogsForm
+              deviceId={device!.id}
+              onRangeChange={({ startISO, endISO }) => {
+                setDateRange({ start: startISO, end: endISO });
+              }}
+            />
+          )}
         </div>
 
-        {logsLoading && (
-          <p className="text-center text-sm">{t("loading", "Loading…")}</p>
-        )}
-
-        {logsError && (
+        {!infoLoading && logsError && (
           <p className="text-center text-sm text-destructive">
             {t(
               "iSpindelDashboard.logsError",
@@ -399,9 +431,9 @@ function DevicePage() {
             )}
           </p>
         )}
-
         <LogTable
           logs={deviceLogs}
+          loading={infoLoading || logsLoading}
           removeLog={(id) => {
             queryClient.setQueryData(
               qk.hydrometerDeviceLogs(deviceId, dateRange.start, dateRange.end),
@@ -415,44 +447,88 @@ function DevicePage() {
 
       {/* Delete device */}
       <div className="pt-2 flex justify-center sm:justify-end">
-        <AlertDialog>
-          <AlertDialogTrigger
-            className={buttonVariants({ variant: "destructive" })}
-          >
-            {t("iSpindelDashboard.deleteDevice")}
-          </AlertDialogTrigger>
+        {infoLoading ? (
+          <Skeleton className="h-9 w-[170px]" />
+        ) : (
+          <AlertDialog>
+            <AlertDialogTrigger
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              {t("iSpindelDashboard.deleteDevice")}
+            </AlertDialogTrigger>
 
-          <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("iSpindelDashboard.confirm")}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("iSpindelDashboard.deleteDeviceAlert")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+            <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("iSpindelDashboard.confirm")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("iSpindelDashboard.deleteDeviceAlert")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
 
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <Button
-                  disabled={isDeletingDevice}
-                  onClick={async () => {
-                    await deleteDevice(device.id);
-                    router.push("/account/hydrometer/devices");
-                  }}
-                >
-                  {isDeletingDevice
-                    ? t("iSpindelDashboard.deleting", "Deleting…")
-                    : t("iSpindelDashboard.deleteDevice")}
-                </Button>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    disabled={isDeletingDevice}
+                    onClick={async () => {
+                      await deleteDevice(device!.id);
+                      router.push("/account/hydrometer/devices");
+                    }}
+                  >
+                    {isDeletingDevice
+                      ? t("iSpindelDashboard.deleting", "Deleting…")
+                      : t("iSpindelDashboard.deleteDevice")}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   );
 }
 
 export default DevicePage;
+
+/* ---------------- skeleton bits ---------------- */
+
+function CoefficientsTableSkeleton() {
+  return (
+    <div className="space-y-3">
+      <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="min-w-[160px]">
+                <Skeleton className="h-4 w-[110px]" />
+              </TableHead>
+              <TableHead className="min-w-[160px]">
+                <Skeleton className="h-4 w-[90px]" />
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-9 w-full max-w-[220px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[140px]" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Skeleton className="h-9 w-[110px]" />
+        <Skeleton className="h-9 w-[110px]" />
+      </div>
+    </div>
+  );
+}

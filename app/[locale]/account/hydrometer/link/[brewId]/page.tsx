@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
 
-import Loading from "@/components/loading";
 import { PagedResults } from "@/components/ui/paged-results";
 import { AccountPagination } from "@/components/account/pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +32,7 @@ import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useBrewById, useLinkBrewToRecipe } from "@/hooks/reactQuery/useBrews";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type RecipeRow = {
   id: number;
@@ -62,6 +62,7 @@ function LinkBrew() {
   const isLoading = brewLoading || accountLoading;
   const isError = brewError || accountError;
 
+  // keep hooks unconditional
   const [pageSize, setPageSize] = useState(5);
   const pageOptions = [5, 10, 20, 50].map((n) => ({
     value: n,
@@ -95,7 +96,10 @@ function LinkBrew() {
 
   const [linkingRecipeId, setLinkingRecipeId] = useState<number | null>(null);
 
-  if (isLoading) return <Loading />;
+  // ---- Skeleton (page-level) ----
+  if (isLoading) {
+    return <LinkBrewSkeleton />;
+  }
 
   if (isError || !brew) {
     return (
@@ -113,10 +117,8 @@ function LinkBrew() {
 
   return (
     <div className="my-6">
-      {/* Title */}
       <h2 className="text-2xl">{t("iSpindelDashboard.brews.link")}</h2>
 
-      {/* Controls (match devices/account style) */}
       <PagedResults
         scroll
         scrollClassName="sm:max-h-[60vh]"
@@ -194,7 +196,6 @@ function LinkBrew() {
           ) : null
         }
       >
-        {/* Cards */}
         <div className="flex flex-wrap justify-center gap-4 py-2">
           {pageData.length > 0 ? (
             pageData.map((rec) => (
@@ -238,6 +239,58 @@ function LinkBrew() {
 }
 
 export default LinkBrew;
+
+function LinkBrewSkeleton() {
+  return (
+    <div className="my-6 space-y-4">
+      {/* Title */}
+      <Skeleton className="h-8 w-[240px]" />
+
+      {/* Controls row */}
+      <div className="grid gap-2 sm:gap-3 mt-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <Skeleton className="h-5 w-[72px]" />
+            <Skeleton className="h-9 w-full sm:max-w-sm rounded-md" />
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2">
+            <Skeleton className="h-5 w-[90px]" />
+            <Skeleton className="h-9 w-[140px] rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div className="flex flex-wrap justify-center gap-4 py-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card
+            key={i}
+            className="w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none"
+          >
+            {/* Title */}
+            <CardHeader className="p-3 pb-2">
+              <Skeleton className="h-5 w-[75%] mx-auto" />
+            </CardHeader>
+
+            {/* Button group (connected) */}
+            <CardContent className="p-3 pt-0">
+              <div className="flex w-full items-stretch">
+                <Skeleton className="h-9 flex-1 rounded-r-none" />
+                <Skeleton className="h-9 flex-1 rounded-l-none -ml-px" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Footer pagination */}
+      <div className="mt-4 flex justify-center">
+        <Skeleton className="h-10 w-[260px]" />
+      </div>
+    </div>
+  );
+}
 
 const RecipeLinkCard = ({
   recipe,
