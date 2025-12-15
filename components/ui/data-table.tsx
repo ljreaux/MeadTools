@@ -165,7 +165,7 @@ export function DataTable<TData, TValue>({
                   variant="ghost"
                   aria-label={t("searchPlaceholder")}
                 >
-                  <Search className="p-1" />
+                  <Search />
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>

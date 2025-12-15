@@ -14,6 +14,7 @@ import {
   useHydrometerInfo,
   useGenerateHydrometerToken
 } from "@/hooks/reactQuery/useHydrometerInfo";
+import { Separator } from "../ui/separator";
 
 function TokenGen() {
   const { t } = useTranslation();
@@ -63,18 +64,19 @@ function TokenGen() {
   };
 
   return (
-    <InputGroup className="max-w-[500px] w-full">
+    <InputGroup className="max-w-[500px] w-full h-12">
       <InputGroupAddon>
         <InputGroupButton
           type="button"
           onClick={handleGenerateClick}
           disabled={tokenLoading}
-          variant="default"
+          className="w-full h-full"
         >
           {tokenLoading
             ? t("iSpindelDashboard.genToken.loading", "Generating...")
             : t("iSpindelDashboard.genToken")}
         </InputGroupButton>
+        <Separator className="h-12" orientation="vertical" />
       </InputGroupAddon>
 
       <InputGroupInput
@@ -92,8 +94,7 @@ function TokenGen() {
           type="button"
           onClick={handleCopyClick}
           disabled={!hydrometerToken}
-          size="icon-xs"
-          className="flex items-center justify-center"
+          className="w-full h-full"
         >
           {copied ? (
             <CopyCheck className="h-4 w-4 text-green-500" />

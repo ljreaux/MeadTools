@@ -39,8 +39,15 @@ function Setup() {
 
   const { data } = useHydrometerInfo();
   const hydrometerToken = data?.hydro_token;
+
   const { currentButton, otherButtons } = useOS();
   const [tempUnits, setTempUnits] = useState("F");
+
+  // NEW: control tab so title can reflect selection
+  const [tab, setTab] = useState<"iSpindel" | "tilt" | "pill">("iSpindel");
+
+  const tabLabel =
+    tab === "iSpindel" ? "iSpindel" : tab === "tilt" ? "Tilt" : "RAPT Pill";
 
   const pillCloudUrl = `${displayUrl}/api/hydrometer/rapt-pill/cloud`;
 
@@ -54,231 +61,247 @@ function Setup() {
   }`;
 
   return (
-    <Tabs defaultValue="iSpindel">
-      <div className="flex items-center justify-center py-4">
+    <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+      <div className="w-full space-y-6">
+        {/* Title (ONLY centered thing) */}
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold leading-tight">
+            Setup {tabLabel}
+          </h2>
+        </div>
+
+        {/* TabsList under title, NOT centered */}
         <TabsList>
           <TabsTrigger value="iSpindel">iSpindel</TabsTrigger>
           <TabsTrigger value="tilt">Tilt</TabsTrigger>
           <TabsTrigger value="pill">RAPT Pill</TabsTrigger>
         </TabsList>
-      </div>
 
-      {/* iSpindel tab */}
-      <TabsContent value="iSpindel">
-        <div className="flex flex-col items-center justify-center gap-6">
-          <h2 className="my-4 text-2xl">
-            {t("iSpindelDashboard.setup.title")}
-          </h2>
-          <TokenGen />
-          <p>{t("iSpindelDashboard.setup.info")}</p>
+        {/* iSpindel tab */}
+        <TabsContent value="iSpindel" className="mt-0">
+          <div className="space-y-6">
+            <TokenGen />
 
-          <UrlCopyField
-            buttonDetails={{
-              url: displayUrl,
-              buttonText: "iSpindelDashboard.buttonText.server"
-            }}
-          />
+            <p className="text-sm">{t("iSpindelDashboard.setup.info")}</p>
 
-          <UrlCopyField
-            buttonDetails={{
-              url: "/api/ispindel",
-              buttonText: "iSpindelDashboard.buttonText.path"
-            }}
-          />
+            <div className="space-y-3">
+              <UrlCopyField
+                buttonDetails={{
+                  url: displayUrl,
+                  buttonText: "iSpindelDashboard.buttonText.server"
+                }}
+              />
 
-          <p>{t("iSpindelDashboard.setup.serviceType")}</p>
-        </div>
-      </TabsContent>
+              <UrlCopyField
+                buttonDetails={{
+                  url: "/api/ispindel",
+                  buttonText: "iSpindelDashboard.buttonText.path"
+                }}
+              />
+            </div>
 
-      {/* Tilt tab */}
-      <TabsContent value="tilt">
-        <div className="flex flex-col items-center justify-center gap-6">
-          <h2 className="my-4 text-2xl">
-            {t("iSpindelDashboard.setup.tilt.title")}
-          </h2>
-          <TokenGen />
-          {hydrometerToken && (
-            <UrlCopyField
-              buttonDetails={{
-                url: `${displayUrl}/api/hydrometer/tilt?token=${hydrometerToken}`,
-                buttonText: "cloudUrl"
-              }}
-            />
-          )}
-          <p>{t("tilt.instructions.text")}</p>
-          <p>{t("tilt.instructions.note")}</p>
-          <p className="text-start w-full">
-            <Trans
-              i18nKey="tilt.instructions.recommendation"
-              components={{
-                a: (
-                  <a
-                    href="https://tilthydrometer.com/products/tilt-pi-v2-buster-feb20-raspberry-pi-sd-card-image-download"
-                    className="font-bold underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    TiltPi
-                  </a>
-                )
-              }}
-            />
-          </p>
-        </div>
-      </TabsContent>
+            <p className="text-sm ">
+              {t("iSpindelDashboard.setup.serviceType")}
+            </p>
+          </div>
+        </TabsContent>
 
-      {/* RAPT Pill tab */}
-      <TabsContent value="pill">
-        <div>
-          <h2 className="my-4 text-2xl text-center">{t("rapt.heading")}</h2>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="bluetooth">
-              <AccordionTrigger>Bluetooth</AccordionTrigger>
-              <AccordionContent>
-                <div className="flex flex-col items-center justify-center gap-6">
-                  <p>{t("rapt.description")}</p>
+        {/* Tilt tab */}
+        <TabsContent value="tilt" className="mt-0">
+          <div className="space-y-6">
+            <TokenGen />
 
-                  <p className="text-start w-full">
-                    {t("rapt.warning")}{" "}
-                    <Trans
-                      i18nKey="rapt.macos_note"
-                      components={{
-                        a: (
-                          <a
-                            href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac"
-                            className="font-bold underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        )
-                      }}
-                    />
-                  </p>
+            <div className="space-y-2">
+              <p className="text-sm ">{t("tilt.instructions.text")}</p>
+              <div className="py-4">
+                <UrlCopyField
+                  buttonDetails={{
+                    url: `${displayUrl}/api/hydrometer/tilt?token=${hydrometerToken}`,
+                    buttonText: "cloudUrl"
+                  }}
+                />
+              </div>
+              <p className="text-sm">{t("tilt.instructions.note")}</p>
 
-                  <p>
-                    <Trans
-                      i18nKey="rapt.credits"
-                      components={{
-                        a: (
-                          <a
-                            href="https://github.com/TravisEvashkevich/RaptPill-To-MeadTools"
-                            className="font-bold underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        )
-                      }}
-                    />
-                  </p>
-
-                  {currentButton && (
-                    <a
-                      href={currentButton.href}
-                      className={cn(
-                        buttonVariants({ variant: "secondary" }),
-                        "flex items-center justify-center gap-1"
-                      )}
-                    >
-                      {currentButton.logo} {t("download")} {currentButton.os}
-                    </a>
-                  )}
-
-                  <div className="flex flex-wrap items-center justify-center my-4">
-                    {otherButtons.map((button) => (
+              <p className="text-sm">
+                <Trans
+                  i18nKey="tilt.instructions.recommendation"
+                  components={{
+                    a: (
                       <a
-                        key={button.key}
-                        href={button.href}
-                        className={cn(
-                          buttonVariants({ variant: "ghost" }),
-                          "flex items-center justify-center gap-1"
-                        )}
-                      >
-                        {button.logo} {t("download")} {button.os}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="cloud">
-              <AccordionTrigger>RAPT Cloud</AccordionTrigger>
-              <AccordionContent>
-                <div className="grid gap-4">
-                  <p>
-                    MeadTools has support for the RAPT Pill through the RAPT
-                    Cloud Custom Web Hooks
-                  </p>
-                  <ol className="list-decimal list-inside space-y-2">
-                    <li>
-                      Go to Web Hooks under My Account in the{" "}
-                      <a
-                        href="https://app.rapt.io/integration/webhooks/list"
+                        href="https://tilthydrometer.com/products/tilt-pi-v2-buster-feb20-raspberry-pi-sd-card-image-download"
+                        className="font-bold underline"
                         target="_blank"
-                        className="underline"
                         rel="noopener noreferrer"
                       >
-                        RAPT Portal
+                        TiltPi
                       </a>
-                    </li>
-                    <li>Click the Create New Web Hook button at the top.</li>
-                    <li>
-                      Name and Description are optional (but recommended)
-                      values, copy the Cloud URL below and set the Method to
-                      Post.
-                    </li>
-                    <li>
-                      Set your temperature units to your preferred units, make
-                      sure your token is generated and correctly displayed in
-                      the block and copy the block below into payload tab.
-                    </li>
-                    <p className="font-extrabold">
-                      IMPORTANT NOTE: You MUST have a unique (to you) device
-                      name set for your device. This allows you to reuse this
-                      webhook for all your RAPT pill devices.
+                    )
+                  }}
+                />
+              </p>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* RAPT Pill tab */}
+        <TabsContent value="pill" className="mt-0">
+          <div className="space-y-6">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="bluetooth">
+                <AccordionTrigger>Bluetooth</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-6">
+                    <p className="text-sm ">{t("rapt.description")}</p>
+
+                    <p className="text-sm">
+                      {t("rapt.warning")}{" "}
+                      <Trans
+                        i18nKey="rapt.macos_note"
+                        components={{
+                          a: (
+                            <a
+                              href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac"
+                              className="font-bold underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          )
+                        }}
+                      />
                     </p>
-                    <li>Add your device in the Devices tab.</li>
-                  </ol>
-                </div>
 
-                <div className="grid gap-4 py-2">
-                  <UrlCopyField
-                    buttonDetails={{
-                      url: pillCloudUrl,
-                      buttonText: "cloudUrl"
-                    }}
-                  />
-                  <TokenGen />
-                </div>
+                    <p className="text-sm">
+                      <Trans
+                        i18nKey="rapt.credits"
+                        components={{
+                          a: (
+                            <a
+                              href="https://github.com/TravisEvashkevich/RaptPill-To-MeadTools"
+                              className="font-bold underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          )
+                        }}
+                      />
+                    </p>
 
-                <div className="grid gap-4">
-                  <div className="w-full flex justify-between items-center px-2">
-                    <h2 className="text-2xl">Payload</h2>
-                    <label className="flex items-center gap-2">
-                      {t("rapt.tempUnitsLabel", "Temperature Units")}
-                      <Select
-                        name="deg"
-                        onValueChange={setTempUnits}
-                        value={tempUnits}
+                    {currentButton && (
+                      <a
+                        href={currentButton.href}
+                        className={cn(
+                          buttonVariants({ variant: "secondary" }),
+                          "inline-flex items-center gap-1"
+                        )}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="F">{t("FAR")}</SelectItem>
-                          <SelectItem value="C">{t("CEL")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </label>
-                  </div>
+                        {currentButton.logo} {t("download")} {currentButton.os}
+                      </a>
+                    )}
 
-                  <CopyableCodeBlock text={pillPayload} />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-      </TabsContent>
+                    <div className="flex flex-wrap gap-2">
+                      {otherButtons.map((button) => (
+                        <a
+                          key={button.key}
+                          href={button.href}
+                          className={cn(
+                            buttonVariants({ variant: "ghost" }),
+                            "inline-flex items-center gap-1"
+                          )}
+                        >
+                          {button.logo} {t("download")} {button.os}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="cloud">
+                <AccordionTrigger>RAPT Cloud</AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <p className="text-sm ">
+                        MeadTools has support for the RAPT Pill through the RAPT
+                        Cloud Custom Web Hooks
+                      </p>
+
+                      <ol className="list-decimal list-inside space-y-2 text-sm">
+                        <li>
+                          Go to Web Hooks under My Account in the{" "}
+                          <a
+                            href="https://app.rapt.io/integration/webhooks/list"
+                            target="_blank"
+                            className="underline"
+                            rel="noopener noreferrer"
+                          >
+                            RAPT Portal
+                          </a>
+                        </li>
+                        <li>
+                          Click the Create New Web Hook button at the top.
+                        </li>
+                        <li>
+                          Name and Description are optional (but recommended)
+                          values, copy the Cloud URL below and set the Method to
+                          Post.
+                        </li>
+                        <li>
+                          Set your temperature units, make sure your token is
+                          generated, and copy the payload below into the payload
+                          tab.
+                        </li>
+                        <p className="font-extrabold">
+                          IMPORTANT NOTE: You MUST have a unique (to you) device
+                          name set for your device. This allows you to reuse
+                          this webhook for all your RAPT pill devices.
+                        </p>
+                        <li>Add your device in the Devices tab.</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-3">
+                      <UrlCopyField
+                        buttonDetails={{
+                          url: pillCloudUrl,
+                          buttonText: "cloudUrl"
+                        }}
+                      />
+                      <TokenGen />
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="text-lg font-medium">Payload</h3>
+
+                        <label className="flex items-center gap-2 text-sm">
+                          {t("rapt.tempUnitsLabel", "Temperature Units")}
+                          <Select
+                            name="deg"
+                            onValueChange={setTempUnits}
+                            value={tempUnits}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="F">{t("FAR")}</SelectItem>
+                              <SelectItem value="C">{t("CEL")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </label>
+                      </div>
+
+                      <CopyableCodeBlock text={pillPayload} />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </TabsContent>
+      </div>
     </Tabs>
   );
 }
@@ -321,7 +344,7 @@ const UrlCopyField = ({
   };
 
   return (
-    <InputGroup className="max-w-[500px] w-full">
+    <InputGroup className="max-w-[500px] w-full h-12">
       <InputGroupAddon>
         <InputGroupText>{t(buttonDetails.buttonText)}</InputGroupText>
       </InputGroupAddon>
@@ -340,8 +363,7 @@ const UrlCopyField = ({
         <InputGroupButton
           type="button"
           onClick={handleClick}
-          className="flex items-center justify-center"
-          size="icon-xs"
+          className="w-full h-full"
         >
           {copied ? (
             <CopyCheck className="h-4 w-4 text-green-500" />

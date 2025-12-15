@@ -12,9 +12,11 @@ async function Layout({
   const i18nNamespaces = ["default", "YeastTable"];
   const { t } = await initTranslations(locale, i18nNamespaces);
   return (
-    <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px] relative">
+    <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
+      <h1 className="text-3xl text-center my-2">
+        {t("iSpindelDashboard.label")}
+      </h1>
       <Nav />
-      <h1 className="text-3xl text-center">{t("iSpindelDashboard.label")}</h1>
       {children}
     </div>
   );

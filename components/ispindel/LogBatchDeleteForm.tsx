@@ -102,46 +102,47 @@ const LogBatchDeleteForm = ({ deviceId }: { deviceId: string }) => {
         className="flex flex-col row-span-2 row-start-1 mt-4 space-y-4 sm:col-start-2 sm:mt-0"
       >
         <h1>{t("iSpindelDashboard.logDeleteRange")}</h1>
+        <div className="flex flex-wrap gap-2">
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="datetime">
+                  {t("iSpindelDashboard.brews.startDate")}
+                </FormLabel>
+                <FormControl>
+                  <DateTimePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    hourCycle={12}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="start_date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col gap-2 w-72">
-              <FormLabel htmlFor="datetime">
-                {t("iSpindelDashboard.brews.startDate")}
-              </FormLabel>
-              <FormControl>
-                <DateTimePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  hourCycle={12}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="end_date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col gap-2 w-72">
-              <FormLabel htmlFor="datetime">
-                {t("iSpindelDashboard.brews.endDate")}
-              </FormLabel>
-              <FormControl>
-                <DateTimePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  hourCycle={12}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="datetime">
+                  {t("iSpindelDashboard.brews.endDate")}
+                </FormLabel>
+                <FormControl>
+                  <DateTimePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    hourCycle={12}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <AlertDialog open={open} onOpenChange={setOpen}>
           <AlertDialogTrigger className="flex-1 w-full" asChild>

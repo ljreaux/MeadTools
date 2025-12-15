@@ -1,7 +1,10 @@
 "use client";
+
+import { useCallback, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { saveAs } from "file-saver";
 import { useGenerateImage } from "recharts-to-png";
+
 import {
   Card,
   CardContent,
@@ -10,6 +13,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+
 import {
   ChartConfig,
   ChartContainer,
@@ -18,7 +22,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@/components/ui/chart";
-import { useTranslation } from "react-i18next";
+
 import {
   Select,
   SelectItem,
@@ -26,12 +30,23 @@ import {
   SelectContent,
   SelectTrigger
 } from "@/components/ui/select";
-import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { toBrix } from "@/lib/utils/unitConverter";
-import ChartDownload from "./ChartDownload";
 import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
+// import ChartDownload from "./ChartDownload";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { Separator } from "../ui/separator";
+
 type FileData = {
   date: string;
   temperature?: number;
@@ -52,12 +67,14 @@ export function HydrometerData({
   name?: string;
   tempUnits: TempUnits;
 }) {
-  const [gravityUnits, setGravityUnits] = useState("SG");
-
   const { i18n, t } = useTranslation();
   const lang = i18n.resolvedLanguage || "en-US";
+
+  const [gravityUnits, setGravityUnits] = useState("SG");
   const [data, setData] = useState(chartData);
   const [currentTempUnits, setCurrentTempUnits] = useState(tempUnits);
+
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const chartConfig = {
     temperature: {
@@ -81,23 +98,32 @@ export function HydrometerData({
       color: "hsl(var(--chart-5))"
     }
   } satisfies ChartConfig;
-  const showSignalStrength = !!data[0].signalStrength;
-  const showBattery = !!data[0].battery;
+
+  const showSignalStrength = !!data[0]?.signalStrength;
+  const showBattery = !!data[0]?.battery;
+
   const yPadding =
     showSignalStrength || showBattery ? { bottom: 15 } : undefined;
   const xPadding =
     showSignalStrength || showBattery ? { left: 45, right: 60 } : undefined;
-  const beginDate = new Date(data[0].date).toLocaleDateString(lang, {
-    month: "long",
-    day: "numeric"
-  });
-  const endDate = new Date(data[data.length - 1].date).toLocaleDateString(
-    lang,
-    {
-      month: "long",
-      day: "numeric",
-      year: "numeric"
-    }
+
+  const beginDate = useMemo(
+    () =>
+      new Date(data[0].date).toLocaleDateString(lang, {
+        month: "long",
+        day: "numeric"
+      }),
+    [data, lang]
+  );
+
+  const endDate = useMemo(
+    () =>
+      new Date(data[data.length - 1].date).toLocaleDateString(lang, {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      }),
+    [data, lang]
   );
 
   const defaultChecked = {
@@ -110,31 +136,29 @@ export function HydrometerData({
 
   const initialChecked = Object.keys(chartConfig).reduce(
     (acc, key) => {
-      const label = key;
-      acc[label] = true;
+      acc[key] = true;
       return acc;
     },
     {} as { [key: string]: boolean }
   );
-  const roundToNearest005 = (value: number) => {
-    return Math.round(value / 0.005) * 0.005;
-  };
-  const [checkObj, setCheckObj] = useState<{
-    [key: string]: boolean;
-  }>(initialChecked || defaultChecked);
+
+  const [checkObj, setCheckObj] = useState<{ [key: string]: boolean }>(
+    initialChecked || defaultChecked
+  );
+
+  const roundToNearest005 = (value: number) =>
+    Math.round(value / 0.005) * 0.005;
+
   const generateTicks = (
     dataMin: number,
     dataMax: number,
     interval: number
   ) => {
-    const ticks = [];
+    const ticks: number[] = [];
     const min = roundToNearest005(dataMin - interval);
     const max = roundToNearest005(dataMax + interval);
 
-    for (let i = min; i <= max; i += interval) {
-      ticks.push(i);
-    }
-
+    for (let i = min; i <= max; i += interval) ticks.push(i);
     return ticks;
   };
 
@@ -142,22 +166,182 @@ export function HydrometerData({
   const dataMax = Math.max(...data.map((d) => d.gravity));
 
   const abvMax = Math.max(...data.map((d) => d.abv));
-  const abvTicks = [];
-  for (let i = 0; i <= abvMax + 0.5; i += 0.5) {
-    abvTicks.push(i);
-  }
+  const abvTicks: number[] = [];
+  for (let i = 0; i <= abvMax + 0.5; i += 0.5) abvTicks.push(i);
 
   const [getDivJpeg, { ref }] = useGenerateImage<HTMLDivElement>({
     quality: 0.8,
     type: "image/png"
   });
 
+  const [getMobilePng, { ref: mobileRef }] = useGenerateImage<HTMLDivElement>({
+    quality: 0.8,
+    type: "image/png"
+  });
+
   const handleDivDownload = useCallback(async () => {
     const jpeg = await getDivJpeg();
-    if (jpeg) {
-      saveAs(jpeg, `${beginDate}-${endDate}.png`);
-    }
-  }, [getDivJpeg]);
+    if (jpeg) saveAs(jpeg, `${beginDate}-${endDate}.png`);
+  }, [getDivJpeg, beginDate, endDate]);
+
+  const handleMobileDownload = useCallback(async () => {
+    const png = await getMobilePng();
+    if (png) saveAs(png, `${beginDate}-${endDate}.png`);
+  }, [getMobilePng, beginDate, endDate]);
+  if (!data.length) return null;
+
+  const handleGravityUnits = (val: string) => {
+    const dataWithBrix = chartData.map((d) => ({
+      ...d,
+      gravity: toBrix(d.gravity)
+    }));
+
+    if (val === "SG") setData(chartData);
+    else if (val === "Brix") setData(dataWithBrix);
+
+    setGravityUnits(val);
+  };
+
+  const handleTempUnits = (val: string) => {
+    const nextUnits = val as "F" | "C";
+
+    setData((prev) =>
+      prev.map((obj) => {
+        if (typeof obj.temperature !== "number") return obj;
+
+        // convert from CURRENT -> NEXT
+        const nextTemp =
+          currentTempUnits === nextUnits
+            ? obj.temperature
+            : currentTempUnits === "F"
+              ? toCelsius(obj.temperature)
+              : toFahrenheit(obj.temperature);
+
+        return { ...obj, temperature: nextTemp };
+      })
+    );
+
+    setCurrentTempUnits(nextUnits);
+  };
+
+  const MobileModalChart = () => (
+    <div className="h-full w-full">
+      <ChartContainer
+        config={{
+          gravity: chartConfig.gravity,
+          abv: chartConfig.abv,
+          temperature: chartConfig.temperature
+        }}
+        className="bg-background"
+      >
+        <LineChart
+          accessibilityLayer
+          data={data}
+          margin={{ left: 8, right: 10, top: 8, bottom: 8 }}
+        >
+          <CartesianGrid vertical={false} stroke="hsl(210, 13%, 35%)" />
+
+          <XAxis
+            dataKey="date"
+            tickMargin={8}
+            minTickGap={70}
+            tickFormatter={(value) =>
+              new Date(value).toLocaleDateString(lang, {
+                month: "short",
+                day: "numeric"
+              })
+            }
+          />
+
+          {/* Visible axes: SG/Brix (left) */}
+          <YAxis
+            dataKey={"gravity"}
+            yAxisId={"gravity"}
+            domain={[
+              (v: number) => roundToNearest005(v - 0.005),
+              (v: number) => roundToNearest005(v + 0.005)
+            ]}
+            ticks={generateTicks(dataMin, dataMax, 0.005)}
+            allowDecimals
+            tickMargin={8}
+            tickFormatter={(val) =>
+              gravityUnits === "Brix"
+                ? Number(val).toFixed(2)
+                : Number(val).toFixed(3)
+            }
+          />
+
+          {/* Visible axes: ABV (right) */}
+          <YAxis
+            dataKey={"abv"}
+            yAxisId={"abv"}
+            orientation="right"
+            ticks={abvTicks}
+            tickMargin={8}
+            unit={"%"}
+          />
+
+          {/* Hidden axis: Temperature (exists so the temp line can render correctly) */}
+          <YAxis
+            dataKey={"temperature"}
+            yAxisId={"temperature"}
+            orientation="right"
+            hide
+            width={0}
+            tick={false}
+            axisLine={false}
+            tickLine={false}
+            unit={`°${currentTempUnits}`}
+          />
+
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(val) => {
+                  const date = new Date(val);
+                  return date.toLocaleString(lang, {
+                    dateStyle: "short",
+                    timeStyle: "short"
+                  });
+                }}
+              />
+            }
+          />
+
+          {/* Lines: SG/Brix + ABV + Temperature */}
+          <Line
+            dataKey="gravity"
+            type="monotone"
+            stroke="var(--color-gravity)"
+            strokeWidth={2}
+            dot={false}
+            yAxisId={"gravity"}
+          />
+
+          <Line
+            dataKey="abv"
+            type="monotone"
+            stroke="var(--color-abv)"
+            strokeWidth={2}
+            dot={false}
+            yAxisId={"abv"}
+            unit={"%"}
+          />
+
+          <Line
+            dataKey="temperature"
+            type="monotone"
+            stroke="var(--color-temperature)"
+            strokeWidth={2}
+            dot={false}
+            yAxisId={"temperature"}
+            unit={`°${currentTempUnits}`}
+          />
+        </LineChart>
+      </ChartContainer>
+    </div>
+  );
 
   return (
     <Card className="w-full max-w-[1240px] self-center">
@@ -167,27 +351,80 @@ export function HydrometerData({
           <CardDescription>
             {beginDate} - {endDate}
           </CardDescription>
-          <CardContent className="block sm:hidden">
-            {t("mobileChartMessage")}
-          </CardContent>
+
+          {/* MOBILE: button -> fullscreen modal */}
+          <div className="block sm:hidden pt-2">
+            <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="w-full">
+                  {t("iSpindelDashboard.openChart", "Open chart")}
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="mx-0 px-0">
+                <div className="flex flex-col bg-background mx-0">
+                  <div className="flex items-center gap-3 pt-4 pb-3">
+                    <div className="w-full flex items-center flex-col">
+                      <DialogHeader className="px-0">
+                        <DialogTitle className="text-base truncate">
+                          {name || t("iSpindelDashboard.chartTitle", "Chart")}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm">
+                          {beginDate} - {endDate}
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="w-full flex gap-2 p-3">
+                        <Select
+                          onValueChange={handleGravityUnits}
+                          value={gravityUnits}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SG">{t("SG")}</SelectItem>
+                            <SelectItem value="Brix">{t("BRIX")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          onValueChange={handleTempUnits}
+                          value={currentTempUnits}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="F">{t("FAR")}</SelectItem>
+                            <SelectItem value="C">{t("CEL")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-full flex p-3">
+                        <Button
+                          onClick={handleMobileDownload}
+                          className="w-full"
+                        >
+                          {t("downloadPNG")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="flex-1 w-screen my-4" ref={mobileRef}>
+                    <MobileModalChart />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* DESKTOP selects (keep your original) */}
           <CardContent className="hidden sm:flex gap-2">
-            <Select
-              onValueChange={(val) => {
-                const dataWithBrix = chartData.map((data) => {
-                  const newGravity = toBrix(data.gravity);
-                  return { ...data, gravity: newGravity };
-                });
-                if (val === "SG") {
-                  setData(chartData);
-                } else if (val === "Brix") {
-                  setData(dataWithBrix);
-                }
-                setGravityUnits(val);
-              }}
-              value={gravityUnits}
-            >
+            <Select onValueChange={handleGravityUnits} value={gravityUnits}>
               <SelectTrigger>
-                <SelectValue></SelectValue>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="SG">{t("SG")}</SelectItem>
@@ -195,23 +432,9 @@ export function HydrometerData({
               </SelectContent>
             </Select>
 
-            <Select
-              onValueChange={(val) => {
-                setCurrentTempUnits(val as "F" | "C");
-                setData((prev) =>
-                  prev.map((obj) => ({
-                    ...obj,
-                    temperature:
-                      currentTempUnits === "F"
-                        ? toCelsius(obj.temperature!)
-                        : toFahrenheit(obj.temperature!)
-                  }))
-                );
-              }}
-              value={currentTempUnits}
-            >
+            <Select onValueChange={handleTempUnits} value={currentTempUnits}>
               <SelectTrigger>
-                <SelectValue></SelectValue>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="F">{t("FAR")}</SelectItem>
@@ -220,15 +443,14 @@ export function HydrometerData({
             </Select>
           </CardContent>
         </CardHeader>
+
+        {/* DESKTOP chart (your original) */}
         <CardContent className="hidden sm:block">
           <ChartContainer config={chartConfig}>
             <LineChart
               accessibilityLayer
               data={data}
-              margin={{
-                left: 12,
-                right: 12
-              }}
+              margin={{ left: 12, right: 12 }}
             >
               <CartesianGrid vertical={false} stroke="hsl(210, 13%, 35%)" />
               <XAxis
@@ -309,13 +531,10 @@ export function HydrometerData({
                   <ChartTooltipContent
                     labelFormatter={(val) => {
                       const date = new Date(val);
-
-                      const dateString = date.toLocaleString(lang, {
+                      return date.toLocaleString(lang, {
                         timeStyle: "medium",
                         dateStyle: "short"
                       });
-
-                      return dateString;
                     }}
                   />
                 }
@@ -377,9 +596,7 @@ export function HydrometerData({
                   <ChartLegendContent
                     checkObj={checkObj}
                     updateCheckObj={(newCheckObj: {
-                      checkObj: {
-                        [key: string]: boolean;
-                      };
+                      checkObj: { [key: string]: boolean };
                     }) => setCheckObj(newCheckObj.checkObj)}
                   />
                 }
@@ -388,8 +605,9 @@ export function HydrometerData({
           </ChartContainer>
         </CardContent>
       </CardContent>
+
       <CardFooter className="hidden sm:block">
-        <ChartDownload data={data} />
+        {/* <ChartDownload data={data} /> */}
         <Button onClick={handleDivDownload} className="w-full my-4">
           {t("downloadPNG")}
         </Button>

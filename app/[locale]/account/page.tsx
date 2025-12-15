@@ -26,7 +26,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import Loading from "@/components/loading";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -71,6 +71,7 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 type SortType = "asc" | "dec" | "clear";
 
@@ -458,7 +459,6 @@ const RecipeCard = ({
   return (
     <Card className="w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none">
       <CardHeader className="p-3 pb-2 relative">
-        {/* Delete (top-right) */}
         <LoadingButton
           variant="destructive"
           size="icon"
@@ -477,28 +477,27 @@ const RecipeCard = ({
       </CardHeader>
 
       <CardContent className="p-3 pt-0">
-        {/* Button group */}
-        <div className="flex w-full">
-          <Link
-            className={cn(
-              buttonVariants({ variant: "secondary", size: "sm" }),
-              "flex-1 rounded-r-none justify-center"
-            )}
-            href={`recipes/${recipe.id}`}
+        <ButtonGroup className="w-full">
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="flex-1 justify-center"
           >
-            {t("accountPage.viewRecipe")}
-          </Link>
+            <Link href={`recipes/${recipe.id}`}>
+              {t("accountPage.viewRecipe")}
+            </Link>
+          </Button>
 
-          <Link
-            className={cn(
-              buttonVariants({ variant: "secondary", size: "sm" }),
-              "flex-1 rounded-l-none justify-center border-l"
-            )}
-            href={`recipes/${recipe.id}?pdf=true`}
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="flex-1 justify-center"
           >
-            {t("PDF.title")}
-          </Link>
-        </div>
+            <Link href={`recipes/${recipe.id}?pdf=true`}>{t("PDF.title")}</Link>
+          </Button>
+        </ButtonGroup>
       </CardContent>
     </Card>
   );

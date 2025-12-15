@@ -14,6 +14,7 @@ import {
   InputGroupInput
 } from "@/components/ui/input-group";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 function getPageWindow(page: number, total: number, windowSize = 3) {
   // returns an array like [page-1, page, page+1] clamped
@@ -50,7 +51,11 @@ export function AccountPagination({
   useEffect(() => setValue(String(page)), [page]);
 
   return (
-    <div className="space-y-1">
+    <div
+      className={cn("space-y-1", {
+        hidden: totalPages <= 1
+      })}
+    >
       <Pagination>
         <PaginationContent>
           <PaginationItem>
