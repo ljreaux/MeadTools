@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import CopyableCodeBlock from "@/components/CodeBlock";
 import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
 
 export default function TaplistOsAnnouncement() {
   return (
     <div className="w-full flex justify-center items-center sm:py-24 py-[6rem] relative">
-      <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-5 w-11/12 max-w-[1000px] border border-border shadow">
+      <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]">
         <h1 className="text-2xl font-bold">MeadTools Taplist OS v1.0</h1>
 
         <p className="text-sm text-muted-foreground">
@@ -66,7 +67,7 @@ export default function TaplistOsAnnouncement() {
             rel="noopener noreferrer"
           >
             <Button className="w-full sm:w-auto">
-              <DownloadIcon className="mr-2 h-4 w-4" />
+              <DownloadIcon />
               Download Taplist OS v1.0
             </Button>
           </Link>
@@ -85,8 +86,8 @@ export default function TaplistOsAnnouncement() {
             </a>
           </p>
         </div>
-
-        <div className="border-t border-border pt-4 space-y-2 text-md">
+        <Separator className="my-4" />
+        <div className="space-y-2 text-md">
           <p className="font-medium text-foreground">
             Prefer manual setup instead?
           </p>
@@ -107,8 +108,8 @@ export default function TaplistOsAnnouncement() {
             <li>Enables kiosk mode on boot</li>
             <li>Sets up Wi-Fi AP and captive portal</li>
           </ul>
-
-          <div className="border-t border-border pt-4 text-sm">
+          <Separator className="my-4" />
+          <div className="text-sm">
             <h3 className="font-semibold mb-1">Hardware Recommendations</h3>
             <ul className="list-disc list-inside space-y-1 text-foreground">
               <li>
@@ -126,7 +127,7 @@ export default function TaplistOsAnnouncement() {
               rel="noopener noreferrer"
             >
               <Button variant="secondary" className="mt-2">
-                <TerminalSquare className="mr-2 h-4 w-4" />
+                <TerminalSquare />
                 View Full Setup Instructions
               </Button>
             </Link>

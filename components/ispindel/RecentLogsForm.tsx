@@ -64,13 +64,13 @@ const RecentLogsForm = ({ onRangeChange }: RecentLogsFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col items-center justify-center row-span-2 row-start-1 mt-4 space-y-4 sm:col-start-2 sm:mt-0"
+        className="flex items-end gap-3 flex-wrap"
       >
         <FormField
           control={form.control}
           name="dateRange"
           render={({ field }) => (
-            <FormItem className="flex flex-col gap-2 w-72">
+            <FormItem>
               <FormLabel htmlFor="datetime">
                 {t("iSpindelDashboard.brews.dateRange")}
               </FormLabel>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { useTheme } from "next-themes";
@@ -22,6 +22,9 @@ export default function CopyableCodeBlock({
 }: CopyableCodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const handleCopy = async () => {
     try {
@@ -43,6 +46,8 @@ export default function CopyableCodeBlock({
     }
   };
 
+  const syntaxStyle = mounted && resolvedTheme === "dark" ? oneDark : oneLight;
+
   return (
     <div className="relative">
       <Button
@@ -56,7 +61,7 @@ export default function CopyableCodeBlock({
 
       <SyntaxHighlighter
         language={language}
-        style={resolvedTheme === "dark" ? oneDark : oneLight}
+        style={syntaxStyle}
         customStyle={{
           fontSize: "0.9rem",
           margin: 0,

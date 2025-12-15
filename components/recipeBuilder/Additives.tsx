@@ -2,7 +2,6 @@ import SearchableInput from "../ui/SearchableInput";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
 import { Additive, AdditiveType, Recipe } from "@/types/recipeDataTypes";
-import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -13,6 +12,13 @@ import {
 import { isValidNumber } from "@/lib/utils/validateInput";
 import DragList from "../ui/DragList";
 import lodash from "lodash";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
+import { Trash } from "lucide-react";
+import { Separator } from "../ui/separator";
 
 const units = [
   { value: "g", label: "G" },
@@ -44,10 +50,15 @@ function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
   } = useRecipe();
 
   return (
-    <div>
-      <span>
+    <div className="py-6">
+      <div className="grid gap-4">
         {additives.length === 0 ? (
-          "Add Some Ingredients to Continue Building your Recipe."
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "additives.empty",
+              "Add some additives to continue building your recipe."
+            )}
+          </p>
         ) : (
           <DragList
             items={additives}
@@ -75,15 +86,16 @@ function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
             }}
           />
         )}
-      </span>
-      <Button
-        onClick={addAdditive}
-        variant={"secondary"}
-        disabled={additives.length >= 10}
-        className="w-full"
-      >
-        {t("additives.addNew")}
-      </Button>
+
+        <Button
+          onClick={addAdditive}
+          variant="secondary"
+          disabled={additives.length >= 10}
+          className="w-full sm:w-auto"
+        >
+          {t("additives.addNew")}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -110,51 +122,73 @@ const AdditiveLine = ({
   const handleAdditiveSelect = (selectedIngredient: Additive) => {
     changeAdditive(selectedIngredient.name);
   };
-  return (
-    <div className="joyride-additiveLine grid sm:grid-cols-6 grid-cols-3 gap-2 py-4 items-center justify-center">
-      <label className="sm:col-span-2 col-span-full">
-        {t("name")}
-        <SearchableInput
-          items={additiveList}
-          query={add.name}
-          setQuery={(val) => changeAdditive(val)}
-          keyName="name"
-          onSelect={handleAdditiveSelect}
-          renderItem={(item) => {
-            return t(lodash.camelCase(item.name));
-          }}
-        />
-      </label>
-      <label className="col-span-2">
-        {t("PDF.addAmount")}
-        <Input
-          value={add.amount}
-          onChange={(e) => {
-            if (isValidNumber(e.target.value)) changeAmount(e.target.value);
-          }}
-          inputMode="decimal"
-          onFocus={(e) => e.target.select()}
-        />
-      </label>
-      <label>
-        {t("UNITS")}
-        <Select value={add.unit} onValueChange={changeUnit}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {units.map((unit) => (
-              <SelectItem key={unit.value} value={unit.value}>
-                {t(unit.label)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </label>
 
-      <Button onClick={remove} variant={"destructive"} className="mt-auto">
-        Remove
+  return (
+    <div className="joyride-additiveLine grid gap-3 py-4 relative">
+      {/* Delete button (top-right but not shifting layout) */}
+      <Button
+        onClick={remove}
+        variant="destructive"
+        size="sm"
+        className="absolute top-0 right-0"
+      >
+        <Trash className="h-4 w-4" />
       </Button>
+
+      {/* Row: Name + Amount */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-12">
+        {/* NAME */}
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">{t("name")}</span>
+          <SearchableInput
+            items={additiveList}
+            query={add.name}
+            setQuery={(val) => changeAdditive(val)}
+            keyName="name"
+            onSelect={handleAdditiveSelect}
+            renderItem={(item) => t(lodash.camelCase(item.name))}
+          />
+        </label>
+
+        {/* AMOUNT + UNITS */}
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">{t("PDF.addAmount")}</span>
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              value={add.amount}
+              onChange={(e) => {
+                if (isValidNumber(e.target.value)) changeAmount(e.target.value);
+              }}
+              inputMode="decimal"
+              type="text"
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
+            />
+
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Separator orientation="vertical" className="h-12" />
+
+              <Select value={add.unit} onValueChange={changeUnit}>
+                <SelectTrigger className="p-2 border-none mr-2 w-16">
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {units.map((unit) => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {t(unit.label)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
+        </label>
+      </div>
     </div>
   );
 };

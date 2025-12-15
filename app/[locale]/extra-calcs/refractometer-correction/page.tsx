@@ -131,7 +131,7 @@ function RefractometerCorrection() {
           >
             <Separator orientation="vertical" className="h-12" />
             <Select {...ogUnitProps} name="ogUnits">
-              <SelectTrigger className="p-2 border-none mr-2">
+              <SelectTrigger className="p-2 border-none mr-2 w-16">
                 <SelectValue placeholder={t("SG")} />
               </SelectTrigger>
               <SelectContent>
@@ -179,7 +179,7 @@ function RefractometerCorrection() {
           >
             <Separator orientation="vertical" className="h-12" />
             <Select {...fgUnitProps} name="fgUnits">
-              <SelectTrigger className="p-2 border-none mr-2">
+              <SelectTrigger className="p-2 border-none mr-2 w-16">
                 <SelectValue placeholder={t("BRIX")} />
               </SelectTrigger>
               <SelectContent>

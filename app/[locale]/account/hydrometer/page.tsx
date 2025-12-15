@@ -13,10 +13,10 @@ async function HydrometerHome({
   const { t } = await initTranslations(locale, ["default", "YeastTable"]);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 my-4 text-center">
+    <div className="flex flex-col space-y-4">
       <p>{t("iSpindelDashboard.home.welcome")}</p>
 
-      <p className="text-start w-full">
+      <p className="w-full">
         <Trans
           t={t}
           i18nKey="iSpindelDashboard.home.subtitle"
@@ -31,9 +31,10 @@ async function HydrometerHome({
         />
       </p>
 
-      <p className="text-start">{t("iSpindelDashboard.home.features")}</p>
+      <p>{t("iSpindelDashboard.home.features")}</p>
 
       <p>{t("sampleChartLabel")}</p>
+
       <HydrometerData chartData={chartData} tempUnits="F" />
     </div>
   );

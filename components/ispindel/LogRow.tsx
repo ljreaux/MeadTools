@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { de, enUS } from "date-fns/locale";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,22 +15,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Input } from "@/components/ui/input";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { de, enUS } from "date-fns/locale";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+
 import { toast } from "@/hooks/use-toast";
 import {
   useUpdateLog,
   useDeleteLog,
   type Log
 } from "@/hooks/reactQuery/useHydrometerLogs";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput
+} from "../ui/input-group";
 
 const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const defaultLocale = i18n.resolvedLanguage?.includes("de") ? de : enUS;
 
   const [editable, setEditable] = useState(false);
@@ -51,12 +60,14 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
   const handleDelete = async () => {
     try {
       await deleteLogMutate({ logId: log.id, deviceId: log.device_id });
-      // Also remove from the parent’s local/query state
       remove();
-      toast({ description: "Log deleted successfully" });
+      toast({ description: t("log.deleted", "Log deleted successfully") });
     } catch (error) {
       console.error("Error deleting log:", error);
-      toast({ description: "Error deleting log", variant: "destructive" });
+      toast({
+        description: t("error.generic", "Error deleting log"),
+        variant: "destructive"
+      });
     }
   };
 
@@ -75,7 +86,8 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
       };
 
       const updatedLog = await updateLogMutate(sanitized);
-      toast({ description: "Log updated successfully" });
+
+      toast({ description: t("log.updated", "Log updated successfully") });
 
       setCurrentLog({
         ...updatedLog,
@@ -85,15 +97,28 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
       });
     } catch (error) {
       console.error("Error updating log:", error);
-      toast({ description: "Error updating log", variant: "destructive" });
+      toast({
+        description: t("error.generic", "Error updating log"),
+        variant: "destructive"
+      });
     } finally {
       setEditable(false);
     }
   };
 
+  const resetEdits = () => {
+    setEditable(false);
+    setCurrentLog({
+      ...log,
+      gravity: log.gravity,
+      temperature: log.temperature,
+      calculated_gravity: log.calculated_gravity ?? ""
+    });
+  };
+
   return (
     <TableRow>
-      <TableCell className="w-24">
+      <TableCell>
         <DateTimePicker
           value={new Date(currentLog.datetime)}
           disabled={!editable}
@@ -107,6 +132,7 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
           displayFormat={{ hour24: "Pp" }}
         />
       </TableCell>
+
       <TableCell>
         <Input
           value={currentLog.gravity}
@@ -114,9 +140,9 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
           onChange={(e) =>
             setCurrentLog({ ...currentLog, gravity: e.target.value })
           }
-          className="w-[4.5rem]"
         />
       </TableCell>
+
       <TableCell>
         <Input
           value={currentLog.calculated_gravity ?? ""}
@@ -129,46 +155,47 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
           }
         />
       </TableCell>
+
       <TableCell>
-        <span className="flex items-center w-full gap-1">
-          <Input
+        <InputGroup>
+          <InputGroupInput
             value={currentLog.temperature}
             disabled={!editable}
             onChange={(e) =>
               setCurrentLog({ ...currentLog, temperature: e.target.value })
             }
-            className="w-[4.5rem]"
+            className="w-[5.5rem]"
           />
-          <p> °{currentLog.temp_units}</p>
-        </span>
+          <InputGroupAddon align="inline-end">
+            °{currentLog.temp_units}
+          </InputGroupAddon>
+        </InputGroup>
       </TableCell>
-      <TableCell className="grid grid-flow-col gap-2 px-4">
-        {editable ? (
-          <>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? "Updating…" : "Update"}
-            </Button>
-            <Button
-              onClick={() => {
-                setEditable(false);
-                setCurrentLog({
-                  ...log,
-                  gravity: log.gravity,
-                  temperature: log.temperature,
-                  calculated_gravity: log.calculated_gravity ?? ""
-                });
-              }}
-              variant={"destructive"}
-            >
-              Cancel
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button onClick={() => setEditable(true)}>Edit</Button>
-            <DeleteButton handleClick={handleDelete} disabled={isDeleting} />
-          </>
-        )}
+
+      <TableCell className="min-w-48">
+        <ButtonGroup className="w-full">
+          {editable ? (
+            <ButtonGroup>
+              <Button onClick={handleUpdate} disabled={isUpdating}>
+                {isUpdating
+                  ? t("updating", "Updating…")
+                  : t("update", "Update")}
+              </Button>
+
+              <Button variant="secondary" onClick={resetEdits}>
+                {t("cancel", "Cancel")}
+              </Button>
+            </ButtonGroup>
+          ) : (
+            <ButtonGroup>
+              <Button onClick={() => setEditable(true)}>
+                {t("edit", "Edit")}
+              </Button>
+
+              <DeleteButton handleClick={handleDelete} disabled={isDeleting} />
+            </ButtonGroup>
+          )}
+        </ButtonGroup>
       </TableCell>
     </TableRow>
   );
@@ -182,29 +209,35 @@ const DeleteButton = ({
   disabled?: boolean;
 }) => {
   const { t } = useTranslation();
+
   return (
     <AlertDialog>
-      <AlertDialogTrigger
-        className={buttonVariants({ variant: "destructive" })}
-        disabled={disabled}
-      >
-        {t("desktop.delete")}
+      {/* IMPORTANT: asChild so the trigger is a real <Button /> and groups correctly */}
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" disabled={disabled}>
+          {t("desktop.delete")}
+        </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+
+      <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle>{t("desktop.confirm")}</AlertDialogTitle>
           <AlertDialogDescription>
             {t("iSpindelDashboard.deleteLog")}
           </AlertDialogDescription>
         </AlertDialogHeader>
+
         <AlertDialogFooter>
           <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            className={buttonVariants({ variant: "destructive" })}
-            onClick={handleClick}
-            disabled={disabled}
-          >
-            {t("desktop.delete")}
+          <AlertDialogAction asChild>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleClick}
+              disabled={disabled}
+            >
+              {t("desktop.delete")}
+            </Button>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

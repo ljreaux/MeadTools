@@ -26,7 +26,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import Loading from "@/components/loading";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -37,8 +37,11 @@ import {
   SortAsc,
   SortDesc,
   LogOut,
-  LucideX,
-  Settings
+  Settings,
+  Trash2,
+  Search,
+  X,
+  Droplets
 } from "lucide-react";
 import {
   Select,
@@ -53,6 +56,22 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
+import { AccountPagination } from "@/components/account/pagination";
+import { PagedResults } from "@/components/ui/paged-results";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from "@/components/ui/tooltip";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 type SortType = "asc" | "dec" | "clear";
 
@@ -61,7 +80,6 @@ function Account() {
 
   const { logout } = useLogout();
 
-  // new account info hook (user + recipes)
   const { data, isLoading, isError, error } = useAccountInfo();
 
   const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
@@ -98,9 +116,8 @@ function Account() {
     page,
     nextPage,
     prevPage,
-    totalPages,
-    start,
-    end
+    goToPage,
+    totalPages
   } = useFuzzySearch({
     data: recipes,
     pageSize,
@@ -202,12 +219,40 @@ function Account() {
   const { user } = data;
 
   return (
-    <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px] relative">
-      <div className="absolute right-4 top-4 flex flex-col sm:flex-row">
+    <div className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
+      <div className="absolute right-4 top-4 flex items-center gap-1">
         <SettingsDialog username={user.public_username} />
-        <Button onClick={logout} variant={"ghost"}>
-          <p className="sr-only">Log Out</p>
-          <LogOut />
+
+        {/* Hydrometer dashboard */}
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon">
+                <Link
+                  href="/account/hydrometer"
+                  aria-label={t(
+                    "accountPage.hydrometerDashboard",
+                    "Wireless Hydrometer Dashboard"
+                  )}
+                >
+                  <Droplets className="h-5 w-5" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+
+            <TooltipContent>
+              {t(
+                "accountPage.hydrometerDashboard",
+                "Wireless Hydrometer Dashboard"
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Logout */}
+        <Button onClick={logout} variant="ghost" size="icon">
+          <span className="sr-only">{t("logout", "Log Out")}</span>
+          <LogOut className="h-5 w-5" />
         </Button>
       </div>
       <h1 className="text-3xl text-center">{t("accountPage.title")}</h1>
@@ -220,153 +265,170 @@ function Account() {
       </p>
       <div className="my-6">
         <h2 className="text-2xl">{t("accountPage.myRecipes")}</h2>
-        <div className="flex items center sm:justify-between flex-wrap sm:flex-nowrap gap-2">
-          <div className="flex items-center gap-2">
-            <label htmlFor="search" className="text-sm font-medium">
-              Search:
-            </label>
-            <div className="relative max-w-sm">
-              <Input
-                id="search"
-                value={searchValue}
-                onChange={(e) => {
-                  search(e.target.value);
-                }}
-                placeholder={`Search ${
-                  Array.isArray(searchKey)
-                    ? searchKey.map((key) => String(key)).join(", ")
-                    : String(searchKey)
-                }`}
-                className="pr-8"
-              />
-              {searchValue && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+
+        <PagedResults
+          // Optional later:
+          scroll
+          scrollClassName="sm:max-h-[60vh]"
+          controls={
+            <div className="grid gap-2 sm:gap-3">
+              {/* Row 1: Search + Per-page (per-page hidden on mobile) */}
+              <div className="flex items-center gap-2">
+                {/* Search */}
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-sm font-medium whitespace-nowrap">
+                    Search:
+                  </label>
+
+                  <InputGroup className="w-full sm:max-w-sm">
+                    <InputGroupInput
+                      id="search"
+                      value={searchValue}
+                      onChange={(e) => search(e.target.value)}
+                      placeholder={`Search ${
+                        Array.isArray(searchKey)
+                          ? searchKey.map((key) => String(key)).join(", ")
+                          : String(searchKey)
+                      }`}
+                    />
+                    <InputGroupAddon>
+                      <Search />
+                    </InputGroupAddon>
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        title="Clear Search"
+                        onClick={clearSearch}
+                        className={cn({ hidden: searchValue.length === 0 })}
+                      >
+                        <X />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </div>
+
+                {/* Per page (desktop only) */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-sm font-medium whitespace-nowrap">
+                    {t("pagination.perPage", "Per page:")}
+                  </span>
+
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(val) => setPageSize(parseInt(val))}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value.toString()}
+                        >
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 2: Sort (mobile breaks into 2 lines; toggles forced to line 2 on mobile) */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-sm font-medium whitespace-nowrap">
+                  Sort
+                </label>
+
+                <Select
+                  value={sortField}
+                  onValueChange={(v) =>
+                    setSortField(v as "default" | "name" | "id")
+                  }
                 >
-                  <LucideX />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <label className="text-sm font-medium">Sort</label>
-
-            {/* Field selector */}
-            <Select
-              value={sortField}
-              onValueChange={(v) =>
-                setSortField(v as "default" | "name" | "id")
-              }
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default</SelectItem>
-                <SelectItem value="name">
-                  <span className="inline-flex items-center gap-2">
-                    <ArrowUpAZ className="h-4 w-4" /> Name
-                  </span>
-                </SelectItem>
-                <SelectItem value="id">
-                  <span className="inline-flex items-center gap-2">
-                    <Hash className="h-4 w-4" /> ID
-                  </span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Direction toggle */}
-            <ToggleGroup
-              type="single"
-              value={sortDir}
-              onValueChange={(v) => v && setSortDir(v as "asc" | "dec")}
-              className="ml-1"
-            >
-              <ToggleGroupItem value="asc" aria-label="Ascending">
-                {sortField === "name" ? (
-                  <ArrowUpAZ className="h-4 w-4" />
-                ) : (
-                  <SortAsc className="h-4 w-4" />
-                )}
-              </ToggleGroupItem>
-              <ToggleGroupItem value="dec" aria-label="Descending">
-                {sortField === "name" ? (
-                  <ArrowDownAZ className="h-4 w-4" />
-                ) : (
-                  <SortDesc className="h-4 w-4" />
-                )}
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            {/* Reset button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSortField("default")}
-              title="Reset sort"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-4 justify-center py-6">
-          {pageData.length > 0 ? (
-            pageData.map((rec) => (
-              <RecipeCard
-                recipe={rec}
-                key={rec.id}
-                deleteRecipe={() => deleteIndividualRecipe(rec.id)}
-              />
-            ))
-          ) : (
-            <p className="mr-auto">{t("accountPage.noRecipes")}</p>
-          )}
-        </div>
-      </div>
-      {filteredData.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
-          <span className="flex gap-4 items-center">
-            <p>
-              {t("pagination.showing", {
-                start: start + 1,
-                end: Math.min(end, filteredData.length),
-                total: filteredData.length
-              })}
-            </p>
-            <span className="max-w-max sm:block hidden">
-              <Select
-                defaultValue={options[0].value.toString()}
-                onValueChange={(val) => setPageSize(parseInt(val))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value.toString()}>
-                      {opt.label}
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="name">
+                      <span className="inline-flex items-center gap-2">
+                        <ArrowUpAZ className="h-4 w-4" /> Name
+                      </span>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </span>
-          </span>
+                    <SelectItem value="id">
+                      <span className="inline-flex items-center gap-2">
+                        <Hash className="h-4 w-4" /> ID
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
 
-          <div className="flex items-center gap-4">
-            <Button disabled={page === 1} onClick={prevPage}>
-              {t("pagination.previous")}
-            </Button>
-            <span>{t("pagination.pageInfo", { page, totalPages })}</span>
-            <Button disabled={page >= totalPages} onClick={nextPage}>
-              {t("pagination.next")}
-            </Button>
+                {/* Mobile: push toggles + reset to next line */}
+                <div className="w-full sm:w-auto flex items-center gap-2 sm:ml-1">
+                  <ToggleGroup
+                    type="single"
+                    value={sortDir}
+                    onValueChange={(v) => v && setSortDir(v as "asc" | "dec")}
+                  >
+                    <ToggleGroupItem value="asc" aria-label="Ascending">
+                      {sortField === "name" ? (
+                        <ArrowUpAZ className="h-4 w-4" />
+                      ) : (
+                        <SortAsc className="h-4 w-4" />
+                      )}
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="dec" aria-label="Descending">
+                      {sortField === "name" ? (
+                        <ArrowDownAZ className="h-4 w-4" />
+                      ) : (
+                        <SortDesc className="h-4 w-4" />
+                      )}
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSortField("default")}
+                    title="Reset sort"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          }
+          footer={
+            filteredData.length > 0 ? (
+              <div className="mt-4 flex flex-col gap-2">
+                <AccountPagination
+                  page={page}
+                  totalPages={totalPages}
+                  canPrev={page > 1}
+                  canNext={page < totalPages}
+                  onPrev={prevPage}
+                  onNext={nextPage}
+                  onGoTo={goToPage}
+                />
+              </div>
+            ) : null
+          }
+        >
+          <div className="flex flex-wrap justify-center gap-4 py-2 max-w-[70rem] mx-auto">
+            {pageData.length > 0 ? (
+              pageData.map((rec) => (
+                <RecipeCard
+                  recipe={rec}
+                  key={rec.id}
+                  deleteRecipe={() => deleteIndividualRecipe(rec.id)}
+                />
+              ))
+            ) : (
+              <p className="justify-self-start">{t("accountPage.noRecipes")}</p>
+            )}
           </div>
-        </div>
-      )}
+        </PagedResults>
+      </div>
     </div>
   );
 }
@@ -395,30 +457,49 @@ const RecipeCard = ({
   };
 
   return (
-    <div className="grid text-center gap-1 p-4 rounded-xl border-secondary border max-w-96">
-      <h2 className="text-2xl text-ellipsis">{recipe.name}</h2>
-      <span className="w-full flex gap-1">
-        <Link
-          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
-          href={`recipes/${recipe.id}`}
+    <Card className="w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none">
+      <CardHeader className="p-3 pb-2 relative">
+        <LoadingButton
+          variant="destructive"
+          size="icon"
+          loading={isDeleting}
+          onClick={handleDelete}
+          className="absolute right-1.5 top-1.5 h-8 w-8"
+          title={t("accountPage.deleteRecipe")}
         >
-          {t("accountPage.viewRecipe")}
-        </Link>
-        <Link
-          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
-          href={`recipes/${recipe.id}?pdf=true`}
-        >
-          {t("PDF.title")}
-        </Link>
-      </span>
-      <LoadingButton
-        variant="destructive"
-        loading={isDeleting}
-        onClick={handleDelete}
-      >
-        {t("accountPage.deleteRecipe")}
-      </LoadingButton>
-    </div>
+          <span className="sr-only">{t("accountPage.deleteRecipe")}</span>
+          <Trash2 />
+        </LoadingButton>
+
+        <CardTitle className="text-base leading-snug text-center line-clamp-2 px-7">
+          {recipe.name}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="p-3 pt-0">
+        <ButtonGroup className="w-full">
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="flex-1 justify-center"
+          >
+            <Link href={`recipes/${recipe.id}`}>
+              {t("accountPage.viewRecipe")}
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="flex-1 justify-center"
+          >
+            <Link href={`recipes/${recipe.id}?pdf=true`}>{t("PDF.title")}</Link>
+          </Button>
+        </ButtonGroup>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -527,22 +608,42 @@ const SettingsDialog = ({
               </SelectContent>
             </Select>
           </label>
-          <div className="grid gap-2 border border-secondary p-3 rounded-md">
-            <label>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">
               {t("account.updateUsername")}
-              <Input
+            </label>
+
+            <InputGroup>
+              <InputGroupInput
                 type="text"
-                placeholder="Enter a public username"
+                placeholder={t(
+                  "publicUsername.placeholder",
+                  "Enter a public username"
+                )}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    updateUsernameMutation.mutate(username);
+                  }
+                }}
               />
-            </label>
-            <Button
-              variant="secondary"
-              onClick={() => updateUsernameMutation.mutate(username)}
-            >
-              {t("SUBMIT")}
-            </Button>
+
+              {/* Submit button */}
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  variant="secondary"
+                  title={t("SUBMIT")}
+                  onClick={() => updateUsernameMutation.mutate(username)}
+                  disabled={
+                    updateUsernameMutation.isPending ||
+                    username.trim().length === 0
+                  }
+                >
+                  {t("SUBMIT")}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
           </div>
         </div>
       </DialogContent>

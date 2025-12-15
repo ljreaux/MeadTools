@@ -21,6 +21,7 @@ import {
 } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function Stabilizers() {
   const { t, i18n } = useTranslation();
@@ -91,7 +92,7 @@ function Stabilizers() {
                 value={volumeUnits}
                 onValueChange={(val) => setVolumeUnits(val as "gal" | "lit")}
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -109,27 +110,15 @@ function Stabilizers() {
             {t("ABV")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="abv"
-              inputMode="decimal"
-              type="text"
-              onFocus={(e) => e.target.select()}
-              value={abv.toString()}
-              onChange={(e) => {
-                if (!isValidNumber(e.target.value)) return;
-                const num = Number(e.target.value || "0");
-                setAbv(num);
-              }}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              className="px-2 text-xs sm:text-sm"
-              align="inline-end"
-            >
-              %
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={abv}
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              const num = Number(e.target.value || "0");
+              setAbv(num);
+            }}
+            text="%"
+          />
         </div>
 
         {/* pH + "taking reading" toggle */}
@@ -155,28 +144,16 @@ function Stabilizers() {
             </div>
           </div>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="phReading"
-              inputMode="decimal"
-              type="text"
-              onFocus={(e) => e.target.select()}
-              value={phReading.toString()}
-              onChange={(e) => {
-                if (!isValidNumber(e.target.value)) return;
-                const num = Number(e.target.value || "0");
-                setPhReading(num);
-              }}
-              disabled={!takingReading}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              className="px-2 text-xs sm:text-sm"
-              align="inline-end"
-            >
-              pH
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={phReading}
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              const num = Number(e.target.value || "0");
+              setPhReading(num);
+            }}
+            text="pH"
+            disabled={!takingReading}
+          />
         </div>
       </div>
 

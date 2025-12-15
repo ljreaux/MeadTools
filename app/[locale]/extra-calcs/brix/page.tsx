@@ -64,7 +64,7 @@ export default function Brix() {
           >
             <Separator orientation="vertical" className="h-12" />
             <Select value={units} onValueChange={setUnits}>
-              <SelectTrigger className="p-2 border-none mr-2">
+              <SelectTrigger className="p-2 border-none mr-2 w-16">
                 <SelectValue placeholder={t("SG")} />
               </SelectTrigger>
               <SelectContent>

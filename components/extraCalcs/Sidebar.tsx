@@ -25,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { usePathname } from "next/navigation";
 
 function ExtraCalcsSideBar() {
   const { t } = useTranslation();
@@ -50,6 +51,10 @@ function ExtraCalcsSideBar() {
     icon: icons[i],
     label: t(link.label)
   }));
+
+  const pathname = usePathname();
+
+  const isActive = (href: string) => pathname === href;
 
   return (
     <div
@@ -85,6 +90,7 @@ function ExtraCalcsSideBar() {
             link={link.path}
             icon={link.icon}
             label={link.label}
+            active={isActive(link.path)}
           />
         ))}
       </nav>
@@ -95,11 +101,13 @@ function ExtraCalcsSideBar() {
 function NavItem({
   link,
   icon,
-  label
+  label,
+  active
 }: {
   link: string;
   icon: JSX.Element;
   label: string;
+  active: boolean;
 }) {
   return (
     <Tooltip>
@@ -108,11 +116,21 @@ function NavItem({
           asChild
           size="icon"
           variant="outline"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+          aria-current={active ? "page" : undefined}
+          className={`
+            flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-full
+            border transition-colors
+            ${
+              active
+                ? "bg-foreground text-background border-foreground"
+                : "bg-background text-foreground border-foreground hover:bg-foreground hover:text-background"
+            }
+          `}
         >
           <Link href={link}>{icon}</Link>
         </Button>
       </TooltipTrigger>
+
       <TooltipContent side="left" className="whitespace-nowrap">
         {label}
       </TooltipContent>

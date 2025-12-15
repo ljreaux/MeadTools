@@ -1,5 +1,6 @@
 "use client";
 
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 import Tooltip from "@/components/Tooltips";
 import {
   InputGroup,
@@ -103,7 +104,7 @@ function Sulfite() {
                   setSulfite((prev) => ({ ...prev, units: val }))
                 }
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue placeholder={t("GAL")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,22 +122,11 @@ function Sulfite() {
             {t("desiredPpm")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="ppm"
-              inputMode="decimal"
-              value={sulfite.ppm}
-              onFocus={(e) => e.target.select()}
-              onChange={handleChange}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              align="inline-end"
-              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-            >
-              ppm
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={sulfite.ppm}
+            handleChange={handleChange}
+            text="ppm"
+          />
         </div>
       </div>
 
@@ -157,7 +147,7 @@ function Sulfite() {
                     setStabilizerType(val as "kMeta" | "naMeta")
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-52">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

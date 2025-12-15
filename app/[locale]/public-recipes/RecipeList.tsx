@@ -208,10 +208,9 @@ export default function RecipeList({
               <InputGroupButton
                 type="submit"
                 size="icon-xs"
-                variant="ghost"
                 aria-label={t("searchPlaceholder")}
               >
-                <Search className="p-1" />
+                <Search />
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>

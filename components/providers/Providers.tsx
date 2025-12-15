@@ -3,6 +3,7 @@ import { ThemeProvider } from "./theme-provider";
 import { SessionProvider } from "next-auth/react";
 import { TooltipProvider } from "../ui/tooltip";
 import ReactQueryProvider from "./ReactQueryProvider";
+import { BannerProvider } from "../ui/banner";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +15,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <ReactQueryProvider>
         <TooltipProvider>
-          <SessionProvider>{children}</SessionProvider>
+          <BannerProvider>
+            <SessionProvider>{children}</SessionProvider>
+          </BannerProvider>
         </TooltipProvider>
       </ReactQueryProvider>
     </ThemeProvider>

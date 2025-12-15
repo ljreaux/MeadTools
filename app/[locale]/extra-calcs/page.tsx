@@ -2,11 +2,6 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon
-} from "@/components/ui/input-group";
 import useAbv from "@/hooks/useAbv";
 import AbvLine from "@/components/extraCalcs/AbvLine";
 import { toBrix } from "@/lib/utils/unitConverter";
@@ -15,6 +10,7 @@ import {
   normalizeNumberString,
   parseNumber
 } from "@/lib/utils/validateInput";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 export default function AbvCalculator() {
   const { t, i18n } = useTranslation();
@@ -44,30 +40,17 @@ export default function AbvCalculator() {
                 {t(`${label.toLowerCase()}Label`)}
               </label>
 
-              <InputGroup className="h-12">
-                <InputGroupInput
-                  id={label}
-                  inputMode="decimal"
-                  step="0.001"
-                  value={inputValues[index]}
-                  onChange={(e) => {
-                    if (!isValidNumber(e.target.value)) return;
+              <InputWithUnits
+                value={inputValues[index]}
+                handleChange={(e) => {
+                  if (!isValidNumber(e.target.value)) return;
 
-                    setInputValues((prev) =>
-                      prev.map((val, i) => (i === index ? e.target.value : val))
-                    );
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  className="h-full text-lg"
-                />
-
-                <InputGroupAddon
-                  align="inline-end"
-                  className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-                >
-                  {normalizeNumberString(brix, 2, currentLocale)} {t("BRIX")}
-                </InputGroupAddon>
-              </InputGroup>
+                  setInputValues((prev) =>
+                    prev.map((val, i) => (i === index ? e.target.value : val))
+                  );
+                }}
+                text={`${normalizeNumberString(brix, 2, currentLocale)} ${t("BRIX")}`}
+              />
             </div>
           );
         })}

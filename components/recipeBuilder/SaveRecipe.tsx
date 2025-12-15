@@ -25,6 +25,11 @@ import { cn } from "@/lib/utils";
 import Tooltip from "../Tooltips";
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
@@ -132,27 +137,31 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
     <Dialog>
       <DialogTrigger asChild>
         <div
-          className={cn(
-            "joyride-saveRecipe relative group flex flex-col items-center",
-            { "w-full": bottom }
-          )}
+          className={cn("joyride-saveRecipe flex flex-col items-center", {
+            "w-full": bottom
+          })}
         >
           {bottom ? (
-            <Button variant="secondary" className="w-full">
+            <Button variant="secondary" className="w-full" type="button">
               <Save />
             </Button>
           ) : (
-            <>
-              <button
-                className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors"
-                type="button"
-              >
-                <Save />
-              </button>
-              <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+            <UiTooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label={t("recipeForm.submit")}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+                >
+                  <Save />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="whitespace-nowrap">
                 {t("recipeForm.submit")}
-              </span>
-            </>
+              </TooltipContent>
+            </UiTooltip>
           )}
         </div>
       </DialogTrigger>

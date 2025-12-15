@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
 import { Recipe } from "@/types/recipeDataTypes";
 import DragList from "../ui/DragList";
+import { Trash } from "lucide-react";
 
 type TextAreaProps = {
   value: string;
@@ -110,7 +111,6 @@ export default Notes;
 const Note = ({
   noteProps,
   detailProps,
-
   remove
 }: {
   noteProps: TextAreaProps;
@@ -118,23 +118,31 @@ const Note = ({
   remove: () => void;
 }) => {
   const { t } = useTranslation();
+
   return (
-    <div className="grid sm:grid-cols-12 grid-cols-6 gap-4 py-4 relative items-center w-full">
-      <label className="sm:col-span-5 col-span-full">
-        Note
-        <Textarea {...noteProps} placeholder={t("notes.placeholder")} />
-      </label>
-      <label className="sm:col-span-4 col-span-full">
-        Details
-        <Textarea {...detailProps} placeholder={t("notes.placeholder")} />
-      </label>
+    <div className="joyride-noteLine relative py-4">
+      {/* Remove button in top-right, consistent with Ingredients/Additives */}
       <Button
         onClick={remove}
         variant="destructive"
-        className="sm:col-span-2 col-span-full"
+        size="sm"
+        className="absolute top-0 right-0"
       >
-        Remove
+        <Trash className="h-4 w-4" />
       </Button>
+
+      {/* Two textareas side-by-side on desktop */}
+      <div className="grid gap-4 pr-16 sm:grid-cols-2">
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Note</span>
+          <Textarea {...noteProps} placeholder={t("notes.placeholder")} />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Details</span>
+          <Textarea {...detailProps} placeholder={t("notes.placeholder")} />
+        </label>
+      </div>
     </div>
   );
 };

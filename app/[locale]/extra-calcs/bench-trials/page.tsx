@@ -2,7 +2,6 @@
 
 import Tooltip from "@/components/Tooltips";
 import { useTranslation } from "react-i18next";
-import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupInput,
@@ -19,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ChangeEvent, useState } from "react";
 import Trials from "@/components/extraCalcs/Trials";
 import { isValidNumber } from "@/lib/utils/validateInput";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function BenchTrials() {
   const { t } = useTranslation();
@@ -77,7 +77,7 @@ function BenchTrials() {
                 value={batchDetails.units}
                 onValueChange={changeUnits}
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -95,13 +95,10 @@ function BenchTrials() {
             {t("sampleSize")}
           </label>
 
-          <Input
-            id="sampleSize"
-            inputMode="decimal"
+          <InputWithUnits
             value={batchDetails.sampleSize}
-            onFocus={(e) => e.target.select()}
-            onChange={setInput}
-            className="h-10 text-lg"
+            handleChange={setInput}
+            text={t("ML")}
           />
         </div>
 
@@ -114,13 +111,10 @@ function BenchTrials() {
             {t("stockSolutionConcentration")}
           </label>
 
-          <Input
-            id="stockSolutionConcentration"
-            inputMode="decimal"
+          <InputWithUnits
             value={batchDetails.stockSolutionConcentration}
-            onFocus={(e) => e.target.select()}
-            onChange={setInput}
-            className="h-10 text-lg"
+            handleChange={setInput}
+            text={t("%")}
           />
         </div>
       </div>

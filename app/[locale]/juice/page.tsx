@@ -78,7 +78,7 @@ function Juice() {
             >
               <Separator orientation="vertical" className="h-12" />
               <Select value={sugarUnits} onValueChange={setSugarUnits}>
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-16">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,7 +118,7 @@ function Juice() {
                 value={servingSizeUnits}
                 onValueChange={setServingSizeUnits}
               >
-                <SelectTrigger className="p-2 border-none mr-2">
+                <SelectTrigger className="p-2 border-none mr-2 w-16">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -5,12 +5,6 @@ import { useTranslation } from "react-i18next";
 
 import AbvLine from "@/components/extraCalcs/AbvLine";
 import Tooltip from "@/components/Tooltips";
-
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon
-} from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
 
 import { toBrix } from "@/lib/utils/unitConverter";
@@ -20,6 +14,7 @@ import {
   parseNumber
 } from "@/lib/utils/validateInput";
 import useAbv from "@/hooks/useAbv";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function EstimatedOG() {
   const { t, i18n } = useTranslation();
@@ -62,25 +57,14 @@ function EstimatedOG() {
             {t("hydrometerFG")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="hydrometerFG"
-              inputMode="decimal"
-              value={gravity.fgh}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                if (!isValidNumber(e.target.value)) return;
-                setGravity((prev) => ({ ...prev, fgh: e.target.value }));
-              }}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              align="inline-end"
-              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-            >
-              {t("SG")}
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={gravity.fgh}
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              setGravity((prev) => ({ ...prev, fgh: e.target.value }));
+            }}
+            text={t("SG")}
+          />
         </div>
 
         {/* Refractometer FG (Brix) */}
@@ -89,25 +73,14 @@ function EstimatedOG() {
             {t("refractometerFG")}
           </label>
 
-          <InputGroup className="h-12">
-            <InputGroupInput
-              id="refractometerFG"
-              inputMode="decimal"
-              value={gravity.fgr}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                if (!isValidNumber(e.target.value)) return;
-                setGravity((prev) => ({ ...prev, fgr: e.target.value }));
-              }}
-              className="h-full text-lg"
-            />
-            <InputGroupAddon
-              align="inline-end"
-              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-            >
-              {t("BRIX")}
-            </InputGroupAddon>
-          </InputGroup>
+          <InputWithUnits
+            value={gravity.fgr}
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              setGravity((prev) => ({ ...prev, fgr: e.target.value }));
+            }}
+            text={t("BRIX")}
+          />
         </div>
       </div>
 

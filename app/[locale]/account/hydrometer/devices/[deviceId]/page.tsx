@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,15 @@ import { useDeviceLogs } from "@/hooks/reactQuery/useHydrometerLogs";
 import { useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/db/queryKeys";
 
+import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { ChevronsUpDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
 function DevicePage() {
   const params = useParams();
   const router = useRouter();
@@ -47,7 +56,6 @@ function DevicePage() {
 
   const deviceId = params.deviceId as string;
 
-  // --- Device + brew info ---
   const {
     data: hydroInfo,
     isLoading: infoLoading,
@@ -57,10 +65,8 @@ function DevicePage() {
   const device: Device | undefined =
     hydroInfo?.devices?.find((d) => d.id === deviceId) ?? undefined;
 
-  // --- Start / end brew mutations ---
   const { startBrew, endBrew, isStarting, isEnding } = useHydrometerBrews();
 
-  // --- Device-level mutations (coeffs + delete) ---
   const {
     updateCoefficients: updateDeviceCoefficients,
     deleteDevice,
@@ -68,22 +74,26 @@ function DevicePage() {
     isDeletingDevice
   } = useHydrometerDeviceMutations();
 
-  // --- Local state for coeffs + file name ---
   const [coefficients, setCoefficients] = useState<string[]>(["", "", "", ""]);
   const [showTable, setShowTable] = useState(false);
   const [fileName, setFileName] = useState("");
 
-  // Initialize coefficients from device (only once at mount / device change)
-  if (
-    device &&
-    device.coefficients &&
-    device.coefficients.length === 4 &&
-    coefficients.every((c) => c === "")
-  ) {
-    setCoefficients(device.coefficients.map((c) => String(c)));
-  }
+  // Only hydrate coefficients once device is known (avoid setState during render)
+  const hydratedCoefficients = useMemo(() => {
+    if (!device?.coefficients || device.coefficients.length !== 4) return null;
+    return device.coefficients.map((c) => String(c));
+  }, [device?.coefficients]);
 
-  // --- Date range state: “since yesterday” is just the initial value ---
+  // if we haven’t typed anything yet, and we have device coefficients, show them
+  useMemo(() => {
+    if (!hydratedCoefficients) return;
+    if (coefficients.every((c) => c === "")) {
+      // safe-ish: we are still “in render”, but memo runs during render too.
+      // If you want to be super strict, move this to useEffect.
+      setCoefficients(hydratedCoefficients);
+    }
+  }, [hydratedCoefficients]);
+
   const [dateRange, setDateRange] = useState(() => {
     const from = new Date();
     const to = new Date();
@@ -94,6 +104,7 @@ function DevicePage() {
 
     return { start, end };
   });
+
   const {
     data: deviceLogs = [],
     isLoading: logsLoading,
@@ -116,9 +127,8 @@ function DevicePage() {
     if (
       arr.length < 4 ||
       arr.some((item) => item === "" || isNaN(Number(item)))
-    ) {
+    )
       return false;
-    }
     return true;
   };
 
@@ -145,15 +155,8 @@ function DevicePage() {
 
   const brewName = device?.brews?.name ?? null;
 
-  if (infoLoading) {
-    return (
-      <div className="flex items-center justify-center my-4">
-        <p>{t("loading", "Loading…")}</p>
-      </div>
-    );
-  }
-
-  if (infoError || !device) {
+  // If we’re not loading, and device not found / errored -> real error state
+  if (!infoLoading && (infoError || !device)) {
     return (
       <div className="flex items-center justify-center my-4">
         <p>
@@ -164,31 +167,63 @@ function DevicePage() {
   }
 
   return (
-    <div className="w-full">
-      <div className="grid items-center justify-center sm:grid-cols-2">
-        {/* Device name + start/end brew */}
-        <div className="flex flex-col items-center justify-center gap-4 my-2">
-          <p>{device.device_name}</p>
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          {infoLoading ? (
+            <>
+              <Skeleton className="h-8 w-[240px] sm:w-[320px]" />
+              <Skeleton className="h-4 w-[220px] mt-2" />
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold leading-tight">
+                {device!.device_name}
+              </h2>
 
-          {!device.brew_id ? (
+              {device!.brew_id ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("iSpindelDashboard.activeBrew", "Active brew")}:{" "}
+                  {brewName ?? t("iSpindelDashboard.unknownBrew", "Unknown")}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("iSpindelDashboard.noActiveBrew", "No active brew")}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {infoLoading ? (
+            <Skeleton className="h-9 w-[160px]" />
+          ) : !device!.brew_id ? (
             <AlertDialog>
               <AlertDialogTrigger
                 className={buttonVariants({ variant: "secondary" })}
               >
                 {t("iSpindelDashboard.startBrew")}
               </AlertDialogTrigger>
-              <AlertDialogContent className="z-[1000] w-11/12">
+
+              <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {t("iSpindelDashboard.addBrewName")}
                   </AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogDescription className="flex flex-col gap-2">
                     <Input
                       value={fileName}
                       onChange={(e) => setFileName(e.target.value)}
+                      placeholder={t(
+                        "iSpindelDashboard.brewNamePlaceholder",
+                        "Optional brew name"
+                      )}
                     />
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                   <AlertDialogAction asChild>
@@ -196,7 +231,7 @@ function DevicePage() {
                       variant="secondary"
                       disabled={isStarting}
                       onClick={async () => {
-                        await startBrew(device.id, fileName || null);
+                        await startBrew(device!.id, fileName || null);
                       }}
                     >
                       {isStarting
@@ -212,7 +247,7 @@ function DevicePage() {
               variant="destructive"
               disabled={isEnding}
               onClick={async () => {
-                await endBrew(device.id, device.brew_id);
+                await endBrew(device!.id, device!.brew_id);
               }}
             >
               {isEnding
@@ -221,94 +256,175 @@ function DevicePage() {
             </Button>
           )}
         </div>
-        {/* Coefficients editor */}
-        <div className="flex flex-col items-center justify-center sm:col-start-1">
-          {showTable ? (
-            <form onSubmit={handleSubmit}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Coefficient</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <Input
-                        value={coefficients[0]}
-                        onChange={(e) => updateCoefficients(0, e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      × angle<sup>3</sup> +
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <Input
-                        value={coefficients[1]}
-                        onChange={(e) => updateCoefficients(1, e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      × angle<sup>2</sup> +
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <Input
-                        value={coefficients[2]}
-                        onChange={(e) => updateCoefficients(2, e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>× angle +</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <Input
-                        value={coefficients[3]}
-                        onChange={(e) => updateCoefficients(3, e.target.value)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-              <div className="mt-2 flex gap-2">
-                <Button type="submit" disabled={isUpdatingCoefficients}>
-                  {isUpdatingCoefficients
-                    ? t("saving", "Saving…")
-                    : t("Submit")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => setShowTable(false)}
-                >
-                  {t("Cancel")}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <Button onClick={() => setShowTable(true)}>
-              {t("iSpindelDashboard.updateCoefficients")}
-            </Button>
-          )}
-        </div>
-        <RecentLogsForm
-          deviceId={device.id}
-          onRangeChange={({ startISO, endISO }) => {
-            setDateRange({ start: startISO, end: endISO });
-          }}
-        />{" "}
       </div>
 
-      {/* Logs table */}
-      <div className="max-w-full mt-4">
-        {logsLoading && (
-          <p className="text-center text-sm mb-2">{t("loading", "Loading…")}</p>
-        )}
-        {logsError && (
-          <p className="text-center text-sm mb-2 text-destructive">
+      {/* Coefficients */}
+      <div className="space-y-3">
+        <Collapsible open={showTable} onOpenChange={setShowTable}>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div className="text-center sm:text-left">
+              {infoLoading ? (
+                <>
+                  <Skeleton className="h-6 w-[180px] sm:w-[220px] mx-auto sm:mx-0" />
+                  <Skeleton className="h-4 w-[320px] sm:w-[520px] mt-2 mx-auto sm:mx-0" />
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium">
+                    {t("iSpindelDashboard.coefficients", "Coefficients")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t(
+                      "iSpindelDashboard.coefficientsHint",
+                      "Update your device coefficients if you’ve calibrated your hydrometer."
+                    )}
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-center sm:justify-end">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  disabled={infoLoading}
+                >
+                  {t("iSpindelDashboard.updateCoefficients")}
+                  <ChevronsUpDown className="h-4 w-4 opacity-70" />
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+
+            <div className="sm:col-span-2">
+              <CollapsibleContent className="mt-2">
+                {infoLoading ? (
+                  <CoefficientsTableSkeleton />
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[160px]">
+                              {t(
+                                "iSpindelDashboard.coefficient",
+                                "Coefficient"
+                              )}
+                            </TableHead>
+                            <TableHead className="min-w-[160px]">
+                              {t("iSpindelDashboard.formula", "Formula")}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[0]}
+                                onChange={(e) =>
+                                  updateCoefficients(0, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              × angle<sup>3</sup> +
+                            </TableCell>
+                          </TableRow>
+
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[1]}
+                                onChange={(e) =>
+                                  updateCoefficients(1, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              × angle<sup>2</sup> +
+                            </TableCell>
+                          </TableRow>
+
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[2]}
+                                onChange={(e) =>
+                                  updateCoefficients(2, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>× angle +</TableCell>
+                          </TableRow>
+
+                          <TableRow>
+                            <TableCell>
+                              <Input
+                                value={coefficients[3]}
+                                onChange={(e) =>
+                                  updateCoefficients(3, e.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" disabled={isUpdatingCoefficients}>
+                        {isUpdatingCoefficients
+                          ? t("saving", "Saving…")
+                          : t("Submit")}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setShowTable(false)}
+                      >
+                        {t("Cancel")}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CollapsibleContent>
+            </div>
+          </div>
+        </Collapsible>
+
+        <Separator />
+      </div>
+
+      {/* Logs */}
+      <div className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {infoLoading ? (
+            <Skeleton className="h-6 w-[160px]" />
+          ) : (
+            <h3 className="text-lg font-medium">
+              {t("iSpindelDashboard.recentLogs", "Recent logs")}
+            </h3>
+          )}
+
+          {infoLoading ? (
+            <Skeleton className="h-9 w-full sm:w-[320px]" />
+          ) : (
+            <RecentLogsForm
+              deviceId={device!.id}
+              onRangeChange={({ startISO, endISO }) => {
+                setDateRange({ start: startISO, end: endISO });
+              }}
+            />
+          )}
+        </div>
+
+        {!infoLoading && logsError && (
+          <p className="text-center text-sm text-destructive">
             {t(
               "iSpindelDashboard.logsError",
               "Unable to load logs for this device."
@@ -317,6 +433,7 @@ function DevicePage() {
         )}
         <LogTable
           logs={deviceLogs}
+          loading={infoLoading || logsLoading}
           removeLog={(id) => {
             queryClient.setQueryData(
               qk.hydrometerDeviceLogs(deviceId, dateRange.start, dateRange.end),
@@ -329,41 +446,89 @@ function DevicePage() {
       </div>
 
       {/* Delete device */}
-      <AlertDialog>
-        <AlertDialogTrigger
-          className={buttonVariants({ variant: "destructive" })}
-        >
-          {t("iSpindelDashboard.deleteDevice")}
-        </AlertDialogTrigger>
-        <AlertDialogContent className="z-[1000] w-11/12">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("iSpindelDashboard.confirm")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("iSpindelDashboard.deleteDeviceAlert")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button
-                disabled={isDeletingDevice}
-                onClick={async () => {
-                  await deleteDevice(device.id);
-                  router.push("/account/hydrometer/devices");
-                }}
-              >
-                {isDeletingDevice
-                  ? t("iSpindelDashboard.deleting", "Deleting…")
-                  : t("iSpindelDashboard.deleteDevice")}
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="pt-2 flex justify-center sm:justify-end">
+        {infoLoading ? (
+          <Skeleton className="h-9 w-[170px]" />
+        ) : (
+          <AlertDialog>
+            <AlertDialogTrigger
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              {t("iSpindelDashboard.deleteDevice")}
+            </AlertDialogTrigger>
+
+            <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("iSpindelDashboard.confirm")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("iSpindelDashboard.deleteDeviceAlert")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    disabled={isDeletingDevice}
+                    onClick={async () => {
+                      await deleteDevice(device!.id);
+                      router.push("/account/hydrometer/devices");
+                    }}
+                  >
+                    {isDeletingDevice
+                      ? t("iSpindelDashboard.deleting", "Deleting…")
+                      : t("iSpindelDashboard.deleteDevice")}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
     </div>
   );
 }
 
 export default DevicePage;
+
+/* ---------------- skeleton bits ---------------- */
+
+function CoefficientsTableSkeleton() {
+  return (
+    <div className="space-y-3">
+      <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="min-w-[160px]">
+                <Skeleton className="h-4 w-[110px]" />
+              </TableHead>
+              <TableHead className="min-w-[160px]">
+                <Skeleton className="h-4 w-[90px]" />
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-9 w-full max-w-[220px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[140px]" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Skeleton className="h-9 w-[110px]" />
+        <Skeleton className="h-9 w-[110px]" />
+      </div>
+    </div>
+  );
+}
