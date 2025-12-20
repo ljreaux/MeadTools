@@ -7,11 +7,27 @@ import { useTranslation } from "react-i18next";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
 import Tooltip from "../Tooltips";
 import lodash from "lodash";
-import { Separator } from "../ui/separator";
 import { Trash } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import SortableItem from "../ui/SortableItem";
 import DragListV2 from "../ui/DragListV2";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
+
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+
+import type { VolumeUnit, WeightUnit } from "@/types/recipeDataV2";
 
 export default function IngredientsV2() {
   const { t } = useTranslation();
@@ -66,7 +82,13 @@ export default function IngredientsV2() {
                   toggleChecked={(val) =>
                     ingredient.setSecondary(ing.lineId, val)
                   }
-                  // fillToNearest: leave out for now until we rebuild it in V2
+                  fillToNext={() => ingredient.fillToNext(ing.lineId)}
+                  setWeightUnit={(unit) =>
+                    ingredient.setWeightUnit(ing.lineId, unit)
+                  }
+                  setVolumeUnit={(unit) =>
+                    ingredient.setVolumeUnit(ing.lineId, unit)
+                  }
                   index={i}
                 />
               )}
@@ -100,6 +122,9 @@ const IngredientLine = ({
   updateVolume,
   updateBrix,
   toggleChecked,
+  fillToNext,
+  setWeightUnit,
+  setVolumeUnit,
   index
 }: {
   ing: IngredientLineV2;
@@ -110,6 +135,9 @@ const IngredientLine = ({
   updateVolume: (val: string) => void;
   updateBrix: (val: string) => void;
   toggleChecked: (val: boolean) => void;
+  fillToNext: () => void;
+  setWeightUnit: (unit: WeightUnit) => void;
+  setVolumeUnit: (unit: VolumeUnit) => void;
   ingredientList: IngredientCatalogItem[];
   unitDefaults: { weight: string; volume: string };
   index: number;
@@ -154,45 +182,136 @@ const IngredientLine = ({
         </label>
       </div>
 
-      {/* Row 2: Weight + Volume (still 1 input each, like you want) */}
+      {/* Row 2: Weight + Volume (InputGroup + per-line unit select) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        {/* Weight */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">
             {t("recipeBuilder.labels.weight")}
           </span>
-          <div className="w-full">
-            <InputWithUnits
+
+          <InputGroup className="h-12">
+            <InputGroupInput
               value={ing.amounts.weight.value}
-              handleChange={(e) => updateWeight(e.target.value)}
-              text={ing.amounts.weight.unit ?? unitDefaults.weight}
+              onChange={(e) => updateWeight(e.target.value)}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
             />
-          </div>
+
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Separator orientation="vertical" className="h-12" />
+
+              <Select
+                value={ing.amounts.weight.unit ?? (unitDefaults.weight as any)}
+                onValueChange={(val) => setWeightUnit(val as WeightUnit)}
+              >
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="lb">{t("units.lb", "lb")}</SelectItem>
+                  <SelectItem value="oz">{t("units.oz", "oz")}</SelectItem>
+
+                  <SelectSeparator />
+
+                  <SelectItem value="kg">{t("units.kg", "kg")}</SelectItem>
+                  <SelectItem value="g">{t("units.g", "g")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
         </label>
 
+        {/* Volume */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">
             {t("recipeBuilder.labels.volume")}
           </span>
-          <div className="w-full">
-            <InputWithUnits
+
+          <InputGroup className="h-12">
+            <InputGroupInput
               value={ing.amounts.volume.value}
-              handleChange={(e) => updateVolume(e.target.value)}
-              text={ing.amounts.volume.unit ?? unitDefaults.volume}
+              onChange={(e) => updateVolume(e.target.value)}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
             />
-          </div>
+
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Separator orientation="vertical" className="h-12" />
+
+              <Select
+                value={ing.amounts.volume.unit ?? (unitDefaults.volume as any)}
+                onValueChange={(val) => setVolumeUnit(val as VolumeUnit)}
+              >
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {/* US (default, unprefixed) */}
+                  <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
+                  <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
+                  <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
+                  <SelectItem value="fl_oz">
+                    {t("units.fl_oz", "fl oz")}
+                  </SelectItem>
+
+                  <SelectSeparator />
+
+                  {/* Metric */}
+                  <SelectItem value="L">{t("units.L", "L")}</SelectItem>
+                  <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+
+                  <SelectSeparator />
+
+                  {/* Imperial (explicitly labeled) */}
+                  <SelectItem value="imp_gal">
+                    {t("units.imp_gal", "gal (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_qt">
+                    {t("units.imp_qt", "qt (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_pt">
+                    {t("units.imp_pt", "pt (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_fl_oz">
+                    {t("units.imp_fl_oz", "fl oz (imp)")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
         </label>
       </div>
 
       {/* Row 3: Secondary (keep) */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mt-3">
         <label
-          className={`joyride-secondary-${index + 1} inline-flex items-center gap-2 text-sm`}
+          className={`joyride-secondary-${
+            index + 1
+          } inline-flex items-center gap-2 text-sm`}
         >
           <span>{t("recipeBuilder.labels.secondary")}</span>
           <Switch checked={ing.secondary} onCheckedChange={toggleChecked} />
         </label>
 
-        {/* Fill-to-next: skip until V2 has “total volume” logic again */}
+        <Button
+          onClick={fillToNext}
+          className={`joyride-fillToNext-${index + 1}`}
+        >
+          {ing.secondary
+            ? t("toNextTotalVolume", { volumeUnit: unitDefaults.volume })
+            : t("toNextBatchVolume", { volumeUnit: unitDefaults.volume })}
+        </Button>
       </div>
     </div>
   );

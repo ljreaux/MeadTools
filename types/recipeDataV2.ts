@@ -14,7 +14,17 @@ export const genLineId = () => nanoid(10);
 /* ----------------------------- Units (V2) ----------------------------- */
 
 export type WeightUnit = "kg" | "g" | "lb" | "oz";
-export type VolumeUnit = "L" | "mL" | "gal" | "qt" | "pt" | "fl_oz";
+export type VolumeUnit =
+  | "L"
+  | "mL"
+  | "gal" // US gallon
+  | "qt" // US quart
+  | "pt" // US pint
+  | "fl_oz" // US fluid ounce
+  | "imp_gal" // Imperial gallon
+  | "imp_qt"
+  | "imp_pt"
+  | "imp_fl_oz";
 
 /**
  * Optional: constrain brix to a string. Keep as string so input can be "".
@@ -120,13 +130,13 @@ export type AdditiveLineV2 = {
 
 /* ------------------------------ Stabilizers ------------------------------ */
 
-export type StabilizerTypeV2 = "kmeta" | "ksorbate";
+export type StabilizerTypeV2 = "kmeta" | "nameta";
 
 export type StabilizersV2 = {
   adding: boolean;
-  pH: boolean;
-  phReading: NumericInputString;
-  type: StabilizerTypeV2;
+  takingPh: boolean;
+  phReading: string;
+  type: "kmeta" | "nameta";
 };
 
 /* --------------------------------- Notes -------------------------------- */
@@ -238,7 +248,7 @@ export const initialRecipeDataV2 = (
   additives: [blankAdditiveLineV2()],
   stabilizers: {
     adding: false,
-    pH: false,
+    takingPh: false,
     phReading: "3.6",
     type: "kmeta"
   },
