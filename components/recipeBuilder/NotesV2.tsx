@@ -1,0 +1,147 @@
+"use client";
+
+import React from "react";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import { useTranslation } from "react-i18next";
+import DragListV2 from "../ui/DragListV2";
+import { Trash } from "lucide-react";
+
+import type { NoteLineV2 } from "@/types/recipeDataV2";
+import { useRecipeV2 } from "../providers/RecipeProviderV2";
+
+type TextAreaProps = {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+};
+
+export default function NotesV2() {
+  const { t } = useTranslation();
+
+  const {
+    data: { notes },
+    notes: notesApi
+  } = useRecipeV2();
+
+  return (
+    <div>
+      {/* Primary */}
+      <div className="joyride-notesCard py-6">
+        <h2>{t("notes.subtitleOne")}</h2>
+
+        {notes.primary.length > 0 ? (
+          <DragListV2
+            items={notes.primary}
+            setItems={notesApi.primary.reorder}
+            getId={(n) => n.lineId}
+            renderItem={(note) => (
+              <NoteLineV2
+                key={note.lineId}
+                note={note}
+                remove={() => notesApi.primary.remove(note.lineId)}
+                noteProps={{
+                  value: note.content[0],
+                  onChange: (e) =>
+                    notesApi.primary.setText(note.lineId, e.target.value)
+                }}
+                detailProps={{
+                  value: note.content[1],
+                  onChange: (e) =>
+                    notesApi.primary.setDetails(note.lineId, e.target.value)
+                }}
+              />
+            )}
+          />
+        ) : (
+          <p className="py-6">Press the button below to add a Note.</p>
+        )}
+
+        <Button
+          onClick={notesApi.primary.add}
+          disabled={notes.primary.length >= 10}
+          variant="secondary"
+        >
+          New Note
+        </Button>
+      </div>
+
+      {/* Secondary */}
+      <div className="py-6">
+        <h2>{t("notes.subtitleTwo")}</h2>
+
+        {notes.secondary.length > 0 ? (
+          <DragListV2
+            items={notes.secondary}
+            setItems={notesApi.secondary.reorder}
+            getId={(n) => n.lineId}
+            renderItem={(note) => (
+              <NoteLineV2
+                key={note.lineId}
+                note={note}
+                remove={() => notesApi.secondary.remove(note.lineId)}
+                noteProps={{
+                  value: note.content[0],
+                  onChange: (e) =>
+                    notesApi.secondary.setText(note.lineId, e.target.value)
+                }}
+                detailProps={{
+                  value: note.content[1],
+                  onChange: (e) =>
+                    notesApi.secondary.setDetails(note.lineId, e.target.value)
+                }}
+              />
+            )}
+          />
+        ) : (
+          <p className="py-6">Press the button below to add a Note.</p>
+        )}
+
+        <Button
+          onClick={notesApi.secondary.add}
+          disabled={notes.secondary.length >= 10}
+          variant="secondary"
+        >
+          New Note
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const NoteLineV2 = ({
+  noteProps,
+  detailProps,
+  remove
+}: {
+  note: NoteLineV2;
+  noteProps: TextAreaProps;
+  detailProps: TextAreaProps;
+  remove: () => void;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="joyride-noteLine relative py-4">
+      <Button
+        onClick={remove}
+        variant="destructive"
+        size="sm"
+        className="absolute top-0 right-0"
+      >
+        <Trash className="h-4 w-4" />
+      </Button>
+
+      <div className="grid gap-4 pr-16 sm:grid-cols-2">
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Note</span>
+          <Textarea {...noteProps} placeholder={t("notes.placeholder")} />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm font-medium">Details</span>
+          <Textarea {...detailProps} placeholder={t("notes.placeholder")} />
+        </label>
+      </div>
+    </div>
+  );
+};

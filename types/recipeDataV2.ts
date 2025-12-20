@@ -47,6 +47,13 @@ export type IngredientCatalogItem = {
   translationKey?: string;
 };
 
+export type AdditiveCatalogItem = {
+  id: string;
+  name: string;
+  dosage: string;
+  unit: string;
+};
+
 /**
  * What a recipe line uses to identify the ingredient the user picked.
  * - "catalog": user picked from your Ingredient table (store the id)
@@ -121,11 +128,14 @@ export type NormalizedIngredientLine = {
 
 /* ------------------------------- Additives ------------------------------- */
 
+type AdditiveAmountDim = "weight" | "volume" | "count" | "unknown";
 export type AdditiveLineV2 = {
   lineId: string; // stable UI id (client-generated)
   name: string;
   amount: NumericInputString;
   unit: string;
+  amountTouched: boolean; // user typed amount manually
+  amountDim: AdditiveAmountDim;
 };
 
 /* ------------------------------ Stabilizers ------------------------------ */
@@ -215,7 +225,9 @@ export const blankAdditiveLineV2 = (): AdditiveLineV2 => ({
   lineId: genLineId(),
   name: "",
   amount: "",
-  unit: "g"
+  unit: "g",
+  amountTouched: false,
+  amountDim: "weight"
 });
 
 export const blankNoteLineV2 = (): NoteLineV2 => ({

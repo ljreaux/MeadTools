@@ -6,15 +6,17 @@ import { Button } from "../ui/button";
 import { CardWrapper } from "../CardWrapper";
 import Tooltip from "../Tooltips";
 import RecipeCalculatorSideBar from "./Sidebar";
-import { useEffect, useState } from "react";
 import IngredientsV2 from "./IngredientsV2";
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 import UnitsV2 from "./UnitsV2";
 import IngredientResultsV2 from "./ResultsV2";
 import DesiredBatchDetailsV2 from "./DesiredBatchDetailsV2";
 import ScaleRecipeFormV2 from "./ScaleRecipeFormV2";
 import StabilizersV2 from "./StabilizersV2";
+import { useLocalRecipeStorage } from "@/hooks/useLocalRecipeStorage";
+import AdditivesV2 from "./AdditivesV2";
+import NotesV2 from "./NotesV2";
+import ResetButtonV2 from "./ResetButtonV2";
 
 // (Optional) keep your existing Save/Reset UI if you want,
 // but if they depend on old providers, comment them out for now.
@@ -51,57 +53,23 @@ const cardConfigV2: CardConfig[] = [
       link: "https://wiki.meadtools.com/en/process/stabilization"
     },
     components: [<StabilizersV2 key="stabilizers" />]
+  },
+  {
+    key: "card 5",
+    heading: "additivesHeading",
+    components: [<AdditivesV2 key="additives" />]
+  },
+  {
+    key: "card 6",
+    heading: "notes.title",
+    components: [<NotesV2 key="notes" />]
   }
 ];
 
 const DRAFT_KEY = "meadtools:recipe:v2:draft";
 
 export default function RecipeBuilderV2() {
-  const {
-    data: { unitDefaults, ingredients, fg, stabilizers },
-    meta: { hydrate }
-  } = useRecipeV2();
-
-  const [didInit, setDidInit] = useState(false);
-
-  // read once -> hydrate -> mark init done
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-
-      const parsed = JSON.parse(raw ?? "");
-
-      if (
-        parsed?.unitDefaults &&
-        parsed?.ingredients &&
-        typeof parsed?.fg === "string" &&
-        parsed?.stabilizers &&
-        typeof parsed.stabilizers.adding === "boolean" &&
-        typeof parsed.stabilizers.takingPh === "boolean" &&
-        typeof parsed.stabilizers.phReading === "string" &&
-        (parsed.stabilizers.type === "kmeta" ||
-          parsed.stabilizers.type === "nameta")
-      ) {
-        hydrate(parsed);
-      }
-    } finally {
-      setDidInit(true);
-    }
-  }, [hydrate]);
-
-  // write on changes, but ONLY after init so we don’t clobber the draft
-  useEffect(() => {
-    if (!didInit) return;
-
-    try {
-      localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({ unitDefaults, ingredients, fg, stabilizers })
-      );
-    } catch {
-      // ignore
-    }
-  }, [didInit, unitDefaults, ingredients, fg, stabilizers]);
+  useLocalRecipeStorage({ key: DRAFT_KEY });
 
   const { t } = useTranslation();
 
@@ -113,13 +81,16 @@ export default function RecipeBuilderV2() {
   ));
 
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
+  const resetFlow = useCallback(() => {
+    goTo(0);
+  }, [goTo]);
 
   return (
     <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
       <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
         <div className="py-2">
           {/* <SaveRecipe /> */}
-          {/* <ResetButton /> */}
+          <ResetButtonV2 resetFlow={resetFlow} />
         </div>
       </RecipeCalculatorSideBar>
 

@@ -8,7 +8,13 @@ import {
   WeightUnit,
   VolumeUnit,
   blankIngredientLineV2,
-  initialRecipeDataV2
+  initialRecipeDataV2,
+  AdditiveLineV2,
+  NotesV2,
+  blankAdditiveLineV2,
+  blankNoteLineV2,
+  AdditiveCatalogItem,
+  NoteLineV2
 } from "@/types/recipeDataV2";
 import {
   fmt,
@@ -19,7 +25,12 @@ import {
   WEIGHT_TO_KG,
   isEffectivelyEmptyNumericInput,
   calculateHoneyAndWaterL,
-  HONEY_BRIX
+  HONEY_BRIX,
+  dosageToAmount,
+  convertAdditiveAmount,
+  inferAdditiveAmountDimFromUnit,
+  shouldConvertAdditiveAmount,
+  nextAdditiveAmountDimOnUnitChange
 } from "@/lib/utils/recipeDataCalculations";
 import {
   createContext,
@@ -35,18 +46,24 @@ import {
 } from "@/lib/utils/recipeDataCalculations";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 import { toSG } from "@/lib/utils/unitConverter";
 import { calcABV, toBrix } from "@/lib/utils/unitConverter";
 
 type HydratePayload = Pick<
   RecipeDataV2,
-  "unitDefaults" | "ingredients" | "fg" | "stabilizers"
+  "unitDefaults" | "ingredients" | "fg" | "additives" | "notes" | "stabilizers"
 >;
 
 type RecipeV2ContextValue = {
   data: Pick<
     RecipeDataV2,
-    "unitDefaults" | "ingredients" | "fg" | "stabilizers"
+    | "unitDefaults"
+    | "ingredients"
+    | "fg"
+    | "stabilizers"
+    | "additives"
+    | "notes"
   >;
 
   derived: {
@@ -103,6 +120,32 @@ type RecipeV2ContextValue = {
     sulfite: number;
     campden: number;
   };
+  additives: {
+    add: () => void;
+    remove: (lineId: string) => void;
+    reorder: (next: AdditiveLineV2[]) => void;
+
+    setName: (lineId: string, name: string) => void;
+    setAmount: (lineId: string, amount: string) => void;
+    setUnit: (lineId: string, unit: string) => void;
+  };
+
+  notes: {
+    primary: {
+      add: () => void;
+      remove: (lineId: string) => void;
+      setText: (lineId: string, text: string) => void;
+      setDetails: (lineId: string, details: string) => void;
+      reorder: (next: NoteLineV2[]) => void;
+    };
+    secondary: {
+      add: () => void;
+      remove: (lineId: string) => void;
+      setText: (lineId: string, text: string) => void;
+      setDetails: (lineId: string, details: string) => void;
+      reorder: (next: NoteLineV2[]) => void;
+    };
+  };
   setFg: (fg: string) => void;
   setUnitDefaults: (next: RecipeUnitDefaultsV2) => void;
   setIngredientsToTarget: (og: number, volume: number) => void;
@@ -114,12 +157,15 @@ type RecipeV2ContextValue = {
   catalog: {
     ingredientList: IngredientCatalogItem[];
     loadingIngredients: boolean;
+    additiveList: AdditiveCatalogItem[];
+    loadingAdditives: boolean;
   };
 
   meta: {
     isDirty: boolean;
     markSaved: () => void;
     hydrate: (next: HydratePayload) => void;
+    reset: () => void;
   };
 };
 
@@ -128,6 +174,8 @@ const RecipeV2Context = createContext<RecipeV2ContextValue | null>(null);
 export function RecipeV2Provider({ children }: { children: ReactNode }) {
   const { data: ingredientList = [], isLoading: loadingIngredients } =
     useIngredientsQuery();
+  const { data: additiveList = [], isLoading: loadingAdditives } =
+    useAdditivesQuery();
 
   const initial = initialRecipeDataV2({ weight: "lb", volume: "gal" });
 
@@ -147,6 +195,11 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
   const [stabilizerType, setStabilizerType] = useState<"kmeta" | "nameta">(
     initial.stabilizers.type
   );
+  const [additives, setAdditives] = useState<AdditiveLineV2[]>(
+    initial.additives
+  );
+  const [notes, setNotes] = useState<NotesV2>(initial.notes);
+
   // ---- Dirty tracking ----
   const [isDirty, setIsDirty] = useState(false);
 
@@ -156,7 +209,6 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
   }, []);
 
   const markSaved = useCallback(() => setIsDirty(false), []);
-
   const hydrate = useCallback(
     (next: HydratePayload) => {
       commit(
@@ -164,17 +216,45 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
           setUnitDefaultsState(next.unitDefaults);
           setIngredients(next.ingredients);
           setFgState(next.fg);
-          setIsDirty(false);
+
+          setAdditives(next.additives);
+          setNotes(next.notes);
+
           setAddingStabilizers(next.stabilizers.adding);
           setTakingPh(next.stabilizers.takingPh);
           setPhReading(next.stabilizers.phReading);
           setStabilizerType(next.stabilizers.type);
+
+          setIsDirty(false);
         },
         { silent: true }
       );
     },
     [commit]
   );
+
+  const reset = useCallback(() => {
+    commit(
+      () => {
+        const fresh = initialRecipeDataV2({ weight: "lb", volume: "gal" }); // or reuse `initial` if you want
+        setUnitDefaultsState(fresh.unitDefaults);
+        setIngredients(fresh.ingredients);
+        setFgState(fresh.fg);
+
+        setAdditives(fresh.additives);
+        setNotes(fresh.notes);
+
+        setAddingStabilizers(fresh.stabilizers.adding);
+        setTakingPh(fresh.stabilizers.takingPh);
+        setPhReading(fresh.stabilizers.phReading);
+        setStabilizerType(fresh.stabilizers.type);
+
+        setIsDirty(false);
+      },
+      { silent: true }
+    );
+  }, [commit]);
+
   const toggleStabilizers = useCallback(
     (val: boolean) => {
       commit(() => setAddingStabilizers(val));
@@ -658,12 +738,255 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
     ]
   );
 
+  const additivesApi = useMemo<RecipeV2ContextValue["additives"]>(
+    () => ({
+      add: () => {
+        commit(() => {
+          setAdditives((prev) => [...prev, blankAdditiveLineV2()]);
+        });
+      },
+
+      remove: (lineId) => {
+        commit(() => {
+          setAdditives((prev) => prev.filter((a) => a.lineId !== lineId));
+        });
+      },
+
+      reorder: (next) => {
+        commit(() => setAdditives(next));
+      },
+
+      setName: (lineId, name) => {
+        commit(() => {
+          const found = additiveList.find((a) => a.name === name);
+
+          // Catalog select: overwrite unit + amount (like V1)
+          if (found) {
+            const dosage =
+              typeof (found as any).dosage === "number"
+                ? (found as any).dosage
+                : parseNumber(String(found.dosage));
+
+            const amount = dosageToAmount({ dosage, totalVolumeL });
+
+            setAdditives((prev) =>
+              prev.map((a) =>
+                a.lineId === lineId
+                  ? {
+                      ...a,
+                      name: found.name,
+                      unit: found.unit,
+                      amount,
+
+                      // IMPORTANT: reset the conversion state to "trusted"
+                      amountTouched: false,
+                      amountDim: inferAdditiveAmountDimFromUnit(found.unit)
+                    }
+                  : a
+              )
+            );
+            return;
+          }
+
+          // Custom text input: only update name
+          setAdditives((prev) =>
+            prev.map((a) => (a.lineId === lineId ? { ...a, name } : a))
+          );
+        });
+      },
+
+      setAmount: (lineId, amount) => {
+        if (!isValidNumber(amount)) return;
+
+        commit(() => {
+          setAdditives((prev) =>
+            prev.map((a) =>
+              a.lineId === lineId
+                ? {
+                    ...a,
+                    amount,
+                    // user typed -> trust conversions within this unit's dimension
+                    amountTouched: true,
+                    amountDim: inferAdditiveAmountDimFromUnit(a.unit)
+                  }
+                : a
+            )
+          );
+        });
+      },
+
+      setUnit: (lineId, nextUnit) => {
+        commit(() => {
+          setAdditives((prev) =>
+            prev.map((a) => {
+              if (a.lineId !== lineId) return a;
+
+              const fromUnit = a.unit;
+
+              const doConvert = shouldConvertAdditiveAmount({
+                amountStr: a.amount,
+                fromUnit,
+                toUnit: nextUnit,
+                amountTouched: a.amountTouched,
+                amountDim: a.amountDim
+              });
+
+              const nextAmount = doConvert
+                ? convertAdditiveAmount({
+                    amountStr: a.amount,
+                    fromUnit,
+                    toUnit: nextUnit
+                  })
+                : a.amount;
+
+              const nextDim = nextAdditiveAmountDimOnUnitChange({
+                fromUnit,
+                toUnit: nextUnit,
+                prevAmountDim: a.amountDim
+              });
+
+              return {
+                ...a,
+                unit: nextUnit,
+                amount: nextAmount,
+                amountDim: nextDim
+                // NOTE: we deliberately do NOT flip amountTouched here.
+                // If user had typed it, it's still "touched".
+                // If it was auto-filled and we crossed dimensions, nextDim becomes "unknown"
+                // and shouldConvertAdditiveAmount will block future same-dim conversions
+                // until user types a new amount or selects a catalog item again.
+              };
+            })
+          );
+        });
+      }
+    }),
+    [commit, additiveList, totalVolumeL]
+  );
+
+  const notesApi = useMemo<RecipeV2ContextValue["notes"]>(
+    () => ({
+      primary: {
+        add: () => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              primary: [...prev.primary, blankNoteLineV2()]
+            }));
+          });
+        },
+
+        remove: (lineId) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              primary: prev.primary.filter((n) => n.lineId !== lineId)
+            }));
+          });
+        },
+
+        reorder: (next) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              primary: next
+            }));
+          });
+        },
+
+        setText: (lineId, text) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              primary: prev.primary.map((n) =>
+                n.lineId === lineId
+                  ? { ...n, content: [text, n.content[1]] }
+                  : n
+              )
+            }));
+          });
+        },
+
+        setDetails: (lineId, details) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              primary: prev.primary.map((n) =>
+                n.lineId === lineId
+                  ? { ...n, content: [n.content[0], details] }
+                  : n
+              )
+            }));
+          });
+        }
+      },
+
+      secondary: {
+        add: () => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              secondary: [...prev.secondary, blankNoteLineV2()]
+            }));
+          });
+        },
+
+        remove: (lineId) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              secondary: prev.secondary.filter((n) => n.lineId !== lineId)
+            }));
+          });
+        },
+
+        reorder: (next) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              secondary: next
+            }));
+          });
+        },
+
+        setText: (lineId, text) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              secondary: prev.secondary.map((n) =>
+                n.lineId === lineId
+                  ? { ...n, content: [text, n.content[1]] }
+                  : n
+              )
+            }));
+          });
+        },
+
+        setDetails: (lineId, details) => {
+          commit(() => {
+            setNotes((prev) => ({
+              ...prev,
+              secondary: prev.secondary.map((n) =>
+                n.lineId === lineId
+                  ? { ...n, content: [n.content[0], details] }
+                  : n
+              )
+            }));
+          });
+        }
+      }
+    }),
+    [commit]
+  );
+
   const value: RecipeV2ContextValue = useMemo(
     () => ({
       data: {
         unitDefaults,
         ingredients,
         fg,
+        additives,
+        notes,
         stabilizers: {
           adding: addingStabilizers,
           takingPh,
@@ -709,6 +1032,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
         sulfite: stabilizerResults.sulfite,
         campden: stabilizerResults.campden
       },
+      additives: additivesApi,
+      notes: notesApi,
 
       setFg: (next) => {
         if (!isValidNumber(next)) return;
@@ -842,19 +1167,24 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
 
       catalog: {
         ingredientList,
-        loadingIngredients
+        loadingIngredients,
+        additiveList,
+        loadingAdditives
       },
 
       meta: {
         isDirty,
         markSaved,
-        hydrate
+        hydrate,
+        reset
       }
     }),
     [
       // state
       unitDefaults,
       ingredients,
+      additives,
+      notes,
       fg,
       isDirty,
 
@@ -876,6 +1206,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
 
       // api + helpers used inside
       ingredientApi,
+      additivesApi,
+      notesApi,
       addingStabilizers,
       takingPh,
       phReading,
