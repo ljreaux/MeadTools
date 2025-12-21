@@ -14,7 +14,7 @@ export function useLocalRecipeStorage({ key }: Options) {
   } = useRecipeV2();
 
   const [didInit, setDidInit] = useState(false);
-
+  const [didHydrate, setDidHydrate] = useState(false);
   // read once -> hydrate -> mark init done
   useEffect(() => {
     try {
@@ -59,6 +59,7 @@ export function useLocalRecipeStorage({ key }: Options) {
           additives: parsed.additives,
           notes: parsed.notes
         });
+        setDidHydrate(true);
       }
     } finally {
       setDidInit(true);
@@ -95,5 +96,5 @@ export function useLocalRecipeStorage({ key }: Options) {
     notes
   ]);
 
-  return { didInit };
+  return { didInit, didHydrate };
 }

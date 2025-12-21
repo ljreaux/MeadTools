@@ -37,6 +37,7 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState
 } from "react";
@@ -168,6 +169,15 @@ type RecipeV2ContextValue = {
     reset: () => void;
   };
 };
+type PreferredUnits = "US" | "METRIC";
+
+function preferredToUnitDefaults(
+  preferred: PreferredUnits | null
+): RecipeUnitDefaultsV2 {
+  return preferred === "METRIC"
+    ? { weight: "kg", volume: "L" }
+    : { weight: "lb", volume: "gal" };
+}
 
 const RecipeV2Context = createContext<RecipeV2ContextValue | null>(null);
 
@@ -176,6 +186,22 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
     useIngredientsQuery();
   const { data: additiveList = [], isLoading: loadingAdditives } =
     useAdditivesQuery();
+
+  // fallback for SSR + first paint
+  const [preferredDefaults, setPreferredDefaults] =
+    useState<RecipeUnitDefaultsV2>({
+      weight: "lb",
+      volume: "gal"
+    });
+
+  useEffect(() => {
+    try {
+      const preferred = localStorage.getItem("units") as PreferredUnits | null;
+      setPreferredDefaults(preferredToUnitDefaults(preferred));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const initial = initialRecipeDataV2({ weight: "lb", volume: "gal" });
 
@@ -236,7 +262,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     commit(
       () => {
-        const fresh = initialRecipeDataV2({ weight: "lb", volume: "gal" }); // or reuse `initial` if you want
+        const fresh = initialRecipeDataV2(preferredDefaults);
+
         setUnitDefaultsState(fresh.unitDefaults);
         setIngredients(fresh.ingredients);
         setFgState(fresh.fg);
@@ -253,7 +280,7 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
       },
       { silent: true }
     );
-  }, [commit]);
+  }, [commit, preferredDefaults]);
 
   const toggleStabilizers = useCallback(
     (val: boolean) => {
@@ -264,7 +291,12 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
 
   const toggleTakingPh = useCallback(
     (val: boolean) => {
-      commit(() => setTakingPh(val));
+      commit(() => {
+        setTakingPh(val);
+
+        // if user turns off pH tracking, reset to default
+        if (!val) setPhReading("3.6");
+      });
     },
     [commit]
   );
@@ -979,6 +1011,41 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
     [commit]
   );
 
+  const setUnitDefaults = useCallback(
+    (next: RecipeUnitDefaultsV2) => {
+      commit(() => {
+        setUnitDefaultsState(next);
+
+        setIngredients((prev) =>
+          prev.map((line) => {
+            const weightEmpty = isEffectivelyEmptyNumericInput(
+              line.amounts.weight.value
+            );
+            const volumeEmpty = isEffectivelyEmptyNumericInput(
+              line.amounts.volume.value
+            );
+
+            if (!weightEmpty && !volumeEmpty) return line;
+
+            return {
+              ...line,
+              amounts: {
+                ...line.amounts,
+                weight: weightEmpty
+                  ? { ...line.amounts.weight, unit: next.weight }
+                  : line.amounts.weight,
+                volume: volumeEmpty
+                  ? { ...line.amounts.volume, unit: next.volume }
+                  : line.amounts.volume
+              }
+            };
+          })
+        );
+      });
+    },
+    [commit]
+  );
+
   const value: RecipeV2ContextValue = useMemo(
     () => ({
       data: {
@@ -1040,37 +1107,7 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
         commit(() => setFgState(next));
       },
 
-      setUnitDefaults: (next) => {
-        commit(() => {
-          setUnitDefaultsState(next);
-
-          setIngredients((prev) =>
-            prev.map((line) => {
-              const weightEmpty = isEffectivelyEmptyNumericInput(
-                line.amounts.weight.value
-              );
-              const volumeEmpty = isEffectivelyEmptyNumericInput(
-                line.amounts.volume.value
-              );
-
-              if (!weightEmpty && !volumeEmpty) return line;
-
-              return {
-                ...line,
-                amounts: {
-                  ...line.amounts,
-                  weight: weightEmpty
-                    ? { ...line.amounts.weight, unit: next.weight }
-                    : line.amounts.weight,
-                  volume: volumeEmpty
-                    ? { ...line.amounts.volume, unit: next.volume }
-                    : line.amounts.volume
-                }
-              };
-            })
-          );
-        });
-      },
+      setUnitDefaults,
 
       setIngredientsToTarget: (og: number, volume: number) => {
         const totalVolumeL = volume * VOLUME_TO_L[unitDefaults.volume];

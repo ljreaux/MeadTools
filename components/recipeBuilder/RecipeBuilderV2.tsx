@@ -17,6 +17,8 @@ import { useLocalRecipeStorage } from "@/hooks/useLocalRecipeStorage";
 import AdditivesV2 from "./AdditivesV2";
 import NotesV2 from "./NotesV2";
 import ResetButtonV2 from "./ResetButtonV2";
+import { useRecipeV2 } from "../providers/RecipeProviderV2";
+import { useAccountUnitDefaults } from "@/hooks/useAccountUnitDefaults";
 
 // (Optional) keep your existing Save/Reset UI if you want,
 // but if they depend on old providers, comment them out for now.
@@ -69,7 +71,13 @@ const cardConfigV2: CardConfig[] = [
 const DRAFT_KEY = "meadtools:recipe:v2:draft";
 
 export default function RecipeBuilderV2() {
-  useLocalRecipeStorage({ key: DRAFT_KEY });
+  const { didInit, didHydrate } = useLocalRecipeStorage({ key: DRAFT_KEY });
+  useAccountUnitDefaults({ didInit, didHydrate });
+  const {
+    meta: { isDirty }
+  } = useRecipeV2();
+
+  console.log(isDirty);
 
   const { t } = useTranslation();
 
