@@ -1,5 +1,6 @@
 // recipeDataV2.ts
 import { nanoid } from "nanoid";
+import { initialNutrientDataV2, NutrientDataV2 } from "./nutrientDataV2";
 
 /**
  * V2 goals:
@@ -183,6 +184,7 @@ export type RecipeDataV2 = {
 
   notes: NotesV2;
 
+  nutrients?: NutrientDataV2; // ✅ add this
   /** Room for future flags without breaking parsing */
   flags?: {
     advanced?: boolean;
@@ -267,7 +269,8 @@ export const initialRecipeDataV2 = (
   notes: {
     primary: [blankNoteLineV2()],
     secondary: [blankNoteLineV2()]
-  }
+  },
+  nutrients: initialNutrientDataV2()
 });
 
 /* ------------------------------ Type guards ------------------------------ */

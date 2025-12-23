@@ -1,7 +1,7 @@
 "use client";
 
 import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Options = {
   key: string;
@@ -9,13 +9,23 @@ type Options = {
 
 export function useLocalRecipeStorage({ key }: Options) {
   const {
-    data: { unitDefaults, ingredients, fg, stabilizers, additives, notes },
+    data: {
+      unitDefaults,
+      ingredients,
+      fg,
+      stabilizers,
+      additives,
+      notes,
+      nutrients
+    },
     meta: { hydrate }
   } = useRecipeV2();
 
   const [didInit, setDidInit] = useState(false);
   const [didHydrate, setDidHydrate] = useState(false);
-  // read once -> hydrate -> mark init done
+
+  const readyToPersistRef = useRef(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
@@ -32,16 +42,30 @@ export function useLocalRecipeStorage({ key }: Options) {
           parsed.stabilizers.type === "nameta");
 
       const hasIngredients = Array.isArray(parsed?.ingredients);
+
       const hasUnits =
         parsed?.unitDefaults &&
         typeof parsed.unitDefaults.weight === "string" &&
         typeof parsed.unitDefaults.volume === "string";
+
       const hasFg = typeof parsed?.fg === "string";
+
       const hasAdditives = Array.isArray(parsed?.additives);
+
       const hasNotes =
         parsed?.notes &&
         Array.isArray(parsed.notes.primary) &&
         Array.isArray(parsed.notes.secondary);
+
+      const hasNutrients =
+        parsed?.nutrients &&
+        parsed.nutrients.version === 2 &&
+        parsed.nutrients.inputs &&
+        typeof parsed.nutrients.inputs.volume === "string" &&
+        (parsed.nutrients.inputs.volumeUnits === "gal" ||
+          parsed.nutrients.inputs.volumeUnits === "liter") &&
+        typeof parsed.nutrients.inputs.sg === "string" &&
+        typeof parsed.nutrients.inputs.offsetPpm === "string";
 
       if (
         hasUnits &&
@@ -49,7 +73,8 @@ export function useLocalRecipeStorage({ key }: Options) {
         hasFg &&
         hasStabilizers &&
         hasAdditives &&
-        hasNotes
+        hasNotes &&
+        hasNutrients
       ) {
         hydrate({
           unitDefaults: parsed.unitDefaults,
@@ -57,18 +82,21 @@ export function useLocalRecipeStorage({ key }: Options) {
           fg: parsed.fg,
           stabilizers: parsed.stabilizers,
           additives: parsed.additives,
-          notes: parsed.notes
+          notes: parsed.notes,
+          nutrients: parsed.nutrients
         });
+
         setDidHydrate(true);
       }
     } finally {
+      readyToPersistRef.current = true;
       setDidInit(true);
     }
   }, [key, hydrate]);
 
-  // write on changes, but ONLY after init so we don’t clobber the draft
   useEffect(() => {
     if (!didInit) return;
+    if (!readyToPersistRef.current) return;
 
     try {
       localStorage.setItem(
@@ -79,7 +107,8 @@ export function useLocalRecipeStorage({ key }: Options) {
           fg,
           stabilizers,
           additives,
-          notes
+          notes,
+          nutrients
         })
       );
     } catch {
@@ -93,7 +122,8 @@ export function useLocalRecipeStorage({ key }: Options) {
     fg,
     stabilizers,
     additives,
-    notes
+    notes,
+    nutrients
   ]);
 
   return { didInit, didHydrate };

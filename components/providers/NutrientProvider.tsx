@@ -384,10 +384,10 @@ export const NutrientProvider = ({
       nitrogen == "Low"
         ? 0.75
         : nitrogen == "Medium"
-          ? 0.9
-          : nitrogen == "High"
-            ? 1.25
-            : 1.8;
+        ? 0.9
+        : nitrogen == "High"
+        ? 1.25
+        : 1.8;
     const gpl = toBrix(sg) * sg * 10;
     const targetYan = gpl * multiplier;
     return Math.round(targetYan - offset);

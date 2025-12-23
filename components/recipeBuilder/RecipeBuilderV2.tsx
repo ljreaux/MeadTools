@@ -19,6 +19,13 @@ import NotesV2 from "./NotesV2";
 import ResetButtonV2 from "./ResetButtonV2";
 import { useRecipeV2 } from "../providers/RecipeProviderV2";
 import { useAccountUnitDefaults } from "@/hooks/useAccountUnitDefaults";
+import VolumeInputsV2 from "../nutrientCalc/VolumeInputsV2";
+import YeastDetailsV2 from "../nutrientCalc/YeastDetailsV2";
+import NutrientSelectorV2 from "../nutrientCalc/NutrientSelectorV2";
+import ResultsV2 from "../nutrientCalc/ResultsV2";
+import AdditionalDetailsV2 from "../nutrientCalc/AdditionalDetailsV2";
+import { NutrientProviderV2 } from "../providers/NutrientProviderV2";
+import RecipePdf from "./RecipePDF";
 
 // (Optional) keep your existing Save/Reset UI if you want,
 // but if they depend on old providers, comment them out for now.
@@ -48,6 +55,23 @@ const cardConfigV2: CardConfig[] = [
     ]
   },
   {
+    key: "card 2",
+    heading: "nutesHeading",
+    components: [
+      <VolumeInputsV2 key="volumeInputs" mode="embedded" />,
+      <YeastDetailsV2 key="yeastDetails" />
+    ]
+  },
+  {
+    key: "card 3",
+    heading: "nuteResults.label",
+    components: [
+      <NutrientSelectorV2 key="nutrientSelector" />,
+      <ResultsV2 key="results" />,
+      <AdditionalDetailsV2 key="additionalDetails" />
+    ]
+  },
+  {
     key: "card 4",
     heading: "stabilizersHeading",
     tooltip: {
@@ -65,6 +89,11 @@ const cardConfigV2: CardConfig[] = [
     key: "card 6",
     heading: "notes.title",
     components: [<NotesV2 key="notes" />]
+  },
+  {
+    key: "card 7",
+    heading: "PDF.title",
+    components: [<RecipePdf key="pdf" />]
   }
 ];
 
@@ -74,10 +103,9 @@ export default function RecipeBuilderV2() {
   const { didInit, didHydrate } = useLocalRecipeStorage({ key: DRAFT_KEY });
   useAccountUnitDefaults({ didInit, didHydrate });
   const {
-    meta: { isDirty }
+    derived: { nutrientValueForRecipe },
+    meta: { setNutrients }
   } = useRecipeV2();
-
-  console.log(isDirty);
 
   const { t } = useTranslation();
 
@@ -94,30 +122,36 @@ export default function RecipeBuilderV2() {
   }, [goTo]);
 
   return (
-    <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-      <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
-        <div className="py-2">
-          {/* <SaveRecipe /> */}
-          <ResetButtonV2 resetFlow={resetFlow} />
+    <NutrientProviderV2
+      mode="controlled"
+      value={nutrientValueForRecipe}
+      onChange={setNutrients}
+    >
+      <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
+        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
+          <div className="py-2">
+            {/* <SaveRecipe /> */}
+            <ResetButtonV2 resetFlow={resetFlow} />
+          </div>
+        </RecipeCalculatorSideBar>
+
+        {card}
+
+        <div className="flex py-12 gap-4 w-11/12 max-w-[1200px] items-center justify-center">
+          {currentStepIndex === 0 || (
+            <Button variant="secondary" onClick={back} className="w-full">
+              {t("buttonLabels.back")}
+            </Button>
+          )}
+
+          {currentStepIndex === cards.length - 1 ? null : (
+            <Button className="w-full" variant="secondary" onClick={next}>
+              {t("buttonLabels.next")}
+            </Button>
+          )}
         </div>
-      </RecipeCalculatorSideBar>
-
-      {card}
-
-      <div className="flex py-12 gap-4 w-11/12 max-w-[1200px] items-center justify-center">
-        {currentStepIndex === 0 || (
-          <Button variant="secondary" onClick={back} className="w-full">
-            {t("buttonLabels.back")}
-          </Button>
-        )}
-
-        {currentStepIndex === cards.length - 1 ? null : (
-          <Button className="w-full" variant="secondary" onClick={next}>
-            {t("buttonLabels.next")}
-          </Button>
-        )}
       </div>
-    </div>
+    </NutrientProviderV2>
   );
 }
 

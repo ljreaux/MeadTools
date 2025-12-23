@@ -39,7 +39,8 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState
+  useState,
+  useRef
 } from "react";
 import {
   calculateOriginalGravity,
@@ -50,10 +51,17 @@ import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 import { toSG } from "@/lib/utils/unitConverter";
 import { calcABV, toBrix } from "@/lib/utils/unitConverter";
+import { initialNutrientDataV2, NutrientDataV2 } from "@/types/nutrientDataV2";
 
 type HydratePayload = Pick<
   RecipeDataV2,
-  "unitDefaults" | "ingredients" | "fg" | "additives" | "notes" | "stabilizers"
+  | "unitDefaults"
+  | "ingredients"
+  | "fg"
+  | "additives"
+  | "notes"
+  | "stabilizers"
+  | "nutrients"
 >;
 
 type RecipeV2ContextValue = {
@@ -65,6 +73,7 @@ type RecipeV2ContextValue = {
     | "stabilizers"
     | "additives"
     | "notes"
+    | "nutrients"
   >;
 
   derived: {
@@ -83,6 +92,7 @@ type RecipeV2ContextValue = {
     backsweetenedFg: number;
     abv: number;
     delle: number;
+    nutrientValueForRecipe: NutrientDataV2;
   };
 
   ingredient: {
@@ -167,6 +177,8 @@ type RecipeV2ContextValue = {
     markSaved: () => void;
     hydrate: (next: HydratePayload) => void;
     reset: () => void;
+
+    setNutrients: (next: NutrientDataV2, opts?: { silent?: boolean }) => void;
   };
 };
 type PreferredUnits = "US" | "METRIC";
@@ -186,7 +198,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
     useIngredientsQuery();
   const { data: additiveList = [], isLoading: loadingAdditives } =
     useAdditivesQuery();
-
+  const hydratingRef = useRef(false);
+  const didMountRef = useRef(false);
   // fallback for SSR + first paint
   const [preferredDefaults, setPreferredDefaults] =
     useState<RecipeUnitDefaultsV2>({
@@ -226,6 +239,10 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
   );
   const [notes, setNotes] = useState<NotesV2>(initial.notes);
 
+  const [nutrients, setNutrients] = useState<NutrientDataV2>(
+    initialNutrientDataV2()
+  );
+
   // ---- Dirty tracking ----
   const [isDirty, setIsDirty] = useState(false);
 
@@ -237,6 +254,7 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
   const markSaved = useCallback(() => setIsDirty(false), []);
   const hydrate = useCallback(
     (next: HydratePayload) => {
+      hydratingRef.current = true;
       commit(
         () => {
           setUnitDefaultsState(next.unitDefaults);
@@ -250,16 +268,21 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
           setTakingPh(next.stabilizers.takingPh);
           setPhReading(next.stabilizers.phReading);
           setStabilizerType(next.stabilizers.type);
+          setNutrients(next.nutrients ?? initialNutrientDataV2());
 
           setIsDirty(false);
         },
         { silent: true }
       );
+      queueMicrotask(() => {
+        hydratingRef.current = false;
+      });
     },
     [commit]
   );
 
   const reset = useCallback(() => {
+    hydratingRef.current = true;
     commit(
       () => {
         const fresh = initialRecipeDataV2(preferredDefaults);
@@ -276,10 +299,15 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
         setPhReading(fresh.stabilizers.phReading);
         setStabilizerType(fresh.stabilizers.type);
 
+        setNutrients(fresh.nutrients ?? initialNutrientDataV2()); // ✅ add
+
         setIsDirty(false);
       },
       { silent: true }
     );
+    queueMicrotask(() => {
+      hydratingRef.current = false;
+    });
   }, [commit, preferredDefaults]);
 
   const toggleStabilizers = useCallback(
@@ -460,6 +488,93 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
 
     return { sorbate, sulfite, campden };
   }, [addingStabilizers, phReading, stabilizerType, totalVolumeL, abv]);
+
+  // --- NUTRIENTS: recipe-derived inputs for the embedded calculator (VIEW ONLY) ---
+  const nutrientVolumeUnits: NutrientDataV2["inputs"]["volumeUnits"] =
+    unitDefaults.volume === "gal" ? "gal" : "liter";
+
+  // delta gravity: 1 + (OG_primary - FG)
+  // ex: 1.100 -> 0.996 => 1 + (0.104) = 1.104
+  // ex: 1.100 -> 1.010 => 1 + (0.090) = 1.090
+  const nutrientSg = useMemo(() => {
+    const fgSg = parseNumber(fg);
+    const og = ogPrimary;
+
+    if (!Number.isFinite(og) || !Number.isFinite(fgSg)) return 1;
+
+    return 1 + (og - fgSg);
+  }, [ogPrimary, fg]);
+
+  const nutrientValueForRecipe = useMemo<NutrientDataV2>(() => {
+    return {
+      ...nutrients,
+      inputs: {
+        ...nutrients.inputs,
+
+        // override these 3 from recipe-derived values
+        volume: fmt(primaryVolume),
+        volumeUnits: nutrientVolumeUnits,
+        sg: fmt(nutrientSg)
+      }
+    };
+  }, [nutrients, primaryVolume, nutrientVolumeUnits, nutrientSg]);
+
+  // --- Default offset (25 ppm per lb of PRIMARY fruit per gal of PRIMARY volume) ---
+  const defaultOffsetPpm = useMemo(() => {
+    // primary volume in gallons (canonical liters -> gal)
+    const primaryVolGal = primaryVolumeL / 3.78541;
+    if (!Number.isFinite(primaryVolGal) || primaryVolGal <= 0) return "0";
+
+    // total PRIMARY fruit weight in pounds
+    // NOTE: normalizeIngredientLine gives you canonical weightKg + category + secondary.
+    const primaryFruitLb = normalized
+      .filter((l) => !l.secondary && l.category === "fruit")
+      .reduce((sum, l) => {
+        const kg = l.weightKg ?? 0; // depends on your normalizeIngredientLine shape
+        return sum + kg * 2.2046226218;
+      }, 0);
+
+    const ppm = (primaryFruitLb * 25) / primaryVolGal;
+
+    // match old behavior: integer ppm string
+    return Number.isFinite(ppm) ? String(Math.round(ppm)) : "0";
+  }, [normalized, primaryVolumeL]);
+  // a stable-ish signature so we can trigger resets only when ingredients meaningfully change
+  const ingredientNutrientSig = useMemo(() => {
+    // we only include fields that affect the offset default calc
+    return normalized
+      .filter((l) => !l.secondary) // offset uses primary-only
+      .map((l) => `${l.lineId}:${l.category}:${l.weightKg ?? 0}`)
+      .join("|");
+  }, [normalized]);
+
+  useEffect(() => {
+    // Skip first mount (initial render) so we don't clobber hydrated/localStorage data
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    // Skip while hydrate() is applying localStorage state
+    if (hydratingRef.current) return;
+
+    // Reset offset whenever ingredients meaningfully change (silent)
+    commit(
+      () => {
+        setNutrients((prev) => {
+          if (prev.inputs.offsetPpm === defaultOffsetPpm) return prev;
+          return {
+            ...prev,
+            inputs: {
+              ...prev.inputs,
+              offsetPpm: defaultOffsetPpm
+            }
+          };
+        });
+      },
+      { silent: true }
+    );
+  }, [commit, ingredientNutrientSig, defaultOffsetPpm]);
 
   /** ---------------------------
    * Public API (small setters)
@@ -1046,6 +1161,13 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
     [commit]
   );
 
+  const onNutrientsChange = useCallback(
+    (next: NutrientDataV2, meta?: { silent?: boolean }) => {
+      commit(() => setNutrients(next), { silent: meta?.silent });
+    },
+    [commit]
+  );
+
   const value: RecipeV2ContextValue = useMemo(
     () => ({
       data: {
@@ -1059,7 +1181,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
           takingPh,
           phReading,
           type: stabilizerType
-        }
+        },
+        nutrients
       },
 
       derived: {
@@ -1077,7 +1200,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
         totalForAbv,
         backsweetenedFg,
         abv,
-        delle
+        delle,
+        nutrientValueForRecipe
       },
 
       ingredient: ingredientApi,
@@ -1213,7 +1337,8 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
         isDirty,
         markSaved,
         hydrate,
-        reset
+        reset,
+        setNutrients: onNutrientsChange
       }
     }),
     [
@@ -1224,6 +1349,11 @@ export function RecipeV2Provider({ children }: { children: ReactNode }) {
       notes,
       fg,
       isDirty,
+      nutrients,
+      additiveList,
+      loadingAdditives,
+      reset,
+      onNutrientsChange,
 
       // derived
       normalized,
