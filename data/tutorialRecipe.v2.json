@@ -1,0 +1,206 @@
+{
+  "recipe": {
+    "id": 371,
+    "user_id": 1,
+    "name": "Tutorial Recipe",
+    "private": false,
+    "public_username": "MeadTools Admin",
+    "averageRating": 0,
+    "numberOfRatings": 0,
+    "activityEmailsEnabled": false,
+    "dataV2": {
+      "version": 2,
+      "unitDefaults": {
+        "weight": "lb",
+        "volume": "gal"
+      },
+      "ingredients": [
+        {
+          "lineId": "walf0w6pou",
+          "name": "Water",
+          "ref": {
+            "kind": "custom"
+          },
+          "category": "water",
+          "brix": "0.00",
+          "secondary": false,
+          "amounts": {
+            "weight": {
+              "value": "4.173",
+              "unit": "lb"
+            },
+            "volume": {
+              "value": "0.5",
+              "unit": "gal"
+            },
+            "basis": "volume"
+          }
+        },
+        {
+          "lineId": "oeuellgx65",
+          "name": "Honey",
+          "ref": {
+            "kind": "custom"
+          },
+          "category": "sugar",
+          "brix": "79.60",
+          "secondary": false,
+          "amounts": {
+            "weight": {
+              "value": "2.5",
+              "unit": "lb"
+            },
+            "volume": {
+              "value": "0.212",
+              "unit": "gal"
+            },
+            "basis": "weight"
+          }
+        },
+        {
+          "lineId": "4ssotxp1dq",
+          "name": "Blueberry",
+          "ref": {
+            "kind": "custom"
+          },
+          "category": "fruit",
+          "brix": "9.36",
+          "secondary": false,
+          "amounts": {
+            "weight": {
+              "value": "3",
+              "unit": "lb"
+            },
+            "volume": {
+              "value": "0.347",
+              "unit": "gal"
+            },
+            "basis": "weight"
+          }
+        },
+        {
+          "lineId": "b9cp2y0x0i",
+          "name": "Honey",
+          "ref": {
+            "kind": "custom"
+          },
+          "category": "sugar",
+          "brix": "79.6",
+          "secondary": true,
+          "amounts": {
+            "weight": {
+              "value": "0.5",
+              "unit": "lb"
+            },
+            "volume": {
+              "value": "0.042",
+              "unit": "gal"
+            },
+            "basis": "weight"
+          }
+        }
+      ],
+      "fg": "0.996",
+      "additives": [
+        {
+          "lineId": "xaelh07f7r",
+          "name": "Opti-Red",
+          "amount": "1.101",
+          "unit": "g",
+          "amountTouched": false,
+          "amountDim": "weight"
+        },
+        {
+          "lineId": "prxdn1kn9w",
+          "name": "FT Rouge",
+          "amount": "1.431",
+          "unit": "g",
+          "amountTouched": false,
+          "amountDim": "weight"
+        }
+      ],
+      "stabilizers": {
+        "adding": false,
+        "takingPh": false,
+        "phReading": "",
+        "type": "kmeta"
+      },
+      "notes": {
+        "primary": [
+          {
+            "lineId": "zrkl1bumq",
+            "content": [
+              "Put any notes you want here.",
+              "Add dates, gravity readings, etc."
+            ]
+          }
+        ],
+        "secondary": [
+          {
+            "lineId": "le1m3zsfil",
+            "content": [
+              "",
+              ""
+            ]
+          }
+        ]
+      },
+      "nutrients": {
+        "version": 2,
+        "inputs": {
+          "volume": "1.059",
+          "volumeUnits": "gal",
+          "sg": "1.099",
+          "offsetPpm": "71",
+          "numberOfAdditions": "1",
+          "goFermType": "Go-Ferm",
+          "yeastAmountG": "3.07",
+          "yeastAmountTouched": false
+        },
+        "selected": {
+          "yeastBrand": "Other",
+          "yeastStrain": "Kviek",
+          "yeastId": 103,
+          "nitrogenRequirement": "Very High",
+          "schedule": "tbe",
+          "selectedNutrients": {
+            "fermO": true,
+            "fermK": true,
+            "dap": true,
+            "other": false
+          }
+        },
+        "settings": {
+          "yanContribution": {
+            "fermO": "40",
+            "fermK": "100",
+            "dap": "210",
+            "other": "0"
+          },
+          "maxGpl": {
+            "fermO": "0.45",
+            "fermK": "0.5",
+            "dap": "0.96",
+            "other": "0"
+          },
+          "maxGplTouched": false,
+          "other": {
+            "name": ""
+          }
+        },
+        "adjustments": {
+          "adjustAllowed": false,
+          "providedYanPpm": {
+            "fermO": "0",
+            "fermK": "0",
+            "dap": "0",
+            "other": "0"
+          }
+        }
+      },
+      "flags": {
+        "private": false
+      }
+    }
+  }
+}

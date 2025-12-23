@@ -8,7 +8,6 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@/components/ui/popover";
-import { useRecipe } from "@/components/providers/SavedRecipeProvider";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Spinner } from "../ui/spinner";
@@ -115,28 +114,27 @@ function RatingPicker({
   );
 }
 
-export default function RateRecipe() {
-  const { ratingStats, setRatingStats } = useRecipe();
+export default function RateRecipe({ userRating }: { userRating?: number }) {
   const { isLoggedIn } = useAuth();
   const params = useParams();
   const recipeId = Number(params.id);
 
   // userRating from provider is the canonical value
-  const userRating = ratingStats?.userRating ?? 0;
+  const safeRating = userRating ?? 0;
 
   // local draft value while the popover is open
-  const [draftRating, setDraftRating] = useState<number>(userRating);
+  const [draftRating, setDraftRating] = useState<number>(safeRating);
   const [open, setOpen] = useState(false);
 
   const rateMutation = useRateRecipeMutation();
   const isLoading = rateMutation.isPending;
 
-  // When the popover opens, initialize the draft from the current userRating
+  // When the popover opens, initialize the draft from the current safeRating
   useEffect(() => {
     if (open) {
-      setDraftRating(userRating);
+      setDraftRating(safeRating);
     }
-  }, [open, userRating]);
+  }, [open, safeRating]);
 
   const handleClick = () => {
     if (!recipeId || draftRating < 1) return;
@@ -146,10 +144,7 @@ export default function RateRecipe() {
       {
         onSuccess: (data) => {
           // assuming API returns { rating: { averageRating, numberOfRatings, userRating } }
-          setRatingStats?.((prev) => ({
-            ...prev,
-            ...(data as any).rating
-          }));
+          setDraftRating(data.rating);
 
           toast({
             description: `Thanks for your ${draftRating} mug rating.`

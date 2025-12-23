@@ -4,6 +4,7 @@ import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 import { parseRecipeData } from "@/lib/utils/parseRecipeData";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
+import { RecipeDataV2 } from "@/types/recipeDataV2";
 
 // --- Raw API shape from /api/recipes/:id ---
 export type RecipeApiResponse = {
@@ -24,6 +25,9 @@ export type RecipeApiResponse = {
   primaryNotes: [string, string][];
   secondaryNotes: [string, string][];
 
+  // new pattern
+  dataV2?: RecipeDataV2;
+
   // owner info
   public_username: string | null;
 
@@ -41,16 +45,21 @@ type RecipeResponse = { recipe: RecipeApiResponse };
 // --- Shared payload shape for create/update ---
 type BaseRecipePayload = {
   name: string;
-  recipeData: string;
-  yanFromSource: string;
-  yanContribution: string;
-  nutrientData: string;
-  advanced: boolean;
-  nuteInfo: string;
-  primaryNotes: string[];
-  secondaryNotes: string[];
   private: boolean;
   activityEmailsEnabled: boolean;
+
+  // ✅ new (preferred going forward)
+  dataV2?: RecipeDataV2;
+
+  // legacy (keep optional during migration)
+  recipeData?: string;
+  yanFromSource?: string | null;
+  yanContribution?: string;
+  nutrientData?: string;
+  advanced?: boolean;
+  nuteInfo?: string | null;
+  primaryNotes?: string[];
+  secondaryNotes?: string[];
 };
 
 export type UpdateRecipePayload = BaseRecipePayload;
@@ -216,6 +225,14 @@ export function useRecipeQuery(id: string, isLoggedIn: boolean) {
         const json = await fetchWithAuth<RecipeResponse>(`/api/recipes/${id}`);
         base = json.recipe;
       }
+
+      if (base.dataV2)
+        return {
+          ...base,
+          averageRating: base.averageRating ?? 0,
+          numberOfRatings: base?.ratings?.length ?? 0,
+          emailNotifications: base.activityEmailsEnabled
+        } as RecipeWithParsedFields;
 
       // Parse JSON blobs into shaped data
       const parsed = parseRecipeData(base);

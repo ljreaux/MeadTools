@@ -1,18 +1,25 @@
-interface RecipeData {
+type RecipeData = {
   userId: number;
   name: string;
+
+  // legacy
   recipeData: string;
   yanFromSource?: string | null;
   yanContribution: string;
   nutrientData: string;
-  advanced: boolean;
+  advanced?: boolean;
   nuteInfo?: string | null;
   primaryNotes?: string[];
   secondaryNotes?: string[];
   private?: boolean;
+  activityEmailsEnabled?: boolean;
   lastActivityEmailAt?: Date | null;
-}
+
+  // ✅ new
+  dataV2?: RecipeDataV2; // ideally: RecipeDataV2
+};
 import prisma from "@/lib/prisma";
+import { RecipeDataV2 } from "@/types/recipeDataV2";
 import { Prisma } from "@prisma/client";
 
 function concatNotes(notes: string[]): string[][] {
@@ -134,7 +141,7 @@ async function getRecipesPageBase(opts: RecipesPageOpts) {
       primaryNotes,
       secondaryNotes,
       public_username: rec.users?.active
-        ? (rec.users?.public_username ?? "")
+        ? rec.users?.public_username ?? ""
         : "",
       averageRating,
       numberOfRatings
@@ -171,20 +178,30 @@ export async function getAdminRecipesPage(opts: {
 }
 
 export async function createRecipe(data: RecipeData) {
+  const isV2 = data.dataV2 != null;
+
   return prisma.recipes.create({
     data: {
       user_id: data.userId,
       name: data.name,
+
+      // ✅ NEW (write when available)
+      dataV2: isV2 ? data.dataV2 : undefined,
+      version: isV2 ? 2 : 1,
+
+      // ✅ LEGACY (keep during migration; only write if provided)
       recipeData: data.recipeData,
-      yanFromSource: data.yanFromSource,
+      yanFromSource: data.yanFromSource ?? null,
       yanContribution: data.yanContribution,
       nutrientData: data.nutrientData,
-      advanced: data.advanced,
-      nuteInfo: data.nuteInfo,
-      primaryNotes: data.primaryNotes || [],
-      secondaryNotes: data.secondaryNotes || [],
-      private: data.private || false,
-      lastActivityEmailAt: data.lastActivityEmailAt
+      advanced: data.advanced ?? false,
+      nuteInfo: data.nuteInfo ?? null,
+      primaryNotes: data.primaryNotes ?? [],
+      secondaryNotes: data.secondaryNotes ?? [],
+
+      private: data.private ?? false,
+      activityEmailsEnabled: data.activityEmailsEnabled ?? false,
+      lastActivityEmailAt: data.lastActivityEmailAt ?? null
     }
   });
 }

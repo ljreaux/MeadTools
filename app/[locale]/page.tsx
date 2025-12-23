@@ -1,9 +1,9 @@
-import ProviderWrapper from "@/components/recipeBuilder/ProviderWrapper";
+import { RecipeV2Provider } from "@/components/providers/RecipeProviderV2";
 import RecipeBuilder from "@/components/recipeBuilder/RecipeBuilder";
 import initTranslations from "@/lib/i18n";
 
 export default async function Home({
-  params,
+  params
 }: {
   params: Promise<{ locale: string }>;
 }) {
@@ -11,8 +11,8 @@ export default async function Home({
   await initTranslations(locale, ["default", "YeastTable"]);
 
   return (
-    <ProviderWrapper>
+    <RecipeV2Provider>
       <RecipeBuilder />
-    </ProviderWrapper>
+    </RecipeV2Provider>
   );
 }

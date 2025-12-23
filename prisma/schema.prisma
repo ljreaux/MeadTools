@@ -65,11 +65,12 @@ model logs {
   devices            devices?   @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model recipes {
   id              Int       @id @default(autoincrement())
   user_id         Int?
   name            String
+
+  // legacy (keep for now)
   recipeData      String
   yanFromSource   String?
   yanContribution String
@@ -78,17 +79,22 @@ model recipes {
   nuteInfo        String?
   primaryNotes    String[]
   secondaryNotes  String[]
+
+  // NEW
+  dataV2          Json?     @db.JsonB
+  version         Int       @default(1)
+
   private         Boolean   @default(false)
   lastActivityEmailAt DateTime? @db.Timestamptz(6)
   activityEmailsEnabled Boolean @default(false)
+
   brews           brews[]
   devices         devices[]
-  users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           users?    @relation(fields: [user_id], references: [id])
   comments        comments[]
   ratings         recipe_ratings[]
   daily_activity  recipe_daily_activity[]
 }
-
 model users {
   id              Int       @id @default(autoincrement())
   email           String    @unique @db.VarChar(255)

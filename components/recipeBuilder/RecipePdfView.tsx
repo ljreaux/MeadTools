@@ -5,12 +5,7 @@ import { useMemo } from "react";
 import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { toBrix, calcSb } from "@/lib/utils/unitConverter";
-import { parseNumber } from "@/lib/utils/validateInput";
-import {
-  fmt,
-  KG_TO_WEIGHT,
-  L_TO_VOLUME
-} from "@/lib/utils/recipeDataCalculations";
+import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 
 import type { NutrientKey } from "@/types/nutrientDataV2";
 import { ORDER } from "@/types/nutrientDataV2";
@@ -34,7 +29,7 @@ function n0(x: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export default function RecipePdfViewV2({
+export default function RecipePdfView({
   recipe,
   nutrients,
   yeast,
@@ -50,14 +45,13 @@ export default function RecipePdfViewV2({
     const n = nutrients;
 
     const unitDefaults = r.data.unitDefaults;
-    const weightUnit = unitDefaults.weight;
-    const volumeUnit = unitDefaults.volume;
 
+    // for temp conversion only (keep your old behavior)
     const isMetric =
-      weightUnit === "kg" ||
-      weightUnit === "g" ||
-      volumeUnit === "L" ||
-      volumeUnit === "mL";
+      unitDefaults.weight === "kg" ||
+      unitDefaults.weight === "g" ||
+      unitDefaults.volume === "L" ||
+      unitDefaults.volume === "mL";
 
     const toC = (f?: unknown) => {
       const num = n0(f);
@@ -65,24 +59,25 @@ export default function RecipePdfViewV2({
       return isMetric ? Math.round((num - 32) * (5 / 9)) : Math.round(num);
     };
 
-    // Ingredients: use normalized (canonical kg/L) and convert to default display units
-    const normalized = r.derived.normalized;
-
-    const ingredientRows = normalized.map((line) => {
-      const original = r.data.ingredients.find((x) => x.lineId === line.lineId);
-
-      const weight = line.weightKg * KG_TO_WEIGHT[weightUnit];
-      const volume = line.volumeL * L_TO_VOLUME[volumeUnit];
-
-      // filter logic: mimic old “details[0] > 0”
-      const hasAmount = line.volumeL > 0 || line.weightKg > 0;
+    // ✅ Ingredients: show NEW per-line units (no conversion)
+    const ingredientRows = (r.data.ingredients ?? []).map((line) => {
+      const hasAmount =
+        parseNumber(line.amounts.weight.value) > 0 ||
+        parseNumber(line.amounts.volume.value) > 0;
 
       return {
         lineId: line.lineId,
         secondary: line.secondary,
-        name: original?.name ?? "",
-        weightStr: fmt(weight),
-        volumeStr: fmt(volume),
+        name: line.name,
+
+        // raw strings the user typed (already “per-line units”)
+        weightStr: line.amounts.weight.value,
+        volumeStr: line.amounts.volume.value,
+
+        // per-line units
+        weightUnit: line.amounts.weight.unit,
+        volumeUnit: line.amounts.volume.unit,
+
         hasAmount
       };
     });
@@ -131,7 +126,7 @@ export default function RecipePdfViewV2({
     const delle = r.derived.delle;
 
     return {
-      units: { weight: weightUnit, volume: volumeUnit },
+      unitDefaults,
       isMetric,
 
       // header meta
@@ -225,10 +220,8 @@ export default function RecipePdfViewV2({
               <tr>
                 <td>
                   <p>
-                    {model.totalVolume.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 3
-                    })}{" "}
-                    {model.units.volume}
+                    {normalizeNumberString(model.totalVolume, 3, currentLocale)}{" "}
+                    {model.unitDefaults.volume}
                   </p>
                   <p>
                     {nutrients.derived.goFerm.amount > 0 &&
@@ -264,31 +257,27 @@ export default function RecipePdfViewV2({
               <tr>
                 <td>
                   <p>
-                    {model.og.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 3,
-                      minimumFractionDigits: 3
-                    })}
+                    {normalizeNumberString(model.og, 3, currentLocale, true)}
                   </p>
                   <p>
-                    {toBrix(model.og).toLocaleString(currentLocale, {
-                      maximumFractionDigits: 2
-                    })}
+                    {normalizeNumberString(toBrix(model.og), 2, currentLocale)}
                   </p>
                 </td>
 
                 <td>
                   <p>
-                    {model.backsweetenedFg.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 3,
-                      minimumFractionDigits: 3
-                    })}
+                    {normalizeNumberString(
+                      model.backsweetenedFg,
+                      3,
+                      currentLocale,
+                      true
+                    )}
                   </p>
                   <p>
-                    {`${toBrix(model.backsweetenedFg).toLocaleString(
-                      currentLocale,
-                      {
-                        maximumFractionDigits: 2
-                      }
+                    {`${normalizeNumberString(
+                      toBrix(model.backsweetenedFg),
+                      2,
+                      currentLocale
                     )} ${t("BRIX")}`}
                   </p>
                 </td>
@@ -301,26 +290,20 @@ export default function RecipePdfViewV2({
                   </p>
                   <p>
                     {Number.isFinite(model.og)
-                      ? `${t("PDF.sugarBreak")} ${calcSb(
-                          model.og
-                        ).toLocaleString(currentLocale, {
-                          maximumFractionDigits: 3
-                        })}`
+                      ? `${t("PDF.sugarBreak")} ${normalizeNumberString(
+                          calcSb(model.og),
+                          3,
+                          currentLocale,
+                          true
+                        )}`
                       : ""}
                   </p>
                 </td>
 
                 <td>
+                  <p>{normalizeNumberString(model.abv, 2, currentLocale)}%</p>
                   <p>
-                    {model.abv.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 2
-                    })}
-                    %
-                  </p>
-                  <p>
-                    {model.delle.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 0
-                    })}{" "}
+                    {normalizeNumberString(model.delle, 0, currentLocale)}{" "}
                     {t("DU")}
                   </p>
                 </td>
@@ -347,9 +330,11 @@ export default function RecipePdfViewV2({
                 <td>
                   {nutrientRows.map((row) => (
                     <p key={`nute-per-${row.key}`}>
-                      {Math.max(row.per, 0).toLocaleString(currentLocale, {
-                        maximumFractionDigits: 3
-                      })}
+                      {normalizeNumberString(
+                        Math.max(row.per, 0),
+                        3,
+                        currentLocale
+                      )}
                       {row.suffix}
                     </p>
                   ))}
@@ -358,9 +343,11 @@ export default function RecipePdfViewV2({
                 <td>
                   {nutrientRows.map((row) => (
                     <p key={`nute-total-${row.key}`}>
-                      {Math.max(row.total, 0).toLocaleString(currentLocale, {
-                        maximumFractionDigits: 3
-                      })}
+                      {normalizeNumberString(
+                        Math.max(row.total, 0),
+                        3,
+                        currentLocale
+                      )}
                       {row.suffix}
                     </p>
                   ))}
@@ -385,24 +372,23 @@ export default function RecipePdfViewV2({
                 {recipe.stabilizers.addingStabilizers && (
                   <td>
                     <p>
-                      {`${recipe.stabilizers.sulfite.toLocaleString(
-                        currentLocale,
-                        {
-                          maximumFractionDigits: 3
-                        }
+                      {`${normalizeNumberString(
+                        recipe.stabilizers.sulfite,
+                        3,
+                        currentLocale
                       )}g ${t(`PDF.${recipe.stabilizers.stabilizerType}`)} ${t(
                         "accountPage.or"
-                      )} ${recipe.stabilizers.campden.toLocaleString(
-                        currentLocale,
-                        { maximumFractionDigits: 3 }
+                      )} ${normalizeNumberString(
+                        recipe.stabilizers.campden,
+                        3,
+                        currentLocale
                       )} ${t("campden")}`}
                     </p>
                     <p>
-                      {`${recipe.stabilizers.sorbate.toLocaleString(
-                        currentLocale,
-                        {
-                          maximumFractionDigits: 3
-                        }
+                      {`${normalizeNumberString(
+                        recipe.stabilizers.sorbate,
+                        3,
+                        currentLocale
                       )}g ${t("PDF.ksorb")}`}
                     </p>
                   </td>
@@ -412,16 +398,13 @@ export default function RecipePdfViewV2({
             </tbody>
           </table>
 
+          {/* ✅ per-line units display */}
           <table>
             <thead>
               <tr>
                 <td>{t("PDF.primary")}</td>
-                <td>
-                  {t("PDF.weight")} {model.units.weight}
-                </td>
-                <td>
-                  {t("PDF.volume")} {model.units.volume}
-                </td>
+                <td>{t("PDF.weight")}</td>
+                <td>{t("PDF.volume")}</td>
               </tr>
             </thead>
             <tbody>
@@ -436,8 +419,12 @@ export default function RecipePdfViewV2({
                     <td>
                       {i + 1}. {translatedText}
                     </td>
-                    <td>{item.weightStr}</td>
-                    <td>{item.volumeStr}</td>
+                    <td>
+                      {item.weightStr} {item.weightUnit}
+                    </td>
+                    <td>
+                      {item.volumeStr} {item.volumeUnit}
+                    </td>
                   </tr>
                 );
               })}
@@ -486,12 +473,8 @@ export default function RecipePdfViewV2({
                 <thead>
                   <tr>
                     <td>{t("PDF.secondary")}</td>
-                    <td>
-                      {t("PDF.weight")} {model.units.weight}
-                    </td>
-                    <td>
-                      {t("PDF.volume")} {model.units.volume}
-                    </td>
+                    <td>{t("PDF.weight")}</td>
+                    <td>{t("PDF.volume")}</td>
                   </tr>
                 </thead>
                 <tbody>
@@ -506,8 +489,12 @@ export default function RecipePdfViewV2({
                         <td>
                           {i + 1}. {translatedText}
                         </td>
-                        <td>{item.weightStr}</td>
-                        <td>{item.volumeStr}</td>
+                        <td>
+                          {item.weightStr} {item.weightUnit}
+                        </td>
+                        <td>
+                          {item.volumeStr} {item.volumeUnit}
+                        </td>
                       </tr>
                     );
                   })}

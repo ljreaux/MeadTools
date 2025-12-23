@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import OwnerRecipe from "@/components/recipes/OwnerRecipe";
 import PublicRecipe from "@/components/recipes/PublicRecipe";
 import Loading from "@/components/loading";
-import SavedRecipeProvider from "../providers/SavedRecipeProvider";
+// import SavedRecipeProvider from "../providers/SavedRecipeProvider";
 import { useRecipeQuery } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { RecipeV2Provider } from "../providers/RecipeProviderV2";
 
 const RecipePage = () => {
   const params = useParams<{ id: string }>();
@@ -73,44 +74,19 @@ const RecipePage = () => {
 
   const userRating =
     userId == null
-      ? null
-      : (recipe.ratings.find((r) => r.user_id === userId)?.rating ?? null);
+      ? undefined
+      : recipe.ratings.find((r) => r.user_id === userId)?.rating;
+
   const isOwner = userId === ownerId;
 
-  const {
-    nutrientData,
-    getSelectedSchedule,
-    emailNotifications,
-    privateRecipe
-  } = recipe;
-
-  // Build the value to feed into SavedRecipeProvider
-  const providerRecipe = {
-    ...recipe,
-    nutrientData: {
-      ...nutrientData,
-      selected: {
-        ...nutrientData.selected,
-        selectedNutrients: getSelectedSchedule(nutrientData.selected.schedule)
-      }
-    },
-    userRating
-    // everything else (recipeData, yanContribution, etc.) is already on `recipe`
-  };
-
   return (
-    <SavedRecipeProvider recipe={providerRecipe}>
+    <RecipeV2Provider>
       {isOwner ? (
-        <OwnerRecipe
-          pdfRedirect={pdfRedirect}
-          privateRecipe={privateRecipe}
-          recipeId={recipe.id}
-          emailNotifications={emailNotifications}
-        />
+        <OwnerRecipe pdfRedirect={pdfRedirect} recipe={recipe} />
       ) : (
-        <PublicRecipe />
+        <PublicRecipe recipe={recipe} userRating={userRating} />
       )}
-    </SavedRecipeProvider>
+    </RecipeV2Provider>
   );
 };
 

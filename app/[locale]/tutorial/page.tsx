@@ -1,38 +1,25 @@
 "use client";
 
-import SavedRecipeProvider from "@/components/providers/SavedRecipeProvider";
-import RecipeBuilderTutorial from "@/components/recipeBuilder/RecipeBuilderTutorial";
-import { parseRecipeData } from "@/lib/utils/parseRecipeData";
 import { useEffect } from "react";
-import tutorialRecipeData from "@/data/tutorialRecipe.json";
+
+import RecipeBuilderTutorial from "@/components/recipeBuilder/RecipeBuilderTutorial";
+
+// ✅ this should be the already-migrated tutorial blob you create
+import tutorialRecipeV2 from "@/data/tutorialRecipe.v2.json";
+import { RecipeV2Provider } from "@/components/providers/RecipeProviderV2";
+import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 
 function RecipeTutorial() {
   useEffect(() => {
     localStorage.setItem("hasSeenTutorialDialog", "true");
   }, []);
 
-  const recipe = tutorialRecipeData.recipe as any;
-
-  const { recipeData, nutrientData, getSelectedSchedule, yanContribution } =
-    parseRecipeData(recipe);
-
-  const hydratedRecipe = {
-    ...recipe,
-    recipeData,
-    nutrientData: {
-      ...nutrientData,
-      selected: {
-        ...nutrientData.selected,
-        selectedNutrients: getSelectedSchedule(nutrientData.selected.schedule)
-      }
-    },
-    yanContribution
-  };
+  const recipe = tutorialRecipeV2.recipe as RecipeWithParsedFields;
 
   return (
-    <SavedRecipeProvider recipe={hydratedRecipe}>
-      <RecipeBuilderTutorial />
-    </SavedRecipeProvider>
+    <RecipeV2Provider>
+      <RecipeBuilderTutorial recipe={recipe} />
+    </RecipeV2Provider>
   );
 }
 

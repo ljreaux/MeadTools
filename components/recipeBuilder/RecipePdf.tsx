@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import PrintableIframe from "./PrintableIframe";
-import RecipePdfViewV2 from "./RecipePdfView";
+import RecipePdfView from "./RecipePdfView";
 
 import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
 import { useNutrientsV2 } from "@/components/providers/NutrientProviderV2";
@@ -31,7 +31,7 @@ export default function RecipePdf({ title, publicUsername }: Props) {
   return (
     <PrintableIframe
       content={
-        <RecipePdfViewV2
+        <RecipePdfView
           recipe={recipe}
           nutrients={nutrients}
           yeast={yeast}

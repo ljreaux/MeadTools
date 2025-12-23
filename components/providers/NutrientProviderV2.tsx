@@ -254,12 +254,14 @@ export function NutrientProviderV2(props: Props) {
             [key]: !prev.selected.selectedNutrients[key]
           };
 
+          const nextSchedule = scheduleFromSelected(nextSelected);
+
           return {
             ...prev,
             selected: {
               ...prev.selected,
               selectedNutrients: nextSelected,
-              schedule: scheduleFromSelected(nextSelected)
+              schedule: nextSchedule
             }
           };
         });
@@ -563,6 +565,11 @@ export function NutrientProviderV2(props: Props) {
     data.selected.selectedNutrients,
     data.settings.yanContribution,
     data.adjustments.providedYanPpm,
+    data.settings.maxGpl.fermO,
+    data.settings.maxGpl.fermK,
+    data.settings.maxGpl.dap,
+    data.settings.maxGpl.other,
+
     commit
   ]);
 

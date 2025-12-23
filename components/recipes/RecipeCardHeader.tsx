@@ -14,6 +14,7 @@ import {
   InputGroupButton
 } from "../ui/input-group";
 import { cn } from "@/lib/utils";
+import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 
 export default function RecipeCardHeader({
   heading,
@@ -24,17 +25,22 @@ export default function RecipeCardHeader({
   isPrivate,
   setIsPrivate,
   notify,
-  setNotify
+  setNotify,
+  recipeNameProps
 }: {
   heading: string;
   tooltip?: { body: string; link: string };
-  recipe: any;
+  recipe: RecipeWithParsedFields;
   nameEditable: boolean;
   setNameEditable: (v: boolean) => void;
   isPrivate: boolean;
   setIsPrivate: (v: boolean) => void;
   notify: boolean;
   setNotify: (v: boolean) => void;
+  recipeNameProps: {
+    recipeName: string;
+    setRecipeName: (v: string) => void;
+  };
 }) {
   const { t } = useTranslation();
 
@@ -52,7 +58,8 @@ export default function RecipeCardHeader({
 
       <InputGroup className="w-full h-12">
         <InputGroupInput
-          {...recipe.recipeNameProps}
+          value={recipeNameProps.recipeName}
+          onChange={(e) => recipeNameProps.setRecipeName(e.target.value)}
           disabled={!nameEditable}
           className="h-11 text-xl"
         />
@@ -100,8 +107,8 @@ export default function RecipeCardHeader({
       {/* Rating */}
 
       <Rating
-        averageRating={recipe.ratingStats?.averageRating ?? 0}
-        numberOfRatings={recipe.ratingStats?.numberOfRatings ?? 0}
+        averageRating={recipe.averageRating ?? 0}
+        numberOfRatings={recipe.numberOfRatings ?? 0}
       />
 
       <Separator />
