@@ -13,30 +13,30 @@ import { stepCards } from "@/lib/tutorialSteps";
 import { useEffect, useState, useCallback } from "react";
 import type { Step } from "react-joyride";
 
-// ✅ V2 recipe builder components
-import UnitsV2 from "./UnitsV2";
-import DesiredBatchDetailsV2 from "./DesiredBatchDetailsV2";
-import IngredientsV2 from "./IngredientsV2";
-import IngredientResultsV2 from "./ResultsV2";
-import ScaleRecipeFormV2 from "./ScaleRecipeFormV2";
-import StabilizersV2 from "./StabilizersV2";
-import AdditivesV2 from "./AdditivesV2";
-import NotesV2 from "./NotesV2";
+// recipe builder components
+import Units from "./Units";
+import DesiredBatchDetails from "./DesiredBatchDetails";
+import Ingredients from "./Ingredients";
+import IngredientResults from "./Results";
+import ScaleRecipeForm from "./ScaleRecipeForm";
+import Stabilizers from "./Stabilizers";
+import Additives from "./Additives";
+import Notes from "./Notes";
 import RecipePdf from "./RecipePdf";
 
-// ✅ V2 nutrient components
-import VolumeInputsV2 from "../nutrientCalc/VolumeInputsV2";
-import YeastDetailsV2 from "../nutrientCalc/YeastDetailsV2";
-import NutrientSelectorV2 from "../nutrientCalc/NutrientSelectorV2";
-import ResultsV2 from "../nutrientCalc/ResultsV2";
-import AdditionalDetailsV2 from "../nutrientCalc/AdditionalDetailsV2";
+// nutrient components
+import VolumeInputs from "../nutrientCalc/VolumeInputs";
+import YeastDetails from "../nutrientCalc/YeastDetails";
+import NutrientSelector from "../nutrientCalc/NutrientSelector";
+import Results from "../nutrientCalc/Results";
+import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
 
-// ✅ V2 providers
-import { useRecipeV2 } from "../providers/RecipeProviderV2";
-import { NutrientProviderV2 } from "../providers/NutrientProviderV2";
+// ✅  providers
+import { useRecipe } from "../providers/RecipeProvider";
+import { NutrientProvider } from "../providers/NutrientProvider";
 
-// ✅ V2 reset + mock save
-import ResetButtonV2 from "./ResetButtonV2";
+// ✅  reset + mock save
+import ResetButton from "./ResetButton";
 import MockSaveRecipe from "./MockSaveRecipe";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
@@ -51,34 +51,34 @@ type CardConfig = {
   };
 };
 
-const cardConfigV2: CardConfig[] = [
+const cardConfig: CardConfig[] = [
   {
     key: "card-1",
     heading: "recipeBuilder.homeHeading",
     components: [
-      <UnitsV2 key="unitsV2" />,
-      <DesiredBatchDetailsV2 key="DesiredBatchDetailsV2" />,
-      <IngredientsV2 key="ingredientsV2" />,
-      <IngredientResultsV2 key="ingredientResultsV2" />,
-      <ScaleRecipeFormV2 key="scaleIngredientsFormV2" />
+      <Units key="units" />,
+      <DesiredBatchDetails key="DesiredBatchDetails" />,
+      <Ingredients key="ingredients" />,
+      <IngredientResults key="ingredientResults" />,
+      <ScaleRecipeForm key="scaleIngredientsForm" />
     ]
   },
   {
     key: "card-2",
     heading: "nutesHeading",
     components: [
-      // match embedded behavior (same as RecipeBuilderV2)
-      <VolumeInputsV2 key="volumeInputsV2" mode="embedded" />,
-      <YeastDetailsV2 key="yeastDetailsV2" />
+      // match embedded behavior (same as RecipeBuilder)
+      <VolumeInputs key="volumeInputs" mode="embedded" />,
+      <YeastDetails key="yeastDetails" />
     ]
   },
   {
     key: "card-3",
     heading: "nuteResults.label",
     components: [
-      <NutrientSelectorV2 key="nutrientSelectorV2" />,
-      <ResultsV2 key="resultsV2" />,
-      <AdditionalDetailsV2 key="additionalDetailsV2" />
+      <NutrientSelector key="nutrientSelector" />,
+      <Results key="results" />,
+      <AdditionalDetails key="additionalDetails" />
     ]
   },
   {
@@ -88,22 +88,22 @@ const cardConfigV2: CardConfig[] = [
       body: "tipText.stabilizers",
       link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<StabilizersV2 key="stabilizersV2" />]
+    components: [<Stabilizers key="stabilizers" />]
   },
   {
     key: "card-5",
     heading: "additivesHeading",
-    components: [<AdditivesV2 key="additivesV2" />]
+    components: [<Additives key="additives" />]
   },
   {
     key: "card-6",
     heading: "notes.title",
-    components: [<NotesV2 key="notesV2" />]
+    components: [<Notes key="notes" />]
   },
   {
     key: "card-7",
     heading: "PDF.title",
-    components: [<RecipePdf key="pdfV2" />]
+    components: [<RecipePdf key="pdf" />]
   }
 ];
 
@@ -122,7 +122,7 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
     }
   }, []);
 
-  const cards = cardConfigV2.map(({ key, heading, components, tooltip }) => (
+  const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
       <Heading text={heading} toolTipProps={tooltip} />
       {components}
@@ -163,18 +163,18 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
     specialCallbacks
   );
 
-  // ✅ hook recipe v2 -> feed nutrients provider in controlled mode (same as RecipeBuilderV2)
+  // ✅ hook recipe  -> feed nutrients provider in controlled mode (same as RecipeBuilder)
   const {
     derived: { nutrientValueForRecipe },
     meta: { setNutrients }
-  } = useRecipeV2();
+  } = useRecipe();
 
   const resetFlow = useCallback(() => {
     goTo(0);
   }, [goTo]);
 
   return (
-    <NutrientProviderV2
+    <NutrientProvider
       mode="controlled"
       value={nutrientValueForRecipe}
       onChange={setNutrients}
@@ -189,7 +189,7 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
         >
           <div className="py-2">
             <MockSaveRecipe />
-            <ResetButtonV2 resetFlow={resetFlow} />
+            <ResetButton resetFlow={resetFlow} />
           </div>
         </RecipeCalculatorSideBar>
 
@@ -215,7 +215,7 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
           </Button>
         </div>
       </div>
-    </NutrientProviderV2>
+    </NutrientProvider>
   );
 }
 

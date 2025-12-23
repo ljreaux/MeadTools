@@ -10,7 +10,7 @@ import Loading from "@/components/loading";
 // import SavedRecipeProvider from "../providers/SavedRecipeProvider";
 import { useRecipeQuery } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { RecipeV2Provider } from "../providers/RecipeProviderV2";
+import { RecipeProvider } from "../providers/RecipeProvider";
 
 const RecipePage = () => {
   const params = useParams<{ id: string }>();
@@ -80,13 +80,13 @@ const RecipePage = () => {
   const isOwner = userId === ownerId;
 
   return (
-    <RecipeV2Provider>
+    <RecipeProvider>
       {isOwner ? (
         <OwnerRecipe pdfRedirect={pdfRedirect} recipe={recipe} />
       ) : (
         <PublicRecipe recipe={recipe} userRating={userRating} />
       )}
-    </RecipeV2Provider>
+    </RecipeProvider>
   );
 };
 

@@ -1,18 +1,9 @@
-// recipeDataV2.ts
 import { nanoid } from "nanoid";
-import { initialNutrientDataV2, NutrientDataV2 } from "./nutrientDataV2";
-
-/**
- * V2 goals:
- * - Keep user-entered inputs as strings (so fields can be empty mid-edit)
- * - Put units next to the values they apply to (per-line units)
- * - Keep a stable lineId for DnD + React keys (NOT tied to Ingredient DB id)
- * - Store only user-editable inputs in DB; derived values are computed in app
- */
+import { initialNutrientData, NutrientData } from "./nutrientData";
 
 export const genLineId = () => nanoid(10);
 
-/* ----------------------------- Units (V2) ----------------------------- */
+/* ----------------------------- Units ----------------------------- */
 
 export type WeightUnit = "kg" | "g" | "lb" | "oz";
 export type VolumeUnit =
@@ -87,7 +78,7 @@ export type IngredientLineAmounts = {
   basis: "weight" | "volume";
 };
 
-export type IngredientLineV2 = {
+export type IngredientLine = {
   /** Stable DnD / UI identity. Generated on the client. */
   lineId: string;
 
@@ -110,7 +101,7 @@ export type IngredientLineV2 = {
   amounts: IngredientLineAmounts;
 };
 
-export type RecipeUnitDefaultsV2 = {
+export type RecipeUnitDefaults = {
   weight: WeightUnit;
   volume: VolumeUnit;
 };
@@ -130,7 +121,7 @@ export type NormalizedIngredientLine = {
 /* ------------------------------- Additives ------------------------------- */
 
 type AdditiveAmountDim = "weight" | "volume" | "count" | "unknown";
-export type AdditiveLineV2 = {
+export type AdditiveLine = {
   lineId: string; // stable UI id (client-generated)
   name: string;
   amount: NumericInputString;
@@ -141,9 +132,9 @@ export type AdditiveLineV2 = {
 
 /* ------------------------------ Stabilizers ------------------------------ */
 
-export type StabilizerTypeV2 = "kmeta" | "nameta";
+export type StabilizerType = "kmeta" | "nameta";
 
-export type StabilizersV2 = {
+export type Stabilizers = {
   adding: boolean;
   takingPh: boolean;
   phReading: string;
@@ -152,39 +143,39 @@ export type StabilizersV2 = {
 
 /* --------------------------------- Notes -------------------------------- */
 
-export type NoteLineV2 = {
+export type NoteLine = {
   lineId: string;
   content: [string, string]; // keep your existing shape
 };
 
-export type NotesV2 = {
-  primary: NoteLineV2[];
-  secondary: NoteLineV2[];
+export type Notes = {
+  primary: NoteLine[];
+  secondary: NoteLine[];
 };
 
-/* ----------------------------- RecipeDataV2 ----------------------------- */
+/* ----------------------------- RecipeData ----------------------------- */
 
 /**
  * This is the object you store in DB as json/jsonb.
  * Keep it purely user-editable inputs; compute OG/ABV/offset/etc at runtime.
  */
-export type RecipeDataV2 = {
+export type RecipeData = {
   version: 2;
 
-  unitDefaults: RecipeUnitDefaultsV2;
+  unitDefaults: RecipeUnitDefaults;
 
-  ingredients: IngredientLineV2[];
+  ingredients: IngredientLine[];
 
   /** User-editable target FG input (your current FG) */
   fg: NumericInputString;
 
-  additives: AdditiveLineV2[];
+  additives: AdditiveLine[];
 
-  stabilizers: StabilizersV2;
+  stabilizers: Stabilizers;
 
-  notes: NotesV2;
+  notes: Notes;
 
-  nutrients?: NutrientDataV2; // ✅ add this
+  nutrients?: NutrientData; // ✅ add this
   /** Room for future flags without breaking parsing */
   flags?: {
     advanced?: boolean;
@@ -194,12 +185,12 @@ export type RecipeDataV2 = {
 
 /* --------------------------- Blank / initial data -------------------------- */
 
-export const blankIngredientLineV2 = (
-  defaults: RecipeUnitDefaultsV2,
-  patch?: Partial<Omit<IngredientLineV2, "amounts">> & {
+export const blankIngredientLine = (
+  defaults: RecipeUnitDefaults,
+  patch?: Partial<Omit<IngredientLine, "amounts">> & {
     amounts?: Partial<IngredientLineAmounts>;
   }
-): IngredientLineV2 => {
+): IngredientLine => {
   const lineId = patch?.lineId ?? genLineId();
 
   return {
@@ -223,7 +214,7 @@ export const blankIngredientLineV2 = (
   };
 };
 
-export const blankAdditiveLineV2 = (): AdditiveLineV2 => ({
+export const blankAdditiveLine = (): AdditiveLine => ({
   lineId: genLineId(),
   name: "",
   amount: "",
@@ -232,25 +223,25 @@ export const blankAdditiveLineV2 = (): AdditiveLineV2 => ({
   amountDim: "weight"
 });
 
-export const blankNoteLineV2 = (): NoteLineV2 => ({
+export const blankNoteLine = (): NoteLine => ({
   lineId: genLineId(),
   content: ["", ""]
 });
 
-export const initialRecipeDataV2 = (
-  defaults: RecipeUnitDefaultsV2 = { weight: "lb", volume: "gal" }
-): RecipeDataV2 => ({
+export const initialRecipeData = (
+  defaults: RecipeUnitDefaults = { weight: "lb", volume: "gal" }
+): RecipeData => ({
   version: 2,
   unitDefaults: defaults,
   ingredients: [
-    blankIngredientLineV2(defaults, {
+    blankIngredientLine(defaults, {
       name: "Water",
       category: "water",
       brix: "0.00",
       ref: { kind: "custom" },
       amounts: { basis: "volume" } // water usually driven by volume
     }),
-    blankIngredientLineV2(defaults, {
+    blankIngredientLine(defaults, {
       name: "Honey",
       category: "sugar",
       brix: "79.60",
@@ -259,7 +250,7 @@ export const initialRecipeDataV2 = (
     })
   ],
   fg: "0.996",
-  additives: [blankAdditiveLineV2()],
+  additives: [blankAdditiveLine()],
   stabilizers: {
     adding: false,
     takingPh: false,
@@ -267,15 +258,15 @@ export const initialRecipeDataV2 = (
     type: "kmeta"
   },
   notes: {
-    primary: [blankNoteLineV2()],
-    secondary: [blankNoteLineV2()]
+    primary: [blankNoteLine()],
+    secondary: [blankNoteLine()]
   },
-  nutrients: initialNutrientDataV2()
+  nutrients: initialNutrientData()
 });
 
 /* ------------------------------ Type guards ------------------------------ */
 
-export const isRecipeDataV2 = (x: unknown): x is RecipeDataV2 => {
+export const isRecipeData = (x: unknown): x is RecipeData => {
   if (!x || typeof x !== "object") return false;
   const obj = x as Record<string, unknown>;
   return obj.version === 2 && Array.isArray(obj.ingredients);

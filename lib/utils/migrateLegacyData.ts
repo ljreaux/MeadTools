@@ -1,12 +1,12 @@
 import type { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
 import type {
-  NoteLineV2,
-  RecipeDataV2,
+  NoteLine,
+  RecipeData,
   VolumeUnit,
   WeightUnit
-} from "@/types/recipeDataV2";
-import type { NutrientDataV2 } from "@/types/nutrientDataV2";
-import { getEffectiveMaxGpl } from "@/types/nutrientDataV2";
+} from "@/types/recipeData";
+import type { NutrientData } from "@/types/nutrientData";
+import { getEffectiveMaxGpl } from "@/types/nutrientData";
 
 // replace with whatever you use today
 const genId = () => Math.random().toString(36).slice(2, 12);
@@ -25,9 +25,7 @@ function selectedNutrientsFromLegacy(arr: string[]) {
   };
 }
 
-export function migrateLegacyRecipeToV2(
-  recipe: RecipeApiResponse
-): RecipeDataV2 {
+export function migrateLegacyRecipeToV2(recipe: RecipeApiResponse): RecipeData {
   const legacy = JSON.parse(recipe.recipeData);
   const legacyNutes = JSON.parse(recipe.nutrientData);
 
@@ -76,7 +74,7 @@ export function migrateLegacyRecipeToV2(
 
   const deltaSg = String(legacyNutes?.inputs?.sg ?? "1.000");
 
-  const nutrientDataV2: NutrientDataV2 = {
+  const nutrientData: NutrientData = {
     version: 2,
     inputs: {
       volume: String(legacyNutes?.inputs?.volume ?? legacy.volume ?? "1.000"),
@@ -112,10 +110,10 @@ export function migrateLegacyRecipeToV2(
     }
   };
 
-  const notesToV2 = (pairs: any[] | null | undefined): NoteLineV2[] =>
-    (pairs ?? []).map((pair: NoteLineV2["content"]) => ({
+  const notesToV2 = (pairs: any[] | null | undefined): NoteLine[] =>
+    (pairs ?? []).map((pair: NoteLine["content"]) => ({
       lineId: genId(),
-      content: Array.isArray(pair) ? pair : (["", ""] as NoteLineV2["content"])
+      content: Array.isArray(pair) ? pair : (["", ""] as NoteLine["content"])
     }));
 
   return {
@@ -134,7 +132,7 @@ export function migrateLegacyRecipeToV2(
       primary: notesToV2(recipe.primaryNotes),
       secondary: notesToV2(recipe.secondaryNotes)
     },
-    nutrients: nutrientDataV2,
+    nutrients: nutrientData,
     flags: { private: !!recipe.private }
   };
 }

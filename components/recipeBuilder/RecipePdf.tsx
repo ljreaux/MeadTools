@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import PrintableIframe from "./PrintableIframe";
 import RecipePdfView from "./RecipePdfView";
 
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
-import { useNutrientsV2 } from "@/components/providers/NutrientProviderV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import { useNutrients } from "@/components/providers/NutrientProvider";
 
 type Props = {
   // optional metadata you likely have from the saved recipe record
@@ -14,8 +14,8 @@ type Props = {
 };
 
 export default function RecipePdf({ title, publicUsername }: Props) {
-  const recipe = useRecipeV2();
-  const nutrients = useNutrientsV2();
+  const recipe = useRecipe();
+  const nutrients = useNutrients();
 
   const yeast = useMemo(() => {
     const yeastList = nutrients.catalog.yeastList ?? [];

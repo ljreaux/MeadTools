@@ -28,7 +28,7 @@ import PerPageSelect from "@/components/pagination/PerPageSelect";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
-import type { RecipeDataV2 } from "@/types/recipeDataV2";
+import type { RecipeData } from "@/types/recipeData";
 
 interface Recipe {
   id: number;
@@ -53,7 +53,7 @@ interface Recipe {
   numberOfRatings?: number;
 
   // ✅ new
-  dataV2?: RecipeDataV2;
+  dataV2?: RecipeData;
 }
 
 function getOgFg(recipe: Recipe) {

@@ -11,50 +11,50 @@ import DeleteRecipe from "./DeleteRecipe";
 import { useEffect, useState } from "react";
 import CommentsSection from "./comments/CommentsSection";
 import RecipeCardHeader from "./RecipeCardHeader";
-import UnitsV2 from "../recipeBuilder/UnitsV2";
-import IngredientsV2 from "../recipeBuilder/IngredientsV2";
-import IngredientResultsV2 from "../recipeBuilder/ResultsV2";
-import ScaleRecipeFormV2 from "../recipeBuilder/ScaleRecipeFormV2";
-import VolumeInputsV2 from "../nutrientCalc/VolumeInputsV2";
-import YeastDetailsV2 from "../nutrientCalc/YeastDetailsV2";
-import NutrientSelectorV2 from "../nutrientCalc/NutrientSelectorV2";
-import ResultsV2 from "../nutrientCalc/ResultsV2";
-import AdditionalDetailsV2 from "../nutrientCalc/AdditionalDetailsV2";
-import StabilizersV2 from "../recipeBuilder/StabilizersV2";
-import AdditivesV2 from "../recipeBuilder/AdditivesV2";
-import NotesV2 from "../recipeBuilder/NotesV2";
+import Units from "../recipeBuilder/Units";
+import Ingredients from "../recipeBuilder/Ingredients";
+import IngredientResults from "../recipeBuilder/Results";
+import ScaleRecipeForm from "../recipeBuilder/ScaleRecipeForm";
+import VolumeInputs from "../nutrientCalc/VolumeInputs";
+import YeastDetails from "../nutrientCalc/YeastDetails";
+import NutrientSelector from "../nutrientCalc/NutrientSelector";
+import Results from "../nutrientCalc/Results";
+import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
+import Stabilizers from "../recipeBuilder/Stabilizers";
+import Additives from "../recipeBuilder/Additives";
+import Notes from "../recipeBuilder/Notes";
 import RecipePdf from "../recipeBuilder/RecipePdf";
 import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
-import { NutrientProviderV2 } from "../providers/NutrientProviderV2";
-import { useRecipeV2 } from "../providers/RecipeProviderV2";
+import { NutrientProvider } from "../providers/NutrientProvider";
+import { useRecipe } from "../providers/RecipeProvider";
 
 const cardConfig = [
   {
-    key: "v2-card-1",
+    key: "card-1",
     heading: "recipeBuilder.homeHeading",
     components: [
-      <UnitsV2 key="unitsV2" />,
-      <IngredientsV2 key="ingredientsV2" />,
-      <IngredientResultsV2 key="ingredientResultsV2" />,
-      <ScaleRecipeFormV2 key="scaleIngredientsForm" />
+      <Units key="units" />,
+      <Ingredients key="ingredients" />,
+      <IngredientResults key="ingredientResults" />,
+      <ScaleRecipeForm key="scaleIngredientsForm" />
     ]
   },
   {
     key: "card 2",
     heading: "nutesHeading",
     components: [
-      <VolumeInputsV2 key="volumeInputs" mode="embedded" />,
-      <YeastDetailsV2 key="yeastDetails" />
+      <VolumeInputs key="volumeInputs" mode="embedded" />,
+      <YeastDetails key="yeastDetails" />
     ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
-      <NutrientSelectorV2 key="nutrientSelector" />,
-      <ResultsV2 key="results" />,
-      <AdditionalDetailsV2 key="additionalDetails" />
+      <NutrientSelector key="nutrientSelector" />,
+      <Results key="results" />,
+      <AdditionalDetails key="additionalDetails" />
     ]
   },
   {
@@ -64,17 +64,17 @@ const cardConfig = [
       body: "tipText.stabilizers",
       link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<StabilizersV2 key="stabilizers" />]
+    components: [<Stabilizers key="stabilizers" />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<AdditivesV2 key="additives" />]
+    components: [<Additives key="additives" />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<NotesV2 key="notes" />]
+    components: [<Notes key="notes" />]
   },
   {
     key: "card 7",
@@ -122,7 +122,7 @@ function OwnerRecipe({
   const {
     derived: { nutrientValueForRecipe },
     meta: { setNutrients }
-  } = useRecipeV2();
+  } = useRecipe();
 
   useEffect(() => {
     if (pdfRedirect) {
@@ -131,7 +131,7 @@ function OwnerRecipe({
   }, [pdfRedirect]);
 
   return (
-    <NutrientProviderV2
+    <NutrientProvider
       mode="controlled"
       value={nutrientValueForRecipe}
       onChange={setNutrients}
@@ -166,7 +166,7 @@ function OwnerRecipe({
           )}
         </div>
       </div>
-    </NutrientProviderV2>
+    </NutrientProvider>
   );
 }
 

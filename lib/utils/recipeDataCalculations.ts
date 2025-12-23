@@ -1,10 +1,10 @@
 import {
   BlendInput,
-  IngredientLineV2,
+  IngredientLine,
   NormalizedIngredientLine,
   VolumeUnit,
   WeightUnit
-} from "../../types/recipeDataV2";
+} from "../../types/recipeData";
 import { blendValues } from "./blendValues";
 import { toSG } from "./unitConverter";
 import { parseNumber, isValidNumber } from "./validateInput";
@@ -69,7 +69,7 @@ export const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(3) : "0.000");
  * suitable for blending math.
  */
 export function normalizeIngredientLine(
-  line: IngredientLineV2
+  line: IngredientLine
 ): NormalizedIngredientLine {
   const brix = parseNumber(line.brix);
 
@@ -310,7 +310,7 @@ export function shouldConvertAdditiveAmount(args: {
   fromUnit: string;
   toUnit: string;
   amountTouched: boolean;
-  amountDim: UnitDim; // your AdditiveLineV2.amountDim
+  amountDim: UnitDim;
 }) {
   const { amountStr, fromUnit, toUnit, amountTouched, amountDim } = args;
 

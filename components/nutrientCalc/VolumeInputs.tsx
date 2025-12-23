@@ -1,4 +1,5 @@
 "use client";
+
 import { Input } from "../ui/input";
 import {
   Select,
@@ -10,42 +11,54 @@ import {
 import { calcSb, toBrix } from "@/lib/utils/unitConverter";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { NutrientType } from "@/types/nutrientTypes";
-import { parseNumber, normalizeNumberString } from "@/lib/utils/validateInput";
+import {
+  parseNumber,
+  normalizeNumberString,
+  isValidNumber
+} from "@/lib/utils/validateInput";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput
 } from "../ui/input-group";
 import { Separator } from "../ui/separator";
+import { useNutrients } from "../providers/NutrientProvider";
 
-function VolumeInputs({
-  useNutrients,
-  disabled
-}: {
-  useNutrients: () => NutrientType;
-  disabled?: boolean;
+export default function VolumeInputs(props: {
+  mode: "standalone" | "embedded";
 }) {
   const { t, i18n } = useTranslation();
-  const currentLocale = i18n.resolvedLanguage;
-  const { inputs } = useNutrients();
+  const locale = i18n.resolvedLanguage;
 
-  // SG → Brix & Sugar Break
-  const sgNumeric = parseNumber(inputs.sg.value);
-  const safeSg = isNaN(sgNumeric) ? 1 : sgNumeric;
+  const {
+    data: { inputs },
+    actions
+  } = useNutrients();
+
+  const isEmbedded = props.mode === "embedded";
+
+  // In embedded mode, we show the nutrient provider's values but lock them (like OG in recipe builder).
+  // Offset stays editable unless disabled=true is passed.
+  const disableVolume = isEmbedded;
+  const disableSg = isEmbedded;
+  const disableUnits = isEmbedded;
+
+  const sgNumeric = parseNumber(inputs.sg);
+  const safeSg = Number.isFinite(sgNumeric) ? sgNumeric : 1;
 
   const brix = toBrix(safeSg);
-  const brixString = normalizeNumberString(brix, 2, currentLocale);
+  const brixString = normalizeNumberString(brix, 2, locale);
 
   const sugarBreakValue = calcSb(sgNumeric);
   const sugarBreak = `${t("nuteResults.sb")}: ${sugarBreakValue.toLocaleString(
-    currentLocale,
+    locale,
     { minimumFractionDigits: 3, maximumFractionDigits: 3 }
   )}`;
 
   return (
     <div className="joyride-nutrientInputs flex flex-col gap-4">
       <h3 className="text-base font-semibold">{t("batchDetails")}</h3>
+
       {/* Volume */}
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="nuteVol">
@@ -55,9 +68,15 @@ function VolumeInputs({
         <InputGroup className="h-12">
           <InputGroupInput
             id="nuteVol"
-            {...inputs.volume}
-            disabled={disabled}
+            value={inputs.volume}
+            disabled={disableVolume}
+            readOnly={disableVolume}
             inputMode="decimal"
+            onChange={(e) => {
+              if (disableVolume) return;
+              const val = e.target.value;
+              if (isValidNumber(val)) actions.setVolume(val);
+            }}
             onFocus={(e) => e.target.select()}
             className="h-full text-lg relative"
           />
@@ -68,9 +87,12 @@ function VolumeInputs({
           >
             <Separator orientation="vertical" className="h-12" />
             <Select
-              value={inputs.volumeUnits.value}
-              onValueChange={inputs.volumeUnits.onChange}
-              disabled={disabled}
+              value={inputs.volumeUnits}
+              disabled={disableUnits}
+              onValueChange={(val) => {
+                if (disableUnits) return;
+                actions.setVolumeUnits(val as any);
+              }}
             >
               <SelectTrigger className="p-2 border-none mr-2 w-20">
                 <SelectValue />
@@ -97,9 +119,15 @@ function VolumeInputs({
 
           <InputGroup className="h-12">
             <InputGroupInput
-              {...inputs.sg}
-              disabled={disabled}
+              value={inputs.sg}
+              disabled={disableSg}
+              readOnly={disableSg}
               inputMode="decimal"
+              onChange={(e) => {
+                if (disableSg) return;
+                const val = e.target.value;
+                if (isValidNumber(val)) actions.setSg(val);
+              }}
               onFocus={(e) => e.target.select()}
               className="h-full text-lg relative"
             />
@@ -127,8 +155,12 @@ function VolumeInputs({
 
           <Input
             className="h-12 text-lg"
-            {...inputs.offset}
+            value={inputs.offsetPpm}
             inputMode="decimal"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (isValidNumber(val)) actions.setOffsetPpm(val);
+            }}
             onFocus={(e) => e.target.select()}
           />
         </div>
@@ -138,5 +170,3 @@ function VolumeInputs({
     </div>
   );
 }
-
-export default VolumeInputs;

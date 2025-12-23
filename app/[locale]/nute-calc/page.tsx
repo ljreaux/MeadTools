@@ -1,11 +1,11 @@
 import NutrientCalculator from "@/components/nutrientCalc/NutrientCalulator";
-import { NutrientProviderV2 } from "@/components/providers/NutrientProviderV2";
+import { NutrientProvider } from "@/components/providers/NutrientProvider";
 
 function NuteCalc() {
   return (
-    <NutrientProviderV2 mode="standalone">
+    <NutrientProvider mode="standalone">
       <NutrientCalculator />
-    </NutrientProviderV2>
+    </NutrientProvider>
   );
 }
 

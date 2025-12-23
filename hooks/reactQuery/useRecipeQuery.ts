@@ -4,7 +4,7 @@ import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 import { parseRecipeData } from "@/lib/utils/parseRecipeData";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
-import { RecipeDataV2 } from "@/types/recipeDataV2";
+import { RecipeData } from "@/types/recipeData";
 
 // --- Raw API shape from /api/recipes/:id ---
 export type RecipeApiResponse = {
@@ -26,7 +26,7 @@ export type RecipeApiResponse = {
   secondaryNotes: [string, string][];
 
   // new pattern
-  dataV2?: RecipeDataV2;
+  dataV2?: RecipeData;
 
   // owner info
   public_username: string | null;
@@ -49,7 +49,7 @@ type BaseRecipePayload = {
   activityEmailsEnabled: boolean;
 
   // ✅ new (preferred going forward)
-  dataV2?: RecipeDataV2;
+  dataV2?: RecipeData;
 
   // legacy (keep optional during migration)
   recipeData?: string;

@@ -1,25 +1,33 @@
+"use client";
+
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { Recipe } from "@/types/recipeDataTypes";
 import { cn } from "@/lib/utils";
 import { Separator } from "../ui/separator";
-import { normalizeNumberString } from "@/lib/utils/validateInput";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
+import {
+  normalizeNumberString,
+  isValidNumber
+} from "@/lib/utils/validateInput";
+import { useRecipe } from "@/components/providers/RecipeProvider";
 
-function Results({ useRecipe }: { useRecipe: () => Recipe }) {
-  const {
-    OG,
-    FG,
-    updateFG,
-    backsweetenedFG,
-    totalVolume,
-    volume,
-    ABV,
-    delle,
-    units
-  } = useRecipe();
+export default function IngredientResults() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
+
+  const {
+    data: { fg },
+    setFg,
+    derived: {
+      ogPrimary,
+      backsweetenedFg,
+      primaryVolume,
+      totalVolume,
+      abv,
+      delle,
+      volumeUnit
+    }
+  } = useRecipe();
 
   const backgroundColor = {
     warning: "bg-[rgb(255,204,0)] text-black",
@@ -28,12 +36,17 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
   };
 
   const ogWarningClass: keyof typeof backgroundColor =
-    OG > 1.16 ? "destructive" : OG > 1.125 ? "warning" : "default";
+    ogPrimary > 1.16
+      ? "destructive"
+      : ogPrimary > 1.125
+      ? "warning"
+      : "default";
 
   const abvWarningClass: keyof typeof backgroundColor =
-    ABV > 23 ? "destructive" : ABV > 20 ? "warning" : "default";
+    abv > 23 ? "destructive" : abv > 20 ? "warning" : "default";
 
-  if (totalVolume <= 0 || OG <= 1) return null;
+  // same gating as V1: hide until meaningful
+  if (totalVolume <= 0 || ogPrimary <= 1) return null;
 
   return (
     <div className="joyride-recipeBuilderResults grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -56,7 +69,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           )}
         </span>
         <p className="text-2xl font-medium tracking-tight">
-          {normalizeNumberString(OG, 3, locale)}
+          {normalizeNumberString(ogPrimary, 3, locale, true)}
         </p>
       </label>
 
@@ -67,8 +80,12 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           <Tooltip body={t("tipText.estimatedFg")} />
         </span>
         <InputWithUnits
-          value={FG}
-          handleChange={(e) => updateFG(e.target.value)}
+          value={fg}
+          handleChange={(e) => {
+            const next = e.target.value;
+            if (!isValidNumber(next)) return;
+            setFg(next);
+          }}
           text={t("SG")}
         />
       </label>
@@ -77,7 +94,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
       <label>
         <span>{t("recipeBuilder.resultsLabels.backFG")}</span>
         <p className="text-2xl font-medium tracking-tight">
-          {normalizeNumberString(backsweetenedFG, 3, locale)}
+          {normalizeNumberString(backsweetenedFg, 3, locale, true)}
         </p>
       </label>
 
@@ -88,14 +105,14 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           <Tooltip body={t("tipText.totalVolume")} />
         </span>
         <p className="text-2xl font-medium tracking-tight">
-          {normalizeNumberString(Number(volume), 3, locale)}
+          {normalizeNumberString(primaryVolume, 3, locale)}
           <span className="text-muted-foreground text-lg ml-1">
-            {units.volume}
+            {volumeUnit}
           </span>
         </p>
       </label>
 
-      {/* Total secondary volume */}
+      {/* Total secondary volume (V1 label, but it’s actually total batch volume) */}
       <label>
         <span className="flex items-center gap-1">
           {t("recipeBuilder.resultsLabels.totalSecondary")}
@@ -104,7 +121,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
         <p className="text-2xl font-medium tracking-tight">
           {normalizeNumberString(totalVolume, 3, locale)}
           <span className="text-muted-foreground text-lg ml-1">
-            {units.volume}
+            {volumeUnit}
           </span>
         </p>
       </label>
@@ -129,7 +146,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           )}
         </span>
         <p className="text-2xl font-medium tracking-tight">
-          {normalizeNumberString(ABV, 2, locale)}
+          {normalizeNumberString(abv, 2, locale)}
           <span className="text-muted-foreground text-lg ml-1">
             {t("recipeBuilder.percent")}
           </span>
@@ -146,7 +163,7 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
           />
         </span>
         <p className="text-2xl font-medium tracking-tight">
-          {normalizeNumberString(delle, 0, locale)}
+          {normalizeNumberString(delle, 0, locale, true)}
           <span className="text-muted-foreground text-lg ml-1">{t("DU")}</span>
         </p>
       </label>
@@ -155,5 +172,3 @@ function Results({ useRecipe }: { useRecipe: () => Recipe }) {
     </div>
   );
 }
-
-export default Results;

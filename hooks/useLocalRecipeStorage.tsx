@@ -1,6 +1,6 @@
 "use client";
 
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
 import { useEffect, useRef, useState } from "react";
 
 type Options = {
@@ -19,7 +19,7 @@ export function useLocalRecipeStorage({ key }: Options) {
       nutrients
     },
     meta: { hydrate }
-  } = useRecipeV2();
+  } = useRecipe();
 
   const [didInit, setDidInit] = useState(false);
   const [didHydrate, setDidHydrate] = useState(false);

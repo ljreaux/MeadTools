@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { RecipeWithParsedFields } from "./reactQuery/useRecipeQuery";
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
 import { useEffect } from "react";
 import { toast } from "./use-toast";
 
@@ -9,7 +9,7 @@ export default function useRecipeVersionGate(recipe: RecipeWithParsedFields) {
   const router = useRouter();
   const {
     meta: { hydrate }
-  } = useRecipeV2();
+  } = useRecipe();
 
   useEffect(() => {
     if (recipe.dataV2) {

@@ -6,7 +6,7 @@ import Rating from "./Rating";
 import CommentsSection from "./comments/CommentsSection";
 import { useParams } from "next/navigation";
 import RecipePdf from "../recipeBuilder/RecipePdf";
-import { NutrientProviderV2 } from "../providers/NutrientProviderV2";
+import { NutrientProvider } from "../providers/NutrientProvider";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import RateRecipe from "./RateRecipe";
 import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
@@ -40,9 +40,9 @@ function PublicRecipe({
           numberOfRatings={recipe.numberOfRatings ?? 0}
         />
         <RateRecipe userRating={userRating} />
-        <NutrientProviderV2>
+        <NutrientProvider>
           <RecipePdf />
-        </NutrientProviderV2>
+        </NutrientProvider>
         <CommentsSection recipeId={Number(id)} />
         <Link
           href={"/public-recipes"}

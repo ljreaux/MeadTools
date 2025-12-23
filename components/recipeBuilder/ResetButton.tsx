@@ -1,4 +1,5 @@
 "use client";
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,7 +16,6 @@ import {
 } from "@radix-ui/react-alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash } from "lucide-react";
-import { resetRecipe } from "@/lib/utils/resetRecipe";
 import { useTranslation } from "react-i18next";
 import {
   Tooltip as UiTooltip,
@@ -23,9 +23,16 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
-export default function ResetButton() {
+import { useRecipe } from "../providers/RecipeProvider";
+
+type ResetButtonProps = {
+  resetFlow: () => void;
+};
+
+export default function ResetButton({ resetFlow }: ResetButtonProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const recipe = useRecipe();
 
   return (
     <AlertDialog>
@@ -60,16 +67,21 @@ export default function ResetButton() {
 
         <AlertDialogFooter>
           <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+
           <AlertDialogAction asChild>
             <Button
               variant="destructive"
               onClick={() => {
-                resetRecipe();
+                recipe.meta.reset(); // provider reset
+                resetFlow(); // builder reset (step/page)
+
                 toast({
-                  title: "Recipe Reset",
-                  description: `Recipe has been reset.`
+                  title: t("recipeBuilder.reset"),
+                  description: t(
+                    "recipeBuilder.resetDone",
+                    "Recipe has been reset."
+                  )
                 });
-                location.reload();
               }}
             >
               {t("reset")}

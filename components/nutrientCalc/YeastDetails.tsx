@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Select,
   SelectContent,
@@ -7,22 +9,19 @@ import {
 } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { NutrientType } from "@/types/nutrientTypes";
 import SearchableInput from "../ui/SearchableInput";
+import { useNutrients } from "@/components/providers/NutrientProvider";
 
-function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
+export default function YeastDetails() {
   const { t } = useTranslation();
-  const {
-    selected,
-    setYeastBrand,
-    yeastList,
-    setYeastName,
-    setNitrogenRequirement
-  } = useNutrients();
+  const { data, actions, catalog } = useNutrients();
+  const { yeastList, brands } = catalog;
+  const selected = data.selected;
 
   return (
     <div className="joyride-yeastDetails flex flex-col gap-4">
       <h3 className="text-base font-semibold">{t("yeastDetails")}</h3>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Yeast brand */}
         <div className="grid gap-1">
@@ -31,18 +30,20 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
               {t("yeastBrand")}
             </span>
           </label>
-          <Select value={selected.yeastBrand} onValueChange={setYeastBrand}>
+
+          <Select
+            value={selected.yeastBrand}
+            onValueChange={actions.setYeastBrand}
+          >
             <SelectTrigger className="h-12">
               <SelectValue placeholder={selected.yeastBrand} />
             </SelectTrigger>
             <SelectContent>
-              {Array.from(new Set(yeastList.map((yeast) => yeast.brand))).map(
-                (brand) => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
-                )
-              )}
+              {brands.map((brand) => (
+                <SelectItem key={brand} value={brand}>
+                  {brand}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -57,14 +58,11 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
           </label>
 
           <SearchableInput
-            items={yeastList.sort()}
-            query={selected.yeastDetails.name}
-            setQuery={(yeast) => setYeastName(yeast)}
+            items={yeastList}
+            query={selected.yeastStrain}
+            setQuery={actions.setYeastStrain}
             keyName="name"
-            onSelect={(yeast) => {
-              setYeastBrand(yeast.brand);
-              setYeastName(yeast.name);
-            }}
+            onSelect={actions.selectYeast}
           />
         </div>
 
@@ -78,23 +76,23 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
           </label>
 
           <Select
-            value={selected.yeastNitrogenRequirement}
-            onValueChange={setNitrogenRequirement}
+            value={selected.nitrogenRequirement}
+            onValueChange={(req) =>
+              actions.setNitrogenRequirement(
+                req as typeof selected.nitrogenRequirement
+              )
+            }
           >
             <SelectTrigger className="h-12">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem key="Low" value="Low">
-                {t("n2Requirement.low")}
-              </SelectItem>
-              <SelectItem key="Medium" value="Medium">
+              <SelectItem value="Low">{t("n2Requirement.low")}</SelectItem>
+              <SelectItem value="Medium">
                 {t("n2Requirement.medium")}
               </SelectItem>
-              <SelectItem key="High" value="High">
-                {t("n2Requirement.high")}
-              </SelectItem>
-              <SelectItem key="Very High" value="Very High">
+              <SelectItem value="High">{t("n2Requirement.high")}</SelectItem>
+              <SelectItem value="Very High">
                 {t("n2Requirement.veryHigh")}
               </SelectItem>
             </SelectContent>
@@ -104,5 +102,3 @@ function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
     </div>
   );
 }
-
-export default YeastDetails;

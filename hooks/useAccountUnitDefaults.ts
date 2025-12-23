@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
 
 type PreferredUnits = "US" | "METRIC";
 
@@ -14,7 +14,7 @@ export function useAccountUnitDefaults(args: {
   const {
     data: { unitDefaults },
     setUnitDefaults
-  } = useRecipeV2();
+  } = useRecipe();
 
   useEffect(() => {
     if (!args.didInit) return;

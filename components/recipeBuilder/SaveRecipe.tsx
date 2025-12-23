@@ -1,14 +1,20 @@
 "use client";
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
-import { useRouter } from "next/navigation";
-import { useRecipe } from "../providers/RecipeProvider";
-import { useNutrients } from "../providers/NutrientProvider";
-import { resetRecipe } from "@/lib/utils/resetRecipe";
+import { Button } from "../ui/button";
+import { LoadingButton } from "../ui/LoadingButton";
+import Tooltip from "../Tooltips";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+
 import {
   Dialog,
   DialogContent,
@@ -18,18 +24,16 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 
-import { Save } from "lucide-react";
-import { LoadingButton } from "../ui/LoadingButton";
-import { Button } from "../ui/button";
-import { cn } from "@/lib/utils";
-import Tooltip from "../Tooltips";
-import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
-import { useAuth } from "@/hooks/auth/useAuth";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+
+import { Save } from "lucide-react";
+
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import { RecipeData } from "@/types/recipeData";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
@@ -39,85 +43,73 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
 
   const createRecipeMutation = useCreateRecipeMutation();
 
-  const [checked, setChecked] = useState(false); // private toggle
-  const [notify, setNotify] = useState(false); // email notify toggle
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // activity email toggle
+  const [name, setName] = useState("");
 
   const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    recipeNameProps,
-    stabilizers,
-    stabilizerType
+    data: {
+      unitDefaults,
+      ingredients,
+      fg,
+      stabilizers,
+      additives,
+      notes,
+      nutrients
+    },
+    meta
   } = useRecipe();
 
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl
-  } = useNutrients();
+  const data: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      flags: {
+        private: checked
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      checked
+    ]
+  );
 
   const handleCreateRecipe = () => {
-    const recipeData = JSON.stringify({
-      ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
-      additives,
-      sorbate,
-      sulfite,
-      campden,
-      stabilizers,
-      stabilizerType
-    });
+    const trimmedName = name.trim();
 
-    const otherNutrientName =
-      otherNameState.value.length > 0 ? otherNameState.value : undefined;
-
-    const nutrientData = JSON.stringify({
-      ...fullData,
-      otherNutrientName
-    });
-    const yanContribution = JSON.stringify(yanContributions);
-
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
+    if (!trimmedName) {
+      toast({
+        title: "Error",
+        description: "Recipe name is required.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const body = {
-      name: recipeNameProps.value,
-      recipeData,
-      yanFromSource: JSON.stringify(providedYan),
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: JSON.stringify(maxGpl),
-      primaryNotes,
-      secondaryNotes,
+      name: trimmedName,
+      dataV2: data, // ✅ send as object; server stores in jsonb
       private: checked,
       activityEmailsEnabled: notify
     };
 
-    createRecipeMutation.mutate(body, {
+    createRecipeMutation.mutate(body as any, {
       onSuccess: () => {
-        resetRecipe();
-        toast({
-          description: "Recipe created successfully."
-        });
+        meta.reset();
+        setName("");
+        toast({ description: "Recipe created successfully." });
         router.push("/account");
       },
       onError: (error: any) => {
@@ -169,16 +161,19 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("recipeForm.title")}</DialogTitle>
+
           {isLoggedIn ? (
             <div className="space-y-4">
               <label>
                 {t("recipeForm.subtitle")}
-                <Input {...recipeNameProps} />
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
               </label>
+
               <label className="grid">
                 {t("private")}
                 <Switch checked={checked} onCheckedChange={setChecked} />
               </label>
+
               {!checked && (
                 <label className="grid">
                   <span className="flex items-center">

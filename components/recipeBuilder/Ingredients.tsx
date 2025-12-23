@@ -1,33 +1,44 @@
-import { Ingredient, IngredientDetails, Recipe } from "@/types/recipeDataTypes";
+import {
+  IngredientCatalogItem,
+  IngredientLine as IngredientLineType
+} from "@/types/recipeData";
+import { useRecipe } from "@/components/providers/RecipeProvider";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
 import SearchableInput from "../ui/SearchableInput";
 import { useTranslation } from "react-i18next";
 import InputWithUnits from "../nutrientCalc/InputWithUnits";
-import DragList from "../ui/DragList";
 import Tooltip from "../Tooltips";
 import lodash from "lodash";
-import { Separator } from "../ui/separator";
 import { Trash } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import SortableItem from "../ui/SortableItem";
+import DragList from "../ui/DragList";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 
-function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+
+import type { VolumeUnit, WeightUnit } from "@/types/recipeData";
+
+export default function Ingredients() {
   const { t } = useTranslation();
+
   const {
-    ingredients,
-    removeIngredient,
-    changeIngredient,
-    loadingIngredients,
-    updateIngredientWeight,
-    updateIngredientVolume,
-    updateBrix,
-    toggleSecondaryChecked,
-    addIngredient,
-    ingredientList,
-    units,
-    fillToNearest,
-    setIngredients
+    data: { ingredients, unitDefaults },
+    ingredient,
+    catalog: { ingredientList, loadingIngredients }
   } = useRecipe();
 
   if (loadingIngredients) {
@@ -52,27 +63,35 @@ function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
           ) : (
             <DragList
               items={ingredients}
-              setItems={setIngredients}
+              setItems={ingredient.reorder}
+              getId={(ing) => ing.lineId}
               renderItem={(ing, i) => (
                 <IngredientLine
-                  units={units}
-                  ingredientList={ingredientList}
                   ing={ing}
-                  deleteFn={() => removeIngredient(ing.id)}
-                  changeIng={(val) => changeIngredient(ing, i, val)}
-                  updateWeight={(val) => {
-                    updateIngredientWeight(ing, ing.id, val);
-                  }}
-                  updateVolume={(val) => {
-                    updateIngredientVolume(ing, ing.id, val);
-                  }}
-                  updateBrix={(val) => {
-                    updateBrix(val, ing.id);
-                  }}
-                  toggleChecked={(val) => {
-                    toggleSecondaryChecked(ing.id, val);
-                  }}
-                  fillToNearest={() => fillToNearest(ing.id)}
+                  ingredientList={ingredientList}
+                  unitDefaults={unitDefaults}
+                  deleteFn={() => ingredient.remove(ing.lineId)}
+                  changeIng={(val) => ingredient.setName(ing.lineId, val)}
+                  selectCatalog={(item) =>
+                    ingredient.selectCatalog(ing.lineId, item)
+                  }
+                  updateWeight={(val) =>
+                    ingredient.setWeightValue(ing.lineId, val)
+                  }
+                  updateVolume={(val) =>
+                    ingredient.setVolumeValue(ing.lineId, val)
+                  }
+                  updateBrix={(val) => ingredient.setBrix(ing.lineId, val)}
+                  toggleChecked={(val) =>
+                    ingredient.setSecondary(ing.lineId, val)
+                  }
+                  fillToNext={() => ingredient.fillToNext(ing.lineId)}
+                  setWeightUnit={(unit) =>
+                    ingredient.setWeightUnit(ing.lineId, unit)
+                  }
+                  setVolumeUnit={(unit) =>
+                    ingredient.setVolumeUnit(ing.lineId, unit)
+                  }
                   index={i}
                 />
               )}
@@ -81,7 +100,7 @@ function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
         </div>
 
         <Button
-          onClick={addIngredient}
+          onClick={ingredient.add}
           variant="secondary"
           disabled={ingredients.length >= 10}
           className="w-full sm:w-auto"
@@ -95,51 +114,49 @@ function Ingredients({ useRecipe }: { useRecipe: () => Recipe }) {
   );
 }
 
-export default Ingredients;
-
 const IngredientLine = ({
-  units,
-  ingredientList,
   ing,
+  ingredientList,
+  unitDefaults,
   deleteFn,
   changeIng,
+  selectCatalog,
   updateWeight,
   updateVolume,
   updateBrix,
   toggleChecked,
-  fillToNearest,
+  fillToNext,
+  setWeightUnit,
+  setVolumeUnit,
   index
 }: {
-  ing: IngredientDetails;
+  ing: IngredientLineType;
   deleteFn: () => void;
   changeIng: (val: string) => void;
+  selectCatalog: (item: IngredientCatalogItem) => void;
   updateWeight: (val: string) => void;
   updateVolume: (val: string) => void;
   updateBrix: (val: string) => void;
   toggleChecked: (val: boolean) => void;
-  ingredientList: Ingredient[];
-  units: { weight: string; volume: string };
-  fillToNearest: () => void;
+  fillToNext: () => void;
+  setWeightUnit: (unit: WeightUnit) => void;
+  setVolumeUnit: (unit: VolumeUnit) => void;
+  ingredientList: IngredientCatalogItem[];
+  unitDefaults: { weight: string; volume: string };
   index: number;
 }) => {
   const { t } = useTranslation();
 
-  const handleIngredientSelect = (selectedIngredient: Ingredient) => {
-    changeIng(selectedIngredient.name);
-  };
-
   return (
     <div className={`joyride-ingredient-${index + 1} grid gap-1 py-2`}>
-      {/* Top-right delete button */}
       <div className="flex justify-end mb-1">
         <Button onClick={deleteFn} variant="destructive" size="sm">
           <Trash className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Row 1: Ingredient + Brix (equal widths) */}
+      {/* Row 1: Ingredient + Brix */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Ingredient */}
         <label className="grid gap-1">
           <span className="flex items-center gap-1 text-sm font-medium">
             {t("ingredient")} <Tooltip body={t("ingredientTooltip")} />
@@ -148,15 +165,14 @@ const IngredientLine = ({
             <SearchableInput
               items={ingredientList}
               query={ing.name}
-              setQuery={(value) => changeIng(value)}
+              setQuery={changeIng}
               keyName="name"
-              onSelect={handleIngredientSelect}
+              onSelect={selectCatalog}
               renderItem={(item) => t(lodash.camelCase(item.name))}
             />
           </div>
         </label>
 
-        {/* Brix */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">{t("BRIX")}</span>
           <div className="w-full">
@@ -169,56 +185,142 @@ const IngredientLine = ({
         </label>
       </div>
 
-      {/* Row 2: Weight + Volume */}
+      {/* Row 2: Weight + Volume (InputGroup + per-line unit select) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+        {/* Weight */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">
             {t("recipeBuilder.labels.weight")}
           </span>
-          <div className="w-full">
-            <InputWithUnits
-              value={ing.details[0]}
-              handleChange={(e) => updateWeight(e.target.value)}
-              text={units.weight}
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              value={ing.amounts.weight.value}
+              onChange={(e) => updateWeight(e.target.value)}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
             />
-          </div>
+
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Separator orientation="vertical" className="h-12" />
+
+              <Select
+                value={ing.amounts.weight.unit ?? (unitDefaults.weight as any)}
+                onValueChange={(val) => setWeightUnit(val as WeightUnit)}
+              >
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="lb">{t("units.lb", "lb")}</SelectItem>
+                  <SelectItem value="oz">{t("units.oz", "oz")}</SelectItem>
+
+                  <SelectSeparator />
+
+                  <SelectItem value="kg">{t("units.kg", "kg")}</SelectItem>
+                  <SelectItem value="g">{t("units.g", "g")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
         </label>
 
+        {/* Volume */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">
             {t("recipeBuilder.labels.volume")}
           </span>
-          <div className="w-full">
-            <InputWithUnits
-              value={ing.details[1]}
-              handleChange={(e) => updateVolume(e.target.value)}
-              text={units.volume}
+
+          <InputGroup className="h-12">
+            <InputGroupInput
+              value={ing.amounts.volume.value}
+              onChange={(e) => updateVolume(e.target.value)}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="h-full text-lg"
             />
-          </div>
+
+            <InputGroupAddon
+              align="inline-end"
+              className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+            >
+              <Separator orientation="vertical" className="h-12" />
+
+              <Select
+                value={ing.amounts.volume.unit ?? (unitDefaults.volume as any)}
+                onValueChange={(val) => setVolumeUnit(val as VolumeUnit)}
+              >
+                <SelectTrigger className="p-2 border-none mr-2 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {/* US (default, unprefixed) */}
+                  <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
+                  <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
+                  <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
+                  <SelectItem value="fl_oz">
+                    {t("units.fl_oz", "fl oz")}
+                  </SelectItem>
+
+                  <SelectSeparator />
+
+                  {/* Metric */}
+                  <SelectItem value="L">{t("units.L", "L")}</SelectItem>
+                  <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+
+                  <SelectSeparator />
+
+                  {/* Imperial (explicitly labeled) */}
+                  <SelectItem value="imp_gal">
+                    {t("units.imp_gal", "gal (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_qt">
+                    {t("units.imp_qt", "qt (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_pt">
+                    {t("units.imp_pt", "pt (imp)")}
+                  </SelectItem>
+                  <SelectItem value="imp_fl_oz">
+                    {t("units.imp_fl_oz", "fl oz (imp)")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
         </label>
       </div>
 
-      {/* Row 3: Secondary + fill to next */}
+      {/* Row 3: Secondary (keep) */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mt-3">
         <label
-          className={`joyride-secondary-${index + 1} inline-flex items-center gap-2 text-sm`}
+          className={`joyride-secondary-${
+            index + 1
+          } inline-flex items-center gap-2 text-sm`}
         >
           <span>{t("recipeBuilder.labels.secondary")}</span>
           <Switch checked={ing.secondary} onCheckedChange={toggleChecked} />
         </label>
 
         <Button
-          onClick={fillToNearest}
+          onClick={fillToNext}
           className={`joyride-fillToNext-${index + 1}`}
         >
-          {t("toNextVolume", { volumeUnit: units.volume })}
+          {ing.secondary
+            ? t("toNextTotalVolume", { volumeUnit: unitDefaults.volume })
+            : t("toNextBatchVolume", { volumeUnit: unitDefaults.volume })}
         </Button>
       </div>
     </div>
   );
 };
 
-/* SKELETONS */
+/* SKELETONS (unchanged) */
 
 const IngredientsSkeleton = () => {
   const { t } = useTranslation();
@@ -236,7 +338,6 @@ const IngredientsSkeleton = () => {
           ))}
         </div>
 
-        {/* Add new button skeleton: matches default button height (h-10) */}
         <Skeleton className="h-10 w-full rounded-lg col-span-full" />
       </div>
 
@@ -246,7 +347,6 @@ const IngredientsSkeleton = () => {
 };
 
 const SortableIngredientSkeleton = ({ id }: { id: string }) => {
-  // Outer shell mirrors SortableItem (flex row, bg, rounding, margin).
   return (
     <SortableItem id={id}>
       <IngredientLineSkeleton />
@@ -257,14 +357,10 @@ const SortableIngredientSkeleton = ({ id }: { id: string }) => {
 const IngredientLineSkeleton = () => {
   return (
     <div className="grid gap-1 py-2">
-      {/* Top-right delete button – matches sm button height (h-9) */}
       <div className="flex justify-end mb-1">
-        {/* <Button variant="ghost" size="sm"> */}
         <Skeleton className="w-10 h-9 rounded-lg" />
-        {/* </Button> */}
       </div>
 
-      {/* Row 1: Ingredient + Brix (both h-12 via InputGroup) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-1">
           <Skeleton className="h-5 w-1/2 mb-0.5" />
@@ -276,7 +372,6 @@ const IngredientLineSkeleton = () => {
         </div>
       </div>
 
-      {/* Row 2: Weight + Volume */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
         <div className="grid gap-1">
           <Skeleton className="h-5 w-1/2" />
@@ -288,7 +383,6 @@ const IngredientLineSkeleton = () => {
         </div>
       </div>
 
-      {/* Row 3: Secondary + fill to next */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mt-3">
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-32" />

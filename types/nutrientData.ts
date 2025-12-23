@@ -1,5 +1,3 @@
-// nutrientDataV2.ts
-
 import { parseNumber } from "@/lib/utils/validateInput";
 
 export type NutrientVolumeUnit = "gal" | "liter";
@@ -24,7 +22,7 @@ export type NutrientScheduleType =
 
 export type NutrientKey = "fermO" | "fermK" | "dap" | "other";
 
-export type SelectedNutrientsV2 = {
+export type SelectedNutrients = {
   fermO: boolean;
   fermK: boolean;
   dap: boolean;
@@ -33,19 +31,19 @@ export type SelectedNutrientsV2 = {
 
 export type NumericInputString = string;
 
-export type NutrientAdjustmentsV2 = {
+export type NutrientAdjustments = {
   adjustAllowed: boolean;
   providedYanPpm: Record<NutrientKey, NumericInputString>;
 };
 
-export type NutrientSettingsV2 = {
+export type NutrientSettings = {
   yanContribution: Record<NutrientKey, NumericInputString>;
   maxGpl: Record<NutrientKey, NumericInputString>;
   maxGplTouched: boolean;
   other: { name: string };
 };
 
-export type NutrientInputsV2 = {
+export type NutrientInputs = {
   volume: NumericInputString;
   volumeUnits: NutrientVolumeUnit;
   sg: NumericInputString;
@@ -58,27 +56,27 @@ export type NutrientInputsV2 = {
   yeastAmountTouched: boolean;
 };
 
-export type NutrientSelectedV2 = {
+export type NutrientSelected = {
   yeastBrand: string;
   yeastStrain: string;
   yeastId?: number;
   nitrogenRequirement: NitrogenRequirement;
 
   schedule: NutrientScheduleType;
-  selectedNutrients: SelectedNutrientsV2;
+  selectedNutrients: SelectedNutrients;
 };
 
-export type NutrientDataV2 = {
+export type NutrientData = {
   version: 2;
-  inputs: NutrientInputsV2;
-  selected: NutrientSelectedV2;
-  settings: NutrientSettingsV2;
-  adjustments: NutrientAdjustmentsV2;
+  inputs: NutrientInputs;
+  selected: NutrientSelected;
+  settings: NutrientSettings;
+  adjustments: NutrientAdjustments;
 };
 
-export const initialSelectedNutrientsV2 = (
-  patch?: Partial<SelectedNutrientsV2>
-): SelectedNutrientsV2 => ({
+export const initialSelectedNutrients = (
+  patch?: Partial<SelectedNutrients>
+): SelectedNutrients => ({
   fermO: true,
   fermK: false,
   dap: false,
@@ -102,10 +100,10 @@ const zeros = (): Record<NutrientKey, NumericInputString> => ({
  * - schedule tosna (Fermaid O only)
  * - Go-Ferm type "Go-Ferm"
  */
-export const initialNutrientDataV2 = (
-  patch?: Partial<NutrientDataV2>
-): NutrientDataV2 => {
-  const base: NutrientDataV2 = {
+export const initialNutrientData = (
+  patch?: Partial<NutrientData>
+): NutrientData => {
+  const base: NutrientData = {
     version: 2,
 
     inputs: {
@@ -128,7 +126,7 @@ export const initialNutrientDataV2 = (
       nitrogenRequirement: "Low",
 
       schedule: "tosna",
-      selectedNutrients: initialSelectedNutrientsV2()
+      selectedNutrients: initialSelectedNutrients()
     },
 
     settings: {
@@ -185,7 +183,7 @@ export const initialNutrientDataV2 = (
   };
 };
 export const scheduleFromSelected = (
-  s: SelectedNutrientsV2
+  s: SelectedNutrients
 ): NutrientScheduleType => {
   if (s.other) return "other";
   if (s.fermO && s.fermK && s.dap) return "tbe";
@@ -198,11 +196,11 @@ export const scheduleFromSelected = (
   return "other";
 };
 
-type MaxGplEntryV2 = {
+type MaxGplEntry = {
   value: string[] | string[][];
 };
 
-export const MAX_GPL_PRESETS: Record<NutrientScheduleType, MaxGplEntryV2> = {
+export const MAX_GPL_PRESETS: Record<NutrientScheduleType, MaxGplEntry> = {
   tbe: { value: ["0.45", "0.5", "0.96", "0"] },
   tosna: { value: ["2.5", "0", "0", "0"] },
   justK: { value: ["0", "3", "0", "0"] },
@@ -233,9 +231,9 @@ function arrToRecord(arr: string[]): Record<NutrientKey, string> {
 }
 
 export function getEffectiveMaxGpl(params: {
-  schedule: NutrientDataV2["selected"]["schedule"];
+  schedule: NutrientData["selected"]["schedule"];
   sg: string;
-  selected: NutrientDataV2["selected"]["selectedNutrients"];
+  selected: NutrientData["selected"]["selectedNutrients"];
 }): Record<NutrientKey, string> {
   const { schedule, sg, selected } = params;
 

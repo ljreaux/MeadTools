@@ -6,27 +6,27 @@ import { Button } from "../ui/button";
 import { CardWrapper } from "../CardWrapper";
 import Tooltip from "../Tooltips";
 import RecipeCalculatorSideBar from "./Sidebar";
-import IngredientsV2 from "./IngredientsV2";
+import Ingredients from "./Ingredients";
 import { ReactNode, useCallback } from "react";
-import UnitsV2 from "./UnitsV2";
-import IngredientResultsV2 from "./ResultsV2";
-import DesiredBatchDetailsV2 from "./DesiredBatchDetailsV2";
-import ScaleRecipeFormV2 from "./ScaleRecipeFormV2";
-import StabilizersV2 from "./StabilizersV2";
+import Units from "./Units";
+import IngredientResults from "./Results";
+import DesiredBatchDetails from "./DesiredBatchDetails";
+import ScaleRecipeForm from "./ScaleRecipeForm";
+import Stabilizers from "./Stabilizers";
 import { useLocalRecipeStorage } from "@/hooks/useLocalRecipeStorage";
-import AdditivesV2 from "./AdditivesV2";
-import NotesV2 from "./NotesV2";
-import ResetButtonV2 from "./ResetButtonV2";
-import { useRecipeV2 } from "../providers/RecipeProviderV2";
+import Additives from "./Additives";
+import Notes from "./Notes";
+import ResetButton from "./ResetButton";
+import { useRecipe } from "../providers/RecipeProvider";
 import { useAccountUnitDefaults } from "@/hooks/useAccountUnitDefaults";
-import VolumeInputsV2 from "../nutrientCalc/VolumeInputsV2";
-import YeastDetailsV2 from "../nutrientCalc/YeastDetailsV2";
-import NutrientSelectorV2 from "../nutrientCalc/NutrientSelectorV2";
-import ResultsV2 from "../nutrientCalc/ResultsV2";
-import AdditionalDetailsV2 from "../nutrientCalc/AdditionalDetailsV2";
-import { NutrientProviderV2 } from "@/components/providers/NutrientProviderV2";
+import VolumeInputs from "../nutrientCalc/VolumeInputs";
+import YeastDetails from "../nutrientCalc/YeastDetails";
+import NutrientSelector from "../nutrientCalc/NutrientSelector";
+import Results from "../nutrientCalc/Results";
+import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
+import { NutrientProvider } from "@/components/providers/NutrientProvider";
 import RecipePdf from "./RecipePdf";
-import SaveRecipeV2 from "./SaveRecipeV2";
+import SaveRecipe from "./SaveRecipe";
 
 type CardConfig = {
   key: string;
@@ -38,33 +38,33 @@ type CardConfig = {
   };
 };
 
-const cardConfigV2: CardConfig[] = [
+const cardConfig: CardConfig[] = [
   {
-    key: "v2-card-1",
+    key: "-card-1",
     heading: "recipeBuilder.homeHeading",
     components: [
-      <UnitsV2 key="unitsV2" />,
-      <DesiredBatchDetailsV2 key="DesiredBatchDetailsV2" />,
-      <IngredientsV2 key="ingredientsV2" />,
-      <IngredientResultsV2 key="ingredientResultsV2" />,
-      <ScaleRecipeFormV2 key="scaleIngredientsForm" />
+      <Units key="units" />,
+      <DesiredBatchDetails key="DesiredBatchDetails" />,
+      <Ingredients key="ingredients" />,
+      <IngredientResults key="ingredientResults" />,
+      <ScaleRecipeForm key="scaleIngredientsForm" />
     ]
   },
   {
     key: "card 2",
     heading: "nutesHeading",
     components: [
-      <VolumeInputsV2 key="volumeInputs" mode="embedded" />,
-      <YeastDetailsV2 key="yeastDetails" />
+      <VolumeInputs key="volumeInputs" mode="embedded" />,
+      <YeastDetails key="yeastDetails" />
     ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
-      <NutrientSelectorV2 key="nutrientSelector" />,
-      <ResultsV2 key="results" />,
-      <AdditionalDetailsV2 key="additionalDetails" />
+      <NutrientSelector key="nutrientSelector" />,
+      <Results key="results" />,
+      <AdditionalDetails key="additionalDetails" />
     ]
   },
   {
@@ -74,17 +74,17 @@ const cardConfigV2: CardConfig[] = [
       body: "tipText.stabilizers",
       link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<StabilizersV2 key="stabilizers" />]
+    components: [<Stabilizers key="stabilizers" />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<AdditivesV2 key="additives" />]
+    components: [<Additives key="additives" />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<NotesV2 key="notes" />]
+    components: [<Notes key="notes" />]
   },
   {
     key: "card 7",
@@ -93,7 +93,7 @@ const cardConfigV2: CardConfig[] = [
   }
 ];
 
-const DRAFT_KEY = "meadtools:recipe:v2:draft";
+const DRAFT_KEY = "meadtools:recipe::draft";
 
 export default function RecipeBuilder() {
   const { didInit, didHydrate } = useLocalRecipeStorage({ key: DRAFT_KEY });
@@ -101,11 +101,11 @@ export default function RecipeBuilder() {
   const {
     derived: { nutrientValueForRecipe },
     meta: { setNutrients }
-  } = useRecipeV2();
+  } = useRecipe();
 
   const { t } = useTranslation();
 
-  const cards = cardConfigV2.map(({ key, heading, components, tooltip }) => (
+  const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
       <Heading text={heading} toolTipProps={tooltip} />
       {components}
@@ -118,7 +118,7 @@ export default function RecipeBuilder() {
   }, [goTo]);
 
   return (
-    <NutrientProviderV2
+    <NutrientProvider
       mode="controlled"
       value={nutrientValueForRecipe}
       onChange={setNutrients}
@@ -126,8 +126,8 @@ export default function RecipeBuilder() {
       <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
         <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
           <div className="py-2">
-            <SaveRecipeV2 />
-            <ResetButtonV2 resetFlow={resetFlow} />
+            <SaveRecipe />
+            <ResetButton resetFlow={resetFlow} />
           </div>
         </RecipeCalculatorSideBar>
 
@@ -141,7 +141,7 @@ export default function RecipeBuilder() {
           )}
 
           {currentStepIndex === cards.length - 1 ? (
-            <SaveRecipeV2 bottom />
+            <SaveRecipe bottom />
           ) : (
             <Button className="w-full" variant={"secondary"} onClick={next}>
               {t("buttonLabels.next")}
@@ -149,7 +149,7 @@ export default function RecipeBuilder() {
           )}
         </div>
       </div>
-    </NutrientProviderV2>
+    </NutrientProvider>
   );
 }
 

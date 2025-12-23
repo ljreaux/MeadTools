@@ -7,15 +7,15 @@ import { useTranslation } from "react-i18next";
 import { toBrix, calcSb } from "@/lib/utils/unitConverter";
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 
-import type { NutrientKey } from "@/types/nutrientDataV2";
-import { ORDER } from "@/types/nutrientDataV2";
+import type { NutrientKey } from "@/types/nutrientData";
+import { ORDER } from "@/types/nutrientData";
 
 type Props = {
   recipe: ReturnType<
-    typeof import("@/components/providers/RecipeProviderV2").useRecipeV2
+    typeof import("@/components/providers/RecipeProvider").useRecipe
   >;
   nutrients: ReturnType<
-    typeof import("@/components/providers/NutrientProviderV2").useNutrientsV2
+    typeof import("@/components/providers/NutrientProvider").useNutrients
   >;
   yeast?: any;
 
@@ -39,7 +39,7 @@ export default function RecipePdfView({
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
 
-  // ---------- Build a V2 view model ----------
+  // ---------- Build a view model ----------
   const model = useMemo(() => {
     const r = recipe;
     const n = nutrients;
@@ -118,7 +118,7 @@ export default function RecipePdfView({
         ? `${t("PDF.tempRange")} ${lowTemp}-${highTemp}°${isMetric ? "C" : "F"}`
         : "";
 
-    // Volumes / gravities from derived (the real V2 truth)
+    // Volumes / gravities from derived
     const totalVolume = r.derived.totalVolume;
     const og = r.derived.ogPrimary;
     const backsweetenedFg = r.derived.backsweetenedFg;
@@ -154,7 +154,7 @@ export default function RecipePdfView({
     };
   }, [recipe, nutrients, yeast, title, publicUsername, t]);
 
-  // ---------- Nutrient rows (V2 keys) ----------
+  // ---------- Nutrient rows ----------
   const nutrientRows = useMemo(() => {
     const enabled = nutrients.data.selected.selectedNutrients;
     const per = nutrients.derived.nutrientAdditions.perAddition;

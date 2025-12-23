@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRecipe } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { getAdminRecipesPage } from "@/lib/db/recipes";
-import { isRecipeDataV2, RecipeDataV2 } from "@/types/recipeDataV2";
+import { isRecipeData, RecipeData } from "@/types/recipeData";
 
 export async function GET(req: NextRequest) {
   try {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       primaryNotes?: string[];
       secondaryNotes?: string[];
 
-      dataV2?: RecipeDataV2;
+      dataV2?: RecipeData;
 
       private?: boolean;
       lastActivityEmailAt?: string | null;
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Optional: enforce valid v2 shape if present
-    if (dataV2 && !isRecipeDataV2(dataV2)) {
+    if (dataV2 && !isRecipeData(dataV2)) {
       return NextResponse.json(
         { error: "Invalid dataV2 payload." },
         { status: 400 }

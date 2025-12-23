@@ -1,16 +1,17 @@
+"use client";
+
 import SearchableInput from "../ui/SearchableInput";
 import { Button } from "../ui/button";
 import { useTranslation } from "react-i18next";
-import { Additive, AdditiveType, Recipe } from "@/types/recipeDataTypes";
 import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue
 } from "../ui/select";
 import { isValidNumber } from "@/lib/utils/validateInput";
-import DragList from "../ui/DragList";
 import lodash from "lodash";
 import {
   InputGroup,
@@ -19,40 +20,46 @@ import {
 } from "@/components/ui/input-group";
 import { Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
+import DragList from "../ui/DragList";
 
-const units = [
+import type { Additive } from "@/types/recipeDataTypes";
+import type { AdditiveLine as AdditiveLine } from "@/types/recipeData";
+import { useRecipe } from "../providers/RecipeProvider";
+
+const weightUnits = [
   { value: "g", label: "G" },
   { value: "mg", label: "MG" },
   { value: "kg", label: "KG" },
   { value: "oz", label: "OZ" },
-  { value: "lbs", label: "LBS" },
+  { value: "lbs", label: "LBS" }
+];
+
+const volumeUnits = [
   { value: "ml", label: "ML" },
   { value: "liters", label: "LIT" },
   { value: "fl oz", label: "FLOZ" },
   { value: "quarts", label: "QUARTS" },
   { value: "gal", label: "GALS" },
   { value: "tsp", label: "TSP" },
-  { value: "tbsp", label: "TBSP" },
-  { value: "units", label: "UNITS" }
+  { value: "tbsp", label: "TBSP" }
 ];
 
-function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
+const countUnits = [{ value: "units", label: "UNITS" }];
+export default function Additives() {
   const { t } = useTranslation();
+
   const {
-    additives,
-    changeAdditive,
-    changeAdditiveUnits,
-    changeAdditiveAmount,
-    addAdditive,
-    removeAdditive,
-    additiveList,
-    updateAdditives
+    data: { additives },
+    additives: additivesApi,
+    catalog: { additiveList, loadingAdditives }
   } = useRecipe();
 
   return (
     <div className="py-6">
       <div className="grid gap-4">
-        {additives.length === 0 ? (
+        {loadingAdditives ? (
+          <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        ) : additives.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {t(
               "additives.empty",
@@ -62,33 +69,27 @@ function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
         ) : (
           <DragList
             items={additives}
-            setItems={updateAdditives}
-            renderItem={(add) => {
-              const id = additives.find((item) => item.id === add.id)?.id || "";
-              return (
-                <AdditiveLine
-                  additiveList={additiveList}
-                  add={add}
-                  changeAdditive={(value) => {
-                    changeAdditive(id, value);
-                  }}
-                  changeUnit={(unit) => {
-                    changeAdditiveUnits(id, unit);
-                  }}
-                  changeAmount={(amount) => {
-                    changeAdditiveAmount(id, amount);
-                  }}
-                  remove={() => {
-                    removeAdditive(id);
-                  }}
-                />
-              );
-            }}
+            setItems={additivesApi.reorder}
+            getId={(a) => a.lineId}
+            renderItem={(add) => (
+              <AdditiveLine
+                additiveList={additiveList}
+                add={add}
+                changeAdditive={(value) =>
+                  additivesApi.setName(add.lineId, value)
+                }
+                changeUnit={(unit) => additivesApi.setUnit(add.lineId, unit)}
+                changeAmount={(amount) =>
+                  additivesApi.setAmount(add.lineId, amount)
+                }
+                remove={() => additivesApi.remove(add.lineId)}
+              />
+            )}
           />
         )}
 
         <Button
-          onClick={addAdditive}
+          onClick={additivesApi.add}
           variant="secondary"
           disabled={additives.length >= 10}
           className="w-full sm:w-auto"
@@ -100,8 +101,6 @@ function Additives({ useRecipe }: { useRecipe: () => Recipe }) {
   );
 }
 
-export default Additives;
-
 const AdditiveLine = ({
   additiveList,
   add,
@@ -111,7 +110,7 @@ const AdditiveLine = ({
   remove
 }: {
   additiveList: Additive[];
-  add: AdditiveType;
+  add: AdditiveLine;
   changeAdditive: (val: string) => void;
   changeUnit: (val: string) => void;
   changeAmount: (val: string) => void;
@@ -119,13 +118,12 @@ const AdditiveLine = ({
 }) => {
   const { t } = useTranslation();
 
-  const handleAdditiveSelect = (selectedIngredient: Additive) => {
-    changeAdditive(selectedIngredient.name);
+  const handleAdditiveSelect = (selected: Additive) => {
+    changeAdditive(selected.name);
   };
 
   return (
     <div className="joyride-additiveLine grid gap-3 py-4 relative">
-      {/* Delete button (top-right but not shifting layout) */}
       <Button
         onClick={remove}
         variant="destructive"
@@ -135,22 +133,19 @@ const AdditiveLine = ({
         <Trash className="h-4 w-4" />
       </Button>
 
-      {/* Row: Name + Amount */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-12">
-        {/* NAME */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">{t("name")}</span>
           <SearchableInput
             items={additiveList}
             query={add.name}
-            setQuery={(val) => changeAdditive(val)}
+            setQuery={changeAdditive}
             keyName="name"
             onSelect={handleAdditiveSelect}
             renderItem={(item) => t(lodash.camelCase(item.name))}
           />
         </label>
 
-        {/* AMOUNT + UNITS */}
         <label className="grid gap-1">
           <span className="text-sm font-medium">{t("PDF.addAmount")}</span>
 
@@ -178,7 +173,23 @@ const AdditiveLine = ({
                 </SelectTrigger>
 
                 <SelectContent>
-                  {units.map((unit) => (
+                  {weightUnits.map((unit) => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {t(unit.label)}
+                    </SelectItem>
+                  ))}
+
+                  <SelectSeparator />
+
+                  {volumeUnits.map((unit) => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {t(unit.label)}
+                    </SelectItem>
+                  ))}
+
+                  <SelectSeparator />
+
+                  {countUnits.map((unit) => (
                     <SelectItem key={unit.value} value={unit.value}>
                       {t(unit.label)}
                     </SelectItem>

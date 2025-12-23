@@ -1,41 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { useRecipe } from "../providers/RecipeProvider";
+import { useTranslation } from "react-i18next";
+import { ChevronDown } from "lucide-react";
+
+import { useRecipe } from "@/components/providers/RecipeProvider";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
+
 import {
   InputGroup,
   InputGroupInput,
   InputGroupAddon
 } from "@/components/ui/input-group";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
+import Tooltip from "@/components/Tooltips";
+import { Separator } from "@/components/ui/separator";
+
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel
-} from "../ui/alert-dialog";
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+
 import {
   Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent
+  CollapsibleContent,
+  CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
-import Tooltip from "../Tooltips";
-import { ChevronDown } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
-function DesiredBatchDetails() {
+export default function DesiredBatchDetails() {
   const { t } = useTranslation();
-  const { setIngredientsToTarget, units } = useRecipe();
+
+  const {
+    data: { unitDefaults },
+    setIngredientsToTarget
+  } = useRecipe();
 
   const [{ og, volume }, setOgAndVolume] = useState({ og: "", volume: "" });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const canSubmit = og.trim() !== "" && volume.trim() !== "";
 
   const handleSubmit = () => {
     setIngredientsToTarget(parseNumber(og), parseNumber(volume));
@@ -73,8 +83,9 @@ function DesiredBatchDetails() {
               placeholder={t("placeholder.og", "Enter OG")}
               value={og}
               onChange={(e) => {
-                if (isValidNumber(e.target.value))
+                if (isValidNumber(e.target.value)) {
                   setOgAndVolume({ og: e.target.value, volume });
+                }
               }}
               inputMode="decimal"
               onFocus={(e) => e.target.select()}
@@ -94,8 +105,9 @@ function DesiredBatchDetails() {
               placeholder={t("placeholder.volume", "Enter Volume")}
               value={volume}
               onChange={(e) => {
-                if (isValidNumber(e.target.value))
+                if (isValidNumber(e.target.value)) {
                   setOgAndVolume({ og, volume: e.target.value });
+                }
               }}
               inputMode="decimal"
               onFocus={(e) => e.target.select()}
@@ -105,7 +117,7 @@ function DesiredBatchDetails() {
               align="inline-end"
               className="mr-1 text-xs sm:text-sm"
             >
-              {units.volume}
+              {unitDefaults.volume}
             </InputGroupAddon>
           </InputGroup>
 
@@ -113,11 +125,13 @@ function DesiredBatchDetails() {
             type="button"
             onClick={() => setIsDialogOpen(true)}
             className="max-w-24"
+            disabled={!canSubmit}
           >
             {t("SUBMIT")}
           </Button>
         </CollapsibleContent>
       </Collapsible>
+
       {/* CONFIRMATION DIALOG */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
@@ -131,14 +145,15 @@ function DesiredBatchDetails() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button onClick={handleSubmit}>{t("SUBMIT")}</Button>
+              <Button onClick={handleSubmit} disabled={!canSubmit}>
+                {t("SUBMIT")}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>{" "}
+      </AlertDialog>
+
       <Separator className="my-2" />
     </div>
   );
 }
-
-export default DesiredBatchDetails;

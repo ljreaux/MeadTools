@@ -6,7 +6,7 @@ import RecipeBuilderTutorial from "@/components/recipeBuilder/RecipeBuilderTutor
 
 // ✅ this should be the already-migrated tutorial blob you create
 import tutorialRecipeV2 from "@/data/tutorialRecipe.v2.json";
-import { RecipeV2Provider } from "@/components/providers/RecipeProviderV2";
+import { RecipeProvider } from "@/components/providers/RecipeProvider";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 
 function RecipeTutorial() {
@@ -17,9 +17,9 @@ function RecipeTutorial() {
   const recipe = tutorialRecipeV2.recipe as RecipeWithParsedFields;
 
   return (
-    <RecipeV2Provider>
+    <RecipeProvider>
       <RecipeBuilderTutorial recipe={recipe} />
-    </RecipeV2Provider>
+    </RecipeProvider>
   );
 }
 

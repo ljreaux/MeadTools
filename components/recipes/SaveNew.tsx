@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
-import type { RecipeDataV2 } from "@/types/recipeDataV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
 
 function SaveNew() {
   const { t } = useTranslation();
@@ -47,14 +47,14 @@ function SaveNew() {
       notes,
       nutrients
     }
-  } = useRecipeV2();
+  } = useRecipe();
 
   const [checked, setChecked] = useState(false); // private
   const [notify, setNotify] = useState(false); // activity emails
   const [recipeName, setRecipeName] = useState("");
 
-  // ✅ match local-storage + save recipe v2 payload shape
-  const dataV2: RecipeDataV2 = useMemo(
+  // match local-storage + save recipe v2 payload shape
+  const dataV2: RecipeData = useMemo(
     () => ({
       version: 2,
       unitDefaults,
@@ -94,7 +94,7 @@ function SaveNew() {
 
     const body = {
       name: trimmedName,
-      dataV2, // ✅ jsonb
+      dataV2, // jsonb
       private: checked,
       activityEmailsEnabled: notify
     };

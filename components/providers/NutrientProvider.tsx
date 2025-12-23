@@ -1,649 +1,680 @@
 "use client";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
+import type { NutrientData, NutrientKey } from "@/types/nutrientData";
+import {
+  getEffectiveMaxGpl,
+  initialNutrientData,
+  scheduleFromSelected
+} from "@/types/nutrientData";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import { toBrix } from "@/lib/utils/unitConverter";
-import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import {
-  FullNutrientData,
-  GoFermType,
-  initialFullData,
-  maxGpl,
-  NitrogenRequirement,
-  NutrientType,
-  ScheduleType,
-  VolumeUnits,
-  YeastBrand
-} from "@/types/nutrientTypes";
-import {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useEffect
-} from "react";
-import { useTranslation } from "react-i18next";
+import { parseNumber } from "@/lib/utils/validateInput";
+type NutrientAdditionsDerived = {
+  totalGrams: Record<NutrientKey, number>;
+  perAddition: Record<NutrientKey, number>;
+};
 
-const NutrientContext = createContext<NutrientType | undefined>(undefined);
+type NutrientDerived = {
+  targetYanPpm: number;
+  remainingYanPpm: number;
 
-export const NutrientProvider = ({
-  children,
-  recipeData,
-  storeData
-}: {
-  children: ReactNode;
-  recipeData?: {
-    volume: string;
-    units: string;
-    sg: string;
-    offset: string;
-    numberOfAdditions: string;
+  // grams for each nutrient key (fermO/fermK/dap/other)
+  nutrientAdditions: NutrientAdditionsDerived;
+
+  // helpful for debugging / settings UI
+  providedYanPpm: Record<NutrientKey, number>;
+  goFerm: {
+    amount: number;
+    water: number;
   };
-  storeData?: boolean;
-}) => {
-  const { i18n } = useTranslation();
-  const currentLocale = i18n.resolvedLanguage;
+};
+type NutrientUI = {
+  data: NutrientData;
 
-  const { data, isPending: loadingYeasts } = useYeastsQuery();
-  const yeastList = data ?? [];
+  // derived: add later
+  derived: NutrientDerived;
 
-  const [fullData, setFullData] = useState<FullNutrientData>(initialFullData);
+  catalog: {
+    yeastList: any[]; // replace with your Yeast type
+    loadingYeasts: boolean;
+    brands: string[];
+  };
 
-  const [selectedGpl, setSelectedGpl] = useState(
-    maxGpl.tosna.value as string[]
-  );
-  const [nuteArr, setNuteArr] = useState<string[]>([]);
-  const [yeastAmount, setYeastAmount] = useState("0");
-  const [goFerm, setGoFerm] = useState({
-    type: "Go-Ferm" as GoFermType,
-    amount: 0,
-    water: 0
-  });
-  const [targetYAN, setTargetYAN] = useState(0);
-  const [nutrientAdditions, setNutrientAdditions] = useState<{
-    totalGrams: number[];
-    perAddition: number[];
-  }>({
-    totalGrams: [],
-    perAddition: []
-  });
+  // actions: add later
+  actions: {
+    setVolume: (v: string) => void;
+    setVolumeUnits: (u: NutrientData["inputs"]["volumeUnits"]) => void;
+    setSg: (v: string) => void;
+    setOffsetPpm: (v: string) => void;
+    setYeastBrand: (brand: string) => void; // will auto-pick first strain + sync nitrogen
+    setYeastStrain: (strain: string) => void; // will sync brand/id/nitrogen
+    selectYeast: (yeast: any) => void; // one-shot (best for SearchableInput onSelect)
+    setNitrogenRequirement: (
+      v: NutrientData["selected"]["nitrogenRequirement"]
+    ) => void;
+    toggleNutrient: (key: NutrientKey) => void;
+    setOtherNutrientName: (name: string) => void;
+    setOtherYanContribution: (v: string) => void; // settings.yanContribution.other
+    setMaxGpl: (key: NutrientKey, v: string) => void; // settings.maxGpl[key]
+    setYanContribution: (key: NutrientKey, v: string) => void; // settings.yanContribution[key]
+    setNumberOfAdditions: (v: string) => void; // inputs.numberOfAdditions
+    setAdjustAllowed: (v: boolean) => void; // adjustments.adjustAllowed
+    setProvidedYanPpm: (key: NutrientKey, v: string) => void; // adjustments.providedYanPpm[key]
+    setGoFermType: (v: NutrientData["inputs"]["goFermType"]) => void;
+    setYeastAmountG: (v: string) => void;
+    resetYeastAmountAuto: () => void;
+  };
 
-  const [yanContributions, setYanContributions] = useState([
-    "40",
-    "100",
-    "210",
-    "0"
-  ]);
-  const [otherNutrientName, setOtherNutrientName] = useState("");
-  const [remainingYan, setRemainingYan] = useState(0);
-  const [providedYan, setProvidedYan] = useState(["0", "0", "0", "0"]);
-  const [adjustAllowed, setAdjustAllowed] = useState(false);
+  meta: {
+    isDirty: boolean;
+    markSaved: () => void;
+    hydrate: (next: NutrientData) => void;
+    reset: () => void;
+  };
+};
 
-  const calculateGoFerm = (type: GoFermType, yeastAmount: number) => {
-    let multiplier = 0;
-    let waterMultiplier = 20;
-    if (type == "none") {
-      waterMultiplier *= 0;
-    }
-    if (type == "Go-Ferm" || type == "protect") {
-      multiplier = 1.25;
-    }
-    if (type == "sterol-flash") {
-      multiplier = 1.2;
-      waterMultiplier /= 2;
-    }
-    const goFerm = yeastAmount * multiplier;
-    const goFermWater = goFerm * waterMultiplier;
-    return {
-      amount: Math.round(goFerm * 100) / 100,
-      water: Math.round(goFermWater * 100) / 100
+const NutrientContext = createContext<NutrientUI | null>(null);
+
+type Props =
+  | { mode?: "standalone"; initial?: NutrientData; children: React.ReactNode }
+  | {
+      mode: "controlled";
+      value: NutrientData;
+      onChange: (next: NutrientData, meta?: { silent?: boolean }) => void;
+      children: React.ReactNode;
     };
-  };
-  const changeGfType = (type: GoFermType) => {
-    setGoFerm((prev) => ({ ...prev, type }));
-    setFullData((prev) => ({
-      ...prev,
-      outputs: {
-        ...prev.outputs,
-        goFerm: {
-          water: prev.outputs.goFerm?.water || 0,
-          amount: prev.outputs.goFerm?.amount || 0,
-          type
-        }
+
+type ControlledProps = Extract<Props, { mode: "controlled" }>;
+
+const isControlledProps = (p: Props): p is ControlledProps =>
+  p.mode === "controlled";
+
+export function NutrientProvider(props: Props) {
+  const { data: yeastList = [], isPending: loadingYeasts } = useYeastsQuery();
+  const brands = useMemo(
+    () => Array.from(new Set(yeastList.map((y) => y.brand))).sort(),
+    [yeastList]
+  );
+  const controlled = isControlledProps(props);
+
+  const [local, setLocal] = useState<NutrientData>(
+    controlled ? initialNutrientData() : props.initial ?? initialNutrientData()
+  );
+
+  const data = controlled ? props.value : local;
+
+  const [dirtyLocal, setDirtyLocal] = useState(false);
+  const isDirty = controlled ? false : dirtyLocal;
+
+  const commit = useCallback(
+    (
+      updater: (prev: NutrientData) => NutrientData,
+      opts?: { silent?: boolean }
+    ) => {
+      if (controlled) {
+        const next = updater(props.value);
+        props.onChange(next, opts);
+        return;
       }
-    }));
-  };
 
-  // Setters for handling input change
-  const setVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (isValidNumber(value)) {
-      setFullData((prev) => ({
-        ...prev,
-        inputs: { ...prev.inputs, volume: value }
-      }));
-    }
-  };
-
-  const setSG = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (isValidNumber(value)) {
-      setFullData((prev) => ({
-        ...prev,
-        inputs: { ...prev.inputs, sg: value }
-      }));
-    }
-  };
-
-  const setOffset = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (isValidNumber(value)) {
-      setFullData((prev) => ({
-        ...prev,
-        inputs: { ...prev.inputs, offset: value }
-      }));
-    }
-  };
-  const setOtherYanContribution = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (isValidNumber(value)) {
-      setYanContributions((prev) => {
-        const newArr = [...prev];
-        newArr[3] = value;
-        return newArr;
+      setLocal((prev) => {
+        const next = updater(prev);
+        if (!opts?.silent) setDirtyLocal(true);
+        return next;
       });
-    }
-  };
+    },
+    [controlled, props]
+  );
 
-  const changeYeastAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (isValidNumber(value)) {
-      setYeastAmount(value);
-      const amount = parseNumber(value);
+  const markSaved = useCallback(() => {
+    if (!controlled) setDirtyLocal(false);
+  }, [controlled]);
 
-      setFullData((prev) => ({
-        ...prev,
-        outputs: {
-          ...prev.outputs,
-          yeastAmount: amount
-        }
-      }));
-    }
-  };
-
-  const setNumberOfAdditions = (value: string) => {
-    if (!isNaN(parseInt(value, 10))) {
-      localStorage.setItem("numberOfAdditions", value);
-      setFullData((prev) => ({
-        ...prev,
-        inputs: { ...prev.inputs, numberOfAdditions: value }
-      }));
-    }
-  };
-
-  const setYeastBrand = (brand: YeastBrand) => {
-    // Find the first yeast of the selected brand
-    const firstYeast = yeastList.find((yeast) => yeast.brand === brand);
-
-    // Set yeastStrain to the first yeast's name if found, or leave as is
-    setFullData((prev) => ({
-      ...prev,
-      selected: {
-        ...prev.selected,
-        yeastBrand: brand,
-        yeastStrain: firstYeast ? firstYeast.name : prev.selected.yeastStrain,
-        yeastDetails: firstYeast || prev.selected.yeastDetails
+  const hydrate = useCallback(
+    (next: NutrientData) => {
+      if (controlled) props.onChange(next, { silent: true });
+      else {
+        setLocal(next);
+        setDirtyLocal(false);
       }
-    }));
-  };
+    },
+    [controlled, props]
+  );
+  const reset = useCallback(() => {
+    const fresh = initialNutrientData();
+    hydrate(fresh);
+  }, [hydrate]);
 
-  const setYeastName = (name: string) => {
-    const yeast = yeastList.find((yeast) => yeast.name === name);
-    if (yeast) {
-      setFullData((prev) => ({
-        ...prev,
-        selected: {
-          ...prev.selected,
-          yeastStrain: name,
-          yeastDetails: yeast
-        }
-      }));
-    } else {
-      setFullData((prev) => ({
-        ...prev,
-        selected: {
-          ...prev.selected,
-          yeastStrain: name,
-          yeastDetails: {
-            ...prev.selected.yeastDetails,
-            id: 103,
-            brand: "Other",
-            name
+  // ---- actions (add as we go, starting with VolumeInputs)
+  // 2) implement them
+  const actions = useMemo<NutrientUI["actions"]>(
+    () => ({
+      setVolume: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, volume: v }
+        }));
+      },
+
+      setVolumeUnits: (u) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, volumeUnits: u }
+        }));
+      },
+
+      setSg: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, sg: v }
+        }));
+      },
+
+      setOffsetPpm: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, offsetPpm: v }
+        }));
+      },
+      selectYeast: (yeast) => {
+        commit((prev) => ({
+          ...prev,
+          selected: {
+            ...prev.selected,
+            yeastBrand: yeast.brand,
+            yeastStrain: yeast.name,
+            yeastId: yeast.id,
+            // IMPORTANT: keep nitrogen in sync like old provider did
+            nitrogenRequirement:
+              yeast.nitrogen_requirement ?? prev.selected.nitrogenRequirement
           }
-        }
-      }));
-    }
-  };
+        }));
+      },
 
-  const setNitrogenRequirement = (req: NitrogenRequirement) => {
-    setFullData((prev) => ({
-      ...prev,
-      selected: {
-        ...prev.selected,
-        yeastDetails: {
-          ...prev.selected.yeastDetails,
-          nitrogen_requirement: req
-        }
+      setYeastBrand: (brand: string) => {
+        // match old behavior: select first yeast of that brand
+        const first = yeastList.find((y) => y.brand === brand);
+
+        commit((prev) => ({
+          ...prev,
+          selected: {
+            ...prev.selected,
+            yeastBrand: brand,
+            yeastStrain: first?.name ?? prev.selected.yeastStrain,
+            yeastId: first?.id ?? prev.selected.yeastId,
+            nitrogenRequirement:
+              first?.nitrogen_requirement ?? prev.selected.nitrogenRequirement
+          }
+        }));
+      },
+
+      setYeastStrain: (strain: string) => {
+        const found = yeastList.find((y) => y.name === strain);
+
+        commit((prev) => ({
+          ...prev,
+          selected: {
+            ...prev.selected,
+            yeastStrain: strain,
+            yeastBrand: found?.brand ?? prev.selected.yeastBrand,
+            yeastId: found?.id ?? prev.selected.yeastId,
+            nitrogenRequirement:
+              found?.nitrogen_requirement ?? prev.selected.nitrogenRequirement
+          }
+        }));
+      },
+      setNitrogenRequirement: (
+        req: NutrientData["selected"]["nitrogenRequirement"]
+      ) => {
+        commit((prev) => ({
+          ...prev,
+          selected: { ...prev.selected, nitrogenRequirement: req }
+        }));
+      },
+      setNumberOfAdditions: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, numberOfAdditions: v }
+        }));
+      },
+
+      toggleNutrient: (key) => {
+        commit((prev) => {
+          const nextSelected = {
+            ...prev.selected.selectedNutrients,
+            [key]: !prev.selected.selectedNutrients[key]
+          };
+
+          const nextSchedule = scheduleFromSelected(nextSelected);
+
+          return {
+            ...prev,
+            selected: {
+              ...prev.selected,
+              selectedNutrients: nextSelected,
+              schedule: nextSchedule
+            }
+          };
+        });
+      },
+
+      setOtherNutrientName: (name) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            other: { ...prev.settings.other, name }
+          }
+        }));
+      },
+
+      setOtherYanContribution: (v) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            yanContribution: { ...prev.settings.yanContribution, other: v }
+          }
+        }));
+      },
+
+      setMaxGpl: (key, v) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            maxGplTouched: true,
+            maxGpl: { ...prev.settings.maxGpl, [key]: v }
+          }
+        }));
+      },
+
+      setYanContribution: (key, v) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            yanContribution: { ...prev.settings.yanContribution, [key]: v }
+          }
+        }));
+      },
+
+      setAdjustAllowed: (v) => {
+        commit((prev) => ({
+          ...prev,
+          adjustments: { ...prev.adjustments, adjustAllowed: v }
+        }));
+      },
+
+      setProvidedYanPpm: (key, v) => {
+        commit((prev) => ({
+          ...prev,
+          adjustments: {
+            ...prev.adjustments,
+            providedYanPpm: { ...prev.adjustments.providedYanPpm, [key]: v }
+          }
+        }));
+      },
+      setGoFermType: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, goFermType: v }
+        }));
+      },
+
+      setYeastAmountG: (v) => {
+        commit((prev) => ({
+          ...prev,
+          inputs: {
+            ...prev.inputs,
+            yeastAmountG: v,
+            yeastAmountTouched: true
+          }
+        }));
+      },
+      resetYeastAmountAuto: () => {
+        commit((prev) => ({
+          ...prev,
+          inputs: { ...prev.inputs, yeastAmountTouched: false }
+        }));
       }
-    }));
-  };
+    }),
 
-  const setVolumeUnits = (unit: VolumeUnits) => {
-    setFullData((prev) => ({
-      ...prev,
-      selected: {
-        ...prev.selected,
-        volumeUnits: unit // Update the volumeUnits field when changed
-      }
-    }));
-  };
-
-  const changeNutrientName = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOtherNutrientName(e.target.value);
-  };
-
-  const setSelectedNutrients = (nutrients: string[]) => {
-    setNuteArr(nutrients);
-    let schedule: ScheduleType = "other"; // Default to "other" if no predefined selection matches
-
-    if (nutrients.includes("Other")) {
-      schedule = "other";
-    } else if (
-      nutrients.includes("Fermaid O") &&
-      nutrients.includes("Fermaid K") &&
-      nutrients.includes("DAP")
-    ) {
-      schedule = "tbe"; // Fermaid O, Fermaid K, and DAP
-    } else if (
-      nutrients.includes("Fermaid O") &&
-      nutrients.includes("Fermaid K")
-    ) {
-      schedule = "oAndk"; // Fermaid O & K
-    } else if (nutrients.includes("Fermaid O") && nutrients.includes("DAP")) {
-      schedule = "oAndDap"; // Fermaid O & DAP
-    } else if (nutrients.includes("Fermaid K") && nutrients.includes("DAP")) {
-      schedule = "kAndDap"; // Fermaid K & DAP
-    } else if (nutrients.includes("Fermaid O")) {
-      schedule = "tosna"; // Fermaid O Only
-    } else if (nutrients.includes("Fermaid K")) {
-      schedule = "justK"; // Fermaid K Only
-    } else if (nutrients.includes("DAP")) {
-      schedule = "dap"; // DAP Only
-    }
-
-    setFullData((prev) => ({
-      ...prev,
-      selected: {
-        ...prev.selected,
-        selectedNutrients: nutrients,
-        schedule: schedule // Set the schedule based on selected nutrients
-      }
-    }));
-  };
-
-  const editMaxGpl = (index: number, value: string) => {
-    const copyArr = [...selectedGpl];
-    copyArr[index] = value;
-    setSelectedGpl(copyArr);
-  };
-
-  const editYanContribution = (index: number, value: string) => {
-    const copyArr = [...yanContributions];
-    copyArr[index] = value;
-    setYanContributions(copyArr);
-  };
-
-  // set Nitrogen requirement in global state
-  useEffect(() => {
-    setFullData((prev) => {
-      return {
-        ...prev,
-        selected: {
-          ...prev.selected,
-          n2Requirement: fullData.selected.yeastDetails.nitrogen_requirement
-        }
-      };
-    });
-  }, [fullData.selected.yeastDetails]);
-
-  // determine yeast and go-ferm amounts
-  useEffect(() => {
-    const units = fullData.selected.volumeUnits;
-    const volume = parseNumber(fullData.inputs.volume);
-    const sg = parseNumber(fullData.inputs.sg);
-
-    let multiplier = 1;
-    if (units === "liter") {
-      multiplier /= 3.78541;
-    }
-
-    if (sg >= 1.125) {
-      multiplier *= 4;
-    } else if (sg > 1.1 && sg < 1.125) {
-      multiplier *= 3;
-    } else {
-      multiplier *= 2;
-    }
-
-    const yeastAmount = Math.round(volume * multiplier * 100) / 100;
-    const gf = calculateGoFerm(goFerm.type, yeastAmount);
-
-    setGoFerm((prev) => ({ ...prev, ...gf }));
-    setYeastAmount(
-      yeastAmount.toLocaleString(currentLocale, {
-        maximumFractionDigits: 2
-      })
+    [commit, yeastList]
+  );
+  const derived = useMemo<NutrientDerived>(() => {
+    const sg = parseNumber(data.inputs.sg);
+    const offset = parseNumber(data.inputs.offsetPpm || "0");
+    const volume = parseNumber(data.inputs.volume);
+    const numberOfAdditions = Math.max(
+      1,
+      parseNumber(data.inputs.numberOfAdditions || "1")
     );
-    setFullData((prev) => ({
-      ...prev,
-      outputs: {
-        ...prev.outputs,
-        yeastAmount: yeastAmount,
-        goFerm: {
-          type: prev.outputs.goFerm?.type || "Go-Ferm",
-          ...gf
-        }
-      }
-    }));
-  }, [
-    fullData.inputs.volume,
-    fullData.inputs.sg,
-    fullData.selected.volumeUnits
-  ]);
-  useEffect(() => {
-    const gf = calculateGoFerm(goFerm.type, parseNumber(yeastAmount));
 
-    setGoFerm((prev) => ({ ...prev, ...gf }));
-    setFullData((prev) => ({
-      ...prev,
-      outputs: {
-        ...prev.outputs,
-        goFerm: {
-          type: prev.outputs.goFerm?.type || "Go-Ferm",
-          ...gf
-        }
-      }
-    }));
-  }, [yeastAmount, goFerm.type]);
-
-  // Calculate target YAN
-  const calculateYAN = () => {
-    const sg = parseNumber(fullData.inputs.sg);
-    const offset = parseNumber(fullData.inputs.offset || "0");
-    const nitrogen = fullData.selected.n2Requirement;
-
-    const multiplier =
-      nitrogen == "Low"
+    // nitrogen multiplier (add a mapping for "Very Low" even if you treat it same as Low)
+    const n2 = data.selected.nitrogenRequirement;
+    const n2Multiplier =
+      n2 === "Very Low"
         ? 0.75
-        : nitrogen == "Medium"
+        : n2 === "Low"
+        ? 0.75
+        : n2 === "Medium"
         ? 0.9
-        : nitrogen == "High"
+        : n2 === "High"
+        ? 1.25
+        : 1.8; // Very High
+
+    const gpl = toBrix(sg) * sg * 10;
+    const targetYanPpm = Math.round(gpl * n2Multiplier - offset);
+
+    // parse provided ppm from state (user editable when adjustAllowed)
+    const providedYanPpm: Record<NutrientKey, number> = {
+      fermO: parseNumber(data.adjustments.providedYanPpm.fermO),
+      fermK: parseNumber(data.adjustments.providedYanPpm.fermK),
+      dap: parseNumber(data.adjustments.providedYanPpm.dap),
+      other: parseNumber(data.adjustments.providedYanPpm.other)
+    };
+
+    // If adjust is ON, grams are based on user-provided ppm.
+    // If adjust is OFF, we *still* compute grams from "computed ppm",
+    // but that computed ppm will be synced into state by the effect in step 4.
+    const ppmToUse = providedYanPpm;
+
+    const yanContribution = {
+      fermO: parseNumber(data.settings.yanContribution.fermO),
+      fermK: parseNumber(data.settings.yanContribution.fermK),
+      dap: parseNumber(data.settings.yanContribution.dap),
+      other: parseNumber(data.settings.yanContribution.other)
+    };
+
+    // old behavior: organic multiplier depends on goFermType
+    const organicMultiplier = data.inputs.goFermType === "none" ? 3 : 4;
+    const effectiveYanContribution = {
+      ...yanContribution,
+      fermO: yanContribution.fermO * organicMultiplier
+    };
+
+    // grams conversion (matches old provider)
+    const litersPerUnit = data.inputs.volumeUnits === "liter" ? 1 : 3.785;
+
+    const nutrientAdditionsTotal: Record<NutrientKey, number> = {
+      fermO: 0,
+      fermK: 0,
+      dap: 0,
+      other: 0
+    };
+
+    (Object.keys(nutrientAdditionsTotal) as NutrientKey[]).forEach((key) => {
+      const ppm = Math.max(0, ppmToUse[key] || 0);
+      const contrib = effectiveYanContribution[key] || 0;
+
+      const gPerLiter = contrib === 0 ? 0 : ppm / contrib;
+      const grams = gPerLiter * volume * litersPerUnit;
+      nutrientAdditionsTotal[key] = grams;
+    });
+
+    const nutrientAdditionsPer: Record<NutrientKey, number> = {
+      fermO: nutrientAdditionsTotal.fermO / numberOfAdditions,
+      fermK: nutrientAdditionsTotal.fermK / numberOfAdditions,
+      dap: nutrientAdditionsTotal.dap / numberOfAdditions,
+      other: nutrientAdditionsTotal.other / numberOfAdditions
+    };
+
+    const remainingYanPpm =
+      targetYanPpm -
+      (ppmToUse.fermO + ppmToUse.fermK + ppmToUse.dap + ppmToUse.other);
+    // ----- Go-Ferm (matches old provider)
+    const yeastAmount = parseNumber(data.inputs.yeastAmountG || "0");
+
+    let gfMultiplier = 0;
+    let waterMultiplier = 20;
+
+    if (data.inputs.goFermType === "none") {
+      waterMultiplier = 0;
+    }
+
+    if (
+      data.inputs.goFermType === "Go-Ferm" ||
+      data.inputs.goFermType === "protect"
+    ) {
+      gfMultiplier = 1.25;
+    }
+
+    if (data.inputs.goFermType === "sterol-flash") {
+      gfMultiplier = 1.2;
+      waterMultiplier = waterMultiplier / 2;
+    }
+
+    const gfAmount = yeastAmount * gfMultiplier;
+    const gfWater = gfAmount * waterMultiplier;
+
+    const goFerm = {
+      amount: Math.round(gfAmount * 100) / 100,
+      water: Math.round(gfWater * 100) / 100
+    };
+    return {
+      targetYanPpm,
+      remainingYanPpm,
+      nutrientAdditions: {
+        totalGrams: nutrientAdditionsTotal,
+        perAddition: nutrientAdditionsPer
+      },
+      providedYanPpm,
+      goFerm
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (data.adjustments.adjustAllowed) return;
+
+    // When NOT adjusting, we want to compute the ppm breakdown from target + max g/L limits,
+    // and write it into adjustments.providedYanPpm (silently).
+    //
+    // Minimal version for now: use data.settings.maxGpl as the "effective max g/L".
+    // Later you can swap this to schedule presets + tiering.
+
+    const sg = parseNumber(data.inputs.sg);
+    const offset = parseNumber(data.inputs.offsetPpm || "0");
+
+    const n2 = data.selected.nitrogenRequirement;
+    const n2Multiplier =
+      n2 === "Very Low"
+        ? 0.75
+        : n2 === "Low"
+        ? 0.75
+        : n2 === "Medium"
+        ? 0.9
+        : n2 === "High"
         ? 1.25
         : 1.8;
+
     const gpl = toBrix(sg) * sg * 10;
-    const targetYan = gpl * multiplier;
-    return Math.round(targetYan - offset);
-  };
-  // calculate the target YAN
-  useEffect(() => {
-    if (!adjustAllowed) {
-      // Calculate nutrient additions based on target YAN
-      const calculateNutrientAdditions = (
-        totalYan: number,
-        currentYanContribution = [40, 100, 210, 0]
-      ) => {
-        const units = fullData.selected.volumeUnits;
-        const volume = parseNumber(fullData.inputs.volume);
-        const numberOfAdditions = parseNumber(
-          fullData.inputs.numberOfAdditions
-        );
+    const target = Math.round(gpl * n2Multiplier - offset);
 
-        let remainingYan = totalYan;
-        const yanContribution = [...currentYanContribution];
-        let organicNutrientMultiplier = 4;
-        if (goFerm.type == "none") organicNutrientMultiplier = 3;
+    const organicMultiplier = data.inputs.goFermType === "none" ? 3 : 4;
 
-        yanContribution[0] *= organicNutrientMultiplier;
+    const yanContribution = {
+      fermO:
+        parseNumber(data.settings.yanContribution.fermO) * organicMultiplier,
+      fermK: parseNumber(data.settings.yanContribution.fermK),
+      dap: parseNumber(data.settings.yanContribution.dap),
+      other: parseNumber(data.settings.yanContribution.other)
+    };
 
-        const ppmYan = [0, 0, 0, 0];
+    const enabled = data.selected.selectedNutrients;
 
-        for (let i = 0; i < yanContribution.length; i++) {
-          const totalYan = yanContribution[i] * parseNumber(selectedGpl[i]);
-          if (totalYan >= remainingYan) {
-            ppmYan[i] = remainingYan;
-            remainingYan = 0;
-            break;
-          }
-          ppmYan[i] = totalYan;
-          remainingYan -= totalYan;
-        }
+    const maxGpl = {
+      fermO: enabled.fermO ? parseNumber(data.settings.maxGpl.fermO) : 0,
+      fermK: enabled.fermK ? parseNumber(data.settings.maxGpl.fermK) : 0,
+      dap: enabled.dap ? parseNumber(data.settings.maxGpl.dap) : 0,
+      other: enabled.other ? parseNumber(data.settings.maxGpl.other) : 0
+    };
 
-        const totalGrams = ppmYan.map((num, i) => {
-          const contribution =
-            yanContribution[i] === 0 ? 0 : num / yanContribution[i];
+    let remaining = target;
+    const nextProvided: Record<NutrientKey, string> = {
+      fermO: "0",
+      fermK: "0",
+      dap: "0",
+      other: "0"
+    };
 
-          return units === "liter"
-            ? contribution * volume
-            : contribution * volume * 3.785;
-        });
+    (["fermO", "fermK", "dap", "other"] as NutrientKey[]).forEach((key) => {
+      if (remaining <= 0) return;
 
-        const perAddition = totalGrams.map((num) => num / numberOfAdditions);
+      const cap = (yanContribution[key] || 0) * (maxGpl[key] || 0);
+      if (cap <= 0) return;
 
-        setRemainingYan(remainingYan);
-        setProvidedYan(ppmYan.map((num) => num.toLocaleString(currentLocale)));
-        return { totalGrams, perAddition };
-      };
+      const use = Math.min(cap, remaining);
+      nextProvided[key] = String(use);
+      remaining -= use;
+    });
 
-      // Calculate YAN and nutrient additions after fullData or schedule changes
-      const yan = calculateYAN();
-      const additions = calculateNutrientAdditions(
-        yan,
-        yanContributions.map(parseNumber)
-      );
+    // Only commit if it actually changed (prevents loops)
+    const cur = data.adjustments.providedYanPpm;
+    const changed =
+      cur.fermO !== nextProvided.fermO ||
+      cur.fermK !== nextProvided.fermK ||
+      cur.dap !== nextProvided.dap ||
+      cur.other !== nextProvided.other;
 
-      setNutrientAdditions(additions);
-      setTargetYAN(yan);
-    }
-  }, [
-    fullData.inputs.sg,
-    fullData.inputs.offset,
-    fullData.selected.schedule,
-    fullData.selected.yeastDetails.nitrogen_requirement,
-    fullData.selected.n2Requirement,
-    fullData.selected.volumeUnits,
-    goFerm.type,
-    selectedGpl,
-    fullData.inputs.numberOfAdditions,
-    yanContributions,
-    nuteArr,
-    adjustAllowed
-  ]);
+    if (!changed) return;
 
-  useEffect(() => {
-    if (adjustAllowed) {
-      let totalYan = targetYAN;
-      const yanContribution = yanContributions.map(parseNumber);
-      const units = fullData.selected.volumeUnits;
-      const volume = parseNumber(fullData.inputs.volume);
-      const numberOfAdditions = parseNumber(fullData.inputs.numberOfAdditions);
-      const ppmYan = providedYan.map(parseNumber);
-
-      ppmYan.forEach((num) => (totalYan -= num));
-
-      const totalGrams = ppmYan.map((num, i) => {
-        const contribution =
-          yanContribution[i] === 0 ? 0 : num / yanContribution[i];
-
-        return units === "liter"
-          ? contribution * volume
-          : contribution * volume * 3.785;
-      });
-
-      const perAddition = totalGrams.map((num) => num / numberOfAdditions);
-
-      setRemainingYan(totalYan);
-      setNutrientAdditions({ totalGrams, perAddition });
-    }
-  }, [providedYan]);
-
-  // determine how much yan comes from each source
-  useEffect(() => {
-    const { schedule } = fullData.selected;
-    const value = maxGpl[schedule].value;
-    const { sg } = fullData.inputs;
-    const og = parseNumber(sg);
-
-    if (schedule !== "other") {
-      if (typeof value[0] === "string") {
-        setSelectedGpl(value as string[]);
-      } else {
-        if (og <= 1.08) {
-          setSelectedGpl(value[0]);
-        } else if (og <= 1.11) {
-          setSelectedGpl(value[1] as string[]);
-        } else {
-          setSelectedGpl(value[2] as string[]);
-        }
-      }
-    } else {
-      const nutrientValues = {
-        "Fermaid O": "0.45",
-        "Fermaid K": "0.5",
-        DAP: "0.96",
-        Other: "1"
-      };
-
-      // Ensure arr has a fixed order corresponding to "Fermaid O", "Fermaid K", "DAP", "Other"
-      const arr = ["Fermaid O", "Fermaid K", "DAP", "Other"].map((nute) =>
-        nuteArr.includes(nute)
-          ? nutrientValues[nute as keyof typeof nutrientValues]
-          : "0"
-      );
-
-      setSelectedGpl(arr);
-    }
-  }, [
-    fullData.selected.schedule,
-    fullData.inputs.sg,
-    yanContributions,
-    nuteArr
-  ]);
-
-  useEffect(() => {
-    if (recipeData)
-      setFullData((prev) => ({
+    commit(
+      (prev) => ({
         ...prev,
-        inputs: { ...prev.inputs, ...recipeData },
-        selected: {
-          ...prev.selected,
-          volumeUnits: recipeData.units as VolumeUnits
+        adjustments: { ...prev.adjustments, providedYanPpm: nextProvided }
+      }),
+      { silent: true }
+    );
+  }, [
+    data.adjustments.adjustAllowed,
+    data.inputs.sg,
+    data.inputs.offsetPpm,
+    data.inputs.goFermType,
+    data.selected.nitrogenRequirement,
+    data.selected.schedule,
+    data.selected.selectedNutrients,
+    data.settings.yanContribution,
+    data.adjustments.providedYanPpm,
+    data.settings.maxGpl.fermO,
+    data.settings.maxGpl.fermK,
+    data.settings.maxGpl.dap,
+    data.settings.maxGpl.other,
+
+    commit
+  ]);
+
+  useEffect(() => {
+    if (data.settings.maxGplTouched) return;
+
+    const next = getEffectiveMaxGpl({
+      schedule: data.selected.schedule,
+      sg: data.inputs.sg,
+      selected: data.selected.selectedNutrients
+    });
+
+    const cur = data.settings.maxGpl;
+    const changed =
+      cur.fermO !== next.fermO ||
+      cur.fermK !== next.fermK ||
+      cur.dap !== next.dap ||
+      cur.other !== next.other;
+
+    if (!changed) return;
+
+    commit(
+      (prev) => ({
+        ...prev,
+        settings: {
+          ...prev.settings,
+          maxGpl: { ...prev.settings.maxGpl, ...next }
         }
-      }));
-  }, [recipeData]);
+      }),
+      { silent: true }
+    );
+  }, [
+    data.selected.schedule,
+    data.inputs.sg,
+    data.selected.selectedNutrients,
+    data.settings.maxGplTouched,
+    commit
+  ]);
 
   useEffect(() => {
-    if (storeData)
-      localStorage.setItem("nutrientData", JSON.stringify(fullData));
-  }, [fullData]);
+    if (data.inputs.yeastAmountTouched) return;
 
-  useEffect(() => {
-    if (storeData) {
-      localStorage.setItem(
-        "yanContribution",
-        JSON.stringify(yanContributions.map(parseNumber))
-      );
-      localStorage.setItem("selectedGpl", JSON.stringify(selectedGpl));
-    }
-  }, [yanContributions, selectedGpl]);
+    const units = data.inputs.volumeUnits;
+    const volume = parseNumber(data.inputs.volume);
+    const sg = parseNumber(data.inputs.sg);
 
-  useEffect(() => {
-    if (storeData) localStorage.setItem("otherNutrientName", otherNutrientName);
-  }, [otherNutrientName]);
+    // old multiplier logic
+    let multiplier = 1;
+    if (units === "liter") multiplier /= 3.78541;
 
-  // Expose only the necessary state to the UI
-  const uiState = {
-    inputs: {
-      volume: { value: fullData.inputs.volume, onChange: setVolume },
-      sg: { value: fullData.inputs.sg, onChange: setSG },
-      offset: { value: fullData.inputs.offset, onChange: setOffset },
-      numberOfAdditions: {
-        value: fullData.inputs.numberOfAdditions,
-        onValueChange: setNumberOfAdditions
-      },
-      volumeUnits: {
-        value: fullData.selected.volumeUnits,
-        onChange: setVolumeUnits
-      }
-    },
-    selected: {
-      ...fullData.selected,
-      yeastNitrogenRequirement: fullData.selected.n2Requirement
-    },
-    setVolume,
-    setSG,
-    setOffset,
-    setNumberOfAdditions,
-    setYeastBrand,
-    setYeastName,
-    setSelectedNutrients,
-    yeastList,
-    loadingYeasts,
-    maxGpl: selectedGpl,
-    targetYAN,
-    yeastAmount,
-    changeYeastAmount,
-    goFermType: {
-      value: goFerm.type,
-      onChange: changeGfType
-    },
-    goFerm: {
-      amount: goFerm.amount,
-      water: goFerm.water
-    },
-    nutrientAdditions,
-    setNitrogenRequirement,
-    otherYanContribution: {
-      value: yanContributions[3],
-      onChange: setOtherYanContribution
-    },
-    otherNutrientName: {
-      value: otherNutrientName,
-      onChange: changeNutrientName
-    },
-    editMaxGpl,
-    editYanContribution,
-    yanContributions,
-    remainingYan,
-    providedYan,
-    updateProvidedYan: (index: number, value: string) => {
-      const arrCopy = [...providedYan];
-      arrCopy[index] = value;
-      setProvidedYan(arrCopy);
-    },
-    adjustAllowed,
-    setAdjustAllowed,
-    fullData
-  };
+    if (sg >= 1.125) multiplier *= 4;
+    else if (sg > 1.1 && sg < 1.125) multiplier *= 3;
+    else multiplier *= 2;
+
+    const yeastAmount = Math.round(volume * multiplier * 100) / 100;
+    const nextStr = String(yeastAmount);
+
+    if (data.inputs.yeastAmountG === nextStr) return;
+
+    commit(
+      (prev) => ({
+        ...prev,
+        inputs: { ...prev.inputs, yeastAmountG: nextStr }
+      }),
+      { silent: true }
+    );
+  }, [
+    data.inputs.volume,
+    data.inputs.volumeUnits,
+    data.inputs.sg,
+    data.inputs.yeastAmountTouched,
+    data.inputs.yeastAmountG,
+    commit
+  ]);
+
+  const value = useMemo<NutrientUI>(
+    () => ({
+      data,
+      derived,
+      catalog: { yeastList, loadingYeasts, brands },
+      actions,
+      meta: { isDirty, markSaved, hydrate, reset }
+    }),
+    [
+      data,
+      derived,
+      actions,
+      isDirty,
+      markSaved,
+      hydrate,
+      reset,
+      yeastList,
+      loadingYeasts,
+      brands
+    ]
+  );
 
   return (
-    <NutrientContext.Provider value={uiState}>
-      {children}
+    <NutrientContext.Provider value={value}>
+      {props.children}
     </NutrientContext.Provider>
   );
-};
+}
 
-export const useNutrients = () => {
-  const context = useContext(NutrientContext);
-  if (!context) {
-    throw new Error("useNutrients must be used within a NutrientProvider");
-  }
-  return context;
-};
+export function useNutrients() {
+  const ctx = useContext(NutrientContext);
+  if (!ctx)
+    throw new Error("useNutrients must be used within NutrientProvider");
+  return ctx;
+}

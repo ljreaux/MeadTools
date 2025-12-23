@@ -21,8 +21,8 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
-import { useRecipeV2 } from "@/components/providers/RecipeProviderV2";
-import type { RecipeDataV2 } from "@/types/recipeDataV2";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
 
 function SaveChanges({
   privateRecipe,
@@ -52,10 +52,10 @@ function SaveChanges({
       notes,
       nutrients
     }
-  } = useRecipeV2();
+  } = useRecipe();
 
   // Build payload exactly like localStorage format
-  const dataV2: RecipeDataV2 = useMemo(
+  const dataV2: RecipeData = useMemo(
     () => ({
       version: 2,
       unitDefaults,

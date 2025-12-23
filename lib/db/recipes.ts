@@ -15,11 +15,11 @@ type RecipeData = {
   activityEmailsEnabled?: boolean;
   lastActivityEmailAt?: Date | null;
 
-  // ✅ new
-  dataV2?: RecipeDataV2; // ideally: RecipeDataV2
+  // new
+  dataV2?: RecipeDataV2;
 };
 import prisma from "@/lib/prisma";
-import { RecipeDataV2 } from "@/types/recipeDataV2";
+import { RecipeData as RecipeDataV2 } from "@/types/recipeData";
 import { Prisma } from "@prisma/client";
 
 function concatNotes(notes: string[]): string[][] {
