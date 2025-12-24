@@ -175,6 +175,7 @@ type RecipeContextValue = {
   meta: {
     isDirty: boolean;
     markSaved: () => void;
+    markDirty: () => void;
     hydrate: (next: HydratePayload) => void;
     reset: () => void;
 
@@ -250,6 +251,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markSaved = useCallback(() => setIsDirty(false), []);
+  const markDirty = useCallback(() => setIsDirty(true), []);
   const hydrate = useCallback(
     (next: HydratePayload) => {
       hydratingRef.current = true;
@@ -1334,6 +1336,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       meta: {
         isDirty,
         markSaved,
+        markDirty,
         hydrate,
         reset,
         setNutrients: onNutrientsChange

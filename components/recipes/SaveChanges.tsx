@@ -51,7 +51,8 @@ function SaveChanges({
       additives,
       notes,
       nutrients
-    }
+    },
+    meta: { markSaved }
   } = useRecipe();
 
   // Build payload exactly like localStorage format
@@ -103,6 +104,7 @@ function SaveChanges({
       {
         onSuccess: () => {
           toast({ description: "Recipe updated successfully." });
+          markSaved();
         },
         onError: (error: any) => {
           console.error("Error updating recipe:", error);

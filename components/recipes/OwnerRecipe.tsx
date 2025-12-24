@@ -8,7 +8,7 @@ import RecipeCalculatorSideBar from "../recipeBuilder/Sidebar";
 import SaveChanges from "./SaveChanges";
 import SaveNew from "./SaveNew";
 import DeleteRecipe from "./DeleteRecipe";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CommentsSection from "./comments/CommentsSection";
 import RecipeCardHeader from "./RecipeCardHeader";
 import Units from "../recipeBuilder/Units";
@@ -28,6 +28,7 @@ import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import { NutrientProvider } from "../providers/NutrientProvider";
 import { useRecipe } from "../providers/RecipeProvider";
+import { useBanner } from "../ui/banner";
 
 const cardConfig = [
   {
@@ -103,13 +104,25 @@ function OwnerRecipe({
         heading={heading}
         tooltip={tooltip}
         recipe={recipe}
-        recipeNameProps={{ recipeName, setRecipeName }}
+        recipeNameProps={{
+          recipeName,
+          setRecipeName: (v) => {
+            setRecipeName(v);
+            markDirty();
+          }
+        }}
         nameEditable={nameEditable}
         setNameEditable={setNameEditable}
         isPrivate={isPrivate}
-        setIsPrivate={setIsPrivate}
+        setIsPrivate={(v) => {
+          setIsPrivate(v);
+          markDirty();
+        }}
         notify={notify}
-        setNotify={setNotify}
+        setNotify={(v) => {
+          setNotify(v);
+          markDirty();
+        }}
       />
 
       {components}
@@ -121,7 +134,7 @@ function OwnerRecipe({
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
   const {
     derived: { nutrientValueForRecipe },
-    meta: { setNutrients }
+    meta: { setNutrients, isDirty, markDirty }
   } = useRecipe();
 
   useEffect(() => {
@@ -129,6 +142,33 @@ function OwnerRecipe({
       goTo(cards.length - 1);
     }
   }, [pdfRedirect]);
+
+  const { showBanner, requestDismiss } = useBanner();
+  const bannerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isDirty) {
+      // already showing
+      if (bannerIdRef.current) return;
+
+      const id = showBanner({
+        variant: "warning",
+        dismissible: true,
+        duration: 0, // not timed
+        title: "Unsaved changes",
+        description: "You’ve made changes to this recipe. Don’t forget to save."
+      });
+
+      bannerIdRef.current = id;
+      return;
+    }
+
+    // isDirty === false -> dismiss if present
+    if (bannerIdRef.current) {
+      requestDismiss(bannerIdRef.current);
+      bannerIdRef.current = null;
+    }
+  }, [isDirty, showBanner, requestDismiss]);
 
   return (
     <NutrientProvider
