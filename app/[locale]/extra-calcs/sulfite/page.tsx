@@ -125,7 +125,7 @@ function Sulfite() {
           <InputWithUnits
             value={sulfite.ppm}
             handleChange={handleChange}
-            text="ppm"
+            text={t("PPM")}
           />
         </div>
       </div>
@@ -137,7 +137,8 @@ function Sulfite() {
           <div className="flex-1 flex justify-center sm:justify-end">
             <div className="text-center sm:mr-3">
               <p className="sm:text-2xl text-lg font-semibold tracking-tight">
-                {sulfiteAmountDisplay} g
+                {sulfiteAmountDisplay}
+                {t("G")}
               </p>
 
               <div className="mt-1 flex items-center justify-center gap-2 text-xs sm:text-sm">

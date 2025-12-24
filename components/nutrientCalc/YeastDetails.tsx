@@ -41,7 +41,7 @@ export default function YeastDetails() {
             <SelectContent>
               {brands.map((brand) => (
                 <SelectItem key={brand} value={brand}>
-                  {brand}
+                  {t(`${brand.toLowerCase()}.label`, brand)}
                 </SelectItem>
               ))}
             </SelectContent>

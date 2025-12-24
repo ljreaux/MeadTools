@@ -112,10 +112,7 @@ function AuthForm({
       </LoadingButton>
       {formType !== "register" && (
         <Button onClick={() => router.push("/reset")} variant="link">
-          {t(
-            "accountPage.buttonMessage.forgotPassword",
-            "Forgot your password?"
-          )}
+          {t("accountPage.buttonMessage.forgotPassword")}
         </Button>
       )}
     </form>

@@ -89,14 +89,12 @@ export default function NutrientSelector() {
         {/* Other details */}
         {data.selected.selectedNutrients.other && (
           <div className="grid grid-cols-2 gap-4 w-full col-span-2 py-6">
-            <h3 className="col-span-2">
-              {t("other.detailsHeading", "Other Nutrient Details")}
-            </h3>
+            <h3 className="col-span-2">{t("other.detailsHeading")}</h3>
 
             {/* Name */}
             <label className="grid gap-1 col-span-2">
               <span className="text-sm font-medium">
-                {t("other.nameLabel", "Name")}
+                {t("sortLabels.name")}
               </span>
 
               <InputGroup className="h-12">
@@ -113,7 +111,7 @@ export default function NutrientSelector() {
             {/* YAN Contribution */}
             <label className="grid gap-1">
               <span className="text-sm font-medium">
-                {t("other.yanContribution", "YAN Contribution")}
+                {t("other.yanContribution")}
               </span>
 
               <InputGroup className="h-12">
@@ -131,7 +129,7 @@ export default function NutrientSelector() {
                   align="inline-end"
                   className="px-2 text-xs sm:text-sm whitespace-nowrap mr-1"
                 >
-                  {t("PPM")} YAN
+                  {t("nuteResults.sideLabels.ppmYan")}
                 </InputGroupAddon>
               </InputGroup>
             </label>
@@ -157,7 +155,7 @@ export default function NutrientSelector() {
                   align="inline-end"
                   className="px-2 text-xs sm:text-sm whitespace-nowrap mr-1"
                 >
-                  g/L
+                  {t("units.gpl")}
                 </InputGroupAddon>
               </InputGroup>
             </label>
@@ -254,18 +252,14 @@ function SettingsDialog({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {t("other.settingsTitle", "Adjust Nutrient Settings")}
-          </DialogTitle>
+          <DialogTitle>{t("other.settingsTitle")}</DialogTitle>
 
           <DialogDescription asChild>
             <div className="flex flex-col gap-4 pt-2">
               {/* YAN Contribution */}
               <div className="px-2">
                 <label className="grid gap-1 text-sm font-medium">
-                  <span>
-                    {t("other.settingsYanContribution", "YAN Contribution")}
-                  </span>
+                  <span>{t("other.yanContribution")}</span>
 
                   <InputGroup className="h-12">
                     <InputGroupInput
@@ -279,7 +273,7 @@ function SettingsDialog({
                       inputMode="decimal"
                     />
                     <InputGroupAddon align="inline-end">
-                      <span>PPM YAN</span>
+                      {t("nuteResults.sideLabels.ppmYan")}
                     </InputGroupAddon>
                   </InputGroup>
                 </label>
@@ -310,17 +304,14 @@ function SettingsDialog({
               {/* Provided YAN + adjust toggle */}
               <div className="px-2">
                 <label className="grid gap-1 text-sm font-medium w-full">
-                  <span>{t("other.settingsProvidedYan", "Provided YAN")}</span>
+                  <span>{t("other.settingsProvidedYan")}</span>
 
                   <InputGroup className="h-12">
                     <InputGroupAddon align="inline-start">
                       <InputGroupButton
                         size="icon-xs"
                         aria-pressed={adjustAllowed}
-                        aria-label={t(
-                          "other.settingsAdjustValue",
-                          "Toggle adjusting provided YAN"
-                        )}
+                        aria-label={t("other.settingsAdjustValue")}
                         onClick={() => actions.setAdjustAllowed(!adjustAllowed)}
                       >
                         {adjustAllowed ? <Pencil /> : <PencilOff />}
@@ -341,7 +332,7 @@ function SettingsDialog({
                     />
 
                     <InputGroupAddon align="inline-end">
-                      <span>PPM YAN</span>
+                      <span>{t("nuteResults.sideLabels.ppmYan")}</span>
                       <span className={cn("sm:hidden")}>
                         <Tooltip body={t("tipText.adjustYanValue")} />
                       </span>

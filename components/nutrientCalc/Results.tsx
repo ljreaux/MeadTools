@@ -68,7 +68,7 @@ function Results() {
                     </span>
                   </p>
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    total
+                    {t("nuteResults.total")}
                   </p>
                 </div>
 
@@ -83,7 +83,7 @@ function Results() {
                       </span>
                     </p>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      per addition
+                      {t("nuteResults.perAddition")}
                     </p>
                   </div>
                 </div>

@@ -61,10 +61,7 @@ export default function Additives() {
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : additives.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {t(
-              "additives.empty",
-              "Add some additives to continue building your recipe."
-            )}
+            {t("additives.empty")}
           </p>
         ) : (
           <DragList

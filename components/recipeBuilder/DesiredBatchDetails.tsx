@@ -80,7 +80,7 @@ export default function DesiredBatchDetails() {
           {/* OG Input */}
           <InputGroup className="h-12">
             <InputGroupInput
-              placeholder={t("placeholder.og", "Enter OG")}
+              placeholder={t("placeholder.og")}
               value={og}
               onChange={(e) => {
                 if (isValidNumber(e.target.value)) {
@@ -102,7 +102,7 @@ export default function DesiredBatchDetails() {
           {/* Volume Input */}
           <InputGroup className="h-12">
             <InputGroupInput
-              placeholder={t("placeholder.volume", "Enter Volume")}
+              placeholder={t("placeholder.volume")}
               value={volume}
               onChange={(e) => {
                 if (isValidNumber(e.target.value)) {

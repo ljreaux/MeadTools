@@ -11,6 +11,7 @@ import Loading from "@/components/loading";
 import { useRecipeQuery } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { RecipeProvider } from "../providers/RecipeProvider";
+import { useTranslation } from "react-i18next";
 
 const RecipePage = () => {
   const params = useParams<{ id: string }>();
@@ -21,6 +22,7 @@ const RecipePage = () => {
   const searchParams = useSearchParams();
   const pdfRedirect = JSON.parse(searchParams.get("pdf") || "false");
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: recipe, error, isLoading } = useRecipeQuery(id, isLoggedIn);
 
@@ -33,8 +35,8 @@ const RecipePage = () => {
 
     if (status === 403) {
       toast({
-        title: "Unauthorized",
-        description: "You are not authorized to view this recipe.",
+        title: t("unathorized"),
+        description: t("cannotView"),
         variant: "destructive"
       });
       router.push("/account");
@@ -43,8 +45,8 @@ const RecipePage = () => {
 
     if (status === 404) {
       toast({
-        title: "Recipe Not Found",
-        description: "The requested recipe does not exist.",
+        title: t("recipeNotFoundTitle"),
+        description: t("recipeNotFound"),
         variant: "destructive"
       });
       router.push("/account");
@@ -52,8 +54,8 @@ const RecipePage = () => {
     }
 
     toast({
-      title: "Error",
-      description: "An error occurred while loading this recipe.",
+      title: t("errorLabel"),
+      description: t("error.generic"),
       variant: "destructive"
     });
     router.push("/account");

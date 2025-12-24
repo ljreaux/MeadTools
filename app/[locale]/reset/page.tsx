@@ -33,19 +33,16 @@ export default function ResetRequestPage() {
     mutationFn: requestPasswordReset,
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Check your email for a reset link."
+        title: t("successLabel"),
+        description: t("resetPassword.description")
       });
       setEmail("");
     },
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error
-          ? err.message
-          : t("error.generic", "Something went wrong.");
+      const message = err instanceof Error ? err.message : t("error.generic");
 
       toast({
-        title: "Error",
+        title: t("errorLabel"),
         description: message,
         variant: "destructive"
       });
@@ -67,10 +64,7 @@ export default function ResetRequestPage() {
         className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem] rounded-xl bg-background"
       >
         <h1 className="col-span-3 text-center text-2xl">
-          {t(
-            "accountPage.buttonMessage.forgotPassword",
-            "Forgot your password?"
-          )}
+          {t("accountPage.buttonMessage.forgotPassword")}
         </h1>
 
         <Label htmlFor="email">{t("accountPage.email")}</Label>
@@ -90,7 +84,7 @@ export default function ResetRequestPage() {
           className="col-span-3"
           loading={loading}
         >
-          {t("accountPage.reset", "Send reset link")}
+          {t("accountPage.reset")}
         </LoadingButton>
       </form>
     </div>

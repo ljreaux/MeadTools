@@ -45,13 +45,8 @@ export function useDeleteRecipe() {
       );
 
       toast({
-        title: t("auth.delete.success.title", "Recipe Deleted"),
-        description:
-          message ||
-          t(
-            "auth.delete.success.description",
-            "Recipe has been successfully deleted."
-          )
+        title: t("auth.delete.success.title"),
+        description: message || t("auth.delete.success.description")
       });
     },
 
@@ -59,21 +54,16 @@ export function useDeleteRecipe() {
       // Special-case: no token at all
       if (error?.code === "NO_TOKEN") {
         toast({
-          title: t("auth.delete.error.title", "Delete Failed"),
-          description: t(
-            "auth.delete.error.noToken",
-            "You must be logged in to delete a recipe."
-          ),
+          title: t("auth.delete.error.title"),
+          description: t("auth.delete.error.noToken"),
           variant: "destructive"
         });
         return;
       }
 
       toast({
-        title: t("auth.delete.error.title", "Delete Failed"),
-        description:
-          error?.message ||
-          t("auth.delete.error.description", "Failed to delete recipe."),
+        title: t("auth.delete.error.title"),
+        description: error?.message || t("auth.delete.error.description"),
         variant: "destructive"
       });
     }

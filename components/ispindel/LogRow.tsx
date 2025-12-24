@@ -61,11 +61,11 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
     try {
       await deleteLogMutate({ logId: log.id, deviceId: log.device_id });
       remove();
-      toast({ description: t("log.deleted", "Log deleted successfully") });
+      toast({ description: t("log.deleted") });
     } catch (error) {
       console.error("Error deleting log:", error);
       toast({
-        description: t("error.generic", "Error deleting log"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     }
@@ -87,7 +87,7 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
 
       const updatedLog = await updateLogMutate(sanitized);
 
-      toast({ description: t("log.updated", "Log updated successfully") });
+      toast({ description: t("log.updated") });
 
       setCurrentLog({
         ...updatedLog,
@@ -98,7 +98,7 @@ const LogRow = ({ log, remove }: { log: Log; remove: () => void }) => {
     } catch (error) {
       console.error("Error updating log:", error);
       toast({
-        description: t("error.generic", "Error updating log"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     } finally {

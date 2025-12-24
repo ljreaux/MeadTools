@@ -66,14 +66,14 @@ function LinkBrew() {
   const [pageSize, setPageSize] = useState(5);
   const pageOptions = [5, 10, 20, 50].map((n) => ({
     value: n,
-    label: `${n} items`
+    label: t("pagination.pageSizeOptions", { n })
   }));
 
   const recipes: RecipeRow[] = useMemo(() => {
     const list = accountInfo?.recipes ?? [];
     return list.map((r: any) => ({
       id: Number(r.id),
-      name: r.name ?? t("untitledRecipe", "Untitled recipe")
+      name: r.name ?? t("untitledRecipe")
     }));
   }, [accountInfo?.recipes, t]);
 
@@ -106,10 +106,7 @@ function LinkBrew() {
       <div className="my-6">
         <h2 className="text-2xl">{t("iSpindelDashboard.brews.link")}</h2>
         <p className="text-destructive mt-3">
-          {t(
-            "iSpindelDashboard.brews.linkError",
-            "Unable to load brew or recipes."
-          )}
+          {t("iSpindelDashboard.brews.linkError")}
         </p>
       </div>
     );
@@ -128,7 +125,7 @@ function LinkBrew() {
               {/* Search */}
               <div className="flex items-center gap-2 flex-1">
                 <label className="text-sm font-medium whitespace-nowrap">
-                  {t("search", "Search")}:
+                  {t("searchLabel")}:
                 </label>
 
                 <InputGroup className="w-full sm:max-w-sm">
@@ -136,8 +133,7 @@ function LinkBrew() {
                     value={searchValue}
                     onChange={(e) => search(e.target.value)}
                     placeholder={t(
-                      "iSpindelDashboard.recipes.searchPlaceholder",
-                      "Search recipes"
+                      "iSpindelDashboard.recipes.searchPlaceholder"
                     )}
                   />
                   <InputGroupAddon>
@@ -145,7 +141,7 @@ function LinkBrew() {
                   </InputGroupAddon>
                   <InputGroupAddon align="inline-end">
                     <InputGroupButton
-                      title={t("clear", "Clear")}
+                      title={t("clearSearch")}
                       onClick={clearSearch}
                       className={cn({ hidden: searchValue.length === 0 })}
                     >
@@ -158,7 +154,7 @@ function LinkBrew() {
               {/* Per page (desktop only) */}
               <div className="hidden sm:flex items-center gap-2">
                 <span className="text-sm font-medium whitespace-nowrap">
-                  {t("pagination.perPage", "Per page:")}
+                  {t("pagination.perPage")}
                 </span>
 
                 <Select
@@ -223,7 +219,7 @@ function LinkBrew() {
             ))
           ) : (
             <p className="w-full text-center mt-6">
-              {t("iSpindelDashboard.recipes.noResults", "No matching recipes.")}
+              {t("accountPage.noRecipes")}
             </p>
           )}
         </div>
@@ -337,19 +333,16 @@ const RecipeLinkCard = ({
             onClick={onLink}
           >
             {isCurrent
-              ? t("iSpindelDashboard.brews.currentRecipeShort", "Linked")
+              ? t("iSpindelDashboard.brews.currentRecipeShort")
               : isLinking
-                ? t("linking", "Linking…")
-                : t("iSpindelDashboard.brews.link")}
+              ? t("linking")
+              : t("iSpindelDashboard.brews.link")}
           </Button>
         </ButtonGroup>
 
         {isCurrent && (
           <p className="text-xs text-muted-foreground text-center">
-            {t(
-              "iSpindelDashboard.brews.currentRecipe",
-              "This recipe is already linked to this brew."
-            )}
+            {t("iSpindelDashboard.brews.currentRecipe")}
           </p>
         )}
       </CardContent>

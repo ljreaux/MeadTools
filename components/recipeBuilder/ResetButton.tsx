@@ -77,10 +77,7 @@ export default function ResetButton({ resetFlow }: ResetButtonProps) {
 
                 toast({
                   title: t("recipeBuilder.reset"),
-                  description: t(
-                    "recipeBuilder.resetDone",
-                    "Recipe has been reset."
-                  )
+                  description: t("recipeBuilder.resetDone")
                 });
               }}
             >

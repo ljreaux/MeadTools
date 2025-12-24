@@ -98,14 +98,14 @@ function SaveRecipeCopy() {
       await createRecipeMutation.mutateAsync(body);
 
       toast({
-        description: "Recipe created successfully."
+        description: t("recipeSuccess")
       });
       router.push("/account");
     } catch (error: any) {
       console.error("Error creating recipe:", error?.message ?? error);
       toast({
-        title: "Error",
-        description: "There was an error creating your recipe",
+        title: t("errorLabel"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     }
