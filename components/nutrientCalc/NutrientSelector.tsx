@@ -1,3 +1,15 @@
+"use client";
+
+import { useTranslation } from "react-i18next";
+import { Pencil, PencilOff, Settings } from "lucide-react";
+
+import Tooltip from "../Tooltips";
+import { cn } from "@/lib/utils";
+import { isValidNumber } from "@/lib/utils/validateInput";
+
+import { Switch } from "../ui/switch";
+import { Separator } from "../ui/separator";
+
 import {
   Select,
   SelectContent,
@@ -5,9 +17,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "../ui/select";
-import { useTranslation } from "react-i18next";
-import Tooltip from "../Tooltips";
-import { Pencil, PencilOff, Settings } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -16,11 +26,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from "../ui/dialog";
-import { isValidNumber } from "@/lib/utils/validateInput";
-import { cn } from "@/lib/utils";
-import { Switch } from "../ui/switch";
-import { NutrientType } from "@/types/nutrientTypes";
-import { Separator } from "../ui/separator";
+
 import {
   InputGroup,
   InputGroupAddon,
@@ -28,38 +34,28 @@ import {
   InputGroupInput
 } from "../ui/input-group";
 
-function NutrientSelector({
-  useNutrients
-}: {
-  useNutrients: () => NutrientType;
-}) {
+import { useNutrients } from "@/components/providers/NutrientProvider";
+import type { NutrientKey } from "@/types/nutrientData";
+
+export default function NutrientSelector() {
   const { t } = useTranslation();
-  const {
-    selected,
-    setSelectedNutrients,
-    inputs,
-    otherYanContribution,
-    otherNutrientName,
-    maxGpl,
-    editMaxGpl
-  } = useNutrients();
-
-  const handleNutrientChange = (nutrient: string) => {
-    const prevSelected = selected?.selectedNutrients || [];
-
-    if (prevSelected?.includes(nutrient)) {
-      setSelectedNutrients(prevSelected.filter((item) => item !== nutrient));
-    } else {
-      setSelectedNutrients([...prevSelected, nutrient]);
-    }
-  };
+  const { data, actions } = useNutrients();
 
   const warnNumberOfAdditions =
-    Number(inputs.sg.value) > 1.08 && inputs.numberOfAdditions.value === "1";
+    Number(data.inputs.sg) > 1.08 && data.inputs.numberOfAdditions === "1";
+
+  const nutrientRows: Array<{
+    key: NutrientKey;
+    labelKey: string;
+  }> = [
+    { key: "fermO", labelKey: "nutrients.fermO" },
+    { key: "fermK", labelKey: "nutrients.fermK" },
+    { key: "dap", labelKey: "nutrients.dap" }
+  ];
 
   return (
     <>
-      {/* Header + helper tooltip, consistent with other sections */}
+      {/* Header */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <h3 className="flex items-center gap-1">
           {t("selectNutes")}
@@ -70,31 +66,28 @@ function NutrientSelector({
         </h3>
       </div>
 
-      {/* Nutrient toggles */}
+      {/* Nutrient switches */}
       <div className="joyride-nutrientSwitches grid sm:grid-cols-2 gap-2">
-        {[
-          { value: "Fermaid O", label: "nutrients.fermO" },
-          { value: "Fermaid K", label: "nutrients.fermK" },
-          { value: "DAP", label: "nutrients.dap" }
-        ].map((label, i) => (
-          <LabeledCheckbox
-            key={label.value + i}
-            label={label}
-            index={i}
-            useNutrients={useNutrients}
+        {nutrientRows.map((row, index) => (
+          <LabeledNutrient
+            key={row.key}
+            nutrientKey={row.key}
+            labelKey={row.labelKey}
+            index={index}
           />
         ))}
 
-        {/* “Other” switch stays, but gets same pill styling */}
+        {/* Other */}
         <label className="flex items-center gap-2">
           <Switch
-            checked={selected.selectedNutrients?.includes("Other")}
-            onCheckedChange={() => handleNutrientChange("Other")}
+            checked={data.selected.selectedNutrients.other}
+            onCheckedChange={() => actions.toggleNutrient("other")}
           />
           <span>{t("other.label")}</span>
         </label>
 
-        {selected.selectedNutrients?.includes("Other") && (
+        {/* Other details */}
+        {data.selected.selectedNutrients.other && (
           <div className="grid grid-cols-2 gap-4 w-full col-span-2 py-6">
             <h3 className="col-span-2">
               {t("other.detailsHeading", "Other Nutrient Details")}
@@ -108,7 +101,8 @@ function NutrientSelector({
 
               <InputGroup className="h-12">
                 <InputGroupInput
-                  {...otherNutrientName}
+                  value={data.settings.other.name}
+                  onChange={(e) => actions.setOtherNutrientName(e.target.value)}
                   inputMode="text"
                   onFocus={(e) => e.target.select()}
                   className="text-lg"
@@ -124,7 +118,11 @@ function NutrientSelector({
 
               <InputGroup className="h-12">
                 <InputGroupInput
-                  {...otherYanContribution}
+                  value={data.settings.yanContribution.other}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (isValidNumber(v)) actions.setOtherYanContribution(v);
+                  }}
                   inputMode="decimal"
                   onFocus={(e) => e.target.select()}
                   className="text-lg"
@@ -146,8 +144,11 @@ function NutrientSelector({
 
               <InputGroup className="h-12">
                 <InputGroupInput
-                  value={maxGpl[3]}
-                  onChange={(e) => editMaxGpl(3, e.target.value)}
+                  value={data.settings.maxGpl.other}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (isValidNumber(v)) actions.setMaxGpl("other", v);
+                  }}
                   inputMode="decimal"
                   onFocus={(e) => e.target.select()}
                   className="text-lg"
@@ -164,7 +165,7 @@ function NutrientSelector({
         )}
       </div>
 
-      {/* Number of additions – your warning logic is good */}
+      {/* Number of additions */}
       <div>
         <label className="joyride-numOfAdditions grid gap-1 mt-4">
           <span className="flex items-center gap-1">
@@ -174,7 +175,11 @@ function NutrientSelector({
               variant={warnNumberOfAdditions ? "warning" : undefined}
             />
           </span>
-          <Select {...inputs.numberOfAdditions}>
+
+          <Select
+            value={data.inputs.numberOfAdditions}
+            onValueChange={actions.setNumberOfAdditions}
+          >
             <SelectTrigger
               className={cn("h-12", {
                 "border-warning ring-warning/40": warnNumberOfAdditions
@@ -198,41 +203,55 @@ function NutrientSelector({
   );
 }
 
-export default NutrientSelector;
-
-const SettingsDialog = ({
-  maxGpl,
-  yanContribution,
-  providedYan,
-  adjustAllowed,
-  setAdjustAllowed,
-  tutorialClassFlag
+function LabeledNutrient({
+  nutrientKey,
+  labelKey,
+  index
 }: {
-  maxGpl: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  };
-  yanContribution: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  };
-  providedYan: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  };
-  adjustAllowed: boolean;
-  setAdjustAllowed: (value: boolean) => void;
-  tutorialClassFlag?: boolean;
-}) => {
+  nutrientKey: NutrientKey;
+  labelKey: string;
+  index: number;
+}) {
   const { t } = useTranslation();
+  const { data, actions } = useNutrients();
+
+  const checked = data.selected.selectedNutrients[nutrientKey];
+
+  return (
+    <label className="flex items-center gap-2">
+      <Switch
+        checked={checked}
+        onCheckedChange={() => actions.toggleNutrient(nutrientKey)}
+      />
+
+      {t(labelKey)}
+
+      <SettingsDialog nutrientKey={nutrientKey} index={index} />
+    </label>
+  );
+}
+
+function SettingsDialog({
+  nutrientKey,
+  index
+}: {
+  nutrientKey: NutrientKey;
+  index: number;
+}) {
+  const { t } = useTranslation();
+  const { data, actions } = useNutrients();
+
+  const maxGpl = data.settings.maxGpl[nutrientKey];
+  const yanContribution = data.settings.yanContribution[nutrientKey];
+  const providedYan = data.adjustments.providedYanPpm[nutrientKey];
+  const adjustAllowed = data.adjustments.adjustAllowed;
 
   return (
     <Dialog>
-      <DialogTrigger
-        className={tutorialClassFlag ? "joyride-nutrientSettings" : ""}
-      >
+      <DialogTrigger className={index === 0 ? "joyride-nutrientSettings" : ""}>
         <Settings />
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -247,9 +266,15 @@ const SettingsDialog = ({
                   <span>
                     {t("other.settingsYanContribution", "YAN Contribution")}
                   </span>
+
                   <InputGroup className="h-12">
                     <InputGroupInput
-                      {...yanContribution}
+                      value={yanContribution}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (isValidNumber(v))
+                          actions.setYanContribution(nutrientKey, v);
+                      }}
                       onFocus={(e) => e.target.select()}
                       inputMode="decimal"
                     />
@@ -264,9 +289,14 @@ const SettingsDialog = ({
               <div className="px-2">
                 <label className="grid gap-1 text-sm font-medium">
                   <span>{t("other.settingsMaxGpl", "Max g/L")}</span>
+
                   <InputGroup className="h-12">
                     <InputGroupInput
-                      {...maxGpl}
+                      value={maxGpl}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (isValidNumber(v)) actions.setMaxGpl(nutrientKey, v);
+                      }}
                       onFocus={(e) => e.target.select()}
                       inputMode="decimal"
                     />
@@ -277,13 +307,12 @@ const SettingsDialog = ({
                 </label>
               </div>
 
-              {/* Provided YAN + inline adjust toggle inside the same input group */}
+              {/* Provided YAN + adjust toggle */}
               <div className="px-2">
                 <label className="grid gap-1 text-sm font-medium w-full">
                   <span>{t("other.settingsProvidedYan", "Provided YAN")}</span>
 
                   <InputGroup className="h-12">
-                    {/* Left addon – adjust toggle as an input-group button */}
                     <InputGroupAddon align="inline-start">
                       <InputGroupButton
                         size="icon-xs"
@@ -292,22 +321,25 @@ const SettingsDialog = ({
                           "other.settingsAdjustValue",
                           "Toggle adjusting provided YAN"
                         )}
-                        onClick={() => setAdjustAllowed(!adjustAllowed)}
+                        onClick={() => actions.setAdjustAllowed(!adjustAllowed)}
                       >
                         {adjustAllowed ? <Pencil /> : <PencilOff />}
                       </InputGroupButton>
                     </InputGroupAddon>
 
-                    {/* Main input */}
                     <InputGroupInput
-                      {...providedYan}
+                      value={providedYan}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (isValidNumber(v))
+                          actions.setProvidedYanPpm(nutrientKey, v);
+                      }}
                       onFocus={(e) => e.target.select()}
                       inputMode="decimal"
                       readOnly={!adjustAllowed}
                       data-warning={adjustAllowed ? "true" : undefined}
                     />
 
-                    {/* Right addon – units + mobile tooltip */}
                     <InputGroupAddon align="inline-end">
                       <span>PPM YAN</span>
                       <span className={cn("sm:hidden")}>
@@ -316,8 +348,6 @@ const SettingsDialog = ({
                     </InputGroupAddon>
                   </InputGroup>
 
-                  {/* Desktop-only helper text (same content as tooltip),
-                      always rendered but hidden via `invisible` when not adjusting */}
                   <p
                     className={cn(
                       "hidden sm:block mt-1 text-xs text-warning",
@@ -334,81 +364,4 @@ const SettingsDialog = ({
       </DialogContent>
     </Dialog>
   );
-};
-
-const LabeledCheckbox = ({
-  index,
-  label,
-  useNutrients
-}: {
-  useNutrients: () => NutrientType;
-  index: number;
-  label: { value: string; label: string };
-}) => {
-  const { t } = useTranslation();
-  const {
-    selected,
-    maxGpl,
-    yanContributions,
-    editMaxGpl,
-    editYanContribution,
-    setSelectedNutrients,
-    providedYan,
-    updateProvidedYan,
-    adjustAllowed,
-    setAdjustAllowed
-  } = useNutrients();
-  const handleNutrientChange = (nutrient: string) => {
-    const prevSelected = selected?.selectedNutrients || [];
-
-    if (prevSelected?.includes(nutrient)) {
-      // If the nutrient is already selected, remove it
-      setSelectedNutrients(prevSelected?.filter((item) => item !== nutrient));
-    } else {
-      // If the nutrient is not selected, add it
-      setSelectedNutrients([...prevSelected, nutrient]);
-    }
-  };
-
-  return (
-    <label className="flex items-center gap-2">
-      <Switch
-        checked={selected.selectedNutrients?.includes(label.value)}
-        onCheckedChange={() => handleNutrientChange(label.value)}
-      />
-      {t(label.label)}
-      <SettingsDialog
-        maxGpl={{
-          value: maxGpl[index],
-          onChange: (e) => {
-            const value = e.target.value;
-            if (isValidNumber(value)) {
-              editMaxGpl(index, value);
-            }
-          }
-        }}
-        yanContribution={{
-          value: yanContributions[index],
-          onChange: (e) => {
-            const value = e.target.value;
-            if (isValidNumber(value)) {
-              editYanContribution(index, value);
-            }
-          }
-        }}
-        providedYan={{
-          value: providedYan[index],
-          onChange: (e) => {
-            const value = e.target.value;
-            if (isValidNumber(value)) {
-              updateProvidedYan(index, e.target.value);
-            }
-          }
-        }}
-        adjustAllowed={adjustAllowed}
-        setAdjustAllowed={setAdjustAllowed}
-        tutorialClassFlag={index === 0}
-      />
-    </label>
-  );
-};
+}

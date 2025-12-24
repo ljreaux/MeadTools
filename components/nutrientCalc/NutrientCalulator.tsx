@@ -1,39 +1,41 @@
 "use client";
 
 import useCards from "@/hooks/useCards";
+import { Button } from "../ui/button";
+import { useTranslation } from "react-i18next";
+import { CardWrapper } from "../CardWrapper";
+import NuteCalcSkeleton from "./NuteCalcSkeleton";
 import VolumeInputs from "./VolumeInputs";
 import YeastDetails from "./YeastDetails";
 import NutrientSelector from "./NutrientSelector";
-import { Button } from "../ui/button";
-import { useTranslation } from "react-i18next";
-import AdditionalDetails from "./AdditionalDetails";
 import Results from "./Results";
-import { CardWrapper } from "../CardWrapper";
-import { useNutrients } from "../providers/NutrientProvider";
-import NuteCalcSkeleton from "./NuteCalcSkeleton";
+import AdditionalDetails from "./AdditionalDetails";
+import { useNutrients } from "@/components/providers/NutrientProvider";
 
 const cardConfig = [
   {
     key: "card 1",
     heading: "nutesHeading",
     components: [
-      <VolumeInputs key="volumeInputs" useNutrients={useNutrients} />,
-      <YeastDetails key="yeastDetails" useNutrients={useNutrients} />
+      <VolumeInputs key="volumeInputs" mode="standalone" />,
+      <YeastDetails key="yeastDetails" />
     ]
   },
   {
     key: "card 2",
     heading: "nuteResults.label",
     components: [
-      <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+      <NutrientSelector key="nutrientSelector" />,
+      <Results key="results" />,
+      <AdditionalDetails key="additionalDetails" />
     ]
   }
 ];
 
 function NutrientCalculator() {
-  const { loadingYeasts } = useNutrients();
+  const {
+    catalog: { loadingYeasts }
+  } = useNutrients();
   const cards = cardConfig.map(({ key, heading, components }) => (
     <CardWrapper key={key}>
       <Heading text={heading} />

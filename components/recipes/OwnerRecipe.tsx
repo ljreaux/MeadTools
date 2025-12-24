@@ -4,56 +4,58 @@ import useCards from "@/hooks/useCards";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { CardWrapper } from "../CardWrapper";
-
-import VolumeInputs from "../nutrientCalc/VolumeInputs";
-import YeastDetails from "../nutrientCalc/YeastDetails";
-import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
-import NutrientSelector from "../nutrientCalc/NutrientSelector";
-import Results from "../nutrientCalc/Results";
 import RecipeCalculatorSideBar from "../recipeBuilder/Sidebar";
-import Units from "../recipeBuilder/Units";
-import Ingredients from "../recipeBuilder/Ingredients";
-import ScaleRecipeForm from "../recipeBuilder/ScaleRecipeForm";
-import Stabilizers from "../recipeBuilder/Stabilizers";
-import Additives from "../recipeBuilder/Additives";
-import Notes from "../recipeBuilder/Notes";
-import PDF from "../recipeBuilder/PDF";
-import IngredientResults from "../recipeBuilder/Results";
-import { useRecipe } from "../providers/SavedRecipeProvider";
-import { useNutrients } from "../providers/SavedNutrientProvider";
 import SaveChanges from "./SaveChanges";
 import SaveNew from "./SaveNew";
 import DeleteRecipe from "./DeleteRecipe";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CommentsSection from "./comments/CommentsSection";
 import RecipeCardHeader from "./RecipeCardHeader";
+import Units from "../recipeBuilder/Units";
+import Ingredients from "../recipeBuilder/Ingredients";
+import IngredientResults from "../recipeBuilder/Results";
+import ScaleRecipeForm from "../recipeBuilder/ScaleRecipeForm";
+import VolumeInputs from "../nutrientCalc/VolumeInputs";
+import YeastDetails from "../nutrientCalc/YeastDetails";
+import NutrientSelector from "../nutrientCalc/NutrientSelector";
+import Results from "../nutrientCalc/Results";
+import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
+import Stabilizers from "../recipeBuilder/Stabilizers";
+import Additives from "../recipeBuilder/Additives";
+import Notes from "../recipeBuilder/Notes";
+import RecipePdf from "../recipeBuilder/RecipePdf";
+import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
+import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
+import { NutrientProvider } from "../providers/NutrientProvider";
+import { useRecipe } from "../providers/RecipeProvider";
+import { useBanner } from "../ui/banner";
 
 const cardConfig = [
   {
-    key: "card 1",
+    key: "card-1",
     heading: "recipeBuilder.homeHeading",
     components: [
-      <Units key="units" useRecipe={useRecipe} />,
-      <Ingredients key="ingredients" useRecipe={useRecipe} />,
-      <IngredientResults key="ingredientResults" useRecipe={useRecipe} />,
-      <ScaleRecipeForm key="scaleRecipeForm" useRecipe={useRecipe} />
+      <Units key="units" />,
+      <Ingredients key="ingredients" />,
+      <IngredientResults key="ingredientResults" />,
+      <ScaleRecipeForm key="scaleIngredientsForm" />
     ]
   },
   {
     key: "card 2",
     heading: "nutesHeading",
     components: [
-      <VolumeInputs key="volumeInputs" disabled useNutrients={useNutrients} />,
-      <YeastDetails key="yeastDetails" useNutrients={useNutrients} />
+      <VolumeInputs key="volumeInputs" mode="embedded" />,
+      <YeastDetails key="yeastDetails" />
     ]
   },
   {
     key: "card 3",
     heading: "nuteResults.label",
     components: [
-      <NutrientSelector key="nutrientSelector" useNutrients={useNutrients} />,
-      <Results key="results" useNutrients={useNutrients} />,
-      <AdditionalDetails key="additionalDetails" useNutrients={useNutrients} />
+      <NutrientSelector key="nutrientSelector" />,
+      <Results key="results" />,
+      <AdditionalDetails key="additionalDetails" />
     ]
   },
   {
@@ -63,42 +65,37 @@ const cardConfig = [
       body: "tipText.stabilizers",
       link: "https://wiki.meadtools.com/en/process/stabilization"
     },
-    components: [<Stabilizers key="stabilizers" useRecipe={useRecipe} />]
+    components: [<Stabilizers key="stabilizers" />]
   },
   {
     key: "card 5",
     heading: "additivesHeading",
-    components: [<Additives key="additives" useRecipe={useRecipe} />]
+    components: [<Additives key="additives" />]
   },
   {
     key: "card 6",
     heading: "notes.title",
-    components: [<Notes key="notes" useRecipe={useRecipe} />]
+    components: [<Notes key="notes" />]
   },
   {
     key: "card 7",
     heading: "PDF.title",
-    components: [
-      <PDF key="pdf" useRecipe={useRecipe} useNutrients={useNutrients} />
-    ]
+    components: [<RecipePdf key="pdf" />]
   }
 ];
 
 function OwnerRecipe({
   pdfRedirect,
-  privateRecipe,
-  emailNotifications,
-  recipeId
+  recipe
 }: {
   pdfRedirect: boolean;
-  privateRecipe?: boolean;
-  emailNotifications?: boolean;
-  recipeId: number;
+  recipe: RecipeWithParsedFields;
 }) {
-  const [isPrivate, setIsPrivate] = useState(privateRecipe ?? false);
-  const [notify, setNotify] = useState(emailNotifications ?? false);
+  useRecipeVersionGate(recipe);
+  const [isPrivate, setIsPrivate] = useState(recipe.private ?? false);
+  const [notify, setNotify] = useState(recipe.emailNotifications ?? false);
   const [nameEditable, setNameEditable] = useState(false);
-  const recipe = useRecipe();
+  const [recipeName, setRecipeName] = useState(recipe.name);
   const { t } = useTranslation();
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
@@ -107,21 +104,38 @@ function OwnerRecipe({
         heading={heading}
         tooltip={tooltip}
         recipe={recipe}
+        recipeNameProps={{
+          recipeName,
+          setRecipeName: (v) => {
+            setRecipeName(v);
+            markDirty();
+          }
+        }}
         nameEditable={nameEditable}
         setNameEditable={setNameEditable}
         isPrivate={isPrivate}
-        setIsPrivate={setIsPrivate}
+        setIsPrivate={(v) => {
+          setIsPrivate(v);
+          markDirty();
+        }}
         notify={notify}
-        setNotify={setNotify}
+        setNotify={(v) => {
+          setNotify(v);
+          markDirty();
+        }}
       />
 
       {components}
 
-      {!privateRecipe && <CommentsSection recipeId={recipeId} />}
+      {!recipe.private && <CommentsSection recipeId={recipe.id} />}
     </CardWrapper>
   ));
 
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
+  const {
+    derived: { nutrientValueForRecipe },
+    meta: { setNutrients, isDirty, markDirty }
+  } = useRecipe();
 
   useEffect(() => {
     if (pdfRedirect) {
@@ -129,33 +143,70 @@ function OwnerRecipe({
     }
   }, [pdfRedirect]);
 
+  const { showBanner, requestDismiss } = useBanner();
+  const bannerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isDirty) {
+      // already showing
+      if (bannerIdRef.current) return;
+
+      const id = showBanner({
+        variant: "warning",
+        dismissible: true,
+        duration: 0, // not timed
+        title: "Unsaved changes",
+        description: "You’ve made changes to this recipe. Don’t forget to save."
+      });
+
+      bannerIdRef.current = id;
+      return;
+    }
+
+    // isDirty === false -> dismiss if present
+    if (bannerIdRef.current) {
+      requestDismiss(bannerIdRef.current);
+      bannerIdRef.current = null;
+    }
+  }, [isDirty, showBanner, requestDismiss]);
+
   return (
-    <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-      <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
-        <div className="py-2">
-          <SaveChanges privateRecipe={isPrivate} emailNotifications={notify} />
-          <SaveNew />
-          <DeleteRecipe />
+    <NutrientProvider
+      mode="controlled"
+      value={nutrientValueForRecipe}
+      onChange={setNutrients}
+    >
+      <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
+        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
+          <div className="py-2">
+            <SaveChanges
+              privateRecipe={isPrivate}
+              emailNotifications={notify}
+              name={recipeName}
+            />
+            <SaveNew />
+            <DeleteRecipe />
+          </div>
+        </RecipeCalculatorSideBar>
+        {card}
+
+        <div className="flex py-12 gap-4 w-11/12 max-w-[1200px] items-center justify-center">
+          {currentStepIndex === 0 || (
+            <Button variant="secondary" onClick={back} className="w-full">
+              {t("buttonLabels.back")}
+            </Button>
+          )}
+
+          {currentStepIndex === cards.length - 1 ? (
+            <SaveChanges privateRecipe={isPrivate} name={recipeName} bottom />
+          ) : (
+            <Button variant="secondary" onClick={next} className="w-full">
+              {t("buttonLabels.next")}
+            </Button>
+          )}
         </div>
-      </RecipeCalculatorSideBar>
-      {card}
-
-      <div className="flex py-12 gap-4 w-11/12 max-w-[1200px] items-center justify-center">
-        {currentStepIndex === 0 || (
-          <Button variant="secondary" onClick={back} className="w-full">
-            {t("buttonLabels.back")}
-          </Button>
-        )}
-
-        {currentStepIndex === cards.length - 1 ? (
-          <SaveChanges privateRecipe={isPrivate} bottom />
-        ) : (
-          <Button variant="secondary" onClick={next} className="w-full">
-            {t("buttonLabels.next")}
-          </Button>
-        )}
       </div>
-    </div>
+    </NutrientProvider>
   );
 }
 

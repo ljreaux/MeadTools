@@ -1,12 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
 
-import { useRecipe } from "../providers/SavedRecipeProvider";
-import { useNutrients } from "../providers/SavedNutrientProvider";
 import { useToast } from "@/hooks/use-toast";
-
 import { Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
@@ -23,14 +21,19 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
+
 function SaveChanges({
   privateRecipe,
   bottom,
-  emailNotifications
+  emailNotifications,
+  name
 }: {
   privateRecipe: boolean;
   bottom?: boolean;
   emailNotifications?: boolean;
+  name: string;
 }) {
   const { t } = useTranslation();
   const params = useParams();
@@ -40,30 +43,44 @@ function SaveChanges({
   const updateRecipeMutation = useUpdateRecipeMutation();
 
   const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    recipeNameProps,
-    stabilizers,
-    stabilizerType
+    data: {
+      unitDefaults,
+      ingredients,
+      fg,
+      stabilizers,
+      additives,
+      notes,
+      nutrients
+    },
+    meta: { markSaved }
   } = useRecipe();
 
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl
-  } = useNutrients();
+  // Build payload exactly like localStorage format
+  const dataV2: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      flags: {
+        private: privateRecipe
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      privateRecipe
+    ]
+  );
 
   const handleSaveClick = () => {
     if (!recipeId) {
@@ -75,57 +92,19 @@ function SaveChanges({
       return;
     }
 
-    const recipeData = JSON.stringify({
-      ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
-      additives,
-      sorbate,
-      sulfite,
-      campden,
-      stabilizers,
-      stabilizerType
-    });
-
-    const otherNutrientName =
-      otherNameState.value.length > 0 ? otherNameState.value : undefined;
-
-    const nutrientData = JSON.stringify({
-      ...fullData,
-      otherNutrientName
-    });
-
-    const yanContribution = JSON.stringify(yanContributions);
-
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
-
     const body: UpdateRecipePayload = {
-      name: recipeNameProps.value,
-      recipeData,
-      yanFromSource: JSON.stringify(providedYan),
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: JSON.stringify(maxGpl),
-      primaryNotes,
-      secondaryNotes,
+      name,
       private: privateRecipe,
-      activityEmailsEnabled: emailNotifications ?? false
+      activityEmailsEnabled: emailNotifications ?? false,
+      dataV2
     };
 
     updateRecipeMutation.mutate(
       { id: recipeId, body },
       {
         onSuccess: () => {
-          toast({
-            description: "Recipe updated successfully."
-          });
+          toast({ description: "Recipe updated successfully." });
+          markSaved();
         },
         onError: (error: any) => {
           console.error("Error updating recipe:", error);
@@ -140,7 +119,6 @@ function SaveChanges({
   };
 
   const isSaving = updateRecipeMutation.isPending;
-
   const icon = isSaving ? <Spinner /> : <Save />;
 
   return (

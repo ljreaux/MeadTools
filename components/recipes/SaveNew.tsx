@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { useRouter } from "next/navigation";
-import { useRecipe } from "../providers/SavedRecipeProvider";
-import { useNutrients } from "../providers/SavedNutrientProvider";
 import { useToast } from "@/hooks/use-toast";
+
 import {
   Dialog,
   DialogContent,
@@ -20,11 +19,6 @@ import {
 import { FilePlus } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
 import TooltipHelper from "../Tooltips";
-import {
-  useCreateRecipeMutation,
-  buildRecipePayload
-} from "@/hooks/reactQuery/useRecipeQuery";
-
 import { Button } from "../ui/button";
 import {
   Tooltip,
@@ -32,77 +26,83 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
+
 function SaveNew() {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
 
-  const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    stabilizers,
-    stabilizerType,
-    recipeNameProps
-  } = useRecipe();
-
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl
-  } = useNutrients();
-
-  const [checked, setChecked] = useState(false); // private
-  const [notify, setNotify] = useState(false); // email notifications
-  const [recipeName, setRecipeName] = useState(recipeNameProps.value);
-
   const createRecipeMutation = useCreateRecipeMutation();
 
-  const createRecipe = async () => {
-    const body = buildRecipePayload({
-      name: recipeName,
-      privateRecipe: checked,
-      emailNotifications: notify,
-
+  const {
+    data: {
+      unitDefaults,
       ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
-      additives,
-      sorbate,
-      sulfite,
-      campden,
+      fg,
       stabilizers,
-      stabilizerType,
-
+      additives,
       notes,
-      fullData,
-      yanContributions,
-      otherNutrientNameValue: otherNameState.value,
-      providedYan,
-      maxGpl
-    });
+      nutrients
+    }
+  } = useRecipe();
+
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // activity emails
+  const [recipeName, setRecipeName] = useState("");
+
+  // match local-storage + save recipe v2 payload shape
+  const dataV2: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      flags: {
+        private: checked
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      checked
+    ]
+  );
+
+  const createRecipe = async () => {
+    const trimmedName = recipeName.trim();
+
+    if (!trimmedName) {
+      toast({
+        title: "Error",
+        description: "Recipe name is required.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const body = {
+      name: trimmedName,
+      dataV2, // jsonb
+      private: checked,
+      activityEmailsEnabled: notify
+    };
 
     try {
-      await createRecipeMutation.mutateAsync(body);
+      await createRecipeMutation.mutateAsync(body as any);
 
-      toast({
-        description: "Recipe created successfully."
-      });
+      toast({ description: "Recipe created successfully." });
       router.push("/account");
     } catch (error: any) {
       console.error("Error creating recipe:", error?.message ?? error);

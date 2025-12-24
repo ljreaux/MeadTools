@@ -28,40 +28,70 @@ import PerPageSelect from "@/components/pagination/PerPageSelect";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
+import type { RecipeData } from "@/types/recipeData";
+
 interface Recipe {
   id: number;
-  user_id: number;
+  user_id: number | null; // ✅ was number
   name: string;
-  recipeData: string;
+
+  // legacy columns may be empty now
+  recipeData: string | null; // ✅ allow null/empty
   yanFromSource: string | null;
   yanContribution: string;
   nutrientData: string;
   advanced: boolean;
   nuteInfo: string | null;
+
   primaryNotes: string[][] | null;
   secondaryNotes: string[][] | null;
+
   private: boolean;
   public_username: string | null;
+
   averageRating?: number;
   numberOfRatings?: number;
+
+  // ✅ new
+  dataV2?: RecipeData;
 }
 
-function parseRecipeData(recipeData: string) {
-  try {
-    const parsedData = JSON.parse(recipeData);
+function getOgFg(recipe: Recipe) {
+  // --- V2 path ---
+  if (recipe.dataV2) {
+    const fg = parseNumber(recipe.dataV2.fg);
 
-    const rawOG = parsedData.OG;
-    const rawFG = parsedData.FG;
+    const deltaSg = parseNumber(recipe.dataV2.nutrients?.inputs?.sg ?? "");
 
-    const ogNum = parseNumber(rawOG);
-    const fgNum = parseNumber(rawFG);
+    let OG = "N/A";
+    let FG = "N/A";
 
-    const OG = Number.isFinite(ogNum) ? ogNum.toFixed(3) : "N/A";
-    const FG = Number.isFinite(fgNum) ? fgNum.toFixed(3) : "N/A";
+    if (Number.isFinite(fg)) {
+      FG = fg.toFixed(3);
+    }
+
+    if (Number.isFinite(fg) && Number.isFinite(deltaSg)) {
+      const og = fg + (deltaSg - 1);
+      OG = og.toFixed(3);
+    }
 
     return { OG, FG };
-  } catch (error) {
-    console.error("Error parsing recipeData:", error);
+  }
+
+  // --- legacy fallback ---
+  const raw = recipe.recipeData ?? "";
+  if (!raw) return { OG: "N/A", FG: "N/A" };
+
+  try {
+    const parsed = JSON.parse(raw);
+    const ogNum = parseNumber(parsed.OG);
+    const fgNum = parseNumber(parsed.FG);
+
+    return {
+      OG: Number.isFinite(ogNum) ? ogNum.toFixed(3) : "N/A",
+      FG: Number.isFinite(fgNum) ? fgNum.toFixed(3) : "N/A"
+    };
+  } catch {
     return { OG: "N/A", FG: "N/A" };
   }
 }
@@ -232,7 +262,7 @@ export default function RecipeList({
       <div className="space-y-4">
         {recipes.length > 0 ? (
           recipes.map((recipe) => {
-            const { OG, FG } = parseRecipeData(recipe.recipeData);
+            const { OG, FG } = getOgFg(recipe);
             return (
               <Card
                 key={recipe.id}

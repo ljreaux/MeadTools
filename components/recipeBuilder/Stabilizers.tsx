@@ -1,7 +1,8 @@
+"use client";
+
 import { Switch } from "../ui/switch";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { Recipe } from "@/types/recipeDataTypes";
 import {
   Select,
   SelectContent,
@@ -16,11 +17,13 @@ import {
 } from "@/components/ui/input-group";
 import { Separator } from "../ui/separator";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { useRecipe } from "../providers/RecipeProvider";
 
-function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
+export default function Stabilizers() {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage;
 
+  const { stabilizers } = useRecipe();
   const {
     addingStabilizers,
     toggleStabilizers,
@@ -33,7 +36,7 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
     campden,
     stabilizerType,
     setStabilizerType
-  } = useRecipe();
+  } = stabilizers;
 
   // Display values (match standalone calc style)
   const sorbateDisplay = normalizeNumberString(sorbate, 3, locale);
@@ -67,7 +70,6 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
                 <Switch checked={takingPh} onCheckedChange={toggleTakingPh} />
               </div>
 
-              {/* Input moved up onto the same horizontal line */}
               {takingPh && (
                 <div>
                   <InputGroup className="h-12">
@@ -119,7 +121,7 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
 
             {sorbate > 0 && (
               <>
-                {/* AND between sorbate + sulfite/campden, matches standalone */}
+                {/* AND between sorbate + sulfite/campden */}
                 <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
                   {t("AND")}
                 </p>
@@ -140,7 +142,9 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
                         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm">
                           <Select
                             value={stabilizerType}
-                            onValueChange={setStabilizerType}
+                            onValueChange={(v) =>
+                              setStabilizerType(v as "kmeta" | "nameta")
+                            }
                           >
                             <SelectTrigger className="h-9 min-w-[120px]">
                               <SelectValue />
@@ -185,5 +189,3 @@ function Stabilizers({ useRecipe }: { useRecipe: () => Recipe }) {
     </div>
   );
 }
-
-export default Stabilizers;
