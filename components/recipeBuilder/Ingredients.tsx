@@ -168,7 +168,8 @@ const IngredientLine = ({
               setQuery={changeIng}
               keyName="name"
               onSelect={selectCatalog}
-              renderItem={(item) => t(lodash.camelCase(item.name))}
+              renderItem={(item) => t(lodash.camelCase(item.name), item.name)}
+              getLabel={(item) => t(lodash.camelCase(item.name), item.name)}
             />
           </div>
         </label>

@@ -1,4 +1,6 @@
-import { useRef, useEffect, useState, KeyboardEvent } from "react";
+"use client";
+
+import React, { useEffect, useRef, useState, KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
 
@@ -12,10 +14,13 @@ import {
 type SearchableInputProps<T> = {
   items: T[];
   query: string;
-  setQuery: (val: string) => void;
+  setQuery: (val: string) => void; // user-typed/custom text
   keyName: keyof T;
-  onSelect: (item: T) => void;
+  onSelect: (item: T) => void; // catalog selection (canonical)
   renderItem?: (item: T) => React.ReactNode;
+
+  // optional display label (ex: translated)
+  getLabel?: (item: T) => string;
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -24,7 +29,8 @@ function SearchableInput<T extends Record<string, any>>({
   setQuery,
   keyName,
   onSelect,
-  renderItem
+  renderItem,
+  getLabel
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -32,8 +38,20 @@ function SearchableInput<T extends Record<string, any>>({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
 
-  const { suggestions } = useSuggestions(items, query, keyName);
-  const visibleSuggestions = query.trim() === "" ? items : suggestions;
+  // Display value (can differ from parent canonical value after selection)
+  const [inputValue, setInputValue] = useState(query);
+
+  // Keep display in sync with parent changes (hydrate/reset/etc.)
+  useEffect(() => {
+    setInputValue(query);
+  }, [query]);
+
+  const labelOf = (item: T) =>
+    getLabel ? getLabel(item) : String(item[keyName] ?? "");
+
+  // IMPORTANT: suggestions are based on what the user is currently seeing/typing
+  const { suggestions } = useSuggestions(items, inputValue, keyName);
+  const visibleSuggestions = inputValue.trim() === "" ? items : suggestions;
 
   // click-outside to close
   useEffect(() => {
@@ -53,6 +71,20 @@ function SearchableInput<T extends Record<string, any>>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const commitSelect = (item: T) => {
+    onSelect(item); // provider sets canonical fields, does derived stuff, etc.
+
+    // show translated label in the input immediately
+    const label = labelOf(item);
+    setInputValue(label);
+
+    // DO NOT call setQuery(label) here — it breaks providers that match by canonical name
+    // (typing still calls setQuery below for custom names)
+
+    setDropdownOpen(false);
+    setHighlightIndex(-1);
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!dropdownOpen || visibleSuggestions.length === 0) return;
 
@@ -68,27 +100,17 @@ function SearchableInput<T extends Record<string, any>>({
       );
     } else if (e.key === "Enter" && highlightIndex >= 0) {
       e.preventDefault();
-      const selected = visibleSuggestions[highlightIndex];
-      onSelect(selected);
-      setQuery(String(selected[keyName] ?? ""));
-      setDropdownOpen(false);
-      setHighlightIndex(-1);
+      commitSelect(visibleSuggestions[highlightIndex]);
     } else if (e.key === "Escape") {
       setDropdownOpen(false);
       setHighlightIndex(-1);
     }
   };
 
-  const handleSelect = (item: T) => {
-    onSelect(item);
-    setQuery(String(item[keyName] ?? ""));
-    setDropdownOpen(false);
-    setHighlightIndex(-1);
-  };
-
   const handleClearOrClose = () => {
-    if (query) {
-      setQuery("");
+    if (inputValue) {
+      setInputValue("");
+      setQuery(""); // clearing should clear the provider value too
       setHighlightIndex(-1);
       setDropdownOpen(true); // keep list open but reset
     } else {
@@ -96,15 +118,19 @@ function SearchableInput<T extends Record<string, any>>({
       setHighlightIndex(-1);
     }
   };
+
   const listboxId = "searchable-input-listbox";
+
   return (
     <div className="relative">
       <InputGroup className="h-12">
         <InputGroupInput
           ref={inputRef}
-          value={query}
+          value={inputValue}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const val = e.target.value;
+            setInputValue(val);
+            setQuery(val); // user typed -> treat as custom text
             setDropdownOpen(true);
             setHighlightIndex(-1);
           }}
@@ -121,14 +147,14 @@ function SearchableInput<T extends Record<string, any>>({
         />
 
         <InputGroupAddon align="inline-end">
-          {(dropdownOpen || query) && (
+          {(dropdownOpen || inputValue) && (
             <InputGroupButton
               type="button"
               size="icon-xs"
               variant="ghost"
               className="rounded-full"
               onClick={handleClearOrClose}
-              aria-label={query ? "Clear search" : "Close suggestions"}
+              aria-label={inputValue ? "Clear search" : "Close suggestions"}
             >
               <X className="h-3 w-3" />
             </InputGroupButton>
@@ -155,12 +181,10 @@ function SearchableInput<T extends Record<string, any>>({
                 }`}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleSelect(suggestion);
+                  commitSelect(suggestion);
                 }}
               >
-                {renderItem
-                  ? renderItem(suggestion)
-                  : String(suggestion[keyName] ?? "")}
+                {renderItem ? renderItem(suggestion) : labelOf(suggestion)}
               </li>
             );
           })}

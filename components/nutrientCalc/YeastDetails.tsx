@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
 import SearchableInput from "../ui/SearchableInput";
 import { useNutrients } from "@/components/providers/NutrientProvider";
+import lodash from "lodash";
 
 export default function YeastDetails() {
   const { t } = useTranslation();
@@ -63,6 +64,8 @@ export default function YeastDetails() {
             setQuery={actions.setYeastStrain}
             keyName="name"
             onSelect={actions.selectYeast}
+            renderItem={(item) => t(lodash.camelCase(item.name), item.name)}
+            getLabel={(item) => t(lodash.camelCase(item.name), item.name)}
           />
         </div>
 

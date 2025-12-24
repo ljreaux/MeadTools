@@ -139,7 +139,8 @@ const AdditiveLine = ({
             setQuery={changeAdditive}
             keyName="name"
             onSelect={handleAdditiveSelect}
-            renderItem={(item) => t(lodash.camelCase(item.name))}
+            renderItem={(item) => t(lodash.camelCase(item.name), item.name)}
+            getLabel={(item) => t(lodash.camelCase(item.name), item.name)}
           />
         </label>
 
