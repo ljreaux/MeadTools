@@ -43,7 +43,10 @@ export default function Bottling() {
     updateCustomRow,
     removeRow,
     totalVolumeBottledL,
-    remainingVolumeL
+    remainingVolumeL,
+    totalTargetVolumeL,
+    getPerBottleLiters,
+    fillRowToTarget
   } = useBottles();
 
   const { t, i18n } = useTranslation();
@@ -82,21 +85,21 @@ export default function Bottling() {
           body: t("bottlingCalculator.status.ok.body")
         }
       : status === "warn"
-      ? {
-          title: t("bottlingCalculator.status.warn.title"),
-          body: t("bottlingCalculator.status.warn.body")
-        }
-      : {
-          title: t("bottlingCalculator.status.error.title"),
-          body: t("bottlingCalculator.status.error.body")
-        };
+        ? {
+            title: t("bottlingCalculator.status.warn.title"),
+            body: t("bottlingCalculator.status.warn.body")
+          }
+        : {
+            title: t("bottlingCalculator.status.error.title"),
+            body: t("bottlingCalculator.status.error.body")
+          };
 
   const statusClasses =
     status === "ok"
       ? "bg-background text-foreground border-foreground/20"
       : status === "warn"
-      ? "bg-warning text-foreground border-foreground/20"
-      : "bg-destructive text-destructive-foreground border-destructive/40";
+        ? "bg-warning text-foreground border-foreground/20"
+        : "bg-destructive text-destructive-foreground border-destructive/40";
 
   const numberCellClass = "tabular-nums whitespace-nowrap";
 
@@ -182,6 +185,9 @@ export default function Bottling() {
               <TableHead>
                 {t("bottlingCalculator.table.percentOfBatch")}
               </TableHead>
+              <TableHead>
+                {t("bottlingCalculator.table.remainingBottles")}
+              </TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -202,7 +208,17 @@ export default function Bottling() {
                 volumeUnits === "gallons"
                   ? t("bottlingCalculator.units.flOzShort")
                   : t("bottlingCalculator.units.lShort");
+              const perBottleL = getPerBottleLiters(row);
 
+              // remaining liters if you used THIS row to finish the batch
+              const bottledExcludingRow =
+                totalVolumeBottledL - row.totalVolumeL;
+              const neededL = totalTargetVolumeL - bottledExcludingRow;
+
+              const remainingBottles =
+                perBottleL > 0 && neededL > 0
+                  ? Math.ceil(neededL / perBottleL)
+                  : 0;
               return (
                 <TableRow key={row.id}>
                   <TableCell>
@@ -245,6 +261,9 @@ export default function Bottling() {
                               />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="ml">
+                                {t("bottlingCalculator.custom.units.ml", "mL")}
+                              </SelectItem>
                               <SelectItem value="fl_oz">
                                 {t("bottlingCalculator.custom.units.flOz")}
                               </SelectItem>
@@ -285,7 +304,27 @@ export default function Bottling() {
                   <TableCell className={`${numberCellClass} w-[6.5rem]`}>
                     {normalizeNumberString(percentOfTotal, 1, locale)}%
                   </TableCell>
+                  <TableCell className={`${numberCellClass} w-[10rem]`}>
+                    <div className="flex items-center gap-2 justify-between">
+                      <span>
+                        {normalizeNumberString(remainingBottles, 0, locale)}
+                      </span>
 
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={
+                          remainingBottles <= 0 ||
+                          !Number.isFinite(perBottleL) ||
+                          perBottleL <= 0
+                        }
+                        onClick={() => fillRowToTarget(row.id)}
+                      >
+                        {t("bottlingCalculator.table.addBottles")}
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {row.size === "custom" && (
                       <Button
@@ -370,7 +409,7 @@ const BOTTLE_SIZES_L: Record<string, number> = {
 };
 
 type BottleSizeKey = keyof typeof BOTTLE_SIZES_L | "custom";
-type CustomUnit = "fl_oz" | "liter" | "gallon";
+type CustomUnit = "fl_oz" | "ml" | "liter" | "gallon";
 
 type BottleRow = {
   size: BottleSizeKey;
@@ -401,8 +440,9 @@ function useBottles() {
   const toLiters = (value: string, unit: CustomUnit) => {
     const n = safeFloat(value);
     if (unit === "liter") return n;
+    if (unit === "ml") return n / 1000;
     if (unit === "gallon") return n * L_PER_GAL;
-    return n / FL_OZ_PER_L;
+    return n / FL_OZ_PER_L; // fl_oz
   };
 
   const perBottleLiters = (row: BottleRow) =>
@@ -473,10 +513,47 @@ function useBottles() {
     0
   );
 
-  const remainingVolumeL =
+  const totalTargetVolumeL =
     volumeUnits === "gallons"
-      ? safeFloat(totalVolume) * L_PER_GAL - totalVolumeBottledL
-      : safeFloat(totalVolume) - totalVolumeBottledL;
+      ? safeFloat(totalVolume) * L_PER_GAL
+      : safeFloat(totalVolume);
+
+  const remainingVolumeL = totalTargetVolumeL - totalVolumeBottledL;
+
+  const fillRowToTarget = (id: string) => {
+    setBottleRows((prev) => {
+      const row = prev.find((r) => r.id === id);
+      if (!row) return prev;
+
+      const perBottleL = perBottleLiters(row);
+      if (!Number.isFinite(perBottleL) || perBottleL <= 0) return prev;
+
+      // remaining liters *excluding this row* (so the fill uses this row to finish)
+      const bottledExcludingRow =
+        prev.reduce((sum, r) => sum + r.totalVolumeL, 0) - row.totalVolumeL;
+
+      const neededL = totalTargetVolumeL - bottledExcludingRow;
+      if (neededL <= 0) {
+        // already at/over target: set to 0 (or keep current—your call)
+        return prev.map((r) =>
+          r.id === id ? { ...r, quantity: "0", totalVolumeL: 0 } : r
+        );
+      }
+
+      // choose ceil so "Fill to" actually reaches the target (may slightly exceed)
+      const qty = Math.ceil(neededL / perBottleL);
+
+      return prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              quantity: String(qty),
+              totalVolumeL: perBottleL * qty
+            }
+          : r
+      );
+    });
+  };
 
   return {
     totalVolume,
@@ -491,6 +568,11 @@ function useBottles() {
     updateCustomRow,
     removeRow,
     totalVolumeBottledL,
-    remainingVolumeL
+    remainingVolumeL,
+
+    // NEW
+    totalTargetVolumeL,
+    getPerBottleLiters: perBottleLiters,
+    fillRowToTarget
   };
 }
