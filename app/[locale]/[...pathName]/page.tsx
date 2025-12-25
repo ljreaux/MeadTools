@@ -38,8 +38,8 @@ export default async function Page({
     const Post = mod.default;
 
     return (
-      <section className="w-full flex justify-center items-center sm:pt-24 pt-[6rem]">
-        <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px] prose dark:prose-invert prose-a:text-blue-500">
+      <section className="w-full flex justify-center items-center sm:pt-24 py-[6rem]">
+        <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background w-11/12 max-w-[1200px] prose dark:prose-invert prose-a:text-blue-500 gap-0">
           <Post />
         </div>
       </section>
