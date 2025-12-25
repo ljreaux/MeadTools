@@ -10,6 +10,7 @@ import {
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { Copy, CopyCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface CopyableCodeBlockProps {
   text: string;
@@ -23,6 +24,7 @@ export default function CopyableCodeBlock({
   const [copied, setCopied] = useState(false);
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => setMounted(true), []);
 
@@ -35,7 +37,7 @@ export default function CopyableCodeBlock({
         description: (
           <div className="flex items-center justify-center gap-2">
             <CopyCheck className="text-xl text-green-500" />
-            Copied to clipboard
+            {t("iSpindelDashboard.copyToken")}
           </div>
         )
       });

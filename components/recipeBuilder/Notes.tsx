@@ -53,7 +53,7 @@ export default function Notes() {
             )}
           />
         ) : (
-          <p className="py-6">Press the button below to add a Note.</p>
+          <p className="py-6">{t("emptyNotes")}</p>
         )}
 
         <Button
@@ -61,7 +61,7 @@ export default function Notes() {
           disabled={notes.primary.length >= 10}
           variant="secondary"
         >
-          New Note
+          {t("newNote")}
         </Button>
       </div>
 
@@ -93,7 +93,7 @@ export default function Notes() {
             )}
           />
         ) : (
-          <p className="py-6">Press the button below to add a Note.</p>
+          <p className="py-6">{t("emptyNotes")}</p>
         )}
 
         <Button
@@ -101,7 +101,7 @@ export default function Notes() {
           disabled={notes.secondary.length >= 10}
           variant="secondary"
         >
-          New Note
+          {t("newNote")}
         </Button>
       </div>
     </div>
@@ -133,12 +133,12 @@ const NoteLine = ({
 
       <div className="grid gap-4 pr-16 sm:grid-cols-2">
         <label className="grid gap-1">
-          <span className="text-sm font-medium">Note</span>
+          <span className="text-sm font-medium">{t("notes.note")}</span>
           <Textarea {...noteProps} placeholder={t("notes.placeholder")} />
         </label>
 
         <label className="grid gap-1">
-          <span className="text-sm font-medium">Details</span>
+          <span className="text-sm font-medium">{t("notes.details")}</span>
           <Textarea {...detailProps} placeholder={t("notes.placeholder")} />
         </label>
       </div>

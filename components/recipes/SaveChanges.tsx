@@ -85,8 +85,8 @@ function SaveChanges({
   const handleSaveClick = () => {
     if (!recipeId) {
       toast({
-        title: "Error",
-        description: "Recipe ID is missing.",
+        title: t("errorLabel"),
+        description: t("error.generic"),
         variant: "destructive"
       });
       return;
@@ -103,14 +103,14 @@ function SaveChanges({
       { id: recipeId, body },
       {
         onSuccess: () => {
-          toast({ description: "Recipe updated successfully." });
+          toast({ description: t("recipeUpdate") });
           markSaved();
         },
         onError: (error: any) => {
           console.error("Error updating recipe:", error);
           toast({
-            title: "Error",
-            description: "There was an error updating your recipe",
+            title: t("errorLabel"),
+            description: t("error.generic"),
             variant: "destructive"
           });
         }

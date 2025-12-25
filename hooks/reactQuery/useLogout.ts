@@ -35,8 +35,8 @@ export function useLogout() {
 
       // 4) Toast
       toast({
-        title: t("auth.logout.success.title", "Logged out successfully."),
-        description: t("auth.logout.success.description", "See you next time!")
+        title: t("auth.logout.successTitle"),
+        description: t("auth.logout.successDescription")
       });
 
       // 5) Hard redirect to login so we don't rely only on layout guard

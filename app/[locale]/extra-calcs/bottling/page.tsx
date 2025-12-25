@@ -46,10 +46,13 @@ export default function Bottling() {
     remainingVolumeL
   } = useBottles();
 
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage;
 
-  const unitShort = volumeUnits === "gallons" ? "gal" : "L";
+  const unitShort =
+    volumeUnits === "gallons"
+      ? t("bottlingCalculator.units.galShort")
+      : t("bottlingCalculator.units.lShort");
 
   const totalVolumeInLiters =
     volumeUnits === "liters"
@@ -74,34 +77,39 @@ export default function Bottling() {
 
   const statusCopy =
     status === "ok"
-      ? { title: "All accounted for", body: "Bottled volume matches batch." }
+      ? {
+          title: t("bottlingCalculator.status.ok.title"),
+          body: t("bottlingCalculator.status.ok.body")
+        }
       : status === "warn"
-        ? {
-            title: "Unbottled volume remaining",
-            body: "You still have volume not assigned to bottles."
-          }
-        : {
-            title: "Overfilled",
-            body: "Your bottle totals exceed the batch size."
-          };
+      ? {
+          title: t("bottlingCalculator.status.warn.title"),
+          body: t("bottlingCalculator.status.warn.body")
+        }
+      : {
+          title: t("bottlingCalculator.status.error.title"),
+          body: t("bottlingCalculator.status.error.body")
+        };
 
   const statusClasses =
     status === "ok"
       ? "bg-background text-foreground border-foreground/20"
       : status === "warn"
-        ? "bg-warning text-foreground border-foreground/20"
-        : "bg-destructive text-destructive-foreground border-destructive/40";
+      ? "bg-warning text-foreground border-foreground/20"
+      : "bg-destructive text-destructive-foreground border-destructive/40";
 
   const numberCellClass = "tabular-nums whitespace-nowrap";
 
   return (
     <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
-      <h1 className="sm:text-3xl text-xl text-center">Bottling Calculator</h1>
+      <h1 className="sm:text-3xl text-xl text-center">
+        {t("bottlingCalculator.title")}
+      </h1>
 
       {/* Total volume */}
       <div className="space-y-2">
         <label htmlFor="totalVolume" className="text-sm font-medium">
-          Total volume
+          {t("bottlingCalculator.totalVolumeLabel")}
         </label>
 
         <InputGroup className="h-12">
@@ -121,11 +129,17 @@ export default function Bottling() {
             <Separator orientation="vertical" className="h-12" />
             <Select value={volumeUnits} onValueChange={handleVolumeUnitsChange}>
               <SelectTrigger className="p-2 border-none mr-2 w-20">
-                <SelectValue placeholder={"Gallons"} />
+                <SelectValue
+                  placeholder={t("bottlingCalculator.volumeUnits.placeholder")}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gallons">Gallons</SelectItem>
-                <SelectItem value="liters">Liters</SelectItem>
+                <SelectItem value="gallons">
+                  {t("bottlingCalculator.volumeUnits.gallons")}
+                </SelectItem>
+                <SelectItem value="liters">
+                  {t("bottlingCalculator.volumeUnits.liters")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </InputGroupAddon>
@@ -142,17 +156,15 @@ export default function Bottling() {
 
           {status !== "ok" ? (
             <p className={`text-sm opacity-90 ${numberCellClass}`}>
-              {status === "warn" ? "Remaining: " : "Over by: "}
-              {normalizeNumberString(
-                Math.abs(remainingDisplay),
-                2,
-                locale
-              )}{" "}
+              {status === "warn"
+                ? `${t("bottlingCalculator.status.warn.remainingPrefix")} `
+                : `${t("bottlingCalculator.status.error.overByPrefix")} `}
+              {normalizeNumberString(Math.abs(remainingDisplay), 2, locale)}{" "}
               <span className="text-muted-foreground">{unitShort}</span>
             </p>
           ) : (
             <p className={`text-sm opacity-90 ${numberCellClass}`}>
-              Within {threshold}{" "}
+              {t("bottlingCalculator.status.withinPrefix")} {threshold}{" "}
               <span className="text-muted-foreground">{unitShort}</span>
             </p>
           )}
@@ -164,10 +176,12 @@ export default function Bottling() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Bottle</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>% of batch</TableHead>
+              <TableHead>{t("bottlingCalculator.table.bottle")}</TableHead>
+              <TableHead>{t("bottlingCalculator.table.qty")}</TableHead>
+              <TableHead>{t("bottlingCalculator.table.total")}</TableHead>
+              <TableHead>
+                {t("bottlingCalculator.table.percentOfBatch")}
+              </TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -183,6 +197,11 @@ export default function Bottling() {
                 totalVolumeInLiters > 0
                   ? (row.totalVolumeL / totalVolumeInLiters) * 100
                   : 0;
+
+              const totalUnitLabel =
+                volumeUnits === "gallons"
+                  ? t("bottlingCalculator.units.flOzShort")
+                  : t("bottlingCalculator.units.lShort");
 
               return (
                 <TableRow key={row.id}>
@@ -201,7 +220,9 @@ export default function Bottling() {
                             })
                           }
                           className="h-full text-lg min-w-24"
-                          placeholder="Bottle size"
+                          placeholder={t(
+                            "bottlingCalculator.custom.sizePlaceholder"
+                          )}
                         />
                         <InputGroupAddon
                           align="inline-end"
@@ -217,12 +238,22 @@ export default function Bottling() {
                             }
                           >
                             <SelectTrigger className="p-2 border-none mr-2 w-12 sm:w-20">
-                              <SelectValue placeholder={"L"} />
+                              <SelectValue
+                                placeholder={t(
+                                  "bottlingCalculator.custom.units.placeholder"
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="fl_oz">fl oz</SelectItem>
-                              <SelectItem value="liter">L</SelectItem>
-                              <SelectItem value="gallon">gallons</SelectItem>
+                              <SelectItem value="fl_oz">
+                                {t("bottlingCalculator.custom.units.flOz")}
+                              </SelectItem>
+                              <SelectItem value="liter">
+                                {t("bottlingCalculator.custom.units.liter")}
+                              </SelectItem>
+                              <SelectItem value="gallon">
+                                {t("bottlingCalculator.custom.units.gallon")}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </InputGroupAddon>
@@ -247,7 +278,7 @@ export default function Bottling() {
                   <TableCell className={`${numberCellClass} w-[7.5rem]`}>
                     {normalizeNumberString(totalBottleVolume, 1, locale)}{" "}
                     <span className="text-muted-foreground">
-                      {volumeUnits === "gallons" ? "fl oz" : "L"}
+                      {totalUnitLabel}
                     </span>
                   </TableCell>
 
@@ -261,10 +292,12 @@ export default function Bottling() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        aria-label="Remove custom bottle"
+                        aria-label={t(
+                          "bottlingCalculator.table.removeCustomBottleAria"
+                        )}
                         onClick={() => removeRow(row.id)}
                       >
-                        Remove
+                        {t("bottlingCalculator.custom.remove")}
                       </Button>
                     )}
                   </TableCell>
@@ -276,7 +309,7 @@ export default function Bottling() {
       </div>
 
       <Button type="button" variant="secondary" onClick={addCustomRow}>
-        Add custom bottle
+        {t("bottlingCalculator.custom.add")}
       </Button>
 
       {/* Results */}
@@ -288,7 +321,7 @@ export default function Bottling() {
               <span className="text-muted-foreground">{unitShort}</span>
             </p>
             <p className="text-xs uppercase text-muted-foreground">
-              Total volume bottled
+              {t("bottlingCalculator.results.totalVolumeBottled")}
             </p>
           </div>
         </div>
@@ -302,7 +335,9 @@ export default function Bottling() {
               <span className="text-muted-foreground">{unitShort}</span>
             </p>
             <p className="text-xs uppercase text-muted-foreground">
-              {status === "error" ? "Over by" : "Unbottled volume"}
+              {status === "error"
+                ? t("bottlingCalculator.results.overBy")
+                : t("bottlingCalculator.results.unbottledVolume")}
             </p>
           </div>
         </div>

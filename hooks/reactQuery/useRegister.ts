@@ -38,11 +38,7 @@ export function useRegister() {
 
     onSuccess: () => {
       toast({
-        title: t("auth.registration.success.title", "Registration successful."),
-        description: t(
-          "auth.registration.success.description",
-          "Your account has been created!"
-        )
+        description: t("auth.registration.success")
       });
 
       // Revalidate account info immediately
@@ -50,10 +46,9 @@ export function useRegister() {
       queryClient.invalidateQueries({ queryKey: qk.accountInfo });
     },
 
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: t("auth.registration.error.title", "Registration Failed"),
-        description: error.message,
+        description: t("auth.registration.error"),
         variant: "destructive"
       });
     }

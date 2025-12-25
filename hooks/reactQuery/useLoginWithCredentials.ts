@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { qk } from "@/lib/db/queryKeys";
+import { useTranslation } from "react-i18next";
 
 type LoginPayload = {
   email: string;
@@ -12,6 +13,7 @@ type LoginPayload = {
 export function useLoginWithCredentials() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ email, password }: LoginPayload) => {
@@ -41,8 +43,10 @@ export function useLoginWithCredentials() {
     },
     onSuccess: (_data, variables) => {
       toast({
-        title: "Login Successful!",
-        description: `Welcome back, ${variables.email}!`
+        title: t("login.success.title"),
+        description: t("login.success.description", {
+          userEmail: variables.email
+        })
       });
 
       // Kick account-info query so useAuth picks up the new user
@@ -50,7 +54,7 @@ export function useLoginWithCredentials() {
     },
     onError: (error: any) => {
       toast({
-        title: "Login Failed",
+        title: t("login.error.title"),
         description: error.message ?? "Could not log you in.",
         variant: "destructive"
       });

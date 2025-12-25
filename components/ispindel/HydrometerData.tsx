@@ -103,19 +103,16 @@ export function HydrometerData({
           label: t("ABV"),
           color: "hsl(var(--chart-5))"
         }
-      }) satisfies ChartConfig,
+      } satisfies ChartConfig),
     [t, gravityUnits]
   );
 
   const initialChecked = useMemo(() => {
     const keys = Object.keys(chartConfig);
-    return keys.reduce(
-      (acc, key) => {
-        acc[key] = true;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
+    return keys.reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
   }, [chartConfig]);
 
   const [checkObj, setCheckObj] =
@@ -260,8 +257,8 @@ export function HydrometerData({
           currentTempUnits === nextUnits
             ? obj.temperature
             : currentTempUnits === "F"
-              ? toCelsius(obj.temperature)
-              : toFahrenheit(obj.temperature);
+            ? toCelsius(obj.temperature)
+            : toFahrenheit(obj.temperature);
 
         return { ...obj, temperature: nextTemp };
       })
@@ -430,7 +427,7 @@ export function HydrometerData({
             <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
               <DialogTrigger asChild>
                 <Button variant="secondary" className="w-full">
-                  {t("iSpindelDashboard.openChart", "Open chart")}
+                  {t("iSpindelDashboard.openChart")}
                 </Button>
               </DialogTrigger>
 
@@ -440,7 +437,7 @@ export function HydrometerData({
                     <div className="w-full flex items-center flex-col">
                       <DialogHeader className="px-0">
                         <DialogTitle className="text-base truncate">
-                          {name || t("iSpindelDashboard.chartTitle", "Chart")}
+                          {name ?? ""}
                         </DialogTitle>
                         <DialogDescription className="text-sm">
                           {beginDate} - {endDate}

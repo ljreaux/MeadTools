@@ -102,13 +102,13 @@ function Brew() {
 
     try {
       await updateBrewName({ brewId: brew.id, name: fileName.trim() });
-      toast({ description: t("log.updated", "Updated successfully") });
+      toast({ description: t("log.updated") });
       setFileName("");
       setRenameOpen(false);
     } catch (error) {
       console.error("Error updating brew name:", error);
       toast({
-        description: t("error.generic", "Something went wrong"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     }
@@ -123,7 +123,7 @@ function Brew() {
     } catch (error) {
       console.error("Error deleting brew:", error);
       toast({
-        description: t("error.generic", "Something went wrong"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     }
@@ -187,7 +187,7 @@ function Brew() {
   if (isError || !brew) {
     return (
       <div className="flex items-center justify-center my-4">
-        <p>{t("iSpindelDashboard.brewError", "Unable to load this brew.")}</p>
+        <p>{t("iSpindelDashboard.brewError")}</p>
       </div>
     );
   }
@@ -203,7 +203,7 @@ function Brew() {
           <h2 className="text-2xl font-semibold leading-tight">
             {brew.name?.trim()
               ? brew.name
-              : t("iSpindelDashboard.brews.details", "Brew details")}
+              : t("iSpindelDashboard.brews.details")}
           </h2>
 
           <div className="text-sm text-muted-foreground space-y-1">
@@ -238,10 +238,7 @@ function Brew() {
                     <Input
                       value={fileName}
                       onChange={(e) => setFileName(e.target.value)}
-                      placeholder={t(
-                        "iSpindelDashboard.brewNamePlaceholder",
-                        "Optional brew name"
-                      )}
+                      placeholder={t("iSpindelDashboard.brewNamePlaceholder")}
                     />
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -299,19 +296,13 @@ function Brew() {
               await updateEmailAlerts({ brewId: brew.id, requested: val });
 
               const msg = val
-                ? t(
-                    "emailAlerts.enabled",
-                    "You will receive email alerts for this brew."
-                  )
-                : t(
-                    "emailAlerts.disabled",
-                    "You will no longer receive email alerts for this brew."
-                  );
+                ? t("emailAlerts.enabled")
+                : t("emailAlerts.disabled");
 
               toast({ description: msg });
             } catch {
               toast({
-                description: t("error.generic", "Something went wrong"),
+                description: t("error.generic"),
                 variant: "destructive"
               });
             }
@@ -338,10 +329,7 @@ function Brew() {
                 {t("iSpindelDashboard.recentLogs", "Recent logs")}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {t(
-                  "iSpindelDashboard.brewLogsHint",
-                  "Logs recorded for this brew."
-                )}
+                {t("iSpindelDashboard.brewLogsHint")}
               </p>
             </div>
 
@@ -358,10 +346,7 @@ function Brew() {
               <CollapsibleContent className="pt-2 space-y-2 min-w-0">
                 {!logsLoading && logsError && (
                   <p className="text-center text-sm text-destructive">
-                    {t(
-                      "iSpindelDashboard.logsError",
-                      "Unable to load logs for this brew."
-                    )}
+                    {t("iSpindelDashboard.logsError")}
                   </p>
                 )}
 
@@ -410,7 +395,7 @@ function Brew() {
               <AlertDialogAction asChild>
                 <Button onClick={handleDeleteBrew} disabled={isDeleting}>
                   {isDeleting
-                    ? t("iSpindelDashboard.deleting", "Deleting…")
+                    ? t("iSpindelDashboard.deleting")
                     : t("iSpindelDashboard.deleteBrew")}
                 </Button>
               </AlertDialogAction>

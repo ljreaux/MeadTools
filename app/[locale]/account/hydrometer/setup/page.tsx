@@ -66,15 +66,21 @@ function Setup() {
         {/* Title (ONLY centered thing) */}
         <div className="text-center">
           <h2 className="text-2xl font-semibold leading-tight">
-            Setup {tabLabel}
+            {t("iSpindelDashboard.tabs.label", { tabLabel })}
           </h2>
         </div>
 
         {/* TabsList under title, NOT centered */}
         <TabsList>
-          <TabsTrigger value="iSpindel">iSpindel</TabsTrigger>
-          <TabsTrigger value="tilt">Tilt</TabsTrigger>
-          <TabsTrigger value="pill">RAPT Pill</TabsTrigger>
+          <TabsTrigger value="iSpindel">
+            {t("iSpindelDashboard.tabs.iSpindel")}
+          </TabsTrigger>
+          <TabsTrigger value="tilt">
+            {t("iSpindelDashboard.tabs.tilt")}
+          </TabsTrigger>
+          <TabsTrigger value="pill">
+            {t("iSpindelDashboard.tabs.pill")}
+          </TabsTrigger>
         </TabsList>
 
         {/* iSpindel tab */}
@@ -149,7 +155,7 @@ function Setup() {
           <div className="space-y-6">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="bluetooth">
-                <AccordionTrigger>Bluetooth</AccordionTrigger>
+                <AccordionTrigger>{t("rapt.tabs.bt")}</AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-6">
                     <p className="text-sm ">{t("rapt.description")}</p>
@@ -218,46 +224,40 @@ function Setup() {
               </AccordionItem>
 
               <AccordionItem value="cloud">
-                <AccordionTrigger>RAPT Cloud</AccordionTrigger>
+                <AccordionTrigger>{t("rapt.tabs.cloud")}</AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-6">
                     <div className="space-y-3">
-                      <p className="text-sm ">
-                        MeadTools has support for the RAPT Pill through the RAPT
-                        Cloud Custom Web Hooks
-                      </p>
+                      <p className="text-sm">{t("rapt.cloud.description")}</p>
 
                       <ol className="list-decimal list-inside space-y-2 text-sm">
                         <li>
-                          Go to Web Hooks under My Account in the{" "}
-                          <a
-                            href="https://app.rapt.io/integration/webhooks/list"
-                            target="_blank"
-                            className="underline"
-                            rel="noopener noreferrer"
-                          >
-                            RAPT Portal
-                          </a>
+                          <Trans
+                            i18nKey="rapt.cloud.steps.step1"
+                            components={{
+                              a: (
+                                <a
+                                  href="https://app.rapt.io/integration/webhooks/list"
+                                  target="_blank"
+                                  className="underline"
+                                  rel="noopener noreferrer"
+                                />
+                              )
+                            }}
+                          />
                         </li>
-                        <li>
-                          Click the Create New Web Hook button at the top.
-                        </li>
-                        <li>
-                          Name and Description are optional (but recommended)
-                          values, copy the Cloud URL below and set the Method to
-                          Post.
-                        </li>
-                        <li>
-                          Set your temperature units, make sure your token is
-                          generated, and copy the payload below into the payload
-                          tab.
-                        </li>
+
+                        <li>{t("rapt.cloud.steps.step2")}</li>
+
+                        <li>{t("rapt.cloud.steps.step3")}</li>
+
+                        <li>{t("rapt.cloud.steps.step4")}</li>
+
                         <p className="font-extrabold">
-                          IMPORTANT NOTE: You MUST have a unique (to you) device
-                          name set for your device. This allows you to reuse
-                          this webhook for all your RAPT pill devices.
+                          {t("rapt.cloud.importantNote")}
                         </p>
-                        <li>Add your device in the Devices tab.</li>
+
+                        <li>{t("rapt.cloud.steps.step5")}</li>
                       </ol>
                     </div>
 
@@ -273,10 +273,12 @@ function Setup() {
 
                     <div className="space-y-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <h3 className="text-lg font-medium">Payload</h3>
+                        <h3 className="text-lg font-medium">
+                          {t("rapt.cloud.payloadTitle")}
+                        </h3>
 
                         <label className="flex items-center gap-2 text-sm">
-                          {t("rapt.tempUnitsLabel", "Temperature Units")}
+                          {t("rapt.tempUnitsLabel")}
                           <Select
                             name="deg"
                             onValueChange={setTempUnits}
@@ -334,10 +336,7 @@ const UrlCopyField = ({
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast({
-        description: t(
-          "iSpindelDashboard.copyError",
-          "Failed to copy to clipboard."
-        ),
+        description: t("iSpindelDashboard.copyError"),
         variant: "destructive"
       });
     }
@@ -352,10 +351,7 @@ const UrlCopyField = ({
       <InputGroupInput
         readOnly
         value={buttonDetails.url}
-        placeholder={t(
-          "iSpindelDashboard.placeholder.generateToken",
-          "Please generate token"
-        )}
+        placeholder={t("iSpindelDashboard.placeholder.generateToken")}
         className="text-center"
       />
 
@@ -370,9 +366,7 @@ const UrlCopyField = ({
           ) : (
             <Copy className="h-4 w-4" />
           )}
-          <span className="sr-only">
-            {t("iSpindelDashboard.copyUrl", "Copy URL to clipboard")}
-          </span>
+          <span className="sr-only">{t("iSpindelDashboard.copyUrl")}</span>
         </InputGroupButton>
       </InputGroupAddon>
     </InputGroup>

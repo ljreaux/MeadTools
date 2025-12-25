@@ -138,9 +138,7 @@ function DevicePage() {
 
     if (!validateCoefficients(coefficients)) {
       return toast({
-        description: t(
-          "Please fill in all coefficients with valid number values."
-        ),
+        description: t("invalidCoefficients"),
         variant: "destructive"
       });
     }

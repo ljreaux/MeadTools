@@ -209,9 +209,7 @@ function Account() {
     console.error("Error loading account info:", error);
     return (
       <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
-        <p className="text-destructive text-center">
-          {t("accountPage.error", "Error loading account information.")}
-        </p>
+        <p className="text-destructive text-center">{t("accountPage.error")}</p>
       </div>
     );
   }
@@ -230,22 +228,14 @@ function Account() {
               <Button asChild variant="ghost" size="icon">
                 <Link
                   href="/account/hydrometer"
-                  aria-label={t(
-                    "accountPage.hydrometerDashboard",
-                    "Wireless Hydrometer Dashboard"
-                  )}
+                  aria-label={t("iSpindelDashboard.label")}
                 >
                   <Droplets className="h-5 w-5" />
                 </Link>
               </Button>
             </TooltipTrigger>
 
-            <TooltipContent>
-              {t(
-                "accountPage.hydrometerDashboard",
-                "Wireless Hydrometer Dashboard"
-              )}
-            </TooltipContent>
+            <TooltipContent>{t("iSpindelDashboard.label")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -277,7 +267,7 @@ function Account() {
                 {/* Search */}
                 <div className="flex items-center gap-2 flex-1">
                   <label className="text-sm font-medium whitespace-nowrap">
-                    Search:
+                    {t("searchLabel")}
                   </label>
 
                   <InputGroup className="w-full sm:max-w-sm">
@@ -296,7 +286,7 @@ function Account() {
                     </InputGroupAddon>
                     <InputGroupAddon align="inline-end">
                       <InputGroupButton
-                        title="Clear Search"
+                        title={t("clearSearch")}
                         onClick={clearSearch}
                         className={cn({ hidden: searchValue.length === 0 })}
                       >
@@ -309,7 +299,7 @@ function Account() {
                 {/* Per page (desktop only) */}
                 <div className="hidden sm:flex items-center gap-2">
                   <span className="text-sm font-medium whitespace-nowrap">
-                    {t("pagination.perPage", "Per page:")}
+                    {t("pagination.perPage")}
                   </span>
 
                   <Select
@@ -336,7 +326,7 @@ function Account() {
               {/* Row 2: Sort (mobile breaks into 2 lines; toggles forced to line 2 on mobile) */}
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-sm font-medium whitespace-nowrap">
-                  Sort
+                  {t("sortLabel")}
                 </label>
 
                 <Select
@@ -349,15 +339,17 @@ function Account() {
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="default">
+                      {t("sortLabels.default")}
+                    </SelectItem>
                     <SelectItem value="name">
                       <span className="inline-flex items-center gap-2">
-                        <ArrowUpAZ className="h-4 w-4" /> Name
+                        <ArrowUpAZ className="h-4 w-4" /> {t("sortLabels.name")}
                       </span>
                     </SelectItem>
                     <SelectItem value="id">
                       <span className="inline-flex items-center gap-2">
-                        <Hash className="h-4 w-4" /> ID
+                        <Hash className="h-4 w-4" /> {t("sortLabels.id")}
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -598,7 +590,7 @@ const SettingsDialog = ({
               onValueChange={(val) => setPreferredUnits(val)}
             >
               <SelectTrigger className="full">
-                <SelectValue placeholder="Select a Default Unit Standard" />
+                <SelectValue placeholder={t("accountPage.units.placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="US">{t("accountPage.units.us")}</SelectItem>
@@ -616,10 +608,7 @@ const SettingsDialog = ({
             <InputGroup>
               <InputGroupInput
                 type="text"
-                placeholder={t(
-                  "publicUsername.placeholder",
-                  "Enter a public username"
-                )}
+                placeholder={t("publicUsername.placeholder")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyDown={(e) => {

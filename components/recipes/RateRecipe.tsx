@@ -14,6 +14,7 @@ import { Spinner } from "../ui/spinner";
 import { toast } from "@/hooks/use-toast";
 import { useRateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { useTranslation } from "react-i18next";
 
 type RatingPickerProps = {
   value: number; // 0..5
@@ -118,6 +119,7 @@ export default function RateRecipe({ userRating }: { userRating?: number }) {
   const { isLoggedIn } = useAuth();
   const params = useParams();
   const recipeId = Number(params.id);
+  const { t } = useTranslation();
 
   // userRating from provider is the canonical value
   const safeRating = userRating ?? 0;
@@ -147,13 +149,13 @@ export default function RateRecipe({ userRating }: { userRating?: number }) {
           setDraftRating(data.rating);
 
           toast({
-            description: `Thanks for your ${draftRating} mug rating.`
+            description: t("rating.success", { draftRating })
           });
           setOpen(false);
         },
         onError: () => {
           toast({
-            description: "Something went wrong",
+            description: t("error.generic"),
             variant: "destructive"
           });
         }
@@ -164,13 +166,13 @@ export default function RateRecipe({ userRating }: { userRating?: number }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className="w-fit">Leave a rating</button>
+        <button className="w-fit">{t("ratings.leave")}</button>
       </PopoverTrigger>
 
       <PopoverContent className="w-auto">
         {!isLoggedIn ? (
           <div className="flex items-center">
-            <Link href="/login">Log in to leave a rating.</Link>
+            <Link href="/login">{t("ratings.logIn")}</Link>
           </div>
         ) : (
           <div className="grid items-center gap-3">

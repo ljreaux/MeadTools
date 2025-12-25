@@ -48,10 +48,7 @@ function TokenGen() {
       setTimeout(() => setCopied(false), 1500);
     } catch {
       toast({
-        description: t(
-          "iSpindelDashboard.copyError",
-          "Failed to copy to clipboard."
-        ),
+        description: t("iSpindelDashboard.copyError"),
         variant: "destructive"
       });
     }

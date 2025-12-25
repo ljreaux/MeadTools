@@ -55,7 +55,7 @@ function Devices() {
   const [pageSize, setPageSize] = useState(5);
   const pageOptions = [5, 10, 20, 50].map((n) => ({
     value: n,
-    label: `${n} items`
+    label: t("pagination.pageSizeOptions", { n })
   }));
 
   const deviceList: Device[] = data?.devices ?? [];
@@ -94,9 +94,7 @@ function Devices() {
     return (
       <div className="my-6">
         <h2 className="text-2xl">{t("iSpindelDashboard.nav.device")}</h2>
-        <p className="text-destructive mt-3">
-          {t("error.generic", "Something went wrong loading devices.")}
-        </p>
+        <p className="text-destructive mt-3">{t("error.generic")}</p>
       </div>
     );
   }
@@ -122,7 +120,7 @@ function Devices() {
                 {/* Search */}
                 <div className="flex items-center gap-2 flex-1">
                   <label className="text-sm font-medium whitespace-nowrap">
-                    {t("search", "Search")}:
+                    {t("searchLabel")}
                   </label>
 
                   <InputGroup className="w-full sm:max-w-sm">
@@ -130,8 +128,7 @@ function Devices() {
                       value={searchValue}
                       onChange={(e) => search(e.target.value)}
                       placeholder={t(
-                        "iSpindelDashboard.devices.searchPlaceholder",
-                        "Search devices"
+                        "iSpindelDashboard.devices.searchPlaceholder"
                       )}
                       disabled={isLoading}
                     />
@@ -140,7 +137,7 @@ function Devices() {
                     </InputGroupAddon>
                     <InputGroupAddon align="inline-end">
                       <InputGroupButton
-                        title={t("clear", "Clear")}
+                        title={t("clearSearch")}
                         onClick={clearSearch}
                         className={cn({ hidden: searchValue.length === 0 })}
                         disabled={isLoading}
@@ -154,7 +151,7 @@ function Devices() {
                 {/* Per page (desktop only) */}
                 <div className="hidden sm:flex items-center gap-2">
                   <span className="text-sm font-medium whitespace-nowrap">
-                    {t("pagination.perPage", "Per page:")}
+                    {t("pagination.perPage")}
                   </span>
 
                   {isLoading ? (
@@ -207,10 +204,7 @@ function Devices() {
               pageData.map((dev) => <DeviceCard device={dev} key={dev.id} />)
             ) : (
               <p className="w-full text-center mt-6">
-                {t(
-                  "iSpindelDashboard.devices.noResults",
-                  "No matching devices."
-                )}
+                {t("iSpindelDashboard.devices.noResults")}
               </p>
             )}
           </div>
@@ -269,7 +263,7 @@ const DeviceCard = ({ device }: { device: Device }) => {
                   disabled={isStarting}
                 >
                   {isStarting
-                    ? t("iSpindelDashboard.startBrew.loading", "Starting…")
+                    ? t("iSpindelDashboard.startBrewLoading")
                     : t("iSpindelDashboard.startBrew")}
                 </Button>
               </AlertDialogTrigger>
@@ -283,10 +277,7 @@ const DeviceCard = ({ device }: { device: Device }) => {
                     <Input
                       value={fileName}
                       onChange={(e) => setFileName(e.target.value)}
-                      placeholder={t(
-                        "iSpindelDashboard.brewNamePlaceholder",
-                        "Optional brew name"
-                      )}
+                      placeholder={t("iSpindelDashboard.brewNamePlaceholder")}
                     />
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -300,7 +291,7 @@ const DeviceCard = ({ device }: { device: Device }) => {
                       disabled={isStarting}
                     >
                       {isStarting
-                        ? t("iSpindelDashboard.startBrew.loading", "Starting…")
+                        ? t("iSpindelDashboard.startBrewLoading")
                         : t("iSpindelDashboard.startBrew")}
                     </Button>
                   </AlertDialogAction>
@@ -316,11 +307,9 @@ const DeviceCard = ({ device }: { device: Device }) => {
               disabled={isEnding}
             >
               {isEnding
-                ? t("iSpindelDashboard.endBrew.loading", "Ending…")
+                ? t("iSpindelDashboard.endBrewLoading")
                 : t("iSpindelDashboard.endBrew", {
-                    brew_name:
-                      brewName ??
-                      t("iSpindelDashboard.unknownBrew", "your brew")
+                    brew_name: brewName ?? t("iSpindelDashboard.unknownBrew")
                   })}
             </Button>
           )}

@@ -85,8 +85,8 @@ function SaveNew() {
 
     if (!trimmedName) {
       toast({
-        title: "Error",
-        description: "Recipe name is required.",
+        title: t("errorLabel"),
+        description: t("nameRequired"),
         variant: "destructive"
       });
       return;
@@ -102,13 +102,13 @@ function SaveNew() {
     try {
       await createRecipeMutation.mutateAsync(body as any);
 
-      toast({ description: "Recipe created successfully." });
+      toast({ description: t("recipeSuccess") });
       router.push("/account");
     } catch (error: any) {
       console.error("Error creating recipe:", error?.message ?? error);
       toast({
-        title: "Error",
-        description: "There was an error creating your recipe",
+        title: t("error"),
+        description: t("error.generic"),
         variant: "destructive"
       });
     }

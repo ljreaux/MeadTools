@@ -42,7 +42,12 @@ type NutrientUI = {
   derived: NutrientDerived;
 
   catalog: {
-    yeastList: any[]; // replace with your Yeast type
+    yeastList: {
+      id: number | string;
+      brand: string;
+      name: string;
+      nitrogen_requirement?: NutrientData["selected"]["nitrogenRequirement"];
+    }[]; // replace with your Yeast type
     loadingYeasts: boolean;
     brands: string[];
   };

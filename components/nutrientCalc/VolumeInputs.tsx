@@ -99,8 +99,8 @@ export default function VolumeInputs(props: {
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="gal">Gallons</SelectItem>
-                <SelectItem value="liter">Liters</SelectItem>
+                <SelectItem value="gal">{t("GAL")}</SelectItem>
+                <SelectItem value="liter">{t("LIT")}</SelectItem>
               </SelectContent>
             </Select>
           </InputGroupAddon>

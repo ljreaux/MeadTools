@@ -44,16 +44,15 @@ export default function ResetPasswordPage() {
     mutationFn: resetPassword,
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Password updated. Please log in."
+        title: t("successLabel"),
+        description: t("passwordSuccessMessage")
       });
       router.push("/login");
     },
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Failed to reset password.";
+      const message = err instanceof Error ? err.message : t("error.generic");
       toast({
-        title: "Error",
+        title: t("errorLabel"),
         description: message,
         variant: "destructive"
       });
@@ -65,8 +64,8 @@ export default function ResetPasswordPage() {
 
     if (!token) {
       toast({
-        title: "Error",
-        description: "Missing or invalid reset token.",
+        title: t("errorLabel"),
+        description: t("missingToken"),
         variant: "destructive"
       });
       return;
@@ -74,8 +73,8 @@ export default function ResetPasswordPage() {
 
     if (password !== confirm) {
       toast({
-        title: "Error",
-        description: "Passwords do not match.",
+        title: t("errorLabel"),
+        description: t("passwordMismatch"),
         variant: "destructive"
       });
       return;

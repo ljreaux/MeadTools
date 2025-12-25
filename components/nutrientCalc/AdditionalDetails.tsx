@@ -64,9 +64,9 @@ export default function AdditionalDetails() {
                 type="button"
                 className="h-12 px-3 rounded-md border text-sm hover:bg-accent"
                 onClick={actions.resetYeastAmountAuto}
-                title={t("tipText.yeastAmountAuto", "Return to auto amount")}
+                title={t("tipText.yeastAmountAuto")}
               >
-                {t("auto", "Auto")}
+                {t("auto")}
               </button>
             )}
           </div>
@@ -123,12 +123,7 @@ export default function AdditionalDetails() {
                 </p>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground flex items-center justify-center gap-1">
                   {t("water")}
-                  <Tooltip
-                    body={t(
-                      "tipText.goFermWater",
-                      "Water amount for rehydration."
-                    )}
-                  />
+                  <Tooltip body={t("tipText.goFermWater")} />
                 </p>
               </div>
             </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import initTranslations from "@/lib/i18n";
 import { HydrometerData } from "@/components/ispindel/HydrometerData";
 import { Trans } from "react-i18next/TransWithoutContext";
-import chartData from "@/public/testChart.json"; // static import
+import chartData from "@/public/testChart.json";
 
 async function HydrometerHome({
   params

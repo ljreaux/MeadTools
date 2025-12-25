@@ -61,10 +61,7 @@ export default function Additives() {
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         ) : additives.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {t(
-              "additives.empty",
-              "Add some additives to continue building your recipe."
-            )}
+            {t("additives.empty")}
           </p>
         ) : (
           <DragList
@@ -142,7 +139,8 @@ const AdditiveLine = ({
             setQuery={changeAdditive}
             keyName="name"
             onSelect={handleAdditiveSelect}
-            renderItem={(item) => t(lodash.camelCase(item.name))}
+            renderItem={(item) => t(lodash.camelCase(item.name), item.name)}
+            getLabel={(item) => t(lodash.camelCase(item.name), item.name)}
           />
         </label>
 

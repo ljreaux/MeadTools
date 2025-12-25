@@ -52,24 +52,16 @@ export function useUpdatePublicUsername() {
       });
 
       toast({
-        title: t("auth.username.success.title", "Username Updated!"),
-        description: t(
-          "auth.username.success.description",
-          "Your public username has been successfully updated."
-        )
+        title: t("auth.username.success.title"),
+        description: t("auth.username.success.description")
       });
     },
 
     onError: (error: any) => {
-      const message =
-        error?.message ??
-        t(
-          "auth.username.error.description",
-          "An error occurred while updating your username."
-        );
+      const message = error?.message ?? t("auth.username.error.description");
 
       toast({
-        title: t("auth.username.error.title", "Update Failed"),
+        title: t("auth.username.error.title"),
         description: message,
         variant: "destructive"
       });

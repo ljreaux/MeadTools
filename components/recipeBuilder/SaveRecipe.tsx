@@ -91,8 +91,8 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
 
     if (!trimmedName) {
       toast({
-        title: "Error",
-        description: "Recipe name is required.",
+        title: t("errorLabel"),
+        description: t("nameRequired"),
         variant: "destructive"
       });
       return;
@@ -109,14 +109,14 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       onSuccess: () => {
         meta.reset();
         setName("");
-        toast({ description: "Recipe created successfully." });
+        toast({ description: t("recipeSuccess") });
         router.push("/account");
       },
       onError: (error: any) => {
         console.error("Error creating recipe:", error?.message ?? error);
         toast({
-          title: "Error",
-          description: "There was an error creating your recipe",
+          title: t("errorLabel"),
+          description: t("error.generic"),
           variant: "destructive"
         });
       }

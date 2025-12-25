@@ -96,7 +96,7 @@ function Brews() {
           <InputGroupInput
             value={searchValue}
             onChange={(e) => search(e.target.value)}
-            placeholder={t("iSpindelDashboard.searchBrews", "Search brews")}
+            placeholder={t("iSpindelDashboard.searchBrews")}
             disabled={isLoading}
           />
           <InputGroupAddon>
@@ -281,20 +281,14 @@ function BrewRow({
                 await updateEmailAlerts({ brewId: brew.id, requested: val });
 
                 const msg = val
-                  ? t(
-                      "emailAlerts.enabled",
-                      "You will receive email alerts for this brew."
-                    )
-                  : t(
-                      "emailAlerts.disabled",
-                      "You will no longer receive email alerts for this brew."
-                    );
+                  ? t("emailAlerts.enabled")
+                  : t("emailAlerts.disabled");
 
                 toast({ description: msg });
               } catch {
                 setChecked(!val);
                 toast({
-                  description: t("error.generic", "Something went wrong"),
+                  description: t("error.generic"),
                   variant: "destructive"
                 });
               }
