@@ -13,14 +13,15 @@ import {
 
 type SearchableInputProps<T> = {
   items: T[];
-  query: string;
-  setQuery: (val: string) => void; // user-typed/custom text
+  query: string; // canonical value from parent (DB/local state)
+  setQuery: (val: string) => void;
   keyName: keyof T;
-  onSelect: (item: T) => void; // catalog selection (canonical)
+  onSelect: (item: T) => void;
   renderItem?: (item: T) => React.ReactNode;
 
-  // optional display label (ex: translated)
   getLabel?: (item: T) => string;
+
+  getValue?: (item: T) => string; // ✅ NEW (canonical id/value)
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -30,7 +31,8 @@ function SearchableInput<T extends Record<string, any>>({
   keyName,
   onSelect,
   renderItem,
-  getLabel
+  getLabel,
+  getValue
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,11 +45,16 @@ function SearchableInput<T extends Record<string, any>>({
 
   // Keep display in sync with parent changes (hydrate/reset/etc.)
   useEffect(() => {
-    setInputValue(query);
-  }, [query]);
+    // query is canonical; display the translated label if we can find the item
+    const match = items.find((it) => valueOf(it) === query);
+
+    setInputValue(match ? labelOf(match) : query);
+  }, [query, items, getLabel, getValue]);
 
   const labelOf = (item: T) =>
     getLabel ? getLabel(item) : String(item[keyName] ?? "");
+  const valueOf = (item: T) =>
+    getValue ? getValue(item) : String(item[keyName] ?? "");
 
   // IMPORTANT: suggestions are based on what the user is currently seeing/typing
   const { suggestions } = useSuggestions(items, inputValue, keyName);
