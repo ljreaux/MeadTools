@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
       user: {
         ...user,
         password: undefined,
+        isGoogleUser: !!user.google_id
       },
-      recipes,
+      recipes
     };
 
     return NextResponse.json(response);
