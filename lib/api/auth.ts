@@ -14,6 +14,8 @@ export type AccountUser = {
   public_username: string | null;
   email: string;
   role?: string | null;
+  isGoogleUser: boolean;
+  show_google_avatar: boolean;
 };
 
 export type AccountInfo = {

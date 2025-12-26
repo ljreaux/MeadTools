@@ -72,6 +72,9 @@ import {
   TooltipProvider
 } from "@/components/ui/tooltip";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { useUpdateShowGoogleAvatar } from "@/hooks/reactQuery/useUpdateShowGoogleAvatar";
+import { Switch } from "@/components/ui/switch";
+import { useAccountRecipeSortPrefs } from "@/hooks/useAccountRecipeSortPrefs";
 
 type SortType = "asc" | "dec" | "clear";
 
@@ -85,10 +88,9 @@ function Account() {
   const [isUsernameDialogOpen, setUsernameDialogOpen] = useState(false);
 
   const searchKey = "name";
-  const [pageSize, setPageSize] = useState(5);
   const options = [5, 10, 20, 50].map((num) => ({
     value: num,
-    label: `${num} items`
+    label: t("pagination.pageSizeOptions", { n: num })
   }));
 
   const [sortBy, setSortBy] = useState<
@@ -97,10 +99,14 @@ function Account() {
       (fieldOne: RecipeApiResponse, fieldTwo: RecipeApiResponse) => number
     >
   >({});
-  const [sortField, setSortField] = useState<"default" | "name" | "id">(
-    "default"
-  );
-  const [sortDir, setSortDir] = useState<"asc" | "dec">("asc");
+  const {
+    pageSize,
+    setPageSize,
+    sortField,
+    setSortField,
+    sortDir,
+    setSortDir
+  } = useAccountRecipeSortPrefs();
 
   const deleteRecipeMutation = useDeleteRecipe();
 
@@ -219,7 +225,11 @@ function Account() {
   return (
     <div className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
       <div className="absolute right-4 top-4 flex items-center gap-1">
-        <SettingsDialog username={user.public_username} />
+        <SettingsDialog
+          username={user.public_username}
+          isGoogleUser={user.isGoogleUser}
+          showGoogleAvatar={user.show_google_avatar}
+        />
 
         {/* Hydrometer dashboard */}
         <TooltipProvider delayDuration={150}>
@@ -541,12 +551,21 @@ const CreateUsernamePopup = ({
 };
 
 const SettingsDialog = ({
-  username: public_username
+  username: public_username,
+  isGoogleUser,
+  showGoogleAvatar
 }: {
   username: string | null;
+  isGoogleUser: boolean;
+  showGoogleAvatar: boolean;
 }) => {
   const [username, setUsername] = useState(public_username || "");
   const updateUsernameMutation = useUpdatePublicUsername();
+
+  const updateShowGoogleAvatarMutation = useUpdateShowGoogleAvatar();
+  const [localShowGoogleAvatar, setLocalShowGoogleAvatar] =
+    useState(showGoogleAvatar);
+
   const [preferredUnits, setPreferredUnits] = useState<string | undefined>(
     undefined
   );
@@ -562,7 +581,13 @@ const SettingsDialog = ({
     if (preferredUnits) localStorage.setItem("units", preferredUnits);
   }, [preferredUnits]);
 
+  // keep the local toggle in sync if data refreshes
+  useEffect(() => {
+    setLocalShowGoogleAvatar(showGoogleAvatar);
+  }, [showGoogleAvatar]);
+
   const { t } = useTranslation();
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -570,19 +595,23 @@ const SettingsDialog = ({
           <Settings />
         </Button>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("account.accountSettings")}</DialogTitle>
         </DialogHeader>
+
         <div className="w-full grid gap-4">
           <label className="w-full flex gap-4 items-center p-1">
             {t("accountPage.theme.title")}
             <ModeToggle />
           </label>
+
           <label className="w-full p-1">
             {t("accountPage.language.title")}
             <LanguageSwitcher />
           </label>
+
           <label className="w-full p-1">
             {t("accountPage.units.title")}
             <Select
@@ -600,6 +629,8 @@ const SettingsDialog = ({
               </SelectContent>
             </Select>
           </label>
+
+          {/* Public username */}
           <div className="grid gap-2">
             <label className="text-sm font-medium">
               {t("account.updateUsername")}
@@ -618,7 +649,6 @@ const SettingsDialog = ({
                 }}
               />
 
-              {/* Submit button */}
               <InputGroupAddon align="inline-end">
                 <InputGroupButton
                   variant="secondary"
@@ -634,6 +664,31 @@ const SettingsDialog = ({
               </InputGroupAddon>
             </InputGroup>
           </div>
+
+          {/* ✅ Google avatar switch BELOW username, only for Google users */}
+          {isGoogleUser ? (
+            <div className="grid gap-1 p-1">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  {t("accountPage.googleAvatar.title")}
+                </label>
+
+                <Switch
+                  checked={localShowGoogleAvatar}
+                  disabled={updateShowGoogleAvatarMutation.isPending}
+                  onCheckedChange={(checked) => {
+                    setLocalShowGoogleAvatar(checked);
+                    updateShowGoogleAvatarMutation.mutate(checked);
+                  }}
+                  aria-label={t("accountPage.googleAvatar.label")}
+                />
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                {t("accountPage.googleAvatar.description")}
+              </p>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>
