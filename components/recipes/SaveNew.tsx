@@ -1,139 +1,142 @@
 "use client";
 
-import React, { useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { useRouter } from "next/navigation";
-import { useRecipe } from "../providers/SavedRecipeProvider";
-import { useNutrients } from "../providers/SavedNutrientProvider";
 import { useToast } from "@/hooks/use-toast";
+
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import { FilePlus } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
+import TooltipHelper from "../Tooltips";
+import { Button } from "../ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
 
 function SaveNew() {
   const { t } = useTranslation();
   const router = useRouter();
-
-  const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    stabilizers,
-    stabilizerType,
-    recipeNameProps,
-  } = useRecipe();
-
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl,
-  } = useNutrients();
-
-  const { fetchAuthenticatedPost } = useAuth();
-
-  const [checked, setChecked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const [recipeName, setRecipeName] = useState(recipeNameProps.value);
+  const createRecipeMutation = useCreateRecipeMutation();
+
+  const {
+    data: {
+      unitDefaults,
+      ingredients,
+      fg,
+      stabilizers,
+      additives,
+      notes,
+      nutrients
+    }
+  } = useRecipe();
+
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // activity emails
+  const [recipeName, setRecipeName] = useState("");
+
+  // match local-storage + save recipe v2 payload shape
+  const dataV2: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      flags: {
+        private: checked
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      checked
+    ]
+  );
 
   const createRecipe = async () => {
-    setIsSubmitting(true); // Start loading
-    const recipeData = JSON.stringify({
-      ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
-      additives,
-      sorbate,
-      sulfite,
-      campden,
-      stabilizers,
-      stabilizerType,
-    });
+    const trimmedName = recipeName.trim();
 
-    const otherNutrientName =
-      otherNameState.value.length > 0 ? otherNameState.value : undefined;
-
-    const nutrientData = JSON.stringify({
-      ...fullData,
-      otherNutrientName,
-    });
-    const yanContribution = JSON.stringify(yanContributions);
-
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
+    if (!trimmedName) {
+      toast({
+        title: t("errorLabel"),
+        description: t("nameRequired"),
+        variant: "destructive"
+      });
+      return;
+    }
 
     const body = {
-      name: recipeName,
-      recipeData,
-      yanFromSource: JSON.stringify(providedYan),
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: JSON.stringify(maxGpl),
-      primaryNotes,
-      secondaryNotes,
+      name: trimmedName,
+      dataV2, // jsonb
       private: checked,
+      activityEmailsEnabled: notify
     };
 
     try {
-      await fetchAuthenticatedPost("/api/recipes", body);
+      await createRecipeMutation.mutateAsync(body as any);
 
-      toast({
-        description: "Recipe created successfully.",
-      });
+      toast({ description: t("recipeSuccess") });
       router.push("/account");
     } catch (error: any) {
-      console.error("Error creating recipe:", error.message);
+      console.error("Error creating recipe:", error?.message ?? error);
       toast({
-        title: "Error",
-        description: "There was an error creating your recipe",
-        variant: "destructive",
+        title: t("error"),
+        description: t("error.generic"),
+        variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false); // End loading
     }
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="relative group flex flex-col items-center my-2">
-          <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
-            <FilePlus />
-          </button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            {t("changesForm.saveAs")}
-          </span>
+        <div className="relative flex flex-col items-center my-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                aria-label={t("changesForm.saveAs")}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+              >
+                <FilePlus />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="whitespace-nowrap">
+              {t("changesForm.saveAs")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("changesForm.saveAs")}</DialogTitle>
@@ -146,17 +149,28 @@ function SaveNew() {
                 onChange={(e) => setRecipeName(e.target.value)}
               />
             </label>
+
             <label className="grid">
               {t("private")}
               <Switch checked={checked} onCheckedChange={setChecked} />
             </label>
+
+            {!checked && (
+              <label className="grid">
+                <span className="flex items-center gap-1">
+                  {t("notify")}
+                  <TooltipHelper body={t("tiptext.notify")} />
+                </span>
+                <Switch checked={notify} onCheckedChange={setNotify} />
+              </label>
+            )}
           </div>
         </DialogHeader>
 
         <DialogFooter>
           <LoadingButton
             onClick={createRecipe}
-            loading={isSubmitting}
+            loading={createRecipeMutation.isPending}
             variant="secondary"
           >
             {t("SUBMIT")}

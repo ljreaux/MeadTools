@@ -1,0 +1,30 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-recipe-activity",
+      "schedule": "0 2 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/taplist",
+      "has": [
+        {
+          "type": "host",
+          "value": "taplist.meadtools.com"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "destination": "/admin",
+      "has": [
+        {
+          "type": "host",
+          "value": "admin.meadtools.com"
+        }
+      ]
+    }
+  ]
+}

@@ -1,52 +1,25 @@
 "use client";
-import SavedRecipeProvider from "@/components/providers/SavedRecipeProvider";
+
+import { useEffect } from "react";
+
 import RecipeBuilderTutorial from "@/components/recipeBuilder/RecipeBuilderTutorial";
-import { parseRecipeData } from "@/lib/utils/parseRecipeData";
-import React, { useEffect, useState } from "react";
+
+// ✅ this should be the already-migrated tutorial blob you create
+import tutorialRecipeV2 from "@/data/tutorialRecipe.v2.json";
+import { RecipeProvider } from "@/components/providers/RecipeProvider";
+import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 
 function RecipeTutorial() {
-  const [recipe, setRecipe] = useState<any>(null);
-
   useEffect(() => {
     localStorage.setItem("hasSeenTutorialDialog", "true");
-    async function getTutorialRecipe() {
-      try {
-        const res = await fetch("/tutorialRecipe.json");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const response = await res.json();
-
-        setRecipe(response.recipe);
-      } catch (error) {
-        console.error("Error fetching recipe:", error);
-      }
-    }
-    getTutorialRecipe();
   }, []);
 
-  if (!recipe) return null;
-
-  const { recipeData, nutrientData, getSelectedSchedule, yanContribution } =
-    parseRecipeData(recipe);
+  const recipe = tutorialRecipeV2.recipe as RecipeWithParsedFields;
 
   return (
-    <SavedRecipeProvider
-      recipe={{
-        ...recipe,
-        recipeData,
-        nutrientData: {
-          ...nutrientData,
-          selected: {
-            ...nutrientData.selected,
-            selectedNutrients: getSelectedSchedule(
-              nutrientData.selected.schedule
-            ),
-          },
-        },
-        yanContribution,
-      }}
-    >
-      <RecipeBuilderTutorial />
-    </SavedRecipeProvider>
+    <RecipeProvider>
+      <RecipeBuilderTutorial recipe={recipe} />
+    </RecipeProvider>
   );
 }
 

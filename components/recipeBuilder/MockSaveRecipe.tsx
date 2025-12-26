@@ -1,16 +1,21 @@
 "use client";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
-
-import { Save } from "lucide-react";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import Link from "next/link";
+import { Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 function MockSaveRecipe() {
   const { t } = useTranslation();
@@ -18,22 +23,32 @@ function MockSaveRecipe() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="joyride-saveRecipe relative group flex flex-col items-center">
-          <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
-            <Save />
-          </button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            {t("recipeForm.submit")}
-          </span>
+        <div className="joyride-saveRecipe flex flex-col items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                aria-label={t("recipeForm.submit")}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+              >
+                <Save />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="whitespace-nowrap">
+              {t("recipeForm.submit")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("recipeForm.title")}</DialogTitle>
 
           <Link
-            href={"/login"}
-            className="flex items-center justify-center gap-4 px-8 py-2 my-4 text-lg border border-solid rounded-lg bg-background text-foreground hover:bg-foreground hover:border-background hover:text-background sm:gap-8 group"
+            href="/login"
+            className="flex items-center justify-center gap-4 px-8 py-2 my-4 text-lg border border-solid rounded-lg bg-background text-foreground hover:bg-foreground hover:border-background hover:text-background sm:gap-8"
           >
             {t("recipeForm.login")}
           </Link>

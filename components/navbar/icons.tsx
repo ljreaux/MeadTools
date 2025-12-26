@@ -1,6 +1,6 @@
-import React, { JSX } from "react";
+import { JSX } from "react";
 
-export const IconWrapper = ({ children }: { children: JSX.Element }) => (
+const IconWrapper = ({ children }: { children: JSX.Element }) => (
   <div className="transition-all w-6 h-6 text-primary hover:text-secondary md:hover:scale-105 flex items-center justify-center">
     {children}
   </div>
@@ -104,15 +104,15 @@ const MailIcon = () => (
 export const socialIcons = [
   {
     href: "https://github.com/ljreaux/meadtools-nextjs-migration",
-    logo: <GithubIcon />,
+    logo: <GithubIcon />
   },
   { href: "https://www.linkedin.com/in/ljreaux/", logo: <LinkedInIcon /> },
   { href: "https://discord.gg/Wbx9DWWqFC", logo: <DiscordIcon /> },
   {
     href: "https://www.facebook.com/profile.php?id=61555860082002",
-    logo: <FacebookIcon />,
+    logo: <FacebookIcon />
   },
   { href: "https://www.instagram.com/meadtools/", logo: <InstagramIcon /> },
   { href: "https://ko-fi.com/meadtools", logo: <KofiIcon /> },
-  { href: "/contact", logo: <MailIcon /> },
+  { href: "/contact", logo: <MailIcon /> }
 ];

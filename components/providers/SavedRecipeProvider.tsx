@@ -5,15 +5,15 @@ import {
   useContext,
   useEffect,
   useState
+  // useRef,
+  // useMemo
 } from "react";
 import {
-  Additive,
   AdditiveType,
   blankAdditive,
   blankIngredient,
   blankNote,
   genRandomId,
-  Ingredient,
   IngredientDetails,
   initialData,
   Recipe,
@@ -26,6 +26,10 @@ import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { SavedNutrientProvider } from "./SavedNutrientProvider";
 import { FullNutrientData } from "@/types/nutrientTypes";
+import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
+
+// import { useBanner } from "@/components/ui/banner";
 
 const RecipeContext = createContext<Recipe | undefined>(undefined);
 
@@ -34,21 +38,30 @@ export default function SavedRecipeProvider({
   recipe
 }: {
   children: ReactNode;
-  // for saved user recipes
   recipe: {
     id: number;
     name: string;
+
     recipeData: RecipeData;
     nutrientData: FullNutrientData;
+
     primaryNotes: [string, string][];
     secondaryNotes: [string, string][];
-    user_id: string;
+
+    user_id: number | null;
+
     yanContribution: string[];
-    users: {
-      public_username: string | null;
-    };
     yanFromSource?: string[];
     nuteInfo?: string[];
+
+    users?: {
+      public_username: string | null;
+    } | null;
+
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+    emailNotifications: boolean;
   };
 }) {
   const { t, i18n } = useTranslation();
@@ -76,10 +89,10 @@ export default function SavedRecipeProvider({
       }))
     }
   );
-  const [ingredientList, setIngredientList] = useState<Ingredient[]>([]);
-  const [loadingIngredients, setLoadingIngredients] = useState(true);
-  const [additiveList, setAdditiveList] = useState<Additive[]>([]);
-  const [loadingAdditives, setLoadingAdditives] = useState(true);
+  const { data: ingredientList = [], isLoading: loadingIngredients } =
+    useIngredientsQuery();
+  const { data: additiveList = [], isLoading: loadingAdditives } =
+    useAdditivesQuery();
   const [primaryNotes, setPrimaryNotes] = useState(
     recipe.primaryNotes.map((note) => {
       const content = note;
@@ -113,6 +126,34 @@ export default function SavedRecipeProvider({
     recipe.recipeData?.stabilizers?.phReading ?? "3.6"
   );
   const [recipeName, setRecipeName] = useState(recipe.name || "");
+  const [ratingStats, setRatingStats] = useState<{
+    averageRating: number;
+    numberOfRatings: number;
+    userRating: number | null;
+  }>({
+    averageRating: recipe.averageRating,
+    numberOfRatings: recipe.numberOfRatings,
+    userRating: recipe.userRating
+  });
+
+  useEffect(() => {
+    setRatingStats((prev) => {
+      // Avoid pointless updates if nothing changed
+      if (
+        prev.averageRating === recipe.averageRating &&
+        prev.numberOfRatings === recipe.numberOfRatings &&
+        prev.userRating === recipe.userRating
+      ) {
+        return prev;
+      }
+
+      return {
+        averageRating: recipe.averageRating,
+        numberOfRatings: recipe.numberOfRatings,
+        userRating: recipe.userRating
+      };
+    });
+  }, [recipe.averageRating, recipe.numberOfRatings, recipe.userRating]);
 
   const addIngredient = () => {
     setRecipeData((prev) => ({
@@ -517,35 +558,147 @@ export default function SavedRecipeProvider({
     setSecondaryNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
+  // ---------------------------------------------
+  // Unsaved-changes banner logic (TEMPORARILY DISABLED)
+  // This logic was working correctly but is commented
+  // out to simplify provider refactoring.
+  // ---------------------------------------------
+  // const { showBanner, dismissBanner } = useBanner();
+
+  // const bannerIdRef = useRef<string | null>(null);
+  // const dismissedRef = useRef(false);
+  // const prevDirtyRef = useRef(false);
+
+  // // We only start dirty tracking after initial/derived state has settled
+  // const dirtyReadyRef = useRef(false);
+
+  // // Normalize away random ids so comparisons are stable (no unused _id vars)
+  // const normalize = (r: RecipeData) => ({
+  //   ...r,
+  //   ingredients: (r.ingredients ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   }),
+  //   additives: (r.additives ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   })
+  // });
+
+  // const normalizeNotes = (notes: { id: string; content: [string, string] }[]) =>
+  //   (notes ?? []).map((x) => {
+  //     const copy = { ...x };
+  //     delete (copy as any).id;
+  //     return copy;
+  //   });
+
+  // type Snapshot = {
+  //   recipeData: any;
+  //   recipeName: string;
+  //   primaryNotes: any;
+  //   secondaryNotes: any;
+  //   stabilizerType: string;
+  //   addingStabilizers: boolean;
+  //   takingPh: boolean;
+  //   phReading: string;
+  // };
+
+  // const initialSnapshotRef = useRef<Snapshot | null>(null);
+
+  // const currentSnapshot = useMemo<Snapshot>(() => {
+  //   return {
+  //     recipeData: normalize(recipeData),
+  //     recipeName,
+  //     primaryNotes: normalizeNotes(primaryNotes),
+  //     secondaryNotes: normalizeNotes(secondaryNotes),
+  //     stabilizerType,
+  //     addingStabilizers,
+  //     takingPh,
+  //     phReading
+  //   };
+  // }, [
+  //   recipeData,
+  //   recipeName,
+  //   primaryNotes,
+  //   secondaryNotes,
+  //   stabilizerType,
+  //   addingStabilizers,
+  //   takingPh,
+  //   phReading
+  // ]);
+
+  // const isDirty = useMemo(() => {
+  //   const init = initialSnapshotRef.current;
+  //   if (!init) return false;
+  //   return !lodash.isEqual(init, currentSnapshot);
+  // }, [currentSnapshot]);
+
+  // // Capture baseline ONCE after everything settles (double RAF)
+  // useEffect(() => {
+  //   if (dirtyReadyRef.current) return;
+
+  //   const raf1 = requestAnimationFrame(() => {
+  //     const raf2 = requestAnimationFrame(() => {
+  //       initialSnapshotRef.current = currentSnapshot;
+  //       dirtyReadyRef.current = true;
+  //       prevDirtyRef.current = false;
+  //       dismissedRef.current = false;
+  //     });
+
+  //     // cleanup nested RAF
+  //     return () => cancelAnimationFrame(raf2);
+  //   });
+
+  //   return () => cancelAnimationFrame(raf1);
+  //   // IMPORTANT: run once. currentSnapshot is read when RAF fires.
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+
+  // // Drive banner from transitions clean <-> dirty
+  // useEffect(() => {
+  //   if (!dirtyReadyRef.current) return;
+
+  //   const wasDirty = prevDirtyRef.current;
+  //   const nowDirty = isDirty;
+
+  //   prevDirtyRef.current = nowDirty;
+
+  //   // Became clean -> remove banner and reset dismissal
+  //   if (wasDirty && !nowDirty) {
+  //     if (bannerIdRef.current) {
+  //       dismissBanner(bannerIdRef.current);
+  //       bannerIdRef.current = null;
+  //     }
+  //     dismissedRef.current = false;
+  //     return;
+  //   }
+
+  //   // Became dirty -> show (one) banner (even if they dismissed a previous dirty cycle)
+  //   if (!wasDirty && nowDirty) {
+  //     dismissedRef.current = false;
+  //     if (bannerIdRef.current) return;
+
+  //     const bannerId = showBanner({
+  //       title: "Unsaved changes",
+  //       description: (
+  //         <span className="text-sm opacity-90">
+  //           You have unsaved changes on this recipe. Make sure to save before
+  //           leaving.
+  //         </span>
+  //       ),
+  //       variant: "warning",
+  //       dismissible: true,
+  //       duration: 0
+  //     });
+
+  //     bannerIdRef.current = bannerId;
+  //   }
+  // }, [isDirty, showBanner, dismissBanner]);
+
   // fetch initial ingredient data
   useEffect(() => {
-    const fetchIngredients = async () => {
-      try {
-        const response = await fetch("/api/ingredients");
-        const data = await response.json();
-        setIngredientList(data);
-        setLoadingIngredients(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingIngredients(false);
-      }
-    };
-    const fetchAdditives = async () => {
-      try {
-        const response = await fetch("/api/additives");
-        const data = await response.json();
-
-        setAdditiveList(data);
-        setLoadingAdditives(false);
-      } catch (error) {
-        console.error("Error fetching ingredient list:", error);
-        setLoadingAdditives(false);
-      }
-    };
-
-    fetchIngredients();
-    fetchAdditives();
-
     setFirstMount(false);
   }, []);
 
@@ -864,11 +1017,13 @@ export default function SavedRecipeProvider({
           onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
             setRecipeName(e.target.value)
         },
-        public_username: recipe.users.public_username,
+        public_username: recipe.users?.public_username,
         fillToNearest,
         setIngredientsToTarget,
         stabilizerType,
-        setStabilizerType
+        setStabilizerType,
+        ratingStats,
+        setRatingStats
       }}
     >
       <SavedNutrientProvider
@@ -884,7 +1039,7 @@ export default function SavedRecipeProvider({
             { maximumFractionDigits: 3 }
           ),
           offset: recipeData.offset,
-          numberOfAdditions: "1",
+          numberOfAdditions: recipe.nutrientData.inputs.numberOfAdditions,
           units: recipeData.units.volume
         }}
       >

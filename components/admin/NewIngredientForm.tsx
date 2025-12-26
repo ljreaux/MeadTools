@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -10,10 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem,
+  SelectItem
 } from "../ui/select";
+
 import { useToast } from "@/hooks/use-toast";
-import { Ingredient } from "@/types/admin";
+import { Ingredient } from "@/types/recipeDataTypes";
+import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import { qk } from "@/lib/db/queryKeys";
 
 const CATEGORY_OPTIONS = [
   "sugar",
@@ -22,65 +27,59 @@ const CATEGORY_OPTIONS = [
   "juice",
   "fruit",
   "vegetable",
-  "dried fruit",
+  "dried fruit"
 ].sort((a, b) => a.localeCompare(b));
 
 const initialFormData: Omit<Ingredient, "id"> = {
   name: "",
   sugar_content: "",
   water_content: "",
-  category: "",
+  category: ""
 };
 
 export default function NewIngredientForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState(initialFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createIngredientMutation = useMutation<
+    Ingredient,
+    Error,
+    typeof initialFormData
+  >({
+    mutationFn: async (payload) =>
+      fetchWithAuth<Ingredient>("/api/ingredients", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }),
+    onSuccess: () => {
+      // Invalidate all ingredient lists (no category filter)
+      queryClient.invalidateQueries({ queryKey: qk.ingredients() });
+      toast({ title: "Success", description: "Ingredient created." });
+      router.push("/admin/ingredients");
+    },
+    onError: (err) => {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create ingredient.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const isSubmitting = createIngredientMutation.isPending;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "No token found in localStorage.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/ingredients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-
-      toast({ title: "Success", description: "Ingredient created." });
-      router.push("/admin/ingredients");
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to create ingredient.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    createIngredientMutation.mutate(formData);
   };
 
   return (

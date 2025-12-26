@@ -11,7 +11,7 @@ function ExtraCalcsLayout({ children }: { children: React.ReactNode }) {
 export default ExtraCalcsLayout;
 
 const ExtraCalcsCard = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+  <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]">
     <ExtraCalcsSideBar />
     {children}
   </div>

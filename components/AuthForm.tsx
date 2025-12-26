@@ -7,11 +7,12 @@ import { PasswordInput } from "./PasswordInput";
 import { LoadingButton } from "./ui/LoadingButton";
 import Tooltip from "./Tooltips";
 import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
 
 function AuthForm({
   formText,
   authFunction,
-  formType,
+  formType
 }: {
   formText: string;
   authFunction: (
@@ -29,7 +30,7 @@ function AuthForm({
   }>({
     email: "",
     password: "",
-    public_username: "",
+    public_username: ""
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -49,49 +50,57 @@ function AuthForm({
 
   return (
     <form
-      className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem] rounded-xl bg-background"
+      className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]"
       onSubmit={handleSubmit}
     >
       <h1 className="col-span-3 text-center text-2xl">{formText}</h1>
-      <label htmlFor="email">{t("accountPage.email")}</label>
+      <label htmlFor="email">
+        {t("accountPage.email")}
 
-      <Input
-        type="email"
-        id="email"
-        required
-        value={formData.email}
-        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        className="col-span-2"
-        disabled={loading} // Disable input during loading
-      />
+        <Input
+          type="email"
+          id="email"
+          required
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="col-span-2"
+          disabled={loading} // Disable input during loading
+        />
+      </label>
 
       {formType === "register" && (
         <>
           <label htmlFor="public_username">
-            {t("publicUsername.label")}
-            <Tooltip body={t("publicUsername.description")}></Tooltip>
+            <span className="flex items-center">
+              {t("publicUsername.label")}
+              <Tooltip body={t("publicUsername.description")}></Tooltip>
+            </span>
+            <Input
+              type="text"
+              id="public_username"
+              value={formData.public_username}
+              onChange={(e) =>
+                setFormData({ ...formData, public_username: e.target.value })
+              }
+              className="col-span-2"
+              disabled={loading} // Disable input during loading
+            />{" "}
           </label>
-          <Input
-            type="text"
-            id="public_username"
-            value={formData.public_username}
-            onChange={(e) =>
-              setFormData({ ...formData, public_username: e.target.value })
-            }
-            className="col-span-2"
-            disabled={loading} // Disable input during loading
-          />
         </>
       )}
 
-      <label htmlFor="password">{t("accountPage.password")}</label>
-      <PasswordInput
-        id="password"
-        value={formData.password}
-        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-        className="col-span-2"
-        disabled={loading} // Disable input during loading
-      />
+      <label htmlFor="password">
+        {t("accountPage.password")}
+        <PasswordInput
+          id="password"
+          value={formData.password}
+          onChange={(e) =>
+            setFormData({ ...formData, password: e.target.value })
+          }
+          className="col-span-2"
+          disabled={loading} // Disable input during loading
+        />
+      </label>
 
       <LoadingButton
         type="submit"
@@ -102,15 +111,9 @@ function AuthForm({
         {formText}
       </LoadingButton>
       {formType !== "register" && (
-        <button
-          onClick={() => router.push("/reset")}
-          className="text-sm text-muted-foreground hover:text-foreground underline self-center col-span-full"
-        >
-          {t(
-            "accountPage.buttonMessage.forgotPassword",
-            "Forgot your password?"
-          )}
-        </button>
+        <Button onClick={() => router.push("/reset")} variant="link">
+          {t("accountPage.buttonMessage.forgotPassword")}
+        </Button>
       )}
     </form>
   );

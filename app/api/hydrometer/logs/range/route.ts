@@ -2,10 +2,7 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { deleteLogsInRange } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function DELETE(
-  req: NextRequest,
-  {}: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {
     return userOrResponse; // Return error response if the user is not verified
@@ -30,7 +27,7 @@ export async function DELETE(
     await deleteLogsInRange(device_id, start_date, end_date);
     return NextResponse.json(
       {
-        message: `Logs from ${start_date} to ${end_date} were deleted successfully.`,
+        message: `Logs from ${start_date} to ${end_date} were deleted successfully.`
       },
       { status: 200 }
     );

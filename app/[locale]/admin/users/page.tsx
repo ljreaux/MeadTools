@@ -1,43 +1,39 @@
 "use client";
+
+import { useRouter } from "next/navigation";
 import Loading from "@/components/loading";
 import { PaginatedTable } from "@/components/PaginatedTable";
-import { useAdminFetchData } from "@/hooks/useAdminFetchData";
-import { useRouter } from "next/navigation";
-
-export type User = {
-  id: number;
-  email: string;
-  google_id?: string;
-  hydro_token: string;
-  public_username?: string;
-  role: "user" | "admin";
-};
+import { useAdminUsersQuery } from "@/hooks/reactQuery/useAdminUsersQuery";
 
 function UserDashboard() {
   const router = useRouter();
-  const {
-    data: users,
-    loading,
-    error,
-  } = useAdminFetchData<User[]>("/api/users");
+  const { data: users, isLoading, isError, error } = useAdminUsersQuery();
 
-  if (loading) return <Loading />;
-  if (error) return <div>An error has occurred.</div>;
+  if (isLoading) return <Loading />;
+
+  if (isError) {
+    const msg = (error as Error)?.message ?? "An error has occurred.";
+    return <div>{msg}</div>;
+  }
 
   if (!users) return null;
+
+  const sorted = [...users]
+    .sort((a, b) => a.email.localeCompare(b.email))
+    .sort((a, b) => a.role.localeCompare(b.role));
+
   return (
     <div>
       <h1 className="text-2xl">Users</h1>
 
       <PaginatedTable
-        data={users
-          .sort((a, b) => a.email.localeCompare(b.email))
-          .sort((a, b) => a.role.localeCompare(b.role))}
+        data={sorted}
         columns={[
           { key: "public_username", header: "Username" },
           { key: "email", header: "Email" },
           { key: "hydro_token", header: "Hydrometer Token" },
           { key: "role", header: "Role" },
+          { key: "active", header: "Active" }
         ]}
         pageSize={10}
         onRowClick={(user) => router.push(`/admin/users/${user.id}`)}

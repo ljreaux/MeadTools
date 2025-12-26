@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -10,15 +10,22 @@ import {
   Pipette,
   Scale,
   NotebookPen,
-  FileText,
+  FileText
 } from "lucide-react";
 import lodash from "lodash";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 function RecipeCalculatorSideBar({
   goTo,
   children,
   cardNumber,
-  forceOpen,
+  forceOpen
 }: {
   goTo: (pageNum: number) => void;
   children: JSX.Element;
@@ -38,33 +45,33 @@ function RecipeCalculatorSideBar({
     {
       label: t("recipeBuilder.homeHeading"),
       pageNumber: 1,
-      icon: <CookingPot />,
+      icon: <CookingPot />
     },
     {
       label: t("nutesHeading"),
       pageNumber: 2,
-      icon: <SmartphoneCharging />,
+      icon: <SmartphoneCharging />
     },
     {
       label: t("stabilizersHeading"),
       pageNumber: 4,
-      icon: <Pipette />,
+      icon: <Pipette />
     },
     {
       label: t("additivesHeading"),
       pageNumber: 5,
-      icon: <Scale />,
+      icon: <Scale />
     },
     {
       label: t("notes.title"),
       pageNumber: 6,
-      icon: <NotebookPen />,
+      icon: <NotebookPen />
     },
     {
       label: t("PDF.title"),
       pageNumber: 7,
-      icon: <FileText />,
-    },
+      icon: <FileText />
+    }
   ];
 
   return (
@@ -73,18 +80,21 @@ function RecipeCalculatorSideBar({
         isOpen ? "translate-y-0" : "-translate-y-full"
       }`}
     >
-      {/* Toggle Button */}
-      <button
+      {/* Toggle Button (match ExtraCalcsSideBar) */}
+      <Button
+        type="button"
+        size="icon"
+        variant="secondary"
         onClick={toggleSidebar}
-        className="absolute -top-5 right-0 flex items-center justify-center w-8 h-8 bg-background text-foreground border border-foreground rounded-md z-50"
+        className="absolute -top-5 right-0 z-50 flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground"
         aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
       >
         {isOpen ? (
-          <ChevronUp className="w-5 h-5" />
+          <ChevronUp className="h-5 w-5" />
         ) : (
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="h-5 w-5" />
         )}
-      </button>
+      </Button>
 
       {/* Sidebar Content */}
       <nav
@@ -94,10 +104,10 @@ function RecipeCalculatorSideBar({
       >
         {links.map((link, idx) => (
           <NavItem
-            key={idx}
+            key={`${link.pageNumber}-${idx}`}
             icon={link.icon}
             label={link.label}
-            isActive={link.pageNumber === cardNumber} // Match active state
+            isActive={link.pageNumber === cardNumber}
             clickFn={() => goTo(link.pageNumber - 1)}
             tutorialClassName={`joyride-${lodash.camelCase(link.label)}`}
           />
@@ -113,7 +123,7 @@ function NavItem({
   icon,
   label,
   isActive,
-  tutorialClassName,
+  tutorialClassName
 }: {
   clickFn: () => void;
   icon: JSX.Element;
@@ -122,26 +132,26 @@ function NavItem({
   tutorialClassName?: string;
 }) {
   return (
-    <div
-      className={`${tutorialClassName} relative group flex flex-col items-center`}
-    >
-      {/* Icon Link */}
-      <button
-        onClick={clickFn}
-        className={`flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 rounded-full border border-foreground transition-colors ${
-          isActive
-            ? "bg-foreground text-background"
-            : "bg-background text-foreground hover:text-background hover:bg-foreground"
-        }`}
-      >
-        {icon}
-      </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          onClick={clickFn}
+          aria-label={label}
+          className={`${tutorialClassName} flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12 ${
+            isActive ? "bg-foreground text-background" : ""
+          }`}
+        >
+          {icon}
+        </Button>
+      </TooltipTrigger>
 
-      {/* Hover Label */}
-      <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+      <TooltipContent side="left" className="whitespace-nowrap">
         {label}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

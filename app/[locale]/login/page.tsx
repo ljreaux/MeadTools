@@ -1,63 +1,84 @@
 "use client";
+
 import AuthForm from "@/components/AuthForm";
-import { useAuth } from "@/components/providers/AuthProvider";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useLoginWithCredentials } from "@/hooks/reactQuery/useLoginWithCredentials";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
+import Image from "next/image";
+import { signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 function Login() {
   const { t } = useTranslation();
-  const { loginWithCredentials, loginWithGoogle, user } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
+  const loginMutation = useLoginWithCredentials();
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
+  // avoid hydration issues with next-themes
   useEffect(() => {
     setIsMounted(true);
-    if (user) {
-      router.push("/account");
+  }, []);
+
+  // if already logged in, bounce to account
+  useEffect(() => {
+    if (!loading && isLoggedIn) {
+      router.replace("/account");
     }
-  }, [user]);
+  }, [loading, isLoggedIn, router]);
 
   if (!isMounted) {
     return null;
   }
 
-  const googleLogo =
-    (theme || resolvedTheme) === "dark"
-      ? "/assets/web_dark_rd_ctn.svg"
-      : "/assets/web_light_rd_ctn.svg";
+  const isDark = resolvedTheme === "dark"; // use resolvedTheme only
+  const googleLogo = isDark
+    ? "/assets/web_dark_rd_ctn.svg"
+    : "/assets/web_light_rd_ctn.svg";
+
+  // Adapter so AuthForm gets the old-style signature
+  const handleCredentialsLogin = async (
+    email: string,
+    password: string
+  ): Promise<void> => {
+    await loginMutation.mutateAsync({ email, password });
+    // if the mutation succeeded, account-info will refetch
+    // and the effect above will redirect to /account
+  };
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
       <AuthForm
         formText={t("accountPage.login")}
-        authFunction={loginWithCredentials}
+        authFunction={handleCredentialsLogin}
       />
-      <button
-        onClick={() => router.push("/register")}
-        className="font-bold underline transition-all text-foreground hover:text-sidebar"
-      >
+
+      <Button onClick={() => router.push("/register")} variant="link">
         {t("accountPage.buttonMessage.register")}
-      </button>
-      <div className="flex flex-col items-center space-y-2">
-        <span className="text-lg">{t("accountPage.or")}</span>
-        <button
-          onClick={loginWithGoogle}
-          className="relative w-64 h-14 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label={t("accountPage.buttonMessage.googleLogin")}
-        >
-          <img
-            src={googleLogo}
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain"
-          />
-          <span className="sr-only">
-            {t("accountPage.buttonMessage.googleLogin")}
-          </span>
-        </button>
+      </Button>
+
+      <div className="flex flex-col items-center mt-6">
+        <span className="text-sm text-muted-foreground leading-none">
+          {t("accountPage.or")}
+        </span>
       </div>
+      <button
+        onClick={() => signIn("google")}
+        className="relative w-64 h-14 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <Image
+          src={googleLogo}
+          alt={t("accountPage.buttonMessage.googleLogin")}
+          fill
+          className="object-cover" // <— key change from contain
+          sizes="256px"
+          priority
+        />
+      </button>
     </div>
   );
 }

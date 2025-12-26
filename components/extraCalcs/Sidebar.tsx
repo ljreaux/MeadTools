@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useState } from "react";
+import { JSX, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import {
@@ -16,8 +16,17 @@ import {
   Pipette,
   Atom,
   Hexagon,
+  BottleWine
 } from "lucide-react";
 import { extraCalculatorLinks } from "@/lib/navigation";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import { usePathname } from "next/navigation";
 
 function ExtraCalcsSideBar() {
   const { t } = useTranslation();
@@ -25,7 +34,7 @@ function ExtraCalcsSideBar() {
 
   const toggleSidebar = () => setIsOpen((prev) => !prev);
 
-  const icons = [
+  const icons: JSX.Element[] = [
     <Beer key="beer" />,
     <Percent key="percent" />,
     <Scale key="scale" />,
@@ -36,13 +45,18 @@ function ExtraCalcsSideBar() {
     <Thermometer key="thermometer" />,
     <Blend key="blend" />,
     <Hexagon key="hex" />,
+    <BottleWine key="bottle" />
   ];
 
   const links = extraCalculatorLinks.map((link, i) => ({
     ...link,
     icon: icons[i],
-    label: t(link.label),
+    label: t(link.label)
   }));
+
+  const pathname = usePathname();
+
+  const isActive = (href: string) => pathname === href;
 
   return (
     <div
@@ -51,17 +65,20 @@ function ExtraCalcsSideBar() {
       }`}
     >
       {/* Toggle Button */}
-      <button
+      <Button
+        type="button"
+        size="icon"
+        variant="secondary"
         onClick={toggleSidebar}
-        className="absolute -top-5 right-0 flex items-center justify-center w-8 h-8 bg-background text-foreground border border-foreground rounded-md z-50"
+        className="absolute -top-5 right-0 z-50 flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground"
         aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
       >
         {isOpen ? (
-          <ChevronUp className="w-5 h-5" />
+          <ChevronUp className="h-5 w-5" />
         ) : (
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="h-5 w-5" />
         )}
-      </button>
+      </Button>
 
       {/* Sidebar Content */}
       <nav
@@ -71,10 +88,11 @@ function ExtraCalcsSideBar() {
       >
         {links.map((link, idx) => (
           <NavItem
-            key={idx}
+            key={link.path ?? idx}
             link={link.path}
             icon={link.icon}
             label={link.label}
+            active={isActive(link.path)}
           />
         ))}
       </nav>
@@ -86,26 +104,39 @@ function NavItem({
   link,
   icon,
   label,
+  active
 }: {
   link: string;
   icon: JSX.Element;
   label: string;
+  active: boolean;
 }) {
   return (
-    <div className="relative group flex flex-col items-center">
-      {/* Icon Link */}
-      <Link
-        href={link}
-        className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors"
-      >
-        {icon}
-      </Link>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          size="icon"
+          variant="outline"
+          aria-current={active ? "page" : undefined}
+          className={`
+            flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-full
+            border transition-colors
+            ${
+              active
+                ? "bg-foreground text-background border-foreground"
+                : "bg-background text-foreground border-foreground hover:bg-foreground hover:text-background"
+            }
+          `}
+        >
+          <Link href={link}>{icon}</Link>
+        </Button>
+      </TooltipTrigger>
 
-      {/* Hover Label */}
-      <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+      <TooltipContent side="left" className="whitespace-nowrap">
         {label}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

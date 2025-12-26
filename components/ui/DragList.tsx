@@ -7,49 +7,51 @@ import {
   PointerSensor,
   TouchSensor,
   useSensor,
-  useSensors,
+  useSensors
 } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
+  sortableKeyboardCoordinates
 } from "@dnd-kit/sortable";
 
 import SortableItem from "./SortableItem";
 
-export default function DragList<T extends { id: string }>({
+export default function DragList<T>({
   items,
   setItems,
-  renderItem,
+  getId,
+  renderItem
 }: {
   items: T[];
   setItems: (arr: T[]) => void;
+  getId: (item: T) => string;
   renderItem?: (item: T, i: number) => React.ReactNode;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
+    const oldIndex = items.findIndex((item) => getId(item) === active.id);
+    const newIndex = items.findIndex((item) => getId(item) === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
 
-      const newItems = [...items];
-      const [movedItem] = newItems.splice(oldIndex, 1);
-      newItems.splice(newIndex, 0, movedItem);
+    const next = [...items];
+    const [moved] = next.splice(oldIndex, 1);
+    next.splice(newIndex, 0, moved);
 
-      setItems(newItems);
-    }
+    setItems(next);
   };
 
-  const itemIds = items.map((item) => item.id);
+  const itemIds = items.map(getId);
 
   return (
     <DndContext
@@ -58,11 +60,14 @@ export default function DragList<T extends { id: string }>({
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        {items.map((item, i) => (
-          <SortableItem key={item.id} id={item.id}>
-            {renderItem ? renderItem(item, i) : String(item.id)}
-          </SortableItem>
-        ))}
+        {items.map((item, i) => {
+          const id = getId(item);
+          return (
+            <SortableItem key={id} id={id}>
+              {renderItem ? renderItem(item, i) : id}
+            </SortableItem>
+          );
+        })}
       </SortableContext>
     </DndContext>
   );

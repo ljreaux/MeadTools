@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+
 import {
   Select,
   SelectContent,
@@ -6,107 +7,101 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import InputWithUnits from "./InputWithUnits";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
-import { NutrientType } from "@/types/nutrientTypes";
 import SearchableInput from "../ui/SearchableInput";
+import { useNutrients } from "@/components/providers/NutrientProvider";
+import lodash from "lodash";
 
-function YeastDetails({ useNutrients }: { useNutrients: () => NutrientType }) {
+export default function YeastDetails() {
   const { t } = useTranslation();
-  const {
-    selected,
-    setYeastBrand,
-    yeastList,
-    setYeastName,
-    setNitrogenRequirement,
-    targetYAN
-  } = useNutrients();
+  const { data, actions, catalog } = useNutrients();
+  const { yeastList, brands } = catalog;
+  const selected = data.selected;
 
   return (
-    <div className="joyride-yeastDetails grid sm:grid-cols-2 gap-2 border-b border-muted-foreground py-6">
-      <div>
-        <label>
-          {t("yeastBrand")}
+    <div className="joyride-yeastDetails flex flex-col gap-4">
+      <h3 className="text-base font-semibold">{t("yeastDetails")}</h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Yeast brand */}
+        <div className="grid gap-1">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1 mb-1">
+              {t("yeastBrand")}
+            </span>
+          </label>
+
           <Select
-            defaultValue={selected.yeastBrand}
-            onValueChange={setYeastBrand}
+            value={selected.yeastBrand}
+            onValueChange={actions.setYeastBrand}
           >
-            <SelectTrigger>
-              <span>{selected.yeastBrand}</span>
+            <SelectTrigger className="h-12">
+              <SelectValue placeholder={selected.yeastBrand} />
             </SelectTrigger>
             <SelectContent>
-              {Array.from(new Set(yeastList.map((yeast) => yeast.brand))).map(
-                (brand) => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
-                )
-              )}
+              {brands.map((brand) => (
+                <SelectItem key={brand} value={brand}>
+                  {t(`${brand.toLowerCase()}.label`, brand)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        </label>
-      </div>
-      <div>
-        <label>
-          <span className="flex items-center">
-            {t("yeastStrain")}
-            <Tooltip body={t("yeastSearch")} />
-          </span>
+        </div>
+
+        {/* Yeast strain (searchable) */}
+        <div className="grid gap-1">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1">
+              {t("yeastStrain")}
+              <Tooltip body={t("yeastSearch")} />
+            </span>
+          </label>
 
           <SearchableInput
-            items={yeastList.sort()}
-            query={selected.yeastDetails.name}
-            setQuery={(yeast) => setYeastName(yeast)}
+            items={yeastList}
+            query={selected.yeastStrain}
+            setQuery={actions.setYeastStrain}
             keyName="name"
-            onSelect={(yeast) => {
-              setYeastBrand(yeast.brand);
-              setYeastName(yeast.name);
-            }}
+            onSelect={actions.selectYeast}
+            renderItem={(item) => t(lodash.camelCase(item.name), item.name)}
+            getLabel={(item) => t(lodash.camelCase(item.name), item.name)}
           />
-        </label>
-      </div>
-      <div>
-        <label className="grid gap-1">
-          <span className="flex items-center sm:gap-1">
-            {t("n2Requirement.label")}
-            <Tooltip body={t("tipText.nitrogenRequirements")} />
-          </span>
+        </div>
+
+        {/* Nitrogen requirement */}
+        <div className="grid gap-1 col-span-full">
+          <label className="text-sm font-medium">
+            <span className="flex items-center sm:gap-1">
+              {t("n2Requirement.label")}
+              <Tooltip body={t("tipText.nitrogenRequirements")} />
+            </span>
+          </label>
+
           <Select
-            value={selected.yeastNitrogenRequirement}
-            onValueChange={setNitrogenRequirement}
+            value={selected.nitrogenRequirement}
+            onValueChange={(req) =>
+              actions.setNitrogenRequirement(
+                req as typeof selected.nitrogenRequirement
+              )
+            }
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-12">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem key="Low" value="Low">
-                {t("n2Requirement.low")}
-              </SelectItem>
-              <SelectItem key="Medium" value="Medium">
+              <SelectItem value="Low">{t("n2Requirement.low")}</SelectItem>
+              <SelectItem value="Medium">
                 {t("n2Requirement.medium")}
               </SelectItem>
-              <SelectItem key="High" value="High">
-                {t("n2Requirement.high")}
-              </SelectItem>
-              <SelectItem key="Very High" value="Very High">
+              <SelectItem value="High">{t("n2Requirement.high")}</SelectItem>
+              <SelectItem value="Very High">
                 {t("n2Requirement.veryHigh")}
               </SelectItem>
             </SelectContent>
           </Select>
-        </label>
-      </div>
-      <div>
-        <span className="grid gap-1">
-          <span className="flex items-center sm:gap-1">
-            {t("targetYan")}
-            <Tooltip body={t("tipText.yan")} />
-          </span>
-          <InputWithUnits value={targetYAN} text={"PPM"} disabled />
-        </span>
+        </div>
       </div>
     </div>
   );
 }
-
-export default YeastDetails;

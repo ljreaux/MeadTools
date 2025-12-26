@@ -1,23 +1,30 @@
 "use client";
+
 import AbvLine from "@/components/extraCalcs/AbvLine";
-import Tooltip from "@/components/Tooltips";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
 import useAbv from "@/hooks/useAbv";
 import useRefrac from "@/hooks/useRefrac";
 import { cn } from "@/lib/utils";
+import { normalizeNumberString } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
+import TooltipHelper from "@/components/Tooltips";
 
 function RefractometerCorrection() {
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
+
   const {
     correctionFactorProps,
     ogProps,
@@ -25,121 +32,215 @@ function RefractometerCorrection() {
     fgProps,
     fgUnitProps,
     correctedFg,
-    correctedBrix,
+    correctedBrix
   } = useRefrac();
-  const abv = useAbv(ogProps.value, correctedFg.toString());
 
+  const abv = useAbv(ogProps.value, correctedFg.toString());
   const warn = correctionFactorProps.value !== "1";
+  const fgInvalid = fgUnitProps.value === "SG";
+
+  const correctedFgDisplay = normalizeNumberString(
+    correctedFg,
+    3,
+    currentLocale,
+    true
+  );
+  const correctedBrixDisplay = normalizeNumberString(
+    correctedBrix,
+    2,
+    currentLocale
+  );
 
   return (
-    <>
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
+      {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("refractometerHeading")}
       </h1>
-      <Table>
-        <TableBody>
-          <TableRow className={cn(warn && "bg-[rgb(255,204,0)] text-black")}>
-            <TableCell className={cn(warn ? "text-black" : "text-foreground")}>
-              <span className="flex items-center">
-                {t("correctionFactor")}
-                <Tooltip
-                  body={t("tiptext.refractometerWarning")}
-                  link="https://www.brewersfriend.com/how-to-determine-your-refractometers-wort-correction-factor/"
-                />
-              </span>
-            </TableCell>
-            <TableCell colSpan={2}>
-              <Input
-                inputMode="decimal"
-                name="cf"
-                id="cf"
-                {...correctionFactorProps}
-                onFocus={(e) => e.target.select()}
-              />
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>{t("ogLabel")} </TableCell>
-            <TableCell className="p-1 md:p-4">
-              <Select name="units" {...ogUnitProps}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SG">{t("SG")}</SelectItem>
-                  <SelectItem value="Brix">{t("BRIX")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </TableCell>
-            <TableCell className="p-1 md:p-4">
-              <Input
-                inputMode="decimal"
-                name="og"
-                id="og"
-                {...ogProps}
-                onFocus={(e) => e.target.select()}
-              />
-            </TableCell>
-          </TableRow>
-          <TableRow
-            className={cn({
-              "bg-destructive": fgUnitProps.value === "SG",
-            })}
+
+      {/* Correction factor */}
+      <div className="relative space-y-2">
+        {/* label + mobile tooltip row */}
+        <div className="flex items-center gap-1 pb-0.5">
+          <label htmlFor="cf" className="text-sm font-medium">
+            {t("correctionFactor")}
+          </label>
+
+          <div
+            className={cn(
+              "block md:hidden",
+              !warn && "invisible pointer-events-none"
+            )}
           >
-            <TableCell>
-              <div className="flex items-center gap-2">
-                {t("fgInBrix")}{" "}
-                {fgUnitProps.value === "SG" && (
-                  <Tooltip body={t("fgWarning")} />
-                )}
-              </div>
-            </TableCell>
-            <TableCell className="p-1 md:p-4">
-              <Select name="units" {...fgUnitProps}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SG">{t("SG")}</SelectItem>
-                  <SelectItem value="Brix">{t("BRIX")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </TableCell>
-            <TableCell>
-              <span className="flex">
-                <Input
-                  inputMode="decimal"
-                  name="fgInBrix"
-                  id="fg"
-                  {...fgProps}
-                  onFocus={(e) => e.target.select()}
-                />
-                <span className=" sm:flex grid items-center gap-1 justify-center text-center min-w-fit mx-1">
-                  <p>
-                    {correctedFg.toLocaleString(currentLocale, {
-                      maximumFractionDigits: 3,
-                    })}
-                  </p>
-                  <p className="min-w-fit">{`${correctedBrix.toLocaleString(
-                    currentLocale,
-                    {
-                      maximumFractionDigits: 2,
-                    }
-                  )} ${t("BRIX")}`}</p>
-                </span>
-              </span>
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell colSpan={3}>
-              <span className="flex items-center justify-center text-center">
-                <AbvLine {...abv} textSize="text-lg" />
-              </span>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </>
+            <TooltipHelper
+              body={t("tiptext.refractometerWarning")}
+              link="https://www.brewersfriend.com/how-to-determine-your-refractometers-wort-correction-factor/"
+              variant="warning"
+            />
+          </div>
+        </div>
+
+        <InputGroup className="h-12">
+          <InputGroupInput
+            inputMode="decimal"
+            id="cf"
+            name="cf"
+            {...correctionFactorProps}
+            onFocus={(e) => e.target.select()}
+            className="h-full text-lg"
+            data-warning={warn ? "true" : undefined}
+          />
+        </InputGroup>
+
+        {/* Desktop-only inline warning text, absolutely positioned like before */}
+        <span
+          className={cn(
+            "absolute top-full left-0 mt-1 text-xs text-warning hidden sm:inline",
+            !warn && "invisible"
+          )}
+        >
+          {t("tiptext.refractometerWarning")}{" "}
+          <a
+            href="https://www.brewersfriend.com/how-to-determine-your-refractometers-wort-correction-factor/"
+            className="underline"
+            target="_blank"
+          >
+            here.
+          </a>
+        </span>
+      </div>
+
+      {/* OG input + units */}
+      <div className="space-y-2">
+        <label htmlFor="og" className="text-sm font-medium">
+          {t("ogLabel")}
+        </label>
+
+        <InputGroup className="h-12">
+          <InputGroupInput
+            id="og"
+            name="og"
+            inputMode="decimal"
+            {...ogProps}
+            onFocus={(e) => e.target.select()}
+            className="h-full text-lg"
+          />
+          <InputGroupAddon
+            align="inline-end"
+            className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+          >
+            <Separator orientation="vertical" className="h-12" />
+            <Select {...ogUnitProps} name="ogUnits">
+              <SelectTrigger className="p-2 border-none mr-2 w-16">
+                <SelectValue placeholder={t("SG")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SG">{t("SG")}</SelectItem>
+                <SelectItem value="Brix">{t("BRIX")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
+
+      {/* FG input + units */}
+      <div className="space-y-2 relative">
+        {/* label + mobile tooltip row */}
+        <div className="flex items-center gap-1 pb-0.5">
+          <label htmlFor="fg" className="text-sm font-medium">
+            <span className="flex items-center gap-2">{t("fgInBrix")}</span>
+          </label>
+
+          <div
+            className={cn(
+              "block md:hidden", // only show on mobile
+              !fgInvalid && "invisible pointer-events-none"
+            )}
+          >
+            <span className="sm:hidden">
+              <TooltipHelper body={t("fgWarning")} variant="destructive" />
+            </span>
+          </div>
+        </div>
+
+        <InputGroup className="h-12">
+          <InputGroupInput
+            id="fg"
+            name="fgInBrix"
+            inputMode="decimal"
+            {...fgProps}
+            onFocus={(e) => e.target.select()}
+            className="h-full text-lg"
+            aria-invalid={fgInvalid}
+          />
+          <InputGroupAddon
+            align="inline-end"
+            className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+          >
+            <Separator orientation="vertical" className="h-12" />
+            <Select {...fgUnitProps} name="fgUnits">
+              <SelectTrigger className="p-2 border-none mr-2 w-16">
+                <SelectValue placeholder={t("BRIX")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SG">{t("SG")}</SelectItem>
+                <SelectItem value="Brix">{t("BRIX")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </InputGroupAddon>
+        </InputGroup>
+
+        {/* Desktop-only inline error text, absolutely positioned */}
+        <p
+          className={cn(
+            "absolute top-full left-0 mt-1 text-xs text-destructive hidden sm:block",
+            !fgInvalid && "invisible"
+          )}
+        >
+          {t("fgWarning")}
+        </p>
+      </div>
+
+      {/* Corrected values display */}
+      <div className="mt-4 w-full max-w-3xl mx-auto flex flex-col gap-3">
+        <h2 className="sm:text-2xl text-xl font-semibold text-center">
+          {t("correctedValues")}
+        </h2>
+
+        <div className="flex items-center w-full p-2">
+          {/* Left: corrected FG */}
+          <div className="flex-1 flex justify-end">
+            <div className="text-center mr-3">
+              <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                {correctedFgDisplay}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("FG")}
+              </p>
+            </div>
+          </div>
+
+          <Separator orientation="vertical" className="h-8" />
+
+          {/* Right: corrected Brix */}
+          <div className="flex-1 flex justify-start">
+            <div className="text-center ml-3">
+              <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                {correctedBrixDisplay}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("BRIX")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ABV / DU line */}
+      <div className="mt-auto flex justify-center">
+        <AbvLine {...abv} textSize="sm:text-2xl text-lg" />
+      </div>
+    </div>
   );
 }
 

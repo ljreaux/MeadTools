@@ -1,166 +1,188 @@
 "use client";
-import React, { useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
+
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
-import { useRouter } from "next/navigation";
-import { useRecipe } from "../providers/RecipeProvider";
-import { useNutrients } from "../providers/NutrientProvider";
-import { resetRecipe } from "@/lib/utils/resetRecipe";
+import { Button } from "../ui/button";
+import { LoadingButton } from "../ui/LoadingButton";
+import Tooltip from "../Tooltips";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog";
 
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+
 import { Save } from "lucide-react";
-import { LoadingButton } from "../ui/LoadingButton";
-import { Button } from "../ui/button";
-import { cn } from "@/lib/utils";
+
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import { RecipeData } from "@/types/recipeData";
 
 function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { toast } = useToast();
+  const { isLoggedIn } = useAuth();
+
+  const createRecipeMutation = useCreateRecipeMutation();
+
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // activity email toggle
+  const [name, setName] = useState("");
 
   const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    recipeNameProps,
-    stabilizers,
-    stabilizerType,
+    data: {
+      unitDefaults,
+      ingredients,
+      fg,
+      stabilizers,
+      additives,
+      notes,
+      nutrients
+    },
+    meta
   } = useRecipe();
 
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl,
-  } = useNutrients();
-
-  const { isLoggedIn, fetchAuthenticatedPost } = useAuth();
-
-  const [checked, setChecked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
-  const { toast } = useToast();
-
-  const createRecipe = async () => {
-    setIsSubmitting(true); // Start loading
-    const recipeData = JSON.stringify({
+  const data: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
       ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
+      fg,
       additives,
-      sorbate,
-      sulfite,
-      campden,
       stabilizers,
-      stabilizerType,
-    });
+      notes,
+      nutrients,
+      flags: {
+        private: checked
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      checked
+    ]
+  );
 
-    const otherNutrientName =
-      otherNameState.value.length > 0 ? otherNameState.value : undefined;
+  const handleCreateRecipe = () => {
+    const trimmedName = name.trim();
 
-    const nutrientData = JSON.stringify({
-      ...fullData,
-      otherNutrientName,
-    });
-    const yanContribution = JSON.stringify(yanContributions);
-
-    const primaryNotes = notes.primary.map((note) => note.content).flat();
-    const secondaryNotes = notes.secondary.map((note) => note.content).flat();
-    const advanced = false;
+    if (!trimmedName) {
+      toast({
+        title: t("errorLabel"),
+        description: t("nameRequired"),
+        variant: "destructive"
+      });
+      return;
+    }
 
     const body = {
-      name: recipeNameProps.value,
-      recipeData,
-      yanFromSource: JSON.stringify(providedYan),
-      yanContribution,
-      nutrientData,
-      advanced,
-      nuteInfo: JSON.stringify(maxGpl),
-      primaryNotes,
-      secondaryNotes,
+      name: trimmedName,
+      dataV2: data, // ✅ send as object; server stores in jsonb
       private: checked,
+      activityEmailsEnabled: notify
     };
 
-    try {
-      await fetchAuthenticatedPost("/api/recipes", body);
-      resetRecipe();
-      toast({
-        description: "Recipe created successfully.",
-      });
-      router.push("/account");
-    } catch (error: any) {
-      console.error("Error creating recipe:", error.message);
-      toast({
-        title: "Error",
-        description: "There was an error creating your recipe",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false); // End loading
-    }
+    createRecipeMutation.mutate(body as any, {
+      onSuccess: () => {
+        meta.reset();
+        setName("");
+        toast({ description: t("recipeSuccess") });
+        router.push("/account");
+      },
+      onError: (error: any) => {
+        console.error("Error creating recipe:", error?.message ?? error);
+        toast({
+          title: t("errorLabel"),
+          description: t("error.generic"),
+          variant: "destructive"
+        });
+      }
+    });
   };
+
+  const isSubmitting = createRecipeMutation.isPending;
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         <div
-          className={cn(
-            "joyride-saveRecipe relative group flex flex-col items-center",
-            { "w-full": bottom }
-          )}
+          className={cn("joyride-saveRecipe flex flex-col items-center", {
+            "w-full": bottom
+          })}
         >
           {bottom ? (
-            <Button variant={"secondary"} className="w-full">
+            <Button variant="secondary" className="w-full" type="button">
               <Save />
             </Button>
           ) : (
-            <>
-              <button className="flex items-center justify-center sm:w-12 sm:h-12 w-8 h-8 bg-background text-foreground rounded-full border border-foreground hover:text-background hover:bg-foreground transition-colors">
-                <Save />
-              </button>
-              <span className="absolute top-1/2 -translate-y-1/2 right-16 whitespace-nowrap px-2 py-1 bg-background text-foreground border border-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity">
+            <UiTooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label={t("recipeForm.submit")}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12"
+                >
+                  <Save />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="whitespace-nowrap">
                 {t("recipeForm.submit")}
-              </span>
-            </>
+              </TooltipContent>
+            </UiTooltip>
           )}
         </div>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("recipeForm.title")}</DialogTitle>
+
           {isLoggedIn ? (
             <div className="space-y-4">
               <label>
                 {t("recipeForm.subtitle")}
-                <Input {...recipeNameProps} />
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
               </label>
+
               <label className="grid">
                 {t("private")}
                 <Switch checked={checked} onCheckedChange={setChecked} />
               </label>
+
+              {!checked && (
+                <label className="grid">
+                  <span className="flex items-center">
+                    {t("notify")}
+                    <Tooltip body={t("tiptext.notify")} />
+                  </span>
+                  <Switch checked={notify} onCheckedChange={setNotify} />
+                </label>
+              )}
             </div>
           ) : (
             <Link
@@ -171,10 +193,11 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
             </Link>
           )}
         </DialogHeader>
+
         {isLoggedIn && (
           <DialogFooter>
             <LoadingButton
-              onClick={createRecipe}
+              onClick={handleCreateRecipe}
               loading={isSubmitting}
               variant="secondary"
             >

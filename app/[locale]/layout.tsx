@@ -6,20 +6,19 @@ import { Suspense } from "react";
 import Loading from "../../components/loading";
 import BottomBar from "@/components/navbar/BottomBar";
 import KofiButton from "@/components/KofiSupportButton";
-import DesktopDialog from "@/components/dialogs/DesktopDialog";
-import SupportDialog from "@/components/dialogs/SupportDialog";
-import TutorialDialog from "@/components/dialogs/TutorialDialog";
+import { BannerStack } from "@/components/ui/banner";
+import Dialogs from "@/components/dialogs/Dialogs";
 
 export default async function Layout({
   children,
-  params,
+  params
 }: Readonly<{
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
   const i18nNamespaces = ["default", "YeastTable"];
-  const { t, resources } = await initTranslations(locale, i18nNamespaces);
+  const { resources } = await initTranslations(locale, i18nNamespaces);
   return (
     <TranslationsProvider
       namespaces={i18nNamespaces}
@@ -27,13 +26,14 @@ export default async function Layout({
       resources={resources}
     >
       <Providers>
-        <Navbar t={t} />
+        <Navbar />
+        <div className="fixed top-20 left-0 right-0 z-[2000]">
+          <BannerStack max={3} />
+        </div>
         <Suspense fallback={<Loading />}>{children}</Suspense>
         <BottomBar />
         <KofiButton />
-        <TutorialDialog />
-        <DesktopDialog />
-        <SupportDialog />
+        <Dialogs />
       </Providers>
     </TranslationsProvider>
   );

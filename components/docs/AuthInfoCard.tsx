@@ -1,10 +1,9 @@
 "use client";
 import { useTheme } from "next-themes";
-import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
-  oneLight,
+  oneLight
 } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
 interface Props {
@@ -32,7 +31,7 @@ export default function AuthInfoCard({ cardInfo }: { cardInfo: Props }) {
               customStyle={{
                 fontSize: "0.9rem",
                 padding: "1rem",
-                whiteSpace: "pre-wrap",
+                whiteSpace: "pre-wrap"
               }}
             >
               {cardInfo.header}
@@ -46,7 +45,7 @@ export default function AuthInfoCard({ cardInfo }: { cardInfo: Props }) {
               customStyle={{
                 fontSize: "0.9rem",
                 padding: "1rem",
-                whiteSpace: "pre-wrap",
+                whiteSpace: "pre-wrap"
               }}
             >
               {`fetch('/api/auth/account-info', {

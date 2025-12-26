@@ -4,18 +4,24 @@ import createMDX from "@next/mdx";
 import rehypeSlug from "rehype-slugs";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  pageExtensions: ["md", "mdx", "ts", "tsx"],
+  pageExtensions: ["md", "mdx", "ts", "tsx"]
 };
 
 const withMDX = createMDX({
-  // Add markdown plugins here, as desired
+  extension: /\.(md|mdx)$/,
   options: {
-    remarkPlugins: [remarkGfm],
-    rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings, rehypeHighlight],
-  },
+    remarkPlugins: [
+      remarkGfm,
+      remarkFrontmatter,
+      [remarkMdxFrontmatter, { name: "meta" }] // creates `export const meta = {...}`
+    ],
+    rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings, rehypeHighlight]
+  }
 });
 
 export default withMDX(nextConfig);

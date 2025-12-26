@@ -1,20 +1,30 @@
 "use client";
+
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import AbvLine from "@/components/extraCalcs/AbvLine";
 import Tooltip from "@/components/Tooltips";
-import { Input } from "@/components/ui/input";
-import useAbv from "@/hooks/useAbv";
+import { Separator } from "@/components/ui/separator";
+
 import { toBrix } from "@/lib/utils/unitConverter";
-import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+import {
+  isValidNumber,
+  normalizeNumberString,
+  parseNumber
+} from "@/lib/utils/validateInput";
+import useAbv from "@/hooks/useAbv";
+import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function EstimatedOG() {
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
+
   const [gravity, setGravity] = useState({
-    fgh: "1.0",
-    fgr: "5",
+    fgh: "1.0", // hydrometer FG (SG)
+    fgr: "5" // refractometer FG (Brix)
   });
+
   const estOG =
     Math.round(
       (-1.728 * parseNumber(gravity.fgh) +
@@ -25,8 +35,11 @@ function EstimatedOG() {
 
   const abv = useAbv(estOG.toString(), gravity.fgh.toString());
 
+  const estOgDisplay = normalizeNumberString(estOG, 3, currentLocale, true);
+  const estBrixDisplay = normalizeNumberString(toBrix(estOG), 2, currentLocale);
+
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 h-full w-full">
+    <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
       {/* Heading with Tooltip */}
       <h1 className="sm:text-3xl text-xl text-center flex items-center justify-center gap-2">
         {t("ogHeading")}{" "}
@@ -36,57 +49,81 @@ function EstimatedOG() {
         />
       </h1>
 
-      {/* Inputs Section */}
+      {/* Inputs */}
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col">
-          <label htmlFor="hydrometerFG" className="mb-1">
+        {/* Hydrometer FG (SG) */}
+        <div className="space-y-2">
+          <label htmlFor="hydrometerFG" className="text-sm font-medium">
             {t("hydrometerFG")}
           </label>
-          <Input
+
+          <InputWithUnits
             value={gravity.fgh}
-            onChange={(e) => {
-              if (isValidNumber(e.target.value))
-                setGravity((prev) => ({ ...prev, fgh: e.target.value }));
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              setGravity((prev) => ({ ...prev, fgh: e.target.value }));
             }}
-            inputMode="decimal"
-            id="hydrometerFG"
-            onFocus={(e) => e.target.select()}
+            text={t("SG")}
           />
         </div>
 
-        <div className="flex flex-col">
-          <label htmlFor="refractometerFG" className="mb-1">
+        {/* Refractometer FG (Brix) */}
+        <div className="space-y-2">
+          <label htmlFor="refractometerFG" className="text-sm font-medium">
             {t("refractometerFG")}
           </label>
-          <Input
+
+          <InputWithUnits
             value={gravity.fgr}
-            onChange={(e) => {
-              if (isValidNumber(e.target.value))
-                setGravity((prev) => ({ ...prev, fgr: e.target.value }));
+            handleChange={(e) => {
+              if (!isValidNumber(e.target.value)) return;
+              setGravity((prev) => ({ ...prev, fgr: e.target.value }));
             }}
-            inputMode="decimal"
-            id="refractometerFG"
-            onFocus={(e) => e.target.select()}
+            text={t("BRIX")}
           />
         </div>
       </div>
 
-      {/* Results Section */}
-      <div className="grid grid-cols-2 sm:grid-cols-1 text-center gap-4 text-lg">
-        <h2 className="sm:text-2xl text-xl">{t("estimatedOG")}</h2>
-        <div className="flex gap-2 justify-center items-center">
-          <p>{estOG.toLocaleString(currentLocale)}</p>
-          <p>
-            {toBrix(estOG).toLocaleString(currentLocale, {
-              maximumFractionDigits: 2,
-            })}{" "}
-            {t("BRIX")}
-          </p>
+      {/* Result display (SG + Brix) */}
+      <div className="mt-4 w-full max-w-3xl mx-auto flex flex-col gap-3">
+        <h2 className="sm:text-2xl text-xl font-semibold text-center">
+          {t("estimatedOG")}
+        </h2>
+
+        <div className="flex items-center w-full p-2">
+          {/* Left (SG) */}
+          <div className="flex-1 flex justify-end">
+            <div className="text-center mr-3">
+              <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                {estOgDisplay}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("SG")}
+              </p>
+            </div>
+          </div>
+
+          {/* Center separator */}
+          <Separator orientation="vertical" className="h-8" />
+
+          {/* Right (Brix) */}
+          <div className="flex-1 flex justify-start">
+            <div className="text-center ml-3">
+              <p className="sm:text-2xl text-lg font-medium tracking-tight">
+                {estBrixDisplay}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("BRIX")}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ABV Line */}
-      <AbvLine {...abv} textSize="text-lg" />
+      {/* ABV / DU line */}
+      <div className="mt-auto flex justify-center">
+        <AbvLine {...abv} textSize="sm:text-2xl text-lg" />
+      </div>
     </div>
   );
 }

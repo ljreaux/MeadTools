@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/additives/:id
 export async function GET(
-  req: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const additive = await prisma.additives.findUnique({
-      where: { id },
+      where: { id }
     });
 
     if (!additive) {
@@ -46,7 +46,7 @@ export async function PATCH(
       where: { id },
       data: Object.fromEntries(
         Object.entries(data).filter(([, v]) => v !== undefined)
-      ),
+      )
     });
 
     return NextResponse.json(updated);
@@ -71,11 +71,11 @@ export async function DELETE(
     const { id } = await params;
 
     const deleted = await prisma.additives.delete({
-      where: { id },
+      where: { id }
     });
 
     return NextResponse.json({
-      message: `${deleted.name} has been deleted`,
+      message: `${deleted.name} has been deleted`
     });
   } catch (error: any) {
     console.error("Error deleting additive:", error);

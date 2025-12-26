@@ -1,28 +1,25 @@
 "use client";
+
 import Loading from "@/components/loading";
 import { PaginatedTable } from "@/components/PaginatedTable";
-import { useFetchData } from "@/hooks/useFetchData";
-import { Additive } from "@/types/admin";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 
 function AdditiveDashboard() {
   const router = useRouter();
-  const {
-    data: additives,
-    loading,
-    error,
-  } = useFetchData<Additive[]>("/api/additives");
 
-  if (loading) return <Loading />;
-  if (error) return <div>An error has occured.</div>;
+  const { data: additives, isLoading, isError } = useAdditivesQuery();
 
+  if (isLoading) return <Loading />;
+  if (isError) return <div>An error has occurred.</div>;
   if (!additives) return null;
+
   return (
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl">Additives</h1>
-        <Link href={"/admin/additives/new-additive"}>Add New additive</Link>
+        <Link href={"/admin/additives/new-additive"}>Add New Additive</Link>
       </div>
 
       <PaginatedTable
@@ -30,7 +27,7 @@ function AdditiveDashboard() {
         columns={[
           { key: "name", header: "Name" },
           { key: "dosage", header: "Dosage" },
-          { key: "unit", header: "Unit" },
+          { key: "unit", header: "Unit" }
         ]}
         pageSize={10}
         onRowClick={(additive) =>

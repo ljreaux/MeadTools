@@ -5,67 +5,67 @@ const cardOneSteps: Step[] = [
     target: "body",
     content: "tutorial.cardOne.step1",
     placement: "center",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-sidebar",
     content: "tutorial.cardOne.step2",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-recipePdf",
     content: "tutorial.cardOne.step3",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-saveRecipe",
     content: "tutorial.cardOne.step4",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-deleteRecipe",
     content: "tutorial.cardOne.step5",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-units",
     content: "tutorial.cardOne.step6",
-    placement: "bottom",
+    placement: "bottom"
   },
   {
     target: ".joyride-initialDetails",
     content: "tutorial.cardOne.step7",
-    placement: "bottom",
+    placement: "bottom"
   },
   {
     target: ".joyride-ingredient-1",
     content: "tutorial.cardOne.step8",
-    placement: "bottom",
+    placement: "bottom"
   },
   {
     target: ".joyride-secondary-4",
     content: "tutorial.cardOne.step9",
-    placement: "right",
+    placement: "right"
   },
   {
     target: ".joyride-fillToNext-4",
     content: "tutorial.cardOne.step10",
-    placement: "bottom-end",
+    placement: "bottom-end"
   },
   {
     target: ".joyride-recipeBuilderResults",
     content: "tutorial.cardOne.step11",
-    placement: "top",
+    placement: "top"
   },
   {
     target: ".joyride-scaleRecipe",
     content: "tutorial.cardOne.step12",
-    placement: "top",
+    placement: "top"
   },
   {
     target: "toNextCard",
-    content: "",
-  },
+    content: ""
+  }
 ];
 
 const cardTwoSteps: Step[] = [
@@ -73,159 +73,154 @@ const cardTwoSteps: Step[] = [
     target: "body",
     content: "tutorial.cardTwo.step1",
     placement: "center",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-nutrientInputs",
-    content: "tutorial.cardTwo.step2",
+    content: "tutorial.cardTwo.step2"
   },
   {
     target: ".joyride-offset",
     content: "tutorial.cardTwo.step3",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-yeastDetails",
     content: "tutorial.cardTwo.step4",
-    placement: "left",
+    placement: "left"
   },
   {
     target: ".joyride-goFerm",
     content: "tutorial.cardTwo.step5",
-    placement: "top",
+    placement: "top"
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 const cardThreeSteps: Step[] = [
   {
     target: "body",
     content: "tutorial.cardThree.step1",
     placement: "center",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-nutrientSwitches",
     content: "tutorial.cardThree.step2",
-    placement: "top",
+    placement: "top"
   },
   {
     target: ".joyride-nutrientSettings",
     content: "tutorial.cardThree.step3",
-    placement: "right",
+    placement: "right"
   },
   {
     target: ".joyride-numOfAdditions",
     content: "tutorial.cardThree.step4",
-    placement: "top",
+    placement: "top"
   },
   {
     target: ".joyride-nuteResults",
     content: "tutorial.cardThree.step5",
-    placement: "top",
+    placement: "top"
   },
   {
     target: ".joyride-warning",
     content: "tutorial.cardThree.step6",
-    placement: "top",
+    placement: "top"
   },
   {
     target: ".joyride-goFerm",
     content: "tutorial.cardThree.step7",
-    placement: "bottom",
+    placement: "bottom"
   },
   {
     target: "toNextCard",
     content: "",
     placement: "top",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 const cardFourSteps: Step[] = [
   {
     target: ".joyride-stabilizersCard",
     content: "tutorial.cardFour.step1",
     placement: "bottom",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 const cardFiveSteps: Step[] = [
   {
     target: "body",
     content: "tutorial.cardFive.step1",
     placement: "center",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-additiveLine",
     content: "tutorial.cardFive.step2",
-    placement: "bottom",
-  },
-  {
-    target: "body",
-    content: "tutorial.cardFive.step3",
-    placement: "center",
+    placement: "bottom"
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 const cardSixSteps: Step[] = [
   {
     target: ".joyride-notesCard",
     content: "tutorial.cardSix.step1",
     placement: "bottom",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 const cardSevenSteps: Step[] = [
   {
     target: "body",
     content: "tutorial.cardSeven.step1",
     placement: "center",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-downloadPdf",
     content: "tutorial.cardSeven.step2",
     placement: "bottom",
-    disableBeacon: true,
+    disableBeacon: true
   },
   {
     target: ".joyride-saveRecipe",
-    content: "tutorial.cardSeven.step3",
+    content: "tutorial.cardSeven.step3"
   },
   {
     target: "body",
     placement: "center",
     disableBeacon: true,
-    content: <FinalTutorialComponent />,
+    content: <FinalTutorialComponent />
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true,
-  },
+    disableBeacon: true
+  }
 ];
 
 export const stepCards = [
@@ -235,5 +230,5 @@ export const stepCards = [
   cardFourSteps,
   cardFiveSteps,
   cardSixSteps,
-  cardSevenSteps,
+  cardSevenSteps
 ];

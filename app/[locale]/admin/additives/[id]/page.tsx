@@ -1,27 +1,37 @@
 "use client";
+
 import { useParams } from "next/navigation";
-import { useFetchData } from "@/hooks/useFetchData";
 import Loading from "@/components/loading";
 import Link from "next/link";
-import { Additive } from "@/types/admin";
 import AdditiveEditForm from "@/components/admin/AdditiveEditForm";
+import type { Additive } from "@/types/recipeDataTypes";
+import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 
-export default function IngredientEditPage() {
-  const { id } = useParams();
-  const {
-    data: additive,
-    loading,
-    error,
-  } = useFetchData<Additive>(`/api/additives/${id}`);
+export default function AdditiveEditPage() {
+  const params = useParams();
+  const { id } = params;
 
-  if (loading) return <Loading />;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!additive) return null;
+  const { data: additives, isLoading, isError, error } = useAdditivesQuery();
+
+  if (isLoading) return <Loading />;
+
+  if (isError) {
+    const msg = (error as Error)?.message || "An error has occurred.";
+    return <p>Error: {msg}</p>;
+  }
+
+  if (!additives) return null;
+
+  const additive: Additive | undefined = additives.find((a) => a.id === id);
+
+  if (!additive) {
+    return <p>Additive not found.</p>;
+  }
 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold mb-6">Edit Additives</h2>
+        <h2 className="text-2xl font-bold mb-6">Edit Additive</h2>
         <Link href={"/admin/additives"}>Back to All Additives</Link>
       </div>
       <AdditiveEditForm additive={additive} />

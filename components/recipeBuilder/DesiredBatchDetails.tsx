@@ -1,31 +1,51 @@
-import React, { useState } from "react";
-import { useRecipe } from "../providers/RecipeProvider";
-import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "../ui/alert-dialog";
+"use client";
+
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import Tooltip from "../Tooltips";
 import { ChevronDown } from "lucide-react";
 
-function DesiredBatchDetails() {
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
+
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon
+} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import Tooltip from "@/components/Tooltips";
+import { Separator } from "@/components/ui/separator";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+
+export default function DesiredBatchDetails() {
   const { t } = useTranslation();
-  const { setIngredientsToTarget } = useRecipe();
-  const [{ og, volume }, setOgAndVolume] = useState({
-    og: "",
-    volume: "",
-  });
+
+  const {
+    data: { unitDefaults },
+    setIngredientsToTarget
+  } = useRecipe();
+
+  const [{ og, volume }, setOgAndVolume] = useState({ og: "", volume: "" });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [open, setOpen] = useState(false);
+
+  const canSubmit = og.trim() !== "" && volume.trim() !== "";
 
   const handleSubmit = () => {
     setIngredientsToTarget(parseNumber(og), parseNumber(volume));
@@ -34,59 +54,85 @@ function DesiredBatchDetails() {
   };
 
   return (
-    <div className="border-b border-muted-foreground py-6">
-      {/* Collapsible Header */}
-      <div
-        className="flex items-center justify-between cursor-pointer w-max"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        <h3 className="flex items-center">
-          {t("initialDetails.title")}
-          <Tooltip body={t("tipText.desiredDetailsForm")} />
-        </h3>
-        <ChevronDown
-          className={`w-5 h-5 transform transition-transform ${
-            isCollapsed ? "" : "rotate-180"
-          }`}
-        />
-      </div>
-
-      {/* Collapsible Content */}
-      {!isCollapsed && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsDialogOpen(true);
-          }}
-          className="joyride-initialDetails grid gap-1 mt-4"
+    <div>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        {/* HEADER */}
+        <CollapsibleTrigger
+          className="flex w-full items-center justify-between cursor-pointer"
+          asChild
         >
-          <label className="mb-4">
-            <Input
+          <span>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              {t("initialDetails.title")}
+              <Tooltip body={t("tipText.desiredDetailsForm")} />
+            </h3>
+
+            <ChevronDown
+              className={`h-5 w-5 transition-transform duration-200 ${
+                open ? "rotate-180" : ""
+              }`}
+            />
+          </span>
+        </CollapsibleTrigger>
+
+        {/* CONTENT */}
+        <CollapsibleContent className="mt-4 grid gap-4 joyride-initialDetails">
+          {/* OG Input */}
+          <InputGroup className="h-12">
+            <InputGroupInput
+              placeholder={t("placeholder.og")}
               value={og}
-              placeholder="Enter OG"
               onChange={(e) => {
-                if (isValidNumber(e.target.value))
-                  setOgAndVolume({ volume, og: e.target.value });
+                if (isValidNumber(e.target.value)) {
+                  setOgAndVolume({ og: e.target.value, volume });
+                }
               }}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="text-lg"
             />
-          </label>
-          <label className="mb-4">
-            <Input
+            <InputGroupAddon
+              align="inline-end"
+              className="mr-1 text-xs sm:text-sm"
+            >
+              {t("SG")}
+            </InputGroupAddon>
+          </InputGroup>
+
+          {/* Volume Input */}
+          <InputGroup className="h-12">
+            <InputGroupInput
+              placeholder={t("placeholder.volume")}
               value={volume}
-              placeholder="Enter Volume"
               onChange={(e) => {
-                if (isValidNumber(e.target.value))
+                if (isValidNumber(e.target.value)) {
                   setOgAndVolume({ og, volume: e.target.value });
+                }
               }}
+              inputMode="decimal"
+              onFocus={(e) => e.target.select()}
+              className="text-lg"
             />
-          </label>
-          <Button type="submit" className="max-w-24">
+            <InputGroupAddon
+              align="inline-end"
+              className="mr-1 text-xs sm:text-sm"
+            >
+              {unitDefaults.volume}
+            </InputGroupAddon>
+          </InputGroup>
+
+          <Button
+            type="button"
+            onClick={() => setIsDialogOpen(true)}
+            className="max-w-24"
+            disabled={!canSubmit}
+          >
             {t("SUBMIT")}
           </Button>
-        </form>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
 
-      {/* Confirmation Dialog */}
+      {/* CONFIRMATION DIALOG */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -95,18 +141,19 @@ function DesiredBatchDetails() {
               {t("calculateDetailsDialog")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>
-              {t("cancel")}
-            </AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button onClick={handleSubmit}>{t("SUBMIT")}</Button>
+              <Button onClick={handleSubmit} disabled={!canSubmit}>
+                {t("SUBMIT")}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Separator className="my-2" />
     </div>
   );
 }
-
-export default DesiredBatchDetails;

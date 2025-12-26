@@ -10,44 +10,28 @@ export async function getAllUsers() {
       google_id: true,
       public_username: true,
       hydro_token: true,
-    },
+      active: true
+    }
   });
 }
 
 // Get a user by ID
 export async function getUserById(id: number) {
   return await prisma.users.findUnique({
-    where: { id },
+    where: { id, active: true }
   });
 }
 
 export async function getUserByEmail(email: string) {
   try {
     const user = await prisma.users.findUnique({
-      where: { email },
+      where: { email, active: true }
     });
 
     return user;
   } catch (error) {
     console.error("Error fetching user by email:", error);
     throw new Error("Failed to fetch user by email.");
-  }
-}
-
-export async function getUserByGoogleId(google_id?: string) {
-  if (!google_id) {
-    throw new Error("Google ID is required.");
-  }
-
-  try {
-    const user = await prisma.users.findFirst({
-      where: { google_id },
-    });
-
-    return user;
-  } catch (error) {
-    console.error("Error fetching user by Google ID:", error);
-    throw new Error("Failed to fetch user by Google ID.");
   }
 }
 
@@ -58,9 +42,11 @@ export async function createUser(data: {
   role?: string;
   google_id?: string;
   public_username?: string;
+  google_avatar_url?: string;
+  show_google_avatar: boolean;
 }) {
   return await prisma.users.create({
-    data,
+    data
   });
 }
 
@@ -78,7 +64,7 @@ export async function updateUser(
 ) {
   return await prisma.users.update({
     where: { id },
-    data: fields,
+    data: fields
   });
 }
 
@@ -87,7 +73,8 @@ export async function deleteUser(id: number) {
   if (id === 1) {
     throw new Error("Cannot Delete MeadTools Admin");
   }
-  return await prisma.users.delete({
+  return await prisma.users.update({
     where: { id },
+    data: { active: false }
   });
 }

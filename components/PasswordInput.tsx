@@ -1,41 +1,62 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Eye, EyeOff } from "lucide-react";
+"use client";
 
-interface RevealableInputProps extends React.ComponentProps<"input"> {
+import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+  InputGroupButton
+} from "@/components/ui/input-group";
+
+interface PasswordInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   revealable?: boolean;
+  /** Extra class for the underlying input element */
+  inputClassName?: string;
 }
 
-const PasswordInput = React.forwardRef<HTMLInputElement, RevealableInputProps>(
-  ({ className, type = "password", ...props }, ref) => {
-    const [isRevealed, setIsRevealed] = React.useState(false);
+export const PasswordInput = React.forwardRef<
+  HTMLInputElement,
+  PasswordInputProps
+>(({ revealable = true, className, inputClassName, ...props }, ref) => {
+  const [isRevealed, setIsRevealed] = React.useState(false);
 
-    const toggleVisibility = () => setIsRevealed((prev) => !prev);
-
+  if (!revealable) {
     return (
-      <div className={cn("relative w-full", className)}>
-        <input
-          type={isRevealed ? "text" : type}
-          className={cn(
-            "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-            className
-          )}
+      <InputGroup className={cn("w-full", className)}>
+        <InputGroupInput
           ref={ref}
+          type="password"
+          className={cn(inputClassName)}
           {...props}
         />
-        {type === "password" && (
-          <button
-            type="button"
-            onClick={toggleVisibility}
-            className="absolute right-4 top-1/2 -translate-y-1/2 -translate-x-1/2 text-sm text-muted-foreground focus:outline-none"
-          >
-            {!isRevealed ? <EyeOff /> : <Eye />}
-          </button>
-        )}
-      </div>
+      </InputGroup>
     );
   }
-);
-PasswordInput.displayName = "PasswordInput";
 
-export { PasswordInput };
+  return (
+    <InputGroup className={cn("w-full", className)}>
+      <InputGroupInput
+        ref={ref}
+        type={isRevealed ? "text" : "password"}
+        className={cn(inputClassName)}
+        {...props}
+      />
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          type="button"
+          size="icon-xs"
+          variant="ghost"
+          onClick={() => setIsRevealed((prev) => !prev)}
+          aria-label={isRevealed ? "Hide password" : "Show password"}
+        >
+          {isRevealed ? <Eye /> : <EyeOff />}
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
+  );
+});
+
+PasswordInput.displayName = "PasswordInput";

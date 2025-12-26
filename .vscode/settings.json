@@ -6,5 +6,6 @@
     "Fermaid",
     "nute",
     "tosna"
-  ]
+  ],
+  "prisma.pinToPrisma6": true
 }

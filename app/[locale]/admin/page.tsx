@@ -1,13 +1,15 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 function AdminDashboard() {
   const router = useRouter();
 
-  useEffect(() => router.push("/admin/yeasts"));
+  useEffect(() => {
+    router.replace("/admin/yeasts");
+  }, [router]);
 
-  return <div></div>;
+  return null;
 }
 
 export default AdminDashboard;
