@@ -22,7 +22,7 @@ import prisma from "@/lib/prisma";
 import { RecipeData as RecipeDataV2 } from "@/types/recipeData";
 import { Prisma } from "@prisma/client";
 
-function concatNotes(notes: string[]): string[][] {
+export function concatNotes(notes: string[]): string[][] {
   const newNotes = [];
   while (notes.length) newNotes.push(notes.splice(0, 2));
 
@@ -141,7 +141,7 @@ async function getRecipesPageBase(opts: RecipesPageOpts) {
       primaryNotes,
       secondaryNotes,
       public_username: rec.users?.active
-        ? rec.users?.public_username ?? ""
+        ? (rec.users?.public_username ?? "")
         : "",
       averageRating,
       numberOfRatings

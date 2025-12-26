@@ -86,7 +86,6 @@ function main() {
   const migrated = migrateTutorialJson(parsed);
 
   fs.writeFileSync(OUTPUT, JSON.stringify(migrated, null, 2), "utf8");
-  // eslint-disable-next-line no-console
   console.log(`Wrote: ${OUTPUT}`);
 }
 
