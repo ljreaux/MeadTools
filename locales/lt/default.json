@@ -308,6 +308,10 @@
   "cantaloupe": "Kantalupa",
   "carrot": "Morka",
   "CEL": "°C",
+  "changesBanner": {
+    "description": "Jūs pakeitėte šį receptą. Nepamirškite išsaugoti.",
+    "title": "Neišsaugoti pakeitimai"
+  },
   "changesForm": {
     "login": "Įrašyti recepto pakeitimus?",
     "saveAs": "Įrašyti kaip naują receptą",

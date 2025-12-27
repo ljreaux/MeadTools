@@ -308,6 +308,10 @@
   "cantaloupe": "Cantaloupe-Melone",
   "carrot": "Karrotte",
   "CEL": "°C",
+  "changesBanner": {
+    "description": "Sie haben Änderungen an diesem Rezept vorgenommen. Vergessen Sie nicht, es zu speichern.",
+    "title": "Nicht gespeicherte Änderungen"
+  },
   "changesForm": {
     "login": "Änderungen am Rezept speichern?",
     "saveAs": "Als neues Rezept speichern",

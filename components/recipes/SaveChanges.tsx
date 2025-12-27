@@ -1,18 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "next/navigation";
 
-import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 
-import {
-  useUpdateRecipeMutation,
-  type UpdateRecipePayload
-} from "@/hooks/reactQuery/useRecipeQuery";
 import { Spinner } from "../ui/spinner";
 
 import {
@@ -21,8 +14,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 
-import { useRecipe } from "@/components/providers/RecipeProvider";
-import type { RecipeData } from "@/types/recipeData";
+import { useSaveRecipe } from "@/hooks/useSaveRecipe";
 
 function SaveChanges({
   privateRecipe,
@@ -36,89 +28,12 @@ function SaveChanges({
   name: string;
 }) {
   const { t } = useTranslation();
-  const params = useParams();
-  const recipeId = params?.id as string | undefined;
 
-  const { toast } = useToast();
-  const updateRecipeMutation = useUpdateRecipeMutation();
-
-  const {
-    data: {
-      unitDefaults,
-      ingredients,
-      fg,
-      stabilizers,
-      additives,
-      notes,
-      nutrients
-    },
-    meta: { markSaved }
-  } = useRecipe();
-
-  // Build payload exactly like localStorage format
-  const dataV2: RecipeData = useMemo(
-    () => ({
-      version: 2,
-      unitDefaults,
-      ingredients,
-      fg,
-      additives,
-      stabilizers,
-      notes,
-      nutrients,
-      flags: {
-        private: privateRecipe
-      }
-    }),
-    [
-      unitDefaults,
-      ingredients,
-      fg,
-      additives,
-      stabilizers,
-      notes,
-      nutrients,
-      privateRecipe
-    ]
-  );
-
-  const handleSaveClick = () => {
-    if (!recipeId) {
-      toast({
-        title: t("errorLabel"),
-        description: t("error.generic"),
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const body: UpdateRecipePayload = {
-      name,
-      private: privateRecipe,
-      activityEmailsEnabled: emailNotifications ?? false,
-      dataV2
-    };
-
-    updateRecipeMutation.mutate(
-      { id: recipeId, body },
-      {
-        onSuccess: () => {
-          toast({ description: t("recipeUpdate") });
-          markSaved();
-        },
-        onError: (error: any) => {
-          console.error("Error updating recipe:", error);
-          toast({
-            title: t("errorLabel"),
-            description: t("error.generic"),
-            variant: "destructive"
-          });
-        }
-      }
-    );
-  };
-
-  const isSaving = updateRecipeMutation.isPending;
+  const { save, isSaving } = useSaveRecipe({
+    name,
+    privateRecipe,
+    emailNotifications
+  });
   const icon = isSaving ? <Spinner /> : <Save />;
 
   return (
@@ -131,7 +46,7 @@ function SaveChanges({
         <Button
           variant="secondary"
           className="w-full"
-          onClick={handleSaveClick}
+          onClick={save}
           disabled={isSaving}
           aria-label={t("changesForm.submit")}
         >
@@ -144,7 +59,7 @@ function SaveChanges({
               type="button"
               size="icon"
               variant="outline"
-              onClick={handleSaveClick}
+              onClick={save}
               disabled={isSaving}
               aria-label={t("changesForm.submit")}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12 disabled:opacity-60"
