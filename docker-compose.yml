@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    container_name: meadtools-db
+    environment:
+      POSTGRES_USER: meadtools
+      POSTGRES_PASSWORD: meadtools
+      POSTGRES_DB: meadtools_dev
+    ports:
+      - "54329:5432"
+    volumes:
+      - meadtools_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meadtools -d meadtools_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  meadtools_pgdata:

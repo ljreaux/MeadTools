@@ -1,0 +1,56 @@
+[
+  {
+    "recipe_id": 2,
+    "user_id": 2,
+    "parent_id": null,
+    "comment": "Adding a comment as myself to test email.",
+    "created_at": "2025-11-16 01:53:45.039+00",
+    "updated_at": "2025-11-16 01:53:45.039+00",
+    "deleted_at": null
+  },
+  {
+    "recipe_id": 2,
+    "user_id": 1,
+    "parent_id": null,
+    "comment": "Adding another comment for testing",
+    "created_at": "2025-11-16 02:01:13.973+00",
+    "updated_at": "2025-11-16 02:05:58.493+00",
+    "deleted_at": "2025-11-16 02:05:58.492+00"
+  },
+  {
+    "recipe_id": 2,
+    "user_id": 2,
+    "parent_id": null,
+    "comment": "This recipe was a collab with Brad Basset. Used my old Gibbons meadowfoam honey that I had laying around as a [really dark](https://cdn.discordapp.com/attachments/755835604025213113/1436330483633098886/IMG_0538.jpg?ex=69284301&is=6926f181&hm=807f6199e94cb52d10dc81e6c89a306d5455bc2afdaf1ec37857df2c42da2813) bochet. This will be aged in my Medium Plus Toast French Oak Bad Motivator barrel for as long as it takes (probably around a year).",
+    "created_at": "2025-11-26 15:38:09.24+00",
+    "updated_at": "2025-11-26 15:38:09.24+00",
+    "deleted_at": null
+  },
+  {
+    "recipe_id": 2,
+    "user_id": 2,
+    "parent_id": null,
+    "comment": "I ***NEED*** to try this. What kind of barrel is it going in?",
+    "created_at": "2025-11-15 23:00:56.304+00",
+    "updated_at": "2025-11-15 23:00:56.304+00",
+    "deleted_at": null
+  },
+  {
+    "recipe_id": 2,
+    "user_id": 1,
+    "parent_id": null,
+    "comment": "I love every iteration of this recipe, but blackberry **REALLY** works.",
+    "created_at": "2025-12-26 14:41:48.269+00",
+    "updated_at": "2025-12-26 14:41:48.269+00",
+    "deleted_at": null
+  },
+  {
+    "recipe_id": 1,
+    "user_id": 1,
+    "parent_id": null,
+    "comment": "leaving a comment as someone else to test email functionality.",
+    "created_at": "2025-11-16 01:56:09.698+00",
+    "updated_at": "2025-11-16 02:05:56.818+00",
+    "deleted_at": "2025-11-16 02:05:56.817+00"
+  }
+]
