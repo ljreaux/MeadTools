@@ -3,11 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "i18nexus pull && concurrently \"next dev --webpack\" \"i18nexus listen\" \"npx prisma studio\" \"sleep 3 && npx open-cli http://localhost:3000\"",
-    "build": "i18nexus pull && prisma generate && next build --webpack",
-    "start": "i18nexus pull && next start",
+    "dev:setup": "node scripts/dev-setup.mjs",
+    "dev:setup:reset": "docker compose down -v && node scripts/dev-setup.mjs",
+    "dev": "concurrently \"next dev --webpack\" \"npx prisma studio\" \"npx wait-on http://localhost:3000 && npx open-cli http://localhost:3000\"",
+    "dev:i18n": "npx i18nexus pull && concurrently \"next dev --webpack\" \"npx i18nexus listen\" \"npx prisma studio\" \"npx wait-on http://localhost:3000 && npx open-cli http://localhost:3000\"",
+    "build": "npx prisma generate && next build --webpack",
+    "build:i18n": "npx i18nexus pull && npx prisma generate && next build --webpack",
+    "start": "next start",
+    "start:i18n": "npx i18nexus pull && next start",
     "lint": "next lint",
-    "check:unused-exports": "knip"
+    "check:unused-exports": "knip",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d && npx prisma db push && ALLOW_DB_RESET=true npx prisma db seed"
   },
   "type": "module",
   "prisma": {
@@ -112,6 +120,7 @@
     "prisma": "^6.1.0",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "wait-on": "^9.0.3"
   }
 }

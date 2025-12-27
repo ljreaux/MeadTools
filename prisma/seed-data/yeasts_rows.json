@@ -1,0 +1,974 @@
+[
+  {
+    "id": 1,
+    "brand": "Lalvin",
+    "name": "18-2007",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "50",
+    "high_temp": "90"
+  },
+  {
+    "id": 2,
+    "brand": "Lalvin",
+    "name": "1895C",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "60",
+    "high_temp": "89"
+  },
+  {
+    "id": 3,
+    "brand": "Lalvin",
+    "name": "71B",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "59",
+    "high_temp": "86"
+  },
+  {
+    "id": 4,
+    "brand": "Lalvin",
+    "name": "ALCHEMY I",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "56",
+    "high_temp": "61"
+  },
+  {
+    "id": 5,
+    "brand": "Lalvin",
+    "name": "ALCHEMY II",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "56",
+    "high_temp": "62"
+  },
+  {
+    "id": 6,
+    "brand": "Lalvin",
+    "name": "ALCHEMY III",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "61",
+    "high_temp": "82"
+  },
+  {
+    "id": 7,
+    "brand": "Lalvin",
+    "name": "ALCHEMY IV",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "61",
+    "high_temp": "82"
+  },
+  {
+    "id": 8,
+    "brand": "Lalvin",
+    "name": "BA11",
+    "nitrogen_requirement": "High",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "77"
+  },
+  {
+    "id": 9,
+    "brand": "Lalvin",
+    "name": "BDX",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "64",
+    "high_temp": "86"
+  },
+  {
+    "id": 10,
+    "brand": "Lalvin",
+    "name": "BM 45",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 11,
+    "brand": "Lalvin",
+    "name": "BM 4x4",
+    "nitrogen_requirement": "High",
+    "tolerance": "16",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 12,
+    "brand": "Lalvin",
+    "name": "BRL97",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "62",
+    "high_temp": "85"
+  },
+  {
+    "id": 13,
+    "brand": "Lalvin",
+    "name": "C",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "59",
+    "high_temp": "86"
+  },
+  {
+    "id": 14,
+    "brand": "Lalvin",
+    "name": "CLOS",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "17",
+    "low_temp": "57",
+    "high_temp": "90"
+  },
+  {
+    "id": 15,
+    "brand": "Lalvin",
+    "name": "CROSS EVOLUTION",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "58",
+    "high_temp": "68"
+  },
+  {
+    "id": 16,
+    "brand": "Lalvin",
+    "name": "CSM",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "59",
+    "high_temp": "90"
+  },
+  {
+    "id": 17,
+    "brand": "Lalvin",
+    "name": "CVRP",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "64",
+    "high_temp": "90"
+  },
+  {
+    "id": 18,
+    "brand": "Lalvin",
+    "name": "CVW5",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "57",
+    "high_temp": "82"
+  },
+  {
+    "id": 19,
+    "brand": "Lalvin",
+    "name": "CY17",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "61",
+    "high_temp": "75"
+  },
+  {
+    "id": 20,
+    "brand": "Lalvin",
+    "name": "CY3079 (BOURGOBLANC)",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "59",
+    "high_temp": "77"
+  },
+  {
+    "id": 21,
+    "brand": "Lalvin",
+    "name": "DV10",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "50",
+    "high_temp": "95"
+  },
+  {
+    "id": 22,
+    "brand": "Lalvin",
+    "name": "EC1118",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "50",
+    "high_temp": "86"
+  },
+  {
+    "id": 23,
+    "brand": "Lalvin",
+    "name": "EC1118 (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "50",
+    "high_temp": "90"
+  },
+  {
+    "id": 24,
+    "brand": "Lalvin",
+    "name": "ENOFERM AMH",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "68",
+    "high_temp": "86"
+  },
+  {
+    "id": 25,
+    "brand": "Lalvin",
+    "name": "ENOFERM SYRAH",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "90"
+  },
+  {
+    "id": 26,
+    "brand": "Lalvin",
+    "name": "EXOTICS MOSAIC",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "64",
+    "high_temp": "83"
+  },
+  {
+    "id": 27,
+    "brand": "Lalvin",
+    "name": "EXOTICS NOVELLO",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 28,
+    "brand": "Lalvin",
+    "name": "FERMIVIN 3C",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14",
+    "low_temp": "62",
+    "high_temp": "72"
+  },
+  {
+    "id": 29,
+    "brand": "Lalvin",
+    "name": "FERMIVIN 4F9",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "57",
+    "high_temp": "68"
+  },
+  {
+    "id": 30,
+    "brand": "Lalvin",
+    "name": "FERMIVIN A33",
+    "nitrogen_requirement": "High",
+    "tolerance": "15.5",
+    "low_temp": "72",
+    "high_temp": "86"
+  },
+  {
+    "id": 31,
+    "brand": "Lalvin",
+    "name": "FERMIVIN MT48",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "68",
+    "high_temp": "86"
+  },
+  {
+    "id": 32,
+    "brand": "Lalvin",
+    "name": "FERMIVIN PF6",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14",
+    "low_temp": "54",
+    "high_temp": "75"
+  },
+  {
+    "id": 33,
+    "brand": "Lalvin",
+    "name": "ICV D21",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "61",
+    "high_temp": "86"
+  },
+  {
+    "id": 34,
+    "brand": "Lalvin",
+    "name": "ICV D254",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "54",
+    "high_temp": "82"
+  },
+  {
+    "id": 35,
+    "brand": "Lalvin",
+    "name": "ICV D47",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "50",
+    "high_temp": "86"
+  },
+  {
+    "id": 36,
+    "brand": "Lalvin",
+    "name": "ICV D80",
+    "nitrogen_requirement": "High",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 37,
+    "brand": "Lalvin",
+    "name": "ICV GRE",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 38,
+    "brand": "Lalvin",
+    "name": "ICV OKAY",
+    "nitrogen_requirement": "Low",
+    "tolerance": "16",
+    "low_temp": "54",
+    "high_temp": "86"
+  },
+  {
+    "id": 39,
+    "brand": "Lalvin",
+    "name": "ICV SUNROSE",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "57",
+    "high_temp": "68"
+  },
+  {
+    "id": 40,
+    "brand": "Lalvin",
+    "name": "IOC BE FRUITS",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "54",
+    "high_temp": "75"
+  },
+  {
+    "id": 41,
+    "brand": "Lalvin",
+    "name": "IOC BE THIOLS",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "59",
+    "high_temp": "77"
+  },
+  {
+    "id": 42,
+    "brand": "Lalvin",
+    "name": "K1V1116",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "50",
+    "high_temp": "95"
+  },
+  {
+    "id": 43,
+    "brand": "Lalvin",
+    "name": "LEVULINE BRG",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "88"
+  },
+  {
+    "id": 44,
+    "brand": "Lalvin",
+    "name": "M83",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "63",
+    "high_temp": "81"
+  },
+  {
+    "id": 45,
+    "brand": "Lalvin",
+    "name": "MSB",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14.5",
+    "low_temp": "57",
+    "high_temp": "68"
+  },
+  {
+    "id": 46,
+    "brand": "Lalvin",
+    "name": "MT",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "59",
+    "high_temp": "90"
+  },
+  {
+    "id": 47,
+    "brand": "Lalvin",
+    "name": "NBC",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "57",
+    "high_temp": "68"
+  },
+  {
+    "id": 48,
+    "brand": "Lalvin",
+    "name": "NT 116",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "54",
+    "high_temp": "83"
+  },
+  {
+    "id": 49,
+    "brand": "Lalvin",
+    "name": "NT 202",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 50,
+    "brand": "Lalvin",
+    "name": "NT 50",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16.5",
+    "low_temp": "57",
+    "high_temp": "82"
+  },
+  {
+    "id": 51,
+    "brand": "Lalvin",
+    "name": "OENOFERM BOUQUET",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "68"
+  },
+  {
+    "id": 52,
+    "brand": "Lalvin",
+    "name": "OENOFERM FREDDO",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "55",
+    "high_temp": "63"
+  },
+  {
+    "id": 53,
+    "brand": "Lalvin",
+    "name": "OENOFERM PINOTYPE",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 54,
+    "brand": "Lalvin",
+    "name": "OENOFERM RIESLING",
+    "nitrogen_requirement": "High",
+    "tolerance": "13",
+    "low_temp": "63",
+    "high_temp": "72"
+  },
+  {
+    "id": 55,
+    "brand": "Lalvin",
+    "name": "OENOFERM X-THIOL",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "55",
+    "high_temp": "72"
+  },
+  {
+    "id": 56,
+    "brand": "Lalvin",
+    "name": "OENOFERM X-TREME",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "50",
+    "high_temp": "63"
+  },
+  {
+    "id": 57,
+    "brand": "Lalvin",
+    "name": "PERSY",
+    "nitrogen_requirement": "Low",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 58,
+    "brand": "Lalvin",
+    "name": "QA23",
+    "nitrogen_requirement": "Low",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "90"
+  },
+  {
+    "id": 59,
+    "brand": "Lalvin",
+    "name": "R-HST",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "50",
+    "high_temp": "86"
+  },
+  {
+    "id": 60,
+    "brand": "Lalvin",
+    "name": "R2",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "50",
+    "high_temp": "86"
+  },
+  {
+    "id": 61,
+    "brand": "Lalvin",
+    "name": "RA17",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "84"
+  },
+  {
+    "id": 62,
+    "brand": "Lalvin",
+    "name": "RC212 (BOURGOROUGE)",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "16",
+    "low_temp": "60",
+    "high_temp": "86"
+  },
+  {
+    "id": 63,
+    "brand": "Lalvin",
+    "name": "RHÔNE 2056",
+    "nitrogen_requirement": "High",
+    "tolerance": "16",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 64,
+    "brand": "Lalvin",
+    "name": "RHÔNE 2226",
+    "nitrogen_requirement": "High",
+    "tolerance": "18",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 65,
+    "brand": "Lalvin",
+    "name": "RHÔNE 4600",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "56",
+    "high_temp": "72"
+  },
+  {
+    "id": 66,
+    "brand": "Lalvin",
+    "name": "RP15",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "17",
+    "low_temp": "68",
+    "high_temp": "86"
+  },
+  {
+    "id": 67,
+    "brand": "Lalvin",
+    "name": "SAUVY",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14",
+    "low_temp": "57",
+    "high_temp": "68"
+  },
+  {
+    "id": 68,
+    "brand": "Lalvin",
+    "name": "SENSY",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "54",
+    "high_temp": "64"
+  },
+  {
+    "id": 69,
+    "brand": "Lalvin",
+    "name": "STEINBERGER",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "13",
+    "low_temp": "59",
+    "high_temp": "77"
+  },
+  {
+    "id": 70,
+    "brand": "Lalvin",
+    "name": "SVG",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "82"
+  },
+  {
+    "id": 71,
+    "brand": "Lalvin",
+    "name": "TANGO",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15.5",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 72,
+    "brand": "Lalvin",
+    "name": "UVAFERM 43",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "55",
+    "high_temp": "95"
+  },
+  {
+    "id": 73,
+    "brand": "Lalvin",
+    "name": "UVAFERM CEG (EPERNAY II)",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "13.5",
+    "low_temp": "59",
+    "high_temp": "77"
+  },
+  {
+    "id": 74,
+    "brand": "Lalvin",
+    "name": "VIN 13",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "54",
+    "high_temp": "61"
+  },
+  {
+    "id": 75,
+    "brand": "Lalvin",
+    "name": "VIN 2000",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15.5",
+    "low_temp": "55",
+    "high_temp": "61"
+  },
+  {
+    "id": 76,
+    "brand": "Lalvin",
+    "name": "VITIFERM ALBA FRIA (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "65"
+  },
+  {
+    "id": 77,
+    "brand": "Lalvin",
+    "name": "VITIFERM ESPIRIT (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "65"
+  },
+  {
+    "id": 78,
+    "brand": "Lalvin",
+    "name": "VITIFERM PINOT ALBA (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "65",
+    "high_temp": "68"
+  },
+  {
+    "id": 79,
+    "brand": "Lalvin",
+    "name": "VITIFERM RUBINO EXTRA (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17",
+    "low_temp": "61",
+    "high_temp": "90"
+  },
+  {
+    "id": 80,
+    "brand": "Lalvin",
+    "name": "VITIFERM SAUVAGE (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "61",
+    "high_temp": "90"
+  },
+  {
+    "id": 81,
+    "brand": "Lalvin",
+    "name": "VITIFERM VULCANO (ORGANIC)",
+    "nitrogen_requirement": "Low",
+    "tolerance": "16",
+    "low_temp": "61",
+    "high_temp": "90"
+  },
+  {
+    "id": 82,
+    "brand": "Lalvin",
+    "name": "VITILEVURE 3001",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "54",
+    "high_temp": "90"
+  },
+  {
+    "id": 83,
+    "brand": "Lalvin",
+    "name": "VITILEVURE 58W",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14",
+    "low_temp": "54",
+    "high_temp": "77"
+  },
+  {
+    "id": 84,
+    "brand": "Lalvin",
+    "name": "VITILEVURE ELIXIR",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "57",
+    "high_temp": "77"
+  },
+  {
+    "id": 85,
+    "brand": "Lalvin",
+    "name": "VRB",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "17",
+    "low_temp": "59",
+    "high_temp": "82"
+  },
+  {
+    "id": 86,
+    "brand": "Lalvin",
+    "name": "W15",
+    "nitrogen_requirement": "High",
+    "tolerance": "16",
+    "low_temp": "50",
+    "high_temp": "81"
+  },
+  {
+    "id": 87,
+    "brand": "Fermentis",
+    "name": "SafAle US-05",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "12",
+    "low_temp": "59",
+    "high_temp": "75"
+  },
+  {
+    "id": 88,
+    "brand": "Mangrove Jack",
+    "name": "AW4",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "61",
+    "high_temp": "75"
+  },
+  {
+    "id": 89,
+    "brand": "Mangrove Jack",
+    "name": "BV7",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "57",
+    "high_temp": "82"
+  },
+  {
+    "id": 90,
+    "brand": "Mangrove Jack",
+    "name": "CL23",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "57",
+    "high_temp": "90"
+  },
+  {
+    "id": 91,
+    "brand": "Mangrove Jack",
+    "name": "CR51",
+    "nitrogen_requirement": "High",
+    "tolerance": "14",
+    "low_temp": "61",
+    "high_temp": "75"
+  },
+  {
+    "id": 92,
+    "brand": "Mangrove Jack",
+    "name": "M02",
+    "nitrogen_requirement": "Low",
+    "tolerance": "17.5",
+    "low_temp": "54",
+    "high_temp": "82"
+  },
+  {
+    "id": 93,
+    "brand": "Mangrove Jack",
+    "name": "M05",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "18",
+    "low_temp": "59",
+    "high_temp": "86"
+  },
+  {
+    "id": 94,
+    "brand": "Mangrove Jack",
+    "name": "MA33",
+    "nitrogen_requirement": "Low",
+    "tolerance": "14",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 95,
+    "brand": "Mangrove Jack",
+    "name": "R56",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 96,
+    "brand": "Mangrove Jack",
+    "name": "SN9",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "57",
+    "high_temp": "82"
+  },
+  {
+    "id": 97,
+    "brand": "Mangrove Jack",
+    "name": "VR21",
+    "nitrogen_requirement": "High",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "82"
+  },
+  {
+    "id": 98,
+    "brand": "Red Star",
+    "name": "Cotes des Blancs",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "14",
+    "low_temp": "53",
+    "high_temp": "86"
+  },
+  {
+    "id": 99,
+    "brand": "Red Star",
+    "name": "Premier Classique",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "57",
+    "high_temp": "95"
+  },
+  {
+    "id": 100,
+    "brand": "Red Star",
+    "name": "Premier Cuvee",
+    "nitrogen_requirement": "Low",
+    "tolerance": "16",
+    "low_temp": "50",
+    "high_temp": "95"
+  },
+  {
+    "id": 101,
+    "brand": "Red Star",
+    "name": "Premier Rouge (Pasteur Red)",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "15",
+    "low_temp": "64",
+    "high_temp": "86"
+  },
+  {
+    "id": 102,
+    "brand": "Other",
+    "name": "Other Low N Yeast",
+    "nitrogen_requirement": "Low",
+    "tolerance": "12",
+    "low_temp": "50",
+    "high_temp": "65"
+  },
+  {
+    "id": 103,
+    "brand": "Other",
+    "name": "Other Medium N Yeast",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "12",
+    "low_temp": "55",
+    "high_temp": "70"
+  },
+  {
+    "id": 104,
+    "brand": "Other",
+    "name": "Other High N Yeast",
+    "nitrogen_requirement": "High",
+    "tolerance": "12",
+    "low_temp": "55",
+    "high_temp": "70"
+  },
+  {
+    "id": 105,
+    "brand": "Other",
+    "name": "Generic Beer Yeast",
+    "nitrogen_requirement": "Medium",
+    "tolerance": "12",
+    "low_temp": "55",
+    "high_temp": "70"
+  },
+  {
+    "id": 106,
+    "brand": "Other",
+    "name": "Kveik Yeast",
+    "nitrogen_requirement": "Very High",
+    "tolerance": "12",
+    "low_temp": "70",
+    "high_temp": "100"
+  },
+  {
+    "id": 108,
+    "brand": "Red Star",
+    "name": "Premier Blanc",
+    "nitrogen_requirement": "Low",
+    "tolerance": "18",
+    "low_temp": "50",
+    "high_temp": "86"
+  },
+  {
+    "id": 114,
+    "brand": "Red Star",
+    "name": "Premier Prestige",
+    "nitrogen_requirement": "Low",
+    "tolerance": "15",
+    "low_temp": "50",
+    "high_temp": "86"
+  }
+]
