@@ -308,6 +308,10 @@
   "cantaloupe": "Cantaloupe",
   "carrot": "Carrot",
   "CEL": "°C",
+  "changesBanner": {
+    "description": "You’ve made changes to this recipe. Don’t forget to save.",
+    "title": "Unsaved changes"
+  },
   "changesForm": {
     "login": "Save Changes to Recipe?",
     "saveAs": "Save as New Recipe",

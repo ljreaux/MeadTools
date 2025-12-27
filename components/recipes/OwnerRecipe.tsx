@@ -29,6 +29,7 @@ import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import { NutrientProvider } from "../providers/NutrientProvider";
 import { useRecipe } from "../providers/RecipeProvider";
 import { useBanner } from "../ui/banner";
+import { useSaveRecipe } from "@/hooks/useSaveRecipe";
 
 const cardConfig = [
   {
@@ -146,6 +147,12 @@ function OwnerRecipe({
   const { showBanner, requestDismiss } = useBanner();
   const bannerIdRef = useRef<string | null>(null);
 
+  const { save, isSaving } = useSaveRecipe({
+    name: recipeName,
+    privateRecipe: isPrivate,
+    emailNotifications: notify
+  });
+
   useEffect(() => {
     if (isDirty) {
       // already showing
@@ -154,9 +161,13 @@ function OwnerRecipe({
       const id = showBanner({
         variant: "warning",
         dismissible: true,
-        duration: 0, // not timed
-        title: "Unsaved changes",
-        description: "You’ve made changes to this recipe. Don’t forget to save."
+        duration: 0,
+        title: t("changesBanner.title"),
+        description: t("changesBanner.description"),
+        action: {
+          label: isSaving ? t("saving") : t("changesForm.submit"),
+          onClick: save
+        }
       });
 
       bannerIdRef.current = id;
