@@ -1111,6 +1111,7 @@
     "abvWarning": "Producing an ABV above 20% is highly unlikely by fermentation alone without step feeding.",
     "additives": "Any ingredient that doesn't provide fermentable sugars is best placed here. You can use one of the suggested ingredients or add your own.",
     "adjustYanValue": "This field should only be edited by users who want precise control over their YAN ratios. It is strongly recommended that it only be edited by experienced Mead Makers.",
+    "backsweetenedFg": "This value is automatically calculated based on the ingredients marked \"secondary\". Adjusting the value and clicking submit will alter the amounts of these secondary ingredients to meet your target gravity.",
     "benchTrials": {
       "body": "Bench Trials are a complicated topic that require further research than I can easily provide here. Follow these links for additional information ",
       "linkTexts": [

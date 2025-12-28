@@ -1111,6 +1111,7 @@
     "abvWarning": "Die Erzeugung eines Alkoholgehalts von über 20% ist allein durch Gärung ohne stufenweise Nachzuckerung höchst unwahrscheinlich.",
     "additives": "Zutaten, die keine vergärbaren Zucker beinhalten, werden am besten hier aufgeführt. Du kannst eine der vorgeschlagenen Zusätze nehmen oder deinen eigenen nutzen.",
     "adjustYanValue": "Dieses Feld sollte nur von Benutzern bearbeitet werden, die eine genaue Kontrolle über ihre YAN-Verhältnisse wünschen. Nur für erfahrene Met-Macher!",
+    "backsweetenedFg": "Dieser Wert wird automatisch anhand der als „sekundär“ gekennzeichneten Zutaten berechnet. Durch Anpassen des Werts und Klicken auf „Absenden“ werden die Mengen dieser sekundären Zutaten so verändert, dass die gewünschte Stammwürze erreicht wird.",
     "benchTrials": {
       "body": "'Bench Trials' sind ein kompliziertes Thema, mit dem man sich vorher gründlich beschäftigen sollte. Hierzu finden sich hier einige nützliche Quellen: ",
       "linkTexts": [

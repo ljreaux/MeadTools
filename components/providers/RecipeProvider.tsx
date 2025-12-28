@@ -160,6 +160,12 @@ type RecipeContextValue = {
   setFg: (fg: string) => void;
   setUnitDefaults: (next: RecipeUnitDefaults) => void;
   setIngredientsToTarget: (og: number, volume: number) => void;
+  adjustSecondaryToTargetBacksweetenedFg: (sg: number) => void;
+  setPrimaryTargetsWithRatios: (props: {
+    targetOg: number;
+    targetVolume: number;
+    ratios: { lineId: string; pct: number }[];
+  }) => void;
   scaleRecipe: (
     targetVolume: number,
     opts?: { mode?: "total" | "primary" }
@@ -1161,6 +1167,269 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     [commit]
   );
 
+  const adjustSecondaryToTargetBacksweetenedFg = useCallback(
+    (targetSg: number) => {
+      const fgSg = parseNumber(fg);
+      const P = primaryVolumeL; // liters
+      const S0 = secondaryVolumeL; // liters
+
+      if (!Number.isFinite(targetSg)) return;
+      if (!Number.isFinite(fgSg) || !Number.isFinite(P) || !Number.isFinite(S0))
+        return;
+
+      // If there's NO secondary yet, add a secondary honey line sized to the required S.
+      if (S0 <= 0) {
+        const honeySg = toSG(HONEY_BRIX);
+        const denom = targetSg - honeySg;
+        if (Math.abs(denom) < 1e-6) return;
+
+        const S = (P * (fgSg - targetSg)) / denom; // required secondary liters (honey)
+        if (!Number.isFinite(S) || S <= 0) return;
+
+        const volInGlobal = S * L_TO_VOLUME[unitDefaults.volume];
+        const weightKg = S * honeySg;
+        const weightInGlobal = weightKg * KG_TO_WEIGHT[unitDefaults.weight];
+
+        const honeyLine = blankIngredientLine(unitDefaults, {
+          name: "Honey",
+          category: "sugar",
+          brix: HONEY_BRIX.toFixed(2),
+          ref: { kind: "custom" },
+          secondary: true,
+          amounts: {
+            basis: "volume",
+            volume: { value: fmt(volInGlobal), unit: unitDefaults.volume },
+            weight: { value: fmt(weightInGlobal), unit: unitDefaults.weight }
+          }
+        });
+
+        commit(() => {
+          setIngredients((prev) => [...prev, honeyLine]);
+        });
+
+        return;
+      }
+
+      // Normal path: you already have secondary ingredients, so scale them as a group.
+      const secSg = secondarySg;
+      if (!Number.isFinite(secSg)) return;
+
+      const denom = targetSg - secSg;
+      if (Math.abs(denom) < 1e-6) return;
+
+      const S = (P * (fgSg - targetSg)) / denom;
+      if (!Number.isFinite(S) || S < 0) return;
+
+      const scale = S / S0;
+      if (!Number.isFinite(scale)) return;
+
+      commit(() => {
+        setIngredients((prev) =>
+          prev.map((line) => {
+            if (!line.secondary) return line;
+
+            const wStr = line.amounts.weight.value;
+            const vStr = line.amounts.volume.value;
+
+            const nextWeight = isEffectivelyEmptyNumericInput(wStr)
+              ? wStr
+              : fmt(parseNumber(wStr) * scale);
+
+            const nextVolume = isEffectivelyEmptyNumericInput(vStr)
+              ? vStr
+              : fmt(parseNumber(vStr) * scale);
+
+            return {
+              ...line,
+              amounts: {
+                ...line.amounts,
+                weight: { ...line.amounts.weight, value: nextWeight },
+                volume: { ...line.amounts.volume, value: nextVolume }
+              }
+            };
+          })
+        );
+      });
+    },
+    [fg, primaryVolumeL, secondaryVolumeL, secondarySg, unitDefaults, commit]
+  );
+
+  const setPrimaryTargetsWithRatios = useCallback(
+    ({
+      targetOg,
+      targetVolume,
+      ratios
+    }: {
+      targetOg: number;
+      targetVolume: number;
+      ratios: { lineId: string; pct: number }[];
+    }) => {
+      if (!Number.isFinite(targetOg) || targetOg <= 1) return;
+      if (!Number.isFinite(targetVolume) || targetVolume <= 0) return;
+
+      const VtargetL = targetVolume * VOLUME_TO_L[unitDefaults.volume];
+      if (!Number.isFinite(VtargetL) || VtargetL <= 0) return;
+
+      // Only primary, non-water, non-secondary
+      const primaryFermentables = ingredients.filter(
+        (l) => !l.secondary && l.category !== "water"
+      );
+
+      if (primaryFermentables.length === 0) return;
+
+      // Build a ratio map (0..1)
+      const ratioMap = new Map<string, number>();
+      const pctSum = ratios.reduce(
+        (s, r) => s + (Number.isFinite(r.pct) ? r.pct : 0),
+        0
+      );
+      if (!Number.isFinite(pctSum) || pctSum <= 0) return;
+
+      ratios.forEach((r) => {
+        ratioMap.set(r.lineId, r.pct / pctSum); // normalize defensively
+      });
+
+      // Total gravity points needed (points/L)
+      const GP_TARGET = (targetOg - 1) * 1000 * VtargetL;
+      if (!Number.isFinite(GP_TARGET) || GP_TARGET <= 0) return;
+
+      // Compute required fermentable liters from allocated gravity points
+      const solved = primaryFermentables.map((line) => {
+        const ratio = ratioMap.get(line.lineId) ?? 0;
+        const sg = toSG(parseNumber(line.brix));
+        const gpPerL = (sg - 1) * 1000;
+
+        return {
+          lineId: line.lineId,
+          sg,
+          ratio,
+          gpPerL
+        };
+      });
+
+      // If any included fermentable has invalid sg, bail
+      if (
+        solved.some(
+          (x) =>
+            !Number.isFinite(x.sg) ||
+            x.sg <= 1 ||
+            !Number.isFinite(x.gpPerL) ||
+            x.gpPerL <= 0
+        )
+      ) {
+        return;
+      }
+
+      const fermentableVolumesL = solved.map((x) => {
+        const gp_i = GP_TARGET * x.ratio;
+        const vL = gp_i / x.gpPerL;
+        return { lineId: x.lineId, vL, sg: x.sg };
+      });
+
+      const fermentableSumL = fermentableVolumesL.reduce((s, x) => s + x.vL, 0);
+      if (!Number.isFinite(fermentableSumL) || fermentableSumL <= 0) return;
+
+      // Water = leftover volume
+      const waterL = VtargetL - fermentableSumL;
+
+      // If water would be negative, we cannot meet the target OG *and* keep ratios with these SGs.
+      // (Would require “negative water”.) Bail instead of doing something surprising.
+      if (waterL < -1e-6) return;
+
+      // Find existing primary water line (optional)
+      const existingWater = ingredients.find(
+        (l) => !l.secondary && l.category === "water"
+      );
+
+      commit(() => {
+        setIngredients((prev) => {
+          const next = prev.map((line) => {
+            // Update fermentables by setting volume/weight directly
+            const solvedLine = fermentableVolumesL.find(
+              (x) => x.lineId === line.lineId
+            );
+            if (solvedLine) {
+              const volInLineUnit =
+                solvedLine.vL * L_TO_VOLUME[line.amounts.volume.unit];
+              const weightKg = solvedLine.vL * solvedLine.sg;
+              const weightInLineUnit =
+                weightKg * KG_TO_WEIGHT[line.amounts.weight.unit];
+
+              return {
+                ...line,
+                amounts: {
+                  ...line.amounts,
+                  basis: "volume" as IngredientLine["amounts"]["basis"],
+                  volume: { ...line.amounts.volume, value: fmt(volInLineUnit) },
+                  weight: {
+                    ...line.amounts.weight,
+                    value: fmt(weightInLineUnit)
+                  }
+                }
+              };
+            }
+
+            // Update water if it exists
+            if (!line.secondary && line.category === "water") {
+              const volInGlobal = waterL * L_TO_VOLUME[unitDefaults.volume];
+              const weightKg = waterL * toSG(0); // ~1
+              const weightInGlobal =
+                weightKg * KG_TO_WEIGHT[unitDefaults.weight];
+
+              return {
+                ...line,
+                amounts: {
+                  ...line.amounts,
+                  basis: "volume" as IngredientLine["amounts"]["basis"],
+                  volume: {
+                    ...line.amounts.volume,
+                    value: fmt(volInGlobal),
+                    unit: unitDefaults.volume
+                  },
+                  weight: {
+                    ...line.amounts.weight,
+                    value: fmt(weightInGlobal),
+                    unit: unitDefaults.weight
+                  }
+                }
+              };
+            }
+
+            return line;
+          });
+
+          // If there’s no water line yet, add one (only if we have leftover > 0)
+          if (!existingWater && waterL > 1e-6) {
+            const volInGlobal = waterL * L_TO_VOLUME[unitDefaults.volume];
+            const weightKg = waterL * 1;
+            const weightInGlobal = weightKg * KG_TO_WEIGHT[unitDefaults.weight];
+
+            const waterLine = blankIngredientLine(unitDefaults, {
+              name: "Water",
+              category: "water",
+              brix: "0.00",
+              ref: { kind: "custom" },
+              secondary: false,
+              amounts: {
+                basis: "volume",
+                volume: { value: fmt(volInGlobal), unit: unitDefaults.volume },
+                weight: {
+                  value: fmt(weightInGlobal),
+                  unit: unitDefaults.weight
+                }
+              }
+            });
+
+            return [...next, waterLine];
+          }
+
+          return next;
+        });
+      });
+    },
+    [ingredients, unitDefaults, commit]
+  );
+
   const onNutrientsChange = useCallback(
     (next: NutrientData, meta?: { silent?: boolean }) => {
       commit(() => setNutrients(next), { silent: meta?.silent });
@@ -1292,6 +1561,9 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
           setIngredients([waterLine, honeyLine]);
         });
       },
+
+      adjustSecondaryToTargetBacksweetenedFg,
+      setPrimaryTargetsWithRatios,
 
       scaleRecipe: (
         targetVolume: number,
