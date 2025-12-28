@@ -1111,6 +1111,7 @@
     "abvWarning": "Vien fermentacijos būdu, be laipsniško šėrimo, alkoholio tūrio padidėjimas virš 20 % yra labai mažai tikėtinas.",
     "additives": "Čia geriausiai tinka bet koks ingredientas, kuris nesuteikia fermentuojamų cukrų. Galite naudoti vieną iš siūlomų ingredientų arba pridėti savo.",
     "adjustYanValue": "Šį lauką turėtų redaguoti tik tie vartotojai, kurie nori tiksliai kontroliuoti savo YAN rodiklius. Primygtinai rekomenduojama, kad jį redaguotų tik patyrę midaus gamintojai.",
+    "backsweetenedFg": "Ši vertė automatiškai apskaičiuojama pagal ingredientus, pažymėtus kaip „antriniai“. Pakoregavus vertę ir spustelėjus „Pateikti“, šių antrinių ingredientų kiekiai pasikeis, kad atitiktų tikslinį gravitaciją.",
     "benchTrials": {
       "body": "Bandymai su laboratoriniais tyrimais yra sudėtinga tema, kuriai reikia daugiau tyrimų, nei galiu čia pateikti. Daugiau informacijos rasite šiose nuorodose. ",
       "linkTexts": [
