@@ -8,6 +8,7 @@
     "dev": "concurrently \"next dev --webpack\" \"npx prisma studio\" \"npx wait-on http://localhost:3000 && npx open-cli http://localhost:3000\"",
     "dev:i18n": "npx i18nexus pull && concurrently \"next dev --webpack\" \"npx i18nexus listen\" \"npx prisma studio\" \"npx wait-on http://localhost:3000 && npx open-cli http://localhost:3000\"",
     "build": "npx prisma generate && next build --webpack",
+    "vercel-build": "npx prisma migrate deploy && npx prisma generate && next build --webpack",
     "build:i18n": "npx i18nexus pull && npx prisma generate && next build --webpack",
     "start": "next start",
     "start:i18n": "npx i18nexus pull && next start",
@@ -18,9 +19,6 @@
     "db:reset": "docker compose down -v && docker compose up -d && npx prisma db push && ALLOW_DB_RESET=true npx prisma db seed"
   },
   "type": "module",
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@dnd-kit/accessibility": "^3.1.1",
     "@dnd-kit/core": "^6.3.1",

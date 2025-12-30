@@ -1,43 +1,83 @@
 generator client {
   provider = "prisma-client-js"
-  seed = "prisma/seed.ts"
+  seed     = "prisma/seed.ts"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model brews {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  start_date            DateTime  @default(now()) @db.Timestamptz(6)
-  end_date              DateTime? @db.Timestamptz(6)
-  user_id               Int?
-  latest_gravity        Float?    @db.Real
-  recipe_id             Int?
-  name                  String?
+  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  start_date             DateTime   @default(now()) @db.Timestamptz(6)
+  end_date               DateTime?  @db.Timestamptz(6)
+  user_id                Int?
+  latest_gravity         Float?     @db.Real
+  recipe_id              Int?
+  name                   String?
   requested_email_alerts Boolean?   @default(false)
-  sb_alert_sent             Boolean?   @default(false)
-  fg_alert_sent             Boolean?   @default(false)
-  recipes               recipes?  @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users                 users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  devices               devices[]
-  logs                  logs[]
+  sb_alert_sent          Boolean?   @default(false)
+  fg_alert_sent          Boolean?   @default(false)
+
+  // brew-tracking additions
+  stage                 brew_stage @default(PLANNED)
+  batch_number          Int?
+  current_volume_liters Float?     @db.Real
+  recipe_snapshot       Json?      // keep as Json (no @db.JsonB) to avoid churn vs pulled schema
+
+  // relations
+  entries brew_entries[]
+  recipes recipes? @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users   users?   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  devices devices[]
+  logs    logs[]
+
+  @@index([user_id, start_date])
+  @@index([recipe_id])
+}
+
+model brew_entries {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  brew_id  String   @db.Uuid
+  user_id  Int?
+  datetime DateTime @default(now()) @db.Timestamptz(6)
+
+  type  brew_entry_type
+  title String?
+  note  String? @db.Text
+
+  // optional typed fields
+  gravity     Float?     @db.Real
+  temperature Float?     @db.Real
+  temp_units  temp_units?
+
+  // flexible payload
+  data Json?
+
+  brews brews  @relation(fields: [brew_id], references: [id], onDelete: Cascade)
+  users users? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([brew_id, datetime])
+  @@index([brew_id, type])
+  @@index([user_id, datetime])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model devices {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   device_name  String?
   recipe_id    Int?
   user_id      Int
-  coefficients Float[]  @default([]) @db.Real
-  brew_id      String?  @db.Uuid
-  brews        brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  recipes      recipes? @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users        users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  logs         logs[]
+  coefficients Float[] @default([]) @db.Real
+  brew_id      String? @db.Uuid
+
+  brews   brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipes recipes? @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users   users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  logs    logs[]
 }
 
 model ingredients {
@@ -50,25 +90,27 @@ model ingredients {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model logs {
-  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  datetime           DateTime   @default(now()) @db.Timestamptz(6)
-  angle              Float      @db.Real
-  temperature        Float      @db.Real
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  datetime           DateTime  @default(now()) @db.Timestamptz(6)
+  angle              Float     @db.Real
+  temperature        Float     @db.Real
   temp_units         temp_units
-  battery            Float      @db.Real
-  gravity            Float      @db.Real
+  battery            Float     @db.Real
+  gravity            Float     @db.Real
   interval           Int
-  calculated_gravity Float?     @db.Real
-  device_id          String?    @db.Uuid
-  brew_id            String?    @db.Uuid
-  brews              brews?     @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  devices            devices?   @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  calculated_gravity Float?    @db.Real
+  device_id          String?   @db.Uuid
+  brew_id            String?   @db.Uuid
+
+  // leaving logs alone if a brew is deleted:
+  brews   brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  devices devices? @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model recipes {
-  id              Int       @id @default(autoincrement())
-  user_id         Int?
-  name            String
+  id      Int    @id @default(autoincrement())
+  user_id Int?
+  name    String
 
   // legacy (keep for now)
   recipeData      String
@@ -81,36 +123,39 @@ model recipes {
   secondaryNotes  String[]
 
   // NEW
-  dataV2          Json?     @db.JsonB
-  version         Int       @default(1)
+  dataV2   Json?
+  version  Int   @default(1)
 
-  private         Boolean   @default(false)
-  lastActivityEmailAt DateTime? @db.Timestamptz(6)
-  activityEmailsEnabled Boolean @default(false)
+  private               Boolean   @default(false)
+  lastActivityEmailAt   DateTime? @db.Timestamptz(6)
+  activityEmailsEnabled Boolean   @default(false)
 
-  brews           brews[]
-  devices         devices[]
-  users           users?    @relation(fields: [user_id], references: [id])
-  comments        comments[]
-  ratings         recipe_ratings[]
-  daily_activity  recipe_daily_activity[]
+  brews          brews[]
+  devices        devices[]
+  users          users? @relation(fields: [user_id], references: [id])
+  comments       comments[]
+  ratings        recipe_ratings[]
+  daily_activity recipe_daily_activity[]
 }
+
 model users {
-  id              Int       @id @default(autoincrement())
-  email           String    @unique @db.VarChar(255)
-  password        String?   @db.VarChar(255)
-  google_id       String?   @db.VarChar(255)
-  role            String?   @default("user") @db.VarChar(255)
-  hydro_token     String?   @unique
-  public_username String?   @db.VarChar(50)
-  google_avatar_url String?   @db.Text
-  show_google_avatar Boolean  @default(false)
-  active         Boolean @default(true)
-  brews           brews[]
-  devices         devices[]
-  recipes         recipes[]
-  comments        comments[]
-  ratings         recipe_ratings[]
+  id                 Int     @id @default(autoincrement())
+  email              String  @unique @db.VarChar(255)
+  password           String? @db.VarChar(255)
+  google_id          String? @db.VarChar(255)
+  role               String? @default("user") @db.VarChar(255)
+  hydro_token        String? @unique
+  public_username    String? @db.VarChar(50)
+  google_avatar_url  String?
+  show_google_avatar Boolean @default(false)
+  active             Boolean @default(true)
+
+  brews        brews[]
+  brew_entries brew_entries[]
+  devices      devices[]
+  recipes      recipes[]
+  comments     comments[]
+  ratings      recipe_ratings[]
 }
 
 model User {
@@ -134,11 +179,11 @@ model yeasts {
 }
 
 model additives {
-  id        String        @id @default(uuid()) @db.Uuid
-  created_at DateTime     @default(now()) @db.Timestamptz(6)
-  name      String
-  dosage    Float         @default(0)
-  unit      additive_unit
+  id         String        @id @default(uuid()) @db.Uuid
+  created_at DateTime      @default(now()) @db.Timestamptz(6)
+  name       String
+  dosage     Float         @default(0)
+  unit       additive_unit
 }
 
 model Account {
@@ -176,84 +221,68 @@ model VerificationToken {
 }
 
 model BjcpIngredient {
-  id        String   @id @default(uuid()) @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz
-  label     String?  @unique
-  category  String?
-  value     String?  @unique
+  id         String   @id @default(uuid()) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  label      String?  @unique
+  category   String?
+  value      String?  @unique
 
   @@map("bjcp-ingredients")
 }
 
 model comments {
-  id          String    @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  // FKs to your existing tables (both Int in your schema)
-  recipe_id   Int
-  user_id     Int
+  recipe_id Int
+  user_id   Int
+  parent_id String? @db.Uuid
 
-  // Self-reference for replies (null = top-level)
-  parent_id   String?   @db.Uuid
+  comment String @db.Text
 
-  // Content
-  comment     String    @db.Text
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
 
-  // Timestamps
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime  @updatedAt
+  recipe recipes @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  author users   @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
-  // Soft delete so replies can live on after a parent is removed
-  deleted_at  DateTime?
-
-  // Relations
-  recipe      recipes   @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  author      users     @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-
-  parent      comments? @relation("CommentToReplies", fields: [parent_id], references: [id], onDelete: SetNull)
-  replies     comments[] @relation("CommentToReplies")
+  parent  comments?  @relation("CommentToReplies", fields: [parent_id], references: [id], onDelete: SetNull)
+  replies comments[] @relation("CommentToReplies")
 
   @@index([recipe_id, created_at])
   @@index([parent_id, created_at])
 }
 
 model recipe_ratings {
-  id         String   @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
-  recipe_id  Int
-  user_id    Int
-  rating     Int      @db.SmallInt
+  recipe_id Int
+  user_id   Int
+  rating    Int @db.SmallInt
 
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @updatedAt
 
-  recipe     recipes  @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
-  user       users    @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  recipe recipes @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  user   users   @relation(fields: [user_id], references: [id], onDelete: Restrict)
 
-  @@unique([recipe_id, user_id])   // one rating per user per recipe
+  @@unique([recipe_id, user_id])
   @@index([recipe_id])
   @@index([user_id])
 }
 
 model recipe_daily_activity {
-  id           Int       @id @default(autoincrement())
-  recipe_id    Int
+  id        Int @id @default(autoincrement())
+  recipe_id Int
 
-  /// Logical “day” for the summary (no time-of-day component)
-  summary_date DateTime  @db.Date
-
-  /// JSON blob of activity/changes for that day (shape is up to you)
+  summary_date DateTime @db.Date
   changes      Json?
+  emailed      Boolean @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
 
-  /// Has this summary been emailed yet?
-  emailed      Boolean   @default(false)
+  recipe recipes @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
 
-  /// When this record was created
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-
-  // Relations
-  recipe       recipes   @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
-
-  @@unique([recipe_id, summary_date])  // one row per recipe per day
+  @@unique([recipe_id, summary_date])
   @@index([recipe_id])
   @@index([summary_date, emailed])
 }
@@ -274,8 +303,34 @@ enum additive_unit {
   kg
   lbs
   liters
-  fl_oz    @map("fl oz")
+  fl_oz  @map("fl oz")
   quarts
   gal
   tbsp
+}
+
+enum brew_entry_type {
+  NOTE
+  GRAVITY
+  TEMPERATURE
+  ADDITION
+  NUTRIENT
+  RACKING
+  STABILIZATION
+  BACKSWEETENING
+  PACKAGING
+  TASTING
+  STAGE_CHANGE
+  ISSUE
+}
+
+enum brew_stage {
+  PLANNED
+  PRIMARY
+  SECONDARY
+  BULK_AGE
+  STABILIZED
+  BACKSWEETENED
+  PACKAGED
+  COMPLETE
 }
