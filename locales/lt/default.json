@@ -922,6 +922,21 @@
   "poweredBy": "Sukurta naudojant",
   "PPM": "PPM",
   "pricklyPear": "Dygliuota kriaušė",
+  "primaryTargets": {
+    "dialogDesc": "Santykių suma turėtų siekti 100 %. Tai pakeis pagrindinių ingredientų proporcijas, kad atitiktų jūsų tikslus.",
+    "dialogTitle": "Pagrindiniai taikiniai",
+    "locked": "Naudojant dabartinius rodiklius",
+    "normalize": "Normalizuoti",
+    "ogImpossible": "Šie santykiai apima nefermentuojamą (SG ≤ 1). OG tikslai, viršijantys 1,000, nėra pasiekiami.",
+    "ogRange": "Pasiekiamas OG diapazonas su šiais santykiais: 1.000– {{maxDisp}}",
+    "ogTooHigh": "Tikslinis OG yra didesnis už maksimalų pasiekiamą OG šiems santykiams (max {{maxDisp}} ).",
+    "ogUnknown": "Maksimalaus pasiekiamo OG negalima apskaičiuoti pagal dabartinius santykius.",
+    "open": "Nustatykite pagrindinius tikslus",
+    "ratios": "Pirminiai rodikliai",
+    "sum": "Suma",
+    "tooltip": "Nustatykite tikslinį pagrindinį OG / tūrį ir pakoreguokite pagrindinių ingredientų santykius.",
+    "unlocked": "Redaguoti santykius"
+  },
   "primingSugarHeading": "Pradinio cukraus skaičiuoklė",
   "primingTable": {
     "perBatchHeading": "Kiekis vienoje partijoje",
@@ -1221,6 +1236,7 @@
     "gpl": "g/l"
   },
   "unnamedDevice": "Neįvardytas įrenginys",
+  "unnamedIngredient": "Bevardis",
   "untitledRecipe": "Receptas be pavadinimo",
   "updateLocalChanges": "Atnaujinti vietinius pakeitimus",
   "val1": "Pirmoji vertė:",

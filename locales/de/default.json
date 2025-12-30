@@ -922,6 +922,21 @@
   "poweredBy": "Powered by",
   "PPM": "PPM",
   "pricklyPear": "Kaktusfeige",
+  "primaryTargets": {
+    "dialogDesc": "Die Verhältnisse sollten sich zu 100 % summieren. Dadurch werden die Hauptbestandteile so skaliert, dass sie Ihren Zielvorgaben entsprechen.",
+    "dialogTitle": "Primäre Ziele",
+    "locked": "Verwendung von aktuellen Kennzahlen",
+    "normalize": "Normalisieren",
+    "ogImpossible": "Diese Verhältnisse beinhalten einen nicht vergärbaren Anteil (SG ≤ 1). OG-Zielwerte über 1,000 sind nicht erreichbar.",
+    "ogRange": "Erreichbarer OG-Bereich mit diesen Verhältnissen: 1,000– {{maxDisp}}",
+    "ogTooHigh": "Der Ziel-OG liegt über dem maximal erreichbaren OG für diese Verhältnisse (max {{maxDisp}} ).",
+    "ogUnknown": "Der maximal erreichbare OG-Wert kann aus den aktuellen Verhältnissen nicht berechnet werden.",
+    "open": "Primäre Ziele festlegen",
+    "ratios": "Primäre Verhältnisse",
+    "sum": "Summe",
+    "tooltip": "Legen Sie ein Ziel-Stammwürze-/Volumenverhältnis fest und passen Sie die Verhältnisse der Hauptbestandteile an.",
+    "unlocked": "Bearbeitungsverhältnisse"
+  },
   "primingSugarHeading": "Priming-Zucker-Rechner",
   "primingTable": {
     "perBatchHeading": "Menge pro Charge",
@@ -1221,6 +1236,7 @@
     "gpl": "g/L"
   },
   "unnamedDevice": "Unbenanntes Gerät",
+  "unnamedIngredient": "Unbenannt",
   "untitledRecipe": "Rezept ohne Titel",
   "updateLocalChanges": "Lokale Änderungen aktualisieren",
   "val1": "Erster Wert:",

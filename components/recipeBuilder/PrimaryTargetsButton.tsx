@@ -80,7 +80,7 @@ export default function PrimaryTargetsButton() {
 
         return {
           lineId: l.lineId,
-          name: l.name || t("ingredient.unnamed", "Unnamed"),
+          name: l.name || t("unnamedIngredient"),
           contrib: sugarContribution(volL, sg)
         };
       })
@@ -94,7 +94,7 @@ export default function PrimaryTargetsButton() {
       const eq = n > 0 ? toPctStr(100 / n) : "0";
       return primaryLines.map((l) => ({
         lineId: l.lineId,
-        name: l.name || t("ingredient.unnamed", "Unnamed"),
+        name: l.name || t("unnamedIngredient"),
         pct: eq
       }));
     }
@@ -110,7 +110,7 @@ export default function PrimaryTargetsButton() {
       .filter((l) => !drafts.some((d) => d.lineId === l.lineId))
       .map((l) => ({
         lineId: l.lineId,
-        name: l.name || t("ingredient.unnamed", "Unnamed"),
+        name: l.name || t("unnamedIngredient"),
         pct: "0"
       }));
 
@@ -236,28 +236,18 @@ export default function PrimaryTargetsButton() {
   const ogWarningText = useMemo(() => {
     if (!ogMaxFinite) {
       if (ogBounds.reason === "non-fermentable")
-        return t(
-          "primaryTargets.ogImpossible",
-          "These ratios include a non-fermentable (SG ≤ 1). OG targets above 1.000 aren’t achievable."
-        );
-      return t(
-        "primaryTargets.ogUnknown",
-        "Max achievable OG can’t be computed from the current ratios."
-      );
+        return t("primaryTargets.ogImpossible");
+      return t("primaryTargets.ogUnknown");
     }
 
     const maxDisp = ogBounds.maxOg.toFixed(3);
     if (ogTooHigh) {
-      return t(
-        "primaryTargets.ogTooHigh",
-        `Target OG is above the max achievable OG for these ratios (max ${maxDisp}).`
-      );
+      return t("primaryTargets.ogTooHigh", {
+        maxDisp
+      });
     }
 
-    return t(
-      "primaryTargets.ogRange",
-      `Achievable OG range with these ratios: 1.000–${maxDisp}`
-    );
+    return t("primaryTargets.ogRange", { maxDisp });
   }, [ogMaxFinite, ogBounds, ogTooHigh, t]);
 
   const canSubmit =
@@ -295,26 +285,18 @@ export default function PrimaryTargetsButton() {
         onClick={() => setOpen(true)}
         disabled={primaryLines.length === 0}
       >
-        {t("primaryTargets.open", "Set Primary Targets")}
+        {t("primaryTargets.open")}
       </Button>
 
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              {t("primaryTargets.dialogTitle", "Primary Targets")}
-              <Tooltip
-                body={t(
-                  "primaryTargets.tooltip",
-                  "Set a target primary OG/volume and adjust primary ingredient ratios."
-                )}
-              />
+              {t("primaryTargets.dialogTitle")}
+              <Tooltip body={t("primaryTargets.tooltip")} />
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "primaryTargets.dialogDesc",
-                "Ratios should total 100%. This will rescale primary ingredients to meet your targets."
-              )}
+              {t("primaryTargets.dialogDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -378,7 +360,7 @@ export default function PrimaryTargetsButton() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium">
-                  {t("primaryTargets.ratios", "Primary ratios")}
+                  {t("primaryTargets.ratios")}
                 </p>
 
                 <Button
@@ -388,9 +370,9 @@ export default function PrimaryTargetsButton() {
                   onClick={() => setLockToCurrent((v) => !v)}
                   aria-pressed={lockToCurrent}
                 >
-                  {lockToCurrent
-                    ? t("primaryTargets.locked", "Using current ratios")
-                    : t("primaryTargets.unlocked", "Edit ratios")}
+                  {!lockToCurrent
+                    ? t("primaryTargets.locked")
+                    : t("primaryTargets.unlocked")}
                 </Button>
 
                 <Button
@@ -400,13 +382,13 @@ export default function PrimaryTargetsButton() {
                   onClick={resetRatios}
                   disabled={lockToCurrent}
                 >
-                  {t("reset", "Reset")}
+                  {t("reset")}
                 </Button>
               </div>
 
               <div className="flex items-center gap-2">
                 <p className="text-xs text-muted-foreground">
-                  {t("primaryTargets.sum", "Sum")}: {round2(ratiosSum)}%
+                  {t("primaryTargets.sum")}: {round2(ratiosSum)}%
                 </p>
 
                 <Button
@@ -416,7 +398,7 @@ export default function PrimaryTargetsButton() {
                   onClick={normalize}
                   disabled={lockToCurrent}
                 >
-                  {t("primaryTargets.normalize", "Normalize")}
+                  {t("primaryTargets.normalize")}
                 </Button>
               </div>
             </div>

@@ -922,6 +922,21 @@
   "poweredBy": "Powered by",
   "PPM": "PPM",
   "pricklyPear": "Prickly Pear",
+  "primaryTargets": {
+    "dialogDesc": "Ratios should total 100%. This will rescale primary ingredients to meet your targets.",
+    "dialogTitle": "Primary Targets",
+    "locked": "Using current ratios",
+    "normalize": "Normalize",
+    "ogImpossible": "These ratios include a non-fermentable (SG ≤ 1). OG targets above 1.000 aren’t achievable.",
+    "ogRange": "Achievable OG range with these ratios: 1.000–{{maxDisp}}",
+    "ogTooHigh": "Target OG is above the max achievable OG for these ratios (max {{maxDisp}}).",
+    "ogUnknown": "Max achievable OG can’t be computed from the current ratios.",
+    "open": "Set Primary Targets",
+    "ratios": "Primary ratios",
+    "sum": "Sum",
+    "tooltip": "Set a target primary OG/volume and adjust primary ingredient ratios.",
+    "unlocked": "Edit ratios"
+  },
   "primingSugarHeading": "Priming Sugar Calculator",
   "primingTable": {
     "perBatchHeading": "Amount per batch",
@@ -1221,6 +1236,7 @@
     "gpl": "g/L"
   },
   "unnamedDevice": "Unnamed device",
+  "unnamedIngredient": "Unnamed",
   "untitledRecipe": "Untitled recipe",
   "updateLocalChanges": "Update Local Changes",
   "val1": "Value One:",
