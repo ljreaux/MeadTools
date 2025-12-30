@@ -591,7 +591,11 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         commit(() => {
           setIngredients((prev) => [
             ...prev,
-            blankIngredientLine(unitDefaults, { name: "Honey", brix: "79.6" })
+            blankIngredientLine(unitDefaults, {
+              name: "Honey",
+              brix: "79.6",
+              category: "sugar"
+            })
           ]);
         });
       },
