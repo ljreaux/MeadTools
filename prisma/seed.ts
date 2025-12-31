@@ -8,6 +8,12 @@ import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
 import ShortUniqueId from "short-unique-id";
 import { endBrew, startBrew } from "@/lib/db/iSpindel";
+import {
+  brew_entry_type,
+  brew_stage,
+  Prisma,
+  temp_units
+} from "@prisma/client";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");
@@ -120,6 +126,7 @@ async function main() {
   console.log("Brews Seeded");
 
   await generateLogs();
+  await generateBrewEntries();
 }
 
 main()
@@ -245,6 +252,7 @@ export async function generateLogs() {
 async function clearDb() {
   // Order matters because of FKs
   await prisma.logs.deleteMany();
+  await prisma.brew_entries.deleteMany(); // <-- add this
   await prisma.devices.deleteMany();
   await prisma.brews.deleteMany();
 
@@ -258,7 +266,6 @@ async function clearDb() {
   await prisma.yeasts.deleteMany();
   await prisma.additives.deleteMany();
 
-  // Custom auth users (NOT NextAuth tables)
   await prisma.users.deleteMany();
 
   console.log("✅ Database cleared");
@@ -313,4 +320,115 @@ function assertSeedSafe() {
     );
   }
   assertSafeDatabaseUrl();
+}
+export async function generateBrewEntries() {
+  const brews = await prisma.brews.findMany({
+    select: {
+      id: true,
+      user_id: true,
+      start_date: true,
+      end_date: true,
+      stage: true
+    }
+  });
+
+  for (const brew of brews) {
+    if (!brew.user_id) continue;
+
+    // Make reruns stable
+    await prisma.brew_entries.deleteMany({ where: { brew_id: brew.id } });
+
+    // Pick a couple timestamps
+    const t0 = new Date(brew.start_date.getTime() + 1 * 60 * 60 * 1000);
+    const t1 = new Date(brew.start_date.getTime() + 24 * 60 * 60 * 1000);
+    const t2 = new Date(brew.start_date.getTime() + 48 * 60 * 60 * 1000);
+    const t3 = brew.end_date
+      ? new Date(brew.end_date.getTime() - 2 * 60 * 60 * 1000)
+      : new Date(brew.start_date.getTime() + 72 * 60 * 60 * 1000);
+
+    // Decide "final" stage for seed consistency
+    const finalStage = brew.end_date ? brew_stage.COMPLETE : brew_stage.PRIMARY;
+
+    // Ensure brew.stage matches what the timeline implies
+    await prisma.brews.update({
+      where: { id: brew.id },
+      data: { stage: finalStage }
+    });
+
+    await prisma.brew_entries.createMany({
+      data: [
+        // Stage change: PLANNED -> PRIMARY
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t0,
+          type: brew_entry_type.STAGE_CHANGE,
+          title: "Stage change",
+          note: null,
+          data: {
+            from: brew_stage.PLANNED,
+            to: brew_stage.PRIMARY,
+            source: "seed"
+          } as Prisma.JsonObject
+        },
+
+        // A note
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t1,
+          type: brew_entry_type.NOTE,
+          title: "Started fermentation",
+          note: "Pitched yeast and set airlock. Keeping this one simple for seed data.",
+          data: null
+        },
+
+        // A gravity entry
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t2,
+          type: brew_entry_type.GRAVITY,
+          title: "Gravity reading",
+          note: null,
+          gravity: 1.04,
+          data: { source: "manual" } as Prisma.JsonObject
+        },
+
+        // A temperature entry
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t2,
+          type: brew_entry_type.TEMPERATURE,
+          title: "Temperature check",
+          note: null,
+          temperature: 70,
+          temp_units: temp_units.F,
+          data: null
+        },
+
+        // If the brew is ended, add a stage change to COMPLETE near the end
+        ...(brew.end_date
+          ? ([
+              {
+                brew_id: brew.id,
+                user_id: brew.user_id,
+                datetime: t3,
+                type: brew_entry_type.STAGE_CHANGE,
+                title: "Stage change",
+                note: "Marking brew complete (seed).",
+                data: {
+                  from: brew_stage.PRIMARY,
+                  to: brew_stage.COMPLETE,
+                  source: "seed"
+                } as Prisma.JsonObject
+              }
+            ] as any[])
+          : [])
+      ]
+    });
+  }
+
+  console.log("Brew entries seeded");
 }
