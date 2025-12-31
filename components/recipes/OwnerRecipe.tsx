@@ -31,7 +31,13 @@ import { useRecipe } from "../providers/RecipeProvider";
 import { useBanner } from "../ui/banner";
 import { useSaveRecipe } from "@/hooks/useSaveRecipe";
 
-const cardConfig = [
+const buildCardConfig = ({
+  recipeName,
+  publicUsername
+}: {
+  recipeName: string;
+  publicUsername?: string | null;
+}) => [
   {
     key: "card-1",
     heading: "recipeBuilder.homeHeading",
@@ -81,7 +87,13 @@ const cardConfig = [
   {
     key: "card 7",
     heading: "PDF.title",
-    components: [<RecipePdf key="pdf" />]
+    components: [
+      <RecipePdf
+        key="pdf"
+        title={recipeName}
+        publicUsername={publicUsername ?? ""}
+      />
+    ]
   }
 ];
 
@@ -98,6 +110,11 @@ function OwnerRecipe({
   const [nameEditable, setNameEditable] = useState(false);
   const [recipeName, setRecipeName] = useState(recipe.name);
   const { t } = useTranslation();
+
+  const cardConfig = buildCardConfig({
+    recipeName,
+    publicUsername: recipe.public_username
+  });
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
