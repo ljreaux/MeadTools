@@ -10,6 +10,7 @@ import { NutrientProvider } from "../providers/NutrientProvider";
 import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import RateRecipe from "./RateRecipe";
 import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
+import { useRecipe } from "../providers/RecipeProvider";
 
 function PublicRecipe({
   recipe,
@@ -22,7 +23,10 @@ function PublicRecipe({
 
   const { t } = useTranslation();
   const { id } = useParams();
-
+  const {
+    derived: { nutrientValueForRecipe },
+    meta: { setNutrients }
+  } = useRecipe();
   return (
     <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
       <div className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px] relative">
@@ -40,8 +44,15 @@ function PublicRecipe({
           numberOfRatings={recipe.numberOfRatings ?? 0}
         />
         <RateRecipe userRating={userRating} />
-        <NutrientProvider>
-          <RecipePdf />
+        <NutrientProvider
+          mode="controlled"
+          value={nutrientValueForRecipe}
+          onChange={setNutrients}
+        >
+          <RecipePdf
+            publicUsername={recipe.public_username ?? ""}
+            title={recipe.name}
+          />
         </NutrientProvider>
         <CommentsSection recipeId={Number(id)} />
         <Link
