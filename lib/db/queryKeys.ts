@@ -43,5 +43,16 @@ export const qk = {
 
   adminUsers: ["admin", "users"] as const,
   adminRecipes: (page: number, limit: number, query: string) =>
-    ["admin", "recipes", { page, limit, query }] as const
+    ["admin", "recipes", { page, limit, query }] as const,
+
+  accountBrews: {
+    all: ["accountBrews"] as const,
+    list: () => [...qk.accountBrews.all, "list"] as const,
+    detail: (brewId: string) =>
+      [...qk.accountBrews.all, "detail", brewId] as const
+  },
+  accountBrewEntries: {
+    list: (brewId: string) => ["accountBrews", brewId, "entries"] as const
+    // optional if you ever fetch entries separately
+  }
 };

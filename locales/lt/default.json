@@ -272,6 +272,20 @@
     }
   },
   "boysenberry": "Boizenberija",
+  "brews": {
+    "label": "Alaus daryklos",
+    "stage": "Scenoje"
+  },
+  "brewStage": {
+    "BACKSWEETENED": "Pasaldintas",
+    "BULK_AGE": "Masinis senėjimas",
+    "COMPLETE": "Užbaigtas",
+    "PACKAGED": "Supakuota",
+    "PLANNED": "Planuota",
+    "PRIMARY": "Pirminis",
+    "SECONDARY": "Antrinis",
+    "STABILIZED": "Stabilizuotas"
+  },
   "brewVolume": "Įveskite savo gėrimo tūrį:",
   "BRIX": "Briksas",
   "brixHeading": "Brikso konversijos skaičiuoklė",
@@ -1067,6 +1081,7 @@
     "title": "Mastelio receptas"
   },
   "scaledBatch": "Mastelio keitimas (visa partija):",
+  "search": "Paieška",
   "searchLabel": "Paieška: ",
   "searchPlaceholder": "Įveskite recepto pavadinimą arba vartotojo vardą, kad galėtumėte ieškoti.",
   "selectNutes": "Pasirinkite maistines medžiagas",

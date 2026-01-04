@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
 import { escapeHtml, sendEmail } from "./emailHelpers";
+import { Prisma } from "@prisma/client";
 
 export type LogType = {
   id?: string;
@@ -166,7 +167,9 @@ This is an automated notification from MeadTools.`;
     ? ""
     : `<tr style="background:#fafafa;">
                   <td style="padding:10px 12px;border:1px solid #ddd;">Sugar Break</td>
-                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${threshold.toFixed(3)}</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${threshold.toFixed(
+                    3
+                  )}</td>
                 </tr>`;
 
   const logoUrl = "https://meadtools.com/assets/full-logo.png";
@@ -175,7 +178,9 @@ This is an automated notification from MeadTools.`;
   const html = `
   <!-- Preheader (hidden preview text) -->
   <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
-    ${isFG ? "Final gravity reached" : "Approaching 1/3 sugar break"} for ${escapeHtml(brewLabel)}.
+    ${
+      isFG ? "Final gravity reached" : "Approaching 1/3 sugar break"
+    } for ${escapeHtml(brewLabel)}.
   </div>
 
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
@@ -194,12 +199,18 @@ This is an automated notification from MeadTools.`;
           <!-- Body -->
           <tr>
             <td style="padding:22px 22px 8px 22px;font:16px/1.5 Arial,Helvetica,sans-serif;color:#222;">
-              <p style="margin:0 0 12px 0;">Hello <strong>${escapeHtml(displayName)}</strong>,</p>
+              <p style="margin:0 0 12px 0;">Hello <strong>${escapeHtml(
+                displayName
+              )}</strong>,</p>
               <p style="margin:0 0 16px 0;">
                 ${
                   isFG
-                    ? `Your brew <strong>${escapeHtml(brewLabel)}</strong> is approaching final gravity (FG).`
-                    : `Your brew <strong>${escapeHtml(brewLabel)}</strong> is approaching the 1/3 sugar break.`
+                    ? `Your brew <strong>${escapeHtml(
+                        brewLabel
+                      )}</strong> is approaching final gravity (FG).`
+                    : `Your brew <strong>${escapeHtml(
+                        brewLabel
+                      )}</strong> is approaching the 1/3 sugar break.`
                 }
               </p>
             </td>
@@ -211,11 +222,15 @@ This is an automated notification from MeadTools.`;
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #ddd;border-collapse:collapse;font:15px/1.45 Arial,Helvetica,sans-serif;">
                 <tr style="background:#fafafa;">
                   <td style="padding:10px 12px;border:1px solid #ddd;">Original Gravity</td>
-                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${og.toFixed(3)}</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${og.toFixed(
+                    3
+                  )}</td>
                 </tr>
                 <tr>
                   <td style="padding:10px 12px;border:1px solid #ddd;">Current Gravity</td>
-                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${latest.toFixed(3)}</td>
+                  <td align="right" style="padding:10px 12px;border:1px solid #ddd;font-variant-numeric:tabular-nums;">${latest.toFixed(
+                    3
+                  )}</td>
                 </tr>
                 ${thirdRow}
               </table>
@@ -626,9 +641,47 @@ export async function addRecipeToBrew(
   user_id: number
 ) {
   try {
-    return await prisma.brews.update({
-      where: { user_id, id },
-      data: { recipe_id }
+    const recipeId = Number(recipe_id);
+    if (!Number.isFinite(recipeId)) throw new Error("Invalid recipe_id");
+
+    return await prisma.$transaction(async (tx) => {
+      // 1) Make sure the brew exists and belongs to the user
+      const brew = await tx.brews.findFirst({
+        where: { id, user_id },
+        select: { id: true }
+      });
+      if (!brew) throw new Error("Brew not found");
+
+      // 2) Make sure the recipe exists and belongs to the user
+      const recipe = await tx.recipes.findFirst({
+        where: { id: recipeId, user_id },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          dataV2: true
+        }
+      });
+      if (!recipe) throw new Error("Recipe not found");
+
+      // 3) Build snapshot (same shape as createBrewForApp)
+      const recipe_snapshot: Prisma.JsonObject = {
+        id: recipe.id,
+        name: recipe.name,
+        version: recipe.version,
+        dataV2: recipe.dataV2 as any,
+        snapshottedAt: new Date().toISOString(),
+        source: "hydrometer_link" // optional, but useful
+      };
+
+      // 4) Link recipe + attach snapshot
+      return await tx.brews.update({
+        where: { id, user_id },
+        data: {
+          recipe_id: recipeId,
+          recipe_snapshot
+        }
+      });
     });
   } catch (error) {
     console.error(error);
