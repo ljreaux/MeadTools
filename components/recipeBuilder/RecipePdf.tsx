@@ -23,7 +23,10 @@ export default function RecipePdf({ title, publicUsername }: Props) {
 
     return (
       (sel.yeastId != null
-        ? yeastList.find((y: any) => y.id === sel.yeastId)
+        ? {
+            ...yeastList.find((y: any) => y.id === sel.yeastId),
+            name: sel.yeastStrain
+          }
         : undefined) ?? yeastList.find((y: any) => y.name === sel.yeastStrain)
     );
   }, [nutrients.catalog.yeastList, nutrients.data.selected]);

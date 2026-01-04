@@ -170,6 +170,11 @@ function OwnerRecipe({
     emailNotifications: notify
   });
 
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
+
   useEffect(() => {
     if (isDirty) {
       // already showing
@@ -183,7 +188,7 @@ function OwnerRecipe({
         description: t("changesBanner.description"),
         action: {
           label: isSaving ? t("saving") : t("changesForm.submit"),
-          onClick: save
+          onClick: () => saveRef.current()
         }
       });
 
@@ -196,7 +201,7 @@ function OwnerRecipe({
       requestDismiss(bannerIdRef.current);
       bannerIdRef.current = null;
     }
-  }, [isDirty, showBanner, requestDismiss]);
+  }, [isDirty, isSaving, t, showBanner, requestDismiss]);
 
   return (
     <NutrientProvider
