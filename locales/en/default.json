@@ -272,6 +272,24 @@
     }
   },
   "boysenberry": "Boysenberry",
+  "brews": {
+    "endDate": "End Date",
+    "entries": "Entries",
+    "label": "Brews",
+    "recipe": "Recipe",
+    "stage": "Stage",
+    "startDate": "Start Date"
+  },
+  "brewStage": {
+    "BACKSWEETENED": "Backsweetened",
+    "BULK_AGE": "Bulk Aging",
+    "COMPLETE": "Complete",
+    "PACKAGED": "Packaged",
+    "PLANNED": "Planned",
+    "PRIMARY": "Primary",
+    "SECONDARY": "Secondary",
+    "STABILIZED": "Stabilized"
+  },
   "brewVolume": "Enter your volume of your brew:",
   "BRIX": "Brix",
   "brixHeading": "Brix Conversion Calculator",
@@ -1067,6 +1085,7 @@
     "title": "Scale Recipe"
   },
   "scaledBatch": "Scaled Adjunct (entire batch):",
+  "search": "Search",
   "searchLabel": "Search: ",
   "searchPlaceholder": "Enter a recipe name or username to search.",
   "selectNutes": "Select Nutrients",

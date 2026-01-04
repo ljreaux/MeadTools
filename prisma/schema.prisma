@@ -313,6 +313,7 @@ enum brew_entry_type {
   NOTE
   GRAVITY
   TEMPERATURE
+  PH
   ADDITION
   NUTRIENT
   RACKING

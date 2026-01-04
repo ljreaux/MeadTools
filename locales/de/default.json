@@ -272,6 +272,24 @@
     }
   },
   "boysenberry": "Boysenbeere",
+  "brews": {
+    "endDate": "Enddatum",
+    "entries": "Einträge",
+    "label": "Biere",
+    "recipe": "Rezept",
+    "stage": "Bühne",
+    "startDate": "Startdatum"
+  },
+  "brewStage": {
+    "BACKSWEETENED": "Nachgesüßt",
+    "BULK_AGE": "Massenreifung",
+    "COMPLETE": "Vollständig",
+    "PACKAGED": "Verpackt",
+    "PLANNED": "Geplant",
+    "PRIMARY": "Primär",
+    "SECONDARY": "Sekundär",
+    "STABILIZED": "Stabilisiert"
+  },
   "brewVolume": "Gib das Volumen Deines Gebräus ein:",
   "BRIX": "Brix",
   "brixHeading": "Brix",
@@ -1067,6 +1085,7 @@
     "title": "Rezept skalieren"
   },
   "scaledBatch": "Skalierter Zusatz (gesamter Ansatz):",
+  "search": "Suchen",
   "searchLabel": "Suchen: ",
   "searchPlaceholder": "Gib zur Suche einen Rezeptnamen oder Benutzernamen ein.",
   "selectNutes": "Nährstoffe auswählen",
