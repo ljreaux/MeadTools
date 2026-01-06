@@ -126,6 +126,7 @@ function TempCorrection() {
           </label>
 
           <InputWithUnits
+            id="calTemp"
             value={tempObj.calTemp}
             handleChange={handleChange}
             text={tempObj.tempUnits === "F" ? t("FAR") : t("CEL")}

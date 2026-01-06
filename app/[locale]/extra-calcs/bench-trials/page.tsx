@@ -96,6 +96,7 @@ function BenchTrials() {
           </label>
 
           <InputWithUnits
+            id="sampleSize"
             value={batchDetails.sampleSize}
             handleChange={setInput}
             text={t("ML")}
@@ -112,6 +113,7 @@ function BenchTrials() {
           </label>
 
           <InputWithUnits
+            id="stockSolutionConcentration"
             value={batchDetails.stockSolutionConcentration}
             handleChange={setInput}
             text={t("%")}

@@ -13,6 +13,7 @@ type InputWithUnitsProps = {
   disabled?: boolean;
   handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
   className?: string;
+  id?: string;
 };
 
 const InputWithUnits = ({
@@ -20,11 +21,13 @@ const InputWithUnits = ({
   text,
   disabled,
   handleChange,
-  className
+  className,
+  id
 }: InputWithUnitsProps) => {
   return (
     <InputGroup className={cn("h-12", className)}>
       <InputGroupInput
+        id={id}
         disabled={disabled}
         value={value}
         readOnly={disabled}

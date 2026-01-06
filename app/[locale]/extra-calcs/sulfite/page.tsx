@@ -20,46 +20,53 @@ import {
   parseNumber,
   normalizeNumberString
 } from "@/lib/utils/validateInput";
-import { useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
+
+type StabilizerType = "kMeta" | "naMeta";
+type Units = "gallons" | "liter";
 
 function Sulfite() {
   const { t, i18n } = useTranslation();
   const currentLocale = i18n.resolvedLanguage;
 
-  const [stabilizerType, setStabilizerType] = useState<"kMeta" | "naMeta">(
-    "kMeta"
-  );
+  const [stabilizerType, setStabilizerType] = useState<StabilizerType>("kMeta");
 
-  const [sulfite, setSulfite] = useState({
-    batchSize: (1).toLocaleString(currentLocale),
-    units: "gallons",
-    ppm: (50).toLocaleString(currentLocale)
-  });
+  // keep INPUTS as strings
+  const [batchSize, setBatchSize] = useState((1).toLocaleString(currentLocale));
+  const [units, setUnits] = useState<Units>("gallons");
+  const [ppm, setPpm] = useState((50).toLocaleString(currentLocale));
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleBatchSizeChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!isValidNumber(e.target.value)) return;
+    setBatchSize(e.target.value);
+  };
 
-    setSulfite((prev) => ({
-      ...prev,
-      [e.target.id]: e.target.value
-    }));
+  const handlePpmChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!isValidNumber(e.target.value)) return;
+    setPpm(e.target.value);
   };
 
   const multiplier = stabilizerType === "kMeta" ? 570 : 674;
 
-  const batchSizeNum = parseNumber(sulfite.batchSize);
-  const ppmNum = parseNumber(sulfite.ppm);
+  // parse only for math (allows "12." to exist in state)
+  const batchSizeNum = useMemo(
+    () => parseNumber(batchSize || "0"),
+    [batchSize]
+  );
+  const ppmNum = useMemo(() => parseNumber(ppm || "0"), [ppm]);
 
-  const sulfiteAmount =
-    sulfite.units === "gallons"
+  const sulfiteAmount = useMemo(() => {
+    return units === "gallons"
       ? (batchSizeNum * 3.785 * ppmNum) / multiplier
       : (batchSizeNum * ppmNum) / multiplier;
+  }, [units, batchSizeNum, ppmNum, multiplier]);
 
-  const campden =
-    sulfite.units !== "gallons"
+  const campden = useMemo(() => {
+    return units !== "gallons"
       ? (ppmNum / 75) * (batchSizeNum / 3.785)
       : (ppmNum / 75) * batchSizeNum;
+  }, [units, ppmNum, batchSizeNum]);
 
   const sulfiteAmountDisplay = normalizeNumberString(
     sulfiteAmount,
@@ -71,14 +78,12 @@ function Sulfite() {
 
   return (
     <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">
-      {/* Heading */}
       <h1 className="sm:text-3xl text-xl text-center text-foreground">
         {t("sulfiteHeading")}
       </h1>
 
-      {/* Inputs */}
       <div className="flex flex-col gap-6">
-        {/* Batch size + units (Brix-style InputGroup) */}
+        {/* Batch size + units */}
         <div className="space-y-2">
           <label htmlFor="batchSize" className="text-sm font-medium">
             {t("batchSize")}
@@ -88,9 +93,9 @@ function Sulfite() {
             <InputGroupInput
               id="batchSize"
               inputMode="decimal"
-              value={sulfite.batchSize}
+              value={batchSize}
               onFocus={(e) => e.target.select()}
-              onChange={handleChange}
+              onChange={handleBatchSizeChange}
               className="h-full text-lg"
             />
             <InputGroupAddon
@@ -99,10 +104,8 @@ function Sulfite() {
             >
               <Separator orientation="vertical" className="h-12" />
               <Select
-                value={sulfite.units}
-                onValueChange={(val) =>
-                  setSulfite((prev) => ({ ...prev, units: val }))
-                }
+                value={units}
+                onValueChange={(val) => setUnits(val as Units)}
               >
                 <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue placeholder={t("GAL")} />
@@ -123,17 +126,16 @@ function Sulfite() {
           </label>
 
           <InputWithUnits
-            value={sulfite.ppm}
-            handleChange={handleChange}
+            value={ppm}
+            handleChange={handlePpmChange}
             text={t("PPM")}
           />
         </div>
       </div>
 
-      {/* Results – split like other pages, stacked on mobile */}
+      {/* Results */}
       <div className="mt-auto w-full max-w-3xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center w-full p-2 gap-2 sm:gap-6">
-          {/* Left: grams of stabilizer */}
           <div className="flex-1 flex justify-center sm:justify-end">
             <div className="text-center sm:mr-3">
               <p className="sm:text-2xl text-lg font-semibold tracking-tight">
@@ -145,7 +147,7 @@ function Sulfite() {
                 <Select
                   value={stabilizerType}
                   onValueChange={(val) =>
-                    setStabilizerType(val as "kMeta" | "naMeta")
+                    setStabilizerType(val as StabilizerType)
                   }
                 >
                   <SelectTrigger className="w-52">
@@ -160,12 +162,10 @@ function Sulfite() {
             </div>
           </div>
 
-          {/* Center "or" – behaves like the separator */}
           <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
             {t("accountPage.or")}
           </p>
 
-          {/* Right: campden tablets */}
           <div className="flex-1 flex justify-center sm:justify-start">
             <div className="text-center sm:ml-3">
               <p className="sm:text-2xl text-lg font-semibold tracking-tight">

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import Tooltip from "@/components/Tooltips";
 
-import useStabilizers from "@/hooks/useStabilizers";
+import useStabilizers, { StabilizerType } from "@/hooks/useStabilizers";
 import {
   isValidNumber,
   normalizeNumberString
@@ -78,8 +78,7 @@ function Stabilizers() {
               value={volume.toString()}
               onChange={(e) => {
                 if (!isValidNumber(e.target.value)) return;
-                const num = Number(e.target.value || "0");
-                setVolume(num);
+                setVolume(e.target.value);
               }}
               className="h-full text-lg"
             />
@@ -114,8 +113,7 @@ function Stabilizers() {
             value={abv}
             handleChange={(e) => {
               if (!isValidNumber(e.target.value)) return;
-              const num = Number(e.target.value || "0");
-              setAbv(num);
+              setAbv(e.target.value);
             }}
             text="%"
           />
@@ -148,8 +146,8 @@ function Stabilizers() {
             value={phReading}
             handleChange={(e) => {
               if (!isValidNumber(e.target.value)) return;
-              const num = Number(e.target.value || "0");
-              setPhReading(num);
+
+              setPhReading(e.target.value);
             }}
             text="pH"
             disabled={!takingReading}
@@ -190,7 +188,9 @@ function Stabilizers() {
                 <div className="mt-1 flex items-center justify-center gap-2 text-xs sm:text-sm">
                   <Select
                     value={stabilizerType}
-                    onValueChange={setStabilizerType}
+                    onValueChange={(val) =>
+                      setStabilizerType(val as StabilizerType)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
