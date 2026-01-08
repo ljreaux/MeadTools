@@ -10,7 +10,12 @@ import {
 } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { STAGE_CONFIG, STAGE_FLOW, type StageStatus } from "./stageConfig";
+import {
+  BrewEntry,
+  STAGE_CONFIG,
+  STAGE_FLOW,
+  type StageStatus
+} from "./stageConfig";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 
 function idxOf(stage: BrewStage) {
@@ -26,10 +31,12 @@ function statusFor(i: number, currentIdx: number): StageStatus {
 
 export function BrewStagePath({
   stage,
-  onMoveToStage
+  onMoveToStage,
+  entries
 }: {
   stage: BrewStage;
   onMoveToStage: (to: BrewStage) => Promise<void>;
+  entries: BrewEntry[]; // ✅ pass from page query
 }) {
   const { t } = useTranslation();
   const currentIdx = idxOf(stage);
@@ -86,7 +93,8 @@ export function BrewStagePath({
             const ctx = {
               brewStage: stage,
               hasRecipeLinked: true, // TODO wire to real brew.recipe_id presence
-              recipe: { ingredients }
+              recipe: { ingredients },
+              brew: { entries }
             };
 
             // ✅ helpers stay here; panels/actions can use them
@@ -104,13 +112,25 @@ export function BrewStagePath({
             );
 
             const Panel = cfg.Panel;
-
+            const isBlocked = status === "future" && unmet.length > 0;
             return (
               <div className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-medium">{cfg.title(t)}</div>
 
-                  <Button size="sm" onClick={() => onMoveToStage(s)}>
+                  <Button
+                    size="sm"
+                    onClick={() => onMoveToStage(s)}
+                    disabled={isBlocked}
+                    title={
+                      isBlocked
+                        ? t(
+                            "brews.prereqsNotMet",
+                            "Some items are not complete yet."
+                          )
+                        : undefined
+                    }
+                  >
                     {status === "past"
                       ? t("brews.moveBack", "Move back to this stage")
                       : status === "current"

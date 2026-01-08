@@ -1,5 +1,9 @@
 // stageConfig.ts
-import type { BrewStage } from "@/lib/brewEnums";
+import {
+  BREW_ENTRY_TYPE,
+  type BrewEntryType,
+  type BrewStage
+} from "@/lib/brewEnums";
 import type { IngredientLine } from "@/types/recipeData";
 import type { TFunction } from "i18next";
 import type React from "react";
@@ -9,7 +13,14 @@ import type React from "react";
 import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 
 export type StageStatus = "past" | "current" | "future";
-
+export type BrewEntry = {
+  id: string;
+  type: BrewEntryType;
+  title: string | null;
+  note: string | null;
+  data: any; // tighten later
+  createdAt?: string; // optional
+};
 export type BrewStageContext = {
   // what stage the brew is currently in (NOT the active tab)
   brewStage: BrewStage;
@@ -20,10 +31,9 @@ export type BrewStageContext = {
   // recipe snapshot/provider data that panels can render
   recipe: {
     ingredients: IngredientLine[];
-    // later:
-    // additives: AdditiveLine[];
-    // unitDefaults: RecipeUnitDefaults;
-    // normalized: ReturnType<typeof normalizeIngredientLine>[];
+  };
+  brew: {
+    entries: BrewEntry[];
   };
 };
 
@@ -134,8 +144,20 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   PRIMARY: {
     id: "PRIMARY",
     title: (t) => t("brewStage.PRIMARY"),
-    description: (t) =>
-      t("brews.stageDesc.primary", "Primary fermentation and daily readings."),
+    prereqs: [
+      {
+        id: "hasGravity",
+        label: (t) =>
+          t("brews.prereq.gravity", "Add at least one gravity reading"),
+        isMet: (ctx) =>
+          ctx.brew.entries.some((e) => e.type === BREW_ENTRY_TYPE.GRAVITY),
+        hint: (t) =>
+          t(
+            "brews.prereq.gravityHint",
+            "Add a gravity reading so MeadTools can track fermentation progress."
+          )
+      }
+    ],
     actions: [
       {
         id: "addEntryGravity",

@@ -37,7 +37,7 @@ type EntryType =
   | typeof BREW_ENTRY_TYPE.TEMPERATURE
   | typeof BREW_ENTRY_TYPE.PH;
 
-const ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
+const ALL_ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
   { value: BREW_ENTRY_TYPE.NOTE, label: "Note" },
   { value: BREW_ENTRY_TYPE.TASTING, label: "Tasting" },
   { value: BREW_ENTRY_TYPE.ISSUE, label: "Issue" },
@@ -46,13 +46,33 @@ const ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
   { value: BREW_ENTRY_TYPE.PH, label: "pH" }
 ];
 
-export default function AddBrewEntryDialog({ brewId }: { brewId: string }) {
+export default function AddBrewEntryDialog({
+  brewId,
+  allowedTypes,
+  defaultType,
+  presetType,
+  triggerLabel
+}: {
+  brewId: string;
+  allowedTypes?: EntryType[];
+  defaultType?: EntryType;
+  presetType?: EntryType; // open modal already set to this
+  triggerLabel?: string;
+}) {
+  const options = React.useMemo(() => {
+    const allow = allowedTypes?.length ? new Set(allowedTypes) : null;
+    return allow
+      ? ALL_ENTRY_TYPES.filter((o) => allow.has(o.value))
+      : ALL_ENTRY_TYPES;
+  }, [allowedTypes]);
+
+  const initialType =
+    presetType ?? defaultType ?? options[0]?.value ?? BREW_ENTRY_TYPE.NOTE;
   const { t } = useTranslation();
   const { mutateAsync, isPending } = useCreateBrewEntry();
 
   const [open, setOpen] = React.useState(false);
-
-  const [type, setType] = React.useState<EntryType>(BREW_ENTRY_TYPE.NOTE);
+  const [type, setType] = React.useState<EntryType>(initialType);
 
   const [title, setTitle] = React.useState<string>("");
   const [note, setNote] = React.useState<string>("");
@@ -64,7 +84,7 @@ export default function AddBrewEntryDialog({ brewId }: { brewId: string }) {
   const [ph, setPh] = React.useState<string>("");
 
   function reset() {
-    setType(BREW_ENTRY_TYPE.NOTE);
+    setType(initialType);
     setTitle("");
     setNote("");
     setGravity("");
@@ -141,6 +161,10 @@ export default function AddBrewEntryDialog({ brewId }: { brewId: string }) {
   const showTemp = type === BREW_ENTRY_TYPE.TEMPERATURE;
   const showPh = type === BREW_ENTRY_TYPE.PH;
 
+  React.useEffect(() => {
+    if (!open) setType(initialType);
+  }, [initialType, open]);
+
   return (
     <Dialog
       open={open}
@@ -150,7 +174,7 @@ export default function AddBrewEntryDialog({ brewId }: { brewId: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button>{t("brew.addEntry", "Add entry")}</Button>
+        <Button>{triggerLabel ?? t("brew.addEntry", "Add entry")}</Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[560px]">
@@ -159,21 +183,26 @@ export default function AddBrewEntryDialog({ brewId }: { brewId: string }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>{t("type", "Type")}</Label>
-            <Select value={type} onValueChange={(v) => setType(v as EntryType)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ENTRY_TYPES.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {options.length > 1 && (
+            <div className="space-y-2">
+              <Label>{t("type", "Type")}</Label>
+              <Select
+                value={type}
+                onValueChange={(v) => setType(v as EntryType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {showTitle && (
             <div className="space-y-2">

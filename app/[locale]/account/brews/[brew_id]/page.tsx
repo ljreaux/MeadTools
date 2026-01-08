@@ -42,6 +42,11 @@ export default function BrewPageClient() {
     meta: { hydrate }
   } = useRecipe();
 
+  const allEntries = useMemo(() => {
+    const buckets = brew?.entries_by_stage ?? [];
+    return buckets.flatMap((b) => b.entries);
+  }, [brew?.entries_by_stage]);
+
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
@@ -111,6 +116,7 @@ export default function BrewPageClient() {
 
       <BrewStagePath
         stage={brew.stage}
+        entries={allEntries}
         onMoveToStage={async (to) => {
           await patchMeta({ brewId: brew.id, input: { stage: to } });
           toast({ description: t("saved", "Saved.") });

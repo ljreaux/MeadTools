@@ -16,9 +16,9 @@ export const BREW_ENTRY_TYPE = {
   GRAVITY: "GRAVITY",
   TEMPERATURE: "TEMPERATURE",
   PH: "PH",
-  STAGE_CHANGE: "STAGE_CHANGE"
+  STAGE_CHANGE: "STAGE_CHANGE",
   // later:
-  // ADDITION: "ADDITION",
+  ADDITION: "ADDITION"
   // NUTRIENT: "NUTRIENT",
   // etc...
 } as const;
