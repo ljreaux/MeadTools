@@ -66,7 +66,7 @@ export default function Navbar() {
                     <SheetTitle>{t("menu", "Menu")}</SheetTitle>
                   </SheetHeader>
 
-                  <div className="mt-4 space-y-6 max-h-[80vh] overflow-y-auto pr-2">
+                  <div className="mt-4 space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-40">
                     <MobileSection
                       title={t("calculators.main")}
                       links={mainCalcs}
