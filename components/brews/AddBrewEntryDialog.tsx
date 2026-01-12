@@ -29,14 +29,17 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 
-type EntryType =
+export type EntryType =
   | typeof BREW_ENTRY_TYPE.NOTE
   | typeof BREW_ENTRY_TYPE.TASTING
   | typeof BREW_ENTRY_TYPE.ISSUE
   | typeof BREW_ENTRY_TYPE.GRAVITY
   | typeof BREW_ENTRY_TYPE.TEMPERATURE
   | typeof BREW_ENTRY_TYPE.PH;
-
+export type OpenAddEntryArgs = {
+  presetType?: EntryType;
+  allowedTypes?: EntryType[];
+};
 const ALL_ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
   { value: BREW_ENTRY_TYPE.NOTE, label: "Note" },
   { value: BREW_ENTRY_TYPE.TASTING, label: "Tasting" },
@@ -51,13 +54,19 @@ export default function AddBrewEntryDialog({
   allowedTypes,
   defaultType,
   presetType,
-  triggerLabel
+  triggerLabel,
+  open: openProp,
+  onOpenChange: onOpenChangeProp,
+  hideTrigger
 }: {
   brewId: string;
   allowedTypes?: EntryType[];
   defaultType?: EntryType;
   presetType?: EntryType; // open modal already set to this
   triggerLabel?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
   const options = React.useMemo(() => {
     const allow = allowedTypes?.length ? new Set(allowedTypes) : null;
@@ -71,7 +80,14 @@ export default function AddBrewEntryDialog({
   const { t } = useTranslation();
   const { mutateAsync, isPending } = useCreateBrewEntry();
 
-  const [open, setOpen] = React.useState(false);
+  const [openInternal, setOpenInternal] = React.useState(false);
+  const open = openProp ?? openInternal;
+
+  const setOpen = (v: boolean) => {
+    onOpenChangeProp?.(v);
+    if (openProp === undefined) setOpenInternal(v);
+  };
+
   const [type, setType] = React.useState<EntryType>(initialType);
 
   const [title, setTitle] = React.useState<string>("");
@@ -173,9 +189,12 @@ export default function AddBrewEntryDialog({
         if (!v) reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button>{triggerLabel ?? t("brew.addEntry", "Add entry")}</Button>
-      </DialogTrigger>
+      {/* ✅ only render trigger if you want it */}
+      {!hideTrigger ? (
+        <DialogTrigger asChild>
+          <Button>{triggerLabel ?? t("brew.addEntry", "Add entry")}</Button>
+        </DialogTrigger>
+      ) : null}
 
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>

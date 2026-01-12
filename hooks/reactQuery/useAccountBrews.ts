@@ -6,6 +6,7 @@ import type { BrewEntryType, BrewStage } from "@/lib/brewEnums";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
+import { BrewAdditionData } from "@/lib/utils/entryPayload";
 
 export type AccountBrewListItem = {
   id: string;
@@ -100,8 +101,13 @@ export type CreateBrewEntryInput =
       note?: string | null;
       // store the pH value in data for now, or add a column later
       data: { ph: number } & Record<string, any>;
+    }
+  | {
+      type: typeof BREW_ENTRY_TYPE.ADDITION;
+      title?: string | null;
+      note?: string | null;
+      data: BrewAdditionData;
     };
-
 const accountBrewsQk = qk.accountBrews;
 
 export function useAccountBrews() {

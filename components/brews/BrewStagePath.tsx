@@ -17,6 +17,7 @@ import {
   type StageStatus
 } from "./stageConfig";
 import { useRecipe } from "@/components/providers/RecipeProvider";
+import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -32,11 +33,32 @@ function statusFor(i: number, currentIdx: number): StageStatus {
 export function BrewStagePath({
   stage,
   onMoveToStage,
-  entries
+  entries,
+  openAddEntry,
+  addAddition,
+  addAdditions
 }: {
   stage: BrewStage;
   onMoveToStage: (to: BrewStage) => Promise<void>;
-  entries: BrewEntry[]; // ✅ pass from page query
+  entries: BrewEntry[];
+  openAddEntry: (args?: OpenAddEntryArgs) => void;
+  addAddition: (input: {
+    name: string;
+    amount?: number;
+    unit?: string;
+    note?: string;
+    recipeIngredientId?: string;
+  }) => Promise<void>;
+
+  addAdditions: (
+    inputs: Array<{
+      name: string;
+      amount?: number;
+      unit?: string;
+      note?: string;
+      recipeIngredientId?: string;
+    }>
+  ) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const currentIdx = idxOf(stage);
@@ -96,14 +118,12 @@ export function BrewStagePath({
               recipe: { ingredients },
               brew: { entries }
             };
-
-            // ✅ helpers stay here; panels/actions can use them
             const helpers = {
               moveToStage: onMoveToStage,
-              addAddition: async () => {},
-              addAdditions: async () => {}
+              addAddition,
+              addAdditions,
+              openAddEntry
             };
-
             const prereqs = cfg.prereqs ?? [];
             const unmet = prereqs.filter((p) => !p.isMet(ctx));
 
@@ -113,6 +133,9 @@ export function BrewStagePath({
 
             const Panel = cfg.Panel;
             const isBlocked = status === "future" && unmet.length > 0;
+            const warnings = (cfg.warnings ?? []).filter((w) =>
+              w.isActive(ctx)
+            );
             return (
               <div className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -144,6 +167,19 @@ export function BrewStagePath({
                     {cfg.description(t)}
                   </div>
                 ) : null}
+
+                {warnings.length > 0 && (
+                  <div className="space-y-2">
+                    {warnings.map((w) => (
+                      <div
+                        key={w.id}
+                        className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm"
+                      >
+                        {w.message(t)}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {status === "future" && prereqs.length > 0 && (
                   <div className="space-y-2">

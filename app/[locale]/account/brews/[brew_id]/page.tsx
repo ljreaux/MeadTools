@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -14,9 +14,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { toast } from "@/hooks/use-toast";
 
-import AddBrewEntryDialog from "@/components/brews/AddBrewEntryDialog";
+import AddBrewEntryDialog, {
+  EntryType,
+  OpenAddEntryArgs
+} from "@/components/brews/AddBrewEntryDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
+import { Button } from "@/components/ui/button";
+import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
+import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
+import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 
 export default function BrewPageClient() {
   const { t, i18n } = useTranslation();
@@ -42,6 +49,20 @@ export default function BrewPageClient() {
     meta: { hydrate }
   } = useRecipe();
 
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [entryPresetType, setEntryPresetType] = useState<
+    EntryType | undefined
+  >();
+  const [entryAllowedTypes, setEntryAllowedTypes] = useState<
+    EntryType[] | undefined
+  >();
+
+  function openAddEntry(args?: OpenAddEntryArgs) {
+    setEntryPresetType(args?.presetType);
+    setEntryAllowedTypes(args?.allowedTypes);
+    setEntryOpen(true);
+  }
+
   const allEntries = useMemo(() => {
     const buckets = brew?.entries_by_stage ?? [];
     return buckets.flatMap((b) => b.entries);
@@ -50,8 +71,43 @@ export default function BrewPageClient() {
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
+      console.log(brew.recipe_snapshot.dataV2);
     }
   }, [brew]);
+  const { mutateAsync: createEntry } = useCreateBrewEntry();
+  async function addAddition(input: {
+    name: string;
+    recipeIngredientId?: string;
+    amount?: number;
+    unit?: string;
+    note?: string;
+  }) {
+    await createEntry({
+      brewId: brew!.id,
+      input: entryPayload.addition({
+        name: input.name,
+        recipeIngredientId: input.recipeIngredientId,
+        amount: input.amount,
+        unit: input.unit,
+        note: input.note ?? null
+      })
+    });
+  }
+
+  async function addAdditions(
+    inputs: Array<{
+      name: string;
+      recipeIngredientId?: string;
+      amount?: number;
+      unit?: string;
+      note?: string;
+    }>
+  ) {
+    // simplest approach: fire sequentially so you don’t DDOS your own API
+    for (const x of inputs) {
+      await addAddition(x);
+    }
+  }
 
   if (isLoading) return <BrewPageSkeleton />;
 
@@ -121,15 +177,39 @@ export default function BrewPageClient() {
           await patchMeta({ brewId: brew.id, input: { stage: to } });
           toast({ description: t("saved", "Saved.") });
         }}
+        openAddEntry={openAddEntry}
+        addAddition={addAddition}
+        addAdditions={addAdditions}
       />
-
+      <AddBrewEntryDialog
+        brewId={brew.id}
+        open={entryOpen}
+        onOpenChange={setEntryOpen}
+        presetType={entryPresetType}
+        allowedTypes={entryAllowedTypes}
+        hideTrigger
+      />
       {/* Timeline by stage */}
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold">{t("timeline", "Timeline")}</h2>
 
-          {/* Add entry */}
-          <AddBrewEntryDialog brewId={brew.id} />
+          <Button
+            onClick={() =>
+              openAddEntry({
+                allowedTypes: [
+                  BREW_ENTRY_TYPE.NOTE,
+                  BREW_ENTRY_TYPE.TASTING,
+                  BREW_ENTRY_TYPE.ISSUE,
+                  BREW_ENTRY_TYPE.GRAVITY,
+                  BREW_ENTRY_TYPE.TEMPERATURE,
+                  BREW_ENTRY_TYPE.PH
+                ] as EntryType[]
+              })
+            }
+          >
+            {t("brew.addEntry", "Add entry")}
+          </Button>
         </div>
 
         {brew.entries_by_stage?.length ? (
@@ -174,6 +254,18 @@ export default function BrewPageClient() {
                           {String((e.data as any)?.to ?? "")}
                         </span>
                       ) : null}
+                      {e.type === BREW_ENTRY_TYPE.ADDITION && e.data
+                        ? (() => {
+                            const d = e.data as Partial<BrewAdditionData>;
+                            return (
+                              <span>
+                                {d.name}
+                                {d.amount != null ? `: ${d.amount}` : ""}
+                                {d.unit ? ` ${d.unit}` : ""}
+                              </span>
+                            );
+                          })()
+                        : null}
                     </div>
                   </div>
                 ))}

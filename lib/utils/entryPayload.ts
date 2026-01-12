@@ -2,6 +2,27 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 
+type BrewAdditionKind = "INGREDIENT" | "NUTRIENT" | "OTHER";
+
+export type BrewAdditionData = {
+  v: 1;
+
+  kind: BrewAdditionKind;
+
+  // display + matching
+  name: string;
+
+  // optional measured amount
+  amount?: number;
+  unit?: string;
+
+  // optional “link” back to recipe line later (not required yet)
+  recipeIngredientId?: string;
+
+  // room for future without schema churn
+  meta?: Record<string, any>;
+};
+
 export const entryPayload = {
   note(note: string, title: string | null = null): CreateBrewEntryInput {
     return { type: BREW_ENTRY_TYPE.NOTE, title, note };
@@ -47,6 +68,32 @@ export const entryPayload = {
       title: "pH reading",
       note,
       data: { ph }
+    };
+  },
+  addition: (input: {
+    name: string;
+    kind?: BrewAdditionKind;
+    amount?: number;
+    unit?: string;
+    note?: string | null;
+    recipeIngredientId?: string;
+    meta?: Record<string, any>;
+  }): CreateBrewEntryInput => {
+    const data: BrewAdditionData = {
+      v: 1,
+      kind: input.kind ?? "INGREDIENT",
+      name: input.name,
+      amount: input.amount,
+      unit: input.unit,
+      recipeIngredientId: input.recipeIngredientId,
+      meta: input.meta
+    };
+
+    return {
+      type: BREW_ENTRY_TYPE.ADDITION,
+      title: input.name, // ✅ this keeps your existing UI working
+      note: input.note ?? null,
+      data
     };
   }
 };
