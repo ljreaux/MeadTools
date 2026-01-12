@@ -12,6 +12,7 @@ import Tooltip from "../Tooltips";
 import SearchableInput from "../ui/SearchableInput";
 import { useNutrients } from "@/components/providers/NutrientProvider";
 import lodash from "lodash";
+import { useCallback } from "react";
 
 export default function YeastDetails() {
   const { t } = useTranslation();
@@ -19,6 +20,16 @@ export default function YeastDetails() {
   const { yeastList, brands } = catalog;
   const selected = data.selected;
 
+  const sortBrandFirst = useCallback(
+    (list: typeof yeastList) =>
+      [...list].sort((a, b) => {
+        const aPref = a.brand === selected.yeastBrand;
+        const bPref = b.brand === selected.yeastBrand;
+        if (aPref !== bPref) return aPref ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      }),
+    [selected.yeastBrand]
+  );
   return (
     <div className="joyride-yeastDetails flex flex-col gap-4">
       <h3 className="text-base font-semibold">{t("yeastDetails")}</h3>
@@ -61,6 +72,7 @@ export default function YeastDetails() {
           <SearchableInput
             items={yeastList}
             query={selected.yeastStrain}
+            sortItems={sortBrandFirst}
             setQuery={actions.setYeastStrain}
             keyName="name"
             onSelect={actions.selectYeast}

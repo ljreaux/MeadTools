@@ -1,12 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { useRouter } from "next/navigation";
-import { useRecipe } from "../providers/SavedRecipeProvider";
-import { useNutrients } from "../providers/SavedNutrientProvider";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -21,10 +19,9 @@ import { Save } from "lucide-react";
 import { LoadingButton } from "../ui/LoadingButton";
 import { Button } from "../ui/button";
 import TooltipHelper from "../Tooltips";
-import {
-  useCreateRecipeMutation,
-  buildRecipePayload
-} from "@/hooks/reactQuery/useRecipeQuery";
+import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useRecipe } from "@/components/providers/RecipeProvider";
+import type { RecipeData } from "@/types/recipeData";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 function SaveRecipeCopy() {
@@ -32,84 +29,86 @@ function SaveRecipeCopy() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const {
-    ingredients,
-    OG,
-    volume,
-    ABV,
-    FG,
-    offset,
-    units,
-    additives,
-    sorbate,
-    sulfite,
-    campden,
-    notes,
-    stabilizers,
-    stabilizerType,
-    recipeNameProps
-  } = useRecipe();
-
-  const {
-    fullData,
-    yanContributions,
-    otherNutrientName: otherNameState,
-    providedYan,
-    maxGpl
-  } = useNutrients();
-
-  const { isLoggedIn } = useAuth();
-
-  const [checked, setChecked] = useState(false); // private
-  const [notify, setNotify] = useState(false); // email notifications
-  const [recipeName, setRecipeName] = useState(recipeNameProps.value);
-
   const createRecipeMutation = useCreateRecipeMutation();
 
-  const createRecipe = async () => {
-    const body = buildRecipePayload({
-      name: recipeName,
-      privateRecipe: checked,
-      emailNotifications: notify,
-
+  const {
+    data: {
+      unitDefaults,
       ingredients,
-      OG,
-      volume,
-      ABV,
-      FG,
-      offset,
-      units,
-      additives,
-      sorbate,
-      sulfite,
-      campden,
+      fg,
       stabilizers,
-      stabilizerType,
-
+      additives,
       notes,
-      fullData,
-      yanContributions,
-      otherNutrientNameValue: otherNameState.value,
-      providedYan,
-      maxGpl
-    });
+      nutrients
+    }
+  } = useRecipe();
+
+  const [checked, setChecked] = useState(false); // private
+  const [notify, setNotify] = useState(false); // activity emails
+  const [recipeName, setRecipeName] = useState("");
+
+  // match local-storage + save recipe v2 payload shape
+  const dataV2: RecipeData = useMemo(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      flags: {
+        private: checked
+      }
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers,
+      notes,
+      nutrients,
+      checked
+    ]
+  );
+
+  const createRecipe = async () => {
+    const trimmedName = recipeName.trim();
+
+    if (!trimmedName) {
+      toast({
+        title: t("errorLabel"),
+        description: t("nameRequired"),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const body = {
+      name: trimmedName,
+      dataV2, // jsonb
+      private: checked,
+      activityEmailsEnabled: notify
+    };
 
     try {
-      await createRecipeMutation.mutateAsync(body);
+      await createRecipeMutation.mutateAsync(body as any);
 
-      toast({
-        description: t("recipeSuccess")
-      });
+      toast({ description: t("recipeSuccess") });
       router.push("/account");
     } catch (error: any) {
       console.error("Error creating recipe:", error?.message ?? error);
       toast({
-        title: t("errorLabel"),
+        title: t("error"),
         description: t("error.generic"),
         variant: "destructive"
       });
     }
   };
+
+  const { isLoggedIn } = useAuth();
 
   return (
     <Dialog>
