@@ -1,7 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState, KeyboardEvent } from "react";
-import { X } from "lucide-react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  KeyboardEvent,
+  useMemo
+} from "react";
+import { Search, X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
 
 import {
@@ -22,6 +28,7 @@ type SearchableInputProps<T> = {
   getLabel?: (item: T) => string;
 
   getValue?: (item: T) => string; // ✅ NEW (canonical id/value)
+  sortItems?: (items: T[]) => T[];
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -32,7 +39,8 @@ function SearchableInput<T extends Record<string, any>>({
   onSelect,
   renderItem,
   getLabel,
-  getValue
+  getValue,
+  sortItems
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,22 +51,30 @@ function SearchableInput<T extends Record<string, any>>({
   // Display value (can differ from parent canonical value after selection)
   const [inputValue, setInputValue] = useState(query);
 
-  // Keep display in sync with parent changes (hydrate/reset/etc.)
-  useEffect(() => {
-    // query is canonical; display the translated label if we can find the item
-    const match = items.find((it) => valueOf(it) === query);
-
-    setInputValue(match ? labelOf(match) : query);
-  }, [query, items, getLabel, getValue]);
-
   const labelOf = (item: T) =>
     getLabel ? getLabel(item) : String(item[keyName] ?? "");
   const valueOf = (item: T) =>
     getValue ? getValue(item) : String(item[keyName] ?? "");
 
   // IMPORTANT: suggestions are based on what the user is currently seeing/typing
-  const { suggestions } = useSuggestions(items, inputValue, keyName);
-  const visibleSuggestions = inputValue.trim() === "" ? items : suggestions;
+  const baseItems = useMemo(
+    () => (sortItems ? sortItems(items) : items),
+    [items, sortItems]
+  );
+
+  const { suggestions } = useSuggestions(baseItems, inputValue, keyName);
+
+  const visibleSuggestions =
+    inputValue.trim() === ""
+      ? baseItems
+      : sortItems
+      ? sortItems(suggestions)
+      : suggestions;
+
+  useEffect(() => {
+    const match = baseItems.find((it) => valueOf(it) === query);
+    setInputValue(match ? labelOf(match) : query);
+  }, [query, baseItems, getLabel, getValue]);
 
   // click-outside to close
   useEffect(() => {
@@ -154,7 +170,7 @@ function SearchableInput<T extends Record<string, any>>({
         />
 
         <InputGroupAddon align="inline-end">
-          {(dropdownOpen || inputValue) && (
+          {dropdownOpen || inputValue ? (
             <InputGroupButton
               type="button"
               size="icon-xs"
@@ -164,6 +180,16 @@ function SearchableInput<T extends Record<string, any>>({
               aria-label={inputValue ? "Clear search" : "Close suggestions"}
             >
               <X className="h-3 w-3" />
+            </InputGroupButton>
+          ) : (
+            <InputGroupButton
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              className="rounded-full"
+              disabled
+            >
+              <Search className="h-3 w-3" />
             </InputGroupButton>
           )}
         </InputGroupAddon>
