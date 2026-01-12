@@ -11,6 +11,7 @@ import { RecipeWithParsedFields } from "@/hooks/reactQuery/useRecipeQuery";
 import RateRecipe from "./RateRecipe";
 import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
 import { useRecipe } from "../providers/RecipeProvider";
+import SaveRecipeCopy from "./SaveRecipeCopy";
 
 function PublicRecipe({
   recipe,
@@ -30,7 +31,7 @@ function PublicRecipe({
   return (
     <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
       <div className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px] relative">
-        {/* <SaveRecipeCopy /> */}
+        <SaveRecipeCopy />
         <h1 className="text-3xl text-center">{recipe.name}</h1>
 
         <p className="w-full text-right">
