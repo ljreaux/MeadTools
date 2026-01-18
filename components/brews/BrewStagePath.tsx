@@ -18,6 +18,7 @@ import {
 } from "./stageConfig";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
+import { useState } from "react";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -66,9 +67,15 @@ export function BrewStagePath({
   const {
     data: { ingredients }
   } = useRecipe();
+  const [activeId, setActiveId] = useState<BrewStage>(stage);
 
   return (
-    <Path currentId={stage} defaultActiveId={stage} className="p-4">
+    <Path
+      currentId={stage} // ✅ truth: brew stage
+      activeId={activeId} // ✅ control selected panel
+      onActiveChange={(id) => setActiveId(id as BrewStage)}
+      className="p-4"
+    >
       <PathHeader>
         <div className="space-y-0.5">
           <PathTitle>{t("stage", "Stage")}</PathTitle>
@@ -89,8 +96,8 @@ export function BrewStagePath({
               i < currentIdx
                 ? "complete"
                 : i === currentIdx
-                ? "current"
-                : "upcoming";
+                  ? "current"
+                  : "upcoming";
 
             return (
               <PathItem
@@ -119,7 +126,10 @@ export function BrewStagePath({
               brew: { entries }
             };
             const helpers = {
-              moveToStage: onMoveToStage,
+              moveToStage: async (to: BrewStage) => {
+                await onMoveToStage(to);
+                setActiveId(to); // ✅ stageConfig action switches panel
+              },
               addAddition,
               addAdditions,
               openAddEntry
@@ -143,7 +153,10 @@ export function BrewStagePath({
 
                   <Button
                     size="sm"
-                    onClick={() => onMoveToStage(s)}
+                    onClick={async () => {
+                      await onMoveToStage(s);
+                      setActiveId(s); // ✅ force panel change
+                    }}
                     disabled={isBlocked}
                     title={
                       isBlocked
@@ -157,8 +170,8 @@ export function BrewStagePath({
                     {status === "past"
                       ? t("brews.moveBack", "Move back to this stage")
                       : status === "current"
-                      ? t("brews.stayHere", "You are here")
-                      : t("brews.moveToStage", "Move to this stage")}
+                        ? t("brews.stayHere", "You are here")
+                        : t("brews.moveToStage", "Move to this stage")}
                   </Button>
                 </div>
 

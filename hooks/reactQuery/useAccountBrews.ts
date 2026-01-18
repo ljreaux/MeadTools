@@ -210,7 +210,7 @@ export function usePatchAccountBrewMetadata() {
       });
     },
 
-    onSuccess: (updated) => {
+    onSuccess: (updated, vars) => {
       // update list cache
       queryClient.setQueryData<AccountBrewListItem[] | undefined>(
         accountBrewsQk.list(),
@@ -225,6 +225,9 @@ export function usePatchAccountBrewMetadata() {
         accountBrewsQk.detail(updated.id),
         (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old)
       );
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.detail(vars.brewId)
+      });
     }
   });
 }
