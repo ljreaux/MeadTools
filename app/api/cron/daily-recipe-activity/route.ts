@@ -3,6 +3,7 @@ import {
   deleteStaleActivityUpdates,
   sendYesterdayRecipeActivityEmails
 } from "@/lib/db/activityEmailUpdates";
+import { pingPreview } from "@/lib/db/pingPreviewDb";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    pingPreview();
     const result = await sendYesterdayRecipeActivityEmails();
     await deleteStaleActivityUpdates();
     return NextResponse.json({ ok: true, ...result });
