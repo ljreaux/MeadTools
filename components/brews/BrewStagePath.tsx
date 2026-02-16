@@ -19,6 +19,7 @@ import {
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { useState } from "react";
+import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -35,13 +36,20 @@ export function BrewStagePath({
   stage,
   onMoveToStage,
   entries,
+  current_volume_liters,
+  patchBrewMetadata,
   openAddEntry,
   addAddition,
-  addAdditions
+  addAdditions,
+  hasRecipeLinked
 }: {
   stage: BrewStage;
   onMoveToStage: (to: BrewStage) => Promise<void>;
   entries: BrewEntry[];
+
+  current_volume_liters: number | null; // ✅ add
+  patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>; // ✅ add
+
   openAddEntry: (args?: OpenAddEntryArgs) => void;
   addAddition: (input: {
     name: string;
@@ -60,6 +68,7 @@ export function BrewStagePath({
       recipeIngredientId?: string;
     }>
   ) => Promise<void>;
+  hasRecipeLinked: boolean;
 }) {
   const { t } = useTranslation();
   const currentIdx = idxOf(stage);
@@ -121,15 +130,16 @@ export function BrewStagePath({
             // ✅ build ctx with recipe data for panels
             const ctx = {
               brewStage: stage,
-              hasRecipeLinked: true, // TODO wire to real brew.recipe_id presence
+              hasRecipeLinked, // TODO wire to real brew.recipe_id presence
               recipe: { ingredients },
-              brew: { entries }
+              brew: { entries, current_volume_liters }
             };
             const helpers = {
               moveToStage: async (to: BrewStage) => {
                 await onMoveToStage(to);
                 setActiveId(to); // ✅ stageConfig action switches panel
               },
+              patchBrewMetadata,
               addAddition,
               addAdditions,
               openAddEntry
@@ -154,8 +164,9 @@ export function BrewStagePath({
                   <Button
                     size="sm"
                     onClick={async () => {
+                      if (status === "current") return;
                       await onMoveToStage(s);
-                      setActiveId(s); // ✅ force panel change
+                      setActiveId(s);
                     }}
                     disabled={isBlocked}
                     title={

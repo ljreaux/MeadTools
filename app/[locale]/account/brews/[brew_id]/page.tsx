@@ -180,6 +180,12 @@ export default function BrewPageClient() {
         openAddEntry={openAddEntry}
         addAddition={addAddition}
         addAdditions={addAdditions}
+        current_volume_liters={brew.current_volume_liters}
+        patchBrewMetadata={async (input) => {
+          await patchMeta({ brewId: brew.id, input });
+          toast({ description: t("saved", "Saved.") });
+        }}
+        hasRecipeLinked={Boolean(brew.recipe_id)}
       />
       <AddBrewEntryDialog
         brewId={brew.id}

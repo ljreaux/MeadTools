@@ -13,6 +13,8 @@ import type React from "react";
 import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
+import { BrewAdditionData } from "@/lib/utils/entryPayload";
+import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
 
 export type StageStatus = "past" | "current" | "future";
 export type BrewEntry = {
@@ -36,6 +38,7 @@ export type BrewStageContext = {
   };
   brew: {
     entries: BrewEntry[];
+    current_volume_liters: number | null;
   };
 };
 
@@ -68,6 +71,7 @@ export type BrewStageHelpers = {
   ) => Promise<void>;
 
   openAddEntry?: (args?: OpenAddEntryArgs) => void;
+  patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>;
 };
 
 export type StageAction = {
@@ -107,6 +111,42 @@ export type StageConfig = {
   warnings?: StageWarning[];
   Panel?: React.ComponentType<StagePanelProps>;
 };
+
+function getPlannedPrimaryIngredientIds(ctx: BrewStageContext) {
+  return new Set(
+    (ctx.recipe.ingredients ?? [])
+      .filter((l) => !l.secondary)
+      .filter((l) => (l.name ?? "").trim().length > 0)
+      .map((l) => String(l.lineId))
+  );
+}
+
+function getLoggedRecipeIngredientIds(ctx: BrewStageContext) {
+  const ids = new Set<string>();
+
+  for (const e of ctx.brew.entries ?? []) {
+    if (e.type !== BREW_ENTRY_TYPE.ADDITION) continue;
+    const rid = (e.data as Partial<BrewAdditionData> | null | undefined)
+      ?.recipeIngredientId;
+    if (rid) ids.add(String(rid));
+  }
+
+  return ids;
+}
+
+function hasMissingPrimaryIngredients(ctx: BrewStageContext) {
+  if (!ctx.hasRecipeLinked) return false;
+
+  const planned = getPlannedPrimaryIngredientIds(ctx);
+  if (planned.size === 0) return false;
+
+  const logged = getLoggedRecipeIngredientIds(ctx);
+
+  for (const id of planned) {
+    if (!logged.has(id)) return true;
+  }
+  return false;
+}
 
 export const STAGE_FLOW: BrewStage[] = [
   "PLANNED",
@@ -179,23 +219,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.warn.primaryIngredientsMissing",
             "Not all primary ingredients have been added to this brew yet."
           ),
-        isActive: (ctx) => {
-          const primary = ctx.recipe.ingredients.filter((i) => !i.secondary);
-          if (!primary.length) return false;
-
-          // SUPER TEMP: treat ADDITION entries' title as ingredient name (change later)
-          const addedNames = new Set(
-            ctx.brew.entries
-              .filter((e) => e.type === BREW_ENTRY_TYPE.ADDITION)
-              .map((e) => (e.title ?? "").trim().toLowerCase())
-              .filter(Boolean)
-          );
-
-          return primary.some((i) => {
-            const name = (i.name ?? "").trim().toLowerCase();
-            return name && !addedNames.has(name);
-          });
-        }
+        isActive: (ctx) => hasMissingPrimaryIngredients(ctx)
       },
       {
         id: "missingNutrients",
@@ -213,18 +237,41 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   SECONDARY: {
     id: "SECONDARY",
     title: (t) => t("brewStage.SECONDARY"),
+    warnings: [
+      {
+        id: "missingPrimaryIngredients",
+        message: (t) =>
+          t(
+            "brews.warn.primaryIngredientsMissing",
+            "Not all primary ingredients have been added to this brew yet."
+          ),
+        isActive: (ctx) => hasMissingPrimaryIngredients(ctx)
+      }
+    ],
     prereqs: [
       {
         id: "primaryHasGravity",
         label: (t) =>
           t("brews.prereq.gravity", "Add at least one gravity reading"),
-        // ✅ this is evaluated while SECONDARY is “future”, i.e. you are still in PRIMARY
         isMet: (ctx) =>
           ctx.brew.entries.some((e) => e.type === BREW_ENTRY_TYPE.GRAVITY),
         hint: (t) =>
           t(
             "brews.prereq.gravityHint",
             "Add a gravity reading before moving out of primary."
+          )
+      },
+      {
+        id: "primaryHasVolume",
+        label: (t) => t("brews.prereq.volume", "Record current volume"),
+        isMet: (ctx) => {
+          const v = ctx.brew.current_volume_liters;
+          return typeof v === "number" && Number.isFinite(v) && v > 0;
+        },
+        hint: (t) =>
+          t(
+            "brews.prereq.volumeHint",
+            "When you rack to secondary, record the new volume."
           )
       }
     ]

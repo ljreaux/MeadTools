@@ -35,7 +35,7 @@ function ingredientDisplay(line: IngredientLine) {
   const volume = fmtAmount(line.amounts.volume.value, line.amounts.volume.unit);
 
   const primary =
-    line.amounts.basis === "volume" ? volume ?? weight : weight ?? volume;
+    line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
 
   const secondary =
     line.amounts.basis === "volume"
@@ -43,8 +43,8 @@ function ingredientDisplay(line: IngredientLine) {
         ? weight
         : null
       : volume && volume !== primary
-      ? volume
-      : null;
+        ? volume
+        : null;
 
   return { name, primary, secondary };
 }
@@ -82,8 +82,6 @@ export function PrimaryStagePanel({
     [ctx.recipe.ingredients]
   );
 
-  console.log(primaryLines);
-
   const loggedIds = React.useMemo(
     () => getLoggedRecipeIds(ctx.brew.entries),
     [ctx.brew.entries]
@@ -96,6 +94,12 @@ export function PrimaryStagePanel({
   const doneCount = primaryLines.length - missing.length;
 
   const canEdit = status === "current"; // you can loosen this if you want
+
+  const setPrimaryVolume = () => {
+    helpers.patchBrewMetadata({
+      current_volume_liters: 3.785
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -115,49 +119,8 @@ export function PrimaryStagePanel({
           {t("brews.actions.addGravity", "Add gravity")}
         </Button>
 
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={!canEdit}
-          onClick={() =>
-            helpers.openAddEntry?.({
-              presetType: BREW_ENTRY_TYPE.TEMPERATURE,
-              allowedTypes: [BREW_ENTRY_TYPE.TEMPERATURE]
-            })
-          }
-        >
-          {t("brews.actions.addTemp", "Add temperature")}
-        </Button>
-
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={!canEdit}
-          onClick={() =>
-            helpers.openAddEntry?.({
-              presetType: BREW_ENTRY_TYPE.PH,
-              allowedTypes: [BREW_ENTRY_TYPE.PH]
-            })
-          }
-        >
-          {t("brews.actions.addPh", "Add pH")}
-        </Button>
-
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={!canEdit}
-          onClick={() =>
-            helpers.openAddEntry?.({
-              allowedTypes: [
-                BREW_ENTRY_TYPE.NOTE,
-                BREW_ENTRY_TYPE.TASTING,
-                BREW_ENTRY_TYPE.ISSUE
-              ]
-            })
-          }
-        >
-          {t("brews.actions.addNote", "Add note/tasting/issue")}
+        <Button size="sm" variant="secondary" onClick={setPrimaryVolume}>
+          log volume
         </Button>
       </div>
 
@@ -221,11 +184,6 @@ export function PrimaryStagePanel({
                       {t("brews.planned.altAmount", "Alt")}: {x.secondary}
                     </div>
                   ) : null}
-
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {t("brews.primary.recipeLineId", "Recipe line")}:{" "}
-                    {String(x.line.lineId)}
-                  </div>
                 </div>
 
                 <div className="shrink-0 flex items-center gap-2">
