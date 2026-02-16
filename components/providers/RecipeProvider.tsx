@@ -1323,6 +1323,12 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
               };
             })
           );
+          setAdditives((prev) => {
+            return prev.map((line) => {
+              const nextAmount = parseNumber(line.amount) * scale;
+              return { ...line, amount: fmt(nextAmount) };
+            });
+          });
         });
       },
 
