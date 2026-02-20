@@ -354,6 +354,7 @@ export default function RecipeList({
 
                   <InputGroup className="h-7">
                     <InputGroupInput
+                      key={page}
                       type="number"
                       name="page"
                       min={1}
