@@ -15,18 +15,47 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import Trials from "@/components/extraCalcs/Trials";
 import { isValidNumber } from "@/lib/utils/validateInput";
 import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
+
+const BENCH_TRIALS_HOWTO_SEEN_KEY = "meadtools:benchTrialsHowToSeen";
 
 function BenchTrials() {
   const { t } = useTranslation();
   const { batchDetails, changeUnits, setInput } = useBenchTrials();
 
+  // Closed by default to avoid flicker
+  const [howToValue, setHowToValue] = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(BENCH_TRIALS_HOWTO_SEEN_KEY);
+
+      if (seen === "true") {
+        setHowToValue("");
+        return;
+      }
+
+      // First visit → open accordion
+      setHowToValue("howto");
+      localStorage.setItem(BENCH_TRIALS_HOWTO_SEEN_KEY, "true");
+    } catch {
+      // If localStorage fails, default to open
+      setHowToValue("howto");
+    }
+  }, []);
+
   const benchTrialLinks = [
     [
-      "https://www.youtube.com/watch?v=AaibXsslBlE&ab_channel=Doin%27theMostBrewing",
+      "https://youtu.be/T-xGG3AKaiM?si=TPB_-DtgE0a5Esti",
       t("tipText.benchTrials.linkTexts.0")
     ],
     [
@@ -49,7 +78,93 @@ function BenchTrials() {
         <Tooltip body={t("tipText.benchTrials.body")} links={benchTrialLinks} />
       </div>
 
-      {/* Inputs (mirrors Priming Sugar layout) */}
+      {/* How to use */}
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        value={howToValue}
+        onValueChange={setHowToValue}
+      >
+        <AccordionItem value="howto">
+          <AccordionTrigger>{t("benchTrials.howToUseTitle")}</AccordionTrigger>
+
+          <AccordionContent>
+            <div className="space-y-4">
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>
+                  {t("benchTrials.howToUse.steps.0", {
+                    sampleSize: batchDetails.sampleSize
+                  })}
+                </li>
+
+                <li>
+                  {t("benchTrials.howToUse.steps.1", {
+                    solutionVolumeLabel: t("solutionVolume")
+                  })}
+                </li>
+
+                <li>{t("benchTrials.howToUse.steps.2")}</li>
+
+                <li>
+                  {t("benchTrials.howToUse.steps.3", {
+                    scaledAdjunctLabel: t(`${batchDetails.units}ScaledAdjunct`)
+                  })}
+                </li>
+              </ol>
+
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+                <p className="text-sm font-semibold">
+                  {t("benchTrials.howToUse.exampleTitle")}
+                </p>
+
+                <p className="text-sm text-muted-foreground">
+                  {t("benchTrials.howToUse.exampleBody")}
+                </p>
+
+                <div className="pt-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground/90">
+                    {t("benchTrials.howToUse.addendum")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-sm font-semibold">
+                  {t("benchTrials.howToUse.videoTitle")}
+                </h3>
+
+                <p className="text-sm text-muted-foreground">
+                  {t("benchTrials.howToUse.videoDescription")}
+                </p>
+
+                <div className="relative w-full aspect-video rounded-md overflow-hidden border border-border">
+                  {howToValue === "howto" && (
+                    <iframe
+                      src="https://www.youtube.com/embed/T-xGG3AKaiM?si=ce93XwDUwvDHCZA3"
+                      title="Bench Trials Walkthrough"
+                      className="absolute inset-0 w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
+
+                <a
+                  href="https://youtu.be/T-xGG3AKaiM?si=TPB_-DtgE0a5Esti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline text-primary"
+                >
+                  {t("benchTrials.howToUse.videoLinkText")}
+                </a>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Inputs */}
       <div className="flex flex-col gap-6">
         {/* Batch size + units */}
         <div className="space-y-2">
@@ -72,6 +187,7 @@ function BenchTrials() {
               className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
             >
               <Separator orientation="vertical" className="h-12" />
+
               <Select
                 name="trialBatchUnits"
                 value={batchDetails.units}
@@ -80,6 +196,7 @@ function BenchTrials() {
                 <SelectTrigger className="p-2 border-none mr-2 w-20">
                   <SelectValue />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="gallon">{t("GAL")}</SelectItem>
                   <SelectItem value="liter">{t("LIT")}</SelectItem>
@@ -121,10 +238,7 @@ function BenchTrials() {
         </div>
       </div>
 
-      {/* Divider like Priming Sugar */}
       <Separator className="my-2" />
-
-      {/* Trials table */}
 
       <Trials batchDetails={batchDetails} />
     </div>
@@ -147,6 +261,7 @@ const useBenchTrials = () => {
 
   const setInput = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+
     if (isValidNumber(val)) {
       const key = e.target.id;
       setBatchDetails((prev) => ({ ...prev, [key]: val }));
