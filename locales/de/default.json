@@ -209,6 +209,23 @@
   "beet": "Rüben",
   "belgianCandiSyrup": "Belgischer Candis-Sirup",
   "benchTrialsHeading": "Bench Trials",
+  "benchTrials": {
+    "howToUse": {
+      "addendum": "Hinweis: Die Auswahl einer geeigneten Stammlösungskonzentration und eines geeigneten Versuchsbereichs erfordert oft mehrere Versuche. Nachdem John 0,2 ml als bevorzugte Probe identifiziert hat, könnte er weitere Versuche zwischen 0,2 ml und 0,3 ml durchführen, um die endgültige Einstellung zu optimieren.",
+      "exampleBody": "John testet Weinsäure in einem 5-Gallonen-Ansatz mit 100-ml-Proben und einer 10%igen Lösung. Er testet Zugaben von 0,1 ml, 0,15 ml, 0,2 ml und 0,3 ml und bevorzugt die 0,2-ml-Probe (200 ppm). Dies entspricht einer Zugabe von 3,785 g zur Gesamtmenge.",
+      "exampleTitle": "Beispiel",
+      "steps": [
+        "Entnehmen Sie vier Proben aus Ihrer Met-Charge, standardmäßig sind es 50 ml.",
+        "Geben Sie in der Spalte ganz links in der Tabelle die Menge der Stammlösung ein, die jeder Probe hinzugefügt werden soll (in ml), oder verwenden Sie die vorgegebenen Standardwerte.",
+        "Probieren Sie die Proben und wählen Sie diejenige, die Ihnen am besten gefällt.",
+        "Verwenden Sie die Spalte „Skalierte Zusatzstoffe“, um diese Dosis auf Ihre gesamte Charge (in Gramm) hochzurechnen."
+      ],
+      "videoDescription": "Hier finden Sie eine Schritt-für-Schritt-Anleitung, die erklärt, wie Bench Trials funktionieren und warum sie nützlich sind.",
+      "videoLinkText": "Auf YouTube ansehen",
+      "videoTitle": "Möchten Sie tiefer in die Materie eintauchen?"
+    },
+    "howToUseTitle": "Anleitung zur Verwendung"
+  },
   "bentonite": "Bentonit",
   "blackberry": "Brombeere",
   "blendedVal": "Mischwert:",
@@ -272,6 +289,24 @@
     }
   },
   "boysenberry": "Boysenbeere",
+  "brews": {
+    "endDate": "Enddatum",
+    "entries": "Einträge",
+    "label": "Biere",
+    "recipe": "Rezept",
+    "stage": "Bühne",
+    "startDate": "Startdatum"
+  },
+  "brewStage": {
+    "BACKSWEETENED": "Nachgesüßt",
+    "BULK_AGE": "Massenreifung",
+    "COMPLETE": "Vollständig",
+    "PACKAGED": "Verpackt",
+    "PLANNED": "Geplant",
+    "PRIMARY": "Primär",
+    "SECONDARY": "Sekundär",
+    "STABILIZED": "Stabilisiert"
+  },
   "brewVolume": "Gib das Volumen Deines Gebräus ein:",
   "BRIX": "Brix",
   "brixHeading": "Brix",
@@ -449,6 +484,7 @@
   "downloadDesktop": "Lade MeadTools Desktop herunter",
   "downloadPNG": "PNG herunterladen",
   "driedFruit": "Trockenfrüchte",
+  "dryMaltExtract": "Trockenmalzextrakt",
   "DU": "Delle-Einheiten",
   "edit": "Bearbeiten",
   "elderberry": "Holunderbeere",
@@ -1067,6 +1103,7 @@
     "title": "Rezept skalieren"
   },
   "scaledBatch": "Skalierter Zusatz (gesamter Ansatz):",
+  "search": "Suchen",
   "searchLabel": "Suchen: ",
   "searchPlaceholder": "Gib zur Suche einen Rezeptnamen oder Benutzernamen ein.",
   "selectNutes": "Nährstoffe auswählen",
