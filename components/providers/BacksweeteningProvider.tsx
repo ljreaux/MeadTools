@@ -38,9 +38,7 @@ export function BacksweeteningProvider({ children }: { children: ReactNode }) {
     useIngredientsQuery();
   const initial = initialRecipeData({ weight: "lb", volume: "gal" });
 
-  const [unitDefaults, setUnitDefaultsState] = useState<RecipeUnitDefaults>(
-    initial.unitDefaults
-  );
+  const [unitDefaults] = useState<RecipeUnitDefaults>(initial.unitDefaults);
   const [initialAbv, setInitialAbv] = useState("0");
   const [volume, setVolume] = useState("0");
   const [ingredients, setIngredients] = useState<IngredientLine[]>([]);
