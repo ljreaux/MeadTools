@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import { useLogout } from "@/hooks/reactQuery/useLogout";
 import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
 import { useDeleteRecipe } from "@/hooks/reactQuery/useDeleteRecipe";
@@ -18,13 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loading from "@/components/loading";
@@ -36,12 +29,9 @@ import {
   RotateCcw,
   SortAsc,
   SortDesc,
-  LogOut,
-  Settings,
   Trash2,
   Search,
-  X,
-  Droplets
+  X
 } from "lucide-react";
 import {
   Select,
@@ -50,8 +40,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import LanguageSwitcher from "@/components/ui/language-switcher";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
@@ -65,23 +53,15 @@ import {
   InputGroupButton,
   InputGroupInput
 } from "@/components/ui/input-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip";
+
 import { ButtonGroup } from "@/components/ui/button-group";
-import { useUpdateShowGoogleAvatar } from "@/hooks/reactQuery/useUpdateShowGoogleAvatar";
-import { Switch } from "@/components/ui/switch";
 import { useAccountRecipeSortPrefs } from "@/hooks/useAccountRecipeSortPrefs";
+import Header from "@/components/account/header";
 
 type SortType = "asc" | "dec" | "clear";
 
 function Account() {
   const { t } = useTranslation();
-
-  const { logout } = useLogout();
 
   const { data, isLoading, isError, error } = useAccountInfo();
 
@@ -224,37 +204,7 @@ function Account() {
 
   return (
     <div className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
-      <div className="absolute right-4 top-4 flex items-center gap-1">
-        <SettingsDialog
-          username={user.public_username}
-          isGoogleUser={user.isGoogleUser}
-          showGoogleAvatar={user.show_google_avatar}
-        />
-
-        {/* Hydrometer dashboard */}
-        <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button asChild variant="ghost" size="icon">
-                <Link
-                  href="/account/hydrometer"
-                  aria-label={t("iSpindelDashboard.label")}
-                >
-                  <Droplets className="h-5 w-5" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-
-            <TooltipContent>{t("iSpindelDashboard.label")}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        {/* Logout */}
-        <Button onClick={logout} variant="ghost" size="icon">
-          <span className="sr-only">{t("logout", "Log Out")}</span>
-          <LogOut className="h-5 w-5" />
-        </Button>
-      </div>
+      <Header />
       <h1 className="text-3xl text-center">{t("accountPage.title")}</h1>
       <CreateUsernamePopup
         isDialogOpen={isUsernameDialogOpen}
@@ -547,150 +497,5 @@ const CreateUsernamePopup = ({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
-};
-
-const SettingsDialog = ({
-  username: public_username,
-  isGoogleUser,
-  showGoogleAvatar
-}: {
-  username: string | null;
-  isGoogleUser: boolean;
-  showGoogleAvatar: boolean;
-}) => {
-  const [username, setUsername] = useState(public_username || "");
-  const updateUsernameMutation = useUpdatePublicUsername();
-
-  const updateShowGoogleAvatarMutation = useUpdateShowGoogleAvatar();
-  const [localShowGoogleAvatar, setLocalShowGoogleAvatar] =
-    useState(showGoogleAvatar);
-
-  const [preferredUnits, setPreferredUnits] = useState<string | undefined>(
-    undefined
-  );
-
-  useEffect(() => {
-    const units = localStorage.getItem("units");
-    if (units) {
-      setPreferredUnits(units);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (preferredUnits) localStorage.setItem("units", preferredUnits);
-  }, [preferredUnits]);
-
-  // keep the local toggle in sync if data refreshes
-  useEffect(() => {
-    setLocalShowGoogleAvatar(showGoogleAvatar);
-  }, [showGoogleAvatar]);
-
-  const { t } = useTranslation();
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost">
-          <Settings />
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("account.accountSettings")}</DialogTitle>
-        </DialogHeader>
-
-        <div className="w-full grid gap-4">
-          <label className="w-full flex gap-4 items-center p-1">
-            {t("accountPage.theme.title")}
-            <ModeToggle />
-          </label>
-
-          <label className="w-full p-1">
-            {t("accountPage.language.title")}
-            <LanguageSwitcher />
-          </label>
-
-          <label className="w-full p-1">
-            {t("accountPage.units.title")}
-            <Select
-              value={preferredUnits}
-              onValueChange={(val) => setPreferredUnits(val)}
-            >
-              <SelectTrigger className="full">
-                <SelectValue placeholder={t("accountPage.units.placeholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="US">{t("accountPage.units.us")}</SelectItem>
-                <SelectItem value="METRIC">
-                  {t("accountPage.units.metric")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </label>
-
-          {/* Public username */}
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">
-              {t("account.updateUsername")}
-            </label>
-
-            <InputGroup>
-              <InputGroupInput
-                type="text"
-                placeholder={t("publicUsername.placeholder")}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    updateUsernameMutation.mutate(username);
-                  }
-                }}
-              />
-
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  variant="secondary"
-                  title={t("SUBMIT")}
-                  onClick={() => updateUsernameMutation.mutate(username)}
-                  disabled={
-                    updateUsernameMutation.isPending ||
-                    username.trim().length === 0
-                  }
-                >
-                  {t("SUBMIT")}
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-          </div>
-
-          {/* ✅ Google avatar switch BELOW username, only for Google users */}
-          {isGoogleUser ? (
-            <div className="grid gap-1 p-1">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">
-                  {t("accountPage.googleAvatar.title")}
-                </label>
-
-                <Switch
-                  checked={localShowGoogleAvatar}
-                  disabled={updateShowGoogleAvatarMutation.isPending}
-                  onCheckedChange={(checked) => {
-                    setLocalShowGoogleAvatar(checked);
-                    updateShowGoogleAvatarMutation.mutate(checked);
-                  }}
-                  aria-label={t("accountPage.googleAvatar.label")}
-                />
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                {t("accountPage.googleAvatar.description")}
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };

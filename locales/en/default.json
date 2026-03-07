@@ -209,6 +209,23 @@
   "beet": "Beet",
   "belgianCandiSyrup": "Belgian Candi Syrup",
   "benchTrialsHeading": "Bench Trials",
+  "benchTrials": {
+    "howToUse": {
+      "addendum": "Note: Selecting an appropriate stock solution concentration and trial range often requires iteration. After identifying 0.2mL as the preferred sample, John could perform another set of trials between 0.2mL and 0.3mL to refine the final adjustment.",
+      "exampleBody": "John is bench testing tartaric acid in a 5-gallon batch using 100 mL samples and a 10% solution. He trials 0.1mL, 0.15mL, 0.2mL, 0.3mL additions and prefers the 0.2mL sample (200 PPM). That corresponds to 3.785g added to the full batch.",
+      "exampleTitle": "Example",
+      "steps": [
+        "Pull four samples from your mead batch, the default is 50mL.",
+        "In the leftmost column of the table, enter the amount of stock solution to add to each sample in mL or use the provided defaults.",
+        "Taste the samples and pick the one you like best.",
+        "Use the “Scaled Adjunct” column to scale that dose up to your full batch (grams)."
+      ],
+      "videoDescription": "Here’s a walkthrough explaining how bench trials work and why they’re useful.",
+      "videoLinkText": "Watch on YouTube",
+      "videoTitle": "Want a deeper dive?"
+    },
+    "howToUseTitle": "How to use"
+  },
   "bentonite": "Bentonite",
   "blackberry": "Blackberry",
   "blendedVal": "Blended Value:",
@@ -278,7 +295,8 @@
     "label": "Brews",
     "recipe": "Recipe",
     "stage": "Stage",
-    "startDate": "Start Date"
+    "startDate": "Start Date",
+    "title": "Brew Tracker"
   },
   "brewStage": {
     "BACKSWEETENED": "Backsweetened",
@@ -467,6 +485,7 @@
   "downloadDesktop": "Download MeadTools Desktop",
   "downloadPNG": "Download PNG",
   "driedFruit": "Dried Fruit",
+  "dryMaltExtract": "Dry Malt Extract",
   "DU": "Delle Units",
   "edit": "Edit",
   "elderberry": "Elderberry",
@@ -1071,6 +1090,7 @@
   "sampleSize": "Sample Size (ml):",
   "SAVE": "Save",
   "saveCopy": "Save a Copy of this Recipe",
+  "savedRecipes": "Saved Recipes",
   "saveLocally": "Save Locally",
   "saving": "Saving…",
   "scale": {

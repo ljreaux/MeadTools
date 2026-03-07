@@ -81,125 +81,123 @@ export default function AccountBrews() {
     !isLoading && (!filteredData || filteredData.length === 0);
 
   return (
-    <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
-      <div className="space-y-4">
-        <h2 className="text-2xl">{t("brews.label")}</h2>
-        <Button asChild>
-          <Link href="/account/brews/new">{t("brews.new", "New Brew")}</Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          <InputGroup className="w-full sm:max-w-sm">
-            <InputGroupInput
-              value={searchValue}
-              onChange={(e) => search(e.target.value)}
-              placeholder={t("search")}
+    <div className="space-y-4">
+      <h2 className="text-2xl">{t("brews.label")}</h2>
+      <Button asChild>
+        <Link href="/account/brews/new">{t("brews.new", "New Brew")}</Link>
+      </Button>
+      <div className="flex flex-wrap items-center gap-3 justify-between">
+        <InputGroup className="w-full sm:max-w-sm">
+          <InputGroupInput
+            value={searchValue}
+            onChange={(e) => search(e.target.value)}
+            placeholder={t("search")}
+            disabled={isLoading}
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              title={t("clear")}
+              onClick={clearSearch}
+              className={cn({ hidden: searchValue.length === 0 })}
               disabled={isLoading}
-            />
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton
-                title={t("clear")}
-                onClick={clearSearch}
-                className={cn({ hidden: searchValue.length === 0 })}
-                disabled={isLoading}
-              >
-                <X />
-              </InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
+            >
+              <X />
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium whitespace-nowrap">
-              {t("pagination.perPage", "Per page:")}
-            </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium whitespace-nowrap">
+            {t("pagination.perPage", "Per page:")}
+          </span>
 
-            {isLoading ? (
-              <Skeleton className="h-9 w-[120px]" />
-            ) : (
-              <Select
-                value={String(pageSize)}
-                onValueChange={(val) => setPageSize(parseInt(val, 10))}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 10, 20, 50].map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          {isLoading ? (
+            <Skeleton className="h-9 w-[120px]" />
+          ) : (
+            <Select
+              value={String(pageSize)}
+              onValueChange={(val) => setPageSize(parseInt(val, 10))}
+            >
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
-
-        {showEmptyState ? (
-          <div className="text-center my-4">
-            {searchValue ? t("noResults") : t("brews.none")}
-          </div>
-        ) : (
-          <>
-            <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className={cn(
-                        "sticky left-0 z-10 bg-card border-r",
-                        "min-w-28 sm:min-w-72"
-                      )}
-                    >
-                      {t("name")}
-                    </TableHead>
-
-                    <TableHead>{t("brews.stage")}</TableHead>
-                    <TableHead>{t("brews.recipe")}</TableHead>
-                    <TableHead>{t("brews.startDate")}</TableHead>
-                    <TableHead>{t("brews.endDate")}</TableHead>
-                    <TableHead>{t("brews.entries")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {isLoading ? (
-                    <AccountBrewsTableSkeleton rows={pageSize} />
-                  ) : (
-                    pageData.map((brew) => (
-                      <AccountBrewRow
-                        key={brew.id}
-                        brew={brew}
-                        formatDate={formatDate}
-                      />
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {!isLoading && totalPages > 1 && (
-              <AccountPagination
-                page={page}
-                totalPages={totalPages}
-                canPrev={page > 1}
-                canNext={page < totalPages}
-                onPrev={prevPage}
-                onNext={nextPage}
-                onGoTo={goToPage}
-              />
-            )}
-
-            {isLoading && (
-              <div className="flex justify-center pt-2">
-                <Skeleton className="h-10 w-[260px]" />
-              </div>
-            )}
-          </>
-        )}
       </div>
+
+      {showEmptyState ? (
+        <div className="text-center my-4">
+          {searchValue ? t("noResults") : t("brews.none")}
+        </div>
+      ) : (
+        <>
+          <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    className={cn(
+                      "sticky left-0 z-10 bg-card border-r",
+                      "min-w-28 sm:min-w-72"
+                    )}
+                  >
+                    {t("name")}
+                  </TableHead>
+
+                  <TableHead>{t("brews.stage")}</TableHead>
+                  <TableHead>{t("brews.recipe")}</TableHead>
+                  <TableHead>{t("brews.startDate")}</TableHead>
+                  <TableHead>{t("brews.endDate")}</TableHead>
+                  <TableHead>{t("brews.entries")}</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {isLoading ? (
+                  <AccountBrewsTableSkeleton rows={pageSize} />
+                ) : (
+                  pageData.map((brew) => (
+                    <AccountBrewRow
+                      key={brew.id}
+                      brew={brew}
+                      formatDate={formatDate}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {!isLoading && totalPages > 1 && (
+            <AccountPagination
+              page={page}
+              totalPages={totalPages}
+              canPrev={page > 1}
+              canNext={page < totalPages}
+              onPrev={prevPage}
+              onNext={nextPage}
+              onGoTo={goToPage}
+            />
+          )}
+
+          {isLoading && (
+            <div className="flex justify-center pt-2">
+              <Skeleton className="h-10 w-[260px]" />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
