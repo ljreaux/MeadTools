@@ -115,7 +115,7 @@ export default function Navbar() {
                   />
 
                   <NavigationMenuContent
-                    className="sm:p-4 p-2 sm:min-w-[600px] min-w-[300px] sm:flex sm:justify-between flex flex-col max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-muted-foreground bg-background"
+                    className="sm:p-4 p-2 sm:min-w-[600px] min-w-[300px] sm:flex sm:justify-between flex flex-col max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-muted-foreground bg-background"
                     // prevents hover from opening it
                     onPointerEnter={(e) => e.preventDefault()}
                     onPointerMove={(e) => e.preventDefault()}
@@ -147,7 +147,7 @@ export default function Navbar() {
 
                         <Separator className="my-3" />
 
-                        <div className="mt-3 max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-muted-foreground">
+                        <div className="mt-3 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-muted-foreground">
                           <p className="font-bold text-left mb-2">
                             {t("additionalLinks.label")}
                           </p>
@@ -249,7 +249,7 @@ function MobileSection({
   isActive
 }: {
   title: string;
-  links: { path: string; label: string }[];
+  links: { path: string; label: string; external?: boolean }[];
   isActive: (href: string) => boolean;
 }) {
   const { t } = useTranslation();
@@ -260,18 +260,29 @@ function MobileSection({
       <div className="flex flex-col gap-1">
         {links.map((l) => (
           <SheetClose asChild key={l.path}>
-            <Link
-              href={l.path}
-              aria-current={isActive(l.path) ? "page" : undefined}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm transition-colors",
-                isActive(l.path)
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              {t(l.label)}
-            </Link>
+            {l.external ? (
+              <a
+                href={l.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                {t(l.label)}
+              </a>
+            ) : (
+              <Link
+                href={l.path}
+                aria-current={isActive(l.path) ? "page" : undefined}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  isActive(l.path)
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                {t(l.label)}
+              </Link>
+            )}
           </SheetClose>
         ))}
       </div>
