@@ -129,7 +129,8 @@
     "juice": "Saftrechner",
     "label": "Weiterführende Links",
     "taplist": "MeadTools Taplist",
-    "tutorial": "Tutorial"
+    "tutorial": "Tutorial",
+    "wiki": "Mead Wiki"
   },
   "additives": {
     "addNew": "Neuen Zusatz hinzufügen",
@@ -295,7 +296,8 @@
     "label": "Biere",
     "recipe": "Rezept",
     "stage": "Bühne",
-    "startDate": "Startdatum"
+    "startDate": "Startdatum",
+    "title": "Brew Tracker"
   },
   "brewStage": {
     "BACKSWEETENED": "Nachgesüßt",
@@ -1089,6 +1091,7 @@
   "sampleSize": "Probenmenge (ml):",
   "SAVE": "Speichern",
   "saveCopy": "Eine Kopie dieses Rezepts speichern",
+  "savedRecipes": "Gespeicherte Rezepte",
   "saveLocally": "Lokal speichern",
   "saving": "Speichern…",
   "scale": {

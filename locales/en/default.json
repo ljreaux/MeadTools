@@ -129,7 +129,8 @@
     "juice": "Juice Calc",
     "label": "Additional Links",
     "taplist": "MeadTools Taplist",
-    "tutorial": "Tutorial"
+    "tutorial": "Tutorial",
+    "wiki": "Mead Wiki"
   },
   "additives": {
     "addNew": "Add New Additive",
@@ -295,7 +296,8 @@
     "label": "Brews",
     "recipe": "Recipe",
     "stage": "Stage",
-    "startDate": "Start Date"
+    "startDate": "Start Date",
+    "title": "Brew Tracker"
   },
   "brewStage": {
     "BACKSWEETENED": "Backsweetened",
@@ -1089,6 +1091,7 @@
   "sampleSize": "Sample Size (ml):",
   "SAVE": "Save",
   "saveCopy": "Save a Copy of this Recipe",
+  "savedRecipes": "Saved Recipes",
   "saveLocally": "Save Locally",
   "saving": "Saving…",
   "scale": {
