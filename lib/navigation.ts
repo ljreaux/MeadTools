@@ -88,5 +88,10 @@ export const extraLinks = [
   {
     path: "/tutorial",
     label: "additionalLinks.tutorial"
+  },
+  {
+    path: "https://wiki.meadtools.com",
+    label: "additionalLinks.wiki",
+    external: true
   }
 ];
