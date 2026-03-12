@@ -26,6 +26,17 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
   const [inputValue, setInputValue] = useState<number>(100);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+
+    if (isMobile) {
+      setZoomFactor(0.4);
+      setInputValue(40);
+    }
+  }, []);
+
+  useEffect(() => {
     fetch("/iframe-styles.css")
       .then((res) => res.text())
       .then((css) => setCssContent(css))
