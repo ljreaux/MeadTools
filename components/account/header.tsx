@@ -59,7 +59,7 @@ function Header() {
   }
   const { user } = data;
   return (
-    <div className="absolute right-4 top-4 flex items-center gap-1">
+    <div className="absolute right-4 top-4 flex items-center sm:gap-1">
       <SettingsDialog
         username={user.public_username}
         isGoogleUser={user.isGoogleUser}

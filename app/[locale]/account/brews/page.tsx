@@ -81,7 +81,7 @@ export default function AccountBrews() {
     !isLoading && (!filteredData || filteredData.length === 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:mt-6 mt-12">
       <h2 className="text-2xl">{t("brews.label")}</h2>
       <Button asChild>
         <Link href="/account/brews/new">{t("brews.new", "New Brew")}</Link>

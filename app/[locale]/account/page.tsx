@@ -205,7 +205,10 @@ function Account() {
   return (
     <div className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
       <Header />
-      <h1 className="text-3xl text-center">{t("accountPage.title")}</h1>
+
+      <h1 className="text-3xl text-center sm:mt-6 mt-12">
+        {t("accountPage.title")}
+      </h1>
       <CreateUsernamePopup
         isDialogOpen={isUsernameDialogOpen}
         closeDialog={() => setUsernameDialogOpen(false)}

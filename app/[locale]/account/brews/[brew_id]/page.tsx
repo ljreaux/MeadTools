@@ -121,7 +121,7 @@ export default function BrewPageClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:mt-6 mt-12">
       {/* Header */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -290,7 +290,7 @@ export default function BrewPageClient() {
 
 function BrewPageSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:mt-6 mt-12">
       <div className="rounded-xl border border-border bg-card p-6 space-y-3">
         <Skeleton className="h-7 w-[280px]" />
         <Skeleton className="h-4 w-full max-w-[520px]" />
