@@ -1,0 +1,212 @@
+# Secondary Ingredients and Dilution
+
+In MeadTools, ingredients can be marked as **secondary**. These are ingredients that are added after fermentation rather than being fermented themselves.
+
+This page explains how secondary ingredients affect volume, gravity, and alcohol calculations.
+
+---
+
+## What “secondary” means
+
+A secondary ingredient:
+
+- is **not fermented**
+- is added after primary fermentation
+- still contributes **volume** and **density (SG)** to the final mixture
+
+**Important:** In real brewing, secondary additions that contain sugar will ferment unless the mead has been stabilized (for example, using sulfite and sorbate) or fermentation conditions otherwise prevent yeast activity. MeadTools treats secondary ingredients as non-fermenting for modeling purposes, but this assumption depends on proper stabilization in practice.
+
+Even though these ingredients are not fermented, they are still modeled the same way:
+
+```txt
+Brix → specific gravity → volume contribution
+```
+
+---
+
+## Primary vs total volume
+
+MeadTools distinguishes between two important volumes:
+
+```txt
+Primary volume = volume of fermenting ingredients
+Total volume   = primary volume + secondary additions
+```
+
+Primary volume determines fermentation behavior.
+
+Total volume determines the final composition of the mixture.
+
+---
+
+## How secondary ingredients affect volume
+
+Secondary ingredients increase total volume without increasing the amount of alcohol produced.
+
+```txt
+total volume > primary volume
+```
+
+This has a direct impact on both:
+
+- final gravity
+- alcohol by volume (ABV)
+
+---
+
+## Dilution and ABV
+
+Alcohol is produced during primary fermentation.
+
+Once fermentation is complete, adding more liquid increases volume but does not increase alcohol.
+
+Conceptually:
+
+```txt
+ABV = alcohol produced / total volume
+```
+
+So when total volume increases:
+
+```txt
+ABV decreases
+```
+
+This is known as **dilution**.
+
+---
+
+## Secondary ingredients and final gravity
+
+Even though secondary ingredients are not fermented, they still have a **specific gravity**.
+
+When they are added, they are blended into the existing mixture.
+
+Conceptually:
+
+```txt
+Final SG = blend(FG_primary, SG_secondary)
+```
+
+Using the same blending equation:
+
+```txt
+Final SG = (finished mead volume × finished mead SG
+          + secondary addition volume × secondary addition SG
+          + any other added volume × its SG) / total volume
+```
+
+This means:
+
+- secondary ingredients can raise the final gravity
+- higher Brix secondary additions result in higher final gravity
+
+---
+
+## Example: backsweetening with honey
+
+Start with a finished traditional mead:
+
+```txt
+3 lb honey
+Water to 1 gallon total volume
+```
+
+From the previous calculations:
+
+```txt
+Primary volume = 3.785411784 L (1 gallon)
+OG ≈ 1.10543
+FG ≈ 0.996
+```
+
+This produces alcohol during fermentation:
+
+```txt
+ABV_primary ≈ 14.53%
+```
+
+### Step 1: Add secondary honey
+
+Now add 1 lb of honey (79.60 °Bx) after fermentation.
+
+```txt
+1 lb = 0.45359237 kg
+SG ≈ 1.41494
+
+Volume_L = 0.45359237 / 1.41494 ≈ 0.32057 L
+Volume_gal ≈ 0.08469 gal
+```
+
+### Step 2: New total volume
+
+```txt
+Primary volume = 3.78541 L
+Added honey volume = 0.32057 L
+
+Total volume = 4.10599 L
+```
+
+### Step 3: Dilution of alcohol
+
+The added honey does not contribute alcohol, so the existing alcohol is diluted by the new total volume.
+
+```txt
+ABV_final = ABV_primary × (primary volume / total volume)
+
+ABV_final ≈ 14.53 × (3.78541 / 4.10599)
+           ≈ 13.40%
+```
+
+### Step 4: Final gravity after backsweetening
+
+The honey also raises the final gravity by blending with the finished mead.
+
+```txt
+Backsweetened FG =
+((primary volume × FG) + (honey volume × SG_honey)) / total volume
+
+≈ ((3.78541 × 0.996) + (0.32057 × 1.41494)) / 4.10599
+≈ 1.02871
+```
+
+### Result
+
+After backsweetening:
+
+- Total volume increases
+- ABV decreases due to dilution
+- Final gravity increases due to added sugar
+
+This reflects the real behavior of stabilized backsweetening, where sugar is added without additional fermentation.
+
+---
+
+## Why this matters
+
+Secondary additions are common in real recipes:
+
+- backsweetening with honey
+- adding fruit after fermentation
+- flavoring additions
+
+Because these additions change both **volume** and **density**, they cannot be modeled by simple adjustments.
+
+MeadTools accounts for this by:
+
+- treating secondary ingredients as additional solution components
+- blending them into the final mixture
+- recalculating both gravity and ABV
+
+---
+
+## Summary
+
+Secondary ingredients:
+
+- do not contribute to fermentation
+- increase total volume
+- dilute alcohol content
+- raise final gravity based on their sugar concentration
+
+This allows MeadTools to model real-world recipe adjustments more accurately than approaches that ignore volume or density changes.

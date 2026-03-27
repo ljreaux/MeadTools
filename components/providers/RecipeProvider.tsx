@@ -457,10 +457,8 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     ]);
   }, [fg, primaryVolumeL, secondarySg, secondaryVolumeL]);
 
-  const abv = useMemo(
-    () => calcABV(totalForAbv, backsweetenedFg),
-    [totalForAbv, backsweetenedFg]
-  );
+  const primaryAbv = calcABV(ogPrimary, parseNumber(fg));
+  const abv = (primaryAbv * primaryVolumeL) / totalVolumeL;
 
   const delle = useMemo(
     () => toBrix(backsweetenedFg) + 4.5 * abv,

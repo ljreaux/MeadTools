@@ -1,27 +1,32 @@
 import { notFound } from "next/navigation";
 import "@/app/atom-one-dark.css";
 
+async function tryImport(path: string) {
+  try {
+    return await import(`@/content/${path}.mdx`);
+  } catch {}
+  try {
+    return await import(`@/content/${path}.md`);
+  } catch {}
+  return null;
+}
+
 async function loadPostModule(pathToFile: string, locale: string) {
   const localizedPath =
     locale !== "en" ? `${pathToFile}-${locale}` : pathToFile;
 
-  // First try localized .mdx / .md
-  try {
-    return await import(`@/content/${localizedPath}.mdx`);
-  } catch {}
-  try {
-    return await import(`@/content/${localizedPath}.md`);
-  } catch {}
+  const attempts = [
+    localizedPath,
+    `${localizedPath}/index`,
+    pathToFile,
+    `${pathToFile}/index`
+  ];
 
-  // Fallback to default locale file (English)
-  try {
-    return await import(`@/content/${pathToFile}.mdx`);
-  } catch {}
-  try {
-    return await import(`@/content/${pathToFile}.md`);
-  } catch {}
+  for (const attempt of attempts) {
+    const mod = await tryImport(attempt);
+    if (mod) return mod;
+  }
 
-  // Nothing found
   throw new Error(`Content not found for: ${pathToFile}`);
 }
 
