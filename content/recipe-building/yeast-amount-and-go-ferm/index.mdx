@@ -1,0 +1,101 @@
+# Yeast Amount and Go-Ferm
+
+MeadTools also gives a suggested yeast amount and a matching Go-Ferm amount.
+
+These are practical planning values, not strict rules.
+
+## Suggested yeast amount
+
+MeadTools starts from a simple baseline:
+
+```txt
+2 g yeast per gallon
+```
+
+For stronger meads, it increases that amount.
+
+The calculator uses:
+
+```txt
+SG 1.100 or below:     2 g per gallon
+Above 1.100 to 1.124:  3 g per gallon
+SG 1.125 and above:    4 g per gallon
+```
+
+This is meant as a reasonable pitch-rate suggestion for dry yeast, especially as gravity rises.
+
+It is not meant to imply that these values are the only correct way to pitch yeast.
+
+## A practical note on packets
+
+In real use, many meadmakers round to the nearest packet rather than measuring an exact custom gram amount.
+
+That is usually a practical approach.
+
+So while MeadTools may calculate a suggested pitch like:
+
+```txt
+7.4 g yeast
+```
+
+many meadmakers would simply use the nearest sensible packet amount.
+
+## How Go-Ferm is calculated
+
+If Go-Ferm is selected, MeadTools calculates it from the yeast amount using the manufacturer's recommended rehydration ratio:
+
+```txt
+Go-Ferm = yeast grams × 1.25
+```
+
+Water is then calculated as:
+
+```txt
+water = Go-Ferm grams × 20 mL
+```
+
+### Example
+
+If the yeast amount is 10 g:
+
+```txt
+Go-Ferm = 10 × 1.25
+        = 12.5 g
+
+Water = 12.5 × 20
+      = 250 mL
+```
+
+## Other Go-Ferm options
+
+MeadTools also supports a few related rehydration options.
+
+In the calculator:
+
+- `Go-Ferm` and `Go-Ferm Protect` use the same `1.25×` nutrient multiplier
+- `Go-Ferm Sterol Flash` uses `1.2×`
+- `none` uses no Go-Ferm at all
+
+## Fermaid O effectiveness changes when Go-Ferm is removed
+
+One important MeadTools-specific behavior is that selecting **no Go-Ferm** also reduces the Fermaid O effectiveness multiplier used elsewhere in the nutrient math.
+
+In the calculator:
+
+```txt
+with Go-Ferm:    Fermaid O effectiveness × 4
+without Go-Ferm: Fermaid O effectiveness × 3
+```
+
+This reflects the idea that MeadTools gives slightly less credit to Fermaid O when the yeast is not being supported with a rehydration nutrient.
+
+## Summary
+
+MeadTools:
+
+- suggests a yeast pitch rate starting at `2 g per gallon`
+- increases that suggestion for higher gravity meads
+- calculates Go-Ferm from manufacturer-style rehydration ratios
+- lowers the Fermaid O effectiveness multiplier if no Go-Ferm is used
+
+These values are best understood as practical suggestions for planning a fermentation, not strict requirements.
