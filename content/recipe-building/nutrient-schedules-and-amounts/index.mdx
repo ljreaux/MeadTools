@@ -1,0 +1,282 @@
+# Nutrient Schedules and Nutrient Amounts
+
+After estimating a target YAN, the next question is:
+
+```txt
+How much of each nutrient should be added?
+```
+
+This page explains how MeadTools converts a target YAN into nutrient amounts, how schedule caps are applied, and what MeadTools does and does not try to enforce.
+
+## MeadTools does not prescribe one single schedule
+
+MeadTools is designed to help plan nutrient amounts, not to declare one schedule universally correct.
+
+In real meadmaking, nutrient schedules vary depending on:
+
+- yeast choice
+- gravity
+- desired fermentation speed
+- whether the meadmaker prefers more organic or more inorganic nitrogen
+- whether the goal is simplicity, flexibility, or strict process control
+
+So MeadTools does **not** force one timing strategy on every batch.
+
+Instead, it does two things:
+
+1. estimate a target YAN
+2. convert that target into nutrient amounts while trying to stay within common usage guidelines where practical
+
+## Step 1: Start with target YAN
+
+Everything on this page starts with the target YAN calculation described in [Calculating Target YAN](/recipe-building/calculating-target-yan).
+
+Once that target exists, MeadTools needs to decide how much of that YAN will come from each nutrient.
+
+## Step 2: Use each nutrient's YAN contribution
+
+Each nutrient contributes a different amount of YAN per gram per liter.
+
+MeadTools uses the following contribution values:
+
+```txt
+Fermaid O:  1 g/L adds  40 ppm YAN
+Fermaid K:  1 g/L adds 100 ppm YAN
+DAP:        1 g/L adds 210 ppm YAN
+Other:      user-defined
+```
+
+These values let MeadTools convert from:
+
+```txt
+desired ppm YAN contribution
+```
+
+to:
+
+```txt
+grams of nutrient needed
+```
+
+## Step 3: Convert YAN contribution into grams
+
+For each nutrient:
+
+```txt
+grams per liter = desired ppm contribution / nutrient YAN contribution
+```
+
+Then:
+
+```txt
+total grams = grams per liter × batch volume in liters
+```
+
+### Example
+
+Suppose a 19 liter batch needs **80 ppm** of YAN from Fermaid K.
+
+Fermaid K contributes 100 ppm per 1 g/L, so:
+
+```txt
+g/L = 80 / 100
+    = 0.8 g/L
+```
+
+Then:
+
+```txt
+total grams = 0.8 × 19
+            = 15.2 g
+```
+
+So the batch would need:
+
+```txt
+15.2 g Fermaid K total
+```
+
+## Step 4: Split the amount across additions
+
+Once total grams are known, MeadTools divides that total by the chosen number of additions:
+
+```txt
+grams per addition = total grams / number of additions
+```
+
+So if a nutrient total is 15.2 g and the schedule uses 4 additions:
+
+```txt
+per addition = 15.2 / 4
+             = 3.8 g
+```
+
+This does **not** mean MeadTools is enforcing when those additions must happen. It only means the total planned nutrient amount has been split evenly across the selected number of additions.
+
+## How MeadTools allocates YAN between nutrients
+
+When MeadTools is not in manual adjustment mode, it automatically allocates the target YAN across the selected nutrients.
+
+It does this in order:
+
+1. Fermaid O
+2. Fermaid K
+3. DAP
+4. Other
+
+For each nutrient, MeadTools fills as much YAN as it can up to that nutrient's current maximum allowed grams-per-liter value, then moves on to the next nutrient.
+
+Conceptually:
+
+```txt
+usable YAN from a nutrient = max g/L × nutrient YAN contribution
+```
+
+If the target is not fully covered after one nutrient reaches its cap, MeadTools uses the next selected nutrient.
+
+## Schedule caps in MeadTools
+
+MeadTools does not lock users into one branded nutrient schedule, but it does use preset caps for several common nutrient combinations.
+
+These caps are expressed in **grams per liter**.
+
+### TOSNA-style Fermaid O only
+
+```txt
+Fermaid O: 2.5 g/L
+```
+
+### TBE-style all three
+
+```txt
+Fermaid O: 0.45 g/L
+Fermaid K: 0.50 g/L
+DAP:       0.96 g/L
+```
+
+### Fermaid O + Fermaid K
+
+This combination uses gravity-based tiers:
+
+For OG up to 1.080:
+
+```txt
+Fermaid O: 0.60 g/L
+Fermaid K: 0.81 g/L
+```
+
+For OG above 1.080 up to 1.110:
+
+```txt
+Fermaid O: 0.90 g/L
+Fermaid K: 0.81 g/L
+```
+
+For OG above 1.110:
+
+```txt
+Fermaid O: 1.10 g/L
+Fermaid K: 1.00 g/L
+```
+
+### Fermaid O + DAP
+
+```txt
+Fermaid O: 1.00 g/L
+DAP:       0.96 g/L
+```
+
+### Fermaid K + DAP
+
+```txt
+Fermaid K: 1.00 g/L
+DAP:       0.96 g/L
+```
+
+## DAP limits
+
+MeadTools tries to keep DAP at or under about:
+
+```txt
+0.96 g/L
+```
+
+where that schedule information is available.
+
+This reflects common modern meadmaking guidance and also helps keep inorganic nitrogen from becoming the dominant source too late in fermentation.
+
+That matters because yeast can no longer make good use of ammonia-based nitrogen once alcohol gets high enough, and excessive DAP can push fermentation harder than desired.
+
+## Fermaid K limits
+
+Fermaid K is more complicated.
+
+Commercial wine rules around thiamine impose limits that matter in federal commercial production, but MeadTools does **not** use those federal wine-making limits as its main calculator cap.
+
+Instead, MeadTools keeps Fermaid K within the schedule ratios it is using, especially in the gravity-based mixed schedules.
+
+So MeadTools is trying to stay within common meadmaking practice and internal ratio logic, not enforce a federal compliance calculator for commercial wine production.
+
+## Fermaid O and effective contribution
+
+MeadTools also treats Fermaid O somewhat differently than the simple 40 ppm per g/L figure might suggest.
+
+The base contribution is:
+
+```txt
+Fermaid O: 40 ppm per 1 g/L
+```
+
+But MeadTools applies an organic multiplier in the nutrient math:
+
+```txt
+with Go-Ferm:    effective Fermaid O contribution × 4
+without Go-Ferm: effective Fermaid O contribution × 3
+```
+
+This reflects the common meadmaking idea that Fermaid O performs more effectively than its raw nitrogen percentage alone would suggest.
+
+In other words, MeadTools does not treat Fermaid O as if it were simply interchangeable with DAP or Fermaid K on a ppm-for-ppm basis.
+
+## Manual adjustment mode
+
+MeadTools also allows manual adjustment of the YAN contribution assigned to each nutrient.
+
+When that is used:
+
+- the user can override the automatically assigned ppm contribution
+- the calculator then converts those custom ppm values into grams
+
+This makes it possible to use MeadTools as a planning tool even when following a custom nutrient strategy.
+
+## Scheduling caveat
+
+Even though MeadTools can split nutrient totals into equal additions, nutrient timing still matters.
+
+In particular:
+
+- DAP is best used early
+- mixed schedules often front-load or complete inorganic additions early
+- organic nutrient sources can remain useful later in fermentation
+
+So MeadTools helps with the math, but the actual timing strategy still depends on the meadmaker's chosen process.
+
+## Summary
+
+MeadTools calculates nutrient amounts by:
+
+1. starting with target YAN
+2. assigning part of that YAN to each selected nutrient
+3. converting ppm contribution into grams per liter
+4. converting grams per liter into total batch grams
+5. dividing that total into equal additions
+
+In short:
+
+```txt
+grams per liter = ppm contribution / nutrient contribution value
+total grams = grams per liter × liters
+per addition = total grams / number of additions
+```
+
+MeadTools does not enforce one single schedule, but it does try to keep nutrient plans within common meadmaking guidelines and known cap values where practical.
