@@ -93,5 +93,9 @@ export const extraLinks = [
     path: "https://wiki.meadtools.com",
     label: "additionalLinks.wiki",
     external: true
+  },
+  {
+    path: "/recipe-building",
+    label: "additionalLinks.recipeBuilderDocs"
   }
 ];
