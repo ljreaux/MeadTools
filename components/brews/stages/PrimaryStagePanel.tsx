@@ -6,22 +6,6 @@ import type { StagePanelProps } from "../stageConfig";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { BrewAdditionData } from "@/lib/utils/entryPayload";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 function fmtAmount(value?: string, unit?: string) {
@@ -87,30 +71,6 @@ function buildPrimaryLines(lines: IngredientLine[]) {
     .map((l) => ({ line: l, ...ingredientDisplay(l) }));
 }
 
-function toLiters(value: number, unit: "gal" | "qt" | "pt" | "L" | "mL") {
-  switch (unit) {
-    case "gal":
-      return value * 3.785411784;
-    case "qt":
-      return value * 0.946352946;
-    case "pt":
-      return value * 0.473176473;
-    case "mL":
-      return value / 1000;
-    case "L":
-    default:
-      return value;
-  }
-}
-
-function formatDisplayVolume(liters: number | null | undefined) {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) {
-    return null;
-  }
-
-  return `${liters.toFixed(2)} L`;
-}
-
 export function PrimaryStagePanel({
   t,
   status,
@@ -135,133 +95,13 @@ export function PrimaryStagePanel({
 
   const canEdit = status === "current"; // you can loosen this if you want
 
-  const [volumeDialogOpen, setVolumeDialogOpen] = React.useState(false);
-  const [volumeValue, setVolumeValue] = React.useState("");
-  const [volumeUnit, setVolumeUnit] = React.useState<
-    "gal" | "qt" | "pt" | "L" | "mL"
-  >("gal");
-  const [isSavingVolume, setIsSavingVolume] = React.useState(false);
-
-  const currentVolumeDisplay = React.useMemo(
-    () => formatDisplayVolume(ctx.brew.current_volume_liters),
-    [ctx.brew.current_volume_liters]
-  );
-
-  const setPrimaryVolume = async () => {
-    const parsed = Number(volumeValue);
-
-    if (!Number.isFinite(parsed) || parsed <= 0) return;
-
-    setIsSavingVolume(true);
-
-    try {
-      await helpers.patchBrewMetadata({
-        current_volume_liters: toLiters(parsed, volumeUnit)
-      });
-      setVolumeDialogOpen(false);
-    } finally {
-      setIsSavingVolume(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <Dialog open={volumeDialogOpen} onOpenChange={setVolumeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {t("brews.primary.setVolume", "Record current volume")}
-            </DialogTitle>
-            <DialogDescription>
-              {t(
-                "brews.primary.setVolumeDesc",
-                "Record the current batch volume before moving to secondary."
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">
-                {t("brews.primary.currentVolume", "Current volume")}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {currentVolumeDisplay ??
-                  t("brews.primary.noVolume", "No volume recorded yet.")}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-sm font-medium">
-                {t("brews.primary.enterVolume", "Volume")}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  inputMode="decimal"
-                  value={volumeValue}
-                  onChange={(e) => setVolumeValue(e.target.value)}
-                  placeholder={t(
-                    "brews.primary.volumePlaceholder",
-                    "Enter volume"
-                  )}
-                  disabled={isSavingVolume}
-                />
-
-                <Select
-                  value={volumeUnit}
-                  onValueChange={(value) =>
-                    setVolumeUnit(value as "gal" | "qt" | "pt" | "L" | "mL")
-                  }
-                  disabled={isSavingVolume}
-                >
-                  <SelectTrigger className="sm:w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                    <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                    <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
-                    <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                    <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setVolumeDialogOpen(false)}
-              disabled={isSavingVolume}
-            >
-              {t("cancel", "Cancel")}
-            </Button>
-            <Button
-              onClick={setPrimaryVolume}
-              disabled={
-                !canEdit ||
-                isSavingVolume ||
-                !Number.isFinite(Number(volumeValue)) ||
-                Number(volumeValue) <= 0
-              }
-            >
-              {t("save", "Save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Quick entry buttons (non-addition) */}
-
       <Button
         size="sm"
         variant="secondary"
         disabled={!canEdit}
-        onClick={() => {
-          setVolumeValue("");
-          setVolumeUnit("gal");
-          setVolumeDialogOpen(true);
-        }}
+        onClick={() => helpers.openRecordVolume?.()}
       >
         {t("brews.actions.logVolume", "Log volume")}
       </Button>

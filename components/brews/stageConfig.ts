@@ -47,10 +47,13 @@ export type StagePrereq = {
   label: (t: TFunction) => string;
   isMet: (ctx: BrewStageContext) => boolean;
   hint?: (t: TFunction) => string;
+  actionLabel?: (t: TFunction) => string;
+  run?: (helpers: BrewStageHelpers, ctx: BrewStageContext) => Promise<void> | void;
 };
 
 export type BrewStageHelpers = {
   moveToStage: (to: BrewStage) => Promise<void>;
+  openRecordVolume?: () => void;
 
   addAddition: (input: {
     name: string;
@@ -78,7 +81,7 @@ export type StageAction = {
   id: string;
   label: (t: TFunction) => string;
   when?: (status: StageStatus, ctx: BrewStageContext) => boolean;
-  run: (helpers: BrewStageHelpers) => Promise<void> | void;
+  run: (helpers: BrewStageHelpers, ctx: BrewStageContext) => Promise<void> | void;
   variant?: "default" | "secondary" | "destructive";
 };
 
@@ -93,6 +96,7 @@ export type StageWarning = {
   id: string;
   message: (t: TFunction) => string;
   isActive: (ctx: BrewStageContext) => boolean; // true => show warning
+  when: (status: StageStatus, ctx: BrewStageContext) => boolean;
 };
 
 export type StageConfig = {
@@ -110,6 +114,13 @@ export type StageConfig = {
 
   warnings?: StageWarning[];
   Panel?: React.ComponentType<StagePanelProps>;
+};
+
+export type StageMoveDecision = {
+  allowed: boolean;
+  isNoOp: boolean;
+  unmet: StagePrereq[];
+  direction: "backward" | "forward" | "none";
 };
 
 function getPlannedPrimaryIngredientIds(ctx: BrewStageContext) {
@@ -156,6 +167,42 @@ export const STAGE_FLOW: BrewStage[] = [
   "PACKAGED",
   "COMPLETE"
 ];
+
+export function getStageMoveDecision(
+  toStage: BrewStage,
+  currentStage: BrewStage,
+  ctx: BrewStageContext
+): StageMoveDecision {
+  const toIdx = STAGE_FLOW.indexOf(toStage);
+  const currentIdx = STAGE_FLOW.indexOf(currentStage);
+  const prereqs = STAGE_CONFIG[toStage]?.prereqs ?? [];
+  const unmet = prereqs.filter((p) => !p.isMet(ctx));
+
+  if (toStage === currentStage) {
+    return {
+      allowed: false,
+      isNoOp: true,
+      unmet: [],
+      direction: "none"
+    };
+  }
+
+  if (toIdx < currentIdx) {
+    return {
+      allowed: true,
+      isNoOp: false,
+      unmet: [],
+      direction: "backward"
+    };
+  }
+
+  return {
+    allowed: unmet.length === 0,
+    isNoOp: false,
+    unmet,
+    direction: "forward"
+  };
+}
 
 export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   PLANNED: {
@@ -219,7 +266,8 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.warn.primaryIngredientsMissing",
             "Not all primary ingredients have been added to this brew yet."
           ),
-        isActive: (ctx) => hasMissingPrimaryIngredients(ctx)
+        isActive: (ctx) => hasMissingPrimaryIngredients(ctx),
+        when: (status) => status === "current"
       },
       {
         id: "missingNutrients",
@@ -228,7 +276,8 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.warn.nutrientsMissing",
             "Some planned nutrient additions haven’t been logged yet."
           ),
-        isActive: () => false // ✅ turn on once nutrients exist
+        isActive: () => false, // ✅ turn on once nutrients exist
+        when: (status) => status === "current"
       }
     ],
     Panel: PrimaryStagePanel
@@ -245,7 +294,8 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.warn.primaryIngredientsMissing",
             "Not all primary ingredients have been added to this brew yet."
           ),
-        isActive: (ctx) => hasMissingPrimaryIngredients(ctx)
+        isActive: (ctx) => hasMissingPrimaryIngredients(ctx),
+        when: (status) => status === "current"
       }
     ],
     prereqs: [
@@ -259,7 +309,11 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
           t(
             "brews.prereq.gravityHint",
             "Add a gravity reading before moving out of primary."
-          )
+          ),
+        actionLabel: (t) => t("brews.actions.addEntry", "Add entry"),
+        run: ({ openAddEntry }) => {
+          openAddEntry?.({ presetType: BREW_ENTRY_TYPE.GRAVITY });
+        }
       },
       {
         id: "primaryHasVolume",
@@ -272,7 +326,12 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
           t(
             "brews.prereq.volumeHint",
             "When you rack to secondary, record the new volume."
-          )
+          ),
+        actionLabel: (t) =>
+          t("brews.actions.logVolume", "Log volume"),
+        run: ({ openRecordVolume }) => {
+          openRecordVolume?.();
+        }
       }
     ]
   },

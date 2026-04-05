@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText
+} from "@/components/ui/input-group";
+import { Separator } from "@/components/ui/separator";
 
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
@@ -178,7 +185,7 @@ export default function AddBrewEntryDialog({
   const showPh = type === BREW_ENTRY_TYPE.PH;
 
   React.useEffect(() => {
-    if (!open) setType(initialType);
+    setType(initialType);
   }, [initialType, open]);
 
   return (
@@ -237,34 +244,47 @@ export default function AddBrewEntryDialog({
           {showGravity && (
             <div className="space-y-2">
               <Label>{t("brew.gravity", "Gravity")}</Label>
-              <Input
-                inputMode="decimal"
-                value={gravity}
-                onChange={(e) => setGravity(e.target.value)}
-                placeholder="1.040"
-              />
+              <InputGroup className="h-12">
+                <InputGroupInput
+                  inputMode="decimal"
+                  value={gravity}
+                  onChange={(e) => setGravity(e.target.value)}
+                  placeholder="1.040"
+                  onFocus={(e) => e.target.select()}
+                  className="h-full text-lg"
+                />
+                <InputGroupAddon
+                  align="inline-end"
+                  className="mr-1 text-xs sm:text-sm"
+                >
+                  <InputGroupText>SG</InputGroupText>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
           )}
 
           {showTemp && (
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
-              <div className="space-y-2">
-                <Label>{t("brew.temperature", "Temperature")}</Label>
-                <Input
+            <div className="space-y-2">
+              <Label>{t("brew.temperature", "Temperature")}</Label>
+              <InputGroup className="h-12">
+                <InputGroupInput
                   inputMode="decimal"
                   value={temperature}
                   onChange={(e) => setTemperature(e.target.value)}
                   placeholder="70"
+                  onFocus={(e) => e.target.select()}
+                  className="h-full text-lg"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("units", "Units")}</Label>
+                <InputGroupAddon
+                  align="inline-end"
+                  className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+                >
+                  <Separator orientation="vertical" className="h-12" />
                 <Select
                   value={String(tempUnits)}
                   onValueChange={(v) => setTempUnits(v as TempUnits)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="p-2 border-none mr-2 w-16">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,19 +292,30 @@ export default function AddBrewEntryDialog({
                     <SelectItem value="C">C</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
           )}
 
           {showPh && (
             <div className="space-y-2">
               <Label>{t("brew.ph", "pH")}</Label>
-              <Input
-                inputMode="decimal"
-                value={ph}
-                onChange={(e) => setPh(e.target.value)}
-                placeholder="3.40"
-              />
+              <InputGroup className="h-12">
+                <InputGroupInput
+                  inputMode="decimal"
+                  value={ph}
+                  onChange={(e) => setPh(e.target.value)}
+                  placeholder="3.40"
+                  onFocus={(e) => e.target.select()}
+                  className="h-full text-lg"
+                />
+                <InputGroupAddon
+                  align="inline-end"
+                  className="mr-1 text-xs sm:text-sm"
+                >
+                  <InputGroupText>pH</InputGroupText>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
           )}
 
