@@ -13,7 +13,9 @@ export type BrewListItem = {
   end_date: Date | null;
 
   stage: brew_stage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -51,6 +53,7 @@ export type BrewForApp = {
   stage: brew_stage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   latest_gravity: number | null;
 
@@ -66,6 +69,8 @@ export type BrewForApp = {
 
 export type PatchBrewMetadataInput = {
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string | Date;
   stage?: brew_stage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
@@ -114,7 +119,9 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
       start_date: true,
       end_date: true,
       stage: true,
+      batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
       latest_gravity: true,
       recipe_id: true,
       recipes: { select: { name: true } },
@@ -129,7 +136,9 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
     end_date: b.end_date,
 
     stage: b.stage,
+    batch_number: b.batch_number,
     current_volume_liters: b.current_volume_liters,
+    requested_email_alerts: b.requested_email_alerts ?? false,
 
     recipe_id: b.recipe_id,
     recipe_name: b.recipes?.name ?? null,
@@ -269,6 +278,7 @@ export async function getBrewForApp(
       stage: true,
       batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
       latest_gravity: true,
 
       recipe_id: true,
@@ -323,6 +333,7 @@ export async function getBrewForApp(
     stage: brew.stage,
     batch_number: brew.batch_number,
     current_volume_liters: brew.current_volume_liters,
+    requested_email_alerts: brew.requested_email_alerts ?? false,
 
     latest_gravity: brew.latest_gravity,
 
@@ -349,6 +360,7 @@ export async function patchBrewMetadata(
       select: {
         id: true,
         stage: true,
+        start_date: true,
         end_date: true
       }
     });
@@ -367,6 +379,29 @@ export async function patchBrewMetadata(
       const v = input.name;
       data.name =
         typeof v === "string" ? (v.trim() ? v.trim() : null) : v ?? null;
+    }
+
+    // batch_number
+    if ("batch_number" in input) {
+      const v = input.batch_number;
+      if (v === null) {
+        data.batch_number = null;
+      } else {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1) {
+          throw new Error("Invalid batch_number");
+        }
+        data.batch_number = n;
+      }
+    }
+
+    // start_date
+    if ("start_date" in input) {
+      const d = input.start_date instanceof Date
+        ? input.start_date
+        : new Date(input.start_date as any);
+      if (Number.isNaN(d.getTime())) throw new Error("Invalid start_date");
+      data.start_date = d;
     }
 
     // stage
@@ -424,6 +459,18 @@ export async function patchBrewMetadata(
     if (stageIsComplete && !endDateWasSet && !endDateWasCleared) {
       data.end_date = existing.end_date ?? new Date();
       // ^ keep existing end_date if already set, otherwise set now
+    }
+
+    if (endDateWasCleared && finalStageCandidate === brew_stage.COMPLETE) {
+      throw new Error("Cannot clear end_date while brew is complete");
+    }
+
+    const nextStartDate = (data.start_date ?? existing.start_date) as Date;
+    const nextEndDate =
+      "end_date" in data ? (data.end_date as Date | null) : existing.end_date;
+
+    if (nextEndDate && nextStartDate > nextEndDate) {
+      throw new Error("start_date must be before end_date");
     }
 
     if (Object.keys(data).length === 0) {
