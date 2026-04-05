@@ -24,6 +24,10 @@ import { Button } from "@/components/ui/button";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
+import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
+import { normalizeNumberString } from "@/lib/utils/validateInput";
+
+type HeaderVolumeUnit = "gal" | "L";
 
 export default function BrewPageClient() {
   const { t, i18n } = useTranslation();
@@ -45,7 +49,60 @@ export default function BrewPageClient() {
   const formatDate = (d?: string | null) =>
     d ? formatter.format(new Date(d)) : "—";
 
+  const [preferredVolumeUnit, setPreferredVolumeUnit] =
+    useState<HeaderVolumeUnit>("gal");
+
+  useEffect(() => {
+    try {
+      const storedUnits = localStorage.getItem("units");
+      setPreferredVolumeUnit(storedUnits === "METRIC" ? "L" : "gal");
+    } catch {
+      setPreferredVolumeUnit("gal");
+    }
+  }, []);
+
+  const formatVolume = (liters?: number | null) => {
+    if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) {
+      return "—";
+    }
+
+    const converted = liters * L_TO_VOLUME[preferredVolumeUnit];
+    return `${normalizeNumberString(converted, 2, i18n.resolvedLanguage)} ${preferredVolumeUnit}`;
+  };
+
+  const formatGravity = (gravity?: number | null) => {
+    if (typeof gravity !== "number" || !Number.isFinite(gravity)) {
+      return "—";
+    }
+
+    return normalizeNumberString(gravity, 3, i18n.resolvedLanguage, true);
+  };
+
+  const formatAbv = (value?: number | null) => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      return "—";
+    }
+
+    return `${normalizeNumberString(value, 2, i18n.resolvedLanguage)}%`;
+  };
+
+  const formatTemperature = (value?: number | null, units?: string | null) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return "—";
+    }
+
+    const decimals = units === "C" ? 1 : 1;
+    const suffix = units ? `°${units}` : "";
+    return `${normalizeNumberString(value, decimals, i18n.resolvedLanguage)}${suffix}`;
+  };
+
+  const formatStageLabel = (stage?: string | null) => {
+    if (!stage) return "—";
+    return t(`brewStage.${stage}`, stage);
+  };
+
   const {
+    derived: { ogPrimary, backsweetenedFg, abv, primaryVolumeL, totalVolumeL },
     meta: { hydrate }
   } = useRecipe();
 
@@ -68,12 +125,156 @@ export default function BrewPageClient() {
     return buckets.flatMap((b) => b.entries);
   }, [brew?.entries_by_stage]);
 
+  const latestGravityEntry = useMemo(() => {
+    const entries = brew?.entries ?? [];
+
+    return entries
+      .filter(
+        (entry) =>
+          typeof entry.gravity === "number" && Number.isFinite(entry.gravity)
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+      )[0];
+  }, [brew?.entries]);
+
+  const latestEntry = useMemo(() => {
+    const entries = brew?.entries ?? [];
+
+    return entries
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+      )[0];
+  }, [brew?.entries]);
+
+  const currentStageStartedAt = useMemo(() => {
+    const entries = brew?.entries ?? [];
+
+    const stageChangeIntoCurrent = entries
+      .filter(
+        (entry) =>
+          entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE &&
+          (entry.data as any)?.to === brew?.stage
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
+      )[0];
+
+    return stageChangeIntoCurrent?.datetime ?? brew?.start_date ?? null;
+  }, [brew?.entries, brew?.stage, brew?.start_date]);
+
+  const daysInCurrentStage = useMemo(() => {
+    if (!currentStageStartedAt) return null;
+
+    const startedAt = new Date(currentStageStartedAt).getTime();
+    if (Number.isNaN(startedAt)) return null;
+
+    const elapsedMs = Date.now() - startedAt;
+    if (elapsedMs < 0) return 0;
+
+    return Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+  }, [currentStageStartedAt]);
+
+  const displayLatestGravity = brew?.latest_gravity ?? latestGravityEntry?.gravity;
+  const displayEstimatedOg =
+    typeof ogPrimary === "number" && Number.isFinite(ogPrimary) && ogPrimary > 1
+      ? ogPrimary
+      : null;
+  const displayEstimatedFg =
+    typeof backsweetenedFg === "number" &&
+    Number.isFinite(backsweetenedFg) &&
+    backsweetenedFg > 0
+      ? backsweetenedFg
+      : null;
+  const displayEstimatedAbv =
+    typeof abv === "number" && Number.isFinite(abv) && abv >= 0 ? abv : null;
+  const displayTargetVolume =
+    typeof totalVolumeL === "number" &&
+    Number.isFinite(totalVolumeL) &&
+    totalVolumeL > 0
+      ? totalVolumeL
+      : null;
+  const displayPrimaryVolume =
+    typeof primaryVolumeL === "number" &&
+    Number.isFinite(primaryVolumeL) &&
+    primaryVolumeL > 0
+      ? primaryVolumeL
+      : null;
+
+  const recipeSummaryItems = [
+    {
+      label: t("recipeBuilder.resultsLabels.estOG"),
+      value: formatGravity(displayEstimatedOg)
+    },
+    {
+      label: t("recipeBuilder.resultsLabels.estFG"),
+      value: formatGravity(displayEstimatedFg)
+    },
+    {
+      label: t("recipeBuilder.resultsLabels.abv"),
+      value: formatAbv(displayEstimatedAbv)
+    },
+    {
+      label: t("recipeBuilder.resultsLabels.totalPrimary"),
+      value: formatVolume(displayPrimaryVolume)
+    },
+    {
+      label: t("recipeBuilder.resultsLabels.totalSecondary"),
+      value: formatVolume(displayTargetVolume)
+    }
+  ];
+
+  const batchSummaryItems = [
+    {
+      label: t("batchNumber", "Batch"),
+      value:
+        brew?.batch_number != null ? `#${String(brew.batch_number)}` : "—"
+    },
+    {
+      label: t("start", "Start"),
+      value: formatDate(brew?.start_date)
+    },
+    {
+      label: t("brews.primary.currentVolume", "Current volume"),
+      value: formatVolume(brew?.current_volume_liters)
+    },
+    {
+      label: t("iSpindelDashboard.brews.latestGrav", "Latest gravity"),
+      value: formatGravity(displayLatestGravity)
+    },
+    {
+      label: t("entries", "Entries"),
+      value: String(brew?.entry_count ?? 0)
+    },
+    {
+      label: t("lastUpdated", "Last updated"),
+      value: latestEntry ? formatDate(latestEntry.datetime) : "—"
+    },
+    {
+      label: t("brews.daysInStage", "Days in current stage"),
+      value:
+        typeof daysInCurrentStage === "number"
+          ? normalizeNumberString(daysInCurrentStage, 0, i18n.resolvedLanguage, true)
+          : "—"
+    }
+  ].filter(Boolean);
+
+  if (brew?.end_date) {
+    batchSummaryItems.splice(2, 0, {
+      label: t("end", "End"),
+      value: formatDate(brew.end_date)
+    });
+  }
+
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
-      console.log(brew.recipe_snapshot.dataV2);
     }
-  }, [brew]);
+  }, [brew, hydrate]);
   const { mutateAsync: createEntry } = useCreateBrewEntry();
   async function addAddition(input: {
     name: string;
@@ -123,50 +324,69 @@ export default function BrewPageClient() {
   return (
     <div className="space-y-6 sm:mt-6 mt-12">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">{brew.name ?? brew.id}</h1>
-            <div className="text-sm text-muted-foreground flex flex-wrap gap-x-6 gap-y-1">
-              <div>
-                {t("start", "Start")}:{" "}
-                <span className="text-foreground">
-                  {formatDate(brew.start_date)}
-                </span>
-              </div>
-              <div>
-                {t("end", "End")}:{" "}
-                <span className="text-foreground">
-                  {brew.end_date
-                    ? formatDate(brew.end_date)
-                    : t("ongoing", "Ongoing")}
-                </span>
-              </div>
-              <div>
-                {t("batchNumber", "Batch")}:{" "}
-                <span className="text-foreground">
-                  {brew.batch_number ?? "—"}
-                </span>
-              </div>
-              <div>
-                {t("entries", "Entries")}:{" "}
-                <span className="text-foreground">{brew.entry_count}</span>
-              </div>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-semibold">{brew.name ?? brew.id}</h1>
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground">
+                {t(`brewStage.${brew.stage}`, brew.stage)}
+              </span>
             </div>
 
-            {brew.recipe_id ? (
-              <Link
-                className="underline text-sm"
-                href={`/recipes/${brew.recipe_id}`}
-              >
-                {brew.recipe_name ?? t("recipe", "Recipe")}
-              </Link>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                {t("noRecipe", "No recipe linked.")}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground">
+              {brew.recipe_id ? (
+                <span>
+                  {t("brews.recipe", "Recipe")}:{" "}
+                  <Link className="text-foreground underline" href={`/recipes/${brew.recipe_id}`}>
+                    {brew.recipe_name ?? t("recipe", "Recipe")}
+                  </Link>
+                </span>
+              ) : (
+                t("noRecipe", "No recipe linked.")
+              )}
+            </div>
           </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-lg border border-border/70 bg-background/40 p-4 space-y-3">
+            <h2 className="text-sm font-semibold">{t("brews.label", "Batch")}</h2>
+            <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+              {batchSummaryItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="border-b border-border/60 py-2"
+                >
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {item.label}
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-foreground">
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section className="rounded-lg border border-border/70 bg-background/40 p-4 space-y-3">
+            <h2 className="text-sm font-semibold">{t("recipe", "Recipe")}</h2>
+            <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+              {recipeSummaryItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="border-b border-border/60 py-2"
+                >
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {item.label}
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium text-foreground">
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         </div>
       </div>
 
@@ -225,7 +445,7 @@ export default function BrewPageClient() {
               className="rounded-xl border border-border bg-card"
             >
               <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                <div className="font-medium">{bucket.stage}</div>
+                <div className="font-medium">{formatStageLabel(bucket.stage)}</div>
                 <div className="text-sm text-muted-foreground">
                   {bucket.entries.length}
                 </div>
@@ -247,17 +467,29 @@ export default function BrewPageClient() {
                     {e.note ? <div className="text-sm">{e.note}</div> : null}
 
                     <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-                      {e.gravity != null ? <span>SG: {e.gravity}</span> : null}
+                      {e.gravity != null ? (
+                        <span>SG: {formatGravity(e.gravity)}</span>
+                      ) : null}
                       {e.temperature != null ? (
                         <span>
-                          Temp: {e.temperature}
-                          {e.temp_units ? `°${e.temp_units}` : ""}
+                          Temp: {formatTemperature(e.temperature, e.temp_units)}
+                        </span>
+                      ) : null}
+                      {e.type === BREW_ENTRY_TYPE.PH &&
+                      typeof (e.data as any)?.ph === "number" ? (
+                        <span>
+                          pH:{" "}
+                          {normalizeNumberString(
+                            Number((e.data as any).ph),
+                            2,
+                            i18n.resolvedLanguage
+                          )}
                         </span>
                       ) : null}
                       {e.type === "STAGE_CHANGE" && e.data ? (
                         <span>
-                          {String((e.data as any)?.from ?? "")} →{" "}
-                          {String((e.data as any)?.to ?? "")}
+                          {formatStageLabel(String((e.data as any)?.from ?? ""))}{" "}
+                          → {formatStageLabel(String((e.data as any)?.to ?? ""))}
                         </span>
                       ) : null}
                       {e.type === BREW_ENTRY_TYPE.ADDITION && e.data
@@ -266,7 +498,13 @@ export default function BrewPageClient() {
                             return (
                               <span>
                                 {d.name}
-                                {d.amount != null ? `: ${d.amount}` : ""}
+                                {d.amount != null
+                                  ? `: ${normalizeNumberString(
+                                      Number(d.amount),
+                                      2,
+                                      i18n.resolvedLanguage
+                                    )}`
+                                  : ""}
                                 {d.unit ? ` ${d.unit}` : ""}
                               </span>
                             );

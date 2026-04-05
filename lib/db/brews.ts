@@ -566,6 +566,29 @@ function groupEntriesByStage(
     .map((s) => ({ stage: s, entries: map.get(s)! }));
 }
 
+async function syncLatestGravity(
+  tx: Prisma.TransactionClient,
+  brewId: string
+): Promise<number | null> {
+  const latestGravityEntry = await tx.brew_entries.findFirst({
+    where: {
+      brew_id: brewId,
+      gravity: { not: null }
+    },
+    orderBy: [{ datetime: "desc" }, { id: "desc" }],
+    select: { gravity: true }
+  });
+
+  const latestGravity = latestGravityEntry?.gravity ?? null;
+
+  await tx.brews.update({
+    where: { id: brewId },
+    data: { latest_gravity: latestGravity }
+  });
+
+  return latestGravity;
+}
+
 export async function createBrewEntryForApp(
   userId: number,
   brewId: string,
@@ -599,19 +622,23 @@ export async function createBrewEntryForApp(
       : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
-  await prisma.brew_entries.create({
-    data: {
-      brew_id: brewId,
-      user_id: userId,
-      type: input.type,
-      datetime,
-      title: input.title ?? null,
-      note: input.note ?? null,
-      gravity: input.gravity ?? null,
-      temperature: input.temperature ?? null,
-      temp_units: input.temp_units ?? null,
-      data: (input.data as any) ?? null
-    }
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.create({
+      data: {
+        brew_id: brewId,
+        user_id: userId,
+        type: input.type,
+        datetime,
+        title: input.title ?? null,
+        note: input.note ?? null,
+        gravity: input.gravity ?? null,
+        temperature: input.temperature ?? null,
+        temp_units: input.temp_units ?? null,
+        data: (input.data as any) ?? null
+      }
+    });
+
+    await syncLatestGravity(tx, brewId);
   });
 
   // consistent return
@@ -707,6 +734,8 @@ export async function patchBrewEntryForApp(
       data
     });
 
+    await syncLatestGravity(tx, brewId);
+
     // 4) return the updated entry (consistent shape)
     return tx.brew_entries.findUnique({
       where: { id: entryId },
@@ -749,7 +778,11 @@ export async function deleteBrewEntryForApp(
     throw new Error("Cannot delete stage change entry");
   }
 
-  await prisma.brew_entries.delete({ where: { id: entryId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.delete({ where: { id: entryId } });
+    await syncLatestGravity(tx, brewId);
+  });
+
   return { message: "Entry deleted successfully." };
 }
 
