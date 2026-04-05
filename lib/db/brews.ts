@@ -519,16 +519,31 @@ function isBrewStage(v: any): v is brew_stage {
   );
 }
 
+function getInitialStageForEntries(
+  currentStage: brew_stage,
+  entries: BrewEntryForApp[]
+) {
+  for (const e of entries) {
+    if (e.type !== brew_entry_type.STAGE_CHANGE) continue;
+
+    const from = (e.data as any)?.from;
+    if (isBrewStage(from)) return from;
+  }
+
+  return currentStage;
+}
+
 /**
  * Groups entries into “stage buckets” based on STAGE_CHANGE entries.
- * We start from `initialStage`, assign each entry to the current stage,
- * then if the entry is a STAGE_CHANGE with data.to, we advance.
+ * We start from the earliest known stage for this entry history, assign each
+ * entry to the current stage, then advance whenever a STAGE_CHANGE entry moves
+ * the brew to a new stage.
  */
 function groupEntriesByStage(
-  initialStage: brew_stage,
+  currentStage: brew_stage,
   entries: BrewEntryForApp[]
 ): EntriesByStage {
-  let current: brew_stage = initialStage;
+  let current: brew_stage = getInitialStageForEntries(currentStage, entries);
 
   const map = new Map<brew_stage, BrewEntryForApp[]>();
   const push = (stage: brew_stage, entry: BrewEntryForApp) => {

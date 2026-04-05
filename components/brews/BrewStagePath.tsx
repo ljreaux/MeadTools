@@ -12,14 +12,16 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import {
   BrewEntry,
+  getStageMoveDecision,
   STAGE_CONFIG,
   STAGE_FLOW,
   type StageStatus
 } from "./stageConfig";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
+import { RecordVolumeDialog } from "./RecordVolumeDialog";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -77,6 +79,11 @@ export function BrewStagePath({
     data: { ingredients }
   } = useRecipe();
   const [activeId, setActiveId] = useState<BrewStage>(stage);
+  const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveId(stage);
+  }, [stage]);
 
   return (
     <Path
@@ -130,31 +137,35 @@ export function BrewStagePath({
             // ✅ build ctx with recipe data for panels
             const ctx = {
               brewStage: stage,
-              hasRecipeLinked, // TODO wire to real brew.recipe_id presence
+              hasRecipeLinked,
               recipe: { ingredients },
               brew: { entries, current_volume_liters }
             };
             const helpers = {
               moveToStage: async (to: BrewStage) => {
+                const decision = getStageMoveDecision(to, stage, ctx);
+                if (!decision.allowed) return;
                 await onMoveToStage(to);
-                setActiveId(to); // ✅ stageConfig action switches panel
+                setActiveId(to);
               },
+              openRecordVolume: () => setRecordVolumeOpen(true),
               patchBrewMetadata,
               addAddition,
               addAdditions,
               openAddEntry
             };
             const prereqs = cfg.prereqs ?? [];
-            const unmet = prereqs.filter((p) => !p.isMet(ctx));
+            const moveDecision = getStageMoveDecision(s, stage, ctx);
+            const unmet = moveDecision.unmet;
 
             const actions = (cfg.actions ?? []).filter((a) =>
               a.when ? a.when(status, ctx) : true
             );
 
             const Panel = cfg.Panel;
-            const isBlocked = status === "future" && unmet.length > 0;
+            const isBlocked = !moveDecision.allowed && !moveDecision.isNoOp;
             const warnings = (cfg.warnings ?? []).filter((w) =>
-              w.isActive(ctx)
+              w.isActive(ctx) && w.when(status, ctx)
             );
             return (
               <div className="p-4 space-y-3">
@@ -164,17 +175,19 @@ export function BrewStagePath({
                   <Button
                     size="sm"
                     onClick={async () => {
-                      if (status === "current") return;
+                      if (!moveDecision.allowed) return;
                       await onMoveToStage(s);
                       setActiveId(s);
                     }}
-                    disabled={isBlocked}
+                    disabled={moveDecision.isNoOp || isBlocked}
                     title={
                       isBlocked
                         ? t(
                             "brews.prereqsNotMet",
                             "Some items are not complete yet."
                           )
+                        : moveDecision.isNoOp
+                          ? t("brews.stayHere", "You are here")
                         : undefined
                     }
                   >
@@ -216,12 +229,27 @@ export function BrewStagePath({
                         const ok = p.isMet(ctx);
                         return (
                           <li key={p.id} className={ok ? "opacity-70" : ""}>
-                            {p.label(t)}
-                            {!ok && p.hint ? (
-                              <span className="block text-xs opacity-90 mt-1">
-                                {p.hint(t)}
-                              </span>
-                            ) : null}
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <span>{p.label(t)}</span>
+                                {!ok && p.hint ? (
+                                  <span className="block text-xs opacity-90 mt-1">
+                                    {p.hint(t)}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {!ok && p.run && p.actionLabel ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="shrink-0"
+                                  onClick={() => p.run?.(helpers, ctx)}
+                                >
+                                  {p.actionLabel(t)}
+                                </Button>
+                              ) : null}
+                            </div>
                           </li>
                         );
                       })}
@@ -249,7 +277,7 @@ export function BrewStagePath({
                           key={a.id}
                           size="sm"
                           variant={a.variant ?? "secondary"}
-                          onClick={() => a.run(helpers)}
+                          onClick={() => a.run(helpers, ctx)}
                         >
                           {a.label(t)}
                         </Button>
@@ -265,6 +293,15 @@ export function BrewStagePath({
               </div>
             );
           }}
+        />
+        <RecordVolumeDialog
+          t={t}
+          open={recordVolumeOpen}
+          onOpenChange={setRecordVolumeOpen}
+          currentVolumeLiters={current_volume_liters}
+          onSave={(volume) =>
+            patchBrewMetadata({ current_volume_liters: volume })
+          }
         />
       </PathContent>
     </Path>

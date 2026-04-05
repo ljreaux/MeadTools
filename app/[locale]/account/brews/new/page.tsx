@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,15 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AccountPagination } from "@/components/account/pagination";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 import {
   InputGroup,
@@ -26,8 +35,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
+import type { VolumeUnit } from "@/types/recipeData";
 
 type RecipeRow = { id: number; name: string };
+type BrewVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
+type PreferredUnits = "US" | "METRIC";
+
+function getPreferredVolumeUnit(preferred: PreferredUnits | null): BrewVolumeUnit {
+  return preferred === "METRIC" ? "L" : "gal";
+}
 
 export default function NewBrewClient() {
   const { t } = useTranslation();
@@ -65,6 +82,16 @@ export default function NewBrewClient() {
   // optional “draft” fields for the new brew
   const [nameDraft, setNameDraft] = useState<string>("");
   const [volumeDraft, setVolumeDraft] = useState<string>("");
+  const [volumeUnit, setVolumeUnit] = useState<BrewVolumeUnit>("gal");
+
+  useEffect(() => {
+    try {
+      const preferred = localStorage.getItem("units") as PreferredUnits | null;
+      setVolumeUnit(getPreferredVolumeUnit(preferred));
+    } catch {
+      setVolumeUnit("gal");
+    }
+  }, []);
 
   if (isError) {
     console.error(error);
@@ -109,15 +136,44 @@ export default function NewBrewClient() {
 
           <div className="space-y-1">
             <div className="text-sm font-medium">
-              {t("brews.new.volumeLiters", "Starting volume (L)")}
+              {t("brews.new.volumeLiters", "Starting volume")}
             </div>
-            <Input
-              value={volumeDraft}
-              onChange={(e) => setVolumeDraft(e.target.value)}
-              inputMode="decimal"
-              placeholder="—"
-              disabled={createMutation.isPending}
-            />
+            <InputGroup className="h-12">
+              <InputGroupInput
+                value={volumeDraft}
+                onChange={(e) => setVolumeDraft(e.target.value)}
+                inputMode="decimal"
+                placeholder="—"
+                disabled={createMutation.isPending}
+                onFocus={(e) => e.target.select()}
+                className="h-full text-lg"
+              />
+              <InputGroupAddon
+                align="inline-end"
+                className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
+              >
+                <Separator orientation="vertical" className="h-12" />
+                <Select
+                  value={volumeUnit}
+                  onValueChange={(value) =>
+                    setVolumeUnit(value as BrewVolumeUnit)
+                  }
+                  disabled={createMutation.isPending}
+                >
+                  <SelectTrigger className="p-2 border-none mr-2 w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
+                    <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
+                    <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
+                    <SelectSeparator />
+                    <SelectItem value="L">{t("units.L", "L")}</SelectItem>
+                    <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </InputGroupAddon>
+            </InputGroup>
           </div>
         </div>
       </div>
@@ -162,7 +218,7 @@ export default function NewBrewClient() {
                   const vol =
                     volumeDraft.trim().length === 0
                       ? undefined
-                      : Number(volumeDraft);
+                      : Number(volumeDraft) * VOLUME_TO_L[volumeUnit];
 
                   if (vol !== undefined && !Number.isFinite(vol)) {
                     toast({
