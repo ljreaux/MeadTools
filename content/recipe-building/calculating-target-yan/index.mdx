@@ -10,13 +10,6 @@ This page explains what YAN is, how MeadTools estimates a target, and why that e
 
 This is the nitrogen in a must that yeast can actually use during fermentation.
 
-In practical terms, YAN helps support:
-
-- yeast growth
-- healthy fermentation
-- complete sugar consumption
-- cleaner flavor development
-
 Honey is naturally low in YAN, which is why mead often needs nutrient additions even when beer or grape wine might not.
 
 ## Why target YAN is only an estimate
@@ -28,18 +21,8 @@ The nitrogen requirement depends on things like:
 - how much sugar is present
 - which yeast strain is being used
 - how much nitrogen is already present from fruit or juice
-- how the fermentation will be managed
 
 So the goal is not to discover one perfect number. The goal is to estimate a reasonable **target YAN** for the must being built.
-
-## The core idea
-
-The target YAN model used here starts with a simple idea:
-
-- more sugar usually means the yeast has more work to do
-- more demanding yeast strains usually need more nitrogen
-
-That means the calculation starts by estimating the sugar concentration of the must, then multiplying that by a yeast-demand factor.
 
 ## Step 1: Estimate sugar in grams per liter
 
@@ -56,8 +39,6 @@ Why this works:
 - Brix describes grams of sugar per 100 grams of solution
 - multiplying by 10 scales that to grams per 1000 grams
 - multiplying by specific gravity adjusts from weight-based concentration to grams per liter of must
-
-This is more accurate for strong mead must than using Brix alone.
 
 ### Example
 
@@ -100,7 +81,7 @@ Very High: × 1.80
 
 The first four categories follow the common Scott Labs style framework used in modern meadmaking calculators.
 
-The **Very High** category is an extra MeadTools category used mainly for especially demanding fermentations, such as many kveik-based nutrient plans. It is a calculator policy choice, not a direct quote from the Scott Labs-style table.
+The **Very High** category is an extra MeadTools category used mainly for especially demanding fermentations, such as many kveik-based nutrient plans.
 
 ## Step 3: Calculate target YAN
 
@@ -115,12 +96,7 @@ Using the previous example with a low-nitrogen yeast:
 ```txt
 Target YAN = 282.5 × 0.75
            ≈ 211.9 ppm
-```
-
-Rounded:
-
-```txt
-Target YAN ≈ 212 ppm
+           ≈ 212 ppm
 ```
 
 This is the estimated total YAN target before accounting for nitrogen already present in the must.
@@ -192,20 +168,6 @@ So the offset should be understood as a practical planning estimate, not as a gu
 
 In other words, MeadTools uses the offset to avoid assuming fruit contributes nothing, while still being careful not to over-credit the fruit.
 
-## A shortcut version
-
-Some winemaking references simplify the formula and describe nitrogen needs directly by Brix:
-
-```txt
-Low nitrogen yeast:    7.5 ppm per 1 degree Brix
-Medium nitrogen yeast: 9.0 ppm per 1 degree Brix
-High nitrogen yeast:   12.5 ppm per 1 degree Brix
-```
-
-This shortcut works reasonably well, but it ignores the specific gravity adjustment.
-
-That makes it less precise for stronger mead must, where the difference becomes more noticeable.
-
 ## Where yeast requirement data comes from
 
 MeadTools stores a large yeast database covering strains from multiple brands.
@@ -215,21 +177,6 @@ The nitrogen requirement category for a strain is taken from the information pub
 That means MeadTools is not inventing nitrogen categories from scratch. It is using producer-supplied guidance and then applying the target YAN model on top of it.
 
 Because manufacturers do not always describe nitrogen demand in exactly the same way, these categories should still be treated as practical working labels rather than absolute scientific values.
-
-## Why the result is still not absolute
-
-Even a careful target YAN calculation is still a planning tool.
-
-It does not fully account for every fermentation variable, such as:
-
-- micronutrient availability
-- oxygen management
-- fermentation temperature
-- staggered nutrient timing
-- pH
-- actual nutrient uptake behavior of a specific yeast strain
-
-That is why target YAN should be treated as a starting point for planning, not as a guarantee.
 
 ## Summary
 

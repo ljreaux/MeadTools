@@ -3,7 +3,7 @@
 Alcohol by volume and Delle units are two of the most important values shown in recipe calculations.
 
 - **ABV** estimates how much of the final beverage is alcohol
-- **Delle units** estimate how resistant the beverage is to microbial instability based on alcohol and residual sugar
+- **Delle units** can help determine if your brew is likely stable without need for additional intervention
 
 This page explains the math behind both values and why they matter.
 
@@ -106,22 +106,6 @@ The value **0.794** is the approximate density of ethanol relative to water.
 
 This final step converts the alcohol estimate into the more familiar **percent alcohol by volume**.
 
-## A simpler version
-
-A common simplified alcohol-by-weight formula in terms of original gravity and final gravity is:
-
-```txt
-ABW = 76.08 × (OG - FG) / (1.775 - OG)
-```
-
-Then:
-
-```txt
-ABV = ABW × (FG / 0.794)
-```
-
-The longer extract-based method is the more complete explanation. The simplified form is useful because it shows that ABV still depends on more than just multiplying gravity drop by a fixed constant.
-
 ## Example
 
 Suppose a mead starts at:
@@ -134,12 +118,12 @@ FG = 0.996
 Using the extract-based method:
 
 ```txt
-OE ≈ 25.15
+OE ≈ 24.83
 AE ≈ -1.04
 q  ≈ 0.245
-RE ≈ 4.11
-ABW ≈ 11.56
-ABV ≈ 14.5%
+RE ≈ 4.05
+ABW ≈ 11.53
+ABV ≈ 14.47%
 ```
 
 So this fermentation would be estimated at about:
@@ -147,8 +131,6 @@ So this fermentation would be estimated at about:
 ```txt
 ABV ≈ 14.5%
 ```
-
-This is why a strong dry traditional mead often lands in the mid-teens for ABV when starting gravity is high.
 
 ## ABV and recipe design
 
@@ -176,10 +158,6 @@ That dilution behavior is described in [Secondary Ingredients and Dilution](/rec
 
 - alcohol content
 - residual sugar
-
-In plain language, Delle units try to answer this question:
-
-> Given how sweet and how alcoholic this beverage is, how resistant is it to spoilage or renewed microbial activity?
 
 Higher values are generally more stable.
 
@@ -235,15 +213,15 @@ ABV = 12.0%
 Convert final gravity to Brix:
 
 ```txt
-Brix(1.020) ≈ 5.1
+Brix(1.020) ≈ 5.08
 ```
 
 Then calculate Delle:
 
 ```txt
-Delle ≈ 5.1 + 4.5 × 12
-       ≈ 5.1 + 54
-       ≈ 59.1
+Delle ≈ 5.08 + 4.5 × 12
+       ≈ 5.08 + 54
+       ≈ 59.08
 ```
 
 That would be:
@@ -253,20 +231,6 @@ Delle ≈ 59
 ```
 
 Which is below the commonly cited 73-point rule of thumb.
-
-## Why Delle can be confusing in mead discussions
-
-Delle is often discussed as if it provides one clean stability threshold, but in practice there are several ways people apply it.
-
-For example:
-
-- some meadmakers treat a lower Delle value as workable when ABV is already high and fermentation is truly finished
-- wine-focused sources often cite **73 Delle** as a more conservative benchmark
-- pH and temperature can also affect how stable a finished beverage really is
-
-That is why you may see different claimed "safe" finishing gravities for the same ABV.
-
-For a 14% mead, one source might consider a stable reading around **1.006 FG** acceptable, while a more conservative 73-Delle target would imply something much sweeter.
 
 ## Delle chart
 
@@ -288,24 +252,6 @@ On this chart:
 - moving right increases ABV
 
 This makes it easier to see the tradeoff: if ABV is lower, more residual sugar is needed to reach the same Delle value. If ABV is higher, less residual sugar is needed.
-
-## Why Delle is only a guideline
-
-Delle units are useful, but they are not a complete stability model.
-
-They do **not** directly account for things like:
-
-- whether fermentation has actually paused
-- whether the mead was chemically stabilized
-- whether yeast is still active
-- pH
-- sanitation
-- temperature
-- alcohol tolerance of the yeast strain
-
-Delle calculations are only meaningful if fermentation has truly paused, whether that happened because of alcohol tolerance, cold crashing, sulfite and sorbate, or some other real halt in yeast activity.
-
-So a higher Delle value is helpful, but it should not be treated as proof that a beverage is safe from refermentation or spoilage.
 
 ## Related reading
 

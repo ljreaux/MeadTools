@@ -2,9 +2,7 @@
 
 After estimating a target YAN, the next question is:
 
-```txt
-How much of each nutrient should be added?
-```
+> How much of each nutrient should be added?
 
 This page explains how MeadTools converts a target YAN into nutrient amounts, how schedule caps are applied, and what MeadTools does and does not try to enforce.
 
@@ -16,7 +14,6 @@ In real meadmaking, nutrient schedules vary depending on:
 
 - yeast choice
 - gravity
-- desired fermentation speed
 - whether the meadmaker prefers more organic or more inorganic nitrogen
 - whether the goal is simplicity, flexibility, or strict process control
 
@@ -46,17 +43,7 @@ DAP:        1 g/L adds 210 ppm YAN
 Other:      user-defined
 ```
 
-These values let MeadTools convert from:
-
-```txt
-desired ppm YAN contribution
-```
-
-to:
-
-```txt
-grams of nutrient needed
-```
+These values let MeadTools convert from desired ppm YAN contribution to grams of nutrient needed.
 
 ## Step 3: Convert YAN contribution into grams
 
@@ -140,13 +127,13 @@ MeadTools does not lock users into one branded nutrient schedule, but it does us
 
 These caps are expressed in **grams per liter**.
 
-### TOSNA-style Fermaid O only
+### TOSNA, Fermaid O only
 
 ```txt
 Fermaid O: 2.5 g/L
 ```
 
-### TBE-style all three
+### TBE, all three
 
 ```txt
 Fermaid O: 0.45 g/L
@@ -235,8 +222,6 @@ without Go-Ferm: effective Fermaid O contribution × 3
 ```
 
 This reflects the common meadmaking idea that Fermaid O performs more effectively than its raw nitrogen percentage alone would suggest.
-
-In other words, MeadTools does not treat Fermaid O as if it were simply interchangeable with DAP or Fermaid K on a ppm-for-ppm basis.
 
 ## Manual adjustment mode
 

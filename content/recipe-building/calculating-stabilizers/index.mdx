@@ -43,13 +43,13 @@ The sorbate side of the calculator is based on the stabilization guidance summar
 MeadTools uses this formula:
 
 ```txt
-Sorbate grams = ((-25 × ABV + 400) / 0.75) × volume in m³
+Sorbate grams = ((-25 × ABV + 400) / 750) × volume in liters
 ```
 
 Where:
 
 - **ABV** is the final alcohol percentage
-- **volume in m³** is the total finished batch volume in cubic meters
+- **volume in liters** is the total finished batch volume
 
 This is equivalent to first estimating the required potassium sorbate concentration in mg/L and then scaling it to the total batch size.
 
@@ -59,21 +59,15 @@ Suppose the finished mead is:
 
 ```txt
 ABV = 12%
-Volume = 5 gal
-```
-
-Convert volume:
-
-```txt
-5 gal ≈ 0.01893 m³
+Volume = 19 L
 ```
 
 Then:
 
 ```txt
-Sorbate = ((-25 × 12 + 400) / 0.75) × 0.01893
-        = (100 / 0.75) × 0.01893
-        ≈ 2.52 g
+Sorbate = ((-25 × 12 + 400) / 750) × 19
+        = (100 / 750) × 19
+        ≈ 2.53 g
 ```
 
 ## Why sorbate drops as ABV rises
@@ -90,19 +84,19 @@ The sulfite side starts with a target **free SO2** amount based on pH.
 
 MeadTools uses the following pH-to-ppm mapping:
 
-```txt
-pH 2.9 or lower: 11 ppm
-pH 3.0:          13 ppm
-pH 3.1:          16 ppm
-pH 3.2:          21 ppm
-pH 3.3:          26 ppm
-pH 3.4:          32 ppm
-pH 3.5:          39 ppm
-pH 3.6:          50 ppm
-pH 3.7:          63 ppm
-pH 3.8:          98 ppm
-pH 3.9 or above: 123 ppm
-```
+| pH           | Target free SO2 |
+| ------------ | --------------- |
+| 2.9 or lower | 11 ppm          |
+| 3.0          | 13 ppm          |
+| 3.1          | 16 ppm          |
+| 3.2          | 21 ppm          |
+| 3.3          | 26 ppm          |
+| 3.4          | 32 ppm          |
+| 3.5          | 39 ppm          |
+| 3.6          | 50 ppm          |
+| 3.7          | 63 ppm          |
+| 3.8          | 98 ppm          |
+| 3.9 or above | 123 ppm         |
 
 These values are based on the free SO2 dosing guidance summarized in the stabilization article.
 
@@ -122,7 +116,32 @@ For sodium metabisulfite:
 Na-meta grams = (liters × target ppm) / 674
 ```
 
-These divisors reflect how much usable SO2 each form contributes by weight.
+These divisors reflect how much free SO2 each form contributes by weight.
+
+Another way to think about the same math is:
+
+- potassium metabisulfite is treated as about **57% available SO2**
+- sodium metabisulfite is treated as about **67.4% available SO2**
+
+So the calculation is effectively:
+
+```txt
+grams needed = (liters × target ppm) / (SO2 fraction × 1000)
+```
+
+For potassium metabisulfite:
+
+```txt
+grams needed = (liters × target ppm) / (0.57 × 1000)
+             = (liters × target ppm) / 570
+```
+
+For sodium metabisulfite:
+
+```txt
+grams needed = (liters × target ppm) / (0.674 × 1000)
+             = (liters × target ppm) / 674
+```
 
 ### Example
 
@@ -156,7 +175,13 @@ It uses:
 Campden tablets = (target ppm / 75) × gallons
 ```
 
-This is a convenience estimate, not a substitute for careful gram measurement.
+This is based on the common rule of thumb that:
+
+```txt
+1 Campden tablet in 1 gallon ≈ 75 ppm
+```
+
+Campden tablets can vary noticeably from one product to another, so MeadTools treats this as a rough tablet equivalent rather than an exact dosing standard.
 
 ### Example
 
@@ -223,6 +248,7 @@ They assume:
 - the mead is being stabilized after fermentation, not during vigorous fermentation
 - sorbate and sulfite are being used appropriately together
 - pH has been measured accurately, or a reasonable default has been chosen
+- stabilizers are replaced regularly and appropriately
 
 They also do not replace good process decisions like confirming stable gravity readings before packaging.
 

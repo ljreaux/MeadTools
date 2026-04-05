@@ -27,8 +27,6 @@ Each ingredient has a **Brix value**, which is converted into a **specific gravi
 
 Once ingredient lines are expressed in terms of specific gravity and volume, MeadTools estimates original gravity by blending those ingredient solutions together.
 
-This means the estimated OG is based on the combined density of the mixture, rather than on a single flat yield rule applied to every ingredient.
-
 ## Brix as the starting point
 
 In MeadTools, gravity estimation starts with **Brix**, which describes the sugar concentration of an ingredient.
@@ -283,8 +281,6 @@ This example shows how MeadTools models a fruit mead by:
 
 In this example, the batch is brought to 1 gallon using honey and water first. The blueberries are then added on top of that volume, increasing the total volume of the mixture.
 
-This reflects a common real-world workflow when making fruit meads.
-
 It also highlights an important limitation of direct gravity measurements: fruit solids can interfere with hydrometer or refractometer readings, making it difficult to measure gravity accurately once fruit is present. Modeling the mixture mathematically helps estimate gravity in situations where direct measurement is unreliable.
 
 ## Why this is only an estimate
@@ -313,7 +309,6 @@ It approaches gravity estimation by:
 
 - Brix values may come from database values, defaults, direct measurements, or nutrition-label-style calculations
 - MeadTools ingredient data pulls much of its sugar information from the USDA FoodData Central database
-- Gravity is modeled from the combined mixture, not from a flat per-ingredient yield system
 - The estimate is only as good as the ingredient assumptions being used
 
 ### In practice
