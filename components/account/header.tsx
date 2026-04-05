@@ -8,7 +8,7 @@ import {
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Beer, Droplets, LogOut, Settings, NotebookPen } from "lucide-react";
+import { Droplets, LogOut, Settings, NotebookPen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
@@ -43,8 +43,6 @@ import { Switch } from "../ui/switch";
 function Header() {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const isBrewsPath =
-    pathname?.includes("brews") && !pathname?.includes("hydrometer");
   const { logout } = useLogout();
   const { data, isLoading, isError, error } = useAccountInfo();
   if (isLoading || !data) return <Loading />;
@@ -66,7 +64,9 @@ function Header() {
         showGoogleAvatar={user.show_google_avatar}
       />
 
-      {/* Brew Tracker / Saved Recipes */}
+      {/*
+      Brew Tracker / Saved Recipes
+      Hidden for now while the account brews UI is not ready for main.
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -89,6 +89,7 @@ function Header() {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+      */}
 
       {/* Hydrometer Dashboard / Saved Recipes */}
       <TooltipProvider delayDuration={150}>
