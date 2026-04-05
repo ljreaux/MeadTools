@@ -1,0 +1,279 @@
+# Calculating ABV and Delle Units
+
+Alcohol by volume and Delle units are two of the most important values shown in recipe calculations.
+
+- **ABV** estimates how much of the final beverage is alcohol
+- **Delle units** can help determine if your brew is likely stable without need for additional intervention
+
+This page explains the math behind both values and why they matter.
+
+## What ABV means
+
+**ABV** stands for **alcohol by volume**.
+
+If a mead is 12% ABV, that means about 12% of the final liquid volume is alcohol.
+
+ABV is not measured directly from sugar alone. It is estimated from how much the gravity changed during fermentation:
+
+- **Original Gravity (OG)** represents the density before fermentation
+- **Final Gravity (FG)** represents the density after fermentation
+
+In general:
+
+- a larger drop from OG to FG means more sugar was fermented
+- more fermented sugar usually means more alcohol was produced
+
+The important idea is that alcohol is not estimated directly from gravity points alone. The calculation works by converting gravity into **extract**, then correcting for the fact that finished mead or beer contains alcohol as well as water and dissolved solids.
+
+## Why a simple shortcut is not the full story
+
+A common homebrew shortcut is:
+
+```txt
+ABV ≈ (OG - FG) × 131.25
+```
+
+That approximation is easy to use, but it is still only a shortcut.
+
+The more complete approach converts gravity into estimated extract values and then estimates alcohol from those values.
+
+This gives a more realistic result across a wider range of gravities.
+
+## The ABV formula used here
+
+It works in several steps.
+
+### Step 1: Convert specific gravity into extract
+
+Here, **extract** means the weight percent of dissolved material in the wort or must. This is usually expressed in degrees Plato.
+
+A common polynomial approximation converts specific gravity into extract:
+
+```txt
+Extract = -668.962 + 1262.45 × SG - 776.43 × SG² + 182.94 × SG³
+```
+
+Applied to the two gravity readings:
+
+```txt
+OE = -668.962 + 1262.45 × OG - 776.43 × OG² + 182.94 × OG³
+AE = -668.962 + 1262.45 × FG - 776.43 × FG² + 182.94 × FG³
+```
+
+Where:
+
+- **OE** = original extract
+- **AE** = apparent extract
+
+The word **apparent** matters here. Once fermentation produces alcohol, the liquid is no longer just water plus dissolved solids. Because alcohol is less dense than water, the final gravity by itself makes the remaining extract look lower than it really is.
+
+## Step 2: Estimate the real extract
+
+Fermentation changes the relationship between sugar and density, so the final gravity alone does not directly tell us how much sugar is still present.
+
+MeadTools estimates **real extract** using:
+
+```txt
+q = 0.22 + 0.001 × OE
+RE = (q × OE + AE) / (1 + q)
+```
+
+Where:
+
+- **RE** = real extract
+
+This is Balling's empirical correction. It adjusts the apparent extract into a more realistic estimate of how much dissolved material actually remains after fermentation.
+
+## Step 3: Estimate alcohol by weight
+
+From there, MeadTools estimates **alcohol by weight**:
+
+```txt
+ABW = (OE - RE) / (2.0665 - 0.010665 × OE)
+```
+
+This is an empirical alcohol-by-weight equation based on Balling's work.
+
+## Step 4: Convert alcohol by weight into alcohol by volume
+
+Finally:
+
+```txt
+ABV = ABW × (FG / 0.794)
+```
+
+The value **0.794** is the approximate density of ethanol relative to water.
+
+This final step converts the alcohol estimate into the more familiar **percent alcohol by volume**.
+
+## Example
+
+Suppose a mead starts at:
+
+```txt
+OG = 1.105
+FG = 0.996
+```
+
+Using the extract-based method:
+
+```txt
+OE ≈ 24.83
+AE ≈ -1.04
+q  ≈ 0.245
+RE ≈ 4.05
+ABW ≈ 11.53
+ABV ≈ 14.47%
+```
+
+So this fermentation would be estimated at about:
+
+```txt
+ABV ≈ 14.5%
+```
+
+## ABV and recipe design
+
+When designing a mead recipe, ABV is usually estimated from the change between OG and FG.
+
+Conceptually:
+
+```txt
+ABV is estimated from OG and FG through extract and alcohol conversion
+```
+
+If the recipe later includes **secondary additions** such as backsweetening, the final ABV can also be affected by dilution from the added volume.
+
+That means:
+
+- alcohol is produced during primary fermentation
+- later additions can increase total volume
+- increasing total volume lowers final ABV
+
+That dilution behavior is described in [Secondary Ingredients and Dilution](/recipe-building/secondary-ingredients).
+
+## What Delle units mean
+
+**Delle units** are a rough stability measure based on:
+
+- alcohol content
+- residual sugar
+
+Higher values are generally more stable.
+
+A commonly cited rule of thumb is:
+
+```txt
+73 Delle units or higher = likely stable
+```
+
+But this is only a guideline, not a guarantee.
+
+## The Delle formula used here
+
+Delle is calculated as:
+
+```txt
+Delle = Brix(final gravity) + 4.5 × ABV
+```
+
+The first part uses the same SG-to-Brix conversion formula shown earlier:
+
+```txt
+Brix = -668.962 + 1262.45 × SG - 776.43 × SG² + 182.94 × SG³
+```
+
+So if the final gravity is sweeter, the Brix term is higher.
+
+If the alcohol is higher, the `4.5 × ABV` term is higher.
+
+Both of those push Delle upward.
+
+Another way to describe the same idea is:
+
+```txt
+Delle = 4.5 × %ABV + % residual sugar
+```
+
+Where:
+
+- **residual sugar %** is often treated as grams of residual sugar per liter, divided by 10
+- sweeter mead raises Delle
+- higher ABV raises Delle
+
+## Example
+
+Suppose a finished mead has:
+
+```txt
+FG = 1.020
+ABV = 12.0%
+```
+
+Convert final gravity to Brix:
+
+```txt
+Brix(1.020) ≈ 5.08
+```
+
+Then calculate Delle:
+
+```txt
+Delle ≈ 5.08 + 4.5 × 12
+       ≈ 5.08 + 54
+       ≈ 59.08
+```
+
+That would be:
+
+```txt
+Delle ≈ 59
+```
+
+Which is below the commonly cited 73-point rule of thumb.
+
+## Delle chart
+
+The chart below shows Delle units across a range of ABV and final gravity values. The red line marks the combinations that land at about **73 Delle units**.
+
+<DocImage
+  src="/delle_units_chart.png"
+  alt="Chart of Delle units across ABV and final gravity, with a red line marking about 73 Delle units"
+  width={951}
+  height={760}
+  caption="Delle units across ABV and final gravity. The red line marks combinations that land at about 73 Delle units."
+/>
+
+On this chart:
+
+- values above the red line are higher than 73 Delle units
+- values below the red line are lower than 73 Delle units
+- moving upward increases residual sugar
+- moving right increases ABV
+
+This makes it easier to see the tradeoff: if ABV is lower, more residual sugar is needed to reach the same Delle value. If ABV is higher, less residual sugar is needed.
+
+## Related reading
+
+- [Calculating Gravity](/recipe-building/calculating-gravity)
+- [Secondary Ingredients and Dilution](/recipe-building/secondary-ingredients)
+
+## Summary
+
+This article calculates ABV by:
+
+1. converting OG and FG into extract estimates
+2. distinguishing apparent extract from real extract
+3. calculating alcohol by weight
+4. converting that result into alcohol by volume
+
+This article calculates Delle by:
+
+1. converting final gravity into a Brix estimate
+2. adding `4.5 × ABV`
+
+Together, these values help describe:
+
+- how much alcohol fermentation likely produced
+- how sweet the finished beverage still is
+- how likely the finished mead is to be microbiologically stable

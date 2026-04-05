@@ -1,0 +1,207 @@
+# Additives and Unit Conversions
+
+The additives section of MeadTools is designed to make common additions faster to plan.
+
+It does two main things:
+
+1. autofills common additive amounts from a built-in additive database
+2. converts additive units when that conversion is possible without knowing density
+
+This page explains how both parts work.
+
+## What the additive database is for
+
+MeadTools stores a catalog of common additives along with a default dosage and unit.
+
+These dosage values come from a mix of:
+
+- common meadmaking practice
+- manufacturer recommendations
+- practical dosage guidelines that are commonly used by home meadmakers
+
+The goal is not to claim that every additive has one universally correct dose.
+
+The goal is to give the user a fast and reasonable starting point that can then be adjusted if needed.
+
+## How autofill works
+
+When an additive is selected from the MeadTools catalog, the calculator fills in:
+
+- the additive name
+- the default unit
+- the amount for the current batch size
+
+MeadTools stores additive dosage as:
+
+```txt
+dosage per gallon
+```
+
+Then it calculates the amount for the actual recipe volume using:
+
+```txt
+amount = dosage per gallon × total batch volume in gallons
+```
+
+## Example
+
+Suppose an additive has a stored dosage of:
+
+```txt
+0.5 g per gallon
+```
+
+If the recipe volume is:
+
+```txt
+3 gallons
+```
+
+Then MeadTools fills:
+
+```txt
+amount = 0.5 × 3
+       = 1.5 g
+```
+
+This makes additive selection batch-aware instead of forcing the user to scale every recommendation manually.
+
+## Why the total batch volume matters
+
+Additive autofill is based on the recipe's total calculated volume.
+
+That means the amount scales with the batch size currently shown in MeadTools.
+
+This is especially useful when:
+
+- building larger batches
+- using fruit that increases volume
+- adjusting ingredients and wanting the additive suggestion to stay in step with the recipe
+
+## Manual edits are allowed
+
+Autofill is only a starting point.
+
+After a value is filled in, the user can still:
+
+- change the amount
+- change the unit
+- type a completely custom additive
+
+MeadTools does not lock the user to the catalog suggestion.
+
+## How unit conversion works
+
+Additive unit conversion is intentionally limited.
+
+MeadTools will convert an amount automatically only when the old unit and new unit are in the same measurable dimension.
+
+Those dimensions are:
+
+- **weight**
+- **volume**
+- **count**
+
+### Weight units
+
+MeadTools can convert between weight units such as:
+
+```txt
+mg, g, kg, oz, lbs
+```
+
+### Volume units
+
+MeadTools can convert between volume units such as:
+
+```txt
+mL, liters, fl oz, tsp, tbsp, quarts, gal
+```
+
+### Count units
+
+Count-style units such as:
+
+```txt
+units
+```
+
+are treated as non-convertible counts.
+
+## When MeadTools converts automatically
+
+If a user switches between units in the same dimension, MeadTools converts the amount.
+
+For example:
+
+```txt
+5 g → 5000 mg
+250 mL → 8.45 fl oz
+```
+
+This works because no density information is needed.
+
+## When MeadTools does not convert automatically
+
+If a unit change crosses dimensions, MeadTools keeps the numeric value the same instead of pretending it knows the conversion.
+
+For example:
+
+```txt
+5 g → 5 mL
+```
+
+would **not** be treated as a real conversion.
+
+That is because MeadTools would need density information to know how many milliliters correspond to 5 grams of that specific additive.
+
+Since density varies from one product to another, MeadTools deliberately avoids making that assumption.
+
+## Why this matters
+
+Many additives do not have a simple universal weight-to-volume conversion.
+
+For example:
+
+- powders settle differently
+- granule size matters
+- packing density matters
+- liquid additives may have densities different from water
+
+So a conversion like grams to milliliters cannot be done honestly without more information about the material.
+
+MeadTools therefore only converts when the math is genuinely known.
+
+## A practical consequence of cross-dimension changes
+
+If the user changes from a weight unit to a volume unit, or from a volume unit to a weight unit, MeadTools treats that as a relabeling step rather than a true conversion.
+
+After that, the user can type a new amount in the new unit if they know the correct value.
+
+This prevents the calculator from carrying forward a fake precision that was never justified.
+
+## Summary
+
+The additives section works by:
+
+1. storing common additive dosages in a built-in catalog
+2. scaling those dosages to the current recipe volume
+3. allowing users to override the suggested amount
+4. converting units only when the units are compatible without density information
+
+In short:
+
+```txt
+autofill amount = dosage per gallon × recipe gallons
+```
+
+And for unit changes:
+
+```txt
+weight ↔ weight: convert
+volume ↔ volume: convert
+weight ↔ volume: do not convert
+count ↔ anything else: do not convert
+```
+
+This gives MeadTools a practical additive system that is convenient without pretending to know more than it actually does.

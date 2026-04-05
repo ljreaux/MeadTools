@@ -1,0 +1,272 @@
+# Calculating Stabilizers
+
+MeadTools can estimate chemical stabilization amounts for finished mead using:
+
+- metabisulfite
+- sorbate
+- Campden tablet equivalents
+
+This page explains the math behind those estimates and the conservative assumptions MeadTools makes when secondary ingredients are involved.
+
+## What stabilizers are trying to do
+
+Chemical stabilization usually means using **metabisulfite** together with **sorbate**.
+
+In practical terms:
+
+- metabisulfite helps protect against oxidation and suppresses yeast and microbes
+- sorbate helps prevent surviving yeast cells from reproducing
+
+These are usually used after fermentation is truly finished, not as a reliable way to stop an active healthy fermentation.
+
+## MeadTools uses conservative final-batch values
+
+One important MeadTools-specific choice is that stabilization math is based on the **final batch as it actually exists after secondary additions**.
+
+That means MeadTools uses:
+
+- **total final volume**, not just primary volume
+- **final ABV after dilution**, not just primary ABV
+
+This matters because secondary ingredients can:
+
+- increase the total volume
+- dilute the alcohol
+- change the real amount of stabilizer needed
+
+So MeadTools intentionally sizes stabilizers against the full finished batch rather than the smaller pre-backsweetening batch.
+
+## Sorbate calculation
+
+The sorbate side of the calculator is based on the stabilization guidance summarized in the Modern Meadmaking wiki, including the extrapolated high-ABV behavior.
+
+MeadTools uses this formula:
+
+```txt
+Sorbate grams = ((-25 × ABV + 400) / 750) × volume in liters
+```
+
+Where:
+
+- **ABV** is the final alcohol percentage
+- **volume in liters** is the total finished batch volume
+
+This is equivalent to first estimating the required potassium sorbate concentration in mg/L and then scaling it to the total batch size.
+
+### Example
+
+Suppose the finished mead is:
+
+```txt
+ABV = 12%
+Volume = 19 L
+```
+
+Then:
+
+```txt
+Sorbate = ((-25 × 12 + 400) / 750) × 19
+        = (100 / 750) × 19
+        ≈ 2.53 g
+```
+
+## Why sorbate drops as ABV rises
+
+In this model, sorbate need decreases as alcohol increases.
+
+That is because alcohol itself helps make renewed fermentation less likely, which reduces how much sorbate is needed.
+
+This is also why potassium sorbate becomes less important at very high ABV, and may be of limited value once a mead is already around 14-15% ABV or above.
+
+## Sulfite calculation
+
+The sulfite side starts with a target **free SO2** amount based on pH.
+
+MeadTools uses the following pH-to-ppm mapping:
+
+| pH           | Target free SO2 |
+| ------------ | --------------- |
+| 2.9 or lower | 11 ppm          |
+| 3.0          | 13 ppm          |
+| 3.1          | 16 ppm          |
+| 3.2          | 21 ppm          |
+| 3.3          | 26 ppm          |
+| 3.4          | 32 ppm          |
+| 3.5          | 39 ppm          |
+| 3.6          | 50 ppm          |
+| 3.7          | 63 ppm          |
+| 3.8          | 98 ppm          |
+| 3.9 or above | 123 ppm         |
+
+These values are based on the free SO2 dosing guidance summarized in the stabilization article.
+
+## Converting free SO2 target into metabisulfite grams
+
+Once the target free SO2 ppm is chosen, MeadTools converts that into grams of metabisulfite.
+
+For potassium metabisulfite:
+
+```txt
+K-meta grams = (liters × target ppm) / 570
+```
+
+For sodium metabisulfite:
+
+```txt
+Na-meta grams = (liters × target ppm) / 674
+```
+
+These divisors reflect how much free SO2 each form contributes by weight.
+
+Another way to think about the same math is:
+
+- potassium metabisulfite is treated as about **57% available SO2**
+- sodium metabisulfite is treated as about **67.4% available SO2**
+
+So the calculation is effectively:
+
+```txt
+grams needed = (liters × target ppm) / (SO2 fraction × 1000)
+```
+
+For potassium metabisulfite:
+
+```txt
+grams needed = (liters × target ppm) / (0.57 × 1000)
+             = (liters × target ppm) / 570
+```
+
+For sodium metabisulfite:
+
+```txt
+grams needed = (liters × target ppm) / (0.674 × 1000)
+             = (liters × target ppm) / 674
+```
+
+### Example
+
+Suppose the finished batch is:
+
+```txt
+Volume = 19 L
+pH = 3.5
+```
+
+At pH 3.5, MeadTools uses:
+
+```txt
+39 ppm
+```
+
+Then potassium metabisulfite would be:
+
+```txt
+K-meta = (19 × 39) / 570
+       ≈ 1.30 g
+```
+
+## Campden tablet equivalent
+
+MeadTools also estimates a Campden-tablet equivalent from the same pH target.
+
+It uses:
+
+```txt
+Campden tablets = (target ppm / 75) × gallons
+```
+
+This is based on the common rule of thumb that:
+
+```txt
+1 Campden tablet in 1 gallon ≈ 75 ppm
+```
+
+Campden tablets can vary noticeably from one product to another, so MeadTools treats this as a rough tablet equivalent rather than an exact dosing standard.
+
+### Example
+
+If the batch is:
+
+```txt
+5 gal
+pH 3.5 → 39 ppm
+```
+
+Then:
+
+```txt
+Campden tablets = (39 / 75) × 5
+                ≈ 2.6 tablets
+```
+
+## Default pH behavior
+
+If no pH reading is taken, MeadTools defaults to:
+
+```txt
+pH 3.6
+```
+
+which corresponds to:
+
+```txt
+50 ppm free SO2
+```
+
+This is a practical default, not a claim that every finished mead is actually at pH 3.6.
+
+## Why MeadTools uses the finished total volume
+
+This is one of the easiest places to under-dose by accident.
+
+For example, imagine a mead that:
+
+- ferments as 1 gallon
+- is then backsweetened or fruited up to 1.2 gallons
+
+If stabilizers were calculated only from the original 1 gallon, the final treated concentration would be too low.
+
+MeadTools avoids that by calculating sulfite, sorbate, and Campden equivalents from the **full finished volume**.
+
+## Why MeadTools uses the final diluted ABV
+
+Secondary additions can also reduce ABV by dilution.
+
+That matters because sorbate recommendations depend on alcohol content.
+
+So MeadTools calculates sorbate using the **final ABV after secondary additions**, not the stronger primary-fermentation ABV.
+
+This is another intentionally conservative choice.
+
+## Important caveats
+
+These calculations are useful planning tools, but they do not guarantee stability on their own.
+
+They assume:
+
+- fermentation has actually stopped
+- the mead is being stabilized after fermentation, not during vigorous fermentation
+- sorbate and sulfite are being used appropriately together
+- pH has been measured accurately, or a reasonable default has been chosen
+- stabilizers are replaced regularly and appropriately
+
+They also do not replace good process decisions like confirming stable gravity readings before packaging.
+
+## Summary
+
+MeadTools estimates stabilizers by:
+
+1. using final total batch volume
+2. using final ABV after secondary additions
+3. estimating sorbate from ABV
+4. estimating target free SO2 from pH
+5. converting that SO2 target into metabisulfite grams and Campden-tablet equivalents
+
+In short:
+
+```txt
+Sorbate depends mostly on final ABV and total volume
+Sulfite depends mostly on final pH and total volume
+```
+
+This gives MeadTools a practical and conservative stabilization estimate for finished mead, especially when backsweetening or other secondary additions have changed the final batch.

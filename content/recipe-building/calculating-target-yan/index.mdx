@@ -1,0 +1,196 @@
+# Calculating Target YAN
+
+Target YAN is one of the main inputs MeadTools uses to estimate nutrient needs for fermentation.
+
+This page explains what YAN is, how MeadTools estimates a target, and why that estimate depends on both sugar level and yeast choice.
+
+## What YAN means
+
+**YAN** stands for **Yeast Assimilable Nitrogen**.
+
+This is the nitrogen in a must that yeast can actually use during fermentation.
+
+Honey is naturally low in YAN, which is why mead often needs nutrient additions even when beer or grape wine might not.
+
+## Why target YAN is only an estimate
+
+There is no single universal YAN number that works for every mead.
+
+The nitrogen requirement depends on things like:
+
+- how much sugar is present
+- which yeast strain is being used
+- how much nitrogen is already present from fruit or juice
+
+So the goal is not to discover one perfect number. The goal is to estimate a reasonable **target YAN** for the must being built.
+
+## Step 1: Estimate sugar in grams per liter
+
+The first step is to estimate how much sugar is present in the must.
+
+This uses:
+
+```txt
+Sugar (g/L) = Brix × Specific Gravity × 10
+```
+
+Why this works:
+
+- Brix describes grams of sugar per 100 grams of solution
+- multiplying by 10 scales that to grams per 1000 grams
+- multiplying by specific gravity adjusts from weight-based concentration to grams per liter of must
+
+### Example
+
+Suppose the must has:
+
+```txt
+SG = 1.108
+Brix = 25.5
+```
+
+Then:
+
+```txt
+Sugar (g/L) = 25.5 × 1.108 × 10
+             ≈ 282.5 g/L
+```
+
+## Step 2: Apply a yeast nitrogen multiplier
+
+Once the sugar concentration is estimated, it is multiplied by a nitrogen-demand factor based on the yeast strain.
+
+The traditional Scott Labs style multipliers are:
+
+```txt
+Extra Low / Very Low: × 0.5 to 0.75
+Low:                  × 0.75
+Medium:               × 0.90
+High:                 × 1.25
+```
+
+In the MeadTools model, these are treated as:
+
+```txt
+Very Low:  × 0.75
+Low:       × 0.75
+Medium:    × 0.90
+High:      × 1.25
+Very High: × 1.80
+```
+
+The first four categories follow the common Scott Labs style framework used in modern meadmaking calculators.
+
+The **Very High** category is an extra MeadTools category used mainly for especially demanding fermentations, such as many kveik-based nutrient plans.
+
+## Step 3: Calculate target YAN
+
+Once sugar concentration and yeast multiplier are known:
+
+```txt
+Target YAN = Sugar (g/L) × yeast multiplier
+```
+
+Using the previous example with a low-nitrogen yeast:
+
+```txt
+Target YAN = 282.5 × 0.75
+           ≈ 211.9 ppm
+           ≈ 212 ppm
+```
+
+This is the estimated total YAN target before accounting for nitrogen already present in the must.
+
+## Step 4: Estimate the offset
+
+Not every batch starts at zero.
+
+Fruit, juice, or other ingredients may already contribute some usable nitrogen. If that nitrogen is known or estimated, it can be subtracted as an **offset**.
+
+In MeadTools, the default offset is a conservative fruit-based estimate:
+
+```txt
+Offset (ppm) = (primary fruit weight in lb × 25) / primary volume in gal
+```
+
+This means:
+
+- only **primary** fruit is counted
+- the estimate is based on **25 ppm per pound of fruit per gallon**
+- the result is scaled to the primary batch volume
+
+### Example
+
+Suppose a recipe has:
+
+```txt
+4 lb fruit
+2 gal primary volume
+```
+
+Then:
+
+```txt
+Offset = (4 × 25) / 2
+       = 50 ppm
+```
+
+## Step 5: Subtract the offset from the target
+
+Once the offset has been estimated:
+
+```txt
+Final target YAN = calculated target YAN - offset
+```
+
+So if the yeast target is 212 ppm, and the estimated offset is 50 ppm:
+
+```txt
+Final target YAN = 212 - 50
+                 = 162 ppm
+```
+
+This prevents overfeeding the fermentation when part of the nitrogen requirement is already being covered by the ingredients.
+
+## Why the offset is only an estimate
+
+The MeadTools offset is intentionally conservative and based on general meadmaking wisdom rather than hard universal fruit-YAN numbers.
+
+That is important because:
+
+- fruit nitrogen content varies widely
+- ripeness matters
+- variety matters
+- processing method matters
+- published YAN data is not available for many ingredients
+
+So the offset should be understood as a practical planning estimate, not as a guaranteed measurement of the must.
+
+In other words, MeadTools uses the offset to avoid assuming fruit contributes nothing, while still being careful not to over-credit the fruit.
+
+## Where yeast requirement data comes from
+
+MeadTools stores a large yeast database covering strains from multiple brands.
+
+The nitrogen requirement category for a strain is taken from the information published by that yeast's manufacturer whenever that information is available.
+
+That means MeadTools is not inventing nitrogen categories from scratch. It is using producer-supplied guidance and then applying the target YAN model on top of it.
+
+Because manufacturers do not always describe nitrogen demand in exactly the same way, these categories should still be treated as practical working labels rather than absolute scientific values.
+
+## Summary
+
+Target YAN is estimated by:
+
+1. converting gravity and Brix into sugar grams per liter
+2. multiplying by a yeast nitrogen requirement factor
+3. estimating an offset from primary fruit contribution
+4. subtracting that offset from the target
+
+In short:
+
+```txt
+Target YAN = (Brix × SG × 10 × yeast multiplier) - offset
+```
+
+This gives MeadTools a practical way to estimate how much nitrogen a must may need before converting that target into specific nutrient additions.

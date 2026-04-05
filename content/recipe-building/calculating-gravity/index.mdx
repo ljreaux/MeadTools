@@ -1,0 +1,330 @@
+# Calculating Gravity
+
+Gravity is one of the core measurements used when building a mead recipe. It gives a way to estimate how much dissolved sugar is present in a must, which in turn helps predict fermentation behavior, alcohol potential, and final balance.
+
+This page explains the math behind estimating original gravity from ingredients and volume, along with how MeadTools models those calculations in practice.
+
+## What gravity means
+
+In brewing, **specific gravity** is a measurement of density relative to water.
+
+- Pure water has a specific gravity of **1.000**
+- A must with dissolved sugars will have a gravity above **1.000**
+- The more dissolved sugar present, the higher the gravity
+
+When building a recipe, gravity is usually discussed as:
+
+- **Original Gravity (OG):** the gravity before fermentation
+- **Final Gravity (FG):** the gravity after fermentation
+
+This page focuses on **calculating original gravity from ingredients and volume**.
+
+## The core idea
+
+In MeadTools, gravity estimation starts by modeling each ingredient as a solution with a sugar concentration and a density.
+
+Each ingredient has a **Brix value**, which is converted into a **specific gravity (SG)**. That specific gravity is then used to relate the ingredient's weight and volume.
+
+Once ingredient lines are expressed in terms of specific gravity and volume, MeadTools estimates original gravity by blending those ingredient solutions together.
+
+## Brix as the starting point
+
+In MeadTools, gravity estimation starts with **Brix**, which describes the sugar concentration of an ingredient.
+
+Brix is a measure of sugar concentration by weight:
+
+```txt
+Brix = sugar weight / total substance weight × 100
+```
+
+So if a fruit puree, juice, or honey sample is 10% sugar by weight, that sample is 10 °Bx.
+
+This makes Brix a useful modeling value because it describes the concentration of sugar in the ingredient itself, rather than only describing the final mixture after everything has been combined.
+
+## Where Brix values come from
+
+A Brix value can come from several sources:
+
+- a measured value from a refractometer or lab data
+- a known default value for a common ingredient
+- a food composition database
+- a nutrition label, when sugar and serving weight are known
+
+For example, if a nutrition label shows 17 g of sugar in a 140 g serving, the implied sugar concentration is:
+
+```txt
+17 / 140 × 100 = 12.14 °Bx
+```
+
+In MeadTools, ingredient sugar values can come from database-backed ingredient data. The ingredient database pulls much of this information from the USDA FoodData Central database.
+
+Because these values are used for modeling, they should be understood as estimates unless they come from direct measurement of the exact ingredient being used.
+
+## Converting Brix to specific gravity
+
+Once an ingredient has a Brix value, that value can be converted into **specific gravity (SG)**.
+
+A common polynomial approximation is:
+
+```txt
+SG = 1.00001 + 0.0038661 × Brix + 0.000013488 × Brix² + 0.000000043074 × Brix³
+```
+
+This gives a density estimate relative to water.
+
+Using this model:
+
+- water at 0.00 °Bx is approximately 1.000 SG
+- honey at 79.60 °Bx is approximately 1.415 SG
+- blueberry at 9.36 °Bx is approximately 1.037 SG
+
+As Brix increases, specific gravity increases as well.
+
+## Weight, volume, and density
+
+Once an ingredient has a specific gravity, its weight and volume are linked.
+
+Conceptually:
+
+```txt
+specific gravity = density of solution / density of water
+```
+
+This means specific gravity describes how dense a solution is compared to water.
+
+For recipe building, this is often used in rearranged form:
+
+```txt
+volume = weight / SG
+weight = volume × SG
+```
+
+This allows MeadTools to keep ingredient lines internally consistent:
+
+- If a user enters a weight, the corresponding volume can be derived
+- If a user enters a volume, the corresponding weight can be derived
+
+This is why Brix and specific gravity are central to how ingredients are modeled.
+
+### Example: converting between weight and volume
+
+Suppose you have honey at 79.60 °Bx (≈ 1.415 SG).
+
+If you start with weight:
+
+```txt
+1.0 kg honey → volume ≈ 1.0 / 1.415 = 0.707 L
+```
+
+If you start with volume:
+
+```txt
+1.0 L honey → weight ≈ 1.0 × 1.415 = 1.415 kg
+```
+
+This is how MeadTools keeps ingredient inputs consistent regardless of whether a user enters weight or volume.
+
+## Example calculation: simple traditional mead
+
+Suppose a recipe contains:
+
+- 3.0 lb honey (79.60 °Bx)
+- Water added to reach a total volume of 1 gallon
+
+### Step 1: Convert honey to base units
+
+```txt
+3.0 lb ≈ 1.36078 kg
+```
+
+### Step 2: Convert Brix to specific gravity
+
+```txt
+79.60 °Bx ≈ 1.41494 SG
+```
+
+### Step 3: Convert honey weight to volume
+
+```txt
+Volume = weight / SG
+Volume ≈ 1.36078 / 1.41494 ≈ 0.96172 L
+Volume ≈ 0.25406 gal
+```
+
+### Step 4: Determine water volume
+
+```txt
+Water volume ≈ 1.00000 - 0.25406 ≈ 0.74594 gal
+Water volume ≈ 2.82369 L
+```
+
+### Step 5: Blend the components
+
+The blended gravity is calculated as a volume-weighted average of the component densities:
+
+```txt
+Blended SG = (honey volume × honey SG
+            + water volume × water SG
+            + fruit volume × fruit SG
+            + ...) / total volume
+```
+
+Each term represents one ingredient component in the mixture.
+
+This means each component contributes to the final gravity in proportion to how much of the total volume it represents.
+
+Total volume:
+
+```txt
+0.96172 L + 2.82369 L = 3.78541 L
+```
+
+Blended gravity:
+
+```txt
+SG ≈ (0.96172 × 1.41494 + 2.82369 × 1.00001) / 3.78541
+SG ≈ 1.10543
+```
+
+### Result
+
+```txt
+Estimated OG ≈ 1.105
+```
+
+This example shows how MeadTools models a traditional mead by:
+
+- converting ingredient sugar concentration (Brix) into density (SG)
+- relating weight and volume through that density
+- blending the resulting liquid components to estimate final gravity
+
+## Example calculation: fruit mead
+
+Suppose a recipe contains:
+
+- 3.0 lb honey (79.60 °Bx)
+- 3.0 lb blueberries (9.36 °Bx)
+- Water added to reach a total volume of 1 gallon **before fruit is added**
+
+### Step 1: Convert ingredients to base units
+
+```txt
+Honey:      3.0 lb ≈ 1.36078 kg
+Blueberry:  3.0 lb ≈ 1.36078 kg
+```
+
+### Step 2: Convert Brix to specific gravity
+
+```txt
+Honey:      79.60 °Bx ≈ 1.41494 SG
+Blueberry:   9.36 °Bx ≈ 1.03741 SG
+Water:       0.00 °Bx ≈ 1.00001 SG
+```
+
+### Step 3: Convert weights to volumes
+
+```txt
+Honey volume   ≈ 1.36078 / 1.41494 ≈ 0.96172 L (≈ 0.25406 gal)
+Blueberry vol. ≈ 1.36078 / 1.03741 ≈ 1.31170 L (≈ 0.34651 gal)
+```
+
+### Step 4: Determine water volume (before fruit)
+
+```txt
+Water volume ≈ 1.00000 - 0.25406 ≈ 0.74594 gal
+Water volume ≈ 2.82369 L
+```
+
+This represents the water needed to reach 1 gallon when combined with honey, before any fruit is added.
+
+At this stage, the mixture is 1 gallon of must. The fruit is then added on top of this, increasing the total volume.
+
+### Step 5: Total volume after all components
+
+```txt
+Total volume ≈ 0.96172 + 2.82369 + 1.31170 ≈ 5.09711 L
+Total volume ≈ 1.34651 gal
+```
+
+### Step 6: Blend the components
+
+The blended gravity is calculated as a volume-weighted average of the component densities:
+
+```txt
+Blended SG = (honey volume × honey SG
+            + water volume × water SG
+            + fruit volume × fruit SG
+            + ...) / total volume
+```
+
+Apply the values:
+
+```txt
+SG ≈ (0.96172 × 1.41494
+     + 2.82369 × 1.00001
+     + 1.31170 × 1.03741) / 5.09711
+SG ≈ 1.08792
+```
+
+### Result
+
+```txt
+Estimated OG ≈ 1.088
+```
+
+This example shows how MeadTools models a fruit mead by:
+
+- converting each ingredient's Brix into a density (SG)
+- deriving volumes from weights using that density
+- accounting for fruit volume in the total mixture
+- blending all components to estimate final gravity
+
+In this example, the batch is brought to 1 gallon using honey and water first. The blueberries are then added on top of that volume, increasing the total volume of the mixture.
+
+It also highlights an important limitation of direct gravity measurements: fruit solids can interfere with hydrometer or refractometer readings, making it difficult to measure gravity accurately once fruit is present. Modeling the mixture mathematically helps estimate gravity in situations where direct measurement is unreliable.
+
+## Why this is only an estimate
+
+Gravity calculations are based on assumptions and will vary in real-world conditions:
+
+- Honey composition varies
+- Fruit sugars are less predictable
+- Volume measurements may differ from actual mixed volume
+- Measurement and temperature effects
+
+These calculations should be treated as estimates, not exact values.
+
+## MeadTools implementation
+
+MeadTools models each ingredient as a solution defined by its sugar concentration, specific gravity, and volume.
+
+It approaches gravity estimation by:
+
+1. Start with a Brix value for the ingredient
+2. Convert that Brix value into a specific gravity estimate
+3. Use specific gravity to keep weight and volume in sync
+4. Blend ingredient inputs together to estimate the gravity of the primary mixture
+
+### Notes
+
+- Brix values may come from database values, defaults, direct measurements, or nutrition-label-style calculations
+- MeadTools ingredient data pulls much of its sugar information from the USDA FoodData Central database
+- The estimate is only as good as the ingredient assumptions being used
+
+### In practice
+
+This allows MeadTools to model recipes in a way that reflects both sugar concentration and physical volume:
+
+- changing an ingredient's Brix changes its estimated density
+- changing an ingredient's amount changes how much influence it has on the blend
+- changing the set of primary ingredients changes the estimated OG of the mixture
+
+## Related calculations
+
+Specific gravity can be converted back into Brix using a polynomial approximation:
+
+```txt
+Brix = -668.962 + 1262.45 × SG - 776.43 × SG² + 182.94 × SG³
+```
+
+This relationship is also used in more advanced calculations such as estimating alcohol content and post-fermentation blending.
