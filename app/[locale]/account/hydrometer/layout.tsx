@@ -1,3 +1,4 @@
+import Header from "@/components/account/header";
 import Nav from "@/components/ispindel/Nav";
 import initTranslations from "@/lib/i18n";
 
@@ -13,7 +14,8 @@ async function Layout({
   const { t } = await initTranslations(locale, i18nNamespaces);
   return (
     <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
-      <h1 className="text-3xl text-center my-2">
+      <Header />
+      <h1 className="text-3xl text-center my-2 sm:mt-6 mt-12">
         {t("iSpindelDashboard.label")}
       </h1>
       <Nav />
