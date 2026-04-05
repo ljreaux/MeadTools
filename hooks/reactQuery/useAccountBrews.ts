@@ -15,7 +15,9 @@ export type AccountBrewListItem = {
   end_date: string | null;
 
   stage: BrewStage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -53,6 +55,7 @@ export type AccountBrew = {
   stage: BrewStage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   latest_gravity: number | null;
 
@@ -184,6 +187,8 @@ export function useCreateAccountBrew() {
  */
 export type PatchAccountBrewMetadataInput = {
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string;
   stage?: BrewStage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
@@ -225,6 +230,9 @@ export function usePatchAccountBrewMetadata() {
         accountBrewsQk.detail(updated.id),
         (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old)
       );
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.list()
+      });
       queryClient.invalidateQueries({
         queryKey: accountBrewsQk.detail(vars.brewId)
       });
