@@ -8,6 +8,17 @@ import {
 } from "@/lib/db/yeasts";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 
+/**
+ * List or search yeasts
+ * @description Returns all yeasts by default. Use brand for matching yeasts, or name/id for a single yeast.
+ * @params YeastQueryParams
+ * @response 200:YeastLookupResponse
+ * @responseSet none
+ * @add 404:YeastNotFoundErrorResponse
+ * @add 500:YeastsFetchErrorResponse
+ * @tag Yeasts
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
@@ -55,6 +66,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Create yeast
+ * @description Admin-only. Creates a yeast catalog entry.
+ * @body CreateYeastRequestBody
+ * @response 200:YeastResponse
+ * @responseSet none
+ * @add 400:CreateYeastValidationErrorResponse
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 500:CreateYeastFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const adminOrResponse = await verifyAdmin(req);
   if (adminOrResponse instanceof NextResponse) {

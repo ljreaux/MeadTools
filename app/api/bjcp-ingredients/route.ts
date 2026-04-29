@@ -2,6 +2,29 @@ import { createIngredients, getIngredients } from "@/lib/db/bjcp-ingredients";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+export type BjcpIngredientResponse = {
+  id: string;
+  created_at: string;
+  label: string | null;
+  category: string | null;
+  value: string | null;
+};
+
+export type BjcpIngredientsResponse = BjcpIngredientResponse[];
+
+export type BjcpIngredientsFetchErrorResponse = {
+  error: "Failed to fetch ingredients";
+};
+
+/**
+ * List BJCP ingredients
+ * @description Returns the BJCP ingredient catalog used by recipe-building tools.
+ * @response 200:BjcpIngredientsResponse
+ * @responseSet none
+ * @add 500:BjcpIngredientsFetchErrorResponse
+ * @tag BJCP Ingredients
+ * @openapi
+ */
 export async function GET() {
   try {
     const ingredients = await getIngredients();
@@ -31,6 +54,19 @@ export async function GET() {
   }
 }
 
+/**
+ * Create BJCP ingredient
+ * @description Admin-only. Creates a BJCP ingredient catalog entry.
+ * @body CreateBjcpIngredientRequestBody
+ * @response 201:BjcpIngredientResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 500:CreateBjcpIngredientFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   // Check for admin privileges
   const adminOrResponse = await verifyAdmin(req);

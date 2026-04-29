@@ -5,6 +5,18 @@ import jwt from "jsonwebtoken";
 
 const { ACCESS_TOKEN_SECRET = "", REFRESH_TOKEN_SECRET = "" } = process.env;
 
+/**
+ * Log in
+ * @description Authenticates a user with email and password and returns access and refresh tokens.
+ * @body LoginRequestBody
+ * @response 200:LoginSuccessResponse
+ * @responseSet none
+ * @add 400:LoginMissingCredentialsErrorResponse
+ * @add 401:LoginInvalidCredentialsErrorResponse
+ * @add 500:LoginFailureErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
 

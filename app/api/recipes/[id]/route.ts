@@ -1,8 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { deleteRecipe, getRecipeInfo, updateRecipe } from "@/lib/db/recipes";
+import type { RecipeDataV2Response } from "../../openapi-types";
 
-// GET /api/recipes/:id
+export type RecipePathParams = {
+  id: string;
+};
+
+export type RecipeOwnerResponse = {
+  public_username: string | null;
+  active: boolean;
+};
+
+export type RecipeRatingResponse = {
+  rating: number;
+  user_id: number;
+};
+
+export type RecipeDetailResponse = {
+  id: number;
+  user_id: number | null;
+  name: string;
+  recipeData: string;
+  yanFromSource: string | null;
+  yanContribution: string;
+  nutrientData: string;
+  advanced: boolean;
+  nuteInfo: string | null;
+  primaryNotes: string[][];
+  secondaryNotes: string[][];
+  dataV2: RecipeDataV2Response | null;
+  version: number;
+  private: boolean;
+  lastActivityEmailAt: string | null;
+  activityEmailsEnabled: boolean;
+  users: RecipeOwnerResponse | null;
+  ratings: RecipeRatingResponse[];
+  public_username: string | null;
+  averageRating: number | null;
+};
+
+export type GetRecipeResponse = {
+  recipe: RecipeDetailResponse;
+};
+
+export type InvalidRecipeIdErrorResponse = {
+  error: "Invalid recipe ID";
+};
+
+export type RecipeNotFoundErrorResponse = {
+  error: "Recipe not found";
+};
+
+export type RecipeForbiddenErrorResponse = {
+  error: "You are not authorized to view this recipe";
+};
+
+export type RecipeFetchErrorResponse = {
+  error: "An error occurred while fetching the recipe";
+};
+
+/**
+ * Get recipe by ID
+ * @description Returns a public recipe by ID. Private recipes require the owner or an admin bearer token.
+ * @pathParams RecipePathParams
+ * @response 200:GetRecipeResponse
+ * @responseSet none
+ * @add 400:InvalidRecipeIdErrorResponse
+ * @add 403:RecipeForbiddenErrorResponse
+ * @add 404:RecipeNotFoundErrorResponse
+ * @add 500:RecipeFetchErrorResponse
+ * @tag Recipes
+ * @openapi
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -55,6 +125,21 @@ export async function GET(
   }
 }
 
+/**
+ * Update recipe
+ * @description Updates an owned recipe. Admin users may also update recipes they do not own.
+ * @pathParams RecipePathParams
+ * @body UpdateRecipeRequestBody
+ * @response 200:UpdateRecipeResponse
+ * @responseSet none
+ * @add 400:UpdateRecipeValidationErrorResponse
+ * @add 403:UpdateRecipeForbiddenErrorResponse
+ * @add 404:RecipeNotFoundErrorResponse
+ * @add 500:UpdateRecipeFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -108,6 +193,20 @@ export async function PATCH(
   }
 }
 
+/**
+ * Delete recipe
+ * @description Deletes an owned recipe. Admin users may also delete recipes they do not own.
+ * @pathParams RecipePathParams
+ * @response 200:DeleteRecipeSuccessResponse
+ * @responseSet none
+ * @add 400:InvalidRecipeIdErrorResponse
+ * @add 403:DeleteRecipeForbiddenErrorResponse
+ * @add 404:RecipeNotFoundErrorResponse
+ * @add 500:DeleteRecipeFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

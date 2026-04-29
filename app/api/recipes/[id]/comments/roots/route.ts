@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listRootCommentsForRecipe } from "@/lib/db/comments";
 
+/**
+ * List root recipe comments
+ * @description Returns paginated top-level comments for a recipe, including reply counts and public author display info.
+ * @pathParams RecipeCommentListPathParams
+ * @params RecipeCommentListQueryParams
+ * @response 200:RecipeCommentsPageResponse
+ * @responseSet none
+ * @add 400:RecipeCommentsValidationErrorResponse
+ * @add 500:RecipeCommentsFetchErrorResponse
+ * @tag Recipes
+ * @openapi
+ */
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }

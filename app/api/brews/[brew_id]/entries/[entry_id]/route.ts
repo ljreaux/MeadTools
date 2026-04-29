@@ -2,6 +2,20 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 import { patchBrewEntryForApp, deleteBrewEntryForApp } from "@/lib/db/brews";
 
+/**
+ * Update brew entry
+ * @description Updates a timeline entry for a brew. Stage change entries only allow datetime and note edits.
+ * @pathParams BrewEntryPathParams
+ * @body UpdateBrewEntryRequestBody
+ * @response 200:UpdateBrewEntryResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:BrewEntryUpdateErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string; entry_id: string }> }
@@ -38,6 +52,19 @@ export async function PATCH(
   }
 }
 
+/**
+ * Delete brew entry
+ * @description Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.
+ * @pathParams BrewEntryPathParams
+ * @response 200:DeleteBrewEntrySuccessResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:BrewEntryDeleteErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string; entry_id: string }> }

@@ -1,110 +1,58 @@
-import ApiNav from "@/components/docs/ApiNav";
-import AuthInfoCard from "@/components/docs/AuthInfoCard";
-import EndpointCard from "@/components/docs/EndpointCard";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import TranslationsProvider from "@/components/providers/TranslationsProvider";
-import initTranslations from "@/lib/i18n";
-import fs from "fs";
-import path from "path";
+"use client";
 
-export default async function APIDocs({
-  params,
-}: Readonly<{
-  params: Promise<{ locale: string }>;
-}>) {
-  const { locale } = await params;
-  const i18nNamespaces = ["default", "YeastTable"];
-  const { resources } = await initTranslations(locale, i18nNamespaces);
+import { ApiReferenceReact } from "@scalar/api-reference-react";
+import "@scalar/api-reference-react/style.css";
 
-  const filePath = path.join(process.cwd(), "public", "doc-info.json");
-  const docData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-
-  // Generate sidebar categories using API paths and methods
-  const categories: Record<string, { path: string; method: string }[]> =
-    Object.fromEntries(
-      Object.entries(docData.endpoints).map(([category, endpoints]) => [
-        category,
-        (endpoints as any[]).map((endpoint: any) => ({
-          path: endpoint.path,
-          method: endpoint.method,
-        })),
-      ])
-    );
-
+export default function ApiDocsPage() {
   return (
-    <TranslationsProvider
-      namespaces={i18nNamespaces}
-      locale={locale}
-      resources={resources}
-    >
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <div className="flex">
-          {/* Sidebar */}
-          <ApiNav categories={categories} />
+    <ApiReferenceReact
+      configuration={{
+        _integration: "nextjs",
+        url: "/openapi.json",
+        title: "MeadTools API",
+        theme: "kepler",
+        layout: "modern",
+        customCss: `
+          .light-mode {
+            --scalar-background-1: hsl(38, 54%, 56%);
+            --scalar-background-2: hsl(38, 54%, 50%);
+            --scalar-background-3: hsl(210, 40%, 96.1%);
+            --scalar-color-1: hsl(0, 0%, 14%);
+            --scalar-color-2: hsl(215.4, 16.3%, 46.9%);
+            --scalar-color-3: hsl(215.4, 16.3%, 38%);
+            --scalar-color-accent: hsl(222.2, 47.4%, 11.2%);
+            --scalar-border-color: hsl(214.3, 31.8%, 91.4%);
+          }
 
-          {/* Main Content */}
-          <main className="flex-1 sm:ml-64 p-10 bg-background max-w-screen-lg mx-auto overflow-x-hidden">
-            <section id="overview">
-              <h1 className="text-3xl font-bold text-foreground">
-                {docData.name}
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                {docData.description}
-              </p>
-            </section>
+          .dark-mode {
+            --scalar-background-1: hsl(0, 0%, 14%);
+            --scalar-background-2: hsl(0, 0%, 18%);
+            --scalar-background-3: hsl(210, 13%, 35%);
+            --scalar-color-1: hsl(36, 16%, 82%);
+            --scalar-color-2: hsl(215, 20.2%, 65.1%);
+            --scalar-color-3: hsl(36, 16%, 68%);
+            --scalar-color-accent: hsl(36, 16%, 82%);
+            --scalar-border-color: hsl(210, 13%, 35%);
+          }
+        `,
 
-            <AuthInfoCard cardInfo={docData.authentication} />
-
-            {/* API Categories & Endpoints */}
-            {Object.entries(docData.endpoints).map(
-              ([category, endpoints]: [string, any]) => (
-                <section
-                  key={category}
-                  id={category.toLowerCase().replace(/\s+/g, "-")}
-                  className="mt-10"
-                >
-                  <h2 className="text-2xl font-semibold text-foreground">
-                    {category}
-                  </h2>
-                  <div className="space-y-6 mt-4">
-                    {endpoints.map((endpoint: any) => {
-                      const formattedId = `${
-                        endpoint.method
-                      }-${endpoint.path.replace(/\//g, "-")}`;
-                      return (
-                        <div key={formattedId} id={formattedId}>
-                          <EndpointCard endpoint={endpoint} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )
-            )}
-
-            {/* Errors Section */}
-            <section id="errors" className="mt-8">
-              <h2 className="text-2xl font-semibold text-foreground">
-                Errors & Status Codes
-              </h2>
-              <ul className="list-disc ml-6 mt-2 text-muted-foreground">
-                {Object.entries(docData.errors).map(
-                  ([code, message]: [string, any]) => (
-                    <li key={code}>
-                      <strong>{code}</strong> - {message}
-                    </li>
-                  )
-                )}
-              </ul>
-            </section>
-          </main>
-        </div>
-      </ThemeProvider>
-    </TranslationsProvider>
+        hideClientButton: true,
+        showDeveloperTools: "never",
+        persistAuth: true,
+        agent: {
+          disabled: true
+        },
+        mcp: {
+          disabled: true
+        },
+        authentication: {
+          preferredSecurityScheme: "BearerAuth"
+        },
+        defaultOpenFirstTag: false,
+        tagsSorter: "alpha",
+        operationsSorter: "alpha",
+        telemetry: false
+      }}
+    />
   );
 }

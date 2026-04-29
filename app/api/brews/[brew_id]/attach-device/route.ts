@@ -2,6 +2,20 @@ import { attachDeviceToBrewForApp } from "@/lib/db/brews";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Attach device to brew
+ * @description Attaches one of the authenticated user's hydrometer devices to a brew.
+ * @pathParams BrewPathParams
+ * @body AttachDeviceToBrewRequestBody
+ * @response 200:AttachDeviceToBrewResponse
+ * @responseSet none
+ * @add 400:BrewDeviceActionErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:BrewDeviceActionErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }

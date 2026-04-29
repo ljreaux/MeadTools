@@ -4,6 +4,18 @@ import { getUserByEmail } from "@/lib/db/users";
 
 const { REFRESH_TOKEN_SECRET = "", ACCESS_TOKEN_SECRET = "" } = process.env;
 
+/**
+ * Refresh access token
+ * @description Exchanges a valid refresh token for a new access token.
+ * @body RefreshTokenRequestBody
+ * @response 200:RefreshTokenSuccessResponse
+ * @responseSet none
+ * @add 400:RefreshTokenValidationErrorResponse
+ * @add 401:RefreshTokenInvalidEmailErrorResponse
+ * @add 500:RefreshTokenFailureErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { email, refreshToken } = await req.json();
 

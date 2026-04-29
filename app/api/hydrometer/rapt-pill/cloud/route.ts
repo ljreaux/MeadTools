@@ -9,6 +9,18 @@ import { toFahrenheit } from "@/lib/utils/temperature";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * RAPT Pill cloud log
+ * @description Intended for RAPT Pill cloud integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Celsius temperatures are converted to Fahrenheit before storage.
+ * @body RaptPillCloudIngestRequestBody
+ * @response 200:HydrometerLogResponse
+ * @responseSet none
+ * @add 400:HydrometerAuthErrorResponse
+ * @add 404:HydrometerAuthErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @tag Hydrometer Logging
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json();
 

@@ -2,6 +2,17 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 import { createBrewForApp, getBrewsForApp } from "@/lib/db/brews";
 
+/**
+ * List brews
+ * @description Returns the authenticated user's brew list with recipe names and latest tracking summary fields.
+ * @response 200:BrewsResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:BrewFetchErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) return userOrResponse;
@@ -20,6 +31,19 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Create brew
+ * @description Starts a new brew from one of the authenticated user's recipes and snapshots the current recipe data.
+ * @body CreateBrewRequestBody
+ * @response 201:CreateBrewResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:BrewCreateErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) return userOrResponse;

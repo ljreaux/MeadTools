@@ -2,6 +2,17 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { getDevicesForUser, getHydrometerToken } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Get hydrometer account info
+ * @description Returns the authenticated user's hydrometer token and registered devices.
+ * @response 200:HydrometerAccountResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerAccountErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   // Verify user authentication
   const userOrResponse = await verifyUser(req);

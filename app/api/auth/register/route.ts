@@ -5,6 +5,17 @@ import jwt from "jsonwebtoken";
 
 const { ACCESS_TOKEN_SECRET = "", REFRESH_TOKEN_SECRET = "" } = process.env;
 
+/**
+ * Register
+ * @description Creates a user account and returns access and refresh tokens.
+ * @body RegisterRequestBody
+ * @response 200:RegisterSuccessResponse
+ * @responseSet none
+ * @add 400:RegisterValidationErrorResponse
+ * @add 500:RegisterFailureErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { email, password: unhashed, public_username } = await req.json();
 

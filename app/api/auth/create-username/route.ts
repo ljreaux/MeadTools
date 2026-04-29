@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { updateUser } from "@/lib/db/users";
 
+/**
+ * Set public username
+ * @description Sets or updates the authenticated user's public username.
+ * @body CreateUsernameRequestBody
+ * @response 200:CreateUsernameSuccessResponse
+ * @responseSet none
+ * @add 400:CreateUsernameValidationErrorResponse
+ * @add 500:CreateUsernameFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Account
+ * @openapi
+ */
 export async function PATCH(req: NextRequest) {
   const userId = await verifyUser(req);
 

@@ -2,6 +2,19 @@ import { createComment } from "@/lib/db/comments";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Create recipe comment
+ * @description Adds a comment or reply to a recipe as the authenticated user.
+ * @pathParams RecipePathParams
+ * @body CreateRecipeCommentRequestBody
+ * @response 201:CreateRecipeCommentResponse
+ * @responseSet none
+ * @add 400:CreateRecipeCommentValidationErrorResponse
+ * @add 500:CreateRecipeCommentFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }

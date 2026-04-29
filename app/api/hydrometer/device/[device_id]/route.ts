@@ -2,6 +2,19 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { deleteDevice, updateCoefficients } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Update hydrometer device
+ * @description Updates calibration coefficients for one of the authenticated user's hydrometer devices.
+ * @pathParams HydrometerDevicePathParams
+ * @body UpdateHydrometerDeviceRequestBody
+ * @response 200:HydrometerDeviceResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerDeviceErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ device_id: string }> }
@@ -29,6 +42,19 @@ export async function PATCH(
     );
   }
 }
+
+/**
+ * Delete hydrometer device
+ * @description Deletes a hydrometer device and removes or detaches its associated logs.
+ * @pathParams HydrometerDevicePathParams
+ * @response 200:DeleteHydrometerDeviceResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerDeviceErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ device_id: string }> }
