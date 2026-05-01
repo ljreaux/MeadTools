@@ -2,6 +2,21 @@ import { setRating } from "@/lib/db/comments";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Rate recipe
+ * @description Creates or updates the authenticated user's rating for a recipe and returns aggregate rating data.
+ * @pathParams RecipePathParams
+ * @body RateRecipeRequestBody
+ * @response 201:RateRecipeResponse
+ * @responseSet none
+ * @add 400:RateRecipeValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:RateRecipeFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }

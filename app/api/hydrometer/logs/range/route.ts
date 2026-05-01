@@ -2,6 +2,20 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { deleteLogsInRange } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Delete hydrometer logs in range
+ * @description Deletes logs for a device within a date range for the authenticated user.
+ * @params HydrometerLogRangeDeleteQueryParams
+ * @response 200:DeleteHydrometerLogsInRangeResponse
+ * @responseSet none
+ * @add 400:HydrometerLogValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function DELETE(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {

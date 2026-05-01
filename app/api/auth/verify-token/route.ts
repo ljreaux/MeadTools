@@ -5,6 +5,19 @@ import jwt from "jsonwebtoken";
 const { ACCESS_TOKEN_SECRET = "" } = process.env;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+/**
+ * Verify OAuth token
+ * @description Verifies a Google ID token or access token and returns a MeadTools access token for an existing user.
+ * @body VerifyTokenRequestBody
+ * @response 200:VerifyTokenSuccessResponse
+ * @responseSet none
+ * @add 400:VerifyTokenValidationErrorResponse
+ * @add 401:VerifyTokenUnauthorizedErrorResponse
+ * @add 404:VerifyTokenNotFoundErrorResponse
+ * @add 500:VerifyTokenFailureErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   try {
     const { token, provider, email } = await req.json();

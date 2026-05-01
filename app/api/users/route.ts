@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllUsers } from "@/lib/db/users";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 
+/**
+ * List users
+ * @description Admin-only. Returns all MeadTools user accounts.
+ * @response 200:AdminUsersResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:AdminUsersFetchErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const userId = await verifyUser(req);
   if (userId instanceof NextResponse) return userId;

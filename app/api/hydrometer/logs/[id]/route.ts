@@ -2,6 +2,19 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { deleteLog, getLogsForBrew, updateLog } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * List hydrometer logs by brew
+ * @description Returns logs for a brew owned by the authenticated user. The id path parameter is the brew id.
+ * @pathParams HydrometerLogPathParams
+ * @response 200:HydrometerLogsResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,6 +37,22 @@ export async function GET(
   }
 }
 
+/**
+ * Update hydrometer log
+ * @description Updates numeric log fields for a hydrometer log. device_id is required as a query parameter.
+ * @pathParams HydrometerLogPathParams
+ * @params HydrometerLogMutationQueryParams
+ * @body UpdateHydrometerLogRequestBody
+ * @response 200:HydrometerLogResponse
+ * @responseSet none
+ * @add 400:HydrometerLogValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -56,6 +85,21 @@ export async function PATCH(
   }
 }
 
+/**
+ * Delete hydrometer log
+ * @description Deletes a hydrometer log by id. device_id is required as a query parameter.
+ * @pathParams HydrometerLogPathParams
+ * @params HydrometerLogMutationQueryParams
+ * @response 200:HydrometerLogResponse
+ * @responseSet none
+ * @add 400:HydrometerLogValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

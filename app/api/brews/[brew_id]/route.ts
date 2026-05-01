@@ -6,6 +6,20 @@ import {
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Get brew
+ * @description Returns a single authenticated-user brew with entries grouped by stage.
+ * @pathParams BrewPathParams
+ * @response 200:BrewResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:BrewFetchErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }
@@ -32,6 +46,21 @@ export async function GET(
   }
 }
 
+/**
+ * Update brew
+ * @description Updates brew metadata. Setting stage to COMPLETE automatically sets end_date when one is not provided.
+ * @pathParams BrewPathParams
+ * @body UpdateBrewRequestBody
+ * @response 200:UpdateBrewResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:BrewUpdateErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }
@@ -60,6 +89,20 @@ export async function PATCH(
   }
 }
 
+/**
+ * Delete brew
+ * @description Deletes a brew owned by the authenticated user, detaches its devices, and deletes logs associated with the brew.
+ * @pathParams BrewPathParams
+ * @response 200:DeleteBrewSuccessResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:BrewDeleteErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }

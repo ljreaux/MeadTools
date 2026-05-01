@@ -7,7 +7,16 @@ import {
 } from "@/lib/db/ingredients";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 
-// GET /api/ingredients
+/**
+ * List ingredients
+ * @description Returns all ingredients, or filters by exact case-insensitive category or name.
+ * @params IngredientQueryParams
+ * @response 200:IngredientsResponse
+ * @responseSet none
+ * @add 500:IngredientsFetchErrorResponse
+ * @tag Ingredients
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
@@ -38,7 +47,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/ingredients
+/**
+ * Create ingredient
+ * @description Admin-only. Creates a sugar/fruit/other ingredient used by recipe-building tools.
+ * @body CreateIngredientRequestBody
+ * @response 201:IngredientResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:CreateIngredientFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   // Check for admin privileges
   const adminOrResponse = await verifyAdmin(req);

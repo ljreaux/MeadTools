@@ -16,30 +16,14 @@ import {
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import { toBrix } from "@/lib/utils/unitConverter";
 import { parseNumber } from "@/lib/utils/validateInput";
-type NutrientAdditionsDerived = {
-  totalGrams: Record<NutrientKey, number>;
-  perAddition: Record<NutrientKey, number>;
-};
-
-type NutrientDerived = {
-  targetYanPpm: number;
-  remainingYanPpm: number;
-
-  // grams for each nutrient key (fermO/fermK/dap/other)
-  nutrientAdditions: NutrientAdditionsDerived;
-
-  // helpful for debugging / settings UI
-  providedYanPpm: Record<NutrientKey, number>;
-  goFerm: {
-    amount: number;
-    water: number;
-  };
-};
+import calculateNutrientDerivedState, {
+  type NutrientDerivedState
+} from "@/lib/utils/calculateNutrientDerivedState";
 type NutrientUI = {
   data: NutrientData;
 
   // derived: add later
-  derived: NutrientDerived;
+  derived: NutrientDerivedState;
 
   catalog: {
     yeastList: {
@@ -354,127 +338,7 @@ export function NutrientProvider(props: Props) {
 
     [commit, yeastList]
   );
-  const derived = useMemo<NutrientDerived>(() => {
-    const sg = parseNumber(data.inputs.sg);
-    const offset = parseNumber(data.inputs.offsetPpm || "0");
-    const volume = parseNumber(data.inputs.volume);
-    const numberOfAdditions = Math.max(
-      1,
-      parseNumber(data.inputs.numberOfAdditions || "1")
-    );
-
-    // nitrogen multiplier (add a mapping for "Very Low" even if you treat it same as Low)
-    const n2 = data.selected.nitrogenRequirement;
-    const n2Multiplier =
-      n2 === "Very Low"
-        ? 0.75
-        : n2 === "Low"
-        ? 0.75
-        : n2 === "Medium"
-        ? 0.9
-        : n2 === "High"
-        ? 1.25
-        : 1.8; // Very High
-
-    const gpl = toBrix(sg) * sg * 10;
-    const targetYanPpm = Math.round(gpl * n2Multiplier - offset);
-
-    // parse provided ppm from state (user editable when adjustAllowed)
-    const providedYanPpm: Record<NutrientKey, number> = {
-      fermO: parseNumber(data.adjustments.providedYanPpm.fermO),
-      fermK: parseNumber(data.adjustments.providedYanPpm.fermK),
-      dap: parseNumber(data.adjustments.providedYanPpm.dap),
-      other: parseNumber(data.adjustments.providedYanPpm.other)
-    };
-
-    // If adjust is ON, grams are based on user-provided ppm.
-    // If adjust is OFF, we *still* compute grams from "computed ppm",
-    // but that computed ppm will be synced into state by the effect in step 4.
-    const ppmToUse = providedYanPpm;
-
-    const yanContribution = {
-      fermO: parseNumber(data.settings.yanContribution.fermO),
-      fermK: parseNumber(data.settings.yanContribution.fermK),
-      dap: parseNumber(data.settings.yanContribution.dap),
-      other: parseNumber(data.settings.yanContribution.other)
-    };
-
-    // old behavior: organic multiplier depends on goFermType
-    const organicMultiplier = data.inputs.goFermType === "none" ? 3 : 4;
-    const effectiveYanContribution = {
-      ...yanContribution,
-      fermO: yanContribution.fermO * organicMultiplier
-    };
-
-    // grams conversion (matches old provider)
-    const litersPerUnit = data.inputs.volumeUnits === "liter" ? 1 : 3.785;
-
-    const nutrientAdditionsTotal: Record<NutrientKey, number> = {
-      fermO: 0,
-      fermK: 0,
-      dap: 0,
-      other: 0
-    };
-
-    (Object.keys(nutrientAdditionsTotal) as NutrientKey[]).forEach((key) => {
-      const ppm = Math.max(0, ppmToUse[key] || 0);
-      const contrib = effectiveYanContribution[key] || 0;
-
-      const gPerLiter = contrib === 0 ? 0 : ppm / contrib;
-      const grams = gPerLiter * volume * litersPerUnit;
-      nutrientAdditionsTotal[key] = grams;
-    });
-
-    const nutrientAdditionsPer: Record<NutrientKey, number> = {
-      fermO: nutrientAdditionsTotal.fermO / numberOfAdditions,
-      fermK: nutrientAdditionsTotal.fermK / numberOfAdditions,
-      dap: nutrientAdditionsTotal.dap / numberOfAdditions,
-      other: nutrientAdditionsTotal.other / numberOfAdditions
-    };
-
-    const remainingYanPpm =
-      targetYanPpm -
-      (ppmToUse.fermO + ppmToUse.fermK + ppmToUse.dap + ppmToUse.other);
-    // ----- Go-Ferm (matches old provider)
-    const yeastAmount = parseNumber(data.inputs.yeastAmountG || "0");
-
-    let gfMultiplier = 0;
-    let waterMultiplier = 20;
-
-    if (data.inputs.goFermType === "none") {
-      waterMultiplier = 0;
-    }
-
-    if (
-      data.inputs.goFermType === "Go-Ferm" ||
-      data.inputs.goFermType === "protect"
-    ) {
-      gfMultiplier = 1.25;
-    }
-
-    if (data.inputs.goFermType === "sterol-flash") {
-      gfMultiplier = 1.2;
-      waterMultiplier = waterMultiplier / 2;
-    }
-
-    const gfAmount = yeastAmount * gfMultiplier;
-    const gfWater = gfAmount * waterMultiplier;
-
-    const goFerm = {
-      amount: Math.round(gfAmount * 100) / 100,
-      water: Math.round(gfWater * 100) / 100
-    };
-    return {
-      targetYanPpm,
-      remainingYanPpm,
-      nutrientAdditions: {
-        totalGrams: nutrientAdditionsTotal,
-        perAddition: nutrientAdditionsPer
-      },
-      providedYanPpm,
-      goFerm
-    };
-  }, [data]);
+  const derived = useMemo(() => calculateNutrientDerivedState(data), [data]);
 
   useEffect(() => {
     if (data.adjustments.adjustAllowed) return;

@@ -6,7 +6,16 @@ import {
 } from "@/lib/db/ingredients";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/yeasts/:id
+/**
+ * Get ingredient by ID
+ * @description Returns a single ingredient by numeric ID, or null when no ingredient matches.
+ * @pathParams IngredientByIdPathParams
+ * @response 200:IngredientByIdResponse
+ * @responseSet none
+ * @add 500:IngredientByIdErrorResponse
+ * @tag Ingredients
+ * @openapi
+ */
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,7 +33,21 @@ export async function GET(
   }
 }
 
-// PATCH /api/ingredients/:ingredientId
+/**
+ * Update ingredient
+ * @description Admin-only. Updates an ingredient by numeric ID.
+ * @pathParams IngredientByIdPathParams
+ * @body UpdateIngredientRequestBody
+ * @response 200:IngredientResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:UpdateIngredientFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -49,7 +72,20 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/ingredients/:ingredientId
+/**
+ * Delete ingredient
+ * @description Admin-only. Deletes an ingredient by numeric ID.
+ * @pathParams IngredientByIdPathParams
+ * @response 200:DeleteIngredientSuccessResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:DeleteIngredientFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
