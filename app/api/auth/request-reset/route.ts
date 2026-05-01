@@ -10,6 +10,16 @@ const {
   NEXT_PUBLIC_BASE_URL,
 } = process.env;
 
+/**
+ * Request password reset
+ * @description Sends a password reset email when the address belongs to an account. The response does not reveal whether the user exists.
+ * @body RequestPasswordResetBody
+ * @response 200:RequestPasswordResetSuccessResponse
+ * @responseSet none
+ * @add 400:RequestPasswordResetValidationErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
 

@@ -4,6 +4,18 @@ import { getUserById, updateUser } from "@/lib/db/users";
 import { getAllRecipesForUser } from "@/lib/db/recipes";
 import bcrypt from "bcrypt";
 
+/**
+ * Get account info
+ * @description Returns the authenticated user's account details and saved recipes.
+ * @response 200:AccountInfoResponse
+ * @responseSet none
+ * @add 401:AccountInfoUnauthorizedErrorResponse
+ * @add 404:AccountInfoNotFoundErrorResponse
+ * @add 500:AccountInfoFetchErrorResponse
+ * @auth BearerAuth
+ * @tag Account
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const userId = await verifyUser(req);
   if (!userId || userId instanceof NextResponse)
@@ -36,6 +48,18 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Update account info
+ * @description Updates fields on the authenticated user's account. Passwords are hashed before storage.
+ * @body UpdateAccountInfoRequestBody
+ * @response 200:UpdateAccountInfoResponse
+ * @responseSet none
+ * @add 401:AccountInfoUnauthorizedErrorResponse
+ * @add 500:UpdateAccountInfoErrorResponse
+ * @auth BearerAuth
+ * @tag Account
+ * @openapi
+ */
 export async function PATCH(req: NextRequest) {
   const userId = await verifyUser(req);
 

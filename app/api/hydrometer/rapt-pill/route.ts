@@ -7,6 +7,18 @@ import {
 } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * RAPT Pill log
+ * @description Intended for RAPT Pill devices to post readings to MeadTools. Registers or finds a device by name and writes a hydrometer log using the user's hydrometer token.
+ * @body HydrometerIngestRequestBody
+ * @response 200:HydrometerLogResponse
+ * @responseSet none
+ * @add 400:HydrometerAuthErrorResponse
+ * @add 404:HydrometerAuthErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @tag Hydrometer Logging
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json();
 

@@ -2,7 +2,17 @@ import prisma from "@/lib/prisma";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/additives/:id
+/**
+ * Get additive by ID
+ * @description Returns a single additive by UUID.
+ * @pathParams AdditiveByIdPathParams
+ * @response 200:AdditiveByIdResponse
+ * @responseSet none
+ * @add 404:AdditiveNotFoundErrorResponse
+ * @add 500:AdditiveFetchErrorResponse
+ * @tag Additives
+ * @openapi
+ */
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,7 +40,21 @@ export async function GET(
   }
 }
 
-// PATCH /api/additives/:id
+/**
+ * Update additive
+ * @description Admin-only. Updates a catalog additive by UUID.
+ * @pathParams AdditiveByIdPathParams
+ * @body UpdateAdditiveRequestBody
+ * @response 200:AdditiveResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:UpdateAdditiveFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -59,7 +83,20 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/additives/:id
+/**
+ * Delete additive
+ * @description Admin-only. Deletes a catalog additive by UUID.
+ * @pathParams AdditiveByIdPathParams
+ * @response 200:DeleteAdditiveSuccessResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:DeleteAdditiveFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

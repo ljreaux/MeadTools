@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listRepliesForParent } from "@/lib/db/comments";
 
+/**
+ * List recipe comment replies
+ * @description Returns paginated replies for a recipe comment, including public author display info.
+ * @pathParams RecipeCommentRepliesPathParams
+ * @params RecipeCommentListQueryParams
+ * @response 200:RecipeCommentsPageResponse
+ * @responseSet none
+ * @add 400:RecipeCommentsValidationErrorResponse
+ * @add 500:RecipeCommentsFetchErrorResponse
+ * @tag Recipes
+ * @openapi
+ */
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string; commentId: string }> }

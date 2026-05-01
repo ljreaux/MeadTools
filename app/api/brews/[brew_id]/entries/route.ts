@@ -2,6 +2,21 @@ import { createBrewEntryForApp } from "@/lib/db/brews";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Create brew entry
+ * @description Adds a timeline entry to a brew. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.
+ * @pathParams BrewPathParams
+ * @body CreateBrewEntryRequestBody
+ * @response 201:CreateBrewEntryResponse
+ * @responseSet none
+ * @add 400:BrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:BrewEntryCreateErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }

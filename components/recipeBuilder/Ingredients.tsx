@@ -102,7 +102,7 @@ export default function Ingredients() {
         <Button
           onClick={ingredient.add}
           variant="secondary"
-          disabled={ingredients.length >= 10}
+          disabled={ingredients.length >= 15}
           className="w-full sm:w-auto"
         >
           {t("recipeBuilder.addNew")}

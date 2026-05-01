@@ -1,6 +1,16 @@
 import { getLogs } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * List hydrometer logs by device
+ * @description Returns logs for a device between start_date and end_date. This endpoint currently uses device_id query lookup and does not require bearer auth.
+ * @params HydrometerLogsQueryParams
+ * @response 200:HydrometerLogsResponse
+ * @responseSet none
+ * @add 400:HydrometerLogValidationErrorResponse
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const startDateString = searchParams.get("start_date");

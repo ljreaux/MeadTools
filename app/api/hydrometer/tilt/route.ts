@@ -42,6 +42,20 @@ function parseFormData(formData: string): TiltRequest {
   return result as TiltRequest;
 }
 
+/**
+ * Tilt log
+ * @description Intended for Tilt devices or Tilt integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Accepts JSON or application/x-www-form-urlencoded bodies.
+ * @params TiltIngestQueryParams
+ * @body TiltIngestRequestBody
+ * @response 200:HydrometerLogResponse
+ * @responseSet none
+ * @add 400:HydrometerLogValidationErrorResponse
+ * @add 404:HydrometerAuthErrorResponse
+ * @add 415:HydrometerLogValidationErrorResponse
+ * @add 500:HydrometerLogErrorResponse
+ * @tag Hydrometer Logging
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token")?.trim();

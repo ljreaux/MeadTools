@@ -4,6 +4,20 @@ import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { getAdminRecipesPage } from "@/lib/db/recipes";
 import { isRecipeData, RecipeData } from "@/types/recipeData";
 
+/**
+ * List recipes as admin
+ * @description Admin-only. Returns a paginated list of all recipes, including private recipes.
+ * @params AdminRecipesQueryParams
+ * @response 200:AdminRecipesPageResponse
+ * @responseSet none
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:AdminRecipesFetchErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   try {
     const userOrResponse = await verifyUser(req);
@@ -37,6 +51,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Create recipe
+ * @description Creates a recipe for the authenticated user. New clients should send dataV2.
+ * @body CreateRecipeRequestBody
+ * @response 201:CreateRecipeResponse
+ * @responseSet none
+ * @add 400:CreateRecipeValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:CreateRecipeFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   try {
     const userOrResponse = await verifyUser(req);

@@ -2,6 +2,21 @@ import { adoptLogsForBrewForApp } from "@/lib/db/brews";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * Adopt device logs for brew
+ * @description Assigns existing hydrometer logs from one of the authenticated user's devices to this brew.
+ * @pathParams BrewPathParams
+ * @body AdoptLogsForBrewRequestBody
+ * @response 200:AdoptLogsForBrewResponse
+ * @responseSet none
+ * @add 400:BrewDeviceActionErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:BrewDeviceActionErrorResponse
+ * @add 500:BrewDeviceActionErrorResponse
+ * @auth BearerAuth
+ * @tag Brews
+ * @openapi
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ brew_id: string }> }

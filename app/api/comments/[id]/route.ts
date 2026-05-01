@@ -3,6 +3,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { updateComment, deleteComment } from "@/lib/db/comments";
 
+/**
+ * Update recipe comment
+ * @description Updates one of the authenticated user's own recipe comments.
+ * @pathParams RecipeCommentPathParams
+ * @body UpdateRecipeCommentRequestBody
+ * @response 200:UpdateRecipeCommentResponse
+ * @responseSet none
+ * @add 400:UpdateRecipeCommentValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:UpdateRecipeCommentFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -39,6 +54,19 @@ export async function PATCH(
   }
 }
 
+/**
+ * Delete recipe comment
+ * @description Soft-deletes a recipe comment. Users can delete their own comments; admins can delete any comment.
+ * @pathParams RecipeCommentPathParams
+ * @response 200:DeleteRecipeCommentResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:DeleteRecipeCommentFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Recipes
+ * @openapi
+ */
 export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }

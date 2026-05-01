@@ -5,6 +5,17 @@ import prisma from "@/lib/prisma";
 
 const { RESET_PASSWORD_SECRET = "" } = process.env;
 
+/**
+ * Reset password
+ * @description Updates a user's password using a valid password-reset token.
+ * @body ResetPasswordRequestBody
+ * @response 200:ResetPasswordSuccessResponse
+ * @responseSet none
+ * @add 400:ResetPasswordValidationErrorResponse
+ * @add 401:ResetPasswordInvalidTokenErrorResponse
+ * @tag Authentication
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const { token, password } = await req.json();
 

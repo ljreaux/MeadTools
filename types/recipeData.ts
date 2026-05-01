@@ -269,7 +269,27 @@ export const initialRecipeData = (
 export const isRecipeData = (x: unknown): x is RecipeData => {
   if (!x || typeof x !== "object") return false;
   const obj = x as Record<string, unknown>;
-  return obj.version === 2 && Array.isArray(obj.ingredients);
+  const unitDefaults = obj.unitDefaults as Record<string, unknown> | undefined;
+  const stabilizers = obj.stabilizers as Record<string, unknown> | undefined;
+  const notes = obj.notes as Record<string, unknown> | undefined;
+
+  return (
+    obj.version === 2 &&
+    !!unitDefaults &&
+    typeof unitDefaults.weight === "string" &&
+    typeof unitDefaults.volume === "string" &&
+    Array.isArray(obj.ingredients) &&
+    typeof obj.fg === "string" &&
+    Array.isArray(obj.additives) &&
+    !!stabilizers &&
+    typeof stabilizers.adding === "boolean" &&
+    typeof stabilizers.takingPh === "boolean" &&
+    typeof stabilizers.phReading === "string" &&
+    typeof stabilizers.type === "string" &&
+    !!notes &&
+    Array.isArray(notes.primary) &&
+    Array.isArray(notes.secondary)
+  );
 };
 
 export type BlendInput = {

@@ -2,6 +2,18 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import { endBrew, getBrews, setBrewName, startBrew } from "@/lib/db/iSpindel";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * List hydrometer brews
+ * @description Returns brews owned by the authenticated user for hydrometer management screens.
+ * @response 200:HydrometerBrewsResponse
+ * @responseSet none
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerBrewErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {
@@ -20,6 +32,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Start hydrometer brew
+ * @description Creates a brew and attaches the given hydrometer device to it.
+ * @body StartHydrometerBrewRequestBody
+ * @response 200:StartHydrometerBrewResponse
+ * @responseSet none
+ * @add 400:HydrometerBrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerBrewErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const body = await req.json(); // Expecting the request body to be parsed correctly
   const { device_id, brew_name } = body;
@@ -49,6 +75,20 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * Update hydrometer brew
+ * @description Renames a hydrometer brew when brew_name is provided, otherwise ends the brew and detaches the device.
+ * @body UpdateHydrometerBrewRequestBody
+ * @response 200:UpdateHydrometerBrewResponse
+ * @responseSet none
+ * @add 400:HydrometerBrewValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerBrewErrorResponse
+ * @auth BearerAuth
+ * @tag Hydrometer
+ * @openapi
+ */
 export async function PATCH(req: NextRequest) {
   const userOrResponse = await verifyUser(req);
   if (userOrResponse instanceof NextResponse) {

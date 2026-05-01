@@ -2,6 +2,16 @@ import prisma from "@/lib/prisma";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
+/**
+ * List additives
+ * @description Returns additives ordered by name. Pass a name query to fetch exact case-insensitive matches.
+ * @params AdditiveQueryParams
+ * @response 200:AdditivesResponse
+ * @responseSet none
+ * @add 500:AdditivesFetchErrorResponse
+ * @tag Additives
+ * @openapi
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name");
@@ -29,6 +39,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Create additive
+ * @description Admin-only. Creates a catalog additive used by recipe-building tools.
+ * @body CreateAdditiveRequestBody
+ * @response 200:AdditiveResponse
+ * @responseSet none
+ * @add 400:CreateAdditiveValidationErrorResponse
+ * @add 401:AdminAuthErrorResponse
+ * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
+ * @add 500:CreateAdditiveFailureErrorResponse
+ * @auth BearerAuth
+ * @tag Admin
+ * @openapi
+ */
 export async function POST(req: NextRequest) {
   const adminOrResponse = await verifyAdmin(req);
   if (adminOrResponse instanceof NextResponse) return adminOrResponse;
