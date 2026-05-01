@@ -262,7 +262,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update additive"
+              "Failed to update additive",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -281,7 +283,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete additive"
+              "Failed to delete additive",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -360,7 +364,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to create additive"
+              "Failed to create additive",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -2788,13 +2794,30 @@
           }
         }
       },
+      "AuthenticatedRouteErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Authorization header missing",
+              "Token missing",
+              "Invalid token or unauthorized access",
+              "Invalid or expired token",
+              "User not found",
+              "Server misconfiguration"
+            ]
+          }
+        }
+      },
       "CreateUsernameFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update public username."
+              "Failed to update public username.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -3223,22 +3246,7 @@
               "Device already attached to another brew",
               "Invalid start_date",
               "Invalid end_date",
-              "Failed"
-            ]
-          }
-        }
-      },
-      "AuthenticatedRouteErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Authorization header missing",
-              "Token missing",
-              "Invalid token or unauthorized access",
-              "Invalid or expired token",
-              "User not found",
+              "Failed",
               "Server misconfiguration"
             ]
           }
@@ -3506,7 +3514,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update entry."
+              "Failed to update entry.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -3528,7 +3537,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete entry."
+              "Failed to delete entry.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5495,7 +5505,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to create entry."
+              "Failed to create entry.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5507,7 +5518,8 @@
             "type": "string",
             "enum": [
               "Failed to fetch brews.",
-              "Failed to fetch brew."
+              "Failed to fetch brew.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5606,7 +5618,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update brew."
+              "Failed to update brew.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5628,7 +5641,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete brew."
+              "Failed to delete brew.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5815,7 +5829,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to create brew."
+              "Failed to create brew.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5913,7 +5928,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update comment"
+              "Failed to update comment",
+              "Server misconfiguration"
             ]
           }
         }
@@ -5941,7 +5957,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete comment"
+              "Failed to delete comment",
+              "Server misconfiguration"
             ]
           }
         }
@@ -6256,7 +6273,8 @@
               "Failed to get brews.",
               "Failed to create brew.",
               "Failed to update brew.",
-              "Failed to delete brew."
+              "Failed to delete brew.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -6976,7 +6994,8 @@
             "type": "string",
             "enum": [
               "Failed to update device.",
-              "Failed to delete device."
+              "Failed to delete device.",
+              "Server misconfiguration"
             ]
           }
         }
@@ -7103,7 +7122,8 @@
               "Failed to delete log.",
               "Error deleting log.",
               "Failed to log",
-              "Failed to log Tilt data"
+              "Failed to log Tilt data",
+              "Server misconfiguration"
             ]
           }
         }
@@ -7210,7 +7230,8 @@
               "Must provide a device id.",
               "Missing device_id, start_date, or end_date parameters",
               "Unsupported content type",
-              "Missing required fields"
+              "Missing required fields",
+              "Error deleting log."
             ]
           }
         }
@@ -7431,7 +7452,8 @@
             "type": "string",
             "enum": [
               "Failed to fetch hydro_token",
-              "Failed to create hydro_token"
+              "Failed to create hydro_token",
+              "Server misconfiguration"
             ]
           }
         }
@@ -7963,7 +7985,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to add comment"
+              "Failed to add comment",
+              "Server misconfiguration"
             ]
           }
         }
@@ -8034,7 +8057,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to add rating"
+              "Failed to add rating",
+              "Server misconfiguration"
             ]
           }
         }
@@ -9135,7 +9159,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Recipe not found"
+              "Recipe not found",
+              "User not found"
             ]
           }
         }
@@ -9146,7 +9171,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "An error occurred while fetching the recipe"
+              "An error occurred while fetching the recipe",
+              "Server misconfiguration"
             ]
           }
         }
@@ -11187,7 +11213,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update recipe"
+              "Failed to update recipe",
+              "Server misconfiguration"
             ]
           }
         }
@@ -11217,7 +11244,943 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete recipe"
+              "Failed to delete recipe",
+              "Server misconfiguration"
+            ]
+          }
+        }
+      },
+      "RecipeDerivedStateResponseBody": {
+        "type": "object",
+        "properties": {
+          "recipeData": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "number",
+                "enum": [
+                  2
+                ]
+              },
+              "unitDefaults": {
+                "type": "object",
+                "properties": {
+                  "weight": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "lb",
+                      "oz"
+                    ]
+                  },
+                  "volume": {
+                    "type": "string",
+                    "enum": [
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz"
+                    ]
+                  }
+                }
+              },
+              "ingredients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lineId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "ref": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "catalog"
+                              ]
+                            },
+                            "ingredientId": {
+                              "oneOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "custom"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "brix": {
+                      "type": "string"
+                    },
+                    "secondary": {
+                      "type": "boolean"
+                    },
+                    "amounts": {
+                      "type": "object",
+                      "properties": {
+                        "weight": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string"
+                            },
+                            "unit": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "volume": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string"
+                            },
+                            "unit": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "basis": {
+                          "type": "string",
+                          "enum": [
+                            "weight",
+                            "volume"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "fg": {
+                "type": "string"
+              },
+              "additives": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lineId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "amountTouched": {
+                      "type": "boolean"
+                    },
+                    "amountDim": {
+                      "type": "string",
+                      "enum": [
+                        "weight",
+                        "volume",
+                        "count",
+                        "unknown"
+                      ]
+                    }
+                  }
+                }
+              },
+              "stabilizers": {
+                "type": "object",
+                "properties": {
+                  "adding": {
+                    "type": "boolean"
+                  },
+                  "takingPh": {
+                    "type": "boolean"
+                  },
+                  "phReading": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "kmeta",
+                      "nameta"
+                    ]
+                  }
+                }
+              },
+              "notes": {
+                "type": "object",
+                "properties": {
+                  "primary": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lineId": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "secondary": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lineId": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "nutrients": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "enum": [
+                      2
+                    ]
+                  },
+                  "inputs": {
+                    "type": "object",
+                    "properties": {
+                      "volume": {
+                        "type": "string"
+                      },
+                      "volumeUnits": {
+                        "type": "string",
+                        "enum": [
+                          "gal",
+                          "liter"
+                        ]
+                      },
+                      "sg": {
+                        "type": "string"
+                      },
+                      "offsetPpm": {
+                        "type": "string"
+                      },
+                      "numberOfAdditions": {
+                        "type": "string"
+                      },
+                      "goFermType": {
+                        "type": "string",
+                        "enum": [
+                          "Go-Ferm",
+                          "protect",
+                          "sterol-flash",
+                          "none"
+                        ]
+                      },
+                      "yeastAmountG": {
+                        "type": "string"
+                      },
+                      "yeastAmountTouched": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "selected": {
+                    "type": "object",
+                    "properties": {
+                      "yeastBrand": {
+                        "type": "string"
+                      },
+                      "yeastStrain": {
+                        "type": "string"
+                      },
+                      "yeastId": {
+                        "type": "number"
+                      },
+                      "nitrogenRequirement": {
+                        "type": "string",
+                        "enum": [
+                          "Very Low",
+                          "Low",
+                          "Medium",
+                          "High",
+                          "Very High"
+                        ]
+                      },
+                      "schedule": {
+                        "type": "string",
+                        "enum": [
+                          "tbe",
+                          "tosna",
+                          "justK",
+                          "dap",
+                          "oAndk",
+                          "oAndDap",
+                          "kAndDap",
+                          "other"
+                        ]
+                      },
+                      "selectedNutrients": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "boolean"
+                          },
+                          "fermK": {
+                            "type": "boolean"
+                          },
+                          "dap": {
+                            "type": "boolean"
+                          },
+                          "other": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "yanContribution": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "string"
+                          },
+                          "fermK": {
+                            "type": "string"
+                          },
+                          "dap": {
+                            "type": "string"
+                          },
+                          "other": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "maxGpl": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "string"
+                          },
+                          "fermK": {
+                            "type": "string"
+                          },
+                          "dap": {
+                            "type": "string"
+                          },
+                          "other": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "maxGplTouched": {
+                        "type": "boolean"
+                      },
+                      "other": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "adjustments": {
+                    "type": "object",
+                    "properties": {
+                      "adjustAllowed": {
+                        "type": "boolean"
+                      },
+                      "providedYanPpm": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "string"
+                          },
+                          "fermK": {
+                            "type": "string"
+                          },
+                          "dap": {
+                            "type": "string"
+                          },
+                          "other": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "flags": {
+                "type": "object",
+                "properties": {
+                  "advanced": {
+                    "type": "boolean"
+                  },
+                  "private": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "derived": {
+            "type": "object",
+            "properties": {
+              "gravity": {
+                "type": "object",
+                "properties": {
+                  "ogPrimary": {
+                    "type": "number"
+                  },
+                  "backsweetenedFg": {
+                    "type": "number"
+                  },
+                  "totalForAbv": {
+                    "type": "number"
+                  }
+                }
+              },
+              "volume": {
+                "type": "object",
+                "properties": {
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz"
+                    ]
+                  },
+                  "primary": {
+                    "type": "number"
+                  },
+                  "secondary": {
+                    "type": "number"
+                  },
+                  "total": {
+                    "type": "number"
+                  },
+                  "primaryL": {
+                    "type": "number"
+                  },
+                  "secondaryL": {
+                    "type": "number"
+                  },
+                  "totalL": {
+                    "type": "number"
+                  }
+                }
+              },
+              "alcohol": {
+                "type": "object",
+                "properties": {
+                  "abv": {
+                    "type": "number"
+                  },
+                  "delle": {
+                    "type": "number"
+                  }
+                }
+              },
+              "stabilizers": {
+                "type": "object",
+                "properties": {
+                  "sorbate": {
+                    "type": "number"
+                  },
+                  "sulfite": {
+                    "type": "number"
+                  },
+                  "campden": {
+                    "type": "number"
+                  }
+                }
+              },
+              "nutrients": {
+                "type": "object",
+                "properties": {
+                  "targetYanPpm": {
+                    "type": "number"
+                  },
+                  "remainingYanPpm": {
+                    "type": "number"
+                  },
+                  "numberOfAdditions": {
+                    "type": "number"
+                  },
+                  "nutrientAdditions": {
+                    "type": "object",
+                    "properties": {
+                      "totalGrams": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "number"
+                          },
+                          "fermK": {
+                            "type": "number"
+                          },
+                          "dap": {
+                            "type": "number"
+                          },
+                          "other": {
+                            "type": "number"
+                          }
+                        }
+                      },
+                      "perAddition": {
+                        "type": "object",
+                        "properties": {
+                          "fermO": {
+                            "type": "number"
+                          },
+                          "fermK": {
+                            "type": "number"
+                          },
+                          "dap": {
+                            "type": "number"
+                          },
+                          "other": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "providedYanPpm": {
+                    "type": "object",
+                    "properties": {
+                      "fermO": {
+                        "type": "number"
+                      },
+                      "fermK": {
+                        "type": "number"
+                      },
+                      "dap": {
+                        "type": "number"
+                      },
+                      "other": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "goFerm": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number"
+                      },
+                      "water": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RecipeDerivedStateResponse": {
+        "type": "object",
+        "properties": {
+          "gravity": {
+            "type": "object",
+            "properties": {
+              "ogPrimary": {
+                "type": "number"
+              },
+              "backsweetenedFg": {
+                "type": "number"
+              },
+              "totalForAbv": {
+                "type": "number"
+              }
+            }
+          },
+          "volume": {
+            "type": "object",
+            "properties": {
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "L",
+                  "mL",
+                  "gal",
+                  "qt",
+                  "pt",
+                  "fl_oz",
+                  "imp_gal",
+                  "imp_qt",
+                  "imp_pt",
+                  "imp_fl_oz"
+                ]
+              },
+              "primary": {
+                "type": "number"
+              },
+              "secondary": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              },
+              "primaryL": {
+                "type": "number"
+              },
+              "secondaryL": {
+                "type": "number"
+              },
+              "totalL": {
+                "type": "number"
+              }
+            }
+          },
+          "alcohol": {
+            "type": "object",
+            "properties": {
+              "abv": {
+                "type": "number"
+              },
+              "delle": {
+                "type": "number"
+              }
+            }
+          },
+          "stabilizers": {
+            "type": "object",
+            "properties": {
+              "sorbate": {
+                "type": "number"
+              },
+              "sulfite": {
+                "type": "number"
+              },
+              "campden": {
+                "type": "number"
+              }
+            }
+          },
+          "nutrients": {
+            "type": "object",
+            "properties": {
+              "targetYanPpm": {
+                "type": "number"
+              },
+              "remainingYanPpm": {
+                "type": "number"
+              },
+              "numberOfAdditions": {
+                "type": "number"
+              },
+              "nutrientAdditions": {
+                "type": "object",
+                "properties": {
+                  "totalGrams": {
+                    "type": "object",
+                    "properties": {
+                      "fermO": {
+                        "type": "number"
+                      },
+                      "fermK": {
+                        "type": "number"
+                      },
+                      "dap": {
+                        "type": "number"
+                      },
+                      "other": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "perAddition": {
+                    "type": "object",
+                    "properties": {
+                      "fermO": {
+                        "type": "number"
+                      },
+                      "fermK": {
+                        "type": "number"
+                      },
+                      "dap": {
+                        "type": "number"
+                      },
+                      "other": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              },
+              "providedYanPpm": {
+                "type": "object",
+                "properties": {
+                  "fermO": {
+                    "type": "number"
+                  },
+                  "fermK": {
+                    "type": "number"
+                  },
+                  "dap": {
+                    "type": "number"
+                  },
+                  "other": {
+                    "type": "number"
+                  }
+                }
+              },
+              "goFerm": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "water": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RecipeStabilizerResultsResponse": {
+        "type": "object",
+        "properties": {
+          "sorbate": {
+            "type": "number"
+          },
+          "sulfite": {
+            "type": "number"
+          },
+          "campden": {
+            "type": "number"
+          }
+        }
+      },
+      "NutrientDerivedStateResponse": {
+        "type": "object",
+        "properties": {
+          "targetYanPpm": {
+            "type": "number"
+          },
+          "remainingYanPpm": {
+            "type": "number"
+          },
+          "numberOfAdditions": {
+            "type": "number"
+          },
+          "nutrientAdditions": {
+            "type": "object",
+            "properties": {
+              "totalGrams": {
+                "type": "object",
+                "properties": {
+                  "fermO": {
+                    "type": "number"
+                  },
+                  "fermK": {
+                    "type": "number"
+                  },
+                  "dap": {
+                    "type": "number"
+                  },
+                  "other": {
+                    "type": "number"
+                  }
+                }
+              },
+              "perAddition": {
+                "type": "object",
+                "properties": {
+                  "fermO": {
+                    "type": "number"
+                  },
+                  "fermK": {
+                    "type": "number"
+                  },
+                  "dap": {
+                    "type": "number"
+                  },
+                  "other": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "providedYanPpm": {
+            "type": "object",
+            "properties": {
+              "fermO": {
+                "type": "number"
+              },
+              "fermK": {
+                "type": "number"
+              },
+              "dap": {
+                "type": "number"
+              },
+              "other": {
+                "type": "number"
+              }
+            }
+          },
+          "goFerm": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number"
+              },
+              "water": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "NutrientAdditionsDerivedResponse": {
+        "type": "object",
+        "properties": {
+          "totalGrams": {
+            "type": "object",
+            "properties": {
+              "fermO": {
+                "type": "number"
+              },
+              "fermK": {
+                "type": "number"
+              },
+              "dap": {
+                "type": "number"
+              },
+              "other": {
+                "type": "number"
+              }
+            }
+          },
+          "perAddition": {
+            "type": "object",
+            "properties": {
+              "fermO": {
+                "type": "number"
+              },
+              "fermK": {
+                "type": "number"
+              },
+              "dap": {
+                "type": "number"
+              },
+              "other": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "NutrientAmountsByKeyNumberResponse": {
+        "type": "object",
+        "properties": {
+          "fermO": {
+            "type": "number"
+          },
+          "fermK": {
+            "type": "number"
+          },
+          "dap": {
+            "type": "number"
+          },
+          "other": {
+            "type": "number"
+          }
+        }
+      },
+      "RecipeDerivedByIdValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid recipe ID",
+              "Recipe does not have valid dataV2."
+            ]
+          }
+        }
+      },
+      "RecipeDerivedFailureErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to calculate recipe derived state",
+              "An error occurred while fetching the recipe"
+            ]
+          }
+        }
+      },
+      "RecipeDerivedValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid recipe data payload."
             ]
           }
         }
@@ -13350,7 +14313,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to fetch recipes"
+              "Failed to fetch recipes",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -13373,7 +14338,8 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to create recipe"
+              "Failed to create recipe",
+              "Server misconfiguration"
             ]
           }
         }
@@ -13444,7 +14410,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to fetch user"
+              "Failed to fetch user",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -13488,7 +14456,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to update user"
+              "Failed to update user",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -13510,7 +14480,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to delete user"
+              "Failed to delete user",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -13584,7 +14556,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to fetch users"
+              "Failed to fetch users",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -14010,7 +14984,9 @@
           "error": {
             "type": "string",
             "enum": [
-              "Failed to create yeast"
+              "Failed to create yeast",
+              "Server misconfiguration",
+              "Failed to verify admin"
             ]
           }
         }
@@ -14297,6 +15273,26 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -14406,6 +15402,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -14542,6 +15548,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -14600,6 +15616,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -14691,6 +15717,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -14746,6 +15782,26 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -14796,6 +15852,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -14957,6 +16023,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -15015,6 +16091,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -15391,6 +16477,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -15431,6 +16527,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -15504,6 +16610,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -15564,6 +16680,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -15647,6 +16773,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -15705,6 +16841,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -15799,6 +16945,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewDeviceActionErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -15876,6 +17032,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewDeviceActionErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -15936,6 +17102,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16030,6 +17206,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16097,6 +17283,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16205,6 +17401,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16245,6 +17451,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16318,6 +17534,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16375,6 +17601,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16489,6 +17725,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16566,6 +17812,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16624,6 +17880,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16699,6 +17965,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16747,6 +18023,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16805,6 +18091,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -16896,6 +18192,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -16962,6 +18268,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -17049,6 +18365,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HydrometerLogErrorResponse"
                 }
               }
             }
@@ -17487,6 +18823,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -17605,6 +18951,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -17663,6 +19019,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -17748,6 +19114,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -17796,6 +19172,16 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
@@ -17853,6 +19239,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InvalidRecipeIdErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
                 }
               }
             }
@@ -17942,6 +19338,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -18018,6 +19424,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -18044,6 +19460,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteRecipeFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/derived": {
+      "post": {
+        "operationId": "post-recipes-derived",
+        "summary": "Calculate recipe derived state",
+        "description": "Calculates the same derived recipe state used by the recipe builder from a v2 recipe data payload.",
+        "tags": [
+          "Recipes"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeDataV2Response"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedStateResponseBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedFailureErrorResponse"
                 }
               }
             }
@@ -18171,6 +19639,26 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -18238,12 +19726,115 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RateRecipeFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/derived/{id}": {
+      "get": {
+        "operationId": "get-recipes-derived-{id}",
+        "summary": "Get recipe derived state by ID",
+        "description": "Returns v2 recipe data plus the same derived recipe state used by the recipe builder. Public recipes are accessible to everyone; private recipes require the owner or an admin bearer token.",
+        "tags": [
+          "Recipes"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedStateResponseBody"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedByIdValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeForbiddenErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeDerivedFailureErrorResponse"
                 }
               }
             }
@@ -18552,6 +20143,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -18670,6 +20271,16 @@
               }
             }
           },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Internal Server Error",
             "content": {
@@ -18728,6 +20339,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {

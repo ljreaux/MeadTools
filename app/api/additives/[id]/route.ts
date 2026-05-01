@@ -49,6 +49,7 @@ export async function GET(
  * @responseSet none
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:UpdateAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
@@ -90,6 +91,7 @@ export async function PATCH(
  * @responseSet none
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:DeleteAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin

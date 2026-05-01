@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet none
  * @add 400:HydrometerLogValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
+ * @add 500:HydrometerLogErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer
  * @openapi

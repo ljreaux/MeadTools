@@ -17,14 +17,18 @@ const RecipePage = () => {
   const params = useParams<{ id: string }>();
   const id = params.id;
 
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pdfRedirect = JSON.parse(searchParams.get("pdf") || "false");
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  const { data: recipe, error, isLoading } = useRecipeQuery(id, isLoggedIn);
+  const {
+    data: recipe,
+    error,
+    isLoading
+  } = useRecipeQuery(id, isLoggedIn, authLoading);
 
   // Handle errors
   useEffect(() => {
@@ -62,7 +66,7 @@ const RecipePage = () => {
   }, [error, router, toast]);
 
   // Loading state
-  if (isLoading || (!recipe && !error)) {
+  if (authLoading || isLoading || (!recipe && !error)) {
     return <Loading />;
   }
 

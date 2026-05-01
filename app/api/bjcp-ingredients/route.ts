@@ -62,6 +62,7 @@ export async function GET() {
  * @responseSet none
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:CreateBjcpIngredientFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin

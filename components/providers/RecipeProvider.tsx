@@ -20,7 +20,6 @@ import {
   fmt,
   KG_TO_WEIGHT,
   L_TO_VOLUME,
-  normalizeIngredientLine,
   VOLUME_TO_L,
   WEIGHT_TO_KG,
   isEffectivelyEmptyNumericInput,
@@ -32,6 +31,10 @@ import {
   shouldConvertAdditiveAmount,
   nextAdditiveAmountDimOnUnitChange
 } from "@/lib/utils/recipeDataCalculations";
+import calculateRecipeDerivedState, {
+  calculateRecipeStabilizerResults,
+  type RecipeDerivedState
+} from "@/lib/utils/calculateRecipeDerivedState";
 import {
   createContext,
   ReactNode,
@@ -42,15 +45,11 @@ import {
   useState,
   useRef
 } from "react";
-import {
-  calculateOriginalGravity,
-  calculateVolume
-} from "@/lib/utils/recipeDataCalculations";
+import { calculateOriginalGravity } from "@/lib/utils/recipeDataCalculations";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 import { toSG } from "@/lib/utils/unitConverter";
-import { calcABV, toBrix } from "@/lib/utils/unitConverter";
 import { initialNutrientData, NutrientData } from "@/types/nutrientData";
 
 type HydratePayload = Pick<
@@ -76,24 +75,7 @@ type RecipeContextValue = {
     | "nutrients"
   >;
 
-  derived: {
-    normalized: ReturnType<typeof normalizeIngredientLine>[];
-    primaryInputs: { sg: number; volumeL: number }[];
-    secondaryInputs: { sg: number; volumeL: number }[];
-    ogPrimary: number;
-    primaryVolumeL: number;
-    secondaryVolumeL: number;
-    totalVolumeL: number;
-    primaryVolume: number;
-    secondaryVolume: number;
-    totalVolume: number;
-    volumeUnit: RecipeUnitDefaults["volume"];
-    totalForAbv: number;
-    backsweetenedFg: number;
-    abv: number;
-    delle: number;
-    nutrientValueForRecipe: NutrientData;
-  };
+  derived: RecipeDerivedState;
 
   ingredient: {
     add: () => void;
@@ -365,87 +347,54 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     setIngredients((prev) => prev.filter((l) => l.lineId !== lineId));
   }, []);
 
-  function phToPpm(ph: number) {
-    if (ph <= 2.9) return 11;
-    if (ph === 3.0) return 13;
-    if (ph === 3.1) return 16;
-    if (ph === 3.2) return 21;
-    if (ph === 3.3) return 26;
-    if (ph === 3.4) return 32;
-    if (ph === 3.5) return 39;
-    if (ph === 3.6) return 50;
-    if (ph === 3.7) return 63;
-    if (ph === 3.8) return 98;
-    return 123; // >= 3.9
-  }
   /** ---------------------------
-   * Derived (ingredients only)
+   * Derived state
    * --------------------------*/
-  const normalized = useMemo(
-    () => ingredients.map(normalizeIngredientLine),
-    [ingredients]
+  const recipeDataForDerived = useMemo<RecipeData>(
+    () => ({
+      version: 2,
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      stabilizers: {
+        adding: addingStabilizers,
+        takingPh,
+        phReading,
+        type: stabilizerType
+      },
+      notes,
+      nutrients
+    }),
+    [
+      unitDefaults,
+      ingredients,
+      fg,
+      additives,
+      addingStabilizers,
+      takingPh,
+      phReading,
+      stabilizerType,
+      notes,
+      nutrients
+    ]
   );
 
-  const primaryInputs = useMemo(
-    () =>
-      normalized
-        .filter((l) => !l.secondary)
-        .map((l) => ({ sg: l.sg, volumeL: l.volumeL })),
-    [normalized]
+  const derived = useMemo(
+    () => calculateRecipeDerivedState(recipeDataForDerived),
+    [recipeDataForDerived]
   );
 
-  const secondaryInputs = useMemo(
-    () =>
-      normalized
-        .filter((l) => l.secondary)
-        .map((l) => ({ sg: l.sg, volumeL: l.volumeL })),
-    [normalized]
-  );
-
-  const ogPrimary = useMemo(
-    () => calculateOriginalGravity(primaryInputs),
-    [primaryInputs]
-  );
-
-  const primaryVolumeL = useMemo(
-    () => calculateVolume(primaryInputs),
-    [primaryInputs]
-  );
-
-  const secondaryVolumeL = useMemo(
-    () => calculateVolume(secondaryInputs),
-    [secondaryInputs]
-  );
-
-  const totalVolumeL = useMemo(
-    () => primaryVolumeL + secondaryVolumeL,
-    [primaryVolumeL, secondaryVolumeL]
-  );
-
-  const volumeFactor = useMemo(
-    () => L_TO_VOLUME[unitDefaults.volume],
-    [unitDefaults.volume]
-  );
-
-  const primaryVolume = useMemo(
-    () => primaryVolumeL * volumeFactor,
-    [primaryVolumeL, volumeFactor]
-  );
-
-  const secondaryVolume = useMemo(
-    () => secondaryVolumeL * volumeFactor,
-    [secondaryVolumeL, volumeFactor]
-  );
-
-  const totalVolume = useMemo(
-    () => totalVolumeL * volumeFactor,
-    [totalVolumeL, volumeFactor]
-  );
-
-  const totalForAbv = useMemo(
-    () => calculateOriginalGravity([...primaryInputs, ...secondaryInputs]),
-    [primaryInputs, secondaryInputs]
-  );
+  const {
+    normalized,
+    secondaryInputs,
+    primaryVolumeL,
+    secondaryVolumeL,
+    totalVolumeL,
+    primaryVolume,
+    totalVolume,
+    abv
+  } = derived;
 
   // Secondary blend SG (what V1 called `secondaryVal`)
   const secondarySg = useMemo(
@@ -453,75 +402,17 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     [secondaryInputs]
   );
 
-  // backsweetenedFG = blend(FG over primaryVol) with (secondary blend SG over secondaryVol)
-  const backsweetenedFg = useMemo(() => {
-    const fgSg = parseNumber(fg);
-
-    return calculateOriginalGravity([
-      { sg: fgSg, volumeL: primaryVolumeL },
-      { sg: secondarySg, volumeL: secondaryVolumeL }
-    ]);
-  }, [fg, primaryVolumeL, secondarySg, secondaryVolumeL]);
-
-  const primaryAbv = calcABV(ogPrimary, parseNumber(fg));
-  const abv = (primaryAbv * primaryVolumeL) / totalVolumeL;
-
-  const delle = useMemo(
-    () => toBrix(backsweetenedFg) + 4.5 * abv,
-    [backsweetenedFg, abv]
+  const stabilizerResults = useMemo(
+    () =>
+      calculateRecipeStabilizerResults({
+        addingStabilizers,
+        phReading,
+        stabilizerType,
+        totalVolumeL,
+        abv
+      }),
+    [addingStabilizers, phReading, stabilizerType, totalVolumeL, abv]
   );
-
-  const stabilizerResults = useMemo(() => {
-    if (!addingStabilizers) return { sorbate: 0, sulfite: 0, campden: 0 };
-
-    const ph = Math.round(parseNumber(phReading) * 10) / 10;
-    const ppm = phToPpm(ph);
-
-    // ✅ use TOTAL volume (canonical liters)
-    const liters = totalVolumeL;
-    const gallons = liters / 3.78541;
-    const m3 = liters / 1000;
-
-    // ✅ use ABV from derived (backsweetened-aware)
-    const sorbate = ((-abv * 25 + 400) / 0.75) * m3;
-
-    const multiplier = stabilizerType === "kmeta" ? 570 : 674;
-    const sulfite = (liters * ppm) / multiplier;
-
-    const campden = (ppm / 75) * gallons;
-
-    return { sorbate, sulfite, campden };
-  }, [addingStabilizers, phReading, stabilizerType, totalVolumeL, abv]);
-
-  // --- NUTRIENTS: recipe-derived inputs for the embedded calculator (VIEW ONLY) ---
-  const nutrientVolumeUnits: NutrientData["inputs"]["volumeUnits"] =
-    unitDefaults.volume === "gal" ? "gal" : "liter";
-
-  // delta gravity: 1 + (OG_primary - FG)
-  // ex: 1.100 -> 0.996 => 1 + (0.104) = 1.104
-  // ex: 1.100 -> 1.010 => 1 + (0.090) = 1.090
-  const nutrientSg = useMemo(() => {
-    const fgSg = parseNumber(fg);
-    const og = ogPrimary;
-
-    if (!Number.isFinite(og) || !Number.isFinite(fgSg)) return 1;
-
-    return 1 + (og - fgSg);
-  }, [ogPrimary, fg]);
-
-  const nutrientValueForRecipe = useMemo<NutrientData>(() => {
-    return {
-      ...nutrients,
-      inputs: {
-        ...nutrients.inputs,
-
-        // override these 3 from recipe-derived values
-        volume: fmt(primaryVolume),
-        volumeUnits: nutrientVolumeUnits,
-        sg: fmt(nutrientSg)
-      }
-    };
-  }, [nutrients, primaryVolume, nutrientVolumeUnits, nutrientSg]);
 
   // --- Default offset (25 ppm per lb of PRIMARY fruit per gal of PRIMARY volume) ---
   const defaultOffsetPpm = useMemo(() => {
@@ -1456,24 +1347,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         nutrients
       },
 
-      derived: {
-        normalized,
-        primaryInputs,
-        secondaryInputs,
-        ogPrimary,
-        primaryVolumeL,
-        secondaryVolumeL,
-        totalVolumeL,
-        primaryVolume,
-        secondaryVolume,
-        totalVolume,
-        volumeUnit: unitDefaults.volume,
-        totalForAbv,
-        backsweetenedFg,
-        abv,
-        delle,
-        nutrientValueForRecipe
-      },
+      derived,
 
       ingredient: ingredientApi,
 
@@ -1637,20 +1511,15 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       onNutrientsChange,
 
       // derived
+      derived,
       normalized,
-      primaryInputs,
       secondaryInputs,
-      ogPrimary,
       primaryVolumeL,
       secondaryVolumeL,
       totalVolumeL,
       primaryVolume,
-      secondaryVolume,
       totalVolume,
-      totalForAbv,
-      backsweetenedFg,
       abv,
-      delle,
 
       // api + helpers used inside
       ingredientApi,

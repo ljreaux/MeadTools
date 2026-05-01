@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
  * @responseSet none
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:CreateIngredientFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin

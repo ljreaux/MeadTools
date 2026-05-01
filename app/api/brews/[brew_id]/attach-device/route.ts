@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @add 400:BrewDeviceActionErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
  * @add 404:BrewDeviceActionErrorResponse
+ * @add 500:BrewDeviceActionErrorResponse
  * @auth BearerAuth
  * @tag Brews
  * @openapi

@@ -164,6 +164,78 @@ export type RecipeDataV2Response = {
   };
 };
 
+export type NutrientAdditionsDerivedResponse = {
+  totalGrams: NutrientAmountsByKeyNumberResponse;
+  perAddition: NutrientAmountsByKeyNumberResponse;
+};
+
+export type NutrientAmountsByKeyNumberResponse = {
+  fermO: number;
+  fermK: number;
+  dap: number;
+  other: number;
+};
+
+export type NutrientDerivedStateResponse = {
+  targetYanPpm: number;
+  remainingYanPpm: number;
+  numberOfAdditions: number;
+  nutrientAdditions: NutrientAdditionsDerivedResponse;
+  providedYanPpm: NutrientAmountsByKeyNumberResponse;
+  goFerm: {
+    amount: number;
+    water: number;
+  };
+};
+
+export type RecipeStabilizerResultsResponse = {
+  sorbate: number;
+  sulfite: number;
+  campden: number;
+};
+
+export type RecipeDerivedStateResponse = {
+  gravity: {
+    ogPrimary: number;
+    backsweetenedFg: number;
+    totalForAbv: number;
+  };
+  volume: {
+    unit: VolumeUnit;
+    primary: number;
+    secondary: number;
+    total: number;
+    primaryL: number;
+    secondaryL: number;
+    totalL: number;
+  };
+  alcohol: {
+    abv: number;
+    delle: number;
+  };
+  stabilizers: RecipeStabilizerResultsResponse;
+  nutrients: NutrientDerivedStateResponse;
+};
+
+export type RecipeDerivedStateResponseBody = {
+  recipeData: RecipeDataV2Response;
+  derived: RecipeDerivedStateResponse;
+};
+
+export type RecipeDerivedValidationErrorResponse = {
+  error: "Invalid recipe data payload.";
+};
+
+export type RecipeDerivedByIdValidationErrorResponse = {
+  error: "Invalid recipe ID" | "Recipe does not have valid dataV2.";
+};
+
+export type RecipeDerivedFailureErrorResponse = {
+  error:
+    | "Failed to calculate recipe derived state"
+    | "An error occurred while fetching the recipe";
+};
+
 export type ApiErrorResponse = {
   error: string;
 };
@@ -228,11 +300,11 @@ export type CreateAdditiveValidationErrorResponse = {
 };
 
 export type CreateAdditiveFailureErrorResponse = {
-  error: "Failed to create additive";
+  error: "Failed to create additive" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type UpdateAdditiveFailureErrorResponse = {
-  error: "Failed to update additive";
+  error: "Failed to update additive" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type DeleteAdditiveSuccessResponse = {
@@ -240,7 +312,7 @@ export type DeleteAdditiveSuccessResponse = {
 };
 
 export type DeleteAdditiveFailureErrorResponse = {
-  error: "Failed to delete additive";
+  error: "Failed to delete additive" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type IngredientResponse = {
@@ -353,7 +425,7 @@ export type CreateYeastValidationErrorResponse = {
 };
 
 export type CreateYeastFailureErrorResponse = {
-  error: "Failed to create yeast";
+  error: "Failed to create yeast" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type UpdateYeastFailureErrorResponse = ApiErrorResponse;
@@ -583,7 +655,7 @@ export type CreateUsernameValidationErrorResponse = {
 };
 
 export type CreateUsernameFailureErrorResponse = {
-  error: "Failed to update public username.";
+  error: "Failed to update public username." | "Server misconfiguration";
 };
 
 export type CreateRecipeRequestBody = {
@@ -620,7 +692,7 @@ export type CreateRecipeValidationErrorResponse = {
 };
 
 export type CreateRecipeFailureErrorResponse = {
-  error: "Failed to create recipe";
+  error: "Failed to create recipe" | "Server misconfiguration";
 };
 
 export type UpdateRecipeRequestBody = Partial<CreateRecipeRequestBody>;
@@ -636,7 +708,7 @@ export type UpdateRecipeForbiddenErrorResponse = {
 };
 
 export type UpdateRecipeFailureErrorResponse = {
-  error: "Failed to update recipe";
+  error: "Failed to update recipe" | "Server misconfiguration";
 };
 
 export type DeleteRecipeSuccessResponse = {
@@ -648,7 +720,7 @@ export type DeleteRecipeForbiddenErrorResponse = {
 };
 
 export type DeleteRecipeFailureErrorResponse = {
-  error: "Failed to delete recipe";
+  error: "Failed to delete recipe" | "Server misconfiguration";
 };
 
 export type RateRecipeRequestBody = {
@@ -671,7 +743,7 @@ export type RateRecipeValidationErrorResponse = {
 };
 
 export type RateRecipeFailureErrorResponse = {
-  error: "Failed to add rating";
+  error: "Failed to add rating" | "Server misconfiguration";
 };
 
 export type CreateRecipeCommentRequestBody = {
@@ -698,7 +770,7 @@ export type CreateRecipeCommentValidationErrorResponse = {
 };
 
 export type CreateRecipeCommentFailureErrorResponse = {
-  error: "Failed to add comment";
+  error: "Failed to add comment" | "Server misconfiguration";
 };
 
 export type RecipeCommentListPathParams = {
@@ -773,11 +845,11 @@ export type UpdateRecipeCommentValidationErrorResponse = {
 };
 
 export type UpdateRecipeCommentFailureErrorResponse = {
-  error: "Failed to update comment";
+  error: "Failed to update comment" | "Server misconfiguration";
 };
 
 export type DeleteRecipeCommentFailureErrorResponse = {
-  error: "Failed to delete comment";
+  error: "Failed to delete comment" | "Server misconfiguration";
 };
 
 export type BrewStageResponse =
@@ -1012,31 +1084,31 @@ export type BrewValidationErrorResponse = {
 };
 
 export type BrewFetchErrorResponse = {
-  error: "Failed to fetch brews." | "Failed to fetch brew.";
+  error: "Failed to fetch brews." | "Failed to fetch brew." | "Server misconfiguration";
 };
 
 export type BrewCreateErrorResponse = {
-  error: "Failed to create brew.";
+  error: "Failed to create brew." | "Server misconfiguration";
 };
 
 export type BrewUpdateErrorResponse = {
-  error: "Failed to update brew.";
+  error: "Failed to update brew." | "Server misconfiguration";
 };
 
 export type BrewDeleteErrorResponse = {
-  error: "Failed to delete brew.";
+  error: "Failed to delete brew." | "Server misconfiguration";
 };
 
 export type BrewEntryCreateErrorResponse = {
-  error: "Failed to create entry.";
+  error: "Failed to create entry." | "Server misconfiguration";
 };
 
 export type BrewEntryUpdateErrorResponse = {
-  error: "Failed to update entry.";
+  error: "Failed to update entry." | "Server misconfiguration";
 };
 
 export type BrewEntryDeleteErrorResponse = {
-  error: "Failed to delete entry.";
+  error: "Failed to delete entry." | "Server misconfiguration";
 };
 
 export type BrewDeviceActionErrorResponse = {
@@ -1047,7 +1119,8 @@ export type BrewDeviceActionErrorResponse = {
     | "Device already attached to another brew"
     | "Invalid start_date"
     | "Invalid end_date"
-    | "Failed";
+    | "Failed"
+    | "Server misconfiguration";
 };
 
 export type AdminAuthErrorResponse = {
@@ -1104,7 +1177,7 @@ export type AdminRecipesPageResponse = {
 };
 
 export type AdminRecipesFetchErrorResponse = {
-  error: "Failed to fetch recipes";
+  error: "Failed to fetch recipes" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type AdminUserPathParams = {
@@ -1151,7 +1224,7 @@ export type DeleteAdminUserSuccessResponse = {
 };
 
 export type AdminUsersFetchErrorResponse = {
-  error: "Failed to fetch users";
+  error: "Failed to fetch users" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type AdminUserNotFoundErrorResponse = {
@@ -1159,15 +1232,15 @@ export type AdminUserNotFoundErrorResponse = {
 };
 
 export type AdminUserFetchErrorResponse = {
-  error: "Failed to fetch user";
+  error: "Failed to fetch user" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type AdminUserUpdateErrorResponse = {
-  error: "Failed to update user";
+  error: "Failed to update user" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type AdminUserDeleteErrorResponse = {
-  error: "Failed to delete user";
+  error: "Failed to delete user" | "Server misconfiguration" | "Failed to verify admin";
 };
 
 export type CreateBjcpIngredientRequestBody = {
@@ -1379,7 +1452,10 @@ export type HydrometerAuthErrorResponse = {
 };
 
 export type HydrometerAccountErrorResponse = {
-  error: "Failed to fetch hydro_token" | "Failed to create hydro_token";
+  error:
+    | "Failed to fetch hydro_token"
+    | "Failed to create hydro_token"
+    | "Server misconfiguration";
 };
 
 export type HydrometerBrewValidationErrorResponse = {
@@ -1395,11 +1471,15 @@ export type HydrometerBrewErrorResponse = {
     | "Failed to get brews."
     | "Failed to create brew."
     | "Failed to update brew."
-    | "Failed to delete brew.";
+    | "Failed to delete brew."
+    | "Server misconfiguration";
 };
 
 export type HydrometerDeviceErrorResponse = {
-  error: "Failed to update device." | "Failed to delete device.";
+  error:
+    | "Failed to update device."
+    | "Failed to delete device."
+    | "Server misconfiguration";
 };
 
 export type HydrometerLogValidationErrorResponse = {
@@ -1409,7 +1489,8 @@ export type HydrometerLogValidationErrorResponse = {
     | "Must provide a device id."
     | "Missing device_id, start_date, or end_date parameters"
     | "Unsupported content type"
-    | "Missing required fields";
+    | "Missing required fields"
+    | "Error deleting log.";
 };
 
 export type HydrometerLogErrorResponse = {
@@ -1419,7 +1500,8 @@ export type HydrometerLogErrorResponse = {
     | "Failed to delete log."
     | "Error deleting log."
     | "Failed to log"
-    | "Failed to log Tilt data";
+    | "Failed to log Tilt data"
+    | "Server misconfiguration";
 };
 
 export type RaptPillRegisterErrorResponse = {

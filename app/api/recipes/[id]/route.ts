@@ -49,7 +49,7 @@ export type InvalidRecipeIdErrorResponse = {
 };
 
 export type RecipeNotFoundErrorResponse = {
-  error: "Recipe not found";
+  error: "Recipe not found" | "User not found";
 };
 
 export type RecipeForbiddenErrorResponse = {
@@ -57,7 +57,7 @@ export type RecipeForbiddenErrorResponse = {
 };
 
 export type RecipeFetchErrorResponse = {
-  error: "An error occurred while fetching the recipe";
+  error: "An error occurred while fetching the recipe" | "Server misconfiguration";
 };
 
 /**
@@ -67,6 +67,7 @@ export type RecipeFetchErrorResponse = {
  * @response 200:GetRecipeResponse
  * @responseSet none
  * @add 400:InvalidRecipeIdErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
  * @add 403:RecipeForbiddenErrorResponse
  * @add 404:RecipeNotFoundErrorResponse
  * @add 500:RecipeFetchErrorResponse
@@ -133,6 +134,7 @@ export async function GET(
  * @response 200:UpdateRecipeResponse
  * @responseSet none
  * @add 400:UpdateRecipeValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
  * @add 403:UpdateRecipeForbiddenErrorResponse
  * @add 404:RecipeNotFoundErrorResponse
  * @add 500:UpdateRecipeFailureErrorResponse
@@ -200,6 +202,7 @@ export async function PATCH(
  * @response 200:DeleteRecipeSuccessResponse
  * @responseSet none
  * @add 400:InvalidRecipeIdErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
  * @add 403:DeleteRecipeForbiddenErrorResponse
  * @add 404:RecipeNotFoundErrorResponse
  * @add 500:DeleteRecipeFailureErrorResponse

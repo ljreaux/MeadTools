@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @response 200:HydrometerDeviceResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:HydrometerDeviceErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer
@@ -50,6 +51,7 @@ export async function PATCH(
  * @response 200:DeleteHydrometerDeviceResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:HydrometerDeviceErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer

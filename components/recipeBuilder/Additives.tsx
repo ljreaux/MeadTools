@@ -88,7 +88,7 @@ export default function Additives() {
         <Button
           onClick={additivesApi.add}
           variant="secondary"
-          disabled={additives.length >= 10}
+          disabled={additives.length >= 15}
           className="w-full sm:w-auto"
         >
           {t("additives.addNew")}

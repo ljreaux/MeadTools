@@ -9,6 +9,7 @@ import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
  * @responseSet none
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:AdminUsersFetchErrorResponse
  * @auth BearerAuth
  * @tag Admin

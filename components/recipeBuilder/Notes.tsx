@@ -58,7 +58,7 @@ export default function Notes() {
 
         <Button
           onClick={notesApi.primary.add}
-          disabled={notes.primary.length >= 10}
+          disabled={notes.primary.length >= 15}
           variant="secondary"
         >
           {t("newNote")}
@@ -98,7 +98,7 @@ export default function Notes() {
 
         <Button
           onClick={notesApi.secondary.add}
-          disabled={notes.secondary.length >= 10}
+          disabled={notes.secondary.length >= 15}
           variant="secondary"
         >
           {t("newNote")}

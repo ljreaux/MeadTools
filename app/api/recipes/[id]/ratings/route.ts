@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @response 201:RateRecipeResponse
  * @responseSet none
  * @add 400:RateRecipeValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:RateRecipeFailureErrorResponse
  * @auth BearerAuth
  * @tag Recipes

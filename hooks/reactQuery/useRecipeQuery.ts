@@ -201,14 +201,18 @@ async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
   return json.recipe;
 }
 
-export function useRecipeQuery(id: string, isLoggedIn: boolean) {
+export function useRecipeQuery(
+  id: string,
+  isLoggedIn: boolean,
+  authLoading = false
+) {
   const fetchWithAuth = useFetchWithAuth();
   const token = useAuthToken();
 
   // Logged-out: we don't care about token
   // Logged-in: don't run the query until we actually *have* a token
   const hasToken = !!token;
-  const enabled = !isLoggedIn || hasToken;
+  const enabled = !authLoading && (!isLoggedIn || hasToken);
 
   return useQuery<RecipeWithParsedFields>({
     queryKey: qk.recipe(id),

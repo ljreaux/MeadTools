@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
  * @add 400:CreateAdditiveValidationErrorResponse
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:CreateAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin

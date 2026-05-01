@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
  * @add 400:CreateYeastValidationErrorResponse
  * @add 401:AdminAuthErrorResponse
  * @add 403:AdminAuthErrorResponse
+ * @add 404:AdminAuthErrorResponse
  * @add 500:CreateYeastFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin

@@ -8,6 +8,7 @@ import { createBrewForApp, getBrewsForApp } from "@/lib/db/brews";
  * @response 200:BrewsResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewFetchErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewCreateErrorResponse
  * @auth BearerAuth
  * @tag Brews

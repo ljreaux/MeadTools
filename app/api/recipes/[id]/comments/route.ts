@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
  * @response 201:CreateRecipeCommentResponse
  * @responseSet none
  * @add 400:CreateRecipeCommentValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:CreateRecipeCommentFailureErrorResponse
  * @auth BearerAuth
  * @tag Recipes

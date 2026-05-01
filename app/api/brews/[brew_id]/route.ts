@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewFetchErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -54,6 +55,7 @@ export async function GET(
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -95,6 +97,7 @@ export async function PATCH(
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewDeleteErrorResponse
  * @auth BearerAuth
  * @tag Brews

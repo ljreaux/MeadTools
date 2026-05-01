@@ -11,6 +11,7 @@ import { patchBrewEntryForApp, deleteBrewEntryForApp } from "@/lib/db/brews";
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewEntryUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -60,6 +61,7 @@ export async function PATCH(
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewEntryDeleteErrorResponse
  * @auth BearerAuth
  * @tag Brews

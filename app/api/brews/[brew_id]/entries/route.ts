@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:BrewEntryCreateErrorResponse
  * @auth BearerAuth
  * @tag Brews

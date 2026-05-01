@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @response 200:HydrometerLogsResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:HydrometerLogErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer
@@ -46,6 +47,7 @@ export async function GET(
  * @responseSet none
  * @add 400:HydrometerLogValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:HydrometerLogErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer
@@ -92,6 +94,7 @@ export async function PATCH(
  * @responseSet none
  * @add 400:HydrometerLogValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:HydrometerLogErrorResponse
  * @auth BearerAuth
  * @tag Hydrometer

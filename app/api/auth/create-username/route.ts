@@ -9,6 +9,8 @@ import { updateUser } from "@/lib/db/users";
  * @response 200:CreateUsernameSuccessResponse
  * @responseSet none
  * @add 400:CreateUsernameValidationErrorResponse
+ * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:CreateUsernameFailureErrorResponse
  * @auth BearerAuth
  * @tag Account

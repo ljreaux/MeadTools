@@ -12,6 +12,7 @@ import { updateComment, deleteComment } from "@/lib/db/comments";
  * @responseSet none
  * @add 400:UpdateRecipeCommentValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:UpdateRecipeCommentFailureErrorResponse
  * @auth BearerAuth
  * @tag Recipes
@@ -60,6 +61,7 @@ export async function PATCH(
  * @response 200:DeleteRecipeCommentResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
+ * @add 404:AuthenticatedRouteErrorResponse
  * @add 500:DeleteRecipeCommentFailureErrorResponse
  * @auth BearerAuth
  * @tag Recipes
