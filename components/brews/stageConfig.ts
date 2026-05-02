@@ -4,7 +4,6 @@ import {
   type BrewEntryType,
   type BrewStage
 } from "@/lib/brewEnums";
-import type { IngredientLine } from "@/types/recipeData";
 import type { TFunction } from "i18next";
 import type React from "react";
 
@@ -13,8 +12,8 @@ import type React from "react";
 import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
-import { BrewAdditionData } from "@/lib/utils/entryPayload";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
+import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type StageStatus = "past" | "current" | "future";
 export type BrewEntry = {
@@ -33,12 +32,18 @@ export type BrewStageContext = {
   hasRecipeLinked: boolean;
 
   // recipe snapshot/provider data that panels can render
-  recipe: {
-    ingredients: IngredientLine[];
+  recipe: BrewRecipeStageData["planned"] & {
+    derived: BrewRecipeStageData["derived"];
+    snapshot: BrewRecipeStageData["snapshot"];
+    actual: BrewRecipeStageData["actual"];
+    effective: BrewRecipeStageData["effective"];
   };
   brew: {
     entries: BrewEntry[];
     current_volume_liters: number | null;
+    effective_current_volume_liters: number | null;
+    latest_gravity: number | null;
+    effective_latest_gravity: number | null;
   };
 };
 
@@ -125,24 +130,14 @@ export type StageMoveDecision = {
 
 function getPlannedPrimaryIngredientIds(ctx: BrewStageContext) {
   return new Set(
-    (ctx.recipe.ingredients ?? [])
-      .filter((l) => !l.secondary)
+    (ctx.recipe.primaryIngredients ?? [])
       .filter((l) => (l.name ?? "").trim().length > 0)
       .map((l) => String(l.lineId))
   );
 }
 
 function getLoggedRecipeIngredientIds(ctx: BrewStageContext) {
-  const ids = new Set<string>();
-
-  for (const e of ctx.brew.entries ?? []) {
-    if (e.type !== BREW_ENTRY_TYPE.ADDITION) continue;
-    const rid = (e.data as Partial<BrewAdditionData> | null | undefined)
-      ?.recipeIngredientId;
-    if (rid) ids.add(String(rid));
-  }
-
-  return ids;
+  return new Set(ctx.recipe.actual.loggedRecipeIngredientIds ?? []);
 }
 
 function hasMissingPrimaryIngredients(ctx: BrewStageContext) {
@@ -325,7 +320,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
         hint: (t) =>
           t(
             "brews.prereq.volumeHint",
-            "When you rack to secondary, record the new volume."
+            "When the brew volume changes, record the actual amount here."
           ),
         actionLabel: (t) =>
           t("brews.actions.logVolume", "Log volume"),
