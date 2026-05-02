@@ -17,11 +17,11 @@ import {
   STAGE_FLOW,
   type StageStatus
 } from "./stageConfig";
-import { useRecipe } from "@/components/providers/RecipeProvider";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { useEffect, useState } from "react";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
 import { RecordVolumeDialog } from "./RecordVolumeDialog";
+import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -39,6 +39,7 @@ export function BrewStagePath({
   onMoveToStage,
   entries,
   current_volume_liters,
+  recipe,
   patchBrewMetadata,
   openAddEntry,
   addAddition,
@@ -50,6 +51,7 @@ export function BrewStagePath({
   entries: BrewEntry[];
 
   current_volume_liters: number | null; // ✅ add
+  recipe: BrewRecipeStageData;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>; // ✅ add
 
   openAddEntry: (args?: OpenAddEntryArgs) => void;
@@ -74,10 +76,6 @@ export function BrewStagePath({
 }) {
   const { t } = useTranslation();
   const currentIdx = idxOf(stage);
-
-  const {
-    data: { ingredients }
-  } = useRecipe();
   const [activeId, setActiveId] = useState<BrewStage>(stage);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
 
@@ -138,8 +136,20 @@ export function BrewStagePath({
             const ctx = {
               brewStage: stage,
               hasRecipeLinked,
-              recipe: { ingredients },
-              brew: { entries, current_volume_liters }
+              recipe: {
+                ...recipe.planned,
+                derived: recipe.derived,
+                snapshot: recipe.snapshot,
+                actual: recipe.actual,
+                effective: recipe.effective
+              },
+              brew: {
+                entries,
+                current_volume_liters,
+                effective_current_volume_liters: recipe.effective.currentVolumeL,
+                latest_gravity: recipe.actual.latestGravity,
+                effective_latest_gravity: recipe.effective.latestGravity
+              }
             };
             const helpers = {
               moveToStage: async (to: BrewStage) => {

@@ -7,6 +7,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
 import { BrewAdditionData } from "@/lib/utils/entryPayload";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type AccountBrewListItem = {
   id: string;
@@ -62,7 +63,7 @@ export type AccountBrew = {
   recipe_id: number | null;
   recipe_name: string | null;
 
-  recipe_snapshot: any | null;
+  recipe_snapshot: BrewRecipeSnapshot | null;
   entry_count: number;
 
   entries: AccountBrewEntry[];

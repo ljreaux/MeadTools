@@ -44,6 +44,7 @@ import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 type HeaderVolumeUnit = "gal" | "L";
 
@@ -134,9 +135,19 @@ export default function BrewPageClient() {
   };
 
   const {
-    derived: { ogPrimary, backsweetenedFg, abv, primaryVolumeL, totalVolumeL },
-    meta: { hydrate }
+    meta: { hydrate, reset }
   } = useRecipe();
+
+  const brewRecipe = useMemo(
+    () =>
+      buildBrewRecipeStageData({
+        recipeSnapshot: brew?.recipe_snapshot,
+        currentVolumeLiters: brew?.current_volume_liters,
+        latestGravity: brew?.latest_gravity,
+        entries: brew?.entries
+      }),
+    [brew?.recipe_snapshot, brew?.current_volume_liters, brew?.latest_gravity, brew?.entries]
+  );
 
   const [entryOpen, setEntryOpen] = useState(false);
   const [entryPresetType, setEntryPresetType] = useState<
@@ -213,28 +224,34 @@ export default function BrewPageClient() {
 
   const displayLatestGravity = brew?.latest_gravity ?? latestGravityEntry?.gravity;
   const displayEstimatedOg =
-    typeof ogPrimary === "number" && Number.isFinite(ogPrimary) && ogPrimary > 1
-      ? ogPrimary
+    typeof brewRecipe.derived?.gravity.ogPrimary === "number" &&
+    Number.isFinite(brewRecipe.derived.gravity.ogPrimary) &&
+    brewRecipe.derived.gravity.ogPrimary > 1
+      ? brewRecipe.derived.gravity.ogPrimary
       : null;
   const displayEstimatedFg =
-    typeof backsweetenedFg === "number" &&
-    Number.isFinite(backsweetenedFg) &&
-    backsweetenedFg > 0
-      ? backsweetenedFg
+    typeof brewRecipe.derived?.gravity.backsweetenedFg === "number" &&
+    Number.isFinite(brewRecipe.derived.gravity.backsweetenedFg) &&
+    brewRecipe.derived.gravity.backsweetenedFg > 0
+      ? brewRecipe.derived.gravity.backsweetenedFg
       : null;
   const displayEstimatedAbv =
-    typeof abv === "number" && Number.isFinite(abv) && abv >= 0 ? abv : null;
+    typeof brewRecipe.derived?.alcohol.abv === "number" &&
+    Number.isFinite(brewRecipe.derived.alcohol.abv) &&
+    brewRecipe.derived.alcohol.abv >= 0
+      ? brewRecipe.derived.alcohol.abv
+      : null;
   const displayTargetVolume =
-    typeof totalVolumeL === "number" &&
-    Number.isFinite(totalVolumeL) &&
-    totalVolumeL > 0
-      ? totalVolumeL
+    typeof brewRecipe.derived?.volume.totalL === "number" &&
+    Number.isFinite(brewRecipe.derived.volume.totalL) &&
+    brewRecipe.derived.volume.totalL > 0
+      ? brewRecipe.derived.volume.totalL
       : null;
   const displayPrimaryVolume =
-    typeof primaryVolumeL === "number" &&
-    Number.isFinite(primaryVolumeL) &&
-    primaryVolumeL > 0
-      ? primaryVolumeL
+    typeof brewRecipe.derived?.volume.primaryL === "number" &&
+    Number.isFinite(brewRecipe.derived.volume.primaryL) &&
+    brewRecipe.derived.volume.primaryL > 0
+      ? brewRecipe.derived.volume.primaryL
       : null;
 
   const recipeSummaryItems = [
@@ -345,8 +362,10 @@ export default function BrewPageClient() {
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
+      return;
     }
-  }, [brew, hydrate]);
+    reset();
+  }, [brew?.recipe_snapshot, hydrate, reset]);
   const { mutateAsync: createEntry } = useCreateBrewEntry();
   async function addAddition(input: {
     name: string;
@@ -587,10 +606,11 @@ export default function BrewPageClient() {
         addAddition={addAddition}
         addAdditions={addAdditions}
         current_volume_liters={brew.current_volume_liters}
+        recipe={brewRecipe}
         patchBrewMetadata={async (input) => {
           await saveMetadata(input);
         }}
-        hasRecipeLinked={Boolean(brew.recipe_id)}
+        hasRecipeLinked={Boolean(brewRecipe.recipeData)}
       />
       <RecordVolumeDialog
         t={t}
