@@ -37,6 +37,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
 import type { VolumeUnit } from "@/types/recipeData";
+import { BrewTrackingUnavailable } from "@/components/brews/BrewTrackingUnavailable";
+import { BREW_TRACKING_ENABLED } from "@/lib/featureFlags";
 
 type RecipeRow = { id: number; name: string };
 type BrewVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
@@ -47,6 +49,14 @@ function getPreferredVolumeUnit(preferred: PreferredUnits | null): BrewVolumeUni
 }
 
 export default function NewBrewClient() {
+  if (!BREW_TRACKING_ENABLED) {
+    return <BrewTrackingUnavailable />;
+  }
+
+  return <NewBrewContent />;
+}
+
+function NewBrewContent() {
   const { t } = useTranslation();
   const router = useRouter();
 

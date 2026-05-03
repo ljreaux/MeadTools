@@ -3,6 +3,8 @@
 import * as React from "react";
 import type { IngredientLine } from "@/types/recipeData";
 import type { StagePanelProps } from "../stageConfig";
+import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
+import type { BrewAdditionData } from "@/lib/utils/entryPayload";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +49,21 @@ function ingredientDisplay(line: IngredientLine) {
   return { name, primary, secondary };
 }
 
+function getLoggedRecipeIds(
+  entries: StagePanelProps["ctx"]["brew"]["entries"]
+) {
+  const ids = new Set<string>();
+
+  for (const e of entries) {
+    if (e.type !== BREW_ENTRY_TYPE.ADDITION) continue;
+    const d = e.data as Partial<BrewAdditionData> | null | undefined;
+    const rid = d?.recipeIngredientId;
+    if (rid) ids.add(String(rid));
+  }
+
+  return ids;
+}
+
 function buildPrimaryLines(lines: IngredientLine[]) {
   return lines
     .filter((l) => !l.secondary)
@@ -61,13 +78,13 @@ export function PrimaryStagePanel({
   helpers
 }: StagePanelProps) {
   const primaryLines = React.useMemo(
-    () => buildPrimaryLines(ctx.recipe.primaryIngredients),
-    [ctx.recipe.primaryIngredients]
+    () => buildPrimaryLines(ctx.recipe.ingredients),
+    [ctx.recipe.ingredients]
   );
 
   const loggedIds = React.useMemo(
-    () => new Set(ctx.recipe.actual.loggedRecipeIngredientIds),
-    [ctx.recipe.actual.loggedRecipeIngredientIds]
+    () => getLoggedRecipeIds(ctx.brew.entries),
+    [ctx.brew.entries]
   );
 
   const missing = React.useMemo(() => {

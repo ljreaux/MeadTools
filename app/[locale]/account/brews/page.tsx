@@ -38,8 +38,18 @@ import {
   useAccountBrews,
   type AccountBrewListItem
 } from "@/hooks/reactQuery/useAccountBrews";
+import { BrewTrackingUnavailable } from "@/components/brews/BrewTrackingUnavailable";
+import { BREW_TRACKING_ENABLED } from "@/lib/featureFlags";
 
 export default function AccountBrews() {
+  if (!BREW_TRACKING_ENABLED) {
+    return <BrewTrackingUnavailable />;
+  }
+
+  return <AccountBrewsContent />;
+}
+
+function AccountBrewsContent() {
   const { t, i18n } = useTranslation();
   const { data: brews = [], isLoading, isError, error } = useAccountBrews();
 
