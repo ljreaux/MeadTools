@@ -9,6 +9,7 @@ import {
   PathTitle
 } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   BrewEntry,
@@ -35,17 +36,20 @@ function statusFor(i: number, currentIdx: number): StageStatus {
 }
 
 export function BrewStagePath({
+  brewId,
   stage,
   onMoveToStage,
   entries,
   current_volume_liters,
   recipe,
   patchBrewMetadata,
+  linkRecipeHref,
   openAddEntry,
   addAddition,
   addAdditions,
   hasRecipeLinked
 }: {
+  brewId: string;
   stage: BrewStage;
   onMoveToStage: (to: BrewStage) => Promise<void>;
   entries: BrewEntry[];
@@ -53,6 +57,7 @@ export function BrewStagePath({
   current_volume_liters: number | null; // ✅ add
   recipe: BrewRecipeStageData;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>; // ✅ add
+  linkRecipeHref?: string;
 
   openAddEntry: (args?: OpenAddEntryArgs) => void;
   addAddition: (input: {
@@ -75,6 +80,7 @@ export function BrewStagePath({
   hasRecipeLinked: boolean;
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const currentIdx = idxOf(stage);
   const [activeId, setActiveId] = useState<BrewStage>(stage);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
@@ -144,6 +150,7 @@ export function BrewStagePath({
                 effective: recipe.effective
               },
               brew: {
+                id: brewId,
                 entries,
                 current_volume_liters,
                 effective_current_volume_liters: recipe.effective.currentVolumeL,
@@ -160,6 +167,9 @@ export function BrewStagePath({
               },
               openRecordVolume: () => setRecordVolumeOpen(true),
               patchBrewMetadata,
+              openLinkRecipePage: () => {
+                if (linkRecipeHref) router.push(linkRecipeHref);
+              },
               addAddition,
               addAdditions,
               openAddEntry

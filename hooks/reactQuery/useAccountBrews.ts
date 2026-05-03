@@ -187,6 +187,7 @@ export function useCreateAccountBrew() {
  * PATCH /api/brews/:brewId  (metadata only)
  */
 export type PatchAccountBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
   batch_number?: number | null;
   start_date?: string;

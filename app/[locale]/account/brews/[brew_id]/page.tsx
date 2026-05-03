@@ -597,6 +597,7 @@ export default function BrewPageClient() {
       </div>
 
       <BrewStagePath
+        brewId={brew.id}
         stage={brew.stage}
         entries={allEntries}
         onMoveToStage={async (to) => {
@@ -610,6 +611,7 @@ export default function BrewPageClient() {
         patchBrewMetadata={async (input) => {
           await saveMetadata(input);
         }}
+        linkRecipeHref={`/account/brews/${brew.id}/link`}
         hasRecipeLinked={Boolean(brewRecipe.recipeData)}
       />
       <RecordVolumeDialog
