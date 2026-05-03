@@ -68,6 +68,7 @@ export type BrewForApp = {
 };
 
 export type PatchBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
   batch_number?: number | null;
   start_date?: string | Date;
@@ -359,6 +360,8 @@ export async function patchBrewMetadata(
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
+        name: true,
+        batch_number: true,
         stage: true,
         start_date: true,
         end_date: true
@@ -373,6 +376,46 @@ export async function patchBrewMetadata(
     const data: Record<string, any> = {};
     let endDateWasSet = false;
     let endDateWasCleared = false;
+
+    // recipe_id
+    if ("recipe_id" in input) {
+      const recipeId = Number(input.recipe_id);
+      if (!Number.isFinite(recipeId)) throw new Error("Invalid recipe_id");
+
+      const recipe = await tx.recipes.findFirst({
+        where: { id: recipeId, user_id: userId },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          dataV2: true
+        }
+      });
+      if (!recipe) throw new Error("Recipe not found");
+
+      const max = await tx.brews.aggregate({
+        where: { recipe_id: recipeId, user_id: userId },
+        _max: { batch_number: true }
+      });
+
+      data.recipe_id = recipeId;
+      data.recipe_snapshot = {
+        id: recipe.id,
+        name: recipe.name,
+        version: recipe.version,
+        dataV2: recipe.dataV2 as any,
+        snapshottedAt: new Date().toISOString(),
+        source: "planned_stage_link"
+      };
+
+      if (input.batch_number === undefined && existing.batch_number == null) {
+        data.batch_number = (max._max.batch_number ?? 0) + 1;
+      }
+
+      if (input.name === undefined && !existing.name) {
+        data.name = recipe.name;
+      }
+    }
 
     // name
     if ("name" in input) {
@@ -509,7 +552,7 @@ export async function patchBrewMetadata(
     }
 
     // 5) Return the updated metadata (same style you’ve been using)
-    return tx.brews.findFirst({
+    const updatedBrew = await tx.brews.findFirst({
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
@@ -521,9 +564,18 @@ export async function patchBrewMetadata(
         current_volume_liters: true,
         requested_email_alerts: true,
         latest_gravity: true,
-        recipe_id: true
+        recipe_id: true,
+        recipes: { select: { name: true } }
       }
     });
+
+    if (!updatedBrew) return null;
+
+    return {
+      ...updatedBrew,
+      recipe_name: updatedBrew.recipes?.name ?? null,
+      recipes: undefined
+    };
   });
 }
 

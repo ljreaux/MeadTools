@@ -39,6 +39,7 @@ export type BrewStageContext = {
     effective: BrewRecipeStageData["effective"];
   };
   brew: {
+    id: string;
     entries: BrewEntry[];
     current_volume_liters: number | null;
     effective_current_volume_liters: number | null;
@@ -80,6 +81,7 @@ export type BrewStageHelpers = {
 
   openAddEntry?: (args?: OpenAddEntryArgs) => void;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>;
+  openLinkRecipePage?: () => void;
 };
 
 export type StageAction = {
@@ -205,25 +207,12 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
     title: (t) => t("brewStage.PLANNED"),
     description: (t) =>
       t("brews.stageDesc.planned", "Get everything ready before you start."),
-    prereqs: [
-      {
-        id: "linkRecipe",
-        label: (t) =>
-          t("brews.prereq.linkRecipe", "Link a recipe (recommended)"),
-        isMet: (ctx) => ctx.hasRecipeLinked,
-        hint: (t) =>
-          t(
-            "brews.prereq.linkRecipeHint",
-            "Linking a recipe lets MeadTools build your ingredient checklist."
-          )
-      }
-    ],
     actions: [
       {
         id: "moveToPrimary",
         label: (t) =>
           t("brews.actions.startPrimary", "Start primary fermentation"),
-        when: (status) => status === "current",
+        when: (status, ctx) => status === "current" && ctx.hasRecipeLinked,
         run: async ({ moveToStage }) => moveToStage("PRIMARY")
       }
     ],
@@ -233,6 +222,23 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   PRIMARY: {
     id: "PRIMARY",
     title: (t) => t("brewStage.PRIMARY"),
+    prereqs: [
+      {
+        id: "linkRecipe",
+        label: (t) => t("brews.prereq.linkRecipe", "Link a recipe"),
+        isMet: (ctx) => ctx.hasRecipeLinked,
+        hint: (t) =>
+          t(
+            "brews.prereq.linkRecipeHardHint",
+            "Brew tracking needs a linked recipe before primary can start."
+          ),
+        actionLabel: (t) =>
+          t("brews.planned.linkRecipeAction", "Link recipe"),
+        run: ({ openLinkRecipePage }) => {
+          openLinkRecipePage?.();
+        }
+      }
+    ],
     actions: [
       // “Add entry” for primary (multi-type)
       {
