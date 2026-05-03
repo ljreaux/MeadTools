@@ -24,8 +24,18 @@ import { Button } from "@/components/ui/button";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
+import { BrewTrackingUnavailable } from "@/components/brews/BrewTrackingUnavailable";
+import { BREW_TRACKING_ENABLED } from "@/lib/featureFlags";
 
 export default function BrewPageClient() {
+  if (!BREW_TRACKING_ENABLED) {
+    return <BrewTrackingUnavailable />;
+  }
+
+  return <BrewPageContent />;
+}
+
+function BrewPageContent() {
   const { t, i18n } = useTranslation();
   const params = useParams<{ brew_id: string }>();
   const brewId = params?.brew_id;

@@ -8,7 +8,7 @@ import {
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Droplets, LogOut, Settings, NotebookPen } from "lucide-react";
+import { Droplets, LogOut, NotebookPen, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
@@ -63,33 +63,6 @@ function Header() {
         isGoogleUser={user.isGoogleUser}
         showGoogleAvatar={user.show_google_avatar}
       />
-
-      {/*
-      Brew Tracker / Saved Recipes
-      Hidden for now while the account brews UI is not ready for main.
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon">
-              <Link
-                href={isBrewsPath ? "/account" : "/account/brews"}
-                aria-label={isBrewsPath ? t("savedRecipes") : t("brews.title")}
-              >
-                {isBrewsPath ? (
-                  <NotebookPen className="h-5 w-5" />
-                ) : (
-                  <Beer className="h-5 w-5" />
-                )}
-              </Link>
-            </Button>
-          </TooltipTrigger>
-
-          <TooltipContent>
-            {isBrewsPath ? t("savedRecipes") : t("brews.title")}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      */}
 
       {/* Hydrometer Dashboard / Saved Recipes */}
       <TooltipProvider delayDuration={150}>
