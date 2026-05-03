@@ -7,6 +7,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
 import { BrewAdditionData } from "@/lib/utils/entryPayload";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type AccountBrewListItem = {
   id: string;
@@ -15,7 +16,9 @@ export type AccountBrewListItem = {
   end_date: string | null;
 
   stage: BrewStage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -53,13 +56,14 @@ export type AccountBrew = {
   stage: BrewStage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   latest_gravity: number | null;
 
   recipe_id: number | null;
   recipe_name: string | null;
 
-  recipe_snapshot: any | null;
+  recipe_snapshot: BrewRecipeSnapshot | null;
   entry_count: number;
 
   entries: AccountBrewEntry[];
@@ -183,7 +187,10 @@ export function useCreateAccountBrew() {
  * PATCH /api/brews/:brewId  (metadata only)
  */
 export type PatchAccountBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string;
   stage?: BrewStage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
@@ -225,6 +232,9 @@ export function usePatchAccountBrewMetadata() {
         accountBrewsQk.detail(updated.id),
         (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old)
       );
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.list()
+      });
       queryClient.invalidateQueries({
         queryKey: accountBrewsQk.detail(vars.brewId)
       });

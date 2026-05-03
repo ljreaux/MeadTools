@@ -13,7 +13,9 @@ export type BrewListItem = {
   end_date: Date | null;
 
   stage: brew_stage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -51,6 +53,7 @@ export type BrewForApp = {
   stage: brew_stage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
 
   latest_gravity: number | null;
 
@@ -65,7 +68,10 @@ export type BrewForApp = {
 };
 
 export type PatchBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string | Date;
   stage?: brew_stage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
@@ -114,7 +120,9 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
       start_date: true,
       end_date: true,
       stage: true,
+      batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
       latest_gravity: true,
       recipe_id: true,
       recipes: { select: { name: true } },
@@ -129,7 +137,9 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
     end_date: b.end_date,
 
     stage: b.stage,
+    batch_number: b.batch_number,
     current_volume_liters: b.current_volume_liters,
+    requested_email_alerts: b.requested_email_alerts ?? false,
 
     recipe_id: b.recipe_id,
     recipe_name: b.recipes?.name ?? null,
@@ -269,6 +279,7 @@ export async function getBrewForApp(
       stage: true,
       batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
       latest_gravity: true,
 
       recipe_id: true,
@@ -323,6 +334,7 @@ export async function getBrewForApp(
     stage: brew.stage,
     batch_number: brew.batch_number,
     current_volume_liters: brew.current_volume_liters,
+    requested_email_alerts: brew.requested_email_alerts ?? false,
 
     latest_gravity: brew.latest_gravity,
 
@@ -348,7 +360,10 @@ export async function patchBrewMetadata(
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
+        name: true,
+        batch_number: true,
         stage: true,
+        start_date: true,
         end_date: true
       }
     });
@@ -362,11 +377,74 @@ export async function patchBrewMetadata(
     let endDateWasSet = false;
     let endDateWasCleared = false;
 
+    // recipe_id
+    if ("recipe_id" in input) {
+      const recipeId = Number(input.recipe_id);
+      if (!Number.isFinite(recipeId)) throw new Error("Invalid recipe_id");
+
+      const recipe = await tx.recipes.findFirst({
+        where: { id: recipeId, user_id: userId },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          dataV2: true
+        }
+      });
+      if (!recipe) throw new Error("Recipe not found");
+
+      const max = await tx.brews.aggregate({
+        where: { recipe_id: recipeId, user_id: userId },
+        _max: { batch_number: true }
+      });
+
+      data.recipe_id = recipeId;
+      data.recipe_snapshot = {
+        id: recipe.id,
+        name: recipe.name,
+        version: recipe.version,
+        dataV2: recipe.dataV2 as any,
+        snapshottedAt: new Date().toISOString(),
+        source: "planned_stage_link"
+      };
+
+      if (input.batch_number === undefined && existing.batch_number == null) {
+        data.batch_number = (max._max.batch_number ?? 0) + 1;
+      }
+
+      if (input.name === undefined && !existing.name) {
+        data.name = recipe.name;
+      }
+    }
+
     // name
     if ("name" in input) {
       const v = input.name;
       data.name =
         typeof v === "string" ? (v.trim() ? v.trim() : null) : v ?? null;
+    }
+
+    // batch_number
+    if ("batch_number" in input) {
+      const v = input.batch_number;
+      if (v === null) {
+        data.batch_number = null;
+      } else {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1) {
+          throw new Error("Invalid batch_number");
+        }
+        data.batch_number = n;
+      }
+    }
+
+    // start_date
+    if ("start_date" in input) {
+      const d = input.start_date instanceof Date
+        ? input.start_date
+        : new Date(input.start_date as any);
+      if (Number.isNaN(d.getTime())) throw new Error("Invalid start_date");
+      data.start_date = d;
     }
 
     // stage
@@ -426,6 +504,18 @@ export async function patchBrewMetadata(
       // ^ keep existing end_date if already set, otherwise set now
     }
 
+    if (endDateWasCleared && finalStageCandidate === brew_stage.COMPLETE) {
+      throw new Error("Cannot clear end_date while brew is complete");
+    }
+
+    const nextStartDate = (data.start_date ?? existing.start_date) as Date;
+    const nextEndDate =
+      "end_date" in data ? (data.end_date as Date | null) : existing.end_date;
+
+    if (nextEndDate && nextStartDate > nextEndDate) {
+      throw new Error("start_date must be before end_date");
+    }
+
     if (Object.keys(data).length === 0) {
       throw new Error("No valid fields to update");
     }
@@ -462,7 +552,7 @@ export async function patchBrewMetadata(
     }
 
     // 5) Return the updated metadata (same style you’ve been using)
-    return tx.brews.findFirst({
+    const updatedBrew = await tx.brews.findFirst({
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
@@ -474,9 +564,18 @@ export async function patchBrewMetadata(
         current_volume_liters: true,
         requested_email_alerts: true,
         latest_gravity: true,
-        recipe_id: true
+        recipe_id: true,
+        recipes: { select: { name: true } }
       }
     });
+
+    if (!updatedBrew) return null;
+
+    return {
+      ...updatedBrew,
+      recipe_name: updatedBrew.recipes?.name ?? null,
+      recipes: undefined
+    };
   });
 }
 
@@ -566,6 +665,29 @@ function groupEntriesByStage(
     .map((s) => ({ stage: s, entries: map.get(s)! }));
 }
 
+async function syncLatestGravity(
+  tx: Prisma.TransactionClient,
+  brewId: string
+): Promise<number | null> {
+  const latestGravityEntry = await tx.brew_entries.findFirst({
+    where: {
+      brew_id: brewId,
+      gravity: { not: null }
+    },
+    orderBy: [{ datetime: "desc" }, { id: "desc" }],
+    select: { gravity: true }
+  });
+
+  const latestGravity = latestGravityEntry?.gravity ?? null;
+
+  await tx.brews.update({
+    where: { id: brewId },
+    data: { latest_gravity: latestGravity }
+  });
+
+  return latestGravity;
+}
+
 export async function createBrewEntryForApp(
   userId: number,
   brewId: string,
@@ -599,19 +721,23 @@ export async function createBrewEntryForApp(
       : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
-  await prisma.brew_entries.create({
-    data: {
-      brew_id: brewId,
-      user_id: userId,
-      type: input.type,
-      datetime,
-      title: input.title ?? null,
-      note: input.note ?? null,
-      gravity: input.gravity ?? null,
-      temperature: input.temperature ?? null,
-      temp_units: input.temp_units ?? null,
-      data: (input.data as any) ?? null
-    }
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.create({
+      data: {
+        brew_id: brewId,
+        user_id: userId,
+        type: input.type,
+        datetime,
+        title: input.title ?? null,
+        note: input.note ?? null,
+        gravity: input.gravity ?? null,
+        temperature: input.temperature ?? null,
+        temp_units: input.temp_units ?? null,
+        data: (input.data as any) ?? null
+      }
+    });
+
+    await syncLatestGravity(tx, brewId);
   });
 
   // consistent return
@@ -707,6 +833,8 @@ export async function patchBrewEntryForApp(
       data
     });
 
+    await syncLatestGravity(tx, brewId);
+
     // 4) return the updated entry (consistent shape)
     return tx.brew_entries.findUnique({
       where: { id: entryId },
@@ -749,7 +877,11 @@ export async function deleteBrewEntryForApp(
     throw new Error("Cannot delete stage change entry");
   }
 
-  await prisma.brew_entries.delete({ where: { id: entryId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.delete({ where: { id: entryId } });
+    await syncLatestGravity(tx, brewId);
+  });
+
   return { message: "Entry deleted successfully." };
 }
 
