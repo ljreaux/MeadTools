@@ -4,6 +4,7 @@ import {
   type BrewEntryType,
   type BrewStage
 } from "@/lib/brewEnums";
+import type { IngredientLine } from "@/types/recipeData";
 import type { TFunction } from "i18next";
 import type React from "react";
 
@@ -12,8 +13,8 @@ import type React from "react";
 import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
+import { BrewAdditionData } from "@/lib/utils/entryPayload";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
-import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type StageStatus = "past" | "current" | "future";
 export type BrewEntry = {
@@ -32,19 +33,12 @@ export type BrewStageContext = {
   hasRecipeLinked: boolean;
 
   // recipe snapshot/provider data that panels can render
-  recipe: BrewRecipeStageData["planned"] & {
-    derived: BrewRecipeStageData["derived"];
-    snapshot: BrewRecipeStageData["snapshot"];
-    actual: BrewRecipeStageData["actual"];
-    effective: BrewRecipeStageData["effective"];
+  recipe: {
+    ingredients: IngredientLine[];
   };
   brew: {
-    id: string;
     entries: BrewEntry[];
     current_volume_liters: number | null;
-    effective_current_volume_liters: number | null;
-    latest_gravity: number | null;
-    effective_latest_gravity: number | null;
   };
 };
 
@@ -81,7 +75,6 @@ export type BrewStageHelpers = {
 
   openAddEntry?: (args?: OpenAddEntryArgs) => void;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>;
-  openLinkRecipePage?: () => void;
 };
 
 export type StageAction = {
@@ -132,14 +125,24 @@ export type StageMoveDecision = {
 
 function getPlannedPrimaryIngredientIds(ctx: BrewStageContext) {
   return new Set(
-    (ctx.recipe.primaryIngredients ?? [])
+    (ctx.recipe.ingredients ?? [])
+      .filter((l) => !l.secondary)
       .filter((l) => (l.name ?? "").trim().length > 0)
       .map((l) => String(l.lineId))
   );
 }
 
 function getLoggedRecipeIngredientIds(ctx: BrewStageContext) {
-  return new Set(ctx.recipe.actual.loggedRecipeIngredientIds ?? []);
+  const ids = new Set<string>();
+
+  for (const e of ctx.brew.entries ?? []) {
+    if (e.type !== BREW_ENTRY_TYPE.ADDITION) continue;
+    const rid = (e.data as Partial<BrewAdditionData> | null | undefined)
+      ?.recipeIngredientId;
+    if (rid) ids.add(String(rid));
+  }
+
+  return ids;
 }
 
 function hasMissingPrimaryIngredients(ctx: BrewStageContext) {
@@ -207,12 +210,25 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
     title: (t) => t("brewStage.PLANNED"),
     description: (t) =>
       t("brews.stageDesc.planned", "Get everything ready before you start."),
+    prereqs: [
+      {
+        id: "linkRecipe",
+        label: (t) =>
+          t("brews.prereq.linkRecipe", "Link a recipe (recommended)"),
+        isMet: (ctx) => ctx.hasRecipeLinked,
+        hint: (t) =>
+          t(
+            "brews.prereq.linkRecipeHint",
+            "Linking a recipe lets MeadTools build your ingredient checklist."
+          )
+      }
+    ],
     actions: [
       {
         id: "moveToPrimary",
         label: (t) =>
           t("brews.actions.startPrimary", "Start primary fermentation"),
-        when: (status, ctx) => status === "current" && ctx.hasRecipeLinked,
+        when: (status) => status === "current",
         run: async ({ moveToStage }) => moveToStage("PRIMARY")
       }
     ],
@@ -222,23 +238,6 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   PRIMARY: {
     id: "PRIMARY",
     title: (t) => t("brewStage.PRIMARY"),
-    prereqs: [
-      {
-        id: "linkRecipe",
-        label: (t) => t("brews.prereq.linkRecipe", "Link a recipe"),
-        isMet: (ctx) => ctx.hasRecipeLinked,
-        hint: (t) =>
-          t(
-            "brews.prereq.linkRecipeHardHint",
-            "Brew tracking needs a linked recipe before primary can start."
-          ),
-        actionLabel: (t) =>
-          t("brews.planned.linkRecipeAction", "Link recipe"),
-        run: ({ openLinkRecipePage }) => {
-          openLinkRecipePage?.();
-        }
-      }
-    ],
     actions: [
       // “Add entry” for primary (multi-type)
       {
@@ -326,7 +325,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
         hint: (t) =>
           t(
             "brews.prereq.volumeHint",
-            "When the brew volume changes, record the actual amount here."
+            "When you rack to secondary, record the new volume."
           ),
         actionLabel: (t) =>
           t("brews.actions.logVolume", "Log volume"),
