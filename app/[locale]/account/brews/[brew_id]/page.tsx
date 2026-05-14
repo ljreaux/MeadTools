@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { Check, Pencil, PencilOff, Scale } from "lucide-react";
 
 import {
+  CreateBrewEntryInput,
   useAccountBrew,
   usePatchAccountBrewMetadata
 } from "@/hooks/reactQuery/useAccountBrews";
@@ -40,10 +41,14 @@ import {
   InputGroupInput
 } from "@/components/ui/input-group";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
+import {
+  BrewAdditionData,
+  GravityReadingRole,
+  entryPayload
+} from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
-import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 type HeaderVolumeUnit = "gal" | "L";
@@ -156,10 +161,22 @@ export default function BrewPageClient() {
   const [entryAllowedTypes, setEntryAllowedTypes] = useState<
     EntryType[] | undefined
   >();
+  const [entryGravityRole, setEntryGravityRole] = useState<
+    GravityReadingRole | undefined
+  >();
+  const [entryGravityDefaultValue, setEntryGravityDefaultValue] = useState<
+    number | undefined
+  >();
+  const [entryGravitySource, setEntryGravitySource] = useState<
+    "measured" | "recipe" | undefined
+  >();
 
   function openAddEntry(args?: OpenAddEntryArgs) {
     setEntryPresetType(args?.presetType);
     setEntryAllowedTypes(args?.allowedTypes);
+    setEntryGravityRole(args?.gravityRole);
+    setEntryGravityDefaultValue(args?.gravityDefaultValue);
+    setEntryGravitySource(args?.gravitySource);
     setEntryOpen(true);
   }
 
@@ -229,12 +246,9 @@ export default function BrewPageClient() {
     brewRecipe.derived.gravity.ogPrimary > 1
       ? brewRecipe.derived.gravity.ogPrimary
       : null;
+  const estimatedFg = parseNumber(brewRecipe.recipeData?.fg ?? "");
   const displayEstimatedFg =
-    typeof brewRecipe.derived?.gravity.backsweetenedFg === "number" &&
-    Number.isFinite(brewRecipe.derived.gravity.backsweetenedFg) &&
-    brewRecipe.derived.gravity.backsweetenedFg > 0
-      ? brewRecipe.derived.gravity.backsweetenedFg
-      : null;
+    Number.isFinite(estimatedFg) && estimatedFg > 0 ? estimatedFg : null;
   const displayEstimatedAbv =
     typeof brewRecipe.derived?.alcohol.abv === "number" &&
     Number.isFinite(brewRecipe.derived.alcohol.abv) &&
@@ -367,32 +381,79 @@ export default function BrewPageClient() {
     reset();
   }, [brew?.recipe_snapshot, hydrate, reset]);
   const { mutateAsync: createEntry } = useCreateBrewEntry();
+
+  async function addEntry(input: CreateBrewEntryInput) {
+    await createEntry({ brewId: brew!.id, input });
+  }
+
+  async function recordCurrentVolume(input: {
+    liters: number;
+    displayValue?: number;
+    displayUnit?: string;
+    startingLiters?: number;
+  }) {
+    await saveMetadata({ current_volume_liters: input.liters });
+    await addEntry(
+      entryPayload.volume({
+        liters: input.liters,
+        displayValue: input.displayValue,
+        displayUnit: input.displayUnit,
+        startingLiters: input.startingLiters
+      })
+    );
+  }
+
   async function addAddition(input: {
     name: string;
     recipeIngredientId?: string;
+    recipeAdditiveId?: string;
     amount?: number;
     unit?: string;
     note?: string;
+    kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+    source?:
+      | "recipe_ingredient"
+      | "recipe_additive"
+      | "recipe_nutrient"
+      | "recipe_go_ferm"
+      | "recipe_yeast"
+      | "manual_yeast"
+      | "manual";
+    meta?: Record<string, any>;
   }) {
-    await createEntry({
-      brewId: brew!.id,
-      input: entryPayload.addition({
+    await addEntry(
+      entryPayload.addition({
         name: input.name,
         recipeIngredientId: input.recipeIngredientId,
+        recipeAdditiveId: input.recipeAdditiveId,
         amount: input.amount,
         unit: input.unit,
-        note: input.note ?? null
+        note: input.note ?? null,
+        kind: input.kind,
+        source: input.source,
+        meta: input.meta
       })
-    });
+    );
   }
 
   async function addAdditions(
     inputs: Array<{
       name: string;
       recipeIngredientId?: string;
+      recipeAdditiveId?: string;
       amount?: number;
       unit?: string;
       note?: string;
+      kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+      source?:
+        | "recipe_ingredient"
+        | "recipe_additive"
+        | "recipe_nutrient"
+        | "recipe_go_ferm"
+        | "recipe_yeast"
+        | "manual_yeast"
+        | "manual";
+      meta?: Record<string, any>;
     }>
   ) {
     // simplest approach: fire sequentially so you don’t DDOS your own API
@@ -606,6 +667,7 @@ export default function BrewPageClient() {
         openAddEntry={openAddEntry}
         addAddition={addAddition}
         addAdditions={addAdditions}
+        addEntry={addEntry}
         current_volume_liters={brew.current_volume_liters}
         recipe={brewRecipe}
         patchBrewMetadata={async (input) => {
@@ -619,7 +681,14 @@ export default function BrewPageClient() {
         open={recordVolumeOpen}
         onOpenChange={setRecordVolumeOpen}
         currentVolumeLiters={brew.current_volume_liters}
-        onSave={(volume) => saveMetadata({ current_volume_liters: volume })}
+        onSave={(volume, meta) =>
+          recordCurrentVolume({
+            liters: volume,
+            displayValue: meta.displayValue,
+            displayUnit: meta.displayUnit,
+            startingLiters: meta.startingLiters
+          })
+        }
       />
       <Dialog
         open={startDateDialogOpen}
@@ -656,6 +725,9 @@ export default function BrewPageClient() {
         onOpenChange={setEntryOpen}
         presetType={entryPresetType}
         allowedTypes={entryAllowedTypes}
+        gravityRole={entryGravityRole}
+        gravityDefaultValue={entryGravityDefaultValue}
+        gravitySource={entryGravitySource}
         hideTrigger
       />
       {/* Timeline by stage */}
@@ -711,7 +783,21 @@ export default function BrewPageClient() {
 
                     <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
                       {e.gravity != null ? (
-                        <span>SG: {formatGravity(e.gravity)}</span>
+                        <span>
+                          {(() => {
+                            const role = (e.data as any)?.readingRole;
+                            const source = (e.data as any)?.source;
+                            const label =
+                              role === "OG"
+                                ? "OG"
+                                : role === "FG"
+                                  ? "FG"
+                                  : "SG";
+                            return `${label}: ${formatGravity(e.gravity)}${
+                              source === "recipe" ? " (recipe)" : ""
+                            }`;
+                          })()}
+                        </span>
                       ) : null}
                       {e.temperature != null ? (
                         <span>
@@ -750,6 +836,28 @@ export default function BrewPageClient() {
                                   : ""}
                                 {d.unit ? ` ${d.unit}` : ""}
                               </span>
+                            );
+                          })()
+                        : null}
+                      {e.type === BREW_ENTRY_TYPE.VOLUME && e.data
+                        ? (() => {
+                            const d = e.data as {
+                              liters?: number;
+                              displayValue?: number;
+                              displayUnit?: string;
+                            };
+                            const value =
+                              typeof d.displayValue === "number" &&
+                              Number.isFinite(d.displayValue) &&
+                              d.displayUnit
+                                ? `${normalizeNumberString(
+                                    d.displayValue,
+                                    2,
+                                    i18n.resolvedLanguage
+                                  )} ${d.displayUnit}`
+                                : formatVolume(d.liters);
+                            return (
+                              <span>Volume: {value}</span>
                             );
                           })()
                         : null}

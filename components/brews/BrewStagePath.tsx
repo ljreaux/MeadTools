@@ -1,4 +1,4 @@
-import type { BrewStage } from "@/lib/brewEnums";
+import { BREW_ENTRY_TYPE, type BrewStage } from "@/lib/brewEnums";
 import {
   Path,
   PathActivePanel,
@@ -9,6 +9,13 @@ import {
   PathTitle
 } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,8 +28,11 @@ import {
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { useEffect, useState } from "react";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
+import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { RecordVolumeDialog } from "./RecordVolumeDialog";
 import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
+import { entryPayload } from "@/lib/utils/entryPayload";
+import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -47,6 +57,7 @@ export function BrewStagePath({
   openAddEntry,
   addAddition,
   addAdditions,
+  addEntry,
   hasRecipeLinked
 }: {
   brewId: string;
@@ -66,6 +77,17 @@ export function BrewStagePath({
     unit?: string;
     note?: string;
     recipeIngredientId?: string;
+    recipeAdditiveId?: string;
+    kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+    source?:
+      | "recipe_ingredient"
+      | "recipe_additive"
+      | "recipe_nutrient"
+      | "recipe_go_ferm"
+      | "recipe_yeast"
+      | "manual_yeast"
+      | "manual";
+    meta?: Record<string, any>;
   }) => Promise<void>;
 
   addAdditions: (
@@ -75,8 +97,20 @@ export function BrewStagePath({
       unit?: string;
       note?: string;
       recipeIngredientId?: string;
+      recipeAdditiveId?: string;
+      kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+      source?:
+        | "recipe_ingredient"
+        | "recipe_additive"
+        | "recipe_nutrient"
+        | "recipe_go_ferm"
+        | "recipe_yeast"
+        | "manual_yeast"
+        | "manual";
+      meta?: Record<string, any>;
     }>
   ) => Promise<void>;
+  addEntry: (input: CreateBrewEntryInput) => Promise<void>;
   hasRecipeLinked: boolean;
 }) {
   const { t } = useTranslation();
@@ -84,6 +118,7 @@ export function BrewStagePath({
   const currentIdx = idxOf(stage);
   const [activeId, setActiveId] = useState<BrewStage>(stage);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
+  const [reviewStage, setReviewStage] = useState<BrewStage | null>(null);
 
   useEffect(() => {
     setActiveId(stage);
@@ -146,6 +181,7 @@ export function BrewStagePath({
                 ...recipe.planned,
                 derived: recipe.derived,
                 snapshot: recipe.snapshot,
+                recipeData: recipe.recipeData,
                 actual: recipe.actual,
                 effective: recipe.effective
               },
@@ -165,13 +201,70 @@ export function BrewStagePath({
                 await onMoveToStage(to);
                 setActiveId(to);
               },
+              openStageMoveReview: (to: BrewStage) => {
+                setActiveId(to);
+                setReviewStage(to);
+              },
               openRecordVolume: () => setRecordVolumeOpen(true),
+              openOriginalGravityDialog: () => {
+                const recipeOg = recipe.derived?.gravity.ogPrimary;
+                openAddEntry?.({
+                  presetType: BREW_ENTRY_TYPE.GRAVITY,
+                  gravityRole: "OG",
+                  gravityDefaultValue:
+                    typeof recipeOg === "number" &&
+                    Number.isFinite(recipeOg) &&
+                    recipeOg > 1
+                      ? recipeOg
+                      : undefined,
+                  gravitySource:
+                    typeof recipeOg === "number" &&
+                    Number.isFinite(recipeOg) &&
+                    recipeOg > 1
+                      ? "recipe"
+                      : "measured"
+                });
+              },
+              openFinalGravityDialog: () => {
+                const recipeFg = recipe.recipeData?.fg;
+                const numericRecipeFg =
+                  typeof recipeFg === "string" ? Number(recipeFg) : recipeFg;
+                openAddEntry?.({
+                  presetType: BREW_ENTRY_TYPE.GRAVITY,
+                  gravityRole: "FG",
+                  gravityDefaultValue:
+                    typeof numericRecipeFg === "number" &&
+                    Number.isFinite(numericRecipeFg) &&
+                    numericRecipeFg > 0
+                      ? numericRecipeFg
+                      : undefined,
+                  gravitySource: "measured"
+                });
+              },
+              acceptRecipeOriginalGravity: async () => {
+                const recipeOg = recipe.derived?.gravity.ogPrimary;
+                if (
+                  typeof recipeOg !== "number" ||
+                  !Number.isFinite(recipeOg) ||
+                  recipeOg <= 1
+                ) {
+                  return;
+                }
+                await addEntry(
+                  entryPayload.gravity(recipeOg, null, {
+                    readingRole: "OG",
+                    source: "recipe",
+                    recipeValue: recipeOg
+                  })
+                );
+              },
               patchBrewMetadata,
               openLinkRecipePage: () => {
                 if (linkRecipeHref) router.push(linkRecipeHref);
               },
               addAddition,
               addAdditions,
+              addEntry,
               openAddEntry
             };
             const prereqs = cfg.prereqs ?? [];
@@ -181,6 +274,12 @@ export function BrewStagePath({
             const actions = (cfg.actions ?? []).filter((a) =>
               a.when ? a.when(status, ctx) : true
             );
+            const visiblePrereqs =
+              stage === "PRIMARY" &&
+              s === "SECONDARY" &&
+              !ctx.recipe.actual.originalGravity
+                ? prereqs.filter((p) => p.id !== "primaryHasFinalGravity")
+                : prereqs;
 
             const Panel = cfg.Panel;
             const isBlocked = !moveDecision.allowed && !moveDecision.isNoOp;
@@ -195,11 +294,18 @@ export function BrewStagePath({
                   <Button
                     size="sm"
                     onClick={async () => {
+                      if (stage === "PRIMARY" && s === "SECONDARY") {
+                        setReviewStage(s);
+                        return;
+                      }
                       if (!moveDecision.allowed) return;
                       await onMoveToStage(s);
                       setActiveId(s);
                     }}
-                    disabled={moveDecision.isNoOp || isBlocked}
+                    disabled={
+                      moveDecision.isNoOp ||
+                      (isBlocked && !(stage === "PRIMARY" && s === "SECONDARY"))
+                    }
                     title={
                       isBlocked
                         ? t(
@@ -238,14 +344,14 @@ export function BrewStagePath({
                   </div>
                 )}
 
-                {status === "future" && prereqs.length > 0 && (
+                {status === "future" && visiblePrereqs.length > 0 && (
                   <div className="space-y-2">
                     <div className="text-sm font-medium">
                       {t("brews.beforeYouProceed", "Before you proceed")}
                     </div>
 
                     <ul className="text-sm text-muted-foreground list-disc pl-5">
-                      {prereqs.map((p) => {
+                      {visiblePrereqs.map((p) => {
                         const ok = p.isMet(ctx);
                         return (
                           <li key={p.id} className={ok ? "opacity-70" : ""}>
@@ -259,7 +365,20 @@ export function BrewStagePath({
                                 ) : null}
                               </div>
 
-                              {!ok && p.run && p.actionLabel ? (
+                              {!ok && p.id === "primaryHasGravity" ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => p.run?.(helpers, ctx)}
+                                >
+                                  {t("brews.actions.logOg", "Log OG")}
+                                </Button>
+                              ) : null}
+
+                              {!ok &&
+                              p.id !== "primaryHasGravity" &&
+                              p.run &&
+                              p.actionLabel ? (
                                 <Button
                                   size="sm"
                                   variant="secondary"
@@ -310,6 +429,28 @@ export function BrewStagePath({
                 {Panel ? (
                   <Panel t={t} status={status} ctx={ctx} helpers={helpers} />
                 ) : null}
+
+                <StageMoveReviewDialog
+                  open={reviewStage === s}
+                  onOpenChange={(open) => {
+                    if (!open) setReviewStage(null);
+                  }}
+                  title={t("brews.moveToSecondary", "Move to Secondary")}
+                  required={STAGE_CONFIG.SECONDARY.prereqs ?? []}
+                  warnings={[
+                    ...(STAGE_CONFIG.PRIMARY.warnings ?? []),
+                    ...(STAGE_CONFIG.SECONDARY.warnings ?? [])
+                  ]}
+                  ctx={ctx}
+                  helpers={helpers}
+                  onMove={async () => {
+                    const decision = getStageMoveDecision("SECONDARY", stage, ctx);
+                    if (!decision.allowed) return;
+                    await onMoveToStage("SECONDARY");
+                    setActiveId("SECONDARY");
+                    setReviewStage(null);
+                  }}
+                />
               </div>
             );
           }}
@@ -318,12 +459,166 @@ export function BrewStagePath({
           t={t}
           open={recordVolumeOpen}
           onOpenChange={setRecordVolumeOpen}
-          currentVolumeLiters={current_volume_liters}
-          onSave={(volume) =>
-            patchBrewMetadata({ current_volume_liters: volume })
+          currentVolumeLiters={
+            current_volume_liters ?? recipe.effective.currentVolumeL
           }
+          intent="secondaryVolume"
+          onSave={async (volume, meta) => {
+            await patchBrewMetadata({ current_volume_liters: volume });
+            await addEntry(
+              entryPayload.volume({
+                liters: volume,
+                displayValue: meta.displayValue,
+                displayUnit: meta.displayUnit,
+                startingLiters: meta.startingLiters
+              })
+            );
+          }}
         />
       </PathContent>
     </Path>
+  );
+}
+
+function StageMoveReviewDialog({
+  open,
+  onOpenChange,
+  title,
+  required,
+  warnings,
+  ctx,
+  helpers,
+  onMove
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  required: NonNullable<(typeof STAGE_CONFIG)["SECONDARY"]["prereqs"]>;
+  warnings: NonNullable<(typeof STAGE_CONFIG)["PRIMARY"]["warnings"]>;
+  ctx: Parameters<NonNullable<typeof warnings[number]["isActive"]>>[0];
+  helpers: Parameters<NonNullable<typeof required[number]["run"]>>[0];
+  onMove: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [yeastOpen, setYeastOpen] = useState(false);
+  const unmet = required.filter((item) => !item.isMet(ctx));
+  const hasOriginalGravity = required
+    .find((item) => item.id === "primaryHasGravity")
+    ?.isMet(ctx) ?? true;
+  const visibleRequired = required.filter(
+    (item) => item.id !== "primaryHasFinalGravity" || hasOriginalGravity
+  );
+  const activeWarnings = warnings
+    .filter((warning, index, all) => all.findIndex((item) => item.id === warning.id) === index)
+    .filter((warning) => warning.isActive(ctx));
+  const canMove = unmet.length === 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[560px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="text-sm font-medium">
+              {t("brews.requiredBeforeMoving", "Required before moving")}
+            </div>
+            <ul className="space-y-2">
+              {visibleRequired.map((item) => {
+                const ok = item.isMet(ctx);
+                return (
+                  <li
+                    key={item.id}
+                    className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2 text-sm"
+                  >
+                    <div className={ok ? "text-muted-foreground" : ""}>
+                      <span>{ok ? "✓ " : ""}{item.label(t)}</span>
+                      {!ok && item.hint ? (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {item.hint(t)}
+                        </div>
+                      ) : null}
+                    </div>
+                    {!ok && item.id === "primaryHasGravity" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => item.run?.(helpers, ctx)}
+                      >
+                        {t("brews.actions.logOg", "Log OG")}
+                      </Button>
+                    ) : null}
+                    {!ok && item.id === "primaryHasYeast" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setYeastOpen(true)}
+                      >
+                        {t("brews.actions.logYeast", "Log yeast")}
+                      </Button>
+                    ) : null}
+                    {!ok &&
+                    item.id !== "primaryHasGravity" &&
+                    item.run &&
+                    item.actionLabel ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => item.run?.(helpers, ctx)}
+                      >
+                        {item.actionLabel(t)}
+                      </Button>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">
+              {t("brews.warnings", "Warnings")}
+            </div>
+            {activeWarnings.length ? (
+              <ul className="space-y-2">
+                {activeWarnings.map((warning) => (
+                  <li
+                    key={warning.id}
+                    className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm"
+                  >
+                    {warning.message(t)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                {t("brews.noWarnings", "No active warnings.")}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            {t("cancel", "Cancel")}
+          </Button>
+          <Button disabled={!canMove} onClick={onMove}>
+            {t("brews.moveToSecondary", "Move to Secondary")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+      <LogYeastDialog
+        open={yeastOpen}
+        onOpenChange={setYeastOpen}
+        planned={ctx.recipe.yeast}
+        forceManual={false}
+        onSave={async (input) => {
+          await helpers.addAddition(input);
+          setYeastOpen(false);
+        }}
+      />
+    </Dialog>
   );
 }

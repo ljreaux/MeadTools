@@ -12,8 +12,12 @@ import type React from "react";
 import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
-import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
+import {
+  CreateBrewEntryInput,
+  PatchAccountBrewMetadataInput
+} from "@/hooks/reactQuery/useAccountBrews";
 import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
+import { parseNumber } from "@/lib/utils/validateInput";
 
 export type StageStatus = "past" | "current" | "future";
 export type BrewEntry = {
@@ -35,6 +39,7 @@ export type BrewStageContext = {
   recipe: BrewRecipeStageData["planned"] & {
     derived: BrewRecipeStageData["derived"];
     snapshot: BrewRecipeStageData["snapshot"];
+    recipeData: BrewRecipeStageData["recipeData"];
     actual: BrewRecipeStageData["actual"];
     effective: BrewRecipeStageData["effective"];
   };
@@ -60,6 +65,7 @@ export type StagePrereq = {
 export type BrewStageHelpers = {
   moveToStage: (to: BrewStage) => Promise<void>;
   openRecordVolume?: () => void;
+  acceptRecipeOriginalGravity?: () => Promise<void>;
 
   addAddition: (input: {
     name: string;
@@ -67,6 +73,17 @@ export type BrewStageHelpers = {
     unit?: string;
     note?: string;
     recipeIngredientId?: string;
+    recipeAdditiveId?: string;
+    kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+    source?:
+      | "recipe_ingredient"
+      | "recipe_additive"
+      | "recipe_nutrient"
+      | "recipe_go_ferm"
+      | "recipe_yeast"
+      | "manual_yeast"
+      | "manual";
+    meta?: Record<string, any>;
   }) => Promise<void>;
 
   addAdditions: (
@@ -76,10 +93,25 @@ export type BrewStageHelpers = {
       unit?: string;
       note?: string;
       recipeIngredientId?: string;
+      recipeAdditiveId?: string;
+      kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+      source?:
+        | "recipe_ingredient"
+        | "recipe_additive"
+        | "recipe_nutrient"
+        | "recipe_go_ferm"
+        | "recipe_yeast"
+        | "manual_yeast"
+        | "manual";
+      meta?: Record<string, any>;
     }>
   ) => Promise<void>;
 
   openAddEntry?: (args?: OpenAddEntryArgs) => void;
+  openStageMoveReview?: (to: BrewStage) => void;
+  openOriginalGravityDialog?: () => void;
+  openFinalGravityDialog?: () => void;
+  addEntry: (input: CreateBrewEntryInput) => Promise<void>;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>;
   openLinkRecipePage?: () => void;
 };
@@ -154,6 +186,56 @@ function hasMissingPrimaryIngredients(ctx: BrewStageContext) {
     if (!logged.has(id)) return true;
   }
   return false;
+}
+
+function hasOriginalGravity(ctx: BrewStageContext) {
+  return Boolean(ctx.recipe.actual.originalGravity);
+}
+
+function hasFinalGravity(ctx: BrewStageContext) {
+  return Boolean(ctx.recipe.actual.finalGravity);
+}
+
+function hasYeastAddition(ctx: BrewStageContext) {
+  return Boolean(ctx.recipe.actual.yeastAddition);
+}
+
+function getPlannedNutrientAdditionCount(ctx: BrewStageContext) {
+  const count = ctx.recipe.nutrientPlan?.derived.numberOfAdditions;
+  return typeof count === "number" && Number.isFinite(count) && count > 0
+    ? Math.floor(count)
+    : 0;
+}
+
+function hasMissingPlannedNutrients(ctx: BrewStageContext) {
+  const planned = getPlannedNutrientAdditionCount(ctx);
+  if (planned === 0) return false;
+
+  const logged = new Set(ctx.recipe.actual.loggedNutrientAdditionIndexes ?? []);
+  for (let i = 1; i <= planned; i += 1) {
+    if (!logged.has(i)) return true;
+  }
+  return false;
+}
+
+function getEstimatedFinalGravity(ctx: BrewStageContext) {
+  const fg = parseNumber(ctx.recipe.recipeData?.fg ?? "");
+  return Number.isFinite(fg) && fg > 0 ? fg : null;
+}
+
+function hasFinalGravityOutsideEstimate(ctx: BrewStageContext) {
+  const finalGravity = ctx.recipe.actual.finalGravity?.gravity;
+  const estimated = getEstimatedFinalGravity(ctx);
+
+  if (
+    typeof finalGravity !== "number" ||
+    !Number.isFinite(finalGravity) ||
+    estimated == null
+  ) {
+    return false;
+  }
+
+  return Math.abs(finalGravity - estimated) > 0.005;
 }
 
 export const STAGE_FLOW: BrewStage[] = [
@@ -271,13 +353,50 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
         when: (status) => status === "current"
       },
       {
+        id: "missingOriginalGravity",
+        message: (t) =>
+          t(
+            "brews.warn.originalGravityMissing",
+            "Original gravity has not been logged yet."
+          ),
+        isActive: (ctx) => !hasOriginalGravity(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "missingFinalGravity",
+        message: (t) =>
+          t(
+            "brews.warn.finalGravityMissing",
+            "Final gravity has not been logged yet."
+          ),
+        isActive: (ctx) => !hasFinalGravity(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "missingYeast",
+        message: (t) =>
+          t("brews.warn.yeastMissing", "Yeast has not been logged yet."),
+        isActive: (ctx) => !hasYeastAddition(ctx),
+        when: (status) => status === "current"
+      },
+      {
         id: "missingNutrients",
         message: (t) =>
           t(
             "brews.warn.nutrientsMissing",
             "Some planned nutrient additions haven’t been logged yet."
           ),
-        isActive: () => false, // ✅ turn on once nutrients exist
+        isActive: (ctx) => hasMissingPlannedNutrients(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "finalGravityEstimateMismatch",
+        message: (t) =>
+          t(
+            "brews.warn.finalGravityEstimateMismatch",
+            "Final gravity is not close to the recipe’s estimated FG."
+          ),
+        isActive: (ctx) => hasFinalGravityOutsideEstimate(ctx),
         when: (status) => status === "current"
       }
     ],
@@ -303,22 +422,49 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
       {
         id: "primaryHasGravity",
         label: (t) =>
-          t("brews.prereq.gravity", "Add at least one gravity reading"),
-        isMet: (ctx) =>
-          ctx.brew.entries.some((e) => e.type === BREW_ENTRY_TYPE.GRAVITY),
+          t("brews.prereq.originalGravity", "Log original gravity"),
+        isMet: (ctx) => hasOriginalGravity(ctx),
         hint: (t) =>
           t(
-            "brews.prereq.gravityHint",
-            "Add a gravity reading before moving out of primary."
+            "brews.prereq.originalGravityHint",
+            "Log a measured OG or accept the recipe OG before moving out of primary."
           ),
-        actionLabel: (t) => t("brews.actions.addEntry", "Add entry"),
-        run: ({ openAddEntry }) => {
-          openAddEntry?.({ presetType: BREW_ENTRY_TYPE.GRAVITY });
+        actionLabel: (t) => t("brews.actions.logOg", "Log OG"),
+        run: ({ openOriginalGravityDialog, openAddEntry }) => {
+          if (openOriginalGravityDialog) {
+            openOriginalGravityDialog();
+            return;
+          }
+          openAddEntry?.({
+            presetType: BREW_ENTRY_TYPE.GRAVITY,
+            gravityRole: "OG"
+          });
+        }
+      },
+      {
+        id: "primaryHasFinalGravity",
+        label: (t) => t("brews.prereq.finalGravity", "Log final gravity"),
+        isMet: (ctx) => hasFinalGravity(ctx),
+        hint: (t) =>
+          t(
+            "brews.prereq.finalGravityHint",
+            "Log a measured FG before moving out of primary."
+          ),
+        actionLabel: (t) => t("brews.actions.logFg", "Log FG"),
+        run: ({ openFinalGravityDialog, openAddEntry }) => {
+          if (openFinalGravityDialog) {
+            openFinalGravityDialog();
+            return;
+          }
+          openAddEntry?.({
+            presetType: BREW_ENTRY_TYPE.GRAVITY,
+            gravityRole: "FG"
+          });
         }
       },
       {
         id: "primaryHasVolume",
-        label: (t) => t("brews.prereq.volume", "Record current volume"),
+        label: (t) => t("brews.prereq.volume", "Record secondary volume"),
         isMet: (ctx) => {
           const v = ctx.brew.current_volume_liters;
           return typeof v === "number" && Number.isFinite(v) && v > 0;
@@ -326,13 +472,24 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
         hint: (t) =>
           t(
             "brews.prereq.volumeHint",
-            "When the brew volume changes, record the actual amount here."
+            "Record the total volume after transferring to secondary so stabilizers and later additions can use the right batch size."
           ),
         actionLabel: (t) =>
-          t("brews.actions.logVolume", "Log volume"),
+          t("brews.actions.logVolume", "Record volume"),
         run: ({ openRecordVolume }) => {
           openRecordVolume?.();
         }
+      },
+      {
+        id: "primaryHasYeast",
+        label: (t) => t("brews.prereq.yeast", "Log yeast"),
+        isMet: (ctx) => hasYeastAddition(ctx),
+        hint: (t) =>
+          t(
+            "brews.prereq.yeastHint",
+            "Log at least one yeast addition before moving out of primary."
+          ),
+        actionLabel: (t) => t("brews.actions.logYeast", "Log yeast")
       }
     ]
   },

@@ -6,8 +6,14 @@ import type { BrewEntryType, BrewStage } from "@/lib/brewEnums";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
-import { BrewAdditionData } from "@/lib/utils/entryPayload";
-import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
+import type {
+  BrewAdditionData,
+  BrewVolumeData,
+  GravityPayloadOptions
+} from "@/lib/utils/entryPayload";
+import type {
+  BrewRecipeSnapshot
+} from "@/lib/utils/buildBrewRecipeStageData";
 
 export type AccountBrewListItem = {
   id: string;
@@ -87,7 +93,14 @@ export type CreateBrewEntryInput =
       title?: string | null;
       note?: string | null;
       gravity: number; // required for GRAVITY
-      data?: any | null;
+      data?: (GravityPayloadOptions & { v?: 1 }) | null;
+    }
+  | {
+      type: typeof BREW_ENTRY_TYPE.VOLUME;
+      datetime?: string;
+      title?: string | null;
+      note?: string | null;
+      data: BrewVolumeData;
     }
   | {
       type: typeof BREW_ENTRY_TYPE.TEMPERATURE;

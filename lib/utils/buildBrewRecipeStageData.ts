@@ -2,7 +2,11 @@ import calculateRecipeDerivedApiResponse, {
   type RecipeDerivedApiResponse
 } from "@/lib/utils/calculateRecipeDerivedApiResponse";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import type { BrewAdditionData } from "@/lib/utils/entryPayload";
+import type {
+  BrewAdditionData,
+  BrewRecipeNoteData,
+  GravityPayloadOptions
+} from "@/lib/utils/entryPayload";
 import type { RecipeData, IngredientLine, AdditiveLine, Notes } from "@/types/recipeData";
 import { isRecipeData } from "@/types/recipeData";
 import {
@@ -44,6 +48,14 @@ export type BrewRecipeStageData = {
     recipeLinkedAdditions: BrewLoggedAddition[];
     loggedRecipeIngredientIds: string[];
     additionsByRecipeIngredientId: Record<string, BrewLoggedAddition[]>;
+    loggedRecipeAdditiveIds: string[];
+    additionsByRecipeAdditiveId: Record<string, BrewLoggedAddition[]>;
+    loggedRecipePrimaryNoteIds: string[];
+    yeastAddition: BrewLoggedAddition | null;
+    goFermAddition: BrewLoggedAddition | null;
+    loggedNutrientAdditionIndexes: number[];
+    originalGravity: BrewLoggedGravity | null;
+    finalGravity: BrewLoggedGravity | null;
   };
   effective: {
     currentVolumeL: number | null;
@@ -61,6 +73,14 @@ export type BrewStageEntryInput = {
   data: unknown;
 };
 
+export type BrewLoggedGravity = {
+  entryId: string;
+  datetime: string | null;
+  gravity: number;
+  readingRole: NonNullable<GravityPayloadOptions["readingRole"]>;
+  source: NonNullable<GravityPayloadOptions["source"]>;
+};
+
 export type BrewLoggedAddition = {
   entryId: string;
   datetime: string | null;
@@ -71,6 +91,9 @@ export type BrewLoggedAddition = {
   amount: number | null;
   unit: string | null;
   recipeIngredientId: string | null;
+  recipeAdditiveId: string | null;
+  source: BrewAdditionData["source"] | null;
+  meta: Record<string, any> | null;
 };
 
 export type BrewPlannedYeast = {
@@ -121,7 +144,15 @@ const EMPTY_STAGE_DATA: BrewRecipeStageData = {
     additions: [],
     recipeLinkedAdditions: [],
     loggedRecipeIngredientIds: [],
-    additionsByRecipeIngredientId: {}
+    additionsByRecipeIngredientId: {},
+    loggedRecipeAdditiveIds: [],
+    additionsByRecipeAdditiveId: {},
+    loggedRecipePrimaryNoteIds: [],
+    yeastAddition: null,
+    goFermAddition: null,
+    loggedNutrientAdditionIndexes: [],
+    originalGravity: null,
+    finalGravity: null
   },
   effective: {
     currentVolumeL: null,
@@ -146,6 +177,51 @@ function getLatestGravity(args: {
     })[0];
 
   return latestEntry?.gravity ?? null;
+}
+
+function getLoggedGravities(entries: BrewStageEntryInput[]) {
+  const gravities: BrewLoggedGravity[] = [];
+
+  for (const entry of entries) {
+    if (entry.type !== BREW_ENTRY_TYPE.GRAVITY) continue;
+    if (typeof entry.gravity !== "number" || !Number.isFinite(entry.gravity)) {
+      continue;
+    }
+
+    const data = entry.data as Partial<GravityPayloadOptions> | null | undefined;
+    const readingRole = data?.readingRole ?? "GENERAL";
+    const source = data?.source ?? "measured";
+
+    gravities.push({
+      entryId: entry.id,
+      datetime: entry.datetime ?? null,
+      gravity: entry.gravity,
+      readingRole,
+      source
+    });
+  }
+
+  return gravities.sort((a, b) => {
+    const aTime = a.datetime ? new Date(a.datetime).getTime() : 0;
+    const bTime = b.datetime ? new Date(b.datetime).getTime() : 0;
+    return bTime - aTime;
+  });
+}
+
+function getLoggedRecipePrimaryNoteIds(entries: BrewStageEntryInput[]) {
+  const ids = new Set<string>();
+
+  for (const entry of entries) {
+    if (entry.type !== BREW_ENTRY_TYPE.NOTE) continue;
+
+    const data = entry.data as Partial<BrewRecipeNoteData> | null | undefined;
+    if (data?.source !== "recipe_primary_note") continue;
+    if (typeof data.recipeNoteId === "string" && data.recipeNoteId.trim()) {
+      ids.add(data.recipeNoteId);
+    }
+  }
+
+  return Array.from(ids);
 }
 
 function getLoggedAdditions(entries: BrewStageEntryInput[]) {
@@ -176,6 +252,15 @@ function getLoggedAdditions(entries: BrewStageEntryInput[]) {
       recipeIngredientId:
         typeof data?.recipeIngredientId === "string" && data.recipeIngredientId.trim()
           ? data.recipeIngredientId
+          : null,
+      recipeAdditiveId:
+        typeof data?.recipeAdditiveId === "string" && data.recipeAdditiveId.trim()
+          ? data.recipeAdditiveId
+          : null,
+      source: data?.source ?? null,
+      meta:
+        data?.meta && typeof data.meta === "object" && !Array.isArray(data.meta)
+          ? data.meta
           : null
     });
   }
@@ -200,6 +285,12 @@ export function buildBrewRecipeStageData(args: {
     entries,
     latestGravity: args.latestGravity
   });
+  const loggedGravities = getLoggedGravities(entries);
+  const originalGravity = loggedGravities.find((entry) => entry.readingRole === "OG") ?? null;
+  const finalGravity =
+    loggedGravities.find(
+      (entry) => entry.readingRole === "FG" && entry.source === "measured"
+    ) ?? null;
   const additions = getLoggedAdditions(entries);
   const recipeLinkedAdditions = additions.filter((addition) => addition.recipeIngredientId);
   const additionsByRecipeIngredientId = recipeLinkedAdditions.reduce<Record<string, BrewLoggedAddition[]>>(
@@ -212,6 +303,33 @@ export function buildBrewRecipeStageData(args: {
     {}
   );
   const loggedRecipeIngredientIds = Object.keys(additionsByRecipeIngredientId);
+  const additiveLinkedAdditions = additions.filter((addition) => addition.recipeAdditiveId);
+  const additionsByRecipeAdditiveId = additiveLinkedAdditions.reduce<Record<string, BrewLoggedAddition[]>>(
+    (acc, addition) => {
+      const recipeAdditiveId = addition.recipeAdditiveId!;
+      if (!acc[recipeAdditiveId]) acc[recipeAdditiveId] = [];
+      acc[recipeAdditiveId].push(addition);
+      return acc;
+    },
+    {}
+  );
+  const loggedRecipeAdditiveIds = Object.keys(additionsByRecipeAdditiveId);
+  const loggedRecipePrimaryNoteIds = getLoggedRecipePrimaryNoteIds(entries);
+  const yeastAddition = additions.find((addition) => addition.kind === "YEAST") ?? null;
+  const goFermAddition =
+    additions.find(
+      (addition) =>
+        addition.source === "recipe_go_ferm" ||
+        addition.meta?.goFerm === true
+    ) ?? null;
+  const loggedNutrientAdditionIndexes = Array.from(
+    new Set(
+      additions
+        .filter((addition) => addition.kind === "NUTRIENT")
+        .map((addition) => addition.meta?.nutrientAdditionIndex)
+        .filter((index): index is number => typeof index === "number" && Number.isFinite(index))
+    )
+  ).sort((a, b) => a - b);
 
   const snapshot = args.recipeSnapshot ?? null;
   const snapshotData = snapshot?.dataV2;
@@ -225,7 +343,15 @@ export function buildBrewRecipeStageData(args: {
         additions,
         recipeLinkedAdditions,
         loggedRecipeIngredientIds,
-        additionsByRecipeIngredientId
+        additionsByRecipeIngredientId,
+        loggedRecipeAdditiveIds,
+        additionsByRecipeAdditiveId,
+        loggedRecipePrimaryNoteIds,
+        yeastAddition,
+        goFermAddition,
+        loggedNutrientAdditionIndexes,
+        originalGravity,
+        finalGravity
       },
       effective: {
         currentVolumeL: actualCurrentVolume,
@@ -300,7 +426,15 @@ export function buildBrewRecipeStageData(args: {
       additions,
       recipeLinkedAdditions,
       loggedRecipeIngredientIds,
-      additionsByRecipeIngredientId
+      additionsByRecipeIngredientId,
+      loggedRecipeAdditiveIds,
+      additionsByRecipeAdditiveId,
+      loggedRecipePrimaryNoteIds,
+      yeastAddition,
+      goFermAddition,
+      loggedNutrientAdditionIndexes,
+      originalGravity,
+      finalGravity
     },
     effective: {
       currentVolumeL: actualCurrentVolume ?? plannedCurrentVolume,

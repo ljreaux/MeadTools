@@ -312,6 +312,7 @@ enum additive_unit {
 enum brew_entry_type {
   NOTE
   GRAVITY
+  VOLUME
   TEMPERATURE
   PH
   ADDITION
