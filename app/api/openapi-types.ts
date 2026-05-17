@@ -865,6 +865,7 @@ export type BrewStageResponse =
 export type BrewEntryTypeResponse =
   | "NOTE"
   | "GRAVITY"
+  | "VOLUME"
   | "TEMPERATURE"
   | "PH"
   | "ADDITION"

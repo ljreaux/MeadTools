@@ -7,43 +7,26 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { Check, Pencil, PencilOff, Scale } from "lucide-react";
 
-import {
-  useAccountBrew,
-  usePatchAccountBrewMetadata
-} from "@/hooks/reactQuery/useAccountBrews";
+import { CreateBrewEntryInput, useAccountBrew, usePatchAccountBrewMetadata } from "@/hooks/reactQuery/useAccountBrews";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { toast } from "@/hooks/use-toast";
 
-import AddBrewEntryDialog, {
-  EntryType,
-  OpenAddEntryArgs
-} from "@/components/brews/AddBrewEntryDialog";
+import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { BrewAdditionData, entryPayload } from "@/lib/utils/entryPayload";
+import { BrewAdditionData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
-import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 type HeaderVolumeUnit = "gal" | "L";
@@ -72,8 +55,7 @@ export default function BrewPageClient() {
     [i18n.resolvedLanguage]
   );
 
-  const formatDate = (d?: string | null) =>
-    d ? formatter.format(new Date(d)) : "—";
+  const formatDate = (d?: string | null) => (d ? formatter.format(new Date(d)) : "—");
 
   useEffect(() => {
     if (!brew) return;
@@ -82,8 +64,7 @@ export default function BrewPageClient() {
     setStartValue(toDateTimeLocalValue(brew.start_date));
   }, [brew]);
 
-  const [preferredVolumeUnit, setPreferredVolumeUnit] =
-    useState<HeaderVolumeUnit>("gal");
+  const [preferredVolumeUnit, setPreferredVolumeUnit] = useState<HeaderVolumeUnit>("gal");
 
   useEffect(() => {
     try {
@@ -150,16 +131,18 @@ export default function BrewPageClient() {
   );
 
   const [entryOpen, setEntryOpen] = useState(false);
-  const [entryPresetType, setEntryPresetType] = useState<
-    EntryType | undefined
-  >();
-  const [entryAllowedTypes, setEntryAllowedTypes] = useState<
-    EntryType[] | undefined
-  >();
+  const [entryPresetType, setEntryPresetType] = useState<EntryType | undefined>();
+  const [entryAllowedTypes, setEntryAllowedTypes] = useState<EntryType[] | undefined>();
+  const [entryGravityRole, setEntryGravityRole] = useState<GravityReadingRole | undefined>();
+  const [entryGravityDefaultValue, setEntryGravityDefaultValue] = useState<number | undefined>();
+  const [entryGravitySource, setEntryGravitySource] = useState<"measured" | "recipe" | undefined>();
 
   function openAddEntry(args?: OpenAddEntryArgs) {
     setEntryPresetType(args?.presetType);
     setEntryAllowedTypes(args?.allowedTypes);
+    setEntryGravityRole(args?.gravityRole);
+    setEntryGravityDefaultValue(args?.gravityDefaultValue);
+    setEntryGravitySource(args?.gravitySource);
     setEntryOpen(true);
   }
 
@@ -174,38 +157,28 @@ export default function BrewPageClient() {
     return entries
       .filter(
         (entry) =>
-          typeof entry.gravity === "number" && Number.isFinite(entry.gravity)
+          typeof entry.gravity === "number" &&
+          Number.isFinite(entry.gravity) &&
+          !(entry.data as any)?.hidden &&
+          (entry.data as any)?.source !== "nutrient_basis"
       )
-      .sort(
-        (a, b) =>
-          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
-      )[0];
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
   }, [brew?.entries]);
 
   const latestEntry = useMemo(() => {
     const entries = brew?.entries ?? [];
 
     return entries
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
-      )[0];
+      .filter((entry) => !(entry.data as any)?.hidden)
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
   }, [brew?.entries]);
 
   const currentStageStartedAt = useMemo(() => {
     const entries = brew?.entries ?? [];
 
     const stageChangeIntoCurrent = entries
-      .filter(
-        (entry) =>
-          entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE &&
-          (entry.data as any)?.to === brew?.stage
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
-      )[0];
+      .filter((entry) => entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE && (entry.data as any)?.to === brew?.stage)
+      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
 
     return stageChangeIntoCurrent?.datetime ?? brew?.start_date ?? null;
   }, [brew?.entries, brew?.stage, brew?.start_date]);
@@ -229,12 +202,8 @@ export default function BrewPageClient() {
     brewRecipe.derived.gravity.ogPrimary > 1
       ? brewRecipe.derived.gravity.ogPrimary
       : null;
-  const displayEstimatedFg =
-    typeof brewRecipe.derived?.gravity.backsweetenedFg === "number" &&
-    Number.isFinite(brewRecipe.derived.gravity.backsweetenedFg) &&
-    brewRecipe.derived.gravity.backsweetenedFg > 0
-      ? brewRecipe.derived.gravity.backsweetenedFg
-      : null;
+  const estimatedFg = parseNumber(brewRecipe.recipeData?.fg ?? "");
+  const displayEstimatedFg = Number.isFinite(estimatedFg) && estimatedFg > 0 ? estimatedFg : null;
   const displayEstimatedAbv =
     typeof brewRecipe.derived?.alcohol.abv === "number" &&
     Number.isFinite(brewRecipe.derived.alcohol.abv) &&
@@ -367,32 +336,79 @@ export default function BrewPageClient() {
     reset();
   }, [brew?.recipe_snapshot, hydrate, reset]);
   const { mutateAsync: createEntry } = useCreateBrewEntry();
+
+  async function addEntry(input: CreateBrewEntryInput) {
+    await createEntry({ brewId: brew!.id, input });
+  }
+
+  async function recordCurrentVolume(input: {
+    liters: number;
+    displayValue?: number;
+    displayUnit?: string;
+    startingLiters?: number;
+  }) {
+    await saveMetadata({ current_volume_liters: input.liters });
+    await addEntry(
+      entryPayload.volume({
+        liters: input.liters,
+        displayValue: input.displayValue,
+        displayUnit: input.displayUnit,
+        startingLiters: input.startingLiters
+      })
+    );
+  }
+
   async function addAddition(input: {
     name: string;
     recipeIngredientId?: string;
+    recipeAdditiveId?: string;
     amount?: number;
     unit?: string;
     note?: string;
+    kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+    source?:
+      | "recipe_ingredient"
+      | "recipe_additive"
+      | "recipe_nutrient"
+      | "recipe_go_ferm"
+      | "recipe_yeast"
+      | "manual_yeast"
+      | "manual";
+    meta?: Record<string, any>;
   }) {
-    await createEntry({
-      brewId: brew!.id,
-      input: entryPayload.addition({
+    await addEntry(
+      entryPayload.addition({
         name: input.name,
         recipeIngredientId: input.recipeIngredientId,
+        recipeAdditiveId: input.recipeAdditiveId,
         amount: input.amount,
         unit: input.unit,
-        note: input.note ?? null
+        note: input.note ?? null,
+        kind: input.kind,
+        source: input.source,
+        meta: input.meta
       })
-    });
+    );
   }
 
   async function addAdditions(
     inputs: Array<{
       name: string;
       recipeIngredientId?: string;
+      recipeAdditiveId?: string;
       amount?: number;
       unit?: string;
       note?: string;
+      kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+      source?:
+        | "recipe_ingredient"
+        | "recipe_additive"
+        | "recipe_nutrient"
+        | "recipe_go_ferm"
+        | "recipe_yeast"
+        | "manual_yeast"
+        | "manual";
+      meta?: Record<string, any>;
     }>
   ) {
     // simplest approach: fire sequentially so you don’t DDOS your own API
@@ -405,11 +421,7 @@ export default function BrewPageClient() {
 
   if (isError || !brew) {
     console.error(error);
-    return (
-      <div className="text-center my-4">
-        {t("error.generic", "Something went wrong loading this brew.")}
-      </div>
-    );
+    return <div className="text-center my-4">{t("error.generic", "Something went wrong loading this brew.")}</div>;
   }
 
   return (
@@ -430,11 +442,7 @@ export default function BrewPageClient() {
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton
                     type="button"
-                    title={
-                      nameEditable
-                        ? t("disableEdit", "Disable editing")
-                        : t("edit", "Edit")
-                    }
+                    title={nameEditable ? t("disableEdit", "Disable editing") : t("edit", "Edit")}
                     onClick={() => {
                       if (nameEditable) {
                         void saveName();
@@ -474,17 +482,13 @@ export default function BrewPageClient() {
               <ActionInputSummaryField
                 label={t("batchNumber", "Batch")}
                 editable={batchEditable}
-                displayValue={
-                  brew.batch_number != null ? `#${String(brew.batch_number)}` : "—"
-                }
+                displayValue={brew.batch_number != null ? `#${String(brew.batch_number)}` : "—"}
                 inputValue={batchValue}
                 onInputChange={setBatchValue}
                 onSave={saveBatchNumber}
                 onToggle={() => {
                   if (batchEditable) {
-                    setBatchValue(
-                      brew.batch_number != null ? String(brew.batch_number) : ""
-                    );
+                    setBatchValue(brew.batch_number != null ? String(brew.batch_number) : "");
                   }
                   setBatchEditable(!batchEditable);
                 }}
@@ -516,7 +520,7 @@ export default function BrewPageClient() {
                   </Button>
                 }
               />
-              {batchSummaryItems.map((item) => (
+              {batchSummaryItems.map((item) =>
                 item.label === t("iSpindelDashboard.brews.latestGrav", "Latest gravity") ? (
                   <SummaryField
                     key={item.label}
@@ -539,27 +543,18 @@ export default function BrewPageClient() {
                     }
                   />
                 ) : (
-                  <div
-                    key={item.label}
-                    className="border-b border-border/60 py-2"
-                  >
-                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {item.label}
-                    </dt>
-                    <dd className="mt-1 text-sm font-medium text-foreground">
-                      {item.value}
-                    </dd>
+                  <div key={item.label} className="border-b border-border/60 py-2">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground">{item.value}</dd>
                   </div>
                 )
-              ))}
+              )}
               <SummaryField
                 label={t("emailAlerts.title", "Email alerts")}
                 value={
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-foreground">
-                      {brew.requested_email_alerts
-                        ? t("on", "On")
-                        : t("off", "Off")}
+                      {brew.requested_email_alerts ? t("on", "On") : t("off", "Off")}
                     </span>
                     <Switch
                       checked={brew.requested_email_alerts}
@@ -579,16 +574,9 @@ export default function BrewPageClient() {
             <h2 className="text-sm font-semibold">{t("recipe", "Recipe")}</h2>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
               {recipeSummaryItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="border-b border-border/60 py-2"
-                >
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {item.label}
-                  </dt>
-                  <dd className="mt-1 text-sm font-medium text-foreground">
-                    {item.value}
-                  </dd>
+                <div key={item.label} className="border-b border-border/60 py-2">
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</dt>
+                  <dd className="mt-1 text-sm font-medium text-foreground">{item.value}</dd>
                 </div>
               ))}
             </dl>
@@ -606,6 +594,7 @@ export default function BrewPageClient() {
         openAddEntry={openAddEntry}
         addAddition={addAddition}
         addAdditions={addAdditions}
+        addEntry={addEntry}
         current_volume_liters={brew.current_volume_liters}
         recipe={brewRecipe}
         patchBrewMetadata={async (input) => {
@@ -619,21 +608,23 @@ export default function BrewPageClient() {
         open={recordVolumeOpen}
         onOpenChange={setRecordVolumeOpen}
         currentVolumeLiters={brew.current_volume_liters}
-        onSave={(volume) => saveMetadata({ current_volume_liters: volume })}
+        onSave={(volume, meta) =>
+          recordCurrentVolume({
+            liters: volume,
+            displayValue: meta.displayValue,
+            displayUnit: meta.displayUnit,
+            startingLiters: meta.startingLiters
+          })
+        }
       />
-      <Dialog
-        open={startDateDialogOpen}
-        onOpenChange={setStartDateDialogOpen}
-      >
+      <Dialog open={startDateDialogOpen} onOpenChange={setStartDateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("start", "Start")}</DialogTitle>
           </DialogHeader>
           <DateTimePicker
             value={startValue ? new Date(startValue) : new Date(brew.start_date)}
-            onChange={(value) =>
-              setStartValue(value ? toDateTimeLocalValue(value.toISOString()) : "")
-            }
+            onChange={(value) => setStartValue(value ? toDateTimeLocalValue(value.toISOString()) : "")}
             hourCycle={12}
           />
           <DialogFooter>
@@ -656,6 +647,9 @@ export default function BrewPageClient() {
         onOpenChange={setEntryOpen}
         presetType={entryPresetType}
         allowedTypes={entryAllowedTypes}
+        gravityRole={entryGravityRole}
+        gravityDefaultValue={entryGravityDefaultValue}
+        gravitySource={entryGravitySource}
         hideTrigger
       />
       {/* Timeline by stage */}
@@ -682,87 +676,91 @@ export default function BrewPageClient() {
         </div>
 
         {brew.entries_by_stage?.length ? (
-          brew.entries_by_stage.map((bucket) => (
-            <div
-              key={bucket.stage}
-              className="rounded-xl border border-border bg-card"
-            >
-              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                <div className="font-medium">{formatStageLabel(bucket.stage)}</div>
-                <div className="text-sm text-muted-foreground">
-                  {bucket.entries.length}
+          brew.entries_by_stage.map((bucket) => {
+            const visibleEntries = bucket.entries.filter((entry) => !(entry.data as any)?.hidden);
+            if (!visibleEntries.length) return null;
+
+            return (
+              <div key={bucket.stage} className="rounded-xl border border-border bg-card">
+                <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                  <div className="font-medium">{formatStageLabel(bucket.stage)}</div>
+                  <div className="text-sm text-muted-foreground">{visibleEntries.length}</div>
                 </div>
-              </div>
 
-              <div className="p-5 space-y-3">
-                {bucket.entries.map((e) => (
-                  <div
-                    key={e.id}
-                    className="rounded-lg border border-border p-4 space-y-1"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="font-medium">{e.title ?? e.type}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDate(e.datetime)}
+                <div className="p-5 space-y-3">
+                  {visibleEntries.map((e) => (
+                    <div key={e.id} className="rounded-lg border border-border p-4 space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-medium">{e.title ?? e.type}</div>
+                        <div className="text-sm text-muted-foreground">{formatDate(e.datetime)}</div>
                       </div>
-                    </div>
 
-                    {e.note ? <div className="text-sm">{e.note}</div> : null}
+                      {e.note ? <div className="text-sm">{e.note}</div> : null}
 
-                    <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-                      {e.gravity != null ? (
-                        <span>SG: {formatGravity(e.gravity)}</span>
-                      ) : null}
-                      {e.temperature != null ? (
-                        <span>
-                          Temp: {formatTemperature(e.temperature, e.temp_units)}
-                        </span>
-                      ) : null}
-                      {e.type === BREW_ENTRY_TYPE.PH &&
-                      typeof (e.data as any)?.ph === "number" ? (
-                        <span>
-                          pH:{" "}
-                          {normalizeNumberString(
-                            Number((e.data as any).ph),
-                            2,
-                            i18n.resolvedLanguage
-                          )}
-                        </span>
-                      ) : null}
-                      {e.type === "STAGE_CHANGE" && e.data ? (
-                        <span>
-                          {formatStageLabel(String((e.data as any)?.from ?? ""))}{" "}
-                          → {formatStageLabel(String((e.data as any)?.to ?? ""))}
-                        </span>
-                      ) : null}
-                      {e.type === BREW_ENTRY_TYPE.ADDITION && e.data
-                        ? (() => {
-                            const d = e.data as Partial<BrewAdditionData>;
-                            return (
-                              <span>
-                                {d.name}
-                                {d.amount != null
-                                  ? `: ${normalizeNumberString(
-                                      Number(d.amount),
+                      <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+                        {e.gravity != null ? (
+                          <span>
+                            {(() => {
+                              const role = (e.data as any)?.readingRole;
+                              const source = (e.data as any)?.source;
+                              const label = role === "OG" ? "OG" : role === "FG" ? "FG" : "SG";
+                              return `${label}: ${formatGravity(e.gravity)}${source === "recipe" ? " (recipe)" : ""}`;
+                            })()}
+                          </span>
+                        ) : null}
+                        {e.temperature != null ? (
+                          <span>Temp: {formatTemperature(e.temperature, e.temp_units)}</span>
+                        ) : null}
+                        {e.type === BREW_ENTRY_TYPE.PH && typeof (e.data as any)?.ph === "number" ? (
+                          <span>pH: {normalizeNumberString(Number((e.data as any).ph), 2, i18n.resolvedLanguage)}</span>
+                        ) : null}
+                        {e.type === "STAGE_CHANGE" && e.data ? (
+                          <span>
+                            {formatStageLabel(String((e.data as any)?.from ?? ""))} →{" "}
+                            {formatStageLabel(String((e.data as any)?.to ?? ""))}
+                          </span>
+                        ) : null}
+                        {e.type === BREW_ENTRY_TYPE.ADDITION && e.data
+                          ? (() => {
+                              const d = e.data as Partial<BrewAdditionData>;
+                              return (
+                                <span>
+                                  {d.name}
+                                  {d.amount != null
+                                    ? `: ${normalizeNumberString(Number(d.amount), 2, i18n.resolvedLanguage)}`
+                                    : ""}
+                                  {d.unit ? ` ${d.unit}` : ""}
+                                </span>
+                              );
+                            })()
+                          : null}
+                        {e.type === BREW_ENTRY_TYPE.VOLUME && e.data
+                          ? (() => {
+                              const d = e.data as {
+                                liters?: number;
+                                displayValue?: number;
+                                displayUnit?: string;
+                              };
+                              const value =
+                                typeof d.displayValue === "number" && Number.isFinite(d.displayValue) && d.displayUnit
+                                  ? `${normalizeNumberString(
+                                      d.displayValue,
                                       2,
                                       i18n.resolvedLanguage
-                                    )}`
-                                  : ""}
-                                {d.unit ? ` ${d.unit}` : ""}
-                              </span>
-                            );
-                          })()
-                        : null}
+                                    )} ${d.displayUnit}`
+                                  : formatVolume(d.liters);
+                              return <span>Volume: {value}</span>;
+                            })()
+                          : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
-          <div className="text-muted-foreground">
-            {t("noEntries", "No entries yet.")}
-          </div>
+          <div className="text-muted-foreground">{t("noEntries", "No entries yet.")}</div>
         )}
       </div>
     </div>
@@ -789,20 +787,10 @@ function BrewPageSkeleton() {
   );
 }
 
-function SummaryField({
-  label,
-  value,
-  action
-}: {
-  label: string;
-  value: ReactNode;
-  action?: ReactNode;
-}) {
+function SummaryField({ label, value, action }: { label: string; value: ReactNode; action?: ReactNode }) {
   return (
     <div className="border-b border-border/60 py-2">
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="mt-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-sm font-medium text-foreground">{value}</div>
@@ -834,9 +822,7 @@ function ActionInputSummaryField({
 }) {
   return (
     <div className="border-b border-border/60 py-2">
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="mt-1">
         <InputGroup className="h-10">
           <InputGroupInput
@@ -876,14 +862,10 @@ function ActionSummaryField({
 }) {
   return (
     <div className="border-b border-border/60 py-2">
-      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="mt-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-foreground">
-            {displayValue}
-          </span>
+          <span className="text-sm font-medium text-foreground">{displayValue}</span>
           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onEdit}>
             <Pencil />
           </Button>

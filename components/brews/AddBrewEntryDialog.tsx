@@ -35,6 +35,7 @@ import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
+import type { GravityReadingRole } from "@/lib/utils/entryPayload";
 
 export type EntryType =
   | typeof BREW_ENTRY_TYPE.NOTE
@@ -46,6 +47,9 @@ export type EntryType =
 export type OpenAddEntryArgs = {
   presetType?: EntryType;
   allowedTypes?: EntryType[];
+  gravityRole?: GravityReadingRole;
+  gravityDefaultValue?: number;
+  gravitySource?: "measured" | "recipe";
 };
 const ALL_ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
   { value: BREW_ENTRY_TYPE.NOTE, label: "Note" },
@@ -61,6 +65,9 @@ export default function AddBrewEntryDialog({
   allowedTypes,
   defaultType,
   presetType,
+  gravityRole,
+  gravityDefaultValue,
+  gravitySource = "measured",
   triggerLabel,
   open: openProp,
   onOpenChange: onOpenChangeProp,
@@ -70,6 +77,9 @@ export default function AddBrewEntryDialog({
   allowedTypes?: EntryType[];
   defaultType?: EntryType;
   presetType?: EntryType; // open modal already set to this
+  gravityRole?: GravityReadingRole;
+  gravityDefaultValue?: number;
+  gravitySource?: "measured" | "recipe";
   triggerLabel?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -110,11 +120,27 @@ export default function AddBrewEntryDialog({
     setType(initialType);
     setTitle("");
     setNote("");
-    setGravity("");
+    setGravity(
+      typeof gravityDefaultValue === "number" &&
+        Number.isFinite(gravityDefaultValue)
+        ? gravityDefaultValue.toFixed(3)
+        : ""
+    );
     setTemperature("");
     setTempUnits("F" as TempUnits);
     setPh("");
   }
+
+  React.useEffect(() => {
+    if (!open) return;
+    setType(initialType);
+    setGravity(
+      typeof gravityDefaultValue === "number" &&
+        Number.isFinite(gravityDefaultValue)
+        ? gravityDefaultValue.toFixed(3)
+        : ""
+    );
+  }, [gravityDefaultValue, initialType, open]);
 
   function buildInput(): CreateBrewEntryInput {
     const trimmedTitle = title.trim();
@@ -139,7 +165,10 @@ export default function AddBrewEntryDialog({
     if (type === BREW_ENTRY_TYPE.GRAVITY) {
       const n = Number(gravity);
       if (!Number.isFinite(n)) throw new Error("Invalid gravity");
-      return entryPayload.gravity(n, noteOrNull);
+      return entryPayload.gravity(n, noteOrNull, {
+        readingRole: gravityRole ?? "GENERAL",
+        source: gravitySource
+      });
     }
 
     if (type === BREW_ENTRY_TYPE.TEMPERATURE) {
