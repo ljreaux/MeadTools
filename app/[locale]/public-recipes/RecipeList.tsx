@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
@@ -125,9 +125,38 @@ export default function RecipeList({
   // --- Search state + debounce ---
   const [searchInput, setSearchInput] = useState(query ?? "");
   const debouncedSearch = useDebouncedValue(searchInput, 400);
+  const pendingSearchQueriesRef = useRef<Set<string>>(new Set());
+
+  const replaceSearchQuery = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = value.trim();
+
+      if (trimmed) {
+        params.set("query", trimmed);
+      } else {
+        params.delete("query");
+      }
+
+      // Always reset to first page when the search changes
+      params.delete("page");
+      pendingSearchQueriesRef.current.add(trimmed);
+
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    },
+    [pathname, router, searchParams]
+  );
 
   // Keep local input in sync if the URL/query prop changes (e.g. via back/forward)
   useEffect(() => {
+    const nextQuery = query ?? "";
+
+    if (pendingSearchQueriesRef.current.has(nextQuery)) {
+      pendingSearchQueriesRef.current.delete(nextQuery);
+      return;
+    }
+
     setSearchInput(query ?? "");
   }, [query]);
 
@@ -136,21 +165,8 @@ export default function RecipeList({
     // If the debounced value matches the current query param, nothing to do
     if ((debouncedSearch ?? "").trim() === (query ?? "").trim()) return;
 
-    const params = new URLSearchParams(searchParams.toString());
-
-    const trimmed = debouncedSearch.trim();
-    if (trimmed) {
-      params.set("query", trimmed);
-    } else {
-      params.delete("query");
-    }
-
-    // Always reset to first page when the search changes
-    params.delete("page");
-
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [debouncedSearch, query, pathname, router, searchParams]);
+    replaceSearchQuery(debouncedSearch);
+  }, [debouncedSearch, query, replaceSearchQuery]);
 
   const buildHref = (opts: { page?: number; query?: string }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -209,18 +225,7 @@ export default function RecipeList({
           onSubmit={(e) => {
             e.preventDefault();
             // Immediate search on enter/click, using current input
-            const params = new URLSearchParams(searchParams.toString());
-            const trimmed = searchInput.trim();
-
-            if (trimmed) {
-              params.set("query", trimmed);
-            } else {
-              params.delete("query");
-            }
-            params.delete("page");
-
-            const qs = params.toString();
-            router.replace(qs ? `${pathname}?${qs}` : pathname);
+            replaceSearchQuery(searchInput);
           }}
         >
           <InputGroup>
