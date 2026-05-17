@@ -2,44 +2,18 @@
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  AdditiveLine,
-  IngredientLine,
-  NoteLine
-} from "@/types/recipeData";
+import type { AdditiveLine, IngredientLine, NoteLine } from "@/types/recipeData";
 import type { NutrientKey } from "@/types/nutrientData";
 import type { StagePanelProps } from "../stageConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput
-} from "@/components/ui/input-group";
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
@@ -90,11 +64,7 @@ const goFermOptions = [
 ] as const;
 
 function calculateGoFermFromYeastAmount(type: string, yeastAmountG?: number | null) {
-  if (
-    typeof yeastAmountG !== "number" ||
-    !Number.isFinite(yeastAmountG) ||
-    yeastAmountG <= 0
-  ) {
+  if (typeof yeastAmountG !== "number" || !Number.isFinite(yeastAmountG) || yeastAmountG <= 0) {
     return null;
   }
 
@@ -157,10 +127,12 @@ function fmtNumber(value?: number | null, decimals = 2) {
   return value.toFixed(decimals).replace(/\.?0+$/, "");
 }
 
-function fmtLoggedAmount(addition?: {
-  amount: number | null;
-  unit: string | null;
-} | null) {
+function fmtLoggedAmount(
+  addition?: {
+    amount: number | null;
+    unit: string | null;
+  } | null
+) {
   if (!addition || typeof addition.amount !== "number") return null;
   return [fmtNumber(addition.amount), addition.unit].filter(Boolean).join(" ");
 }
@@ -175,8 +147,7 @@ function latestLoggedAddition<T extends { datetime: string | null }>(items?: T[]
 }
 
 function getRecipeAmount(line: IngredientLine) {
-  const src =
-    line.amounts.basis === "volume" ? line.amounts.volume : line.amounts.weight;
+  const src = line.amounts.basis === "volume" ? line.amounts.volume : line.amounts.weight;
   const amount = Number(src.value);
   if (!Number.isFinite(amount)) return {};
   return { amount, unit: src.unit };
@@ -192,8 +163,7 @@ function ingredientDisplay(line: IngredientLine) {
   const name = (line.name ?? "").trim() || "—";
   const weight = fmtAmount(line.amounts.weight.value, line.amounts.weight.unit);
   const volume = fmtAmount(line.amounts.volume.value, line.amounts.volume.unit);
-  const primary =
-    line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
+  const primary = line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
   const secondary =
     line.amounts.basis === "volume"
       ? weight && weight !== primary
@@ -231,9 +201,7 @@ function getNoteText(note: NoteLine) {
 }
 
 function buildPrimaryNotes(notes: NoteLine[]) {
-  return notes
-    .map((note) => ({ note, text: getNoteText(note) }))
-    .filter((item) => item.text.length > 0);
+  return notes.map((note) => ({ note, text: getNoteText(note) })).filter((item) => item.text.length > 0);
 }
 
 function getEstimatedFg(ctx: StagePanelProps["ctx"]) {
@@ -275,25 +243,18 @@ export function PrimaryStagePanel({
   t,
   status,
   ctx,
-  helpers
+  helpers,
+  warnings = []
 }: StagePanelProps) {
-  const [additionDialog, setAdditionDialog] =
-    React.useState<PlannedAddition | null>(null);
-  const [yeastDialogMode, setYeastDialogMode] = React.useState<
-    "planned" | "manual" | null
-  >(null);
+  const [additionDialog, setAdditionDialog] = React.useState<PlannedAddition | null>(null);
+  const [yeastDialogMode, setYeastDialogMode] = React.useState<"planned" | "manual" | null>(null);
+  const [warningsOpen, setWarningsOpen] = React.useState(true);
   const primaryLines = React.useMemo(
     () => buildPrimaryLines(ctx.recipe.primaryIngredients),
     [ctx.recipe.primaryIngredients]
   );
-  const additiveLines = React.useMemo(
-    () => buildAdditiveLines(ctx.recipe.additives),
-    [ctx.recipe.additives]
-  );
-  const primaryNotes = React.useMemo(
-    () => buildPrimaryNotes(ctx.recipe.primaryNotes),
-    [ctx.recipe.primaryNotes]
-  );
+  const additiveLines = React.useMemo(() => buildAdditiveLines(ctx.recipe.additives), [ctx.recipe.additives]);
+  const primaryNotes = React.useMemo(() => buildPrimaryNotes(ctx.recipe.primaryNotes), [ctx.recipe.primaryNotes]);
   const nutrientRows = React.useMemo(() => getNutrientRows(ctx), [ctx]);
 
   const loggedIngredientIds = React.useMemo(
@@ -314,37 +275,31 @@ export function PrimaryStagePanel({
   );
 
   const missingIngredients = React.useMemo(
-    () =>
-      primaryLines.filter(
-        (line) => !loggedIngredientIds.has(String(line.line.lineId))
-      ),
+    () => primaryLines.filter((line) => !loggedIngredientIds.has(String(line.line.lineId))),
     [primaryLines, loggedIngredientIds]
   );
 
   const canEdit = status === "current";
   const recipeOg = ctx.recipe.derived?.gravity.ogPrimary ?? null;
+  const suggestedOg = ctx.recipe.actual.suggestedOriginalGravity ?? recipeOg;
+  const nutrientBasis = ctx.recipe.actual.nutrientBasis;
+  const hasNutrientBasis = Boolean(nutrientBasis);
+  const ogDiffersFromSuggestion = Boolean(
+    nutrientBasis &&
+      typeof suggestedOg === "number" &&
+      Number.isFinite(suggestedOg) &&
+      Math.abs(nutrientBasis.basis.chosenOg - suggestedOg) > 0.0005
+  );
   const estimatedFg = getEstimatedFg(ctx);
   const finalGravity = ctx.recipe.actual.finalGravity?.gravity ?? null;
-  const fgDelta =
-    typeof finalGravity === "number" && estimatedFg != null
-      ? Math.abs(finalGravity - estimatedFg)
-      : null;
+  const fgDelta = typeof finalGravity === "number" && estimatedFg != null ? Math.abs(finalGravity - estimatedFg) : null;
   const fgOutsideEstimate = typeof fgDelta === "number" && fgDelta > 0.005;
   const ingredientDoneCount = primaryLines.length - missingIngredients.length;
-  const additiveDoneCount = additiveLines.filter((line) =>
-    loggedAdditiveIds.has(String(line.line.lineId))
-  ).length;
-  const notesDoneCount = primaryNotes.filter((item) =>
-    loggedNoteIds.has(String(item.note.lineId))
-  ).length;
-  const nutrientDoneCount = nutrientRows.filter((row) =>
-    loggedNutrientIndexes.has(row.index)
-  ).length;
+  const additiveDoneCount = additiveLines.filter((line) => loggedAdditiveIds.has(String(line.line.lineId))).length;
+  const notesDoneCount = primaryNotes.filter((item) => loggedNoteIds.has(String(item.note.lineId))).length;
+  const nutrientDoneCount = nutrientRows.filter((row) => loggedNutrientIndexes.has(row.index)).length;
   const goFerm = ctx.recipe.nutrientPlan?.derived.goFerm;
-  const hasPlannedGoFerm =
-    typeof goFerm?.amount === "number" &&
-    Number.isFinite(goFerm.amount) &&
-    goFerm.amount > 0;
+  const hasPlannedGoFerm = typeof goFerm?.amount === "number" && Number.isFinite(goFerm.amount) && goFerm.amount > 0;
   const hasLoggedGoFerm = Boolean(ctx.recipe.actual.goFermAddition);
   const hasLoggedOg = Boolean(ctx.recipe.actual.originalGravity);
   const hasLoggedYeast = Boolean(ctx.recipe.actual.yeastAddition);
@@ -353,35 +308,25 @@ export function PrimaryStagePanel({
     typeof ctx.brew.current_volume_liters === "number" &&
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
-  const nutrientDisabledReason = !hasLoggedYeast
-    ? t(
-        "brews.primary.nutrientsNeedYeast",
-        "Log yeast before nutrient additions."
-      )
-    : hasPlannedGoFerm && !hasLoggedGoFerm
-      ? t(
-          "brews.primary.nutrientsNeedGoFermDecision",
-          "Log Go-Ferm or mark it not used before nutrient additions."
-        )
-      : null;
+  const nutrientDisabledReason = !hasNutrientBasis
+    ? t("brews.primary.nutrientsNeedOg", "Log OG first.")
+    : !hasLoggedYeast
+      ? t("brews.primary.nutrientsNeedYeast", "Log yeast before nutrient additions.")
+      : hasPlannedGoFerm && !hasLoggedGoFerm
+        ? t("brews.primary.nutrientsNeedGoFermDecision", "Log Go-Ferm or mark it not used before nutrient additions.")
+        : null;
   const actualYeastAmountG = ctx.recipe.actual.yeastAddition?.amount;
   const yeastRowTitle =
     ctx.recipe.actual.yeastAddition?.name ||
     [ctx.recipe.yeast?.brand, ctx.recipe.yeast?.strain].filter(Boolean).join(" ");
   const yeastRowAmount =
     typeof ctx.recipe.actual.yeastAddition?.amount === "number"
-      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${
-          ctx.recipe.actual.yeastAddition.unit || "g"
-        }`
+      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${ctx.recipe.actual.yeastAddition.unit || "g"}`
       : typeof ctx.recipe.yeast?.plannedAmountG === "number"
         ? `${fmtNumber(ctx.recipe.yeast.plannedAmountG)} g`
         : null;
-  const plannedGoFermType =
-    ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm";
-  const actualYeastGoFerm = calculateGoFermFromYeastAmount(
-    plannedGoFermType,
-    actualYeastAmountG
-  );
+  const plannedGoFermType = ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm";
+  const actualYeastGoFerm = calculateGoFermFromYeastAmount(plannedGoFermType, actualYeastAmountG);
   const defaultGoFermAmount = actualYeastGoFerm?.amount ?? goFerm?.amount;
   const defaultGoFermWater = actualYeastGoFerm?.water ?? goFerm?.water;
   const loggedGoFerm = ctx.recipe.actual.goFermAddition;
@@ -425,14 +370,12 @@ export function PrimaryStagePanel({
         plannedWaterUnit: "mL"
       }
     });
-  const nextNutrientRow = nutrientRows.find(
-    (row) => !loggedNutrientIndexes.has(row.index)
-  );
+  const nextNutrientRow = nutrientRows.find((row) => !loggedNutrientIndexes.has(row.index));
   const openNutrientRow = (row: (typeof nutrientRows)[number]) => {
     const total = row.components.reduce((sum, item) => sum + item.amount, 0);
     setAdditionDialog({
       title: t("brews.primary.logNutrients", "Log nutrients"),
-      name: t("brews.primary.nutrientAddition", "Addition {{index}}", {
+      name: t("brews.primary.nutrientAddition", "Nutrient addition {{index}}", {
         index: row.index
       }),
       kind: "NUTRIENT",
@@ -449,8 +392,7 @@ export function PrimaryStagePanel({
   };
   const markGoFermNotUsed = async () => {
     await helpers.addAddition({
-      name:
-        ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm",
+      name: ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm",
       kind: "NUTRIENT",
       source: "recipe_go_ferm",
       amount: 0,
@@ -481,39 +423,23 @@ export function PrimaryStagePanel({
       })
     );
   };
-  const pitchPending =
-    !hasLoggedOg || !hasLoggedYeast || (hasPlannedGoFerm && !hasLoggedGoFerm);
-  const nutrientsPending =
-    !pitchPending && nutrientDoneCount < nutrientRows.length;
+  const pitchPending = !hasNutrientBasis || !hasLoggedYeast || (hasPlannedGoFerm && !hasLoggedGoFerm);
+  const nutrientsPending = !pitchPending && nutrientDoneCount < nutrientRows.length;
   const fgPending = !pitchPending && !nutrientsPending && !hasLoggedFg;
-  const transferPending =
-    !pitchPending &&
-    !nutrientsPending &&
-    !fgPending &&
-    !hasLoggedSecondaryVolume;
+  const transferPending = !pitchPending && !nutrientsPending && !fgPending && !hasLoggedSecondaryVolume;
   const workflowFocus = pitchPending
     ? t("brews.primary.focusPitch", "Pitch yeast and record starting details")
     : nutrientsPending
       ? t("brews.primary.focusNutrients", "Keep up with nutrient additions")
       : fgPending
-        ? t(
-            "brews.primary.focusFg",
-            "Take final gravity when fermentation is finished"
-          )
+        ? t("brews.primary.focusFg", "Take final gravity when fermentation is finished")
         : transferPending
-          ? t(
-              "brews.primary.focusTransfer",
-              "Transfer to secondary and record the new volume"
-            )
+          ? t("brews.primary.focusTransfer", "Transfer to secondary and record the new volume")
           : t("brews.primary.focusReady", "Ready to move to secondary");
 
   const openReading = () => {
     helpers.openAddEntry?.({
-      allowedTypes: [
-        BREW_ENTRY_TYPE.GRAVITY,
-        BREW_ENTRY_TYPE.TEMPERATURE,
-        BREW_ENTRY_TYPE.PH
-      ]
+      allowedTypes: [BREW_ENTRY_TYPE.GRAVITY, BREW_ENTRY_TYPE.TEMPERATURE, BREW_ENTRY_TYPE.PH]
     });
   };
 
@@ -525,24 +451,16 @@ export function PrimaryStagePanel({
           value={
             ctx.recipe.actual.originalGravity
               ? fmtGravity(ctx.recipe.actual.originalGravity.gravity)
-              : typeof recipeOg === "number" &&
-                  Number.isFinite(recipeOg) &&
-                  recipeOg > 1
-                ? t("brews.primary.recipeOgAvailable", "Recipe OG available")
+              : typeof suggestedOg === "number" && Number.isFinite(suggestedOg) && suggestedOg > 1
+                ? t("brews.primary.suggestedOgAvailable", "Suggested OG available")
                 : "—"
           }
-          tone={ctx.recipe.actual.originalGravity ? "ok" : "warn"}
+          tone={ctx.recipe.actual.originalGravity && !ogDiffersFromSuggestion ? "ok" : "warn"}
         />
         <StatusTile
           label={t("brews.primary.fg", "Final gravity")}
           value={fmtGravity(finalGravity)}
-          tone={
-            ctx.recipe.actual.finalGravity
-              ? fgOutsideEstimate
-                ? "warn"
-                : "ok"
-              : "warn"
-          }
+          tone={ctx.recipe.actual.finalGravity ? (fgOutsideEstimate ? "warn" : "ok") : "warn"}
         />
         <StatusTile
           label={t("brews.primary.currentVolume", "Current volume")}
@@ -555,18 +473,6 @@ export function PrimaryStagePanel({
           tone={ctx.recipe.actual.yeastAddition ? "ok" : "warn"}
         />
       </div>
-
-      {fgOutsideEstimate ? (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
-          {t(
-            "brews.warn.finalGravityEstimateMismatchWithValues",
-            "Final gravity is not close to the recipe’s estimated FG."
-          )}{" "}
-          {t("brews.primary.estimatedFg", "Estimated FG")}:{" "}
-          {fmtGravity(estimatedFg)}, {t("brews.primary.loggedFg", "Logged FG")}:{" "}
-          {fmtGravity(finalGravity)}.
-        </div>
-      ) : null}
 
       <div className="rounded-md border border-border bg-background/40 px-3 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -581,24 +487,12 @@ export function PrimaryStagePanel({
           </div>
           <div className="flex flex-wrap gap-2">
             {missingIngredients.length > 0 ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={!canEdit}
-                onClick={logMissingIngredients}
-              >
-                {t(
-                  "brews.primary.logMissingIngredients",
-                  "Log missing ingredients"
-                )}
+              <Button size="sm" variant="secondary" disabled={!canEdit} onClick={logMissingIngredients}>
+                {t("brews.primary.logMissingIngredients", "Log missing ingredients")}
               </Button>
             ) : null}
-            {pitchPending && !hasLoggedOg ? (
-              <Button
-                size="sm"
-                disabled={!canEdit}
-                onClick={() => helpers.openOriginalGravityDialog?.()}
-              >
+            {pitchPending && !hasNutrientBasis ? (
+              <Button size="sm" disabled={!canEdit} onClick={() => helpers.openOriginalGravityDialog?.()}>
                 {t("brews.actions.logOg", "Log OG")}
               </Button>
             ) : null}
@@ -606,9 +500,7 @@ export function PrimaryStagePanel({
               <Button
                 size="sm"
                 disabled={!canEdit}
-                onClick={() =>
-                  setYeastDialogMode(ctx.recipe.yeast ? "planned" : "manual")
-                }
+                onClick={() => setYeastDialogMode(ctx.recipe.yeast ? "planned" : "manual")}
               >
                 {t("brews.actions.logYeast", "Log yeast")}
               </Button>
@@ -628,24 +520,13 @@ export function PrimaryStagePanel({
               </Button>
             ) : null}
             {fgPending ? (
-              <Button
-                size="sm"
-                onClick={() => helpers.openFinalGravityDialog?.()}
-                disabled={!canEdit}
-              >
+              <Button size="sm" onClick={() => helpers.openFinalGravityDialog?.()} disabled={!canEdit}>
                 {t("brews.actions.logFg", "Log FG")}
               </Button>
             ) : null}
             {transferPending ? (
-              <Button
-                size="sm"
-                onClick={() => helpers.openRecordVolume?.()}
-                disabled={!canEdit}
-              >
-                {t(
-                  "brews.actions.logSecondaryVolume",
-                  "Record secondary volume"
-                )}
+              <Button size="sm" onClick={() => helpers.openRecordVolume?.()} disabled={!canEdit}>
+                {t("brews.actions.logSecondaryVolume", "Record secondary volume")}
               </Button>
             ) : null}
             <Button
@@ -657,18 +538,58 @@ export function PrimaryStagePanel({
               {t("brews.moveToSecondary", "Move to Secondary")}
             </Button>
             {hasLoggedOg ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={!canEdit}
-                onClick={openReading}
-              >
+              <Button size="sm" variant="secondary" disabled={!canEdit} onClick={openReading}>
                 {t("brews.actions.logReading", "Log reading")}
               </Button>
             ) : null}
           </div>
         </div>
       </div>
+
+      {warnings.length > 0 ? (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium"
+            onClick={() => setWarningsOpen((open) => !open)}
+          >
+            <span>
+              {t("brews.warnings", "Warnings")} · {warnings.length}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {warningsOpen ? t("hide", "Hide") : t("show", "Show")}
+            </span>
+          </button>
+          {warningsOpen ? (
+            <div className="space-y-2 border-t border-yellow-500/20 px-3 py-3">
+              {warnings.map((warning) => (
+                <div key={warning.id} className="text-sm">
+                  {warning.message(t)}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {fgOutsideEstimate ? (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+          {t(
+            "brews.warn.finalGravityEstimateMismatchWithValues",
+            "Final gravity is not close to the recipe’s estimated FG."
+          )}{" "}
+          {t("brews.primary.estimatedFg", "Estimated FG")}: {fmtGravity(estimatedFg)},{" "}
+          {t("brews.primary.loggedFg", "Logged FG")}: {fmtGravity(finalGravity)}.
+        </div>
+      ) : null}
+
+      {ogDiffersFromSuggestion && nutrientBasis ? (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+          {t("brews.primary.ogDiffersFromSuggestion", "Logged OG differs from the suggested OG used for planning.")}{" "}
+          {t("brews.primary.suggestedOg", "Suggested OG")}: {fmtGravity(suggestedOg)},{" "}
+          {t("brews.primary.loggedOg", "Logged OG")}: {fmtGravity(nutrientBasis.basis.chosenOg)}.
+        </div>
+      ) : null}
 
       <Accordion type="multiple" defaultValue={["yeast", "ingredients"]}>
         <AccordionItem value="yeast">
@@ -705,12 +626,7 @@ export function PrimaryStagePanel({
                     actionLabel={t("brews.primary.log", "Log")}
                   />
                   {!hasLoggedGoFerm ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={!canEdit}
-                      onClick={markGoFermNotUsed}
-                    >
+                    <Button size="sm" variant="secondary" disabled={!canEdit} onClick={markGoFermNotUsed}>
                       {t("brews.primary.markGoFermNotUsed", "Mark not used")}
                     </Button>
                   ) : null}
@@ -718,17 +634,9 @@ export function PrimaryStagePanel({
               ) : null}
 
               {!hasLoggedYeast ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={!canEdit}
-                  onClick={() => setYeastDialogMode("manual")}
-                >
+                <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setYeastDialogMode("manual")}>
                   {ctx.recipe.yeast
-                    ? t(
-                        "brews.primary.logDifferentYeast",
-                        "Log different yeast"
-                      )
+                    ? t("brews.primary.logDifferentYeast", "Log different yeast")
                     : t("brews.actions.logYeast", "Log yeast")}
                 </Button>
               ) : null}
@@ -738,39 +646,26 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="ingredients">
           <AccordionTrigger>
-            {t("brews.primary.ingredients", "Primary ingredients")} ·{" "}
-            {ingredientDoneCount}/{primaryLines.length}
+            {t("brews.primary.ingredients", "Primary ingredients")} · {ingredientDoneCount}/{primaryLines.length}
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              <Button
-                size="sm"
-                disabled={!canEdit || missingIngredients.length === 0}
-                onClick={logMissingIngredients}
-              >
+              <Button size="sm" disabled={!canEdit || missingIngredients.length === 0} onClick={logMissingIngredients}>
                 {t("brews.primary.logMissing", "Log missing")}
               </Button>
               {primaryLines.length ? (
                 <ul className="space-y-1">
                   {primaryLines.map((item) => {
-                    const isLogged = loggedIngredientIds.has(
-                      String(item.line.lineId)
-                    );
+                    const isLogged = loggedIngredientIds.has(String(item.line.lineId));
                     const loggedAddition = latestLoggedAddition(
-                      ctx.recipe.actual.additionsByRecipeIngredientId[
-                        String(item.line.lineId)
-                      ]
+                      ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
                     );
                     const { amount, unit } = getRecipeAmount(item.line);
                     return (
                       <WorkRow
                         key={item.line.lineId}
                         title={loggedAddition?.name || item.name}
-                        detail={
-                          item.secondary
-                            ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}`
-                            : null
-                        }
+                        detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
                         amount={fmtLoggedAmount(loggedAddition) ?? item.primary}
                         isLogged={isLogged}
                         disabled={!canEdit}
@@ -778,10 +673,7 @@ export function PrimaryStagePanel({
                         actionLabel={t("brews.primary.log", "Log")}
                         onLog={() =>
                           setAdditionDialog({
-                            title: t(
-                              "brews.primary.logIngredient",
-                              "Log ingredient"
-                            ),
+                            title: t("brews.primary.logIngredient", "Log ingredient"),
                             name: item.name,
                             kind: "INGREDIENT",
                             source: "recipe_ingredient",
@@ -797,10 +689,7 @@ export function PrimaryStagePanel({
                 </ul>
               ) : (
                 <EmptyState>
-                  {t(
-                    "brews.primary.noPrimaryIngredients",
-                    "No primary ingredients found in the linked recipe."
-                  )}
+                  {t("brews.primary.noPrimaryIngredients", "No primary ingredients found in the linked recipe.")}
                 </EmptyState>
               )}
             </div>
@@ -809,20 +698,15 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="additives">
           <AccordionTrigger>
-            {t("brews.primary.additives", "Planned additives")} ·{" "}
-            {additiveDoneCount}/{additiveLines.length}
+            {t("brews.primary.additives", "Planned additives")} · {additiveDoneCount}/{additiveLines.length}
           </AccordionTrigger>
           <AccordionContent>
             {additiveLines.length ? (
               <ul className="space-y-1">
                 {additiveLines.map((item) => {
-                  const isLogged = loggedAdditiveIds.has(
-                    String(item.line.lineId)
-                  );
+                  const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
                   const loggedAddition = latestLoggedAddition(
-                    ctx.recipe.actual.additionsByRecipeAdditiveId[
-                      String(item.line.lineId)
-                    ]
+                    ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
                   );
                   const { amount, unit } = getAdditiveAmount(item.line);
                   return (
@@ -852,10 +736,7 @@ export function PrimaryStagePanel({
               </ul>
             ) : (
               <EmptyState>
-                {t(
-                  "brews.primary.noAdditives",
-                  "No planned additives found in the linked recipe."
-                )}
+                {t("brews.primary.noAdditives", "No planned additives found in the linked recipe.")}
               </EmptyState>
             )}
           </AccordionContent>
@@ -863,8 +744,7 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="nutrients">
           <AccordionTrigger>
-            {t("brews.primary.nutrients", "Nutrients")} · {nutrientDoneCount}/
-            {nutrientRows.length}
+            {t("brews.primary.nutrients", "Nutrients")} · {nutrientDoneCount}/{nutrientRows.length}
           </AccordionTrigger>
           <AccordionContent>
             {nutrientRows.length ? (
@@ -872,31 +752,29 @@ export function PrimaryStagePanel({
                 <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                   {t(
                     "brews.primary.nutrientsRecipeBuilderNotice",
-                    "This logs the planned nutrient schedule from the recipe. Change the schedule in the recipe builder for now; actual-addition recalculation will be handled by the upcoming nutrient workflow."
+                    "This schedule uses logged OG, linked primary additions, yeast, and Go-Ferm. Change the schedule settings in the recipe builder for now."
                   )}
                 </div>
+                {hasNutrientBasis && ctx.recipe.actual.missingActualPrimaryIngredientIds.length > 0 ? (
+                  <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-muted-foreground">
+                    {t(
+                      "brews.primary.nutrientsUsingPlannedIngredients",
+                      "Some linked primary ingredients have not been logged yet, so their planned amounts are being used for nutrient recalculation."
+                    )}
+                  </div>
+                ) : null}
                 <ul className="space-y-1">
                   {nutrientRows.map((row) => {
                     const isLogged = loggedNutrientIndexes.has(row.index);
-                    const total = row.components.reduce(
-                      (sum, item) => sum + item.amount,
-                      0
-                    );
+                    const total = row.components.reduce((sum, item) => sum + item.amount, 0);
                     return (
                       <WorkRow
                         key={row.index}
-                        title={t(
-                          "brews.primary.nutrientAddition",
-                          "Addition {{index}}",
-                          {
-                            index: row.index
-                          }
-                        )}
+                        title={t("brews.primary.nutrientAddition", "Nutrient addition {{index}}", {
+                          index: row.index
+                        })}
                         detail={row.components
-                          .map(
-                            (item) =>
-                              `${item.name}: ${fmtNumber(item.amount)} ${item.unit}`
-                          )
+                          .map((item) => `${item.name}: ${fmtNumber(item.amount)} ${item.unit}`)
                           .join(", ")}
                         amount={`${fmtNumber(total)} g`}
                         isLogged={isLogged}
@@ -911,20 +789,14 @@ export function PrimaryStagePanel({
                 </ul>
               </div>
             ) : (
-              <EmptyState>
-                {t(
-                  "brews.primary.noNutrients",
-                  "No planned nutrient additions found."
-                )}
-              </EmptyState>
+              <EmptyState>{t("brews.primary.noNutrients", "No planned nutrient additions found.")}</EmptyState>
             )}
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="notes">
           <AccordionTrigger>
-            {t("brews.primary.recipeNotes", "Recipe primary notes")} ·{" "}
-            {notesDoneCount}/{primaryNotes.length}
+            {t("brews.primary.recipeNotes", "Recipe primary notes")} · {notesDoneCount}/{primaryNotes.length}
           </AccordionTrigger>
           <AccordionContent>
             {primaryNotes.length ? (
@@ -954,10 +826,7 @@ export function PrimaryStagePanel({
               </ul>
             ) : (
               <EmptyState>
-                {t(
-                  "brews.primary.noRecipeNotes",
-                  "No primary notes found in the linked recipe."
-                )}
+                {t("brews.primary.noRecipeNotes", "No primary notes found in the linked recipe.")}
               </EmptyState>
             )}
           </AccordionContent>
@@ -990,24 +859,11 @@ export function PrimaryStagePanel({
   );
 }
 
-function StatusTile({
-  label,
-  value,
-  tone
-}: {
-  label: string;
-  value: string;
-  tone: "ok" | "warn";
-}) {
+function StatusTile({ label, value, tone }: { label: string; value: string; tone: "ok" | "warn" }) {
   return (
     <div className="rounded-md border border-border bg-background/40 px-3 py-2">
       <div className="text-xs uppercase text-muted-foreground">{label}</div>
-      <div
-        className={cn(
-          "mt-1 text-sm font-medium",
-          tone === "warn" && "text-yellow-700 dark:text-yellow-300"
-        )}
-      >
+      <div className={cn("mt-1 text-sm font-medium", tone === "warn" && "text-yellow-700 dark:text-yellow-300")}>
         {value}
       </div>
     </div>
@@ -1043,32 +899,19 @@ function WorkRow({
       )}
     >
       <div className="min-w-0">
-        <div className="text-sm font-medium leading-tight line-clamp-2 whitespace-pre-line">
-          {title}
-        </div>
-        {detail ? (
-          <div className="mt-0.5 text-xs text-muted-foreground">{detail}</div>
-        ) : null}
+        <div className="text-sm font-medium leading-tight line-clamp-2 whitespace-pre-line">{title}</div>
+        {detail ? <div className="mt-0.5 text-xs text-muted-foreground">{detail}</div> : null}
         {!isLogged && disabled && disabledReason ? (
-          <div className="mt-1 text-xs text-muted-foreground">
-            {disabledReason}
-          </div>
+          <div className="mt-1 text-xs text-muted-foreground">{disabledReason}</div>
         ) : null}
       </div>
 
       <div className="shrink-0 flex items-center gap-2">
-        {amount ? (
-          <div className="text-sm text-muted-foreground">{amount}</div>
-        ) : null}
+        {amount ? <div className="text-sm text-muted-foreground">{amount}</div> : null}
         {isLogged ? (
           <div className="text-xs text-muted-foreground">{loggedLabel}</div>
         ) : (
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={disabled}
-            onClick={onLog}
-          >
+          <Button size="sm" variant="secondary" disabled={disabled} onClick={onLog}>
             {actionLabel}
           </Button>
         )}
@@ -1103,9 +946,7 @@ function LogPlannedAdditionDialog({
   const [amountTouched, setAmountTouched] = React.useState(false);
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
-  const [components, setComponents] = React.useState<
-    PlannedAddition["components"]
-  >([]);
+  const [components, setComponents] = React.useState<PlannedAddition["components"]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -1119,18 +960,13 @@ function LogPlannedAdditionDialog({
     setComponents(planned.components ?? []);
   }, [planned]);
 
-  const usesAdditiveUnits =
-    planned?.source === "recipe_additive" ||
-    planned?.source === "recipe_go_ferm";
+  const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
   const isGoFerm = planned?.source === "recipe_go_ferm";
   const isNutrient = planned?.source === "recipe_nutrient";
   const changeGoFermType = (nextType: string) => {
     setName(nextType);
 
-    const recalculated = calculateGoFermFromYeastAmount(
-      nextType,
-      planned?.meta?.actualYeastAmount
-    );
+    const recalculated = calculateGoFermFromYeastAmount(nextType, planned?.meta?.actualYeastAmount);
     if (!recalculated) return;
 
     setAmount(String(recalculated.amount));
@@ -1252,18 +1088,14 @@ function LogPlannedAdditionDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <Input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
+              <Input value={name} onChange={(event) => setName(event.target.value)} />
             )}
           </div>
 
           {isNutrient ? (
             <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              This records the planned recipe nutrient addition. Change the
-              recipe schedule in the recipe builder for now; actual-addition
-              recalculation is coming in the nutrient workflow.
+              This records the recalculated recipe nutrient addition. Change the schedule settings in the recipe builder
+              for now.
             </div>
           ) : null}
 
@@ -1272,10 +1104,7 @@ function LogPlannedAdditionDialog({
               <Label>Amounts</Label>
               <div className="space-y-2">
                 {components.map((component, index) => (
-                  <div
-                    key={component.key}
-                    className="grid grid-cols-[1fr_7rem_4rem] gap-2"
-                  >
+                  <div key={component.key} className="grid grid-cols-[1fr_7rem_4rem] gap-2">
                     <div className="self-center text-sm">{component.name}</div>
                     <Input
                       inputMode="decimal"
@@ -1289,9 +1118,7 @@ function LogPlannedAdditionDialog({
                         setComponents(next);
                       }}
                     />
-                    <div className="self-center text-sm text-muted-foreground">
-                      {component.unit}
-                    </div>
+                    <div className="self-center text-sm text-muted-foreground">{component.unit}</div>
                   </div>
                 ))}
               </div>
@@ -1338,15 +1165,8 @@ function LogPlannedAdditionDialog({
                 </InputGroup>
               ) : (
                 <div className="grid grid-cols-[1fr_7rem] gap-2">
-                  <Input
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(event) => setAmount(event.target.value)}
-                  />
-                  <Input
-                    value={unit}
-                    onChange={(event) => setUnit(event.target.value)}
-                  />
+                  <Input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} />
+                  <Input value={unit} onChange={(event) => setUnit(event.target.value)} />
                 </div>
               )}
             </div>
@@ -1354,21 +1174,12 @@ function LogPlannedAdditionDialog({
 
           <div className="space-y-2">
             <Label>Note</Label>
-            <Textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Optional"
-              rows={3}
-            />
+            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional" rows={3} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="secondary"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancel
           </Button>
           <Button onClick={save} disabled={isSaving || !name.trim()}>

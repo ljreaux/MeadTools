@@ -25,6 +25,7 @@ import {
 import SearchableInput from "@/components/ui/SearchableInput";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import type { BrewPlannedYeast } from "@/lib/utils/buildBrewRecipeStageData";
+import type { NitrogenRequirement } from "@/types/nutrientData";
 import type { Yeast } from "@/types/nutrientTypes";
 
 type LogYeastInput = {
@@ -43,6 +44,22 @@ function yeastDisplayName(brand: string, strain: string) {
 
 function plannedName(planned?: BrewPlannedYeast | null) {
   return planned ? yeastDisplayName(planned.brand, planned.strain) : "";
+}
+
+const nitrogenRequirements: NitrogenRequirement[] = [
+  "Very Low",
+  "Low",
+  "Medium",
+  "High",
+  "Very High"
+];
+
+function normalizeNitrogenRequirement(
+  value?: string | null
+): NitrogenRequirement {
+  return nitrogenRequirements.includes(value as NitrogenRequirement)
+    ? (value as NitrogenRequirement)
+    : "Low";
 }
 
 export function LogYeastDialog({
@@ -77,6 +94,8 @@ export function LogYeastDialog({
   const [strain, setStrain] = React.useState("");
   const [selectedYeast, setSelectedYeast] = React.useState<Yeast | null>(null);
   const [amount, setAmount] = React.useState("");
+  const [nitrogenRequirement, setNitrogenRequirement] =
+    React.useState<NitrogenRequirement>("Low");
   const [note, setNote] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -98,6 +117,13 @@ export function LogYeastDialog({
         ? String(planned.plannedAmountG)
         : ""
     );
+    setNitrogenRequirement(
+      normalizeNitrogenRequirement(
+        forceManual
+          ? planned?.nitrogenRequirement
+          : plannedYeast?.nitrogen_requirement ?? planned?.nitrogenRequirement
+      )
+    );
     setNote("");
   }, [forceManual, open, planned, yeastList]);
 
@@ -116,6 +142,9 @@ export function LogYeastDialog({
     setSelectedYeast(yeast);
     setBrand(yeast.brand);
     setStrain(yeast.name);
+    setNitrogenRequirement(
+      normalizeNitrogenRequirement(yeast.nitrogen_requirement)
+    );
   };
 
   const actualName = yeastDisplayName(brand === "Other" ? "" : brand, strain);
@@ -148,7 +177,7 @@ export function LogYeastDialog({
           brand: brand === "Other" ? null : brand,
           strain: strain.trim(),
           nitrogenRequirement:
-            selectedYeast?.nitrogen_requirement ?? planned?.nitrogenRequirement ?? null,
+            nitrogenRequirement,
           plannedName: plannedName(planned),
           plannedAmount: planned?.plannedAmountG,
           plannedUnit: planned ? "g" : undefined,
@@ -221,6 +250,35 @@ export function LogYeastDialog({
               />
               <div className="self-center text-sm text-muted-foreground">g</div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t("n2Requirement.label", "Nitrogen requirement")}</Label>
+            <Select
+              value={nitrogenRequirement}
+              onValueChange={(value) =>
+                setNitrogenRequirement(value as NitrogenRequirement)
+              }
+            >
+              <SelectTrigger className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Very Low">
+                  {t("n2Requirement.veryLow", "Very Low")}
+                </SelectItem>
+                <SelectItem value="Low">{t("n2Requirement.low", "Low")}</SelectItem>
+                <SelectItem value="Medium">
+                  {t("n2Requirement.medium", "Medium")}
+                </SelectItem>
+                <SelectItem value="High">
+                  {t("n2Requirement.high", "High")}
+                </SelectItem>
+                <SelectItem value="Very High">
+                  {t("n2Requirement.veryHigh", "Very High")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

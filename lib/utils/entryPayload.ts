@@ -12,12 +12,23 @@ export type BrewAdditionSource =
   | "manual_yeast"
   | "manual";
 export type GravityReadingRole = "OG" | "FG" | "GENERAL";
-export type GravityReadingSource = "measured" | "recipe";
+export type GravityReadingSource = "measured" | "recipe" | "nutrient_basis";
+
+export type BrewNutrientBasisData = {
+  chosenOg: number;
+  suggestedOg: number;
+  suggestedOgSource: "actualized_recipe" | "recipe" | "measured";
+  estimatedFg: number;
+  fermentableSg: number;
+  warningAcknowledged: boolean;
+};
 
 export type GravityPayloadOptions = {
   readingRole?: GravityReadingRole;
   source?: GravityReadingSource;
   recipeValue?: number;
+  hidden?: boolean;
+  nutrientBasis?: BrewNutrientBasisData;
 };
 
 export type BrewAdditionData = {
@@ -56,18 +67,11 @@ export type BrewVolumeData = {
 };
 
 export const entryPayload = {
-  note(
-    note: string,
-    title: string | null = null,
-    data?: Record<string, any> | null
-  ): CreateBrewEntryInput {
+  note(note: string, title: string | null = null, data?: Record<string, any> | null): CreateBrewEntryInput {
     return { type: BREW_ENTRY_TYPE.NOTE, title, note, data: data ?? null };
   },
 
-  tasting(
-    note: string,
-    title: string | null = "Tasting"
-  ): CreateBrewEntryInput {
+  tasting(note: string, title: string | null = "Tasting"): CreateBrewEntryInput {
     return { type: BREW_ENTRY_TYPE.TASTING, title, note };
   },
 
@@ -75,27 +79,20 @@ export const entryPayload = {
     return { type: BREW_ENTRY_TYPE.ISSUE, title, note };
   },
 
-  gravity(
-    gravity: number,
-    note: string | null = null,
-    options: GravityPayloadOptions = {}
-  ): CreateBrewEntryInput {
+  gravity(gravity: number, note: string | null = null, options: GravityPayloadOptions = {}): CreateBrewEntryInput {
     const readingRole = options.readingRole ?? "GENERAL";
     const source = options.source ?? "measured";
     return {
       type: BREW_ENTRY_TYPE.GRAVITY,
-      title:
-        readingRole === "OG"
-          ? "Original gravity"
-          : readingRole === "FG"
-            ? "Final gravity"
-            : "Gravity reading",
+      title: readingRole === "OG" ? "Original gravity" : readingRole === "FG" ? "Final gravity" : "Gravity reading",
       gravity,
       data: {
         v: 1,
         readingRole,
         source,
-        recipeValue: options.recipeValue
+        recipeValue: options.recipeValue,
+        hidden: options.hidden,
+        nutrientBasis: options.nutrientBasis
       },
       note
     };
@@ -122,11 +119,7 @@ export const entryPayload = {
     };
   },
 
-  temperature(
-    temperature: number,
-    units: TempUnits,
-    note: string | null = null
-  ): CreateBrewEntryInput {
+  temperature(temperature: number, units: TempUnits, note: string | null = null): CreateBrewEntryInput {
     return {
       type: BREW_ENTRY_TYPE.TEMPERATURE,
       title: "Temperature check",

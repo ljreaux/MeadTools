@@ -129,6 +129,7 @@ export type StagePanelProps = {
   status: StageStatus;
   ctx: BrewStageContext;
   helpers: BrewStageHelpers;
+  warnings?: StageWarning[];
 };
 
 export type StageWarning = {
