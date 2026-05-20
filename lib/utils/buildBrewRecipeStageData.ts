@@ -14,7 +14,7 @@ import calculateNutrientDerivedState, {
   calculateEffectiveNutrientData,
   type NutrientDerivedState
 } from "@/lib/utils/calculateNutrientDerivedState";
-import type { NitrogenRequirement, NutrientData } from "@/types/nutrientData";
+import type { NitrogenRequirement, NutrientData, NutrientKey } from "@/types/nutrientData";
 import {
   calculateOriginalGravity,
   calculateVolume,
@@ -68,6 +68,9 @@ export type BrewRecipeStageData = {
     yeastAddition: BrewLoggedAddition | null;
     goFermAddition: BrewLoggedAddition | null;
     loggedNutrientAdditionIndexes: number[];
+    loggedNutrientAdditionCount: number;
+    loggedNutrientGrams: Record<NutrientKey, number>;
+    remainingNutrientGrams: Record<NutrientKey, number>;
     originalGravity: BrewLoggedGravity | null;
     finalGravity: BrewLoggedGravity | null;
     currentAbv: number | null;
@@ -178,6 +181,9 @@ const EMPTY_STAGE_DATA: BrewRecipeStageData = {
     yeastAddition: null,
     goFermAddition: null,
     loggedNutrientAdditionIndexes: [],
+    loggedNutrientAdditionCount: 0,
+    loggedNutrientGrams: { fermO: 0, fermK: 0, dap: 0, other: 0 },
+    remainingNutrientGrams: { fermO: 0, fermK: 0, dap: 0, other: 0 },
     originalGravity: null,
     finalGravity: null,
     currentAbv: null,
@@ -360,6 +366,7 @@ const volumeUnits = new Set<VolumeUnit>([
   "imp_fl_oz"
 ]);
 const nitrogenRequirements = new Set<NitrogenRequirement>(["Very Low", "Low", "Medium", "High", "Very High"]);
+const nutrientKeys: NutrientKey[] = ["fermO", "fermK", "dap", "other"];
 
 function normalizeLoggedWeightUnit(unit: string): WeightUnit | null {
   const value = unit.trim();
@@ -540,6 +547,41 @@ function buildActualizedNutrientPlan(args: {
   };
 }
 
+function getLoggedNutrientGrams(additions: BrewLoggedAddition[]) {
+  const grams: Record<NutrientKey, number> = { fermO: 0, fermK: 0, dap: 0, other: 0 };
+
+  for (const addition of additions) {
+    const isRecipeNutrient = addition.source === "recipe_nutrient";
+    const components = addition.meta?.components;
+    if (!isRecipeNutrient || !Array.isArray(components)) continue;
+
+    for (const component of components) {
+      const key = component?.key;
+      const amount = component?.amount;
+      if (!nutrientKeys.includes(key as NutrientKey)) continue;
+      if (typeof amount !== "number" || !Number.isFinite(amount)) continue;
+      grams[key as NutrientKey] += amount;
+    }
+  }
+
+  return grams;
+}
+
+function getRemainingNutrientGrams(
+  plan: BrewPlannedNutrientPlan | null,
+  logged: Record<NutrientKey, number>
+) {
+  const remaining: Record<NutrientKey, number> = { fermO: 0, fermK: 0, dap: 0, other: 0 };
+  const totals = plan?.derived.nutrientAdditions.totalGrams;
+
+  for (const key of nutrientKeys) {
+    const total = totals?.[key] ?? 0;
+    remaining[key] = Math.max(0, total - (logged[key] ?? 0));
+  }
+
+  return remaining;
+}
+
 export function buildBrewRecipeStageData(args: {
   recipeSnapshot: BrewRecipeSnapshot | null | undefined;
   currentVolumeLiters: number | null | undefined;
@@ -598,6 +640,8 @@ export function buildBrewRecipeStageData(args: {
         .filter((index): index is number => typeof index === "number" && Number.isFinite(index))
     )
   ).sort((a, b) => a - b);
+  const loggedNutrientAdditionCount = additions.filter((addition) => addition.source === "recipe_nutrient").length;
+  const loggedNutrientGrams = getLoggedNutrientGrams(additions);
 
   const snapshot = args.recipeSnapshot ?? null;
   const snapshotData = snapshot?.dataV2;
@@ -619,6 +663,9 @@ export function buildBrewRecipeStageData(args: {
         yeastAddition,
         goFermAddition,
         loggedNutrientAdditionIndexes,
+        loggedNutrientAdditionCount,
+        loggedNutrientGrams,
+        remainingNutrientGrams: { fermO: 0, fermK: 0, dap: 0, other: 0 },
         originalGravity,
         finalGravity,
         currentAbv: null,
@@ -686,6 +733,7 @@ export function buildBrewRecipeStageData(args: {
           source: "recipe_nutrients" as const
         })
       : null;
+  const remainingNutrientGrams = getRemainingNutrientGrams(plannedNutrientPlan, loggedNutrientGrams);
   const plannedStabilizerPlan = {
     enabled: derivedResponse.recipeData.stabilizers.adding,
     type: derivedResponse.recipeData.stabilizers.type,
@@ -750,6 +798,9 @@ export function buildBrewRecipeStageData(args: {
       yeastAddition,
       goFermAddition,
       loggedNutrientAdditionIndexes,
+      loggedNutrientAdditionCount,
+      loggedNutrientGrams,
+      remainingNutrientGrams,
       originalGravity,
       finalGravity,
       currentAbv,

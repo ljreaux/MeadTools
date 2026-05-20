@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import { parseNumber, isValidNumber } from "@/lib/utils/validateInput";
@@ -138,6 +139,38 @@ function latestLoggedAddition<T extends { datetime: string | null }>(items?: T[]
   })[0];
 }
 
+function loggedNutrientAdditionForIndex(
+  additions: StagePanelProps["ctx"]["recipe"]["actual"]["additions"],
+  index: number
+) {
+  return latestLoggedAddition(
+    additions.filter(
+      (addition) =>
+        addition.source === "recipe_nutrient" &&
+        typeof addition.meta?.nutrientAdditionIndex === "number" &&
+        addition.meta.nutrientAdditionIndex === index
+    )
+  );
+}
+
+function loggedNutrientComponents(
+  addition: ReturnType<typeof loggedNutrientAdditionForIndex>,
+  fallback: Array<{ key: string; name: string; amount: number; unit: string }>
+) {
+  const components = addition?.meta?.components;
+  if (!Array.isArray(components)) return fallback;
+
+  return fallback.map((planned) => {
+    const actual = components.find((component) => component?.key === planned.key);
+    const amount = actual?.amount;
+    return {
+      ...planned,
+      amount: typeof amount === "number" && Number.isFinite(amount) ? amount : planned.amount,
+      unit: typeof actual?.unit === "string" && actual.unit ? actual.unit : planned.unit
+    };
+  });
+}
+
 function getRecipeAmount(line: IngredientLine) {
   const src = line.amounts.basis === "volume" ? line.amounts.volume : line.amounts.weight;
   const amount = Number(src.value);
@@ -208,12 +241,30 @@ function getNutrientRows(ctx: StagePanelProps["ctx"]) {
   const keys: NutrientKey[] = ["fermO", "fermK", "dap", "other"];
   const selected = plan.effectiveData.selected.selectedNutrients;
   const per = plan.derived.nutrientAdditions.perAddition;
+  const totals = plan.derived.nutrientAdditions.totalGrams;
   const otherName = plan.effectiveData.settings.other.name.trim();
+  const loggedCount = ctx.recipe.actual.loggedNutrientAdditionCount ?? 0;
+  const plannedCount = Math.max(0, Math.floor(plan.derived.numberOfAdditions || 0));
+  const hasComponentLogs = keys.some((key) => (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0) > 0);
+  const remaining = keys.reduce<Record<NutrientKey, number>>(
+    (acc, key) => {
+      const logged = hasComponentLogs
+        ? (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0)
+        : Math.min(loggedCount, plannedCount) * (per[key] ?? 0);
+      acc[key] = Math.max(0, (totals[key] ?? 0) - logged);
+      return acc;
+    },
+    { fermO: 0, fermK: 0, dap: 0, other: 0 }
+  );
+  const hasRemaining = keys.some((key) => remaining[key] > 0.01);
+  const suggestedRowsRemaining = Math.max(plannedCount - loggedCount, hasRemaining ? 1 : 0);
+  const targetCount = Math.max(plannedCount, loggedCount + (hasRemaining ? 1 : 0));
 
-  const components = keys
+  const buildComponents = (divisor: number, useRemaining: boolean) => keys
     .filter((key) => selected[key])
     .map((key) => {
-      const amount = Number.isFinite(per[key]) ? per[key] : 0;
+      const amountSource = useRemaining ? remaining[key] / Math.max(1, divisor) : per[key];
+      const amount = Number.isFinite(amountSource) ? amountSource : 0;
       return {
         key,
         name: key === "other" && otherName ? otherName : nutrientLabels[key],
@@ -224,11 +275,15 @@ function getNutrientRows(ctx: StagePanelProps["ctx"]) {
     })
     .filter((component) => component.amount > 0);
 
-  const count = Math.max(0, Math.floor(plan.derived.numberOfAdditions || 0));
-  return Array.from({ length: count }, (_, index) => ({
-    index: index + 1,
-    components
-  })).filter((row) => row.components.length > 0);
+  return Array.from({ length: targetCount }, (_, index) => {
+    const rowIndex = index + 1;
+    const useRemaining = rowIndex > loggedCount;
+    return {
+      index: rowIndex,
+      isExtra: rowIndex > plannedCount,
+      components: buildComponents(suggestedRowsRemaining, useRemaining)
+    };
+  }).filter((row) => row.components.length > 0);
 }
 
 export function PrimaryStagePanel({
@@ -289,7 +344,10 @@ export function PrimaryStagePanel({
   const ingredientDoneCount = primaryLines.length - missingIngredients.length;
   const additiveDoneCount = additiveLines.filter((line) => loggedAdditiveIds.has(String(line.line.lineId))).length;
   const notesDoneCount = primaryNotes.filter((item) => loggedNoteIds.has(String(item.note.lineId))).length;
-  const nutrientDoneCount = nutrientRows.filter((row) => loggedNutrientIndexes.has(row.index)).length;
+  const nutrientDoneCount = ctx.recipe.actual.loggedNutrientAdditionCount ?? loggedNutrientIndexes.size;
+  const hasRemainingNutrients = Object.values(ctx.recipe.actual.remainingNutrientGrams ?? {}).some(
+    (amount) => typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
+  );
   const goFerm = ctx.recipe.nutrientPlan?.derived.goFerm;
   const hasPlannedGoFerm = typeof goFerm?.amount === "number" && Number.isFinite(goFerm.amount) && goFerm.amount > 0;
   const hasLoggedGoFerm = Boolean(ctx.recipe.actual.goFermAddition);
@@ -362,7 +420,7 @@ export function PrimaryStagePanel({
         plannedWaterUnit: "mL"
       }
     });
-  const nextNutrientRow = nutrientRows.find((row) => !loggedNutrientIndexes.has(row.index));
+  const nextNutrientRow = nutrientRows.find((row) => row.index > nutrientDoneCount);
   const openNutrientRow = (row: (typeof nutrientRows)[number]) => {
     const total = row.components.reduce((sum, item) => sum + item.amount, 0);
     setAdditionDialog({
@@ -416,7 +474,7 @@ export function PrimaryStagePanel({
     );
   };
   const pitchPending = !hasNutrientBasis || !hasLoggedYeast || (hasPlannedGoFerm && !hasLoggedGoFerm);
-  const nutrientsPending = !pitchPending && nutrientDoneCount < nutrientRows.length;
+  const nutrientsPending = !pitchPending && hasRemainingNutrients;
   const fgPending = !pitchPending && !nutrientsPending && !hasLoggedFg;
   const transferPending = !pitchPending && !nutrientsPending && !fgPending && !hasLoggedSecondaryVolume;
   const workflowFocus = pitchPending
@@ -756,17 +814,30 @@ export function PrimaryStagePanel({
                     )}
                   </div>
                 ) : null}
+                {nutrientDoneCount >= Math.max(0, Math.floor(ctx.recipe.nutrientPlan?.derived.numberOfAdditions || 0)) &&
+                hasRemainingNutrients ? (
+                  <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-muted-foreground">
+                    {t(
+                      "brews.primary.nutrientsRemainingAfterPlan",
+                      "Planned nutrient additions are complete, but some nutrient amount remains. Add an extra nutrient addition to finish the schedule."
+                    )}
+                  </div>
+                ) : null}
                 <ul className="space-y-1">
                   {nutrientRows.map((row) => {
-                    const isLogged = loggedNutrientIndexes.has(row.index);
-                    const total = row.components.reduce((sum, item) => sum + item.amount, 0);
+                    const isLogged = row.index <= nutrientDoneCount;
+                    const loggedAddition = loggedNutrientAdditionForIndex(ctx.recipe.actual.additions, row.index);
+                    const displayComponents = isLogged
+                      ? loggedNutrientComponents(loggedAddition, row.components)
+                      : row.components;
+                    const total = displayComponents.reduce((sum, item) => sum + item.amount, 0);
                     return (
                       <WorkRow
                         key={row.index}
                         title={t("brews.primary.nutrientAddition", "Nutrient addition {{index}}", {
                           index: row.index
                         })}
-                        detail={row.components
+                        detail={displayComponents
                           .map((item) => `${item.name}: ${fmtNumber(item.amount)} ${item.unit}`)
                           .join(", ")}
                         amount={`${fmtNumber(total)} g`}
@@ -869,6 +940,7 @@ function LogPlannedAdditionDialog({
     kind?: AdditionKind;
     source?: AdditionSource;
     meta?: Record<string, any>;
+    datetime?: string;
   }) => Promise<void>;
 }) {
   const { t } = useTranslation();
@@ -879,6 +951,7 @@ function LogPlannedAdditionDialog({
   const [amountTouched, setAmountTouched] = React.useState(false);
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [components, setComponents] = React.useState<PlannedAddition["components"]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -891,6 +964,7 @@ function LogPlannedAdditionDialog({
     setAmountTouched(false);
     setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
     setNote("");
+    setDatetime(new Date());
     setComponents(planned.components ?? []);
   }, [planned]);
 
@@ -1001,6 +1075,7 @@ function LogPlannedAdditionDialog({
         recipeAdditiveId: planned.recipeAdditiveId,
         kind: planned.kind,
         source: planned.source,
+        datetime: datetime.toISOString(),
         meta: {
           ...(planned.meta ?? {}),
           plannedName: planned.name,
@@ -1117,6 +1192,11 @@ function LogPlannedAdditionDialog({
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
 
           <div className="space-y-2">
             <Label>Note</Label>

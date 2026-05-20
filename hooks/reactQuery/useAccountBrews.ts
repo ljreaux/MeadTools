@@ -121,10 +121,21 @@ export type CreateBrewEntryInput =
     }
   | {
       type: typeof BREW_ENTRY_TYPE.ADDITION;
+      datetime?: string;
       title?: string | null;
       note?: string | null;
       data: BrewAdditionData;
     };
+
+export type PatchBrewEntryInput = {
+  datetime?: string;
+  title?: string | null;
+  note?: string | null;
+  gravity?: number | null;
+  temperature?: number | null;
+  temp_units?: TempUnits | null;
+  data?: any | null;
+};
 const accountBrewsQk = qk.accountBrews;
 
 export function useAccountBrews() {
@@ -208,6 +219,7 @@ export type PatchAccountBrewMetadataInput = {
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
   end_date?: string | null; // ISO or null
+  stage_change_datetime?: string;
 };
 
 export function usePatchAccountBrewMetadata() {

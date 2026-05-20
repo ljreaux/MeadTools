@@ -67,24 +67,29 @@ export type BrewVolumeData = {
 };
 
 export const entryPayload = {
-  note(note: string, title: string | null = null, data?: Record<string, any> | null): CreateBrewEntryInput {
-    return { type: BREW_ENTRY_TYPE.NOTE, title, note, data: data ?? null };
+  note(note: string, title: string | null = null, data?: Record<string, any> | null, datetime?: string): CreateBrewEntryInput {
+    return { type: BREW_ENTRY_TYPE.NOTE, title, note, data: data ?? null, datetime };
   },
 
-  tasting(note: string, title: string | null = "Tasting"): CreateBrewEntryInput {
-    return { type: BREW_ENTRY_TYPE.TASTING, title, note };
+  tasting(note: string, title: string | null = "Tasting", datetime?: string): CreateBrewEntryInput {
+    return { type: BREW_ENTRY_TYPE.TASTING, title, note, datetime };
   },
 
-  issue(note: string, title: string | null = "Issue"): CreateBrewEntryInput {
-    return { type: BREW_ENTRY_TYPE.ISSUE, title, note };
+  issue(note: string, title: string | null = "Issue", datetime?: string): CreateBrewEntryInput {
+    return { type: BREW_ENTRY_TYPE.ISSUE, title, note, datetime };
   },
 
-  gravity(gravity: number, note: string | null = null, options: GravityPayloadOptions = {}): CreateBrewEntryInput {
+  gravity(
+    gravity: number,
+    note: string | null = null,
+    options: GravityPayloadOptions & { datetime?: string } = {}
+  ): CreateBrewEntryInput {
     const readingRole = options.readingRole ?? "GENERAL";
     const source = options.source ?? "measured";
     return {
       type: BREW_ENTRY_TYPE.GRAVITY,
       title: readingRole === "OG" ? "Original gravity" : readingRole === "FG" ? "Final gravity" : "Gravity reading",
+      datetime: options.datetime,
       gravity,
       data: {
         v: 1,
@@ -104,10 +109,12 @@ export const entryPayload = {
     displayUnit?: string;
     startingLiters?: number;
     note?: string | null;
+    datetime?: string;
   }): CreateBrewEntryInput {
     return {
       type: BREW_ENTRY_TYPE.VOLUME,
       title: "Volume recorded",
+      datetime: input.datetime,
       note: input.note ?? null,
       data: {
         v: 1,
@@ -119,20 +126,22 @@ export const entryPayload = {
     };
   },
 
-  temperature(temperature: number, units: TempUnits, note: string | null = null): CreateBrewEntryInput {
+  temperature(temperature: number, units: TempUnits, note: string | null = null, datetime?: string): CreateBrewEntryInput {
     return {
       type: BREW_ENTRY_TYPE.TEMPERATURE,
       title: "Temperature check",
+      datetime,
       temperature,
       temp_units: units,
       note
     };
   },
 
-  ph(ph: number, note: string | null = null): CreateBrewEntryInput {
+  ph(ph: number, note: string | null = null, datetime?: string): CreateBrewEntryInput {
     return {
       type: BREW_ENTRY_TYPE.PH,
       title: "pH reading",
+      datetime,
       note,
       data: { ph }
     };
@@ -147,6 +156,7 @@ export const entryPayload = {
     recipeIngredientId?: string;
     recipeAdditiveId?: string;
     meta?: Record<string, any>;
+    datetime?: string;
   }): CreateBrewEntryInput => {
     const data: BrewAdditionData = {
       v: 1,
@@ -163,6 +173,7 @@ export const entryPayload = {
     return {
       type: BREW_ENTRY_TYPE.ADDITION,
       title: input.name, // ✅ this keeps your existing UI working
+      datetime: input.datetime,
       note: input.note ?? null,
       data
     };

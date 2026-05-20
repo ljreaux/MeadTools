@@ -76,6 +76,7 @@ export type PatchBrewMetadataInput = {
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
   end_date?: string | Date | null; // allow ISO string from client
+  stage_change_datetime?: string | Date;
 };
 
 export type CreateBrewEntryInput = {
@@ -485,6 +486,16 @@ export async function patchBrewMetadata(
       }
     }
 
+    let stageChangeDatetime = new Date();
+    if ("stage_change_datetime" in input && input.stage_change_datetime != null) {
+      const d =
+        input.stage_change_datetime instanceof Date
+          ? input.stage_change_datetime
+          : new Date(input.stage_change_datetime as any);
+      if (Number.isNaN(d.getTime())) throw new Error("Invalid stage_change_datetime");
+      stageChangeDatetime = d;
+    }
+
     // 2) Apply your “stage/end_date” rules to the FINAL payload
 
     // Rule A: If ending the brew, force COMPLETE
@@ -539,7 +550,7 @@ export async function patchBrewMetadata(
           brew_id: brewId,
           user_id: userId,
           type: brew_entry_type.STAGE_CHANGE,
-          datetime: new Date(),
+          datetime: stageChangeDatetime,
           title: "Stage change",
           note: null,
           data: {
@@ -669,16 +680,20 @@ async function syncLatestGravity(
   tx: Prisma.TransactionClient,
   brewId: string
 ): Promise<number | null> {
-  const latestGravityEntry = await tx.brew_entries.findFirst({
+  const gravityEntries = await tx.brew_entries.findMany({
     where: {
       brew_id: brewId,
       gravity: { not: null }
     },
     orderBy: [{ datetime: "desc" }, { id: "desc" }],
-    select: { gravity: true }
+    select: { gravity: true, data: true }
   });
 
-  const latestGravity = latestGravityEntry?.gravity ?? null;
+  const latestGravity =
+    gravityEntries.find((entry) => {
+      const data = entry.data as any;
+      return !data?.hidden && data?.source !== "nutrient_basis";
+    })?.gravity ?? null;
 
   await tx.brews.update({
     where: { id: brewId },
@@ -686,6 +701,33 @@ async function syncLatestGravity(
   });
 
   return latestGravity;
+}
+
+async function syncCurrentVolume(
+  tx: Prisma.TransactionClient,
+  brewId: string
+): Promise<number | null> {
+  const latestVolumeEntry = await tx.brew_entries.findFirst({
+    where: {
+      brew_id: brewId,
+      type: brew_entry_type.VOLUME
+    },
+    orderBy: [{ datetime: "desc" }, { id: "desc" }],
+    select: { data: true }
+  });
+
+  const liters = (latestVolumeEntry?.data as any)?.liters;
+  const currentVolume =
+    typeof liters === "number" && Number.isFinite(liters) && liters > 0
+      ? liters
+      : null;
+
+  await tx.brews.update({
+    where: { id: brewId },
+    data: { current_volume_liters: currentVolume }
+  });
+
+  return currentVolume;
 }
 
 export async function createBrewEntryForApp(
@@ -738,6 +780,9 @@ export async function createBrewEntryForApp(
     });
 
     await syncLatestGravity(tx, brewId);
+    if (input.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
+    }
   });
 
   // consistent return
@@ -834,6 +879,9 @@ export async function patchBrewEntryForApp(
     });
 
     await syncLatestGravity(tx, brewId);
+    if (entry.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
+    }
 
     // 4) return the updated entry (consistent shape)
     return tx.brew_entries.findUnique({
@@ -880,6 +928,9 @@ export async function deleteBrewEntryForApp(
   await prisma.$transaction(async (tx) => {
     await tx.brew_entries.delete({ where: { id: entryId } });
     await syncLatestGravity(tx, brewId);
+    if (entry.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
+    }
   });
 
   return { message: "Entry deleted successfully." };

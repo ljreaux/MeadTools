@@ -28,6 +28,7 @@ import {
   InputGroupInput
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 type DialogVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
 type PreferredUnits = "US" | "METRIC";
@@ -74,6 +75,7 @@ export function RecordVolumeDialog({
       displayValue: number;
       displayUnit: DialogVolumeUnit;
       startingLiters?: number;
+      datetime?: string;
     }
   ) => Promise<void>;
 }) {
@@ -81,6 +83,7 @@ export function RecordVolumeDialog({
   const [displayUnit, setDisplayUnit] = React.useState<DialogVolumeUnit>("gal");
   const [volumeValue, setVolumeValue] = React.useState("");
   const [volumeUnit, setVolumeUnit] = React.useState<DialogVolumeUnit>("gal");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -106,6 +109,7 @@ export function RecordVolumeDialog({
     if (open) {
       setVolumeValue("");
       setVolumeUnit(preferredUnit);
+      setDatetime(new Date());
     }
   }, [open, preferredUnit]);
 
@@ -130,7 +134,8 @@ export function RecordVolumeDialog({
       await onSave(resultingVolumeLiters, {
         displayValue: parsed,
         displayUnit: volumeUnit,
-        startingLiters: isSecondaryVolume ? currentVolumeLiters ?? undefined : undefined
+        startingLiters: isSecondaryVolume ? currentVolumeLiters ?? undefined : undefined,
+        datetime: datetime.toISOString()
       });
       onOpenChange(false);
     } finally {
@@ -245,6 +250,11 @@ export function RecordVolumeDialog({
                 )}
               </div>
             ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">{t("date", "Date")}</div>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
           </div>
         </div>
 

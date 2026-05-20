@@ -2,6 +2,7 @@ import { BREW_ENTRY_TYPE, type BrewStage } from "@/lib/brewEnums";
 import { Path, PathActivePanel, PathContent, PathHeader, PathItem, PathList, PathTitle } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { BrewEntry, getStageMoveDecision, STAGE_CONFIG, STAGE_FLOW, type StageStatus } from "./stageConfig";
@@ -45,7 +46,7 @@ export function BrewStagePath({
 }: {
   brewId: string;
   stage: BrewStage;
-  onMoveToStage: (to: BrewStage) => Promise<void>;
+  onMoveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
   entries: BrewEntry[];
 
   current_volume_liters: number | null; // ✅ add
@@ -71,6 +72,7 @@ export function BrewStagePath({
       | "manual_yeast"
       | "manual";
     meta?: Record<string, any>;
+    datetime?: string;
   }) => Promise<void>;
 
   addAdditions: (
@@ -91,6 +93,7 @@ export function BrewStagePath({
         | "manual_yeast"
         | "manual";
       meta?: Record<string, any>;
+      datetime?: string;
     }>
   ) => Promise<void>;
   addEntry: (input: CreateBrewEntryInput) => Promise<void>;
@@ -104,6 +107,7 @@ export function BrewStagePath({
   const [recordVolumeIntent, setRecordVolumeIntent] = useState<RecordVolumeIntent>("current");
   const [originalGravityOpen, setOriginalGravityOpen] = useState(false);
   const [reviewStage, setReviewStage] = useState<BrewStage | null>(null);
+  const [pendingStageMove, setPendingStageMove] = useState<BrewStage | null>(null);
 
   const numericRecipeFg =
     typeof recipe.recipeData?.fg === "string" ? Number(recipe.recipeData.fg) : recipe.recipeData?.fg;
@@ -177,10 +181,10 @@ export function BrewStagePath({
               }
             };
             const helpers = {
-              moveToStage: async (to: BrewStage) => {
+              moveToStage: async (to: BrewStage, datetime?: string) => {
                 const decision = getStageMoveDecision(to, stage, ctx);
                 if (!decision.allowed) return;
-                await onMoveToStage(to);
+                await onMoveToStage(to, datetime);
                 setActiveId(to);
               },
               openStageMoveReview: (to: BrewStage) => {
@@ -253,8 +257,7 @@ export function BrewStagePath({
                         return;
                       }
                       if (!moveDecision.allowed) return;
-                      await onMoveToStage(s);
-                      setActiveId(s);
+                      setPendingStageMove(s);
                     }}
                     disabled={moveDecision.isNoOp || (isBlocked && !(stage === "PRIMARY" && s === "SECONDARY"))}
                     title={
@@ -363,12 +366,28 @@ export function BrewStagePath({
                   warnings={STAGE_CONFIG.PRIMARY.warnings ?? []}
                   ctx={ctx}
                   helpers={helpers}
-                  onMove={async () => {
+                  onMove={async (stageChangeDatetime) => {
                     const decision = getStageMoveDecision("SECONDARY", stage, ctx);
                     if (!decision.allowed) return;
-                    await onMoveToStage("SECONDARY");
+                    await onMoveToStage("SECONDARY", stageChangeDatetime);
                     setActiveId("SECONDARY");
                     setReviewStage(null);
+                  }}
+                />
+                <StageMoveDateDialog
+                  open={pendingStageMove === s}
+                  onOpenChange={(open) => {
+                    if (!open) setPendingStageMove(null);
+                  }}
+                  title={
+                    status === "past"
+                      ? t("brews.moveBack", "Move back to this stage")
+                      : t("brews.moveToStage", "Move to this stage")
+                  }
+                  onMove={async (datetime) => {
+                    await onMoveToStage(s, datetime);
+                    setActiveId(s);
+                    setPendingStageMove(null);
                   }}
                 />
               </div>
@@ -388,7 +407,8 @@ export function BrewStagePath({
                 liters: volume,
                 displayValue: meta.displayValue,
                 displayUnit: meta.displayUnit,
-                startingLiters: meta.startingLiters
+                startingLiters: meta.startingLiters,
+                datetime: meta.datetime
               })
             );
           }}
@@ -405,7 +425,8 @@ export function BrewStagePath({
             await addEntry(
               entryPayload.gravity(input.chosenOg, input.note ?? null, {
                 readingRole: "OG",
-                source: "measured"
+                source: "measured",
+                datetime: input.datetime
               })
             );
             await addEntry(
@@ -413,6 +434,7 @@ export function BrewStagePath({
                 readingRole: "GENERAL",
                 source: "nutrient_basis",
                 hidden: true,
+                datetime: input.datetime,
                 nutrientBasis: {
                   chosenOg: input.chosenOg,
                   suggestedOg: input.suggestedOg,
@@ -427,6 +449,57 @@ export function BrewStagePath({
         />
       </PathContent>
     </Path>
+  );
+}
+
+function StageMoveDateDialog({
+  open,
+  onOpenChange,
+  title,
+  onMove
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  onMove: (datetime: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [datetime, setDatetime] = useState<Date>(new Date());
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) setDatetime(new Date());
+  }, [open]);
+
+  const move = async () => {
+    setIsSaving(true);
+    try {
+      await onMove(datetime.toISOString());
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <div className="text-sm font-medium">{t("date", "Date")}</div>
+          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            {t("cancel", "Cancel")}
+          </Button>
+          <Button onClick={move} disabled={isSaving}>
+            {t("save", "Save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -447,10 +520,11 @@ function StageMoveReviewDialog({
   warnings: NonNullable<(typeof STAGE_CONFIG)["PRIMARY"]["warnings"]>;
   ctx: Parameters<NonNullable<(typeof warnings)[number]["isActive"]>>[0];
   helpers: Parameters<NonNullable<(typeof required)[number]["run"]>>[0];
-  onMove: () => Promise<void>;
+  onMove: (datetime: string) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [yeastOpen, setYeastOpen] = useState(false);
+  const [datetime, setDatetime] = useState<Date>(new Date());
   const unmet = required.filter((item) => !item.isMet(ctx));
   const hasOriginalGravity = required.find((item) => item.id === "primaryHasGravity")?.isMet(ctx) ?? true;
   const visibleRequired = required.filter((item) => item.id !== "primaryHasFinalGravity" || hasOriginalGravity);
@@ -458,6 +532,10 @@ function StageMoveReviewDialog({
     .filter((warning, index, all) => all.findIndex((item) => item.id === warning.id) === index)
     .filter((warning) => warning.isActive(ctx));
   const canMove = unmet.length === 0;
+
+  useEffect(() => {
+    if (open) setDatetime(new Date());
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -524,13 +602,18 @@ function StageMoveReviewDialog({
               <div className="text-sm text-muted-foreground">{t("brews.noWarnings", "No active warnings.")}</div>
             )}
           </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">{t("date", "Date")}</div>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             {t("cancel", "Cancel")}
           </Button>
-          <Button disabled={!canMove} onClick={onMove}>
+          <Button disabled={!canMove} onClick={() => onMove(datetime.toISOString())}>
             {t("brews.moveToSecondary", "Move to Secondary")}
           </Button>
         </DialogFooter>
