@@ -29,6 +29,7 @@ import {
   InputGroupText
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
@@ -109,6 +110,7 @@ export default function AddBrewEntryDialog({
 
   const [title, setTitle] = React.useState<string>("");
   const [note, setNote] = React.useState<string>("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
 
   const [gravity, setGravity] = React.useState<string>("");
   const [temperature, setTemperature] = React.useState<string>("");
@@ -120,6 +122,7 @@ export default function AddBrewEntryDialog({
     setType(initialType);
     setTitle("");
     setNote("");
+    setDatetime(new Date());
     setGravity(
       typeof gravityDefaultValue === "number" &&
         Number.isFinite(gravityDefaultValue)
@@ -147,6 +150,7 @@ export default function AddBrewEntryDialog({
     const titleOrNull = trimmedTitle ? trimmedTitle : null;
     const trimmedNote = note.trim();
     const noteOrNull = trimmedNote ? trimmedNote : null;
+    const datetimeIso = datetime.toISOString();
 
     // NOTE / TASTING / ISSUE
     if (
@@ -156,10 +160,10 @@ export default function AddBrewEntryDialog({
     ) {
       // you can use entryPayload here, or inline.
       if (type === BREW_ENTRY_TYPE.NOTE)
-        return entryPayload.note(noteOrNull ?? "", titleOrNull);
+        return entryPayload.note(noteOrNull ?? "", titleOrNull, null, datetimeIso);
       if (type === BREW_ENTRY_TYPE.TASTING)
-        return entryPayload.tasting(noteOrNull ?? "", titleOrNull ?? "Tasting");
-      return entryPayload.issue(noteOrNull ?? "", titleOrNull ?? "Issue");
+        return entryPayload.tasting(noteOrNull ?? "", titleOrNull ?? "Tasting", datetimeIso);
+      return entryPayload.issue(noteOrNull ?? "", titleOrNull ?? "Issue", datetimeIso);
     }
 
     if (type === BREW_ENTRY_TYPE.GRAVITY) {
@@ -167,14 +171,15 @@ export default function AddBrewEntryDialog({
       if (!Number.isFinite(n)) throw new Error("Invalid gravity");
       return entryPayload.gravity(n, noteOrNull, {
         readingRole: gravityRole ?? "GENERAL",
-        source: gravitySource
+        source: gravitySource,
+        datetime: datetimeIso
       });
     }
 
     if (type === BREW_ENTRY_TYPE.TEMPERATURE) {
       const n = Number(temperature);
       if (!Number.isFinite(n)) throw new Error("Invalid temperature");
-      return entryPayload.temperature(n, tempUnits, noteOrNull);
+      return entryPayload.temperature(n, tempUnits, noteOrNull, datetimeIso);
     }
 
     // PH
@@ -184,6 +189,7 @@ export default function AddBrewEntryDialog({
     const input: CreateBrewEntryInput = {
       type: BREW_ENTRY_TYPE.PH,
       title: titleOrNull ?? "pH reading",
+      datetime: datetimeIso,
       note: noteOrNull,
       data: { ph: n }
     };
@@ -258,6 +264,11 @@ export default function AddBrewEntryDialog({
               </Select>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
 
           {showTitle && (
             <div className="space-y-2">

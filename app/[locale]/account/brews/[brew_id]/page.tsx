@@ -5,9 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { Check, Pencil, PencilOff, Scale } from "lucide-react";
+import { Check, Pencil, PencilOff, Scale, Trash2 } from "lucide-react";
 
-import { CreateBrewEntryInput, useAccountBrew, usePatchAccountBrewMetadata } from "@/hooks/reactQuery/useAccountBrews";
+import {
+  AccountBrewEntry,
+  CreateBrewEntryInput,
+  useAccountBrew,
+  usePatchAccountBrewMetadata
+} from "@/hooks/reactQuery/useAccountBrews";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,13 +27,35 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { BrewAdditionData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
-import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
-import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
+import { useCreateBrewEntry, useDeleteBrewEntry, usePatchBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
+import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
 import { calcABV } from "@/lib/utils/unitConverter";
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
+import {
+  AdditiveUnitSelect,
+  AmountUnitField,
+  IngredientBasisSelect,
+  IngredientUnitSelect,
+  type AdditionBasis
+} from "@/components/brews/stages/additionDialogShared";
 
 type HeaderVolumeUnit = "gal" | "L";
 
@@ -137,6 +164,7 @@ export default function BrewPageClient() {
   const [entryGravityRole, setEntryGravityRole] = useState<GravityReadingRole | undefined>();
   const [entryGravityDefaultValue, setEntryGravityDefaultValue] = useState<number | undefined>();
   const [entryGravitySource, setEntryGravitySource] = useState<"measured" | "recipe" | undefined>();
+  const [editingEntry, setEditingEntry] = useState<AccountBrewEntry | null>(null);
 
   function openAddEntry(args?: OpenAddEntryArgs) {
     setEntryPresetType(args?.presetType);
@@ -342,6 +370,8 @@ export default function BrewPageClient() {
     reset();
   }, [brew?.recipe_snapshot, hydrate, reset]);
   const { mutateAsync: createEntry } = useCreateBrewEntry();
+  const { mutateAsync: patchEntry } = usePatchBrewEntry();
+  const { mutateAsync: deleteEntry } = useDeleteBrewEntry();
 
   async function addEntry(input: CreateBrewEntryInput) {
     await createEntry({ brewId: brew!.id, input });
@@ -352,6 +382,7 @@ export default function BrewPageClient() {
     displayValue?: number;
     displayUnit?: string;
     startingLiters?: number;
+    datetime?: string;
   }) {
     await saveMetadata({ current_volume_liters: input.liters });
     await addEntry(
@@ -359,7 +390,8 @@ export default function BrewPageClient() {
         liters: input.liters,
         displayValue: input.displayValue,
         displayUnit: input.displayUnit,
-        startingLiters: input.startingLiters
+        startingLiters: input.startingLiters,
+        datetime: input.datetime
       })
     );
   }
@@ -381,6 +413,7 @@ export default function BrewPageClient() {
       | "manual_yeast"
       | "manual";
     meta?: Record<string, any>;
+    datetime?: string;
   }) {
     await addEntry(
       entryPayload.addition({
@@ -392,7 +425,8 @@ export default function BrewPageClient() {
         note: input.note ?? null,
         kind: input.kind,
         source: input.source,
-        meta: input.meta
+        meta: input.meta,
+        datetime: input.datetime
       })
     );
   }
@@ -415,6 +449,7 @@ export default function BrewPageClient() {
         | "manual_yeast"
         | "manual";
       meta?: Record<string, any>;
+      datetime?: string;
     }>
   ) {
     // simplest approach: fire sequentially so you don’t DDOS your own API
@@ -594,8 +629,8 @@ export default function BrewPageClient() {
         brewId={brew.id}
         stage={brew.stage}
         entries={allEntries}
-        onMoveToStage={async (to) => {
-          await saveMetadata({ stage: to });
+        onMoveToStage={async (to, datetime) => {
+          await saveMetadata({ stage: to, stage_change_datetime: datetime });
         }}
         openAddEntry={openAddEntry}
         addAddition={addAddition}
@@ -619,7 +654,8 @@ export default function BrewPageClient() {
             liters: volume,
             displayValue: meta.displayValue,
             displayUnit: meta.displayUnit,
-            startingLiters: meta.startingLiters
+            startingLiters: meta.startingLiters,
+            datetime: meta.datetime
           })
         }
       />
@@ -698,7 +734,18 @@ export default function BrewPageClient() {
                     <div key={e.id} className="rounded-lg border border-border p-4 space-y-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="font-medium">{e.title ?? e.type}</div>
-                        <div className="text-sm text-muted-foreground">{formatDate(e.datetime)}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm text-muted-foreground">{formatDate(e.datetime)}</div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => setEditingEntry(e)}
+                            title={t("edit", "Edit")}
+                          >
+                            <Pencil />
+                          </Button>
+                        </div>
                       </div>
 
                       {e.note ? <div className="text-sm">{e.note}</div> : null}
@@ -769,6 +816,23 @@ export default function BrewPageClient() {
           <div className="text-muted-foreground">{t("noEntries", "No entries yet.")}</div>
         )}
       </div>
+      <EditBrewEntryDialog
+        entry={editingEntry}
+        onOpenChange={(open) => {
+          if (!open) setEditingEntry(null);
+        }}
+        formatGravity={formatGravity}
+        onSave={async (entryId, input) => {
+          await patchEntry({ brewId: brew.id, entryId, input });
+          toast({ description: t("saved", "Saved.") });
+          setEditingEntry(null);
+        }}
+        onDelete={async (entryId) => {
+          await deleteEntry({ brewId: brew.id, entryId });
+          toast({ description: t("deleted", "Deleted.") });
+          setEditingEntry(null);
+        }}
+      />
     </div>
   );
 }
@@ -790,6 +854,419 @@ function BrewPageSkeleton() {
         </div>
       </div>
     </div>
+  );
+}
+
+function inferAdditionBasis(unit?: string | null): AdditionBasis {
+  if (!unit) return "other";
+  if (["kg", "g", "mg", "lb", "lbs", "oz"].includes(unit)) return "weight";
+  if (["L", "mL", "ml", "liter", "liters", "gal", "qt", "pt", "fl_oz", "imp_gal", "imp_qt", "imp_pt", "imp_fl_oz"].includes(unit)) {
+    return "volume";
+  }
+  return "other";
+}
+
+function EditBrewEntryDialog({
+  entry,
+  onOpenChange,
+  onSave,
+  onDelete
+}: {
+  entry: AccountBrewEntry | null;
+  onOpenChange: (open: boolean) => void;
+  formatGravity: (gravity?: number | null) => string;
+  onSave: (entryId: string, input: {
+    datetime?: string;
+    title?: string | null;
+    note?: string | null;
+    gravity?: number | null;
+    temperature?: number | null;
+    temp_units?: any | null;
+    data?: any | null;
+  }) => Promise<void>;
+  onDelete: (entryId: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [datetime, setDatetime] = useState<Date>(new Date());
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [gravity, setGravity] = useState("");
+  const [temperature, setTemperature] = useState("");
+  const [tempUnits, setTempUnits] = useState("F");
+  const [ph, setPh] = useState("");
+  const [additionName, setAdditionName] = useState("");
+  const [additionAmount, setAdditionAmount] = useState("");
+  const [additionUnit, setAdditionUnit] = useState("");
+  const [additionBasis, setAdditionBasis] = useState<AdditionBasis>("other");
+  const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: number; unit: string }>>([]);
+  const [volume, setVolume] = useState("");
+  const [volumeUnit, setVolumeUnit] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!entry) return;
+    const parsedDate = new Date(entry.datetime);
+    setDatetime(Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate);
+    setTitle(entry.title ?? "");
+    setNote(entry.note ?? "");
+    setGravity(entry.gravity != null ? String(entry.gravity) : "");
+    setTemperature(entry.temperature != null ? String(entry.temperature) : "");
+    setTempUnits(entry.temp_units ?? "F");
+    setPh(typeof (entry.data as any)?.ph === "number" ? String((entry.data as any).ph) : "");
+
+    const addition = entry.data as Partial<BrewAdditionData> | null;
+    setAdditionName(addition?.name ?? entry.title ?? "");
+    setAdditionAmount(typeof addition?.amount === "number" ? String(addition.amount) : "");
+    setAdditionUnit(addition?.unit ?? "");
+    setAdditionBasis(inferAdditionBasis(addition?.unit ?? ""));
+    setAdditionComponents(
+      Array.isArray(addition?.meta?.components)
+        ? addition.meta.components
+            .map((component: any) => ({
+              key: String(component?.key ?? ""),
+              name: String(component?.name ?? component?.key ?? ""),
+              amount: typeof component?.amount === "number" && Number.isFinite(component.amount) ? component.amount : 0,
+              unit: typeof component?.unit === "string" && component.unit ? component.unit : "g"
+            }))
+            .filter((component) => component.key && component.name)
+        : []
+    );
+
+    const volumeData = entry.data as any;
+    setVolume(
+      typeof volumeData?.displayValue === "number"
+        ? String(volumeData.displayValue)
+        : typeof volumeData?.liters === "number"
+          ? String(volumeData.liters)
+          : ""
+    );
+    setVolumeUnit(volumeData?.displayUnit ?? "L");
+  }, [entry]);
+
+  if (!entry) return null;
+
+  const isStageChange = entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE;
+  const canDelete = !isStageChange;
+
+  const buildPatch = () => {
+    const patch: {
+      datetime?: string;
+      title?: string | null;
+      note?: string | null;
+      gravity?: number | null;
+      temperature?: number | null;
+      temp_units?: any | null;
+      data?: any | null;
+    } = {
+      datetime: datetime.toISOString(),
+      note: note.trim() || null
+    };
+
+    if (isStageChange) return patch;
+
+    if (entry.type === BREW_ENTRY_TYPE.NOTE || entry.type === BREW_ENTRY_TYPE.TASTING || entry.type === BREW_ENTRY_TYPE.ISSUE) {
+      patch.title = title.trim() || null;
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.GRAVITY) {
+      const n = Number(gravity);
+      if (!Number.isFinite(n)) throw new Error("Invalid gravity");
+      patch.gravity = n;
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.TEMPERATURE) {
+      const n = Number(temperature);
+      if (!Number.isFinite(n)) throw new Error("Invalid temperature");
+      patch.temperature = n;
+      patch.temp_units = tempUnits;
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.PH) {
+      const n = Number(ph);
+      if (!Number.isFinite(n)) throw new Error("Invalid pH");
+      patch.title = title.trim() || "pH reading";
+      patch.data = { ...(entry.data as any), ph: n };
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.ADDITION) {
+      const nextComponents = additionComponents.map((component) => ({
+        ...component,
+        amount: Number(component.amount)
+      }));
+      const componentTotal = nextComponents.reduce(
+        (sum, component) => sum + (Number.isFinite(component.amount) ? component.amount : 0),
+        0
+      );
+      const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? Number(additionAmount) : undefined;
+      if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
+      const nextData = {
+        ...((entry.data as any) ?? {}),
+        name: additionName.trim(),
+        amount,
+        unit: additionUnit.trim() || undefined,
+        meta:
+          additionComponents.length > 0
+            ? {
+                ...(((entry.data as any) ?? {}).meta ?? {}),
+                components: nextComponents
+              }
+            : ((entry.data as any) ?? {}).meta
+      };
+      patch.title = additionName.trim() || entry.title;
+      patch.data = nextData;
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.VOLUME) {
+      const n = Number(volume);
+      if (!Number.isFinite(n) || n <= 0) throw new Error("Invalid volume");
+      const previous = (entry.data as any) ?? {};
+      const previousUnit = previous.displayUnit ?? volumeUnit;
+      const liters = volumeUnit in VOLUME_TO_L ? n * VOLUME_TO_L[volumeUnit as keyof typeof VOLUME_TO_L] : previous.liters;
+      patch.data = {
+        ...previous,
+        liters: typeof liters === "number" && Number.isFinite(liters) ? liters : previous.liters,
+        displayValue: n,
+        displayUnit: volumeUnit || previousUnit
+      };
+      return patch;
+    }
+
+    patch.title = title.trim() || entry.title;
+    return patch;
+  };
+
+  const save = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(entry.id, buildPatch());
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    setIsSaving(true);
+    try {
+      await onDelete(entry.id);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={Boolean(entry)} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[560px]">
+        <DialogHeader>
+          <DialogTitle>{t("edit", "Edit")}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
+
+          {(entry.type === BREW_ENTRY_TYPE.NOTE ||
+            entry.type === BREW_ENTRY_TYPE.TASTING ||
+            entry.type === BREW_ENTRY_TYPE.ISSUE ||
+            entry.type === BREW_ENTRY_TYPE.PH) &&
+          !isStageChange ? (
+            <div className="space-y-2">
+              <Label>{t("title", "Title")}</Label>
+              <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.GRAVITY ? (
+            <div className="space-y-2">
+              <Label>{t("brew.gravity", "Gravity")}</Label>
+              <Input inputMode="decimal" value={gravity} onChange={(event) => setGravity(event.target.value)} />
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.TEMPERATURE ? (
+            <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+              <div className="space-y-2">
+                <Label>{t("brew.temperature", "Temperature")}</Label>
+                <Input inputMode="decimal" value={temperature} onChange={(event) => setTemperature(event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("units", "Units")}</Label>
+                <Select value={tempUnits} onValueChange={setTempUnits}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="F">F</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.PH ? (
+            <div className="space-y-2">
+              <Label>{t("brew.ph", "pH")}</Label>
+              <Input inputMode="decimal" value={ph} onChange={(event) => setPh(event.target.value)} />
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.ADDITION ? (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>{t("name", "Name")}</Label>
+                <Input value={additionName} onChange={(event) => setAdditionName(event.target.value)} />
+              </div>
+              {additionComponents.length > 0 ? (
+                <div className="space-y-2">
+                  <Label>{t("amount", "Amount")}</Label>
+                  <div className="space-y-2">
+                    {additionComponents.map((component, index) => (
+                      <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
+                        <div className="self-center text-sm">{component.name}</div>
+                        <AmountUnitField
+                          amount={String(component.amount)}
+                          unit={component.unit}
+                          onAmountChange={(value) => {
+                            const nextAmount = Number(value);
+                            setAdditionComponents((items) =>
+                              items.map((item, itemIndex) =>
+                                itemIndex === index
+                                  ? { ...item, amount: Number.isFinite(nextAmount) ? nextAmount : item.amount }
+                                  : item
+                              )
+                            );
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>{t("amount", "Amount")}</Label>
+                  {(entry.data as Partial<BrewAdditionData> | null)?.source === "recipe_ingredient" ? (
+                    <div className="space-y-2">
+                      <IngredientBasisSelect value={additionBasis} onValueChange={setAdditionBasis} t={t} />
+                      <AmountUnitField
+                        amount={additionAmount}
+                        unit={additionUnit}
+                        onAmountChange={setAdditionAmount}
+                        unitControl={
+                          <IngredientUnitSelect
+                            basis={additionBasis === "other" ? "weight" : additionBasis}
+                            value={additionUnit}
+                            onValueChange={setAdditionUnit}
+                          />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <AmountUnitField
+                      amount={additionAmount}
+                      unit={additionUnit}
+                      onAmountChange={setAdditionAmount}
+                      unitControl={
+                        <AdditiveUnitSelect
+                          value={additionUnit}
+                          onValueChange={(value) => {
+                            setAdditionUnit(value);
+                            setAdditionBasis(inferAdditionBasis(value));
+                          }}
+                        />
+                      }
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.VOLUME ? (
+            <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+              <div className="space-y-2">
+                <Label>{t("brews.volume.enterVolume", "Volume")}</Label>
+                <Input inputMode="decimal" value={volume} onChange={(event) => setVolume(event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("unit", "Unit")}</Label>
+                <Select value={volumeUnit} onValueChange={setVolumeUnit}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gal">gal</SelectItem>
+                    <SelectItem value="qt">qt</SelectItem>
+                    <SelectItem value="pt">pt</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="mL">mL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="space-y-2">
+            <Label>{t("note", "Note")}</Label>
+            <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} />
+          </div>
+
+        </div>
+
+        <DialogFooter className="gap-2 sm:justify-between">
+          {canDelete ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isSaving}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t("delete", "Delete")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("brews.deleteEntryTitle", "Delete this entry?")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t(
+                      "brews.deleteEntryDescription",
+                      "This removes the entry from the brew timeline. This action cannot be undone."
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isSaving}>{t("cancel", "Cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={isSaving}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void remove();
+                    }}
+                  >
+                    {t("delete", "Delete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <div />
+          )}
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+              {t("cancel", "Cancel")}
+            </Button>
+            <Button onClick={save} disabled={isSaving}>
+              {t("save", "Save")}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

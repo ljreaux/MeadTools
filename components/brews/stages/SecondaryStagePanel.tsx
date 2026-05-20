@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1009,7 +1010,11 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         onSave={async (inputs, extra) => {
           if (extra?.phReading != null) {
             await helpers.addEntry(
-              entryPayload.ph(extra.phReading, t("brews.secondary.stabilizerPhNote", "pH reading recorded while logging stabilizers."))
+              entryPayload.ph(
+                extra.phReading,
+                t("brews.secondary.stabilizerPhNote", "pH reading recorded while logging stabilizers."),
+                extra.datetime
+              )
             );
           }
           await helpers.addAdditions(inputs);
@@ -1019,16 +1024,16 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
       <ConfirmBulkAgeDialog
         open={bulkAgeConfirmOpen}
         onOpenChange={setBulkAgeConfirmOpen}
-        onConfirm={async () => {
-          await helpers.moveToStage("BULK_AGE");
+        onConfirm={async (datetime) => {
+          await helpers.moveToStage("BULK_AGE", datetime);
           setBulkAgeConfirmOpen(false);
         }}
       />
       <ConfirmPackageDialog
         open={packageConfirmOpen}
         onOpenChange={setPackageConfirmOpen}
-        onConfirm={async () => {
-          await helpers.moveToStage("PACKAGED");
+        onConfirm={async (datetime) => {
+          await helpers.moveToStage("PACKAGED", datetime);
           setPackageConfirmOpen(false);
         }}
       />
@@ -1063,6 +1068,7 @@ function LogSecondaryAdditionDialog({
     kind?: AdditionKind;
     source?: AdditionSource;
     meta?: Record<string, any>;
+    datetime?: string;
   }) => Promise<void>;
 }) {
   const { t } = useTranslation();
@@ -1073,6 +1079,7 @@ function LogSecondaryAdditionDialog({
   const [amountTouched, setAmountTouched] = React.useState(false);
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -1084,6 +1091,7 @@ function LogSecondaryAdditionDialog({
     setAmountTouched(false);
     setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
     setNote("");
+    setDatetime(new Date());
   }, [planned]);
 
   const usesIngredientUnits = planned?.source === "recipe_ingredient";
@@ -1168,6 +1176,7 @@ function LogSecondaryAdditionDialog({
         recipeAdditiveId: planned.recipeAdditiveId,
         kind: planned.kind,
         source: planned.source,
+        datetime: datetime.toISOString(),
         meta: {
           ...(planned.meta ?? {}),
           plannedName: planned.name,
@@ -1231,6 +1240,11 @@ function LogSecondaryAdditionDialog({
               rows={3}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
         </div>
 
         <DialogFooter>
@@ -1264,8 +1278,9 @@ function LogStabilizersDialog({
       kind?: AdditionKind;
       source?: AdditionSource;
       meta?: Record<string, any>;
+      datetime?: string;
     }>,
-    extra?: { phReading?: number }
+    extra?: { phReading?: number; datetime?: string }
   ) => Promise<void>;
 }) {
   const { t } = useTranslation();
@@ -1278,6 +1293,7 @@ function LogStabilizersDialog({
   const [phTouched, setPhTouched] = React.useState(false);
   const [sorbateTouched, setSorbateTouched] = React.useState(false);
   const [sulfiteTouched, setSulfiteTouched] = React.useState(false);
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -1289,6 +1305,7 @@ function LogStabilizersDialog({
     setPhTouched(false);
     setSorbateTouched(false);
     setSulfiteTouched(false);
+    setDatetime(new Date());
   }, [open, plan]);
 
   const parsedPh = takingPh && ph.trim() ? parseNumber(ph) : 3.6;
@@ -1367,6 +1384,7 @@ function LogStabilizersDialog({
             unit: "g",
             kind: "OTHER",
             source: "manual",
+            datetime: datetime.toISOString(),
             note: t("brews.secondary.stabilizerAdditionNote", "Stabilizer addition calculated for secondary."),
             meta: {
               ...commonMeta,
@@ -1384,6 +1402,7 @@ function LogStabilizersDialog({
             unit: sulfiteUnit,
             kind: "OTHER",
             source: "manual",
+            datetime: datetime.toISOString(),
             note: t("brews.secondary.stabilizerAdditionNote", "Stabilizer addition calculated for secondary."),
             meta: {
               ...commonMeta,
@@ -1401,7 +1420,7 @@ function LogStabilizersDialog({
             }
           }
         ],
-        shouldLogPhReading ? { phReading: Number(phForCalc) } : undefined
+        shouldLogPhReading ? { phReading: Number(phForCalc), datetime: datetime.toISOString() } : undefined
       );
     } finally {
       setIsSaving(false);
@@ -1545,6 +1564,11 @@ function LogStabilizersDialog({
               </div>
             ) : null}
           </div>
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
         </div>
 
         <DialogFooter>
@@ -1576,15 +1600,20 @@ function ConfirmBulkAgeDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (datetime: string) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
+
+  React.useEffect(() => {
+    if (open) setDatetime(new Date());
+  }, [open]);
 
   const confirm = async () => {
     setIsSaving(true);
     try {
-      await onConfirm();
+      await onConfirm(datetime.toISOString());
     } finally {
       setIsSaving(false);
     }
@@ -1598,6 +1627,10 @@ function ConfirmBulkAgeDialog({
         </DialogHeader>
         <div className="text-sm text-muted-foreground">
           {t("brews.secondary.confirmBulkAgeHelp", "This moves the brew out of Secondary and into the bulk age stage.")}
+        </div>
+        <div className="space-y-2">
+          <Label>{t("date", "Date")}</Label>
+          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
@@ -1619,15 +1652,20 @@ function ConfirmPackageDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (datetime: string) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
+
+  React.useEffect(() => {
+    if (open) setDatetime(new Date());
+  }, [open]);
 
   const confirm = async () => {
     setIsSaving(true);
     try {
-      await onConfirm();
+      await onConfirm(datetime.toISOString());
     } finally {
       setIsSaving(false);
     }
@@ -1644,6 +1682,10 @@ function ConfirmPackageDialog({
             "brews.secondary.confirmPackageHelp",
             "This skips bulk aging and moves the brew directly to the packaged stage."
           )}
+        </div>
+        <div className="space-y-2">
+          <Label>{t("date", "Date")}</Label>
+          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>

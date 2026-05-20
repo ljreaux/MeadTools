@@ -22,6 +22,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import SearchableInput from "@/components/ui/SearchableInput";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { AmountUnitField } from "@/components/brews/stages/additionDialogShared";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import type { BrewPlannedYeast } from "@/lib/utils/buildBrewRecipeStageData";
@@ -37,6 +38,7 @@ type LogYeastInput = {
   kind: "YEAST";
   source: "recipe_yeast" | "manual_yeast";
   meta?: Record<string, any>;
+  datetime?: string;
 };
 
 function yeastDisplayName(brand: string, strain: string) {
@@ -98,6 +100,7 @@ export function LogYeastDialog({
   const [nitrogenRequirement, setNitrogenRequirement] =
     React.useState<NitrogenRequirement>("Low");
   const [note, setNote] = React.useState("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -126,6 +129,7 @@ export function LogYeastDialog({
       )
     );
     setNote("");
+    setDatetime(new Date());
   }, [forceManual, open, planned, yeastList]);
 
   const sortBrandFirst = React.useCallback(
@@ -171,6 +175,7 @@ export function LogYeastDialog({
             : undefined,
         unit: "g",
         note: note.trim() || undefined,
+        datetime: datetime.toISOString(),
         kind: "YEAST",
         source: matchesPlanned ? "recipe_yeast" : "manual_yeast",
         meta: {
@@ -251,6 +256,11 @@ export function LogYeastDialog({
                 setAmount(value);
               }}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
           </div>
 
           <div className="space-y-2">

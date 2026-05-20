@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 export type LogOriginalGravityInput = {
   chosenOg: number;
@@ -24,6 +25,7 @@ export type LogOriginalGravityInput = {
   fermentableSg: number;
   warningAcknowledged: boolean;
   note?: string;
+  datetime?: string;
 };
 
 function formatGravity(value?: number | null) {
@@ -49,6 +51,7 @@ export function LogOriginalGravityDialog({
   const [og, setOg] = React.useState("");
   const [fg, setFg] = React.useState("");
   const [note, setNote] = React.useState("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -56,6 +59,7 @@ export function LogOriginalGravityDialog({
     setOg(formatGravity(suggestedOg));
     setFg(formatGravity(estimatedFg));
     setNote("");
+    setDatetime(new Date());
   }, [estimatedFg, open, suggestedOg]);
 
   const parsedOg = Number(og);
@@ -90,7 +94,8 @@ export function LogOriginalGravityDialog({
         estimatedFg: parsedFg,
         fermentableSg,
         warningAcknowledged: differsFromSuggested,
-        note: note.trim() || undefined
+        note: note.trim() || undefined,
+        datetime: datetime.toISOString()
       });
       onOpenChange(false);
     } finally {
@@ -150,6 +155,11 @@ export function LogOriginalGravityDialog({
               {t("brews.primary.fermentableSg", "Fermentable SG")}: {formatGravity(fermentableSg)}
             </div>
           ) : null}
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
 
           <div className="space-y-2">
             <Label>{t("note", "Note")}</Label>

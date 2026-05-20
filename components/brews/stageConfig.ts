@@ -64,7 +64,7 @@ export type StagePrereq = {
 };
 
 export type BrewStageHelpers = {
-  moveToStage: (to: BrewStage) => Promise<void>;
+  moveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
   openRecordVolume?: () => void;
   acceptRecipeOriginalGravity?: () => Promise<void>;
 
@@ -85,6 +85,7 @@ export type BrewStageHelpers = {
       | "manual_yeast"
       | "manual";
     meta?: Record<string, any>;
+    datetime?: string;
   }) => Promise<void>;
 
   addAdditions: (
@@ -105,6 +106,7 @@ export type BrewStageHelpers = {
         | "manual_yeast"
         | "manual";
       meta?: Record<string, any>;
+      datetime?: string;
     }>
   ) => Promise<void>;
 
@@ -261,11 +263,10 @@ function hasMissingPlannedNutrients(ctx: BrewStageContext) {
   const planned = getPlannedNutrientAdditionCount(ctx);
   if (planned === 0) return false;
 
-  const logged = new Set(ctx.recipe.actual.loggedNutrientAdditionIndexes ?? []);
-  for (let i = 1; i <= planned; i += 1) {
-    if (!logged.has(i)) return true;
-  }
-  return false;
+  const remaining = ctx.recipe.actual.remainingNutrientGrams;
+  return Object.values(remaining ?? {}).some(
+    (amount) => typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
+  );
 }
 
 function getEstimatedFinalGravity(ctx: BrewStageContext) {
