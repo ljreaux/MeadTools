@@ -15,6 +15,8 @@ import { entryPayload } from "@/lib/utils/entryPayload";
 import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
 import { LogOriginalGravityDialog } from "@/components/brews/LogOriginalGravityDialog";
 
+type RecordVolumeIntent = "current" | "secondaryVolume";
+
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
   return i === -1 ? 0 : i;
@@ -99,6 +101,7 @@ export function BrewStagePath({
   const currentIdx = idxOf(stage);
   const [activeId, setActiveId] = useState<BrewStage>(stage);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
+  const [recordVolumeIntent, setRecordVolumeIntent] = useState<RecordVolumeIntent>("current");
   const [originalGravityOpen, setOriginalGravityOpen] = useState(false);
   const [reviewStage, setReviewStage] = useState<BrewStage | null>(null);
 
@@ -110,6 +113,10 @@ export function BrewStagePath({
     typeof numericRecipeFg === "number" && Number.isFinite(numericRecipeFg) && numericRecipeFg > 0
       ? numericRecipeFg
       : null;
+  const fallbackRecordVolumeLiters =
+    stage === "PRIMARY"
+      ? (recipe.derived?.volume.primaryL ?? recipe.effective.currentVolumeL)
+      : recipe.effective.currentVolumeL;
 
   useEffect(() => {
     setActiveId(stage);
@@ -180,7 +187,10 @@ export function BrewStagePath({
                 setActiveId(to);
                 setReviewStage(to);
               },
-              openRecordVolume: () => setRecordVolumeOpen(true),
+              openRecordVolume: () => {
+                setRecordVolumeIntent(stage === "PRIMARY" ? "secondaryVolume" : "current");
+                setRecordVolumeOpen(true);
+              },
               openOriginalGravityDialog: () => setOriginalGravityOpen(true),
               openFinalGravityDialog: () => {
                 const recipeFg = recipe.recipeData?.fg;
@@ -350,7 +360,7 @@ export function BrewStagePath({
                   }}
                   title={t("brews.moveToSecondary", "Move to Secondary")}
                   required={STAGE_CONFIG.SECONDARY.prereqs ?? []}
-                  warnings={[...(STAGE_CONFIG.PRIMARY.warnings ?? []), ...(STAGE_CONFIG.SECONDARY.warnings ?? [])]}
+                  warnings={STAGE_CONFIG.PRIMARY.warnings ?? []}
                   ctx={ctx}
                   helpers={helpers}
                   onMove={async () => {
@@ -369,8 +379,8 @@ export function BrewStagePath({
           t={t}
           open={recordVolumeOpen}
           onOpenChange={setRecordVolumeOpen}
-          currentVolumeLiters={current_volume_liters ?? recipe.effective.currentVolumeL}
-          intent="secondaryVolume"
+          currentVolumeLiters={current_volume_liters ?? fallbackRecordVolumeLiters}
+          intent={recordVolumeIntent}
           onSave={async (volume, meta) => {
             await patchBrewMetadata({ current_volume_liters: volume });
             await addEntry(

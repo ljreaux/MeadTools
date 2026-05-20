@@ -26,6 +26,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { BrewAdditionData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
+import { calcABV } from "@/lib/utils/unitConverter";
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
@@ -173,29 +174,20 @@ export default function BrewPageClient() {
       .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
   }, [brew?.entries]);
 
-  const currentStageStartedAt = useMemo(() => {
-    const entries = brew?.entries ?? [];
-
-    const stageChangeIntoCurrent = entries
-      .filter((entry) => entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE && (entry.data as any)?.to === brew?.stage)
-      .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
-
-    return stageChangeIntoCurrent?.datetime ?? brew?.start_date ?? null;
-  }, [brew?.entries, brew?.stage, brew?.start_date]);
-
-  const daysInCurrentStage = useMemo(() => {
-    if (!currentStageStartedAt) return null;
-
-    const startedAt = new Date(currentStageStartedAt).getTime();
-    if (Number.isNaN(startedAt)) return null;
-
-    const elapsedMs = Date.now() - startedAt;
-    if (elapsedMs < 0) return 0;
-
-    return Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-  }, [currentStageStartedAt]);
-
   const displayLatestGravity = brew?.latest_gravity ?? latestGravityEntry?.gravity;
+  const displayActualOg = brewRecipe.actual.originalGravity?.gravity ?? null;
+  const displayActualFg = brewRecipe.actual.finalGravity?.gravity ?? null;
+  const displayRawActualAbv =
+    typeof displayActualOg === "number" &&
+    Number.isFinite(displayActualOg) &&
+    typeof displayActualFg === "number" &&
+    Number.isFinite(displayActualFg)
+      ? calcABV(displayActualOg, displayActualFg)
+      : null;
+  const displayActualAbv =
+    typeof brewRecipe.actual.currentAbv === "number" && Number.isFinite(brewRecipe.actual.currentAbv)
+      ? brewRecipe.actual.currentAbv
+      : displayRawActualAbv;
   const displayEstimatedOg =
     typeof brewRecipe.derived?.gravity.ogPrimary === "number" &&
     Number.isFinite(brewRecipe.derived.gravity.ogPrimary) &&
@@ -222,6 +214,15 @@ export default function BrewPageClient() {
     brewRecipe.derived.volume.primaryL > 0
       ? brewRecipe.derived.volume.primaryL
       : null;
+  const recordVolumeCurrentLiters =
+    brew?.current_volume_liters ??
+    (brew?.stage === "PRIMARY" ? displayPrimaryVolume : brewRecipe.effective.currentVolumeL);
+  const displaySecondaryVolume =
+    typeof brewRecipe.derived?.volume.secondaryL === "number" &&
+    Number.isFinite(brewRecipe.derived.volume.secondaryL) &&
+    brewRecipe.derived.volume.secondaryL > 0
+      ? brewRecipe.derived.volume.secondaryL
+      : null;
 
   const recipeSummaryItems = [
     {
@@ -237,34 +238,39 @@ export default function BrewPageClient() {
       value: formatAbv(displayEstimatedAbv)
     },
     {
+      label: t("brews.recipe.targetVolume", "Target volume"),
+      value: formatVolume(displayTargetVolume)
+    },
+    {
       label: t("recipeBuilder.resultsLabels.totalPrimary"),
       value: formatVolume(displayPrimaryVolume)
     },
     {
       label: t("recipeBuilder.resultsLabels.totalSecondary"),
-      value: formatVolume(displayTargetVolume)
+      value: formatVolume(displaySecondaryVolume)
     }
   ];
 
   const batchSummaryItems = [
     {
+      label: t("brews.actualOg", "Actual OG"),
+      value: formatGravity(displayActualOg)
+    },
+    {
+      label: t("brews.actualFg", "Actual FG"),
+      value: formatGravity(displayActualFg)
+    },
+    {
+      label: t("ABV", "ABV"),
+      value: formatAbv(displayActualAbv)
+    },
+    {
       label: t("iSpindelDashboard.brews.latestGrav", "Latest gravity"),
       value: formatGravity(displayLatestGravity)
     },
     {
-      label: t("entries", "Entries"),
-      value: String(brew?.entry_count ?? 0)
-    },
-    {
       label: t("lastUpdated", "Last updated"),
       value: latestEntry ? formatDate(latestEntry.datetime) : "—"
-    },
-    {
-      label: t("brews.daysInStage", "Days in current stage"),
-      value:
-        typeof daysInCurrentStage === "number"
-          ? normalizeNumberString(daysInCurrentStage, 0, i18n.resolvedLanguage, true)
-          : "—"
     }
   ].filter(Boolean);
 
@@ -507,14 +513,14 @@ export default function BrewPageClient() {
                 }}
               />
               <SummaryField
-                label={t("brews.primary.currentVolume", "Current volume")}
+                label={t("brews.volume.currentVolume", "Current volume")}
                 value={formatVolume(brew.current_volume_liters)}
                 action={
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={() => setRecordVolumeOpen(true)}
-                    title={t("brews.primary.setVolume", "Record current volume")}
+                    title={t("brews.volume.recordCurrent", "Record current volume")}
                   >
                     <Scale />
                   </Button>
@@ -607,7 +613,7 @@ export default function BrewPageClient() {
         t={t}
         open={recordVolumeOpen}
         onOpenChange={setRecordVolumeOpen}
-        currentVolumeLiters={brew.current_volume_liters}
+        currentVolumeLiters={recordVolumeCurrentLiters}
         onSave={(volume, meta) =>
           recordCurrentVolume({
             liters: volume,

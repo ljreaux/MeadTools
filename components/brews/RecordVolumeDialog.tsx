@@ -145,7 +145,7 @@ export function RecordVolumeDialog({
           <DialogTitle>
             {isSecondaryVolume
               ? t("brews.primary.recordSecondaryVolume", "Record secondary volume")
-              : t("brews.primary.setVolume", "Record current volume")}
+              : t("brews.volume.recordCurrent", "Record current volume")}
           </DialogTitle>
           <DialogDescription>
             {isSecondaryVolume
@@ -154,8 +154,8 @@ export function RecordVolumeDialog({
                   "Enter the total volume after transferring to secondary. This becomes the batch volume used for stabilizers and later additions."
                 )
               : t(
-                  "brews.primary.setVolumeDesc",
-                  "Record the current batch volume before moving to secondary."
+                  "brews.volume.recordCurrentDesc",
+                  "Record the current batch volume for this brew."
                 )}
           </DialogDescription>
         </DialogHeader>
@@ -165,12 +165,12 @@ export function RecordVolumeDialog({
             <div className="text-sm font-medium">
               {isSecondaryVolume
                 ? t("brews.primary.previousVolume", "Previous volume")
-                : t("brews.primary.currentVolume", "Current volume")}
+                : t("brews.volume.currentVolume", "Current volume")}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">
                 {currentVolumeDisplay ??
-                  t("brews.primary.noVolume", "No volume recorded yet.")}
+                  t("brews.volume.noVolume", "No volume recorded yet.")}
               </div>
               <Select
                 value={displayUnit}
@@ -197,7 +197,7 @@ export function RecordVolumeDialog({
             <div className="text-sm font-medium">
               {isSecondaryVolume
                 ? t("brews.primary.enterSecondaryVolume", "Volume after transfer")
-                : t("brews.primary.enterVolume", "Volume")}
+                : t("brews.volume.enterVolume", "Volume")}
             </div>
             <InputGroup className="h-10">
               <InputGroupInput
@@ -207,7 +207,7 @@ export function RecordVolumeDialog({
                 placeholder={
                   isSecondaryVolume
                     ? t("brews.primary.secondaryVolumePlaceholder", "Enter volume after transfer")
-                    : t("brews.primary.volumePlaceholder", "Enter volume")
+                    : t("brews.volume.placeholder", "Enter volume")
                 }
                 disabled={isSaving}
                 onFocus={(e) => e.target.select()}

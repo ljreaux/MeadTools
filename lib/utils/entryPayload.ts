@@ -54,7 +54,7 @@ export type BrewAdditionData = {
 
 export type BrewRecipeNoteData = {
   v: 1;
-  source: "recipe_primary_note";
+  source: "recipe_primary_note" | "recipe_secondary_note";
   recipeNoteId: string;
 };
 
