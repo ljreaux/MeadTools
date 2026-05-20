@@ -12,7 +12,6 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -23,8 +22,10 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import SearchableInput from "@/components/ui/SearchableInput";
+import { AmountUnitField } from "@/components/brews/stages/additionDialogShared";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import type { BrewPlannedYeast } from "@/lib/utils/buildBrewRecipeStageData";
+import { isValidNumber } from "@/lib/utils/validateInput";
 import type { NitrogenRequirement } from "@/types/nutrientData";
 import type { Yeast } from "@/types/nutrientTypes";
 
@@ -242,14 +243,14 @@ export function LogYeastDialog({
 
           <div className="space-y-2">
             <Label>{t("amount", "Amount")}</Label>
-            <div className="grid grid-cols-[1fr_3rem] gap-2">
-              <Input
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-              />
-              <div className="self-center text-sm text-muted-foreground">g</div>
-            </div>
+            <AmountUnitField
+              amount={amount}
+              unit="g"
+              onAmountChange={(value) => {
+                if (!isValidNumber(value)) return;
+                setAmount(value);
+              }}
+            />
           </div>
 
           <div className="space-y-2">

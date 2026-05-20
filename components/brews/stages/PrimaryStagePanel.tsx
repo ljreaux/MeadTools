@@ -9,16 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import { parseNumber, isValidNumber } from "@/lib/utils/validateInput";
 import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
+import { StatusTile, WorkRow } from "./StagePanelShared";
 import {
   convertAdditiveAmount,
   inferAdditiveAmountDimFromUnit,
@@ -26,6 +24,15 @@ import {
   shouldConvertAdditiveAmount,
   type UnitDim
 } from "@/lib/utils/recipeDataCalculations";
+import {
+  AdditiveUnitSelect,
+  AmountUnitField,
+  convertIngredientAmount,
+  getPlannedIngredientAmounts,
+  IngredientBasisSelect,
+  IngredientUnitSelect,
+  type AdditionBasis
+} from "./additionDialogShared";
 
 type AdditionSource =
   | "recipe_ingredient"
@@ -37,26 +44,6 @@ type AdditionSource =
   | "manual";
 
 type AdditionKind = "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
-
-const additiveWeightUnits = [
-  { value: "g", label: "G" },
-  { value: "mg", label: "MG" },
-  { value: "kg", label: "KG" },
-  { value: "oz", label: "OZ" },
-  { value: "lbs", label: "LBS" }
-];
-
-const additiveVolumeUnits = [
-  { value: "ml", label: "ML" },
-  { value: "liters", label: "LIT" },
-  { value: "fl_oz", label: "FLOZ" },
-  { value: "quarts", label: "QUARTS" },
-  { value: "gal", label: "GALS" },
-  { value: "tsp", label: "TSP" },
-  { value: "tbsp", label: "TBSP" }
-];
-
-const additiveCountUnits = [{ value: "units", label: "UNITS" }];
 const goFermOptions = [
   { value: "Go-Ferm", label: "nuteResults.gfTypes.gf" },
   { value: "protect", label: "nuteResults.gfTypes.gfProtect" },
@@ -85,6 +72,11 @@ type PlannedAddition = {
   source: AdditionSource;
   amount?: number;
   unit?: string;
+  weightAmount?: number;
+  weightUnit?: string;
+  volumeAmount?: number;
+  volumeUnit?: string;
+  basis?: AdditionBasis;
   recipeIngredientId?: string;
   recipeAdditiveId?: string;
   meta?: Record<string, any>;
@@ -679,6 +671,7 @@ export function PrimaryStagePanel({
                             source: "recipe_ingredient",
                             amount,
                             unit,
+                            ...getPlannedIngredientAmounts(item.line),
                             recipeIngredientId: String(item.line.lineId),
                             meta: { plannedAmount: amount, plannedUnit: unit }
                           })
@@ -859,67 +852,6 @@ export function PrimaryStagePanel({
   );
 }
 
-function StatusTile({ label, value, tone }: { label: string; value: string; tone: "ok" | "warn" }) {
-  return (
-    <div className="rounded-md border border-border bg-background/40 px-3 py-2">
-      <div className="text-xs uppercase text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 text-sm font-medium", tone === "warn" && "text-yellow-700 dark:text-yellow-300")}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function WorkRow({
-  title,
-  detail,
-  amount,
-  isLogged,
-  loggedLabel,
-  actionLabel,
-  disabled,
-  disabledReason,
-  onLog
-}: {
-  title: string;
-  detail?: string | null;
-  amount?: string | null;
-  isLogged: boolean;
-  loggedLabel: string;
-  actionLabel: string;
-  disabled: boolean;
-  disabledReason?: string | null;
-  onLog: () => Promise<void> | void;
-}) {
-  return (
-    <li
-      className={cn(
-        "flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2",
-        isLogged && "opacity-70"
-      )}
-    >
-      <div className="min-w-0">
-        <div className="text-sm font-medium leading-tight line-clamp-2 whitespace-pre-line">{title}</div>
-        {detail ? <div className="mt-0.5 text-xs text-muted-foreground">{detail}</div> : null}
-        {!isLogged && disabled && disabledReason ? (
-          <div className="mt-1 text-xs text-muted-foreground">{disabledReason}</div>
-        ) : null}
-      </div>
-
-      <div className="shrink-0 flex items-center gap-2">
-        {amount ? <div className="text-sm text-muted-foreground">{amount}</div> : null}
-        {isLogged ? (
-          <div className="text-xs text-muted-foreground">{loggedLabel}</div>
-        ) : (
-          <Button size="sm" variant="secondary" disabled={disabled} onClick={onLog}>
-            {actionLabel}
-          </Button>
-        )}
-      </div>
-    </li>
-  );
-}
-
 function LogPlannedAdditionDialog({
   planned,
   onOpenChange,
@@ -943,6 +875,7 @@ function LogPlannedAdditionDialog({
   const [name, setName] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [unit, setUnit] = React.useState("");
+  const [basis, setBasis] = React.useState<AdditionBasis>("other");
   const [amountTouched, setAmountTouched] = React.useState(false);
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
@@ -954,6 +887,7 @@ function LogPlannedAdditionDialog({
     setName(planned.name);
     setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
     setUnit(planned.unit ?? "");
+    setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
     setAmountTouched(false);
     setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
     setNote("");
@@ -961,6 +895,7 @@ function LogPlannedAdditionDialog({
   }, [planned]);
 
   const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
+  const usesIngredientUnits = planned?.source === "recipe_ingredient";
   const isGoFerm = planned?.source === "recipe_go_ferm";
   const isNutrient = planned?.source === "recipe_nutrient";
   const changeGoFermType = (nextType: string) => {
@@ -983,7 +918,27 @@ function LogPlannedAdditionDialog({
     }
   };
 
+  const changeBasis = (nextBasis: AdditionBasis) => {
+    setBasis(nextBasis);
+    if (!planned || nextBasis === "other") return;
+
+    if (nextBasis === "weight") {
+      setAmount(typeof planned.weightAmount === "number" ? String(planned.weightAmount) : "");
+      setUnit(planned.weightUnit ?? "g");
+      return;
+    }
+
+    setAmount(typeof planned.volumeAmount === "number" ? String(planned.volumeAmount) : "");
+    setUnit(planned.volumeUnit ?? "L");
+  };
+
   const changeUnit = (nextUnit: string) => {
+    if (usesIngredientUnits) {
+      setAmount(convertIngredientAmount(amount, unit, nextUnit, basis));
+      setUnit(nextUnit);
+      return;
+    }
+
     if (!usesAdditiveUnits) {
       setUnit(nextUnit);
       return;
@@ -1051,6 +1006,12 @@ function LogPlannedAdditionDialog({
           plannedName: planned.name,
           plannedAmount: planned.amount,
           plannedUnit: planned.unit,
+          actualBasis: usesIngredientUnits ? basis : undefined,
+          plannedBasis: planned.basis,
+          plannedWeightAmount: planned.weightAmount,
+          plannedWeightUnit: planned.weightUnit,
+          plannedVolumeAmount: planned.volumeAmount,
+          plannedVolumeUnit: planned.volumeUnit,
           actualWaterAmount:
             isGoFerm && planned.meta?.actualYeastAmount
               ? calculateGoFermFromYeastAmount(trimmedName, planned.meta.actualYeastAmount)?.water
@@ -1104,21 +1065,21 @@ function LogPlannedAdditionDialog({
               <Label>Amounts</Label>
               <div className="space-y-2">
                 {components.map((component, index) => (
-                  <div key={component.key} className="grid grid-cols-[1fr_7rem_4rem] gap-2">
+                  <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
                     <div className="self-center text-sm">{component.name}</div>
-                    <Input
-                      inputMode="decimal"
-                      value={String(component.amount)}
-                      onChange={(event) => {
+                    <AmountUnitField
+                      amount={String(component.amount)}
+                      unit={component.unit}
+                      onAmountChange={(value) => {
+                        if (!isValidNumber(value)) return;
                         const next = [...components];
                         next[index] = {
                           ...component,
-                          amount: Number(event.target.value)
+                          amount: Number(value)
                         };
                         setComponents(next);
                       }}
                     />
-                    <div className="self-center text-sm text-muted-foreground">{component.unit}</div>
                   </div>
                 ))}
               </div>
@@ -1126,48 +1087,33 @@ function LogPlannedAdditionDialog({
           ) : (
             <div className="space-y-2">
               <Label>Amount</Label>
-              {usesAdditiveUnits ? (
-                <InputGroup className="h-10">
-                  <InputGroupInput
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(event) => changeAmount(event.target.value)}
-                    onFocus={(event) => event.target.select()}
-                    className="h-full"
+              {usesIngredientUnits ? (
+                <div className="space-y-2">
+                  <IngredientBasisSelect value={basis} onValueChange={changeBasis} t={t} />
+                  <AmountUnitField
+                    amount={amount}
+                    unit={unit}
+                    onAmountChange={changeAmount}
+                    unitControl={
+                      <IngredientUnitSelect
+                        basis={basis}
+                        value={unit}
+                        onValueChange={changeUnit}
+                      />
+                    }
                   />
-                  <InputGroupAddon align="inline-end" className="pr-1">
-                    <Separator orientation="vertical" className="h-10" />
-                    <Select value={unit} onValueChange={changeUnit}>
-                      <SelectTrigger className="p-2 border-none mr-2 w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {additiveWeightUnits.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.value}
-                          </SelectItem>
-                        ))}
-                        <SelectSeparator />
-                        {additiveVolumeUnits.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.value}
-                          </SelectItem>
-                        ))}
-                        <SelectSeparator />
-                        {additiveCountUnits.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
-                            {item.value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </InputGroupAddon>
-                </InputGroup>
-              ) : (
-                <div className="grid grid-cols-[1fr_7rem] gap-2">
-                  <Input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} />
-                  <Input value={unit} onChange={(event) => setUnit(event.target.value)} />
                 </div>
+              ) : usesAdditiveUnits ? (
+                <AmountUnitField
+                  amount={amount}
+                  unit={unit}
+                  onAmountChange={changeAmount}
+                  unitControl={
+                    <AdditiveUnitSelect value={unit} onValueChange={changeUnit} />
+                  }
+                />
+              ) : (
+                <AmountUnitField amount={amount} unit={unit} onAmountChange={setAmount} />
               )}
             </div>
           )}
