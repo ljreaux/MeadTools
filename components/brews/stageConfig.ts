@@ -13,6 +13,7 @@ import { PlannedStagePanel } from "./stages/PlannedStagePanel";
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
 import { SecondaryStagePanel } from "./stages/SecondaryStagePanel";
+import { BulkAgeStagePanel } from "./stages/BulkAgeStagePanel";
 import {
   CreateBrewEntryInput,
   PatchAccountBrewMetadataInput
@@ -292,6 +293,10 @@ function hasFinalGravityOutsideEstimate(ctx: BrewStageContext) {
 function hasCurrentVolume(ctx: BrewStageContext) {
   const v = ctx.brew.current_volume_liters;
   return typeof v === "number" && Number.isFinite(v) && v > 0;
+}
+
+function hasOutstandingBulkAgeItems(ctx: BrewStageContext) {
+  return hasMissingSecondaryIngredients(ctx) || hasMissingAdditives(ctx);
 }
 
 export const STAGE_FLOW: BrewStage[] = [
@@ -606,8 +611,45 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
 
   BULK_AGE: {
     id: "BULK_AGE",
-    title: (t) => t("brewStage.BULK_AGE")
-    // Panel: BulkAgeStagePanel
+    title: (t) => t("brewStage.BULK_AGE"),
+    description: (t) =>
+      t(
+        "brews.stageDesc.bulkAge",
+        "Track aging notes, occasional readings, and packaging readiness."
+      ),
+    warnings: [
+      {
+        id: "missingFinalGravity",
+        message: (t) =>
+          t(
+            "brews.warn.finalGravityMissing",
+            "Final gravity has not been logged yet."
+          ),
+        isActive: (ctx) => !hasFinalGravity(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "missingCurrentVolume",
+        message: (t) =>
+          t(
+            "brews.warn.currentVolumeMissing",
+            "Current volume has not been recorded yet."
+          ),
+        isActive: (ctx) => !hasCurrentVolume(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "outstandingRecipeItems",
+        message: (t) =>
+          t(
+            "brews.warn.bulkAgeOutstandingItems",
+            "Some linked recipe ingredients or additives have not been logged yet."
+          ),
+        isActive: (ctx) => hasOutstandingBulkAgeItems(ctx),
+        when: (status) => status === "current"
+      }
+    ],
+    Panel: BulkAgeStagePanel
   },
 
   PACKAGED: {
