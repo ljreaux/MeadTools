@@ -43,7 +43,7 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { BrewAdditionData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
+import { BrewAdditionData, BrewPackagingData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry, useDeleteBrewEntry, usePatchBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
 import { calcABV } from "@/lib/utils/unitConverter";
@@ -636,6 +636,9 @@ export default function BrewPageClient() {
         addAddition={addAddition}
         addAdditions={addAdditions}
         addEntry={addEntry}
+        patchEntry={async (entryId, input) => {
+          await patchEntry({ brewId: brew.id, entryId, input });
+        }}
         current_volume_liters={brew.current_volume_liters}
         recipe={brewRecipe}
         patchBrewMetadata={async (input) => {
@@ -805,7 +808,47 @@ export default function BrewPageClient() {
                               return <span>Volume: {value}</span>;
                             })()
                           : null}
+                        {e.type === BREW_ENTRY_TYPE.PACKAGING && e.data
+                          ? (() => {
+                              const d = e.data as Partial<BrewPackagingData>;
+                              const value =
+                                typeof d.displayValue === "number" && Number.isFinite(d.displayValue) && d.displayUnit
+                                  ? `${normalizeNumberString(
+                                      d.displayValue,
+                                      2,
+                                      i18n.resolvedLanguage
+                                    )} ${d.displayUnit}`
+                                  : formatVolume(d.packagedVolumeLiters);
+                              const count = (d.bottleRows ?? []).reduce((sum, row) => sum + row.quantity, 0);
+                              return (
+                                <span>
+                                  Packaging: {value}
+                                  {count > 0 ? ` · ${normalizeNumberString(count, 0, i18n.resolvedLanguage)} packages` : ""}
+                                </span>
+                              );
+                            })()
+                          : null}
                       </div>
+
+                      {e.type === BREW_ENTRY_TYPE.PACKAGING && (e.data as Partial<BrewPackagingData> | null)?.bottleRows?.length ? (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {((e.data as Partial<BrewPackagingData>).bottleRows ?? []).map((row, index) => (
+                            <span
+                              key={`${row.label}-${index}`}
+                              className="inline-flex items-baseline gap-1.5 rounded-md border border-border bg-background/60 px-2 py-1 text-xs"
+                            >
+                              <span className="font-medium text-foreground">
+                                {normalizeNumberString(row.quantity, 0, i18n.resolvedLanguage)} {row.label}
+                              </span>
+                              {row.totalLiters > 0 ? (
+                                <span className="text-muted-foreground">
+                                  {formatVolume(row.totalLiters)}
+                                </span>
+                              ) : null}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -901,6 +944,9 @@ function EditBrewEntryDialog({
   const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: number; unit: string }>>([]);
   const [volume, setVolume] = useState("");
   const [volumeUnit, setVolumeUnit] = useState("");
+  const [packagingRows, setPackagingRows] = useState<
+    Array<{ label: string; quantity: string; sizeLiters: string }>
+  >([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -933,20 +979,35 @@ function EditBrewEntryDialog({
     );
 
     const volumeData = entry.data as any;
+    const packagingData = entry.data as Partial<BrewPackagingData> | null;
     setVolume(
       typeof volumeData?.displayValue === "number"
         ? String(volumeData.displayValue)
         : typeof volumeData?.liters === "number"
           ? String(volumeData.liters)
-          : ""
+          : typeof volumeData?.packagedVolumeLiters === "number"
+            ? String(volumeData.packagedVolumeLiters)
+            : ""
     );
     setVolumeUnit(volumeData?.displayUnit ?? "L");
+    setPackagingRows(
+      (packagingData?.bottleRows ?? []).map((row) => ({
+        label: row.label,
+        quantity: String(row.quantity),
+        sizeLiters: String(row.sizeLiters)
+      }))
+    );
   }, [entry]);
 
   if (!entry) return null;
 
   const isStageChange = entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE;
   const canDelete = !isStageChange;
+  const withoutVersion = (data: any) => {
+    const rest = { ...(data ?? {}) };
+    delete rest.v;
+    return rest;
+  };
 
   const buildPatch = () => {
     const patch: {
@@ -973,6 +1034,7 @@ function EditBrewEntryDialog({
       const n = Number(gravity);
       if (!Number.isFinite(n)) throw new Error("Invalid gravity");
       patch.gravity = n;
+      patch.data = withoutVersion(entry.data);
       return patch;
     }
 
@@ -988,7 +1050,7 @@ function EditBrewEntryDialog({
       const n = Number(ph);
       if (!Number.isFinite(n)) throw new Error("Invalid pH");
       patch.title = title.trim() || "pH reading";
-      patch.data = { ...(entry.data as any), ph: n };
+      patch.data = { ...withoutVersion(entry.data), ph: n };
       return patch;
     }
 
@@ -1004,7 +1066,7 @@ function EditBrewEntryDialog({
       const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? Number(additionAmount) : undefined;
       if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
       const nextData = {
-        ...((entry.data as any) ?? {}),
+        ...withoutVersion(entry.data),
         name: additionName.trim(),
         amount,
         unit: additionUnit.trim() || undefined,
@@ -1024,7 +1086,7 @@ function EditBrewEntryDialog({
     if (entry.type === BREW_ENTRY_TYPE.VOLUME) {
       const n = Number(volume);
       if (!Number.isFinite(n) || n <= 0) throw new Error("Invalid volume");
-      const previous = (entry.data as any) ?? {};
+      const previous = withoutVersion(entry.data);
       const previousUnit = previous.displayUnit ?? volumeUnit;
       const liters = volumeUnit in VOLUME_TO_L ? n * VOLUME_TO_L[volumeUnit as keyof typeof VOLUME_TO_L] : previous.liters;
       patch.data = {
@@ -1032,6 +1094,48 @@ function EditBrewEntryDialog({
         liters: typeof liters === "number" && Number.isFinite(liters) ? liters : previous.liters,
         displayValue: n,
         displayUnit: volumeUnit || previousUnit
+      };
+      return patch;
+    }
+
+    if (entry.type === BREW_ENTRY_TYPE.PACKAGING) {
+      const n = Number(volume);
+      if (!Number.isFinite(n) || n <= 0) throw new Error("Invalid packaged volume");
+      const previous = withoutVersion(entry.data);
+      const previousUnit = previous.displayUnit ?? volumeUnit;
+      const liters =
+        volumeUnit in VOLUME_TO_L
+          ? n * VOLUME_TO_L[volumeUnit as keyof typeof VOLUME_TO_L]
+          : previous.packagedVolumeLiters;
+      const nextRows = packagingRows
+        .map((row) => ({
+          label: row.label.trim(),
+          quantity: Number(row.quantity),
+          sizeLiters: Number(row.sizeLiters)
+        }))
+        .filter(
+          (row) =>
+            row.label &&
+            Number.isFinite(row.quantity) &&
+            row.quantity > 0 &&
+            Number.isFinite(row.sizeLiters) &&
+            row.sizeLiters > 0
+        )
+        .map((row) => ({
+          ...row,
+          totalLiters: row.quantity * row.sizeLiters
+        }));
+
+      patch.title = entry.title ?? "Packaged";
+      patch.data = {
+        ...previous,
+        packagedVolumeLiters:
+          typeof liters === "number" && Number.isFinite(liters)
+            ? liters
+            : previous.packagedVolumeLiters,
+        displayValue: n,
+        displayUnit: volumeUnit || previousUnit,
+        bottleRows: nextRows
       };
       return patch;
     }
@@ -1208,6 +1312,110 @@ function EditBrewEntryDialog({
                     <SelectItem value="mL">mL</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          ) : null}
+
+          {entry.type === BREW_ENTRY_TYPE.PACKAGING ? (
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+                <div className="space-y-2">
+                  <Label>{t("brews.packaged.packagedVolume", "Packaged volume")}</Label>
+                  <Input inputMode="decimal" value={volume} onChange={(event) => setVolume(event.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("unit", "Unit")}</Label>
+                  <Select value={volumeUnit} onValueChange={setVolumeUnit}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gal">gal</SelectItem>
+                      <SelectItem value="qt">qt</SelectItem>
+                      <SelectItem value="pt">pt</SelectItem>
+                      <SelectItem value="L">L</SelectItem>
+                      <SelectItem value="mL">mL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>{t("brews.packaged.packages", "Packages")}</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      setPackagingRows((rows) => [
+                        ...rows,
+                        { label: "", quantity: "", sizeLiters: "" }
+                      ])
+                    }
+                  >
+                    {t("add", "Add")}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {packagingRows.length ? (
+                    packagingRows.map((row, index) => (
+                      <div key={index} className="grid gap-2 sm:grid-cols-[1fr_6rem_7rem_auto]">
+                        <Input
+                          value={row.label}
+                          placeholder={t("bottlingCalculator.table.bottle", "Bottle")}
+                          onChange={(event) =>
+                            setPackagingRows((rows) =>
+                              rows.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, label: event.target.value } : item
+                              )
+                            )
+                          }
+                        />
+                        <Input
+                          inputMode="decimal"
+                          value={row.quantity}
+                          placeholder={t("bottlingCalculator.table.qty", "Qty")}
+                          onChange={(event) =>
+                            setPackagingRows((rows) =>
+                              rows.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, quantity: event.target.value } : item
+                              )
+                            )
+                          }
+                        />
+                        <Input
+                          inputMode="decimal"
+                          value={row.sizeLiters}
+                          placeholder={t("units.L", "L")}
+                          onChange={(event) =>
+                            setPackagingRows((rows) =>
+                              rows.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, sizeLiters: event.target.value } : item
+                              )
+                            )
+                          }
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setPackagingRows((rows) =>
+                              rows.filter((_, itemIndex) => itemIndex !== index)
+                            )
+                          }
+                        >
+                          {t("remove", "Remove")}
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      {t("brews.packaged.noPackageRows", "No package rows recorded.")}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : null}

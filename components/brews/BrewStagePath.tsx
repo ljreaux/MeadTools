@@ -9,7 +9,7 @@ import { BrewEntry, getStageMoveDecision, STAGE_CONFIG, STAGE_FLOW, type StageSt
 import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { useEffect, useState } from "react";
 import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
-import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
+import type { CreateBrewEntryInput, PatchBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { RecordVolumeDialog } from "./RecordVolumeDialog";
 import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { entryPayload } from "@/lib/utils/entryPayload";
@@ -42,6 +42,7 @@ export function BrewStagePath({
   addAddition,
   addAdditions,
   addEntry,
+  patchEntry,
   hasRecipeLinked
 }: {
   brewId: string;
@@ -97,6 +98,7 @@ export function BrewStagePath({
     }>
   ) => Promise<void>;
   addEntry: (input: CreateBrewEntryInput) => Promise<void>;
+  patchEntry?: (entryId: string, input: PatchBrewEntryInput) => Promise<void>;
   hasRecipeLinked: boolean;
 }) {
   const { t } = useTranslation();
@@ -229,6 +231,7 @@ export function BrewStagePath({
               addAddition,
               addAdditions,
               addEntry,
+              patchEntry,
               openAddEntry
             };
             const prereqs = cfg.prereqs ?? [];

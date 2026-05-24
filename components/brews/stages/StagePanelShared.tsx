@@ -1,7 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import * as React from "react";
+import { useTranslation } from "react-i18next";
 
 export function StatusTile({ label, value, tone }: { label: string; value: string; tone: "ok" | "warn" }) {
   return (
@@ -61,5 +66,61 @@ export function WorkRow({
         )}
       </div>
     </li>
+  );
+}
+
+export function LogRecipeNoteDialog({
+  note,
+  onOpenChange,
+  onSave
+}: {
+  note: { title: string; text: string } | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (datetime: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (note) setDatetime(new Date());
+  }, [note]);
+
+  const save = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(datetime.toISOString());
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={Boolean(note)} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>{note?.title ?? t("brews.primary.addNote", "Add note")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {note?.text ? (
+            <div className="rounded-md border border-border bg-background/40 px-3 py-2 text-sm whitespace-pre-line">
+              {note.text}
+            </div>
+          ) : null}
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            {t("cancel", "Cancel")}
+          </Button>
+          <Button onClick={save} disabled={isSaving || !note}>
+            {t("save", "Save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

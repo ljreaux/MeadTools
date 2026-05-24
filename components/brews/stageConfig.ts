@@ -14,9 +14,11 @@ import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
 import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
 import { SecondaryStagePanel } from "./stages/SecondaryStagePanel";
 import { BulkAgeStagePanel } from "./stages/BulkAgeStagePanel";
+import { PackagedStagePanel } from "./stages/PackagedStagePanel";
 import {
   CreateBrewEntryInput,
-  PatchAccountBrewMetadataInput
+  PatchAccountBrewMetadataInput,
+  PatchBrewEntryInput
 } from "@/hooks/reactQuery/useAccountBrews";
 import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { parseNumber } from "@/lib/utils/validateInput";
@@ -28,6 +30,7 @@ export type BrewEntry = {
   title: string | null;
   note: string | null;
   data: any; // tighten later
+  datetime?: string;
   createdAt?: string; // optional
 };
 export type BrewStageContext = {
@@ -116,6 +119,7 @@ export type BrewStageHelpers = {
   openOriginalGravityDialog?: () => void;
   openFinalGravityDialog?: () => void;
   addEntry: (input: CreateBrewEntryInput) => Promise<void>;
+  patchEntry?: (entryId: string, input: PatchBrewEntryInput) => Promise<void>;
   patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>;
   openLinkRecipePage?: () => void;
 };
@@ -297,6 +301,23 @@ function hasCurrentVolume(ctx: BrewStageContext) {
 
 function hasOutstandingBulkAgeItems(ctx: BrewStageContext) {
   return hasMissingSecondaryIngredients(ctx) || hasMissingAdditives(ctx);
+}
+
+function hasPackagingEntry(ctx: BrewStageContext) {
+  return ctx.brew.entries.some((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING);
+}
+
+function hasPackagedVolume(ctx: BrewStageContext) {
+  const packagingEntry = ctx.brew.entries.find(
+    (entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING
+  );
+  const packagedVolume = (packagingEntry?.data as any)?.packagedVolumeLiters;
+  return (
+    (typeof packagedVolume === "number" &&
+      Number.isFinite(packagedVolume) &&
+      packagedVolume > 0) ||
+    hasCurrentVolume(ctx)
+  );
 }
 
 export const STAGE_FLOW: BrewStage[] = [
@@ -654,13 +675,64 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
 
   PACKAGED: {
     id: "PACKAGED",
-    title: (t) => t("brewStage.PACKAGED")
-    // Panel: PackagedStagePanel
+    title: (t) => t("brewStage.PACKAGED"),
+    description: (t) =>
+      t(
+        "brews.stageDesc.packaged",
+        "Record bottle, keg, or package details before completion."
+      ),
+    warnings: [
+      {
+        id: "missingPackagingEntry",
+        message: (t) =>
+          t(
+            "brews.warn.packagingMissing",
+            "Packaging details have not been recorded yet."
+          ),
+        isActive: (ctx) => !hasPackagingEntry(ctx),
+        when: (status) => status === "current"
+      },
+      {
+        id: "missingPackagedVolume",
+        message: (t) =>
+          t(
+            "brews.warn.packagedVolumeMissing",
+            "Packaged volume has not been recorded yet."
+          ),
+        isActive: (ctx) => !hasPackagedVolume(ctx),
+        when: (status) => status === "current"
+      }
+    ],
+    Panel: PackagedStagePanel
   },
 
   COMPLETE: {
     id: "COMPLETE",
-    title: (t) => t("brewStage.COMPLETE")
+    title: (t) => t("brewStage.COMPLETE"),
+    prereqs: [
+      {
+        id: "packagingRecorded",
+        label: (t) =>
+          t("brews.prereq.packagingRecorded", "Record packaging details"),
+        isMet: (ctx) => hasPackagingEntry(ctx),
+        hint: (t) =>
+          t(
+            "brews.prereq.packagingRecordedHint",
+            "Save bottle, keg, or mixed packaging details before completing the brew."
+          )
+      },
+      {
+        id: "packagedVolumeRecorded",
+        label: (t) =>
+          t("brews.prereq.packagedVolume", "Record packaged volume"),
+        isMet: (ctx) => hasPackagedVolume(ctx),
+        hint: (t) =>
+          t(
+            "brews.prereq.packagedVolumeHint",
+            "Record the packaged volume so the final brew summary has a usable yield."
+          )
+      }
+    ]
     // Panel: CompleteStagePanel
   }
 };

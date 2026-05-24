@@ -17,7 +17,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import { parseNumber, isValidNumber } from "@/lib/utils/validateInput";
 import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
-import { StatusTile, WorkRow } from "./StagePanelShared";
+import { LogRecipeNoteDialog, StatusTile, WorkRow } from "./StagePanelShared";
 import {
   convertAdditiveAmount,
   inferAdditiveAmountDimFromUnit,
@@ -295,6 +295,10 @@ export function PrimaryStagePanel({
 }: StagePanelProps) {
   const [additionDialog, setAdditionDialog] = React.useState<PlannedAddition | null>(null);
   const [yeastDialogMode, setYeastDialogMode] = React.useState<"planned" | "manual" | null>(null);
+  const [recipeNoteDialog, setRecipeNoteDialog] = React.useState<{
+    text: string;
+    recipeNoteId: string;
+  } | null>(null);
   const [warningsOpen, setWarningsOpen] = React.useState(true);
   const primaryLines = React.useMemo(
     () => buildPrimaryLines(ctx.recipe.primaryIngredients),
@@ -875,14 +879,11 @@ export function PrimaryStagePanel({
                       disabled={!canEdit}
                       loggedLabel={t("brews.primary.logged", "Logged")}
                       actionLabel={t("brews.primary.addNote", "Add")}
-                      onLog={async () => {
-                        await helpers.addEntry(
-                          entryPayload.note(item.text, "Recipe primary note", {
-                            v: 1,
-                            source: "recipe_primary_note",
-                            recipeNoteId: String(item.note.lineId)
-                          })
-                        );
+                      onLog={() => {
+                        setRecipeNoteDialog({
+                          text: item.text,
+                          recipeNoteId: String(item.note.lineId)
+                        });
                       }}
                     />
                   );
@@ -917,6 +918,34 @@ export function PrimaryStagePanel({
         onSave={async (input) => {
           await helpers.addAddition(input);
           setYeastDialogMode(null);
+        }}
+      />
+      <LogRecipeNoteDialog
+        note={
+          recipeNoteDialog
+            ? {
+                title: t("brews.primary.recipeNoteTitle", "Add recipe primary note"),
+                text: recipeNoteDialog.text
+              }
+            : null
+        }
+        onOpenChange={(open) => {
+          if (!open) setRecipeNoteDialog(null);
+        }}
+        onSave={async (datetime) => {
+          if (!recipeNoteDialog) return;
+          await helpers.addEntry(
+            entryPayload.note(
+              recipeNoteDialog.text,
+              "Recipe primary note",
+              {
+                source: "recipe_primary_note",
+                recipeNoteId: recipeNoteDialog.recipeNoteId
+              },
+              datetime
+            )
+          );
+          setRecipeNoteDialog(null);
         }}
       />
     </div>

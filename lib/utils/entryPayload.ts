@@ -1,6 +1,7 @@
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
+import type { PackagingBottleRow } from "@/components/extraCalcs/BottlingCalculator";
 
 type BrewAdditionKind = "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
 export type BrewAdditionSource =
@@ -32,8 +33,6 @@ export type GravityPayloadOptions = {
 };
 
 export type BrewAdditionData = {
-  v: 1;
-
   kind: BrewAdditionKind;
   source?: BrewAdditionSource;
 
@@ -53,17 +52,22 @@ export type BrewAdditionData = {
 };
 
 export type BrewRecipeNoteData = {
-  v: 1;
   source: "recipe_primary_note" | "recipe_secondary_note";
   recipeNoteId: string;
 };
 
 export type BrewVolumeData = {
-  v: 1;
   liters: number;
   displayValue?: number;
   displayUnit?: string;
   startingLiters?: number;
+};
+
+export type BrewPackagingData = {
+  packagedVolumeLiters: number;
+  displayValue?: number;
+  displayUnit?: string;
+  bottleRows?: PackagingBottleRow[];
 };
 
 export const entryPayload = {
@@ -92,7 +96,6 @@ export const entryPayload = {
       datetime: options.datetime,
       gravity,
       data: {
-        v: 1,
         readingRole,
         source,
         recipeValue: options.recipeValue,
@@ -117,7 +120,6 @@ export const entryPayload = {
       datetime: input.datetime,
       note: input.note ?? null,
       data: {
-        v: 1,
         liters: input.liters,
         displayValue: input.displayValue,
         displayUnit: input.displayUnit,
@@ -146,6 +148,27 @@ export const entryPayload = {
       data: { ph }
     };
   },
+  packaging(input: {
+    packagedVolumeLiters: number;
+    displayValue?: number;
+    displayUnit?: string;
+    bottleRows?: PackagingBottleRow[];
+    note?: string | null;
+    datetime?: string;
+  }): CreateBrewEntryInput {
+    return {
+      type: BREW_ENTRY_TYPE.PACKAGING,
+      title: "Packaged",
+      datetime: input.datetime,
+      note: input.note ?? null,
+      data: {
+        packagedVolumeLiters: input.packagedVolumeLiters,
+        displayValue: input.displayValue,
+        displayUnit: input.displayUnit,
+        bottleRows: input.bottleRows
+      }
+    };
+  },
   addition: (input: {
     name: string;
     kind?: BrewAdditionKind;
@@ -159,7 +182,6 @@ export const entryPayload = {
     datetime?: string;
   }): CreateBrewEntryInput => {
     const data: BrewAdditionData = {
-      v: 1,
       kind: input.kind ?? "INGREDIENT",
       source: input.source,
       name: input.name,
