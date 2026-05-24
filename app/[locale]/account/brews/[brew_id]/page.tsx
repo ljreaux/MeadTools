@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { Check, Pencil, PencilOff, Scale, Trash2 } from "lucide-react";
+import { Check, Filter, Pencil, PencilOff, Scale, Trash2, X } from "lucide-react";
 
 import {
   AccountBrewEntry,
@@ -23,6 +23,9 @@ import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -42,7 +45,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
+import { BREW_ENTRY_TYPE, BREW_STAGE, type BrewStage } from "@/lib/brewEnums";
 import { BrewAdditionData, BrewPackagingData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry, useDeleteBrewEntry, usePatchBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
@@ -58,6 +61,26 @@ import {
 } from "@/components/brews/stages/additionDialogShared";
 
 type HeaderVolumeUnit = "gal" | "L";
+type HistoryView = "stages" | "metrics";
+type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
+
+const BREW_STAGE_ORDER = Object.values(BREW_STAGE);
+const HISTORY_FILTER_TYPES: Record<HistoryFilter, string[]> = {
+  readings: [BREW_ENTRY_TYPE.GRAVITY, BREW_ENTRY_TYPE.TEMPERATURE, BREW_ENTRY_TYPE.PH],
+  additions: [BREW_ENTRY_TYPE.ADDITION],
+  volume: [BREW_ENTRY_TYPE.VOLUME],
+  notes: [BREW_ENTRY_TYPE.NOTE, BREW_ENTRY_TYPE.TASTING, BREW_ENTRY_TYPE.ISSUE],
+  stageChanges: [BREW_ENTRY_TYPE.STAGE_CHANGE],
+  packaging: [BREW_ENTRY_TYPE.PACKAGING]
+};
+const METRIC_ENTRY_TYPES = new Set<string>([
+  BREW_ENTRY_TYPE.GRAVITY,
+  BREW_ENTRY_TYPE.TEMPERATURE,
+  BREW_ENTRY_TYPE.PH,
+  BREW_ENTRY_TYPE.VOLUME,
+  BREW_ENTRY_TYPE.PACKAGING,
+  BREW_ENTRY_TYPE.ADDITION
+]);
 
 export default function BrewPageClient() {
   const { t, i18n } = useTranslation();
@@ -143,6 +166,176 @@ export default function BrewPageClient() {
     return t(`brewStage.${stage}`, stage);
   };
 
+  const getEntryTime = (entry: AccountBrewEntry) => {
+    const time = new Date(entry.datetime).getTime();
+    return Number.isFinite(time) ? time : 0;
+  };
+
+  const getVisibleEntries = (entries: AccountBrewEntry[]) => entries.filter((entry) => !(entry.data as any)?.hidden);
+
+  const sortEntriesNewestFirst = (entries: AccountBrewEntry[]) =>
+    [...entries].sort((a, b) => getEntryTime(b) - getEntryTime(a));
+  const formatTimelineDateRange = (entries: AccountBrewEntry[]) => {
+    if (!entries.length) return "—";
+
+    const sorted = [...entries].sort((a, b) => getEntryTime(a) - getEntryTime(b));
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+
+    if (!first || !last || first.id === last.id) {
+      return formatDate(last?.datetime);
+    }
+
+    return `${formatDate(first.datetime)} - ${formatDate(last.datetime)}`;
+  };
+
+  const getPackageCount = (data?: Partial<BrewPackagingData> | null) =>
+    (data?.bottleRows ?? []).reduce((sum, row) => sum + row.quantity, 0);
+
+  const formatGravityEntry = (entry: AccountBrewEntry) => {
+    const role = (entry.data as any)?.readingRole;
+    const source = (entry.data as any)?.source;
+    const label = role === "OG" ? "OG" : role === "FG" ? "FG" : "SG";
+    return `${label}: ${formatGravity(entry.gravity)}${source === "recipe" ? ` (${t("recipe", "Recipe").toLowerCase()})` : ""}`;
+  };
+
+  const formatAdditionEntry = (entry: AccountBrewEntry) => {
+    const data = entry.data as Partial<BrewAdditionData> | null;
+    if (!data?.name) return t("brews.entryTypes.ADDITION", "Addition");
+
+    const amount =
+      data.amount != null && Number.isFinite(Number(data.amount))
+        ? `: ${normalizeNumberString(Number(data.amount), 2, i18n.resolvedLanguage)}`
+        : "";
+    const unit = data.unit ? ` ${data.unit}` : "";
+    return `${data.name}${amount}${unit}`;
+  };
+
+  const formatVolumeEntry = (entry: AccountBrewEntry) => {
+    const data = entry.data as { liters?: number; displayValue?: number; displayUnit?: string } | null;
+    const value =
+      typeof data?.displayValue === "number" && Number.isFinite(data.displayValue) && data.displayUnit
+        ? `${normalizeNumberString(data.displayValue, 2, i18n.resolvedLanguage)} ${data.displayUnit}`
+        : formatVolume(data?.liters);
+    return `${t("volume", "Volume")}: ${value}`;
+  };
+
+  const formatPackagingEntry = (entry: AccountBrewEntry) => {
+    const data = entry.data as Partial<BrewPackagingData> | null;
+    const value =
+      typeof data?.displayValue === "number" && Number.isFinite(data.displayValue) && data.displayUnit
+        ? `${normalizeNumberString(data.displayValue, 2, i18n.resolvedLanguage)} ${data.displayUnit}`
+        : formatVolume(data?.packagedVolumeLiters);
+    const count = getPackageCount(data);
+    const packages =
+      count > 0
+        ? ` - ${normalizeNumberString(count, 0, i18n.resolvedLanguage)} ${t("brews.packaged.packages", "packages")}`
+        : "";
+    return `${t("brews.packaged.packaging", "Packaging")}: ${value}${packages}`;
+  };
+
+  const formatStageChangeEntry = (entry: AccountBrewEntry) => {
+    const data = entry.data as { from?: string; to?: string } | null;
+    return `${formatStageLabel(data?.from ?? "")} -> ${formatStageLabel(data?.to ?? "")}`;
+  };
+
+  const formatTimelineEntryLabel = (entry: AccountBrewEntry) => {
+    if (entry.title) return entry.title;
+
+    if (entry.type === BREW_ENTRY_TYPE.GRAVITY) return t("gravity", "Gravity");
+    if (entry.type === BREW_ENTRY_TYPE.TEMPERATURE) return t("temperature", "Temperature");
+    if (entry.type === BREW_ENTRY_TYPE.PH) return t("pH", "pH");
+    if (entry.type === BREW_ENTRY_TYPE.NOTE) return t("note", "Note");
+    if (entry.type === BREW_ENTRY_TYPE.TASTING) return t("tasting", "Tasting");
+    if (entry.type === BREW_ENTRY_TYPE.ISSUE) return t("issue", "Issue");
+    if (entry.type === BREW_ENTRY_TYPE.ADDITION) return t("brews.entryTypes.ADDITION", "Addition");
+    if (entry.type === BREW_ENTRY_TYPE.VOLUME) return t("volume", "Volume");
+    if (entry.type === BREW_ENTRY_TYPE.PACKAGING) return t("brews.packaged.packaging", "Packaging");
+    if (entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE) return t("brews.stageChange", "Stage change");
+
+    return entry.type;
+  };
+
+  const formatTimelineEntrySummary = (entry: AccountBrewEntry) => {
+    if (entry.type === BREW_ENTRY_TYPE.GRAVITY && entry.gravity != null) return formatGravityEntry(entry);
+    if (entry.type === BREW_ENTRY_TYPE.TEMPERATURE && entry.temperature != null) {
+      return `${t("temperature", "Temperature")}: ${formatTemperature(entry.temperature, entry.temp_units)}`;
+    }
+    if (entry.type === BREW_ENTRY_TYPE.PH && typeof (entry.data as any)?.ph === "number") {
+      return `pH: ${normalizeNumberString(Number((entry.data as any).ph), 2, i18n.resolvedLanguage)}`;
+    }
+    if (entry.type === BREW_ENTRY_TYPE.ADDITION) return formatAdditionEntry(entry);
+    if (entry.type === BREW_ENTRY_TYPE.VOLUME) return formatVolumeEntry(entry);
+    if (entry.type === BREW_ENTRY_TYPE.PACKAGING) return formatPackagingEntry(entry);
+    if (entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE) return formatStageChangeEntry(entry);
+    if (entry.note) return entry.note;
+
+    return formatTimelineEntryLabel(entry);
+  };
+
+  const getStageHighlights = (entries: AccountBrewEntry[]) => {
+    const newestFirst = [...entries].sort((a, b) => getEntryTime(b) - getEntryTime(a));
+    const highlights: string[] = [];
+
+    const latestGravity = newestFirst.find((entry) => entry.type === BREW_ENTRY_TYPE.GRAVITY && entry.gravity != null);
+    if (latestGravity) highlights.push(formatGravityEntry(latestGravity));
+
+    const latestPackaging = newestFirst.find((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING);
+    if (latestPackaging) highlights.push(formatPackagingEntry(latestPackaging));
+
+    const stageChange = newestFirst.find((entry) => entry.type === BREW_ENTRY_TYPE.STAGE_CHANGE);
+    if (stageChange) highlights.push(formatStageChangeEntry(stageChange));
+
+    const addition = newestFirst.find((entry) => entry.type === BREW_ENTRY_TYPE.ADDITION);
+    if (addition) highlights.push(formatAdditionEntry(addition));
+
+    const latestNote = newestFirst.find(
+      (entry) =>
+        entry.type === BREW_ENTRY_TYPE.NOTE ||
+        entry.type === BREW_ENTRY_TYPE.TASTING ||
+        entry.type === BREW_ENTRY_TYPE.ISSUE
+    );
+    if (latestNote) highlights.push(`${formatTimelineEntryLabel(latestNote)}: ${formatTimelineEntrySummary(latestNote)}`);
+
+    return Array.from(new Set(highlights)).slice(0, 2);
+  };
+
+  const getDefaultTimelineStage = (
+    buckets: Array<{ stage: BrewStage; entries: AccountBrewEntry[] }>,
+    currentStage?: BrewStage
+  ) => {
+    if (!buckets.length) return undefined;
+    if (currentStage && buckets.some((bucket) => bucket.stage === currentStage)) return currentStage;
+
+    const currentIndex = currentStage ? BREW_STAGE_ORDER.indexOf(currentStage) : -1;
+    if (currentIndex === -1) return buckets[0]?.stage;
+
+    return [...buckets].sort((a, b) => {
+      const aDistance = Math.abs(BREW_STAGE_ORDER.indexOf(a.stage) - currentIndex);
+      const bDistance = Math.abs(BREW_STAGE_ORDER.indexOf(b.stage) - currentIndex);
+      return aDistance - bDistance;
+    })[0]?.stage;
+  };
+
+  const getAllowedFilterTypes = (filters: HistoryFilter[]) => {
+    if (!filters.length) return null;
+    return new Set(filters.flatMap((filter) => HISTORY_FILTER_TYPES[filter]));
+  };
+
+  const entryMatchesFilters = (entry: AccountBrewEntry, filters: HistoryFilter[]) => {
+    const allowedTypes = getAllowedFilterTypes(filters);
+    return !allowedTypes || allowedTypes.has(entry.type);
+  };
+
+  const getMetricGroupKey = (entry: AccountBrewEntry) => {
+    if (entry.type === BREW_ENTRY_TYPE.GRAVITY || entry.type === BREW_ENTRY_TYPE.TEMPERATURE || entry.type === BREW_ENTRY_TYPE.PH) {
+      return "readings";
+    }
+    if (entry.type === BREW_ENTRY_TYPE.ADDITION) return "additions";
+    if (entry.type === BREW_ENTRY_TYPE.VOLUME || entry.type === BREW_ENTRY_TYPE.PACKAGING) return "volume";
+    return null;
+  };
+
   const {
     meta: { hydrate, reset }
   } = useRecipe();
@@ -165,6 +358,9 @@ export default function BrewPageClient() {
   const [entryGravityDefaultValue, setEntryGravityDefaultValue] = useState<number | undefined>();
   const [entryGravitySource, setEntryGravitySource] = useState<"measured" | "recipe" | undefined>();
   const [editingEntry, setEditingEntry] = useState<AccountBrewEntry | null>(null);
+  const [timelineOpenStage, setTimelineOpenStage] = useState<string | undefined>();
+  const [historyView, setHistoryView] = useState<HistoryView>("stages");
+  const [historyFilters, setHistoryFilters] = useState<HistoryFilter[]>([]);
 
   function openAddEntry(args?: OpenAddEntryArgs) {
     setEntryPresetType(args?.presetType);
@@ -179,6 +375,62 @@ export default function BrewPageClient() {
     const buckets = brew?.entries_by_stage ?? [];
     return buckets.flatMap((b) => b.entries);
   }, [brew?.entries_by_stage]);
+
+  const visibleEntries = useMemo(() => getVisibleEntries(brew?.entries ?? []), [brew?.entries]);
+  const entryStageById = useMemo(() => {
+    const map = new Map<string, BrewStage>();
+    for (const bucket of brew?.entries_by_stage ?? []) {
+      for (const entry of bucket.entries) {
+        map.set(entry.id, bucket.stage);
+      }
+    }
+    return map;
+  }, [brew?.entries_by_stage]);
+
+  const visibleTimelineBuckets = useMemo(
+    () =>
+      (brew?.entries_by_stage ?? [])
+        .map((bucket) => ({
+          stage: bucket.stage,
+          entries: getVisibleEntries(bucket.entries)
+        }))
+        .filter((bucket) => bucket.entries.length > 0),
+    [brew?.entries_by_stage]
+  );
+  const filteredTimelineBuckets = useMemo(
+    () =>
+      visibleTimelineBuckets
+        .map((bucket) => ({
+          stage: bucket.stage,
+          entries: sortEntriesNewestFirst(bucket.entries.filter((entry) => entryMatchesFilters(entry, historyFilters)))
+        }))
+        .filter((bucket) => bucket.entries.length > 0),
+    [historyFilters, visibleTimelineBuckets]
+  );
+  const metricGroups = useMemo(() => {
+    const groups: Record<"readings" | "additions" | "volume", AccountBrewEntry[]> = {
+      readings: [],
+      additions: [],
+      volume: []
+    };
+
+    for (const entry of visibleEntries) {
+      if (!METRIC_ENTRY_TYPES.has(entry.type)) continue;
+      const key = getMetricGroupKey(entry);
+      if (key) groups[key].push(entry);
+    }
+
+    return groups;
+  }, [visibleEntries]);
+
+  const defaultTimelineStage = useMemo(
+    () => getDefaultTimelineStage(filteredTimelineBuckets, brew?.stage),
+    [brew?.stage, filteredTimelineBuckets]
+  );
+
+  useEffect(() => {
+    setTimelineOpenStage(defaultTimelineStage);
+  }, [defaultTimelineStage]);
 
   const latestGravityEntry = useMemo(() => {
     const entries = brew?.entries ?? [];
@@ -274,7 +526,7 @@ export default function BrewPageClient() {
       value: formatVolume(displayPrimaryVolume)
     },
     {
-      label: t("recipeBuilder.resultsLabels.totalSecondary"),
+      label: t("brews.recipeTotalSecondaryVolume", "Total secondary volume"),
       value: formatVolume(displaySecondaryVolume)
     }
   ];
@@ -464,6 +716,84 @@ export default function BrewPageClient() {
     console.error(error);
     return <div className="text-center my-4">{t("error.generic", "Something went wrong loading this brew.")}</div>;
   }
+
+  const historyFilterOptions: Array<{ value: HistoryFilter; label: string }> = [
+    { value: "readings", label: t("brews.history.filters.readings", "Readings") },
+    { value: "additions", label: t("brews.history.filters.additions", "Additions") },
+    { value: "volume", label: t("brews.history.filters.volume", "Volume") },
+    { value: "notes", label: t("brews.history.filters.notes", "Notes") },
+    { value: "stageChanges", label: t("brews.history.filters.stageChanges", "Stage changes") },
+    { value: "packaging", label: t("brews.history.filters.packaging", "Packaging") }
+  ];
+  const activeFilterValue = historyFilters.length ? historyFilters : ["all"];
+  const hasMetricEntries = Object.values(metricGroups).some((entries) => entries.length > 0);
+
+  const renderEmptyHistory = () => (
+    <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
+      {visibleEntries.length
+        ? t("brews.history.noFilteredEntries", "No entries match the selected filters.")
+        : t("noEntries", "No entries yet.")}
+    </div>
+  );
+
+  const renderEntryCard = (entry: AccountBrewEntry, options?: { showStage?: boolean }) => {
+    const label = formatTimelineEntryLabel(entry);
+    const summary = formatTimelineEntrySummary(entry);
+    const showSummary = summary !== label && summary !== entry.note;
+    const stage = entryStageById.get(entry.id);
+
+    return (
+      <div key={entry.id} className="rounded-lg border border-border p-4 space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="font-medium">{label}</div>
+            {options?.showStage && stage ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                {formatStageLabel(stage)}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-muted-foreground">{formatDate(entry.datetime)}</div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => setEditingEntry(entry)}
+              title={t("edit", "Edit")}
+            >
+              <Pencil />
+            </Button>
+          </div>
+        </div>
+
+        {entry.note ? <div className="text-sm">{entry.note}</div> : null}
+
+        {showSummary ? (
+          <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+            <span>{summary}</span>
+          </div>
+        ) : null}
+
+        {entry.type === BREW_ENTRY_TYPE.PACKAGING &&
+        (entry.data as Partial<BrewPackagingData> | null)?.bottleRows?.length ? (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {((entry.data as Partial<BrewPackagingData>).bottleRows ?? []).map((row, index) => (
+              <span
+                key={`${row.label}-${index}`}
+                className="inline-flex items-baseline gap-1.5 rounded-md border border-border bg-background/60 px-2 py-1 text-xs"
+              >
+                <span className="font-medium text-foreground">
+                  {normalizeNumberString(row.quantity, 0, i18n.resolvedLanguage)} {row.label}
+                </span>
+                {row.totalLiters > 0 ? <span className="text-muted-foreground">{formatVolume(row.totalLiters)}</span> : null}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 sm:mt-6 mt-12">
@@ -697,10 +1027,19 @@ export default function BrewPageClient() {
         gravitySource={entryGravitySource}
         hideTrigger
       />
-      {/* Timeline by stage */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">{t("timeline", "Timeline")}</h2>
+      <Tabs value={historyView} onValueChange={(value) => setHistoryView(value as HistoryView)} className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-semibold">{t("brews.history.title", "History")}</h2>
+            <TabsList className="h-8">
+              <TabsTrigger value="stages" className="h-6 px-2">
+                {t("brews.history.views.stages", "Stages")}
+              </TabsTrigger>
+              <TabsTrigger value="metrics" className="h-6 px-2">
+                {t("brews.history.views.metrics", "Metrics")}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <Button
             onClick={() =>
@@ -720,145 +1059,147 @@ export default function BrewPageClient() {
           </Button>
         </div>
 
-        {brew.entries_by_stage?.length ? (
-          brew.entries_by_stage.map((bucket) => {
-            const visibleEntries = bucket.entries.filter((entry) => !(entry.data as any)?.hidden);
-            if (!visibleEntries.length) return null;
+        {historyView === "stages" ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-2">
+            <div className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              {t("brews.history.filters.label", "Filters")}
+            </div>
+            <ToggleGroup
+              type="multiple"
+              size="sm"
+              value={activeFilterValue}
+              onValueChange={(value) => {
+                if (!value.length) {
+                  setHistoryFilters([]);
+                  return;
+                }
+                if (value.includes("all")) {
+                  setHistoryFilters(historyFilters.length ? [] : (value.filter((item) => item !== "all") as HistoryFilter[]));
+                  return;
+                }
+                setHistoryFilters(value as HistoryFilter[]);
+              }}
+              className="flex flex-wrap justify-start gap-1.5"
+            >
+              <ToggleGroupItem
+                value="all"
+                aria-label={t("brews.history.filters.all", "All")}
+                className="h-7 rounded-full border border-border bg-background px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              >
+                {t("brews.history.filters.all", "All")}
+              </ToggleGroupItem>
+              {historyFilterOptions.map((option) => (
+                <ToggleGroupItem
+                  key={option.value}
+                  value={option.value}
+                  aria-label={option.label}
+                  className="h-7 rounded-full border border-border bg-background px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
+                  {option.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            {historyFilters.length ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 rounded-full px-2 text-xs text-muted-foreground"
+                onClick={() => setHistoryFilters([])}
+              >
+                <X className="h-3.5 w-3.5" />
+                {t("clear", "Clear")}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
-            return (
-              <div key={bucket.stage} className="rounded-xl border border-border bg-card">
-                <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                  <div className="font-medium">{formatStageLabel(bucket.stage)}</div>
-                  <div className="text-sm text-muted-foreground">{visibleEntries.length}</div>
-                </div>
+        <TabsContent value="stages" className="mt-0">
+          {filteredTimelineBuckets.length ? (
+            <Accordion
+              type="single"
+              collapsible
+              value={timelineOpenStage}
+              onValueChange={(value) => setTimelineOpenStage(value || undefined)}
+              className="space-y-3"
+            >
+              {filteredTimelineBuckets.map((bucket) => {
+                const highlights = getStageHighlights(bucket.entries);
+                const entryCountLabel = bucket.entries.length === 1 ? t("entry", "entry") : t("entries", "entries");
 
-                <div className="p-5 space-y-3">
-                  {visibleEntries.map((e) => (
-                    <div key={e.id} className="rounded-lg border border-border p-4 space-y-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="font-medium">{e.title ?? e.type}</div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm text-muted-foreground">{formatDate(e.datetime)}</div>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => setEditingEntry(e)}
-                            title={t("edit", "Edit")}
-                          >
-                            <Pencil />
-                          </Button>
+                return (
+                  <AccordionItem
+                    key={bucket.stage}
+                    value={bucket.stage}
+                    className="rounded-xl border border-border bg-card px-0"
+                  >
+                    <AccordionTrigger className="gap-4 px-5 py-4 hover:no-underline">
+                      <div className="min-w-0 flex-1 text-left">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <div className="font-medium text-foreground">{formatStageLabel(bucket.stage)}</div>
+                          <div className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            {bucket.entries.length} {entryCountLabel}
+                          </div>
+                          {bucket.stage === brew.stage ? (
+                            <div className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                              {t("current", "Current")}
+                            </div>
+                          ) : null}
                         </div>
-                      </div>
-
-                      {e.note ? <div className="text-sm">{e.note}</div> : null}
-
-                      <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-                        {e.gravity != null ? (
-                          <span>
-                            {(() => {
-                              const role = (e.data as any)?.readingRole;
-                              const source = (e.data as any)?.source;
-                              const label = role === "OG" ? "OG" : role === "FG" ? "FG" : "SG";
-                              return `${label}: ${formatGravity(e.gravity)}${source === "recipe" ? " (recipe)" : ""}`;
-                            })()}
-                          </span>
-                        ) : null}
-                        {e.temperature != null ? (
-                          <span>Temp: {formatTemperature(e.temperature, e.temp_units)}</span>
-                        ) : null}
-                        {e.type === BREW_ENTRY_TYPE.PH && typeof (e.data as any)?.ph === "number" ? (
-                          <span>pH: {normalizeNumberString(Number((e.data as any).ph), 2, i18n.resolvedLanguage)}</span>
-                        ) : null}
-                        {e.type === "STAGE_CHANGE" && e.data ? (
-                          <span>
-                            {formatStageLabel(String((e.data as any)?.from ?? ""))} →{" "}
-                            {formatStageLabel(String((e.data as any)?.to ?? ""))}
-                          </span>
-                        ) : null}
-                        {e.type === BREW_ENTRY_TYPE.ADDITION && e.data
-                          ? (() => {
-                              const d = e.data as Partial<BrewAdditionData>;
-                              return (
-                                <span>
-                                  {d.name}
-                                  {d.amount != null
-                                    ? `: ${normalizeNumberString(Number(d.amount), 2, i18n.resolvedLanguage)}`
-                                    : ""}
-                                  {d.unit ? ` ${d.unit}` : ""}
-                                </span>
-                              );
-                            })()
-                          : null}
-                        {e.type === BREW_ENTRY_TYPE.VOLUME && e.data
-                          ? (() => {
-                              const d = e.data as {
-                                liters?: number;
-                                displayValue?: number;
-                                displayUnit?: string;
-                              };
-                              const value =
-                                typeof d.displayValue === "number" && Number.isFinite(d.displayValue) && d.displayUnit
-                                  ? `${normalizeNumberString(
-                                      d.displayValue,
-                                      2,
-                                      i18n.resolvedLanguage
-                                    )} ${d.displayUnit}`
-                                  : formatVolume(d.liters);
-                              return <span>Volume: {value}</span>;
-                            })()
-                          : null}
-                        {e.type === BREW_ENTRY_TYPE.PACKAGING && e.data
-                          ? (() => {
-                              const d = e.data as Partial<BrewPackagingData>;
-                              const value =
-                                typeof d.displayValue === "number" && Number.isFinite(d.displayValue) && d.displayUnit
-                                  ? `${normalizeNumberString(
-                                      d.displayValue,
-                                      2,
-                                      i18n.resolvedLanguage
-                                    )} ${d.displayUnit}`
-                                  : formatVolume(d.packagedVolumeLiters);
-                              const count = (d.bottleRows ?? []).reduce((sum, row) => sum + row.quantity, 0);
-                              return (
-                                <span>
-                                  Packaging: {value}
-                                  {count > 0 ? ` · ${normalizeNumberString(count, 0, i18n.resolvedLanguage)} packages` : ""}
-                                </span>
-                              );
-                            })()
-                          : null}
-                      </div>
-
-                      {e.type === BREW_ENTRY_TYPE.PACKAGING && (e.data as Partial<BrewPackagingData> | null)?.bottleRows?.length ? (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {((e.data as Partial<BrewPackagingData>).bottleRows ?? []).map((row, index) => (
-                            <span
-                              key={`${row.label}-${index}`}
-                              className="inline-flex items-baseline gap-1.5 rounded-md border border-border bg-background/60 px-2 py-1 text-xs"
-                            >
-                              <span className="font-medium text-foreground">
-                                {normalizeNumberString(row.quantity, 0, i18n.resolvedLanguage)} {row.label}
-                              </span>
-                              {row.totalLiters > 0 ? (
-                                <span className="text-muted-foreground">
-                                  {formatVolume(row.totalLiters)}
-                                </span>
-                              ) : null}
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span>{formatTimelineDateRange(bucket.entries)}</span>
+                          {highlights.map((highlight) => (
+                            <span key={highlight} className="line-clamp-1 max-w-full sm:max-w-[18rem]">
+                              {highlight}
                             </span>
                           ))}
                         </div>
-                      ) : null}
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-5 pb-5">
+                      <div className="space-y-3">{bucket.entries.map((entry) => renderEntryCard(entry))}</div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          ) : (
+            renderEmptyHistory()
+          )}
+        </TabsContent>
+
+        <TabsContent value="metrics" className="mt-0">
+          {hasMetricEntries ? (
+            <div className="grid gap-3 lg:grid-cols-3">
+              {[
+                { key: "readings" as const, label: t("brews.history.metrics.readings", "Readings") },
+                { key: "additions" as const, label: t("brews.history.metrics.additions", "Additions") },
+                { key: "volume" as const, label: t("brews.history.metrics.volume", "Volume & packaging") }
+              ].map((group) => (
+                <section key={group.key} className="flex max-h-[34rem] min-h-[12rem] flex-col rounded-xl border border-border bg-card p-4">
+                  <div className="mb-3 flex shrink-0 items-center justify-between gap-2">
+                    <h3 className="font-medium">{group.label}</h3>
+                    <span className="text-sm text-muted-foreground">{metricGroups[group.key].length}</span>
+                  </div>
+                  {metricGroups[group.key].length ? (
+                    <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+                      {metricGroups[group.key].map((entry) => renderEntryCard(entry, { showStage: true }))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="text-muted-foreground">{t("noEntries", "No entries yet.")}</div>
-        )}
-      </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      {t("brews.history.noMetricEntries", "No matching metric entries.")}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
+          ) : (
+            renderEmptyHistory()
+          )}
+        </TabsContent>
+      </Tabs>
       <EditBrewEntryDialog
         entry={editingEntry}
         onOpenChange={(open) => {
