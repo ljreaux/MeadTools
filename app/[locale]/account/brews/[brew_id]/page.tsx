@@ -202,7 +202,7 @@ export default function BrewPageClient() {
       .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())[0];
   }, [brew?.entries]);
 
-  const displayLatestGravity = brew?.latest_gravity ?? latestGravityEntry?.gravity;
+  const displayLatestGravity = latestGravityEntry?.gravity ?? brew?.latest_gravity;
   const displayActualOg = brewRecipe.actual.originalGravity?.gravity ?? null;
   const displayActualFg = brewRecipe.actual.finalGravity?.gravity ?? null;
   const displayRawActualAbv =

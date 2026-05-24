@@ -199,10 +199,6 @@ const EMPTY_STAGE_DATA: BrewRecipeStageData = {
 };
 
 function getLatestGravity(args: { entries: BrewStageEntryInput[]; latestGravity: number | null | undefined }) {
-  if (typeof args.latestGravity === "number" && Number.isFinite(args.latestGravity)) {
-    return args.latestGravity;
-  }
-
   const latestEntry = args.entries
     .filter((entry) => {
       const data = entry.data as Partial<GravityPayloadOptions> | null | undefined;
@@ -219,7 +215,11 @@ function getLatestGravity(args: { entries: BrewStageEntryInput[]; latestGravity:
       return bTime - aTime;
     })[0];
 
-  return latestEntry?.gravity ?? null;
+  if (typeof latestEntry?.gravity === "number" && Number.isFinite(latestEntry.gravity)) {
+    return latestEntry.gravity;
+  }
+
+  return typeof args.latestGravity === "number" && Number.isFinite(args.latestGravity) ? args.latestGravity : null;
 }
 
 function getLoggedGravities(entries: BrewStageEntryInput[]) {
@@ -469,16 +469,19 @@ function buildActualizedPrimaryBlend(args: {
   };
 }
 
-function calculateLoggedSecondaryVolumeL(args: {
+function calculateSecondaryVolumeL(args: {
   secondaryIngredients: IngredientLine[];
   additionsByRecipeIngredientId: Record<string, BrewLoggedAddition[]>;
 }) {
-  const inputs = args.secondaryIngredients.flatMap((line) => {
-    const logged = latestAddition(args.additionsByRecipeIngredientId[String(line.lineId)]);
-    if (!logged) return [];
+  const hasLoggedSecondaryIngredient = args.secondaryIngredients.some((line) =>
+    Boolean(latestAddition(args.additionsByRecipeIngredientId[String(line.lineId)]))
+  );
+  if (!hasLoggedSecondaryIngredient) return 0;
 
+  const inputs = args.secondaryIngredients.flatMap((line) => {
     const result = applyLoggedIngredientAmount(line, args.additionsByRecipeIngredientId);
-    const normalized = normalizeIngredientLine(result.line);
+
+    const normalized = normalizeIngredientLine(result.usedActual ? result.line : line);
     return [{ sg: normalized.sg, volumeL: normalized.volumeL }];
   });
 
@@ -742,7 +745,7 @@ export function buildBrewRecipeStageData(args: {
     derived: derivedResponse.derived.stabilizers,
     source: "recipe_stabilizers" as const
   };
-  const loggedSecondaryVolumeL = calculateLoggedSecondaryVolumeL({
+  const secondaryVolumeL = calculateSecondaryVolumeL({
     secondaryIngredients,
     additionsByRecipeIngredientId
   });
@@ -764,7 +767,7 @@ export function buildBrewRecipeStageData(args: {
       : null;
   const currentAbv =
     actualCurrentVolume && typeof baseAbv === "number" && Number.isFinite(baseAbv)
-      ? (baseAbv * actualCurrentVolume) / (actualCurrentVolume + loggedSecondaryVolumeL)
+      ? (baseAbv * actualCurrentVolume) / (actualCurrentVolume + secondaryVolumeL)
       : null;
 
   return {

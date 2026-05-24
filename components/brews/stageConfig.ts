@@ -15,6 +15,7 @@ import { PrimaryStagePanel } from "./stages/PrimaryStagePanel";
 import { SecondaryStagePanel } from "./stages/SecondaryStagePanel";
 import { BulkAgeStagePanel } from "./stages/BulkAgeStagePanel";
 import { PackagedStagePanel } from "./stages/PackagedStagePanel";
+import { CompleteStagePanel } from "./stages/CompleteStagePanel";
 import {
   CreateBrewEntryInput,
   PatchAccountBrewMetadataInput,
@@ -299,6 +300,40 @@ function hasCurrentVolume(ctx: BrewStageContext) {
   return typeof v === "number" && Number.isFinite(v) && v > 0;
 }
 
+function getTime(value?: string | null) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function getLatestSecondaryIngredientAdditionTime(ctx: BrewStageContext) {
+  const plannedSecondaryIds = getPlannedSecondaryIngredientIds(ctx);
+  let latest = 0;
+
+  for (const id of plannedSecondaryIds) {
+    const additions = ctx.recipe.actual.additionsByRecipeIngredientId[id] ?? [];
+    for (const addition of additions) {
+      latest = Math.max(latest, getTime(addition.datetime));
+    }
+  }
+
+  return latest;
+}
+
+function hasEntryAfter(ctx: BrewStageContext, type: BrewEntryType, after: number) {
+  return ctx.brew.entries.some((entry) => entry.type === type && getTime(entry.datetime ?? entry.createdAt) >= after);
+}
+
+function needsSecondaryFollowupReadings(ctx: BrewStageContext) {
+  const latestSecondaryAdditionTime = getLatestSecondaryIngredientAdditionTime(ctx);
+  if (latestSecondaryAdditionTime === 0) return false;
+
+  const hasGravityAfterSecondary = hasEntryAfter(ctx, BREW_ENTRY_TYPE.GRAVITY, latestSecondaryAdditionTime);
+  const hasVolumeAfterSecondary = hasEntryAfter(ctx, BREW_ENTRY_TYPE.VOLUME, latestSecondaryAdditionTime);
+
+  return !hasGravityAfterSecondary || !hasVolumeAfterSecondary;
+}
+
 function hasOutstandingBulkAgeItems(ctx: BrewStageContext) {
   return hasMissingSecondaryIngredients(ctx) || hasMissingAdditives(ctx);
 }
@@ -551,6 +586,16 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
           ),
         isActive: (ctx) => !hasCurrentVolume(ctx),
         when: (status) => status === "current"
+      },
+      {
+        id: "secondaryFollowupReadingsMissing",
+        message: (t) =>
+          t(
+            "brews.warn.secondaryFollowupReadingsMissing",
+            "Secondary additions can change gravity and volume. Take a gravity reading and record current volume before moving on."
+          ),
+        isActive: (ctx) => needsSecondaryFollowupReadings(ctx),
+        when: (status) => status === "current"
       }
     ],
     prereqs: [
@@ -709,6 +754,11 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
   COMPLETE: {
     id: "COMPLETE",
     title: (t) => t("brewStage.COMPLETE"),
+    description: (t) =>
+      t(
+        "brews.stageDesc.complete",
+        "Review final stats, packaging, and tasting notes."
+      ),
     prereqs: [
       {
         id: "packagingRecorded",
@@ -732,7 +782,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "Record the packaged volume so the final brew summary has a usable yield."
           )
       }
-    ]
-    // Panel: CompleteStagePanel
+    ],
+    Panel: CompleteStagePanel
   }
 };
