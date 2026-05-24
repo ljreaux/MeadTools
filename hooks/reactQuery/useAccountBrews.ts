@@ -8,6 +8,7 @@ import type { TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
 import type {
   BrewAdditionData,
+  BrewPackagingData,
   BrewVolumeData,
   GravityPayloadOptions
 } from "@/lib/utils/entryPayload";
@@ -93,7 +94,7 @@ export type CreateBrewEntryInput =
       title?: string | null;
       note?: string | null;
       gravity: number; // required for GRAVITY
-      data?: (GravityPayloadOptions & { v?: 1 }) | null;
+      data?: GravityPayloadOptions | null;
     }
   | {
       type: typeof BREW_ENTRY_TYPE.VOLUME;
@@ -118,6 +119,13 @@ export type CreateBrewEntryInput =
       note?: string | null;
       // store the pH value in data for now, or add a column later
       data: { ph: number } & Record<string, any>;
+    }
+  | {
+      type: typeof BREW_ENTRY_TYPE.PACKAGING;
+      datetime?: string;
+      title?: string | null;
+      note?: string | null;
+      data: BrewPackagingData;
     }
   | {
       type: typeof BREW_ENTRY_TYPE.ADDITION;

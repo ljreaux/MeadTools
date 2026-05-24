@@ -38,7 +38,7 @@ import {
   IngredientUnitSelect,
   type AdditionBasis
 } from "./additionDialogShared";
-import { StatusTile, WorkRow } from "./StagePanelShared";
+import { LogRecipeNoteDialog, StatusTile, WorkRow } from "./StagePanelShared";
 
 type AdditionSource = "recipe_ingredient" | "recipe_additive" | "manual";
 type AdditionKind = "INGREDIENT" | "OTHER";
@@ -506,6 +506,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   const [bulkAgeConfirmOpen, setBulkAgeConfirmOpen] = React.useState(false);
   const [packageConfirmOpen, setPackageConfirmOpen] = React.useState(false);
   const [secondaryBeforeStabilizersOpen, setSecondaryBeforeStabilizersOpen] = React.useState(false);
+  const [recipeNoteDialog, setRecipeNoteDialog] = React.useState<{
+    text: string;
+    recipeNoteId: string;
+  } | null>(null);
   const [warningsOpen, setWarningsOpen] = React.useState(true);
   const pendingSecondaryIngredientAction = React.useRef<(() => void | Promise<void>) | null>(null);
 
@@ -971,14 +975,11 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                       disabled={!canEdit}
                       loggedLabel={t("brews.primary.logged", "Logged")}
                       actionLabel={t("brews.primary.addNote", "Add")}
-                      onLog={async () => {
-                        await helpers.addEntry(
-                          entryPayload.note(item.text, "Recipe secondary note", {
-                            v: 1,
-                            source: "recipe_secondary_note",
-                            recipeNoteId: String(item.note.lineId)
-                          })
-                        );
+                      onLog={() => {
+                        setRecipeNoteDialog({
+                          text: item.text,
+                          recipeNoteId: String(item.note.lineId)
+                        });
                       }}
                     />
                   );
@@ -1045,6 +1046,34 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
           pendingSecondaryIngredientAction.current = null;
           setSecondaryBeforeStabilizersOpen(false);
           await action?.();
+        }}
+      />
+      <LogRecipeNoteDialog
+        note={
+          recipeNoteDialog
+            ? {
+                title: t("brews.secondary.recipeNoteTitle", "Add recipe secondary note"),
+                text: recipeNoteDialog.text
+              }
+            : null
+        }
+        onOpenChange={(open) => {
+          if (!open) setRecipeNoteDialog(null);
+        }}
+        onSave={async (datetime) => {
+          if (!recipeNoteDialog) return;
+          await helpers.addEntry(
+            entryPayload.note(
+              recipeNoteDialog.text,
+              "Recipe secondary note",
+              {
+                source: "recipe_secondary_note",
+                recipeNoteId: recipeNoteDialog.recipeNoteId
+              },
+              datetime
+            )
+          );
+          setRecipeNoteDialog(null);
         }}
       />
     </div>
