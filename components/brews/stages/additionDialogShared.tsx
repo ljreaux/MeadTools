@@ -1,21 +1,79 @@
 "use client";
 
-import type React from "react";
+import * as React from "react";
 import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import {
+  convertAdditiveAmount,
+  inferAdditiveAmountDimFromUnit,
   KG_TO_WEIGHT,
   L_TO_VOLUME,
+  nextAdditiveAmountDimOnUnitChange,
+  shouldConvertAdditiveAmount,
+  type UnitDim,
   VOLUME_TO_L,
   WEIGHT_TO_KG
 } from "@/lib/utils/recipeDataCalculations";
-import { parseNumber } from "@/lib/utils/validateInput";
+import { isValidNumber, normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import type { IngredientLine, VolumeUnit, WeightUnit } from "@/types/recipeData";
 
 export type AdditionBasis = "weight" | "volume" | "other";
+export type PlannedAdditionSource =
+  | "recipe_ingredient"
+  | "recipe_additive"
+  | "recipe_nutrient"
+  | "recipe_go_ferm"
+  | "recipe_yeast"
+  | "manual_yeast"
+  | "manual";
+export type PlannedAdditionKind = "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
+
+export type PlannedAdditionDialogItem = {
+  title: string;
+  name: string;
+  kind: PlannedAdditionKind;
+  source: PlannedAdditionSource;
+  amount?: number;
+  unit?: string;
+  weightAmount?: number;
+  weightUnit?: string;
+  volumeAmount?: number;
+  volumeUnit?: string;
+  basis?: AdditionBasis;
+  recipeIngredientId?: string;
+  recipeAdditiveId?: string;
+  meta?: Record<string, any>;
+  components?: Array<{
+    key: string;
+    name: string;
+    amount: number;
+    unit: string;
+    plannedAmount: number;
+  }>;
+};
+
+export type PlannedAdditionSaveInput = {
+  name: string;
+  amount?: number;
+  unit?: string;
+  note?: string;
+  recipeIngredientId?: string;
+  recipeAdditiveId?: string;
+  kind?: PlannedAdditionKind;
+  source?: PlannedAdditionSource;
+  meta?: Record<string, any>;
+  datetime?: string;
+};
 
 const ingredientWeightUnits: WeightUnit[] = ["kg", "g", "lb", "oz"];
 const ingredientVolumeUnits: VolumeUnit[] = ["L", "mL", "gal", "qt", "pt", "fl_oz", "imp_gal", "imp_qt", "imp_pt", "imp_fl_oz"];
@@ -25,7 +83,7 @@ const additiveCountUnits = ["units"];
 
 function fmtNumber(value?: number | null, decimals = 2) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(decimals).replace(/\.?0+$/, "");
+  return normalizeNumberString(value, decimals);
 }
 
 export function convertIngredientAmount(amountStr: string, fromUnit: string, toUnit: string, basis: AdditionBasis) {
@@ -192,5 +250,291 @@ export function AdditiveUnitSelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+export function PlannedAdditionDialog({
+  planned,
+  onOpenChange,
+  onSave,
+  defaultTitle,
+  stage,
+  nutrientNotice,
+  goFermOptions,
+  calculateGoFermFromYeastAmount,
+  includeEmptyComponents = false
+}: {
+  planned: PlannedAdditionDialogItem | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (input: PlannedAdditionSaveInput) => Promise<void>;
+  defaultTitle: string;
+  stage?: string;
+  nutrientNotice?: string;
+  goFermOptions?: ReadonlyArray<{ value: string; label: string }>;
+  calculateGoFermFromYeastAmount?: (type: string, yeastAmountG?: number | null) => { amount: number; water: number } | null;
+  includeEmptyComponents?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [name, setName] = React.useState("");
+  const [amount, setAmount] = React.useState("");
+  const [unit, setUnit] = React.useState("");
+  const [basis, setBasis] = React.useState<AdditionBasis>("other");
+  const [amountTouched, setAmountTouched] = React.useState(false);
+  const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
+  const [note, setNote] = React.useState("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
+  const [components, setComponents] = React.useState<PlannedAdditionDialogItem["components"]>([]);
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!planned) return;
+    setName(planned.name);
+    setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
+    setUnit(planned.unit ?? "");
+    setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
+    setAmountTouched(false);
+    setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
+    setNote("");
+    setDatetime(new Date());
+    setComponents(planned.components ?? []);
+  }, [planned]);
+
+  const usesIngredientUnits = planned?.source === "recipe_ingredient";
+  const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
+  const isGoFerm = planned?.source === "recipe_go_ferm";
+  const isNutrient = planned?.source === "recipe_nutrient";
+
+  const changeGoFermType = (nextType: string) => {
+    setName(nextType);
+
+    const recalculated = calculateGoFermFromYeastAmount?.(nextType, planned?.meta?.actualYeastAmount);
+    if (!recalculated) return;
+
+    setAmount(String(recalculated.amount));
+    setAmountTouched(false);
+    setAmountDim(inferAdditiveAmountDimFromUnit("g"));
+  };
+
+  const changeAmount = (value: string) => {
+    if (!isValidNumber(value)) return;
+    setAmount(value);
+    if (usesAdditiveUnits) {
+      setAmountTouched(true);
+      setAmountDim(inferAdditiveAmountDimFromUnit(unit));
+    }
+  };
+
+  const changeBasis = (nextBasis: AdditionBasis) => {
+    setBasis(nextBasis);
+    if (!planned || nextBasis === "other") return;
+
+    if (nextBasis === "weight") {
+      setAmount(typeof planned.weightAmount === "number" ? String(planned.weightAmount) : "");
+      setUnit(planned.weightUnit ?? "g");
+      return;
+    }
+
+    setAmount(typeof planned.volumeAmount === "number" ? String(planned.volumeAmount) : "");
+    setUnit(planned.volumeUnit ?? "L");
+  };
+
+  const changeUnit = (nextUnit: string) => {
+    if (usesIngredientUnits) {
+      setAmount(convertIngredientAmount(amount, unit, nextUnit, basis));
+      setUnit(nextUnit);
+      return;
+    }
+
+    if (!usesAdditiveUnits) {
+      setUnit(nextUnit);
+      return;
+    }
+
+    const fromUnit = unit;
+    const doConvert = shouldConvertAdditiveAmount({
+      amountStr: amount,
+      fromUnit,
+      toUnit: nextUnit,
+      amountTouched,
+      amountDim
+    });
+    const nextAmount =
+      doConvert && amount.trim().length > 0
+        ? convertAdditiveAmount({
+            amountStr: amount,
+            fromUnit,
+            toUnit: nextUnit
+          })
+        : amount;
+
+    setAmount(nextAmount);
+    setUnit(nextUnit);
+    setAmountDim(
+      nextAdditiveAmountDimOnUnitChange({
+        fromUnit,
+        toUnit: nextUnit,
+        prevAmountDim: amountDim
+      })
+    );
+  };
+
+  const save = async () => {
+    if (!planned) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    const parsedAmount = amount.trim() ? Number(amount) : undefined;
+    const actualComponents = components ?? [];
+    const componentTotal = actualComponents.reduce((sum, component) => {
+      const value = Number(component.amount);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    const actualAmount =
+      actualComponents.length > 0
+        ? componentTotal
+        : typeof parsedAmount === "number" && Number.isFinite(parsedAmount)
+          ? parsedAmount
+          : undefined;
+
+    setIsSaving(true);
+    try {
+      await onSave({
+        name: trimmedName,
+        amount: actualAmount,
+        unit: unit.trim() || planned.unit,
+        note: note.trim() || undefined,
+        recipeIngredientId: planned.recipeIngredientId,
+        recipeAdditiveId: planned.recipeAdditiveId,
+        kind: planned.kind,
+        source: planned.source,
+        datetime: datetime.toISOString(),
+        meta: {
+          ...(planned.meta ?? {}),
+          plannedName: planned.name,
+          plannedAmount: planned.amount,
+          plannedUnit: planned.unit,
+          actualBasis: usesIngredientUnits ? basis : undefined,
+          plannedBasis: planned.basis,
+          plannedWeightAmount: planned.weightAmount,
+          plannedWeightUnit: planned.weightUnit,
+          plannedVolumeAmount: planned.volumeAmount,
+          plannedVolumeUnit: planned.volumeUnit,
+          actualWaterAmount:
+            isGoFerm && planned.meta?.actualYeastAmount
+              ? calculateGoFermFromYeastAmount?.(trimmedName, planned.meta.actualYeastAmount)?.water
+              : planned.meta?.plannedWaterAmount,
+          actualWaterUnit: isGoFerm ? "mL" : undefined,
+          components: actualComponents.length > 0 || includeEmptyComponents ? actualComponents : undefined,
+          stage: stage ?? planned.meta?.stage
+        }
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={Boolean(planned)} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[560px]">
+        <DialogHeader>
+          <DialogTitle>{planned?.title ?? defaultTitle}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>{t("name", "Name")}</Label>
+            {isGoFerm && goFermOptions?.length ? (
+              <Select value={name} onValueChange={changeGoFermType}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {goFermOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {t(label)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={name} onChange={(event) => setName(event.target.value)} />
+            )}
+          </div>
+
+          {isNutrient && nutrientNotice ? (
+            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+              {nutrientNotice}
+            </div>
+          ) : null}
+
+          {components?.length ? (
+            <div className="space-y-2">
+              <Label>{t("amounts", "Amounts")}</Label>
+              <div className="space-y-2">
+                {components.map((component, index) => (
+                  <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
+                    <div className="self-center text-sm">{component.name}</div>
+                    <AmountUnitField
+                      amount={String(component.amount)}
+                      unit={component.unit}
+                      onAmountChange={(value) => {
+                        if (!isValidNumber(value)) return;
+                        const next = [...components];
+                        next[index] = {
+                          ...component,
+                          amount: Number(value)
+                        };
+                        setComponents(next);
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>{t("amount", "Amount")}</Label>
+              {usesIngredientUnits ? <IngredientBasisSelect value={basis} onValueChange={changeBasis} t={t} /> : null}
+              <AmountUnitField
+                amount={amount}
+                unit={unit}
+                onAmountChange={changeAmount}
+                unitControl={
+                  usesIngredientUnits ? (
+                    <IngredientUnitSelect basis={basis} value={unit} onValueChange={changeUnit} />
+                  ) : usesAdditiveUnits ? (
+                    <AdditiveUnitSelect value={unit} onValueChange={changeUnit} />
+                  ) : undefined
+                }
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>{t("note", "Note")}</Label>
+            <Textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={t("optional", "Optional")}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            {t("cancel", "Cancel")}
+          </Button>
+          <Button onClick={save} disabled={isSaving || !name.trim()}>
+            {t("save", "Save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

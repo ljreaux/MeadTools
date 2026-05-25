@@ -5,6 +5,8 @@ import {
   brew_entry_type,
   temp_units
 } from "@prisma/client";
+import { calcABV } from "@/lib/utils/unitConverter";
+import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type BrewListItem = {
   id: string;
@@ -723,6 +725,208 @@ async function syncLatestGravity(
   return latestGravity;
 }
 
+async function syncEstimatedAbvEntry(
+  tx: Prisma.TransactionClient,
+  brewId: string,
+  userId: number
+): Promise<void> {
+  const brew = await tx.brews.findFirst({
+    where: { id: brewId, user_id: userId },
+    select: {
+      id: true,
+      current_volume_liters: true,
+      latest_gravity: true,
+      recipe_snapshot: true
+    }
+  });
+  if (!brew) throw new Error("Brew not found");
+
+  const entries = await tx.brew_entries.findMany({
+    where: { brew_id: brewId },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      datetime: true,
+      type: true,
+      title: true,
+      note: true,
+      gravity: true,
+      data: true
+    }
+  });
+
+  const abvEstimateEntryIds = entries
+    .filter((entry) => (entry.data as any)?.source === "abv_estimate")
+    .map((entry) => entry.id);
+
+  if (abvEstimateEntryIds.length > 0) {
+    await tx.brew_entries.deleteMany({
+      where: {
+        id: { in: abvEstimateEntryIds },
+        brew_id: brewId
+      }
+    });
+  }
+
+  const visibleEntries = entries.filter((entry) => !(entry.data as any)?.hidden);
+  const snapshotEntries = visibleEntries.filter((entry) => {
+    const data = entry.data as any;
+    if (entry.type === brew_entry_type.VOLUME) return true;
+    if (entry.type === brew_entry_type.ADDITION) {
+      return data?.kind === "INGREDIENT" && data?.meta?.stage === "SECONDARY";
+    }
+    if (entry.type !== brew_entry_type.GRAVITY) return false;
+    return data?.readingRole === "OG" || (data?.readingRole === "FG" && (data?.source ?? "measured") === "measured");
+  });
+
+  const createdSnapshots = new Set<string>();
+
+  for (const event of snapshotEntries) {
+    const entriesThroughEvent = visibleEntries.filter((entry) => {
+      const entryTime = entry.datetime.getTime();
+      const eventTime = event.datetime.getTime();
+      return entryTime < eventTime || (entryTime === eventTime && entry.id <= event.id);
+    });
+    const isOriginalGravityEvent =
+      event.type === brew_entry_type.GRAVITY && (event.data as any)?.readingRole === "OG";
+
+    if (isOriginalGravityEvent && typeof event.gravity === "number" && Number.isFinite(event.gravity)) {
+      const snapshotKey = `${event.id}:0`;
+      if (createdSnapshots.has(snapshotKey)) continue;
+      createdSnapshots.add(snapshotKey);
+
+      await tx.brew_entries.create({
+        data: {
+          brew_id: brewId,
+          user_id: userId,
+          type: brew_entry_type.GRAVITY,
+          datetime: event.datetime,
+          title: "Estimated ABV",
+          note: null,
+          gravity: 0,
+          data: {
+            readingRole: "GENERAL",
+            source: "abv_estimate",
+            hidden: true,
+            abvEstimate: {
+              abv: 0,
+              og: event.gravity,
+              fg: null,
+              ogEntryId: event.id,
+              fgEntryId: null,
+              eventEntryId: event.id,
+              eventType: event.type
+            }
+          }
+        }
+      });
+      continue;
+    }
+
+    const latestVolumeEntry = [...entriesThroughEvent]
+      .reverse()
+      .find((entry) => {
+        const liters = (entry.data as any)?.liters;
+        return entry.type === brew_entry_type.VOLUME && typeof liters === "number" && Number.isFinite(liters) && liters > 0;
+      });
+    const currentVolumeLiters =
+      typeof (latestVolumeEntry?.data as any)?.liters === "number" && Number.isFinite((latestVolumeEntry?.data as any).liters)
+        ? (latestVolumeEntry?.data as any).liters
+        : brew.current_volume_liters;
+    const stageData = buildBrewRecipeStageData({
+      recipeSnapshot: brew.recipe_snapshot as any,
+      currentVolumeLiters,
+      latestGravity: brew.latest_gravity,
+      entries: entriesThroughEvent.map((entry) => ({
+        id: entry.id,
+        datetime: entry.datetime.toISOString(),
+        type: entry.type,
+        title: entry.title,
+        note: entry.note,
+        gravity: entry.gravity,
+        data: entry.data
+      }))
+    });
+    const originalGravityEntry = stageData.actual.originalGravity;
+    const finalGravityEntry = stageData.actual.finalGravity;
+    const volumeData = event.data as any;
+    const fallbackAbv =
+      typeof originalGravityEntry?.gravity === "number" &&
+      Number.isFinite(originalGravityEntry.gravity) &&
+      typeof finalGravityEntry?.gravity === "number" &&
+      Number.isFinite(finalGravityEntry.gravity)
+        ? calcABV(originalGravityEntry.gravity, finalGravityEntry.gravity)
+        : null;
+    const volumeAdjustedAbv =
+      event.type === brew_entry_type.VOLUME &&
+      typeof volumeData?.startingLiters === "number" &&
+      Number.isFinite(volumeData.startingLiters) &&
+      volumeData.startingLiters > 0 &&
+      typeof volumeData?.liters === "number" &&
+      Number.isFinite(volumeData.liters) &&
+      volumeData.liters > 0 &&
+      typeof fallbackAbv === "number" &&
+      Number.isFinite(fallbackAbv)
+        ? (fallbackAbv * volumeData.startingLiters) / volumeData.liters
+        : null;
+    const abv =
+      typeof volumeAdjustedAbv === "number" && Number.isFinite(volumeAdjustedAbv)
+        ? volumeAdjustedAbv
+        : typeof stageData.actual.currentAbv === "number" && Number.isFinite(stageData.actual.currentAbv)
+        ? stageData.actual.currentAbv
+        : fallbackAbv;
+
+    if (
+      !originalGravityEntry ||
+      typeof abv !== "number" ||
+      !Number.isFinite(abv)
+    ) {
+      continue;
+    }
+
+    const roundedAbv = Math.max(Math.round(abv * 1000) / 1000, 0);
+    const snapshotKey = `${event.id}:${roundedAbv}`;
+    if (createdSnapshots.has(snapshotKey)) continue;
+    createdSnapshots.add(snapshotKey);
+
+    await tx.brew_entries.create({
+      data: {
+        brew_id: brewId,
+        user_id: userId,
+        type: brew_entry_type.GRAVITY,
+        datetime: event.datetime,
+        title: "Estimated ABV",
+        note: null,
+        gravity: roundedAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: roundedAbv,
+            og: originalGravityEntry.gravity,
+            fg: finalGravityEntry?.gravity ?? null,
+            ogEntryId: originalGravityEntry.entryId,
+            fgEntryId: finalGravityEntry?.entryId ?? null,
+            eventEntryId: event.id,
+            eventType: event.type,
+            currentVolumeLiters
+          }
+        }
+      }
+    });
+  }
+}
+
+function shouldSyncEstimatedAbvForEntry(entry: { type: brew_entry_type; data?: Prisma.JsonValue | null }) {
+  const data = entry.data as any;
+  if (data?.source === "abv_estimate") return false;
+  if (entry.type === brew_entry_type.VOLUME) return true;
+  if (entry.type === brew_entry_type.ADDITION) return data?.kind === "INGREDIENT" && data?.meta?.stage === "SECONDARY";
+  if (entry.type !== brew_entry_type.GRAVITY) return false;
+  return data?.readingRole === "OG" || (data?.readingRole === "FG" && (data?.source ?? "measured") === "measured");
+}
+
 async function syncCurrentVolume(
   tx: Prisma.TransactionClient,
   brewId: string
@@ -800,6 +1004,9 @@ export async function createBrewEntryForApp(
     });
 
     await syncLatestGravity(tx, brewId);
+    if (shouldSyncEstimatedAbvForEntry({ type: input.type, data: input.data })) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
     if (input.type === brew_entry_type.VOLUME) {
       await syncCurrentVolume(tx, brewId);
     }
@@ -824,7 +1031,8 @@ export async function patchBrewEntryForApp(
       },
       select: {
         id: true,
-        type: true
+        type: true,
+        data: true
       }
     });
 
@@ -899,6 +1107,9 @@ export async function patchBrewEntryForApp(
     });
 
     await syncLatestGravity(tx, brewId);
+    if (shouldSyncEstimatedAbvForEntry({ type: entry.type, data: ("data" in input ? input.data : entry.data) ?? entry.data })) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
     if (entry.type === brew_entry_type.VOLUME) {
       await syncCurrentVolume(tx, brewId);
     }
@@ -935,7 +1146,7 @@ export async function deleteBrewEntryForApp(
       brew_id: brewId,
       brews: { user_id: userId }
     },
-    select: { id: true, type: true }
+    select: { id: true, type: true, data: true }
   });
 
   if (!entry) throw new Error("Entry not found");
@@ -948,6 +1159,9 @@ export async function deleteBrewEntryForApp(
   await prisma.$transaction(async (tx) => {
     await tx.brew_entries.delete({ where: { id: entryId } });
     await syncLatestGravity(tx, brewId);
+    if (shouldSyncEstimatedAbvForEntry(entry)) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
     if (entry.type === brew_entry_type.VOLUME) {
       await syncCurrentVolume(tx, brewId);
     }

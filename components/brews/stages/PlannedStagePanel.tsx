@@ -2,66 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { AdditiveLine, IngredientLine } from "@/types/recipeData";
 import type { NutrientKey } from "@/types/nutrientData";
 
 import type { StagePanelProps } from "../stageConfig";
-
-function fmtAmount(value?: string, unit?: string) {
-  const v = (value ?? "").trim();
-  if (!v) return null;
-  return unit ? `${v} ${unit}` : v;
-}
-
-function fmtNumber(value?: number | null, decimals = 2) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: decimals,
-    minimumFractionDigits: 0
-  }).format(value);
-}
-
-function ingredientDisplay(line: IngredientLine) {
-  const name = (line.name ?? "").trim() || "—";
-  const weight = fmtAmount(line.amounts.weight.value, line.amounts.weight.unit);
-  const volume = fmtAmount(line.amounts.volume.value, line.amounts.volume.unit);
-  const primary =
-    line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
-  const secondary =
-    line.amounts.basis === "volume"
-      ? weight && weight !== primary
-        ? weight
-        : null
-      : volume && volume !== primary
-        ? volume
-        : null;
-
-  return { name, primary, secondary };
-}
-
-function buildIngredientList(ingredients: IngredientLine[]) {
-  return ingredients
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({
-      key: line.lineId,
-      ...ingredientDisplay(line)
-    }));
-}
-
-function buildAdditiveList(additives: AdditiveLine[]) {
-  return additives
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({
-      key: line.lineId,
-      name: line.name.trim(),
-      amount: fmtAmount(line.amount, line.unit)
-    }));
-}
+import { buildAdditiveLines, buildIngredientLines, formatNumber } from "./StagePanelShared";
 
 const nutrientLabels: Record<NutrientKey, string> = {
   fermO: "Fermaid O",
@@ -91,16 +40,19 @@ function buildNutrientRows(
 }
 
 export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage;
+  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
   const primaryList = React.useMemo(
-    () => buildIngredientList(ctx.recipe.primaryIngredients),
+    () => buildIngredientLines(ctx.recipe.primaryIngredients),
     [ctx.recipe.primaryIngredients]
   );
   const secondaryList = React.useMemo(
-    () => buildIngredientList(ctx.recipe.secondaryIngredients),
+    () => buildIngredientLines(ctx.recipe.secondaryIngredients),
     [ctx.recipe.secondaryIngredients]
   );
   const additiveList = React.useMemo(
-    () => buildAdditiveList(ctx.recipe.additives),
+    () => buildAdditiveLines(ctx.recipe.additives),
     [ctx.recipe.additives]
   );
   const nutrientRows = React.useMemo(
@@ -293,7 +245,7 @@ function IngredientList({
   t: StagePanelProps["t"];
   title: string;
   empty: string;
-  items: ReturnType<typeof buildIngredientList>;
+  items: ReturnType<typeof buildIngredientLines>;
 }) {
   return (
     <div className="space-y-2">
@@ -303,7 +255,7 @@ function IngredientList({
         <ul className="space-y-1">
           {items.map((item) => (
             <li
-              key={item.key}
+              key={item.line.lineId}
               className={cn(
                 "flex items-start justify-between gap-3",
                 "rounded-md border border-border bg-background/40 px-3 py-2"
@@ -338,7 +290,7 @@ function AdditiveList({
   items
 }: {
   title: string;
-  items: ReturnType<typeof buildAdditiveList>;
+  items: ReturnType<typeof buildAdditiveLines>;
 }) {
   return (
     <div className="space-y-2">
@@ -346,7 +298,7 @@ function AdditiveList({
       <ul className="space-y-1">
         {items.map((item) => (
           <li
-            key={item.key}
+            key={item.line.lineId}
             className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2"
           >
             <div className="text-sm font-medium leading-tight">

@@ -6,6 +6,7 @@ import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
+import { randomUUID as uuid } from "crypto";
 import ShortUniqueId from "short-unique-id";
 import { addRecipeToBrew, endBrew, startBrew } from "@/lib/db/iSpindel";
 import {
@@ -14,6 +15,7 @@ import {
   Prisma,
   temp_units
 } from "@prisma/client";
+import { calcABV } from "@/lib/utils/unitConverter";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");
@@ -482,6 +484,7 @@ export async function generateBrewEntries() {
     const t2 = new Date(brew.start_date.getTime() + 18 * 60 * 60 * 1000);
     const t3 = new Date(brew.start_date.getTime() + 36 * 60 * 60 * 1000);
     const t4 = new Date(brew.start_date.getTime() + 54 * 60 * 60 * 1000);
+    const ogEntryId = uuid();
 
     await prisma.brews.update({
       where: { id: brew.id },
@@ -512,6 +515,7 @@ export async function generateBrewEntries() {
 
         // A note
         {
+          id: ogEntryId,
           brew_id: brew.id,
           user_id: brew.user_id,
           datetime: t1,
@@ -522,6 +526,29 @@ export async function generateBrewEntries() {
           data: {
             readingRole: "OG",
             source: "measured"
+          } as Prisma.JsonObject
+        },
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t1,
+          type: brew_entry_type.GRAVITY,
+          title: "Estimated ABV",
+          note: null,
+          gravity: 0,
+          data: {
+            readingRole: "GENERAL",
+            source: "abv_estimate",
+            hidden: true,
+            abvEstimate: {
+              abv: 0,
+              og: 1.1,
+              fg: null,
+              ogEntryId,
+              fgEntryId: null,
+              eventEntryId: ogEntryId,
+              eventType: brew_entry_type.GRAVITY
+            }
           } as Prisma.JsonObject
         },
 
@@ -619,6 +646,16 @@ async function seedCompletedKeyLimePieEntries(brew: {
   const primaryVolumeGal = 5.0075;
   const secondaryVolumeGal = 5.54;
   const packagedVolumeGal = 5.25;
+  const primaryVolumeL = gallonsToLiters(primaryVolumeGal);
+  const secondaryVolumeL = gallonsToLiters(secondaryVolumeGal);
+  const og = 1.06;
+  const fg = 0.996;
+  const baseAbv = Math.max(Math.round(calcABV(og, fg) * 1000) / 1000, 0);
+  const secondaryAbv = Math.max(Math.round(((baseAbv * primaryVolumeL) / secondaryVolumeL) * 1000) / 1000, 0);
+  const ogEntryId = uuid();
+  const fgEntryId = uuid();
+  const secondaryAdditionEntryId = uuid();
+  const secondaryVolumeEntryId = uuid();
 
   await prisma.brews.update({
     where: { id: brew.id },
@@ -653,9 +690,24 @@ async function seedCompletedKeyLimePieEntries(brew: {
         title: "Volume recorded",
         note: "Primary batch volume from the Key Lime Pie recipe.",
         data: {
-          liters: gallonsToLiters(primaryVolumeGal),
+          liters: primaryVolumeL,
           displayValue: primaryVolumeGal,
           displayUnit: "gal"
+        } as Prisma.JsonObject
+      },
+      {
+        id: ogEntryId,
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t1,
+        type: brew_entry_type.GRAVITY,
+        title: "Original gravity",
+        note: "Matches the Key Lime Pie recipe target.",
+        gravity: og,
+        data: {
+          readingRole: "OG",
+          source: "measured",
+          recipeValue: og
         } as Prisma.JsonObject
       },
       {
@@ -663,13 +715,22 @@ async function seedCompletedKeyLimePieEntries(brew: {
         user_id: brew.user_id,
         datetime: t1,
         type: brew_entry_type.GRAVITY,
-        title: "Original gravity",
-        note: "Matches the Key Lime Pie recipe target.",
-        gravity: 1.06,
+        title: "Estimated ABV",
+        note: null,
+        gravity: 0,
         data: {
-          readingRole: "OG",
-          source: "measured",
-          recipeValue: 1.06
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: 0,
+            og,
+            fg: null,
+            ogEntryId,
+            fgEntryId: null,
+            eventEntryId: ogEntryId,
+            eventType: brew_entry_type.GRAVITY
+          }
         } as Prisma.JsonObject
       },
       {
@@ -735,17 +796,42 @@ async function seedCompletedKeyLimePieEntries(brew: {
         } as Prisma.JsonObject
       },
       {
+        id: fgEntryId,
         brew_id: brew.id,
         user_id: brew.user_id,
         datetime: t5,
         type: brew_entry_type.GRAVITY,
         title: "Final gravity",
         note: "Finished at the recipe FG.",
-        gravity: 0.996,
+        gravity: fg,
         data: {
           readingRole: "FG",
           source: "measured",
-          recipeValue: 0.996
+          recipeValue: fg
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t5,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: baseAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: baseAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: fgEntryId,
+            eventType: brew_entry_type.GRAVITY,
+            currentVolumeLiters: primaryVolumeL
+          }
         } as Prisma.JsonObject
       },
       {
@@ -762,6 +848,7 @@ async function seedCompletedKeyLimePieEntries(brew: {
         } as Prisma.JsonObject
       },
       {
+        id: secondaryAdditionEntryId,
         brew_id: brew.id,
         user_id: brew.user_id,
         datetime: t6,
@@ -774,7 +861,32 @@ async function seedCompletedKeyLimePieEntries(brew: {
           name: "Key Lime Juice",
           amount: 2.0972,
           unit: "lb",
-          recipeIngredientId: "gbl0yyixla"
+          recipeIngredientId: "gbl0yyixla",
+          meta: { stage: "SECONDARY" }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t6,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: secondaryAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: secondaryAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: secondaryAdditionEntryId,
+            eventType: brew_entry_type.ADDITION,
+            currentVolumeLiters: primaryVolumeL
+          }
         } as Prisma.JsonObject
       },
       {
@@ -794,6 +906,7 @@ async function seedCompletedKeyLimePieEntries(brew: {
         } as Prisma.JsonObject
       },
       {
+        id: secondaryVolumeEntryId,
         brew_id: brew.id,
         user_id: brew.user_id,
         datetime: t7,
@@ -801,10 +914,34 @@ async function seedCompletedKeyLimePieEntries(brew: {
         title: "Volume recorded",
         note: "Volume after secondary Key Lime Pie additions.",
         data: {
-          liters: gallonsToLiters(secondaryVolumeGal),
+          liters: secondaryVolumeL,
           displayValue: secondaryVolumeGal,
           displayUnit: "gal",
-          startingLiters: gallonsToLiters(primaryVolumeGal)
+          startingLiters: primaryVolumeL
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t7,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: secondaryAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: secondaryAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: secondaryVolumeEntryId,
+            eventType: brew_entry_type.VOLUME,
+            currentVolumeLiters: secondaryVolumeL
+          }
         } as Prisma.JsonObject
       },
       {

@@ -5,11 +5,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { BrewEntry, getStageMoveDecision, STAGE_CONFIG, STAGE_FLOW, type StageStatus } from "./stageConfig";
-import { OpenAddEntryArgs } from "./AddBrewEntryDialog";
+import {
+  getStageMoveDecision,
+  STAGE_CONFIG,
+  STAGE_FLOW,
+  type BrewEntry,
+  type BrewStageHelpers,
+  type StageStatus
+} from "./stageConfig";
 import { useEffect, useState } from "react";
-import { PatchAccountBrewMetadataInput } from "@/hooks/reactQuery/useAccountBrews";
-import type { CreateBrewEntryInput, PatchBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { RecordVolumeDialog } from "./RecordVolumeDialog";
 import type { BrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { entryPayload } from "@/lib/utils/entryPayload";
@@ -17,6 +21,22 @@ import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
 import { LogOriginalGravityDialog } from "@/components/brews/LogOriginalGravityDialog";
 
 type RecordVolumeIntent = "current" | "secondaryVolume";
+type BrewStagePathProps = {
+  brewId: string;
+  stage: BrewStage;
+  onMoveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
+  entries: BrewEntry[];
+  current_volume_liters: number | null;
+  recipe: BrewRecipeStageData;
+  patchBrewMetadata: BrewStageHelpers["patchBrewMetadata"];
+  linkRecipeHref?: string;
+  openAddEntry: NonNullable<BrewStageHelpers["openAddEntry"]>;
+  addAddition: BrewStageHelpers["addAddition"];
+  addAdditions: BrewStageHelpers["addAdditions"];
+  addEntry: BrewStageHelpers["addEntry"];
+  patchEntry?: BrewStageHelpers["patchEntry"];
+  hasRecipeLinked: boolean;
+};
 
 function idxOf(stage: BrewStage) {
   const i = STAGE_FLOW.indexOf(stage);
@@ -44,63 +64,7 @@ export function BrewStagePath({
   addEntry,
   patchEntry,
   hasRecipeLinked
-}: {
-  brewId: string;
-  stage: BrewStage;
-  onMoveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
-  entries: BrewEntry[];
-
-  current_volume_liters: number | null; // ✅ add
-  recipe: BrewRecipeStageData;
-  patchBrewMetadata: (input: PatchAccountBrewMetadataInput) => Promise<void>; // ✅ add
-  linkRecipeHref?: string;
-
-  openAddEntry: (args?: OpenAddEntryArgs) => void;
-  addAddition: (input: {
-    name: string;
-    amount?: number;
-    unit?: string;
-    note?: string;
-    recipeIngredientId?: string;
-    recipeAdditiveId?: string;
-    kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
-    source?:
-      | "recipe_ingredient"
-      | "recipe_additive"
-      | "recipe_nutrient"
-      | "recipe_go_ferm"
-      | "recipe_yeast"
-      | "manual_yeast"
-      | "manual";
-    meta?: Record<string, any>;
-    datetime?: string;
-  }) => Promise<void>;
-
-  addAdditions: (
-    inputs: Array<{
-      name: string;
-      amount?: number;
-      unit?: string;
-      note?: string;
-      recipeIngredientId?: string;
-      recipeAdditiveId?: string;
-      kind?: "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
-      source?:
-        | "recipe_ingredient"
-        | "recipe_additive"
-        | "recipe_nutrient"
-        | "recipe_go_ferm"
-        | "recipe_yeast"
-        | "manual_yeast"
-        | "manual";
-      meta?: Record<string, any>;
-      datetime?: string;
-    }>
-  ) => Promise<void>;
-  addEntry: (input: CreateBrewEntryInput) => Promise<void>;
-  patchEntry?: (entryId: string, input: PatchBrewEntryInput) => Promise<void>;
-  hasRecipeLinked: boolean;
-}) {
+}: BrewStagePathProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const currentIdx = idxOf(stage);
@@ -130,8 +94,8 @@ export function BrewStagePath({
 
   return (
     <Path
-      currentId={stage} // ✅ truth: brew stage
-      activeId={activeId} // ✅ control selected panel
+      currentId={stage}
+      activeId={activeId}
       onActiveChange={(id) => setActiveId(id as BrewStage)}
       className="p-4"
     >
@@ -161,7 +125,6 @@ export function BrewStagePath({
             const activeIdx = idxOf(s);
             const status = statusFor(activeIdx, currentIdx);
 
-            // ✅ build ctx with recipe data for panels
             const ctx = {
               brewStage: stage,
               hasRecipeLinked,
@@ -346,7 +309,6 @@ export function BrewStagePath({
                   </div>
                 )}
 
-                {/* ✅ stage-specific UI lives in the stage config now */}
                 {Panel ? <Panel t={t} status={status} ctx={ctx} helpers={helpers} warnings={warnings} /> : null}
 
                 {!Panel && warnings.length > 0 && (

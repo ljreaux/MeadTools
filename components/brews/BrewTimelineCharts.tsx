@@ -36,10 +36,6 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function getEntryReadingRole(entry: AccountBrewEntry) {
-  return (entry.data as { readingRole?: unknown } | null)?.readingRole;
-}
-
 function getManualTemperatureUnits(entries: AccountBrewEntry[]): TempUnits {
   const entryUnits = entries.find(
     (entry) =>
@@ -65,27 +61,35 @@ function getWirelessTemperatureUnits(logs: Log[]): TempUnits {
 
 export function buildManualBrewChartData(entries: AccountBrewEntry[]): HydrometerChartData[] {
   const points: HydrometerChartData[] = [];
-  const manualOriginalGravity = entries
-    .filter(
-      (entry) =>
-        entry.type === BREW_ENTRY_TYPE.GRAVITY &&
-        getEntryReadingRole(entry) === "OG" &&
-        isFiniteNumber(entry.gravity)
-    )
-    .sort((a, b) => getTime(a.datetime) - getTime(b.datetime))[0]?.gravity;
 
   for (const entry of entries) {
     if (!entry.datetime || !getTime(entry.datetime)) continue;
 
-    if (entry.type === BREW_ENTRY_TYPE.GRAVITY && isFiniteNumber(entry.gravity)) {
-      const abv = isFiniteNumber(manualOriginalGravity)
-        ? Math.round(calcABV(manualOriginalGravity, entry.gravity) * 1000) / 1000
-        : null;
+    const data = entry.data as {
+      hidden?: unknown;
+      source?: unknown;
+      abvEstimate?: { abv?: unknown };
+      ph?: unknown;
+      liters?: unknown;
+    } | null;
 
+    if (data?.source === "abv_estimate") {
+      const abv = isFiniteNumber(data.abvEstimate?.abv) ? data.abvEstimate.abv : entry.gravity;
+      if (isFiniteNumber(abv)) {
+        points.push({
+          date: entry.datetime,
+          abv
+        });
+      }
+      continue;
+    }
+
+    if (data?.hidden) continue;
+
+    if (entry.type === BREW_ENTRY_TYPE.GRAVITY && isFiniteNumber(entry.gravity)) {
       points.push({
         date: entry.datetime,
-        gravity: entry.gravity,
-        ...(isFiniteNumber(abv) ? { abv: Math.max(abv, 0) } : {})
+        gravity: entry.gravity
       });
     }
 
@@ -96,7 +100,7 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
       });
     }
 
-    const ph = (entry.data as { ph?: unknown } | null)?.ph;
+    const ph = data?.ph;
     if (entry.type === BREW_ENTRY_TYPE.PH && isFiniteNumber(ph)) {
       points.push({
         date: entry.datetime,
@@ -104,7 +108,7 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
       });
     }
 
-    const liters = (entry.data as { liters?: unknown } | null)?.liters;
+    const liters = data?.liters;
     if (entry.type === BREW_ENTRY_TYPE.VOLUME && isFiniteNumber(liters)) {
       points.push({
         date: entry.datetime,
@@ -117,6 +121,7 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
     .filter(
       (point) =>
         isFiniteNumber(point.gravity) ||
+        isFiniteNumber(point.abv) ||
         isFiniteNumber(point.temperature) ||
         isFiniteNumber(point.ph) ||
         isFiniteNumber(point.volume)
