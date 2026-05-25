@@ -221,6 +221,13 @@ function Brew() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href={`/account/brews/${brewId}`}
+            className={buttonVariants({ variant: "secondary" })}
+          >
+            {t("brews.charts.openTrackedBrew", "Open brew")}
+          </Link>
+
           {!brew.name && (
             <AlertDialog open={renameOpen} onOpenChange={setRenameOpen}>
               <AlertDialogTrigger

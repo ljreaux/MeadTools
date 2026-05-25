@@ -3360,6 +3360,7 @@
                 "enum": [
                   "NOTE",
                   "GRAVITY",
+                  "VOLUME",
                   "TEMPERATURE",
                   "PH",
                   "ADDITION",
@@ -3428,6 +3429,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -3481,6 +3483,7 @@
         "enum": [
           "NOTE",
           "GRAVITY",
+          "VOLUME",
           "TEMPERATURE",
           "PH",
           "ADDITION",
@@ -3551,6 +3554,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -4136,6 +4140,7 @@
                       "enum": [
                         "NOTE",
                         "GRAVITY",
+                        "VOLUME",
                         "TEMPERATURE",
                         "PH",
                         "ADDITION",
@@ -4219,6 +4224,7 @@
                             "enum": [
                               "NOTE",
                               "GRAVITY",
+                              "VOLUME",
                               "TEMPERATURE",
                               "PH",
                               "ADDITION",
@@ -4781,6 +4787,7 @@
                   "enum": [
                     "NOTE",
                     "GRAVITY",
+                    "VOLUME",
                     "TEMPERATURE",
                     "PH",
                     "ADDITION",
@@ -4864,6 +4871,7 @@
                         "enum": [
                           "NOTE",
                           "GRAVITY",
+                          "VOLUME",
                           "TEMPERATURE",
                           "PH",
                           "ADDITION",
@@ -5368,6 +5376,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -5448,6 +5457,7 @@
                   "enum": [
                     "NOTE",
                     "GRAVITY",
+                    "VOLUME",
                     "TEMPERATURE",
                     "PH",
                     "ADDITION",
@@ -5835,6 +5845,582 @@
           }
         }
       },
+      "UpdateHydrometerBrewRequestBody": {
+        "type": "object",
+        "properties": {
+          "brew_id": {
+            "type": "string",
+            "nullable": false
+          },
+          "device_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "brew_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateHydrometerBrewResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string",
+                "nullable": true
+              },
+              "user_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "requested_email_alerts": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "sb_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "fg_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "PLANNED",
+                  "PRIMARY",
+                  "SECONDARY",
+                  "BULK_AGE",
+                  "STABILIZED",
+                  "BACKSWEETENED",
+                  "PACKAGED",
+                  "COMPLETE"
+                ]
+              },
+              "batch_number": {
+                "type": "number",
+                "nullable": true
+              },
+              "current_volume_liters": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_snapshot": {
+                "type": "object",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string"
+                    },
+                    "end_date": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "user_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "latest_gravity": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "recipe_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "requested_email_alerts": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "sb_alert_sent": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "fg_alert_sent": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "PLANNED",
+                        "PRIMARY",
+                        "SECONDARY",
+                        "BULK_AGE",
+                        "STABILIZED",
+                        "BACKSWEETENED",
+                        "PACKAGED",
+                        "COMPLETE"
+                      ]
+                    },
+                    "batch_number": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "current_volume_liters": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "recipe_snapshot": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "device_name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "brew_id": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "recipe_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "coefficients": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "brews": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "HydrometerBrewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "user_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "latest_gravity": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested_email_alerts": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sb_alert_sent": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "fg_alert_sent": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "PRIMARY",
+              "SECONDARY",
+              "BULK_AGE",
+              "STABILIZED",
+              "BACKSWEETENED",
+              "PACKAGED",
+              "COMPLETE"
+            ]
+          },
+          "batch_number": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_volume_liters": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_snapshot": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "EndHydrometerBrewResponse": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "user_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "latest_gravity": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "recipe_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "requested_email_alerts": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "sb_alert_sent": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "fg_alert_sent": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "PLANNED",
+                    "PRIMARY",
+                    "SECONDARY",
+                    "BULK_AGE",
+                    "STABILIZED",
+                    "BACKSWEETENED",
+                    "PACKAGED",
+                    "COMPLETE"
+                  ]
+                },
+                "batch_number": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "current_volume_liters": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "recipe_snapshot": {
+                  "type": "object",
+                  "nullable": true
+                }
+              }
+            },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "device_name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "brew_id": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "recipe_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "coefficients": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "brews": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "nullable": true
+                }
+              }
+            }
+          ]
+        }
+      },
+      "HydrometerBrewDevicePairItemResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string",
+                "nullable": true
+              },
+              "user_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "requested_email_alerts": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "sb_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "fg_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "PLANNED",
+                  "PRIMARY",
+                  "SECONDARY",
+                  "BULK_AGE",
+                  "STABILIZED",
+                  "BACKSWEETENED",
+                  "PACKAGED",
+                  "COMPLETE"
+                ]
+              },
+              "batch_number": {
+                "type": "number",
+                "nullable": true
+              },
+              "current_volume_liters": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_snapshot": {
+                "type": "object",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "device_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "brew_id": {
+                "type": "string",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "coefficients": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "brews": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "HydrometerDeviceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "device_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "brew_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "coefficients": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "brews": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "nullable": true
+          }
+        }
+      },
+      "HydrometerDeviceBrewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HydrometerBrewValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Missing device_id or brew_name",
+              "Missing brew_id",
+              "Missing device_id for ending brew",
+              "Missing brew_id or recipe_id"
+            ]
+          }
+        }
+      },
+      "HydrometerBrewErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to get brews.",
+              "Failed to create brew.",
+              "Failed to update brew.",
+              "Failed to delete brew.",
+              "Server misconfiguration"
+            ]
+          }
+        }
+      },
       "RecipeCommentPathParams": {
         "type": "object",
         "properties": {
@@ -6174,108 +6760,11 @@
           }
         }
       },
-      "HydrometerBrewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "start_date": {
-            "type": "string"
-          },
-          "end_date": {
-            "type": "string",
-            "nullable": true
-          },
-          "user_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "latest_gravity": {
-            "type": "number",
-            "nullable": true
-          },
-          "recipe_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "requested_email_alerts": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "sb_alert_sent": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "fg_alert_sent": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "stage": {
-            "type": "string",
-            "enum": [
-              "PLANNED",
-              "PRIMARY",
-              "SECONDARY",
-              "BULK_AGE",
-              "STABILIZED",
-              "BACKSWEETENED",
-              "PACKAGED",
-              "COMPLETE"
-            ]
-          },
-          "batch_number": {
-            "type": "number",
-            "nullable": true
-          },
-          "current_volume_liters": {
-            "type": "number",
-            "nullable": true
-          },
-          "recipe_snapshot": {
-            "type": "object",
-            "nullable": true
-          }
-        }
-      },
       "HydrometerBrewAlertResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string"
-          }
-        }
-      },
-      "HydrometerBrewValidationErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Missing device_id or brew_name",
-              "Missing brew_id",
-              "Missing device_id for ending brew",
-              "Missing brew_id or recipe_id"
-            ]
-          }
-        }
-      },
-      "HydrometerBrewErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Failed to get brews.",
-              "Failed to create brew.",
-              "Failed to update brew.",
-              "Failed to delete brew.",
-              "Server misconfiguration"
-            ]
           }
         }
       },
@@ -6375,485 +6864,6 @@
         }
       },
       "StartHydrometerBrewResponse": {
-        "type": "array",
-        "items": {
-          "oneOf": [
-            {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "start_date": {
-                  "type": "string"
-                },
-                "end_date": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "user_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "latest_gravity": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "recipe_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "name": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "requested_email_alerts": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "sb_alert_sent": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "fg_alert_sent": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "stage": {
-                  "type": "string",
-                  "enum": [
-                    "PLANNED",
-                    "PRIMARY",
-                    "SECONDARY",
-                    "BULK_AGE",
-                    "STABILIZED",
-                    "BACKSWEETENED",
-                    "PACKAGED",
-                    "COMPLETE"
-                  ]
-                },
-                "batch_number": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "current_volume_liters": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "recipe_snapshot": {
-                  "type": "object",
-                  "nullable": true
-                }
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "device_name": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "brew_id": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "recipe_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "coefficients": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                },
-                "brews": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "nullable": true
-                }
-              }
-            }
-          ]
-        }
-      },
-      "HydrometerBrewDevicePairItemResponse": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "start_date": {
-                "type": "string"
-              },
-              "end_date": {
-                "type": "string",
-                "nullable": true
-              },
-              "user_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "latest_gravity": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              },
-              "requested_email_alerts": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "sb_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "fg_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "stage": {
-                "type": "string",
-                "enum": [
-                  "PLANNED",
-                  "PRIMARY",
-                  "SECONDARY",
-                  "BULK_AGE",
-                  "STABILIZED",
-                  "BACKSWEETENED",
-                  "PACKAGED",
-                  "COMPLETE"
-                ]
-              },
-              "batch_number": {
-                "type": "number",
-                "nullable": true
-              },
-              "current_volume_liters": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_snapshot": {
-                "type": "object",
-                "nullable": true
-              }
-            }
-          },
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "device_name": {
-                "type": "string",
-                "nullable": true
-              },
-              "brew_id": {
-                "type": "string",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "coefficients": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "brews": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "nullable": true
-              }
-            }
-          }
-        ]
-      },
-      "HydrometerDeviceResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "device_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "brew_id": {
-            "type": "string",
-            "nullable": true
-          },
-          "recipe_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "coefficients": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "brews": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "nullable": true
-          }
-        }
-      },
-      "HydrometerDeviceBrewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "UpdateHydrometerBrewRequestBody": {
-        "type": "object",
-        "properties": {
-          "brew_id": {
-            "type": "string",
-            "nullable": false
-          },
-          "device_id": {
-            "type": "string",
-            "nullable": true
-          },
-          "brew_name": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "UpdateHydrometerBrewResponse": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "start_date": {
-                "type": "string"
-              },
-              "end_date": {
-                "type": "string",
-                "nullable": true
-              },
-              "user_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "latest_gravity": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              },
-              "requested_email_alerts": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "sb_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "fg_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "stage": {
-                "type": "string",
-                "enum": [
-                  "PLANNED",
-                  "PRIMARY",
-                  "SECONDARY",
-                  "BULK_AGE",
-                  "STABILIZED",
-                  "BACKSWEETENED",
-                  "PACKAGED",
-                  "COMPLETE"
-                ]
-              },
-              "batch_number": {
-                "type": "number",
-                "nullable": true
-              },
-              "current_volume_liters": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_snapshot": {
-                "type": "object",
-                "nullable": true
-              }
-            }
-          },
-          {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "start_date": {
-                      "type": "string"
-                    },
-                    "end_date": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "user_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "latest_gravity": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "recipe_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "name": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "requested_email_alerts": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "sb_alert_sent": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "fg_alert_sent": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "stage": {
-                      "type": "string",
-                      "enum": [
-                        "PLANNED",
-                        "PRIMARY",
-                        "SECONDARY",
-                        "BULK_AGE",
-                        "STABILIZED",
-                        "BACKSWEETENED",
-                        "PACKAGED",
-                        "COMPLETE"
-                      ]
-                    },
-                    "batch_number": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "current_volume_liters": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "recipe_snapshot": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "device_name": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "brew_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "recipe_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "coefficients": {
-                      "type": "array",
-                      "items": {
-                        "type": "number"
-                      }
-                    },
-                    "brews": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "nullable": true
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "EndHydrometerBrewResponse": {
         "type": "array",
         "items": {
           "oneOf": [
@@ -16626,6 +16636,81 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BrewCreateErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-brews",
+        "summary": "Update hydrometer brew",
+        "description": "Renames a brew when brew_name is provided, otherwise detaches the device.",
+        "tags": [
+          "Brews"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHydrometerBrewRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateHydrometerBrewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HydrometerBrewValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HydrometerBrewErrorResponse"
                 }
               }
             }

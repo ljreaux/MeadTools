@@ -182,6 +182,7 @@ function Brews() {
                   <TableHead>
                     {t("iSpindelDashboard.brews.recipeLink")}
                   </TableHead>
+                  <TableHead>{t("brews.title", "Brew Tracker")}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -314,6 +315,14 @@ function BrewRow({
           </Link>
         )}
       </TableCell>
+      <TableCell>
+        <Link
+          href={`/account/brews/${brew.id}`}
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+        >
+          {t("brews.charts.openTrackedBrew", "Open brew")}
+        </Link>
+      </TableCell>
     </TableRow>
   );
 }
@@ -356,6 +365,9 @@ function BrewsTableSkeleton({ rows = 5 }: { rows?: number }) {
           <TableCell>
             {/* button-ish */}
             <Skeleton className="h-8 w-[96px] rounded-md" />{" "}
+          </TableCell>
+          <TableCell>
+            <Skeleton className="h-8 w-[96px] rounded-md" />
           </TableCell>
         </TableRow>
       ))}

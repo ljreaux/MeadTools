@@ -12,9 +12,7 @@ import type {
   BrewVolumeData,
   GravityPayloadOptions
 } from "@/lib/utils/entryPayload";
-import type {
-  BrewRecipeSnapshot
-} from "@/lib/utils/buildBrewRecipeStageData";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type AccountBrewListItem = {
   id: string;
@@ -54,6 +52,11 @@ export type AccountEntriesByStage = Array<{
   entries: AccountBrewEntry[];
 }>;
 
+export type AccountBrewLinkedDevice = {
+  id: string;
+  device_name: string | null;
+};
+
 export type AccountBrew = {
   id: string;
   name: string | null;
@@ -73,6 +76,7 @@ export type AccountBrew = {
   recipe_snapshot: BrewRecipeSnapshot | null;
   entry_count: number;
 
+  linked_devices: AccountBrewLinkedDevice[];
   entries: AccountBrewEntry[];
   entries_by_stage: AccountEntriesByStage;
 };
@@ -293,6 +297,103 @@ export function useDeleteAccountBrew() {
         (old) => (old ? old.filter((b) => b.id !== brewId) : old)
       );
       queryClient.removeQueries({ queryKey: accountBrewsQk.detail(brewId) });
+    }
+  });
+}
+
+export type LinkHydrometerDeviceToAccountBrewInput = {
+  brewId: string;
+  deviceId: string;
+  fromBrewId?: string | null;
+};
+
+export function useLinkHydrometerDeviceToAccountBrew() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      brewId,
+      deviceId,
+      fromBrewId
+    }: LinkHydrometerDeviceToAccountBrewInput) => {
+      await fetchWithAuth(`/api/brews/${brewId}/attach-device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: deviceId
+        })
+      });
+
+      const adoptBody: Record<string, unknown> = { device_id: deviceId };
+      if (fromBrewId !== undefined) {
+        adoptBody.from_brew_id = fromBrewId;
+      }
+
+      return await fetchWithAuth<{
+        message: string;
+        adopted_count: number;
+        brew_id: string;
+        device_id: string;
+      }>(`/api/brews/${brewId}/adopt-logs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adoptBody)
+      });
+    },
+    onSuccess: (_, { brewId, deviceId }) => {
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerBrewLogs(brewId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.detail(brewId)
+      });
+      queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
+    }
+  });
+}
+
+export function useUnlinkHydrometerDeviceFromAccountBrew() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      brewId,
+      deviceId
+    }: {
+      brewId: string;
+      deviceId: string;
+    }) => {
+      const [brew, device] = await fetchWithAuth<[any, any]>("/api/brews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: deviceId,
+          brew_id: brewId
+        })
+      });
+
+      return { brew, device };
+    },
+    onSuccess: (_, { brewId, deviceId }) => {
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerBrewLogs(brewId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.detail(brewId)
+      });
+      queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
     }
   });
 }

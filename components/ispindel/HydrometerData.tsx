@@ -47,11 +47,13 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "../ui/separator";
 
-type FileData = {
+export type HydrometerChartData = {
   date: string;
   temperature?: number;
-  gravity: number;
-  abv: number;
+  gravity?: number;
+  abv?: number;
+  ph?: number;
+  volume?: number;
   signalStrength?: number;
   battery?: number;
 };
@@ -64,7 +66,7 @@ export function HydrometerData({
   tempUnits,
   loading
 }: {
-  chartData: FileData[];
+  chartData: HydrometerChartData[];
   name?: string;
   tempUnits: TempUnits;
   loading?: boolean;
@@ -75,7 +77,7 @@ export function HydrometerData({
 
   // ---------- state (hooks must always run) ----------
   const [gravityUnits, setGravityUnits] = useState<"SG" | "Brix">("SG");
-  const [data, setData] = useState<FileData[]>(chartData);
+  const [data, setData] = useState<HydrometerChartData[]>(chartData);
   const [currentTempUnits, setCurrentTempUnits] =
     useState<TempUnits>(tempUnits);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -102,6 +104,14 @@ export function HydrometerData({
         abv: {
           label: t("ABV"),
           color: "hsl(var(--chart-5))"
+        },
+        ph: {
+          label: t("brews.charts.phLabel", "pH"),
+          color: "hsl(var(--chart-3))"
+        },
+        volume: {
+          label: t("brews.charts.volumeLabel", "Volume (L)"),
+          color: "hsl(var(--chart-4))"
         }
       } satisfies ChartConfig),
     [t, gravityUnits]
@@ -133,7 +143,13 @@ export function HydrometerData({
   useEffect(() => {
     // if user is currently viewing Brix, convert the incoming chartData too
     if (gravityUnits === "Brix") {
-      setData(chartData.map((d) => ({ ...d, gravity: toBrix(d.gravity) })));
+      setData(
+        chartData.map((d) => ({
+          ...d,
+          gravity:
+            typeof d.gravity === "number" ? toBrix(d.gravity) : d.gravity
+        }))
+      );
     } else {
       setData(chartData);
     }
@@ -157,8 +173,18 @@ export function HydrometerData({
   // ---------- safe derived values ----------
   const hasData = data.length > 0;
 
-  const showSignalStrength = !!data[0]?.signalStrength;
-  const showBattery = !!data[0]?.battery;
+  const hasGravity = data.some((d) => typeof d.gravity === "number");
+  const hasTemperature = data.some((d) => typeof d.temperature === "number");
+  const hasAbv = data.some((d) => typeof d.abv === "number");
+  const hasPh = data.some((d) => typeof d.ph === "number");
+  const hasVolume = data.some((d) => typeof d.volume === "number");
+  const showSignalStrength = data.some((d) => typeof d.signalStrength === "number");
+  const showBattery = data.some((d) => typeof d.battery === "number");
+  const sparseDot = { r: 4, strokeWidth: 2 };
+  const getSeriesCount = (key: keyof HydrometerChartData) =>
+    data.filter((d) => typeof d[key] === "number").length;
+  const getLineDot = (key: keyof HydrometerChartData) =>
+    getSeriesCount(key) <= 2 ? sparseDot : false;
 
   const yPadding = useMemo(
     () => (showSignalStrength || showBattery ? { bottom: 15 } : undefined),
@@ -205,18 +231,27 @@ export function HydrometerData({
   );
 
   const dataMin = useMemo(() => {
-    if (!hasData) return 0;
-    return Math.min(...data.map((d) => d.gravity));
+    const gravityValues = data
+      .map((d) => d.gravity)
+      .filter((value): value is number => typeof value === "number");
+    if (!gravityValues.length) return 0;
+    return Math.min(...gravityValues);
   }, [hasData, data]);
 
   const dataMax = useMemo(() => {
-    if (!hasData) return 0;
-    return Math.max(...data.map((d) => d.gravity));
+    const gravityValues = data
+      .map((d) => d.gravity)
+      .filter((value): value is number => typeof value === "number");
+    if (!gravityValues.length) return 0;
+    return Math.max(...gravityValues);
   }, [hasData, data]);
 
   const abvTicks = useMemo(() => {
-    if (!hasData) return [];
-    const abvMax = Math.max(...data.map((d) => d.abv));
+    const abvValues = data
+      .map((d) => d.abv)
+      .filter((value): value is number => typeof value === "number");
+    if (!abvValues.length) return [];
+    const abvMax = Math.max(...abvValues);
     const ticks: number[] = [];
     for (let i = 0; i <= abvMax + 0.5; i += 0.5) ticks.push(i);
     return ticks;
@@ -240,7 +275,13 @@ export function HydrometerData({
     setGravityUnits(next);
 
     if (next === "Brix") {
-      setData(chartData.map((d) => ({ ...d, gravity: toBrix(d.gravity) })));
+      setData(
+        chartData.map((d) => ({
+          ...d,
+          gravity:
+            typeof d.gravity === "number" ? toBrix(d.gravity) : d.gravity
+        }))
+      );
     } else {
       setData(chartData);
     }
@@ -303,9 +344,11 @@ export function HydrometerData({
     <div className="h-full w-full">
       <ChartContainer
         config={{
-          gravity: chartConfig.gravity,
-          abv: chartConfig.abv,
-          temperature: chartConfig.temperature
+          ...(hasGravity ? { gravity: chartConfig.gravity } : {}),
+          ...(hasAbv ? { abv: chartConfig.abv } : {}),
+          ...(hasTemperature ? { temperature: chartConfig.temperature } : {}),
+          ...(hasPh ? { ph: chartConfig.ph } : {}),
+          ...(hasVolume ? { volume: chartConfig.volume } : {})
         }}
         className="bg-background"
       >
@@ -328,43 +371,76 @@ export function HydrometerData({
             }
           />
 
-          <YAxis
-            dataKey={"gravity"}
-            yAxisId={"gravity"}
-            domain={[
-              (v: number) => roundToNearest005(v - 0.005),
-              (v: number) => roundToNearest005(v + 0.005)
-            ]}
-            ticks={generateTicks(dataMin, dataMax, 0.005)}
-            allowDecimals
-            tickMargin={8}
-            tickFormatter={(val) =>
-              gravityUnits === "Brix"
-                ? Number(val).toFixed(2)
-                : Number(val).toFixed(3)
-            }
-          />
+          {hasGravity ? (
+            <YAxis
+              dataKey={"gravity"}
+              yAxisId={"gravity"}
+              domain={[
+                (v: number) => roundToNearest005(v - 0.005),
+                (v: number) => roundToNearest005(v + 0.005)
+              ]}
+              ticks={generateTicks(dataMin, dataMax, 0.005)}
+              allowDecimals
+              tickMargin={8}
+              tickFormatter={(val) =>
+                gravityUnits === "Brix"
+                  ? Number(val).toFixed(2)
+                  : Number(val).toFixed(3)
+              }
+            />
+          ) : null}
 
-          <YAxis
-            dataKey={"abv"}
-            yAxisId={"abv"}
-            orientation="right"
-            ticks={abvTicks}
-            tickMargin={8}
-            unit={"%"}
-          />
+          {hasAbv ? (
+            <YAxis
+              dataKey={"abv"}
+              yAxisId={"abv"}
+              orientation="right"
+              ticks={abvTicks}
+              tickMargin={8}
+              unit={"%"}
+            />
+          ) : null}
 
-          <YAxis
-            dataKey={"temperature"}
-            yAxisId={"temperature"}
-            orientation="right"
-            hide
-            width={0}
-            tick={false}
-            axisLine={false}
-            tickLine={false}
-            unit={`°${currentTempUnits}`}
-          />
+          {hasTemperature ? (
+            <YAxis
+              dataKey={"temperature"}
+              yAxisId={"temperature"}
+              orientation="right"
+              hide
+              width={0}
+              tick={false}
+              axisLine={false}
+              tickLine={false}
+              unit={`°${currentTempUnits}`}
+            />
+          ) : null}
+
+          {hasPh ? (
+            <YAxis
+              dataKey={"ph"}
+              yAxisId={"ph"}
+              orientation="right"
+              hide
+              width={0}
+              tick={false}
+              axisLine={false}
+              tickLine={false}
+            />
+          ) : null}
+
+          {hasVolume ? (
+            <YAxis
+              dataKey={"volume"}
+              yAxisId={"volume"}
+              orientation="right"
+              hide
+              width={0}
+              tick={false}
+              axisLine={false}
+              tickLine={false}
+              unit=" L"
+            />
+          ) : null}
 
           <ChartTooltip
             cursor={false}
@@ -381,32 +457,69 @@ export function HydrometerData({
             }
           />
 
-          <Line
-            dataKey="gravity"
-            type="monotone"
-            stroke="var(--color-gravity)"
-            strokeWidth={2}
-            dot={false}
-            yAxisId={"gravity"}
-          />
-          <Line
-            dataKey="abv"
-            type="monotone"
-            stroke="var(--color-abv)"
-            strokeWidth={2}
-            dot={false}
-            yAxisId={"abv"}
-            unit={"%"}
-          />
-          <Line
-            dataKey="temperature"
-            type="monotone"
-            stroke="var(--color-temperature)"
-            strokeWidth={2}
-            dot={false}
-            yAxisId={"temperature"}
-            unit={`°${currentTempUnits}`}
-          />
+          {hasGravity ? (
+            <Line
+              dataKey="gravity"
+              type="monotone"
+              stroke="var(--color-gravity)"
+              strokeWidth={2}
+              dot={getLineDot("gravity")}
+              activeDot={sparseDot}
+              yAxisId={"gravity"}
+              connectNulls
+            />
+          ) : null}
+          {hasAbv ? (
+            <Line
+              dataKey="abv"
+              type="monotone"
+              stroke="var(--color-abv)"
+              strokeWidth={2}
+              dot={getLineDot("abv")}
+              activeDot={sparseDot}
+              yAxisId={"abv"}
+              unit={"%"}
+              connectNulls
+            />
+          ) : null}
+          {hasTemperature ? (
+            <Line
+              dataKey="temperature"
+              type="monotone"
+              stroke="var(--color-temperature)"
+              strokeWidth={2}
+              dot={getLineDot("temperature")}
+              activeDot={sparseDot}
+              yAxisId={"temperature"}
+              unit={`°${currentTempUnits}`}
+              connectNulls
+            />
+          ) : null}
+          {hasPh ? (
+            <Line
+              dataKey="ph"
+              type="monotone"
+              stroke="var(--color-ph)"
+              strokeWidth={2}
+              dot={getLineDot("ph")}
+              activeDot={sparseDot}
+              yAxisId={"ph"}
+              connectNulls
+            />
+          ) : null}
+          {hasVolume ? (
+            <Line
+              dataKey="volume"
+              type="monotone"
+              stroke="var(--color-volume)"
+              strokeWidth={2}
+              dot={getLineDot("volume")}
+              activeDot={sparseDot}
+              yAxisId={"volume"}
+              unit=" L"
+              connectNulls
+            />
+          ) : null}
         </LineChart>
       </ChartContainer>
     </div>
@@ -540,47 +653,80 @@ export function HydrometerData({
                 padding={xPadding}
               />
 
-              <YAxis
-                domain={[
-                  (v: number) => roundToNearest005(v - 0.005),
-                  (v: number) => roundToNearest005(v + 0.005)
-                ]}
-                ticks={generateTicks(dataMin, dataMax, 0.005)}
-                allowDecimals
-                tickMargin={8}
-                dataKey={"gravity"}
-                yAxisId={"gravity"}
-                tickFormatter={(val) =>
-                  gravityUnits === "Brix"
-                    ? Number(val).toFixed(2)
-                    : Number(val).toFixed(3)
-                }
-                padding={yPadding}
-                hide={!checkObj.gravity}
-              />
+              {hasGravity ? (
+                <YAxis
+                  domain={[
+                    (v: number) => roundToNearest005(v - 0.005),
+                    (v: number) => roundToNearest005(v + 0.005)
+                  ]}
+                  ticks={generateTicks(dataMin, dataMax, 0.005)}
+                  allowDecimals
+                  tickMargin={8}
+                  dataKey={"gravity"}
+                  yAxisId={"gravity"}
+                  tickFormatter={(val) =>
+                    gravityUnits === "Brix"
+                      ? Number(val).toFixed(2)
+                      : Number(val).toFixed(3)
+                  }
+                  padding={yPadding}
+                  hide={!checkObj.gravity}
+                />
+              ) : null}
 
-              <YAxis
-                domain={["dataMin - 5", "dataMax + 5"]}
-                orientation="right"
-                dataKey={"temperature"}
-                yAxisId={"temperature"}
-                tickCount={10}
-                tickFormatter={(val) => Number(val).toFixed()}
-                padding={yPadding}
-                unit={`°${currentTempUnits}`}
-                hide={!checkObj.temperature}
-              />
+              {hasTemperature ? (
+                <YAxis
+                  domain={["dataMin - 5", "dataMax + 5"]}
+                  orientation="right"
+                  dataKey={"temperature"}
+                  yAxisId={"temperature"}
+                  tickCount={10}
+                  tickFormatter={(val) => Number(val).toFixed()}
+                  padding={yPadding}
+                  unit={`°${currentTempUnits}`}
+                  hide={!checkObj.temperature}
+                />
+              ) : null}
 
-              <YAxis
-                domain={[0, "dataMax + 0.5"]}
-                orientation="right"
-                dataKey={"abv"}
-                yAxisId={"abv"}
-                ticks={abvTicks}
-                padding={yPadding}
-                unit={"%"}
-                hide={!checkObj.abv}
-              />
+              {hasAbv ? (
+                <YAxis
+                  domain={[0, "dataMax + 0.5"]}
+                  orientation="right"
+                  dataKey={"abv"}
+                  yAxisId={"abv"}
+                  ticks={abvTicks}
+                  padding={yPadding}
+                  unit={"%"}
+                  hide={!checkObj.abv}
+                />
+              ) : null}
+
+              {hasPh ? (
+                <YAxis
+                  domain={["dataMin - 0.1", "dataMax + 0.1"]}
+                  orientation="right"
+                  dataKey={"ph"}
+                  yAxisId={"ph"}
+                  tickCount={8}
+                  tickFormatter={(val) => Number(val).toFixed(2)}
+                  padding={yPadding}
+                  hide={!checkObj.ph}
+                />
+              ) : null}
+
+              {hasVolume ? (
+                <YAxis
+                  domain={["dataMin - 0.25", "dataMax + 0.25"]}
+                  orientation="right"
+                  dataKey={"volume"}
+                  yAxisId={"volume"}
+                  tickCount={8}
+                  tickFormatter={(val) => Number(val).toFixed(1)}
+                  padding={yPadding}
+                  unit=" L"
+                  hide={!checkObj.volume}
+                />
+              ) : null}
 
               <ChartTooltip
                 cursor={false}
@@ -597,35 +743,74 @@ export function HydrometerData({
                 }
               />
 
-              <Line
-                dataKey="abv"
-                type="monotone"
-                stroke="var(--color-abv)"
-                strokeWidth={2}
-                dot={false}
-                yAxisId={"abv"}
-                unit={"%"}
-                hide={!checkObj.abv}
-              />
-              <Line
-                dataKey="temperature"
-                type="monotone"
-                stroke="var(--color-temperature)"
-                strokeWidth={2}
-                dot={false}
-                yAxisId={"temperature"}
-                unit={`°${currentTempUnits}`}
-                hide={!checkObj.temperature}
-              />
-              <Line
-                dataKey="gravity"
-                type="monotone"
-                stroke="var(--color-gravity)"
-                strokeWidth={2}
-                dot={false}
-                yAxisId={"gravity"}
-                hide={!checkObj.gravity}
-              />
+              {hasAbv ? (
+                <Line
+                  dataKey="abv"
+                  type="monotone"
+                  stroke="var(--color-abv)"
+                  strokeWidth={2}
+                  dot={getLineDot("abv")}
+                  activeDot={sparseDot}
+                  yAxisId={"abv"}
+                  unit={"%"}
+                  hide={!checkObj.abv}
+                  connectNulls
+                />
+              ) : null}
+              {hasTemperature ? (
+                <Line
+                  dataKey="temperature"
+                  type="monotone"
+                  stroke="var(--color-temperature)"
+                  strokeWidth={2}
+                  dot={getLineDot("temperature")}
+                  activeDot={sparseDot}
+                  yAxisId={"temperature"}
+                  unit={`°${currentTempUnits}`}
+                  hide={!checkObj.temperature}
+                  connectNulls
+                />
+              ) : null}
+              {hasPh ? (
+                <Line
+                  dataKey="ph"
+                  type="monotone"
+                  stroke="var(--color-ph)"
+                  strokeWidth={2}
+                  dot={getLineDot("ph")}
+                  activeDot={sparseDot}
+                  yAxisId={"ph"}
+                  hide={!checkObj.ph}
+                  connectNulls
+                />
+              ) : null}
+              {hasVolume ? (
+                <Line
+                  dataKey="volume"
+                  type="monotone"
+                  stroke="var(--color-volume)"
+                  strokeWidth={2}
+                  dot={getLineDot("volume")}
+                  activeDot={sparseDot}
+                  yAxisId={"volume"}
+                  unit=" L"
+                  hide={!checkObj.volume}
+                  connectNulls
+                />
+              ) : null}
+              {hasGravity ? (
+                <Line
+                  dataKey="gravity"
+                  type="monotone"
+                  stroke="var(--color-gravity)"
+                  strokeWidth={2}
+                  dot={getLineDot("gravity")}
+                  activeDot={sparseDot}
+                  yAxisId={"gravity"}
+                  hide={!checkObj.gravity}
+                  connectNulls
+                />
+              ) : null}
 
               <ChartLegend
                 content={

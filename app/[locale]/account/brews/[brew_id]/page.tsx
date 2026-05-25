@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 
 import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
+import { BrewTimelineCharts } from "@/components/brews/BrewTimelineCharts";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
@@ -61,7 +62,7 @@ import {
 } from "@/components/brews/stages/additionDialogShared";
 
 type HeaderVolumeUnit = "gal" | "L";
-type HistoryView = "stages" | "metrics";
+type HistoryView = "stages" | "metrics" | "charts";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
 
 const BREW_STAGE_ORDER = Object.values(BREW_STAGE);
@@ -955,28 +956,37 @@ export default function BrewPageClient() {
         </div>
       </div>
 
-      <BrewStagePath
-        brewId={brew.id}
-        stage={brew.stage}
-        entries={allEntries}
-        onMoveToStage={async (to, datetime) => {
-          await saveMetadata({ stage: to, stage_change_datetime: datetime });
-        }}
-        openAddEntry={openAddEntry}
-        addAddition={addAddition}
-        addAdditions={addAdditions}
-        addEntry={addEntry}
-        patchEntry={async (entryId, input) => {
-          await patchEntry({ brewId: brew.id, entryId, input });
-        }}
-        current_volume_liters={brew.current_volume_liters}
-        recipe={brewRecipe}
-        patchBrewMetadata={async (input) => {
-          await saveMetadata(input);
-        }}
-        linkRecipeHref={`/account/brews/${brew.id}/link`}
-        hasRecipeLinked={Boolean(brewRecipe.recipeData)}
-      />
+      <Accordion type="single" defaultValue="stage-panel" collapsible>
+        <AccordionItem value="stage-panel">
+          <AccordionTrigger>
+            {t("brews.stagePanel.title", "Brew tracker")} · {t(`brewStage.${brew.stage}`, brew.stage)}
+          </AccordionTrigger>
+          <AccordionContent>
+            <BrewStagePath
+              brewId={brew.id}
+              stage={brew.stage}
+              entries={allEntries}
+              onMoveToStage={async (to, datetime) => {
+                await saveMetadata({ stage: to, stage_change_datetime: datetime });
+              }}
+              openAddEntry={openAddEntry}
+              addAddition={addAddition}
+              addAdditions={addAdditions}
+              addEntry={addEntry}
+              patchEntry={async (entryId, input) => {
+                await patchEntry({ brewId: brew.id, entryId, input });
+              }}
+              current_volume_liters={brew.current_volume_liters}
+              recipe={brewRecipe}
+              patchBrewMetadata={async (input) => {
+                await saveMetadata(input);
+              }}
+              linkRecipeHref={`/account/brews/${brew.id}/link`}
+              hasRecipeLinked={Boolean(brewRecipe.recipeData)}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
       <RecordVolumeDialog
         t={t}
         open={recordVolumeOpen}
@@ -1037,6 +1047,9 @@ export default function BrewPageClient() {
               </TabsTrigger>
               <TabsTrigger value="metrics" className="h-6 px-2">
                 {t("brews.history.views.metrics", "Metrics")}
+              </TabsTrigger>
+              <TabsTrigger value="charts" className="h-6 px-2">
+                {t("brews.history.views.charts", "Charts")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1198,6 +1211,10 @@ export default function BrewPageClient() {
           ) : (
             renderEmptyHistory()
           )}
+        </TabsContent>
+
+        <TabsContent value="charts" className="mt-0">
+          <BrewTimelineCharts brewId={brew.id} entries={visibleEntries} linkedDevices={brew.linked_devices ?? []} />
         </TabsContent>
       </Tabs>
       <EditBrewEntryDialog
