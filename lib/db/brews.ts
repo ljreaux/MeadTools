@@ -63,6 +63,10 @@ export type BrewForApp = {
   recipe_snapshot: Prisma.JsonValue | null;
   entry_count: number;
 
+  linked_devices: Array<{
+    id: string;
+    device_name: string | null;
+  }>;
   entries: BrewEntryForApp[];
   entries_by_stage: EntriesByStage;
 };
@@ -287,6 +291,13 @@ export async function getBrewForApp(
       recipe_snapshot: true,
 
       recipes: { select: { name: true } },
+      devices: {
+        orderBy: [{ device_name: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          device_name: true
+        }
+      },
 
       entries: {
         orderBy: { datetime: "asc" },
@@ -345,6 +356,10 @@ export async function getBrewForApp(
     recipe_snapshot: (brew.recipe_snapshot as Prisma.JsonValue) ?? null,
     entry_count: brew._count.entries,
 
+    linked_devices: brew.devices.map((device) => ({
+      id: device.id,
+      device_name: device.device_name ?? null
+    })),
     entries,
     entries_by_stage
   };
@@ -422,7 +437,7 @@ export async function patchBrewMetadata(
     if ("name" in input) {
       const v = input.name;
       data.name =
-        typeof v === "string" ? (v.trim() ? v.trim() : null) : v ?? null;
+        typeof v === "string" ? (v.trim() ? v.trim() : null) : (v ?? null);
     }
 
     // batch_number
@@ -441,9 +456,10 @@ export async function patchBrewMetadata(
 
     // start_date
     if ("start_date" in input) {
-      const d = input.start_date instanceof Date
-        ? input.start_date
-        : new Date(input.start_date as any);
+      const d =
+        input.start_date instanceof Date
+          ? input.start_date
+          : new Date(input.start_date as any);
       if (Number.isNaN(d.getTime())) throw new Error("Invalid start_date");
       data.start_date = d;
     }
@@ -487,12 +503,16 @@ export async function patchBrewMetadata(
     }
 
     let stageChangeDatetime = new Date();
-    if ("stage_change_datetime" in input && input.stage_change_datetime != null) {
+    if (
+      "stage_change_datetime" in input &&
+      input.stage_change_datetime != null
+    ) {
       const d =
         input.stage_change_datetime instanceof Date
           ? input.stage_change_datetime
           : new Date(input.stage_change_datetime as any);
-      if (Number.isNaN(d.getTime())) throw new Error("Invalid stage_change_datetime");
+      if (Number.isNaN(d.getTime()))
+        throw new Error("Invalid stage_change_datetime");
       stageChangeDatetime = d;
     }
 
@@ -759,8 +779,8 @@ export async function createBrewEntryForApp(
     dtRaw == null
       ? new Date()
       : dtRaw instanceof Date
-      ? dtRaw
-      : new Date(dtRaw);
+        ? dtRaw
+        : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
   await prisma.$transaction(async (tx) => {
@@ -982,6 +1002,28 @@ export async function attachDeviceToBrewForApp(
 
     return { message: "Device attached", device_id: deviceId, brew_id: brewId };
   });
+}
+
+export async function removeDeviceFromBrew(
+  id: string,
+  brew_id: string,
+  user_id: number
+) {
+  try {
+    const brew = await prisma.brews.findFirst({
+      where: { user_id, id: brew_id }
+    });
+
+    const device = await prisma.devices.update({
+      where: { id },
+      data: { brew_id: null }
+    });
+
+    return [brew, device];
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error ending brew.");
+  }
 }
 
 function parseDateOrThrow(v: any, label: string): Date {
