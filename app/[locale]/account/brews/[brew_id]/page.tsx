@@ -64,6 +64,7 @@ import {
 type HeaderVolumeUnit = "gal" | "L";
 type HistoryView = "stages" | "metrics" | "charts";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
+type HistorySortOrder = "oldest" | "newest";
 
 const BREW_STAGE_ORDER = Object.values(BREW_STAGE);
 const HISTORY_FILTER_TYPES: Record<HistoryFilter, string[]> = {
@@ -174,8 +175,10 @@ export default function BrewPageClient() {
 
   const getVisibleEntries = (entries: AccountBrewEntry[]) => entries.filter((entry) => !(entry.data as any)?.hidden);
 
-  const sortEntriesNewestFirst = (entries: AccountBrewEntry[]) =>
-    [...entries].sort((a, b) => getEntryTime(b) - getEntryTime(a));
+  const sortEntriesForHistory = (entries: AccountBrewEntry[], order: HistorySortOrder) =>
+    [...entries].sort((a, b) =>
+      order === "oldest" ? getEntryTime(a) - getEntryTime(b) : getEntryTime(b) - getEntryTime(a)
+    );
   const formatTimelineDateRange = (entries: AccountBrewEntry[]) => {
     if (!entries.length) return "—";
 
@@ -362,6 +365,7 @@ export default function BrewPageClient() {
   const [timelineOpenStage, setTimelineOpenStage] = useState<string | undefined>();
   const [historyView, setHistoryView] = useState<HistoryView>("stages");
   const [historyFilters, setHistoryFilters] = useState<HistoryFilter[]>([]);
+  const [historySortOrder, setHistorySortOrder] = useState<HistorySortOrder>("oldest");
 
   function openAddEntry(args?: OpenAddEntryArgs) {
     setEntryPresetType(args?.presetType);
@@ -403,10 +407,13 @@ export default function BrewPageClient() {
       visibleTimelineBuckets
         .map((bucket) => ({
           stage: bucket.stage,
-          entries: sortEntriesNewestFirst(bucket.entries.filter((entry) => entryMatchesFilters(entry, historyFilters)))
+          entries: sortEntriesForHistory(
+            bucket.entries.filter((entry) => entryMatchesFilters(entry, historyFilters)),
+            historySortOrder
+          )
         }))
         .filter((bucket) => bucket.entries.length > 0),
-    [historyFilters, visibleTimelineBuckets]
+    [historyFilters, historySortOrder, visibleTimelineBuckets]
   );
   const metricGroups = useMemo(() => {
     const groups: Record<"readings" | "additions" | "volume", AccountBrewEntry[]> = {
@@ -1125,6 +1132,35 @@ export default function BrewPageClient() {
                 {t("clear", "Clear")}
               </Button>
             ) : null}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <div className="text-sm font-medium text-muted-foreground">
+                {t("brews.history.sort.label", "Sort")}
+              </div>
+              <ToggleGroup
+                type="single"
+                size="sm"
+                value={historySortOrder}
+                onValueChange={(value) => {
+                  if (value) setHistorySortOrder(value as HistorySortOrder);
+                }}
+                className="flex flex-wrap justify-start gap-1.5"
+              >
+                <ToggleGroupItem
+                  value="oldest"
+                  aria-label={t("brews.history.sort.oldest", "Oldest first")}
+                  className="h-7 rounded-full border border-border bg-background px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
+                  {t("brews.history.sort.oldest", "Oldest first")}
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="newest"
+                  aria-label={t("brews.history.sort.newest", "Newest first")}
+                  className="h-7 rounded-full border border-border bg-background px-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                >
+                  {t("brews.history.sort.newest", "Newest first")}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </div>
         ) : null}
 
@@ -1214,7 +1250,7 @@ export default function BrewPageClient() {
         </TabsContent>
 
         <TabsContent value="charts" className="mt-0">
-          <BrewTimelineCharts brewId={brew.id} entries={visibleEntries} linkedDevices={brew.linked_devices ?? []} />
+          <BrewTimelineCharts brewId={brew.id} entries={brew.entries ?? []} linkedDevices={brew.linked_devices ?? []} />
         </TabsContent>
       </Tabs>
       <EditBrewEntryDialog

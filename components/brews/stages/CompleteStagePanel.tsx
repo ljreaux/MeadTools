@@ -2,42 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
 import { calcABV } from "@/lib/utils/unitConverter";
 import type { BrewPackagingData } from "@/lib/utils/entryPayload";
-import type { RecipeUnitDefaults } from "@/types/recipeData";
 import type { StagePanelProps } from "../stageConfig";
-import { StatusTile } from "./StagePanelShared";
+import { formatGravity, formatNumber, formatVolume, sortNewestFirst, StageFocusActions, StatusTile } from "./StagePanelShared";
+import { useTranslation } from "react-i18next";
 
-function fmtNumber(value?: number | null, decimals = 2) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "-";
-  return value.toFixed(decimals).replace(/\.?0+$/, "");
-}
-
-function fmtGravity(value?: number | null) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return "-";
-  return value.toFixed(3);
-}
-
-function fmtAbv(value?: number | null) {
+function fmtAbv(value?: number | null, locale?: string) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return "-";
-  return `${fmtNumber(value, 2)}%`;
-}
-
-function fmtVolume(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) return "-";
-  return `${fmtNumber(liters * L_TO_VOLUME[unit])} ${unit}`;
-}
-
-function getEntryTime(entry: StagePanelProps["ctx"]["brew"]["entries"][number]) {
-  const value = entry.datetime ?? entry.createdAt;
-  if (typeof value !== "string") return 0;
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : 0;
-}
-
-function sortNewestFirst<T extends StagePanelProps["ctx"]["brew"]["entries"][number]>(entries: T[]) {
-  return [...entries].sort((a, b) => getEntryTime(b) - getEntryTime(a));
+  return `${formatNumber(value, 2, locale, "-")}%`;
 }
 
 function getLatestPackaging(ctx: StagePanelProps["ctx"]) {
@@ -92,7 +65,9 @@ function getFinalNotes(ctx: StagePanelProps["ctx"]) {
 }
 
 export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps) {
+  const { i18n } = useTranslation();
   const unit = ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal";
+  const locale = i18n.resolvedLanguage;
   const latestPackaging = getLatestPackaging(ctx);
   const latestPackagingData = latestPackaging?.data as BrewPackagingData | null | undefined;
   const packagedVolume = latestPackagingData?.packagedVolumeLiters ?? null;
@@ -123,17 +98,17 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
         />
         <StatusTile
           label={t("brews.complete.abv", "ABV")}
-          value={fmtAbv(abv)}
+          value={fmtAbv(abv, locale)}
           tone={abv != null ? "ok" : "warn"}
         />
         <StatusTile
           label={t("brews.complete.packagedVolume", "Packaged volume")}
-          value={fmtVolume(packagedVolume, unit)}
+          value={formatVolume(packagedVolume, unit, locale, { fallback: "-" })}
           tone={packagedVolume ? "ok" : "warn"}
         />
         <StatusTile
           label={t("brews.packaged.packageCount", "Package count")}
-          value={packageCount > 0 ? fmtNumber(packageCount, 0) : "-"}
+          value={packageCount > 0 ? formatNumber(packageCount, 0, locale, "-") : "-"}
           tone={packageCount > 0 ? "ok" : "warn"}
         />
       </div>
@@ -141,17 +116,17 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
       <div className="grid gap-3 sm:grid-cols-3">
         <StatusTile
           label={t("brews.complete.originalGravity", "Original gravity")}
-          value={fmtGravity(originalGravity)}
+          value={formatGravity(originalGravity, locale, "-")}
           tone={originalGravity ? "ok" : "warn"}
         />
         <StatusTile
           label={t("brews.complete.finalGravity", "Final gravity")}
-          value={fmtGravity(finalGravity)}
+          value={formatGravity(finalGravity, locale, "-")}
           tone={finalGravity ? "ok" : "warn"}
         />
         <StatusTile
           label={t("iSpindelDashboard.brews.latestGrav", "Latest gravity")}
-          value={fmtGravity(latestGravity)}
+          value={formatGravity(latestGravity, locale, "-")}
           tone={latestGravity ? "ok" : "warn"}
         />
       </div>
@@ -159,9 +134,9 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
       <div className="rounded-md border border-border bg-background/40 px-3 py-3 text-sm">
         <div className="font-medium">{t("brews.complete.packagingRecap", "Packaging recap")}</div>
         <div className="mt-1 text-muted-foreground">
-          {fmtVolume(latestPackagingData?.packagedVolumeLiters, unit)}
+          {formatVolume(latestPackagingData?.packagedVolumeLiters, unit, locale, { fallback: "-" })}
           {packageCount > 0
-            ? ` - ${fmtNumber(packageCount, 0)} ${t("brews.packaged.packages", "packages")}`
+            ? ` - ${formatNumber(packageCount, 0, locale, "-")} ${t("brews.packaged.packages", "packages")}`
             : ""}
         </div>
         {latestPackagingData?.bottleRows?.length ? (
@@ -172,10 +147,10 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
                 className="inline-flex items-baseline gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs"
               >
                 <span className="font-medium text-foreground">
-                  {fmtNumber(row.quantity, 0)} {row.label}
+                  {formatNumber(row.quantity, 0, locale, "-")} {row.label}
                 </span>
                 {row.totalLiters > 0 ? (
-                  <span className="text-muted-foreground">{fmtVolume(row.totalLiters, unit)}</span>
+                  <span className="text-muted-foreground">{formatVolume(row.totalLiters, unit, locale, { fallback: "-" })}</span>
                 ) : null}
               </span>
             ))}
@@ -221,14 +196,10 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
         )}
       </div>
 
-      <div className="rounded-md border border-border bg-background/40 px-3 py-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">{t("brews.actions.addEntry", "Add entry")}</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {t("brews.complete.addEntryHint", "Add any final reading, tasting, issue, or note.")}
-            </div>
-          </div>
+      <StageFocusActions
+        title={t("brews.actions.addEntry", "Add entry")}
+        description={t("brews.complete.addEntryHint", "Add any final reading, tasting, issue, or note.")}
+      >
           {canAddEntry ? (
             <Button
               size="sm"
@@ -248,8 +219,7 @@ export function CompleteStagePanel({ t, status, ctx, helpers }: StagePanelProps)
               {t("brews.actions.addEntry", "Add entry")}
             </Button>
           ) : null}
-        </div>
-      </div>
+      </StageFocusActions>
     </div>
   );
 }

@@ -13,7 +13,19 @@ export type BrewAdditionSource =
   | "manual_yeast"
   | "manual";
 export type GravityReadingRole = "OG" | "FG" | "GENERAL";
-export type GravityReadingSource = "measured" | "recipe" | "nutrient_basis";
+export type GravityReadingSource = "measured" | "recipe" | "nutrient_basis" | "abv_estimate";
+
+export type BrewAbvEstimateData = {
+  abv: number;
+  og: number;
+  fg?: number | null;
+  ogEntryId: string;
+  fgEntryId?: string | null;
+  eventEntryId?: string;
+  eventType?: string;
+  currentVolumeLiters?: number | null;
+  secondaryVolumeLiters?: number | null;
+};
 
 export type BrewNutrientBasisData = {
   chosenOg: number;
@@ -30,6 +42,7 @@ export type GravityPayloadOptions = {
   recipeValue?: number;
   hidden?: boolean;
   nutrientBasis?: BrewNutrientBasisData;
+  abvEstimate?: BrewAbvEstimateData;
 };
 
 export type BrewAdditionData = {
@@ -100,9 +113,25 @@ export const entryPayload = {
         source,
         recipeValue: options.recipeValue,
         hidden: options.hidden,
-        nutrientBasis: options.nutrientBasis
+        nutrientBasis: options.nutrientBasis,
+        abvEstimate: options.abvEstimate
       },
       note
+    };
+  },
+
+  abvEstimate(input: BrewAbvEstimateData & { datetime?: string }): CreateBrewEntryInput {
+    return {
+      type: BREW_ENTRY_TYPE.GRAVITY,
+      title: "Estimated ABV",
+      datetime: input.datetime,
+      gravity: input.abv,
+      data: {
+        readingRole: "GENERAL",
+        source: "abv_estimate",
+        hidden: true,
+        abvEstimate: input
+      }
     };
   },
 

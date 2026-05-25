@@ -2,49 +2,36 @@
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import type { AdditiveLine, IngredientLine, NoteLine } from "@/types/recipeData";
 import type { NutrientKey } from "@/types/nutrientData";
 import type { StagePanelProps } from "../stageConfig";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
-import { parseNumber, isValidNumber } from "@/lib/utils/validateInput";
+import { parseNumber } from "@/lib/utils/validateInput";
 import { LogYeastDialog } from "@/components/brews/LogYeastDialog";
-import { LogRecipeNoteDialog, StatusTile, WorkRow } from "./StagePanelShared";
 import {
-  convertAdditiveAmount,
-  inferAdditiveAmountDimFromUnit,
-  nextAdditiveAmountDimOnUnitChange,
-  shouldConvertAdditiveAmount,
-  type UnitDim
-} from "@/lib/utils/recipeDataCalculations";
+  buildAdditiveLines,
+  buildIngredientLines,
+  buildNoteLines,
+  formatGravity,
+  formatLoggedAmount,
+  formatNumber,
+  formatVolume,
+  getAdditiveAmount,
+  getIngredientAmount,
+  latestLoggedItem,
+  LogRecipeNoteDialog,
+  StatusTile,
+  WarningsPanel,
+  WorkRow
+} from "./StagePanelShared";
 import {
-  AdditiveUnitSelect,
-  AmountUnitField,
-  convertIngredientAmount,
   getPlannedIngredientAmounts,
-  IngredientBasisSelect,
-  IngredientUnitSelect,
-  type AdditionBasis
+  PlannedAdditionDialog,
+  type PlannedAdditionDialogItem
 } from "./additionDialogShared";
 
-type AdditionSource =
-  | "recipe_ingredient"
-  | "recipe_additive"
-  | "recipe_nutrient"
-  | "recipe_go_ferm"
-  | "recipe_yeast"
-  | "manual_yeast"
-  | "manual";
-
-type AdditionKind = "INGREDIENT" | "NUTRIENT" | "YEAST" | "OTHER";
 const goFermOptions = [
   { value: "Go-Ferm", label: "nuteResults.gfTypes.gf" },
   { value: "protect", label: "nuteResults.gfTypes.gfProtect" },
@@ -66,29 +53,7 @@ function calculateGoFermFromYeastAmount(type: string, yeastAmountG?: number | nu
   };
 }
 
-type PlannedAddition = {
-  title: string;
-  name: string;
-  kind: AdditionKind;
-  source: AdditionSource;
-  amount?: number;
-  unit?: string;
-  weightAmount?: number;
-  weightUnit?: string;
-  volumeAmount?: number;
-  volumeUnit?: string;
-  basis?: AdditionBasis;
-  recipeIngredientId?: string;
-  recipeAdditiveId?: string;
-  meta?: Record<string, any>;
-  components?: Array<{
-    key: string;
-    name: string;
-    amount: number;
-    unit: string;
-    plannedAmount: number;
-  }>;
-};
+type PlannedAddition = PlannedAdditionDialogItem;
 
 const nutrientLabels: Record<NutrientKey, string> = {
   fermO: "Fermaid O",
@@ -97,53 +62,11 @@ const nutrientLabels: Record<NutrientKey, string> = {
   other: "Other"
 };
 
-function fmtAmount(value?: string, unit?: string) {
-  const v = (value ?? "").trim();
-  if (!v) return null;
-  return unit ? `${v} ${unit}` : v;
-}
-
-function fmtGravity(value?: number | null) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(3);
-}
-
-function fmtVolume(liters?: number | null) {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) {
-    return "—";
-  }
-  return `${(liters / 3.78541).toFixed(2)} gal`;
-}
-
-function fmtNumber(value?: number | null, decimals = 2) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(decimals).replace(/\.?0+$/, "");
-}
-
-function fmtLoggedAmount(
-  addition?: {
-    amount: number | null;
-    unit: string | null;
-  } | null
-) {
-  if (!addition || typeof addition.amount !== "number") return null;
-  return [fmtNumber(addition.amount), addition.unit].filter(Boolean).join(" ");
-}
-
-function latestLoggedAddition<T extends { datetime: string | null }>(items?: T[]) {
-  if (!items?.length) return null;
-  return [...items].sort((a, b) => {
-    const aTime = a.datetime ? new Date(a.datetime).getTime() : 0;
-    const bTime = b.datetime ? new Date(b.datetime).getTime() : 0;
-    return bTime - aTime;
-  })[0];
-}
-
 function loggedNutrientAdditionForIndex(
   additions: StagePanelProps["ctx"]["recipe"]["actual"]["additions"],
   index: number
 ) {
-  return latestLoggedAddition(
+  return latestLoggedItem(
     additions.filter(
       (addition) =>
         addition.source === "recipe_nutrient" &&
@@ -169,64 +92,6 @@ function loggedNutrientComponents(
       unit: typeof actual?.unit === "string" && actual.unit ? actual.unit : planned.unit
     };
   });
-}
-
-function getRecipeAmount(line: IngredientLine) {
-  const src = line.amounts.basis === "volume" ? line.amounts.volume : line.amounts.weight;
-  const amount = Number(src.value);
-  if (!Number.isFinite(amount)) return {};
-  return { amount, unit: src.unit };
-}
-
-function getAdditiveAmount(line: AdditiveLine) {
-  const amount = Number(line.amount);
-  if (!Number.isFinite(amount)) return {};
-  return { amount, unit: line.unit };
-}
-
-function ingredientDisplay(line: IngredientLine) {
-  const name = (line.name ?? "").trim() || "—";
-  const weight = fmtAmount(line.amounts.weight.value, line.amounts.weight.unit);
-  const volume = fmtAmount(line.amounts.volume.value, line.amounts.volume.unit);
-  const primary = line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
-  const secondary =
-    line.amounts.basis === "volume"
-      ? weight && weight !== primary
-        ? weight
-        : null
-      : volume && volume !== primary
-        ? volume
-        : null;
-
-  return { name, primary, secondary };
-}
-
-function buildPrimaryLines(lines: IngredientLine[]) {
-  return lines
-    .filter((line) => !line.secondary)
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({ line, ...ingredientDisplay(line) }));
-}
-
-function buildAdditiveLines(lines: AdditiveLine[]) {
-  return lines
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({
-      line,
-      name: line.name.trim(),
-      amount: fmtAmount(line.amount, line.unit)
-    }));
-}
-
-function getNoteText(note: NoteLine) {
-  return (note.content ?? [])
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join("\n");
-}
-
-function buildPrimaryNotes(notes: NoteLine[]) {
-  return notes.map((note) => ({ note, text: getNoteText(note) })).filter((item) => item.text.length > 0);
 }
 
 function getEstimatedFg(ctx: StagePanelProps["ctx"]) {
@@ -293,19 +158,19 @@ export function PrimaryStagePanel({
   helpers,
   warnings = []
 }: StagePanelProps) {
+  const { i18n } = useTranslation();
   const [additionDialog, setAdditionDialog] = React.useState<PlannedAddition | null>(null);
   const [yeastDialogMode, setYeastDialogMode] = React.useState<"planned" | "manual" | null>(null);
   const [recipeNoteDialog, setRecipeNoteDialog] = React.useState<{
     text: string;
     recipeNoteId: string;
   } | null>(null);
-  const [warningsOpen, setWarningsOpen] = React.useState(true);
   const primaryLines = React.useMemo(
-    () => buildPrimaryLines(ctx.recipe.primaryIngredients),
+    () => buildIngredientLines(ctx.recipe.primaryIngredients, { secondaryOnly: true }),
     [ctx.recipe.primaryIngredients]
   );
   const additiveLines = React.useMemo(() => buildAdditiveLines(ctx.recipe.additives), [ctx.recipe.additives]);
-  const primaryNotes = React.useMemo(() => buildPrimaryNotes(ctx.recipe.primaryNotes), [ctx.recipe.primaryNotes]);
+  const primaryNotes = React.useMemo(() => buildNoteLines(ctx.recipe.primaryNotes), [ctx.recipe.primaryNotes]);
   const nutrientRows = React.useMemo(() => getNutrientRows(ctx), [ctx]);
 
   const loggedIngredientIds = React.useMemo(
@@ -362,6 +227,12 @@ export function PrimaryStagePanel({
     typeof ctx.brew.current_volume_liters === "number" &&
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
+  const locale = i18n.resolvedLanguage;
+  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtGravity = (value?: number | null) => formatGravity(value, locale);
+  const fmtVolume = (value?: number | null) => formatVolume(value, "gal", locale);
+  const fmtLoggedAmount = (addition?: { amount: number | null; unit: string | null } | null) =>
+    formatLoggedAmount(addition, locale);
   const nutrientDisabledReason = !hasNutrientBasis
     ? t("brews.primary.nutrientsNeedOg", "Log OG first.")
     : !hasLoggedYeast
@@ -465,7 +336,7 @@ export function PrimaryStagePanel({
   const logMissingIngredients = async () => {
     await helpers.addAdditions(
       missingIngredients.map((item) => {
-        const { amount, unit } = getRecipeAmount(item.line);
+        const { amount, unit } = getIngredientAmount(item.line);
         return {
           name: item.name,
           amount,
@@ -600,31 +471,7 @@ export function PrimaryStagePanel({
         </div>
       </div>
 
-      {warnings.length > 0 ? (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium"
-            onClick={() => setWarningsOpen((open) => !open)}
-          >
-            <span>
-              {t("brews.warnings", "Warnings")} · {warnings.length}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {warningsOpen ? t("hide", "Hide") : t("show", "Show")}
-            </span>
-          </button>
-          {warningsOpen ? (
-            <div className="space-y-2 border-t border-yellow-500/20 px-3 py-3">
-              {warnings.map((warning) => (
-                <div key={warning.id} className="text-sm">
-                  {warning.message(t)}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <WarningsPanel warnings={warnings} defaultOpen />
 
       {fgOutsideEstimate ? (
         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
@@ -711,10 +558,10 @@ export function PrimaryStagePanel({
                 <ul className="space-y-1">
                   {primaryLines.map((item) => {
                     const isLogged = loggedIngredientIds.has(String(item.line.lineId));
-                    const loggedAddition = latestLoggedAddition(
+                    const loggedAddition = latestLoggedItem(
                       ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
                     );
-                    const { amount, unit } = getRecipeAmount(item.line);
+                    const { amount, unit } = getIngredientAmount(item.line);
                     return (
                       <WorkRow
                         key={item.line.lineId}
@@ -760,7 +607,7 @@ export function PrimaryStagePanel({
               <ul className="space-y-1">
                 {additiveLines.map((item) => {
                   const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
-                  const loggedAddition = latestLoggedAddition(
+                  const loggedAddition = latestLoggedItem(
                     ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
                   );
                   const { amount, unit } = getAdditiveAmount(item.line);
@@ -898,7 +745,7 @@ export function PrimaryStagePanel({
         </AccordionItem>
       </Accordion>
 
-      <LogPlannedAdditionDialog
+      <PlannedAdditionDialog
         planned={additionDialog}
         onOpenChange={(open) => {
           if (!open) setAdditionDialog(null);
@@ -907,6 +754,11 @@ export function PrimaryStagePanel({
           await helpers.addAddition(input);
           setAdditionDialog(null);
         }}
+        defaultTitle={t("brews.primary.logAddition", "Log addition")}
+        goFermOptions={goFermOptions}
+        calculateGoFermFromYeastAmount={calculateGoFermFromYeastAmount}
+        includeEmptyComponents
+        nutrientNotice="This records the recalculated recipe nutrient addition. Change the schedule settings in the recipe builder for now."
       />
       <LogYeastDialog
         open={yeastDialogMode != null}
@@ -949,300 +801,6 @@ export function PrimaryStagePanel({
         }}
       />
     </div>
-  );
-}
-
-function LogPlannedAdditionDialog({
-  planned,
-  onOpenChange,
-  onSave
-}: {
-  planned: PlannedAddition | null;
-  onOpenChange: (open: boolean) => void;
-  onSave: (input: {
-    name: string;
-    amount?: number;
-    unit?: string;
-    note?: string;
-    recipeIngredientId?: string;
-    recipeAdditiveId?: string;
-    kind?: AdditionKind;
-    source?: AdditionSource;
-    meta?: Record<string, any>;
-    datetime?: string;
-  }) => Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const [name, setName] = React.useState("");
-  const [amount, setAmount] = React.useState("");
-  const [unit, setUnit] = React.useState("");
-  const [basis, setBasis] = React.useState<AdditionBasis>("other");
-  const [amountTouched, setAmountTouched] = React.useState(false);
-  const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
-  const [note, setNote] = React.useState("");
-  const [datetime, setDatetime] = React.useState<Date>(new Date());
-  const [components, setComponents] = React.useState<PlannedAddition["components"]>([]);
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!planned) return;
-    setName(planned.name);
-    setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
-    setUnit(planned.unit ?? "");
-    setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
-    setAmountTouched(false);
-    setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
-    setNote("");
-    setDatetime(new Date());
-    setComponents(planned.components ?? []);
-  }, [planned]);
-
-  const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
-  const usesIngredientUnits = planned?.source === "recipe_ingredient";
-  const isGoFerm = planned?.source === "recipe_go_ferm";
-  const isNutrient = planned?.source === "recipe_nutrient";
-  const changeGoFermType = (nextType: string) => {
-    setName(nextType);
-
-    const recalculated = calculateGoFermFromYeastAmount(nextType, planned?.meta?.actualYeastAmount);
-    if (!recalculated) return;
-
-    setAmount(String(recalculated.amount));
-    setAmountTouched(false);
-    setAmountDim(inferAdditiveAmountDimFromUnit("g"));
-  };
-
-  const changeAmount = (value: string) => {
-    if (!isValidNumber(value)) return;
-    setAmount(value);
-    if (usesAdditiveUnits) {
-      setAmountTouched(true);
-      setAmountDim(inferAdditiveAmountDimFromUnit(unit));
-    }
-  };
-
-  const changeBasis = (nextBasis: AdditionBasis) => {
-    setBasis(nextBasis);
-    if (!planned || nextBasis === "other") return;
-
-    if (nextBasis === "weight") {
-      setAmount(typeof planned.weightAmount === "number" ? String(planned.weightAmount) : "");
-      setUnit(planned.weightUnit ?? "g");
-      return;
-    }
-
-    setAmount(typeof planned.volumeAmount === "number" ? String(planned.volumeAmount) : "");
-    setUnit(planned.volumeUnit ?? "L");
-  };
-
-  const changeUnit = (nextUnit: string) => {
-    if (usesIngredientUnits) {
-      setAmount(convertIngredientAmount(amount, unit, nextUnit, basis));
-      setUnit(nextUnit);
-      return;
-    }
-
-    if (!usesAdditiveUnits) {
-      setUnit(nextUnit);
-      return;
-    }
-
-    const fromUnit = unit;
-    const doConvert = shouldConvertAdditiveAmount({
-      amountStr: amount,
-      fromUnit,
-      toUnit: nextUnit,
-      amountTouched,
-      amountDim
-    });
-    const nextAmount =
-      doConvert && amount.trim().length > 0
-        ? convertAdditiveAmount({
-            amountStr: amount,
-            fromUnit,
-            toUnit: nextUnit
-          })
-        : amount;
-
-    const nextDim = nextAdditiveAmountDimOnUnitChange({
-      fromUnit,
-      toUnit: nextUnit,
-      prevAmountDim: amountDim
-    });
-
-    setAmount(nextAmount);
-    setUnit(nextUnit);
-    setAmountDim(nextDim);
-  };
-
-  const save = async () => {
-    if (!planned) return;
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
-
-    const parsedAmount = amount.trim() ? Number(amount) : undefined;
-    const actualComponents = components ?? [];
-    const componentTotal = actualComponents.reduce((sum, component) => {
-      const value = Number(component.amount);
-      return sum + (Number.isFinite(value) ? value : 0);
-    }, 0);
-    const actualAmount =
-      actualComponents.length > 0
-        ? componentTotal
-        : typeof parsedAmount === "number" && Number.isFinite(parsedAmount)
-          ? parsedAmount
-          : undefined;
-
-    setIsSaving(true);
-    try {
-      await onSave({
-        name: trimmedName,
-        amount: actualAmount,
-        unit: unit.trim() || planned.unit,
-        note: note.trim() || undefined,
-        recipeIngredientId: planned.recipeIngredientId,
-        recipeAdditiveId: planned.recipeAdditiveId,
-        kind: planned.kind,
-        source: planned.source,
-        datetime: datetime.toISOString(),
-        meta: {
-          ...(planned.meta ?? {}),
-          plannedName: planned.name,
-          plannedAmount: planned.amount,
-          plannedUnit: planned.unit,
-          actualBasis: usesIngredientUnits ? basis : undefined,
-          plannedBasis: planned.basis,
-          plannedWeightAmount: planned.weightAmount,
-          plannedWeightUnit: planned.weightUnit,
-          plannedVolumeAmount: planned.volumeAmount,
-          plannedVolumeUnit: planned.volumeUnit,
-          actualWaterAmount:
-            isGoFerm && planned.meta?.actualYeastAmount
-              ? calculateGoFermFromYeastAmount(trimmedName, planned.meta.actualYeastAmount)?.water
-              : planned.meta?.plannedWaterAmount,
-          actualWaterUnit: isGoFerm ? "mL" : undefined,
-          components: actualComponents
-        }
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={Boolean(planned)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>{planned?.title ?? "Log addition"}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Name</Label>
-            {isGoFerm ? (
-              <Select value={name} onValueChange={changeGoFermType}>
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {goFermOptions.map(({ value, label }) => (
-                    <SelectItem key={value} value={value}>
-                      {t(label)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input value={name} onChange={(event) => setName(event.target.value)} />
-            )}
-          </div>
-
-          {isNutrient ? (
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              This records the recalculated recipe nutrient addition. Change the schedule settings in the recipe builder
-              for now.
-            </div>
-          ) : null}
-
-          {components?.length ? (
-            <div className="space-y-2">
-              <Label>Amounts</Label>
-              <div className="space-y-2">
-                {components.map((component, index) => (
-                  <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
-                    <div className="self-center text-sm">{component.name}</div>
-                    <AmountUnitField
-                      amount={String(component.amount)}
-                      unit={component.unit}
-                      onAmountChange={(value) => {
-                        if (!isValidNumber(value)) return;
-                        const next = [...components];
-                        next[index] = {
-                          ...component,
-                          amount: Number(value)
-                        };
-                        setComponents(next);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Amount</Label>
-              {usesIngredientUnits ? (
-                <div className="space-y-2">
-                  <IngredientBasisSelect value={basis} onValueChange={changeBasis} t={t} />
-                  <AmountUnitField
-                    amount={amount}
-                    unit={unit}
-                    onAmountChange={changeAmount}
-                    unitControl={
-                      <IngredientUnitSelect
-                        basis={basis}
-                        value={unit}
-                        onValueChange={changeUnit}
-                      />
-                    }
-                  />
-                </div>
-              ) : usesAdditiveUnits ? (
-                <AmountUnitField
-                  amount={amount}
-                  unit={unit}
-                  onAmountChange={changeAmount}
-                  unitControl={
-                    <AdditiveUnitSelect value={unit} onValueChange={changeUnit} />
-                  }
-                />
-              ) : (
-                <AmountUnitField amount={amount} unit={unit} onAmountChange={setAmount} />
-              )}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label>{t("date", "Date")}</Label>
-            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Note</Label>
-            <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional" rows={3} />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={isSaving || !name.trim()}>
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

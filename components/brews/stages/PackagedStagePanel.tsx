@@ -11,46 +11,15 @@ import {
 } from "@/components/extraCalcs/BottlingCalculator";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
 import { entryPayload, type BrewPackagingData } from "@/lib/utils/entryPayload";
-import type { RecipeUnitDefaults } from "@/types/recipeData";
 import type { StagePanelProps } from "../stageConfig";
-import { StatusTile } from "./StagePanelShared";
-
-function fmtNumber(value?: number | null, decimals = 2) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(decimals).replace(/\.?0+$/, "");
-}
-
-function fmtVolume(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) return "—";
-  return `${fmtNumber(liters * L_TO_VOLUME[unit])} ${unit}`;
-}
-
-function getPackagingEntries(ctx: StagePanelProps["ctx"]) {
-  return ctx.brew.entries
-    .filter((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING)
-    .sort((a, b) => {
-      const aValue = (a as any).datetime ?? a.createdAt;
-      const bValue = (b as any).datetime ?? b.createdAt;
-      const aTime = typeof aValue === "string" ? new Date(aValue).getTime() : 0;
-      const bTime = typeof bValue === "string" ? new Date(bValue).getTime() : 0;
-      return bTime - aTime;
-    });
-}
+import { DateConfirmDialog, formatNumber, formatVolume, latestLoggedItem, StageFocusActions, StatusTile, WarningsPanel } from "./StagePanelShared";
 
 function getLatestPackaging(ctx: StagePanelProps["ctx"]) {
-  return getPackagingEntries(ctx)[0] ?? null;
+  return latestLoggedItem(ctx.brew.entries.filter((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING));
 }
 
 function getPackageCount(data?: BrewPackagingData | null) {
@@ -60,11 +29,11 @@ function getPackageCount(data?: BrewPackagingData | null) {
 const VOLUME_CHANGE_THRESHOLD_L = 0.01;
 
 export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: StagePanelProps) {
+  const { i18n } = useTranslation();
   const bottling = useBottlingRows();
   const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [note, setNote] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
-  const [warningsOpen, setWarningsOpen] = React.useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = React.useState(false);
 
   const unit = ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal";
@@ -81,6 +50,7 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
     bottling.volumeUnits === "gallons" ? saveVolumeLiters / L_PER_GAL : saveVolumeLiters;
   const displayUnit = bottling.volumeUnits === "gallons" ? "gal" : "L";
   const bottleRows = getPackagingBottleRows(bottling.bottleRows, bottling.getPerBottleLiters);
+  const locale = i18n.resolvedLanguage;
 
   React.useEffect(() => {
     if (latestPackagingData?.packagedVolumeLiters) {
@@ -187,12 +157,12 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
       <div className="grid gap-3 sm:grid-cols-3">
         <StatusTile
           label={t("brews.packaged.packagedVolume", "Packaged volume")}
-          value={fmtVolume(displayPackagedVolume, unit)}
+          value={formatVolume(displayPackagedVolume, unit, locale)}
           tone={displayPackagedVolume ? "ok" : "warn"}
         />
         <StatusTile
           label={t("brews.packaged.packageCount", "Package count")}
-          value={packageCount > 0 ? fmtNumber(packageCount, 0) : "—"}
+          value={packageCount > 0 ? formatNumber(packageCount, 0, locale) : "—"}
           tone={latestPackaging ? "ok" : "warn"}
         />
         <StatusTile
@@ -206,20 +176,13 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
         />
       </div>
 
-      <div className="rounded-md border border-border bg-background/40 px-3 py-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">
-              {t("brews.packaged.focus", "Record packaging details and finish the brew")}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {t(
-                "brews.packaged.workflowHint",
-                "Save package sizes, counts, and volume before marking the brew complete."
-              )}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <StageFocusActions
+        title={t("brews.packaged.focus", "Record packaging details and finish the brew")}
+        description={t(
+          "brews.packaged.workflowHint",
+          "Save package sizes, counts, and volume before marking the brew complete."
+        )}
+      >
             <Button size="sm" disabled={!canEdit} onClick={() => openEntry(BREW_ENTRY_TYPE.NOTE)}>
               {t("brews.bulkAge.addNote", "Add note")}
             </Button>
@@ -232,35 +195,9 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
             <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setCompleteDialogOpen(true)}>
               {t("brews.bulkAge.markComplete", "Mark Complete")}
             </Button>
-          </div>
-        </div>
-      </div>
+      </StageFocusActions>
 
-      {warnings.length > 0 ? (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium"
-            onClick={() => setWarningsOpen((open) => !open)}
-          >
-            <span>
-              {t("brews.warnings", "Warnings")} · {warnings.length}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {warningsOpen ? t("hide", "Hide") : t("show", "Show")}
-            </span>
-          </button>
-          {warningsOpen ? (
-            <div className="space-y-2 border-t border-yellow-500/20 px-3 py-3">
-              {warnings.map((warning) => (
-                <div key={warning.id} className="text-sm">
-                  {warning.message(t)}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <WarningsPanel warnings={warnings} />
 
       <div className="rounded-md border border-border bg-background/40 p-3">
         <div className="space-y-2">
@@ -292,9 +229,9 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
             {t("brews.packaged.latestPackaging", "Latest packaging")}
           </div>
           <div className="mt-1 text-muted-foreground">
-            {fmtVolume(latestPackagingData?.packagedVolumeLiters, unit)}
+            {formatVolume(latestPackagingData?.packagedVolumeLiters, unit, locale)}
             {packageCount > 0
-              ? ` · ${fmtNumber(packageCount, 0)} ${t("brews.packaged.packages", "packages")}`
+              ? ` · ${formatNumber(packageCount, 0, locale)} ${t("brews.packaged.packages", "packages")}`
               : ""}
           </div>
           {latestPackagingData?.bottleRows?.length ? (
@@ -305,11 +242,11 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
                   className="inline-flex items-baseline gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs"
                 >
                   <span className="font-medium text-foreground">
-                    {fmtNumber(row.quantity, 0)} {row.label}
+                    {formatNumber(row.quantity, 0, locale)} {row.label}
                   </span>
                   {row.totalLiters > 0 ? (
                     <span className="text-muted-foreground">
-                      {fmtVolume(row.totalLiters, unit)}
+                      {formatVolume(row.totalLiters, unit, locale)}
                     </span>
                   ) : null}
                 </span>
@@ -320,63 +257,15 @@ export function PackagedStagePanel({ t, status, ctx, helpers, warnings = [] }: S
         </div>
       ) : null}
 
-      <PackagedCompleteDialog
+      <DateConfirmDialog
         open={completeDialogOpen}
         onOpenChange={setCompleteDialogOpen}
-        onMove={async (datetimeIso) => {
+        title={t("brews.bulkAge.markComplete", "Mark Complete")}
+        onConfirm={async (datetimeIso) => {
           await helpers.moveToStage("COMPLETE", datetimeIso);
           setCompleteDialogOpen(false);
         }}
       />
     </div>
-  );
-}
-
-function PackagedCompleteDialog({
-  open,
-  onOpenChange,
-  onMove
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onMove: (datetime: string) => Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const [datetime, setDatetime] = React.useState<Date>(new Date());
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (open) setDatetime(new Date());
-  }, [open]);
-
-  const move = async () => {
-    setIsSaving(true);
-    try {
-      await onMove(datetime.toISOString());
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>{t("brews.bulkAge.markComplete", "Mark Complete")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label>{t("date", "Date")}</Label>
-          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
-        </div>
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            {t("cancel", "Cancel")}
-          </Button>
-          <Button onClick={move} disabled={isSaving}>
-            {t("save", "Save")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

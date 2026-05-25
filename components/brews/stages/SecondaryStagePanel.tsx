@@ -11,54 +11,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import { calculateRecipeStabilizerResults } from "@/lib/utils/calculateRecipeDerivedState";
 import {
-  convertAdditiveAmount,
-  inferAdditiveAmountDimFromUnit,
   L_TO_VOLUME,
-  nextAdditiveAmountDimOnUnitChange,
-  shouldConvertAdditiveAmount,
   VOLUME_TO_L,
-  WEIGHT_TO_KG,
-  type UnitDim
+  WEIGHT_TO_KG
 } from "@/lib/utils/recipeDataCalculations";
 import { calcABV } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import type { AdditiveLine, IngredientLine, NoteLine, RecipeUnitDefaults, VolumeUnit, WeightUnit } from "@/types/recipeData";
+import type { IngredientLine, RecipeUnitDefaults, VolumeUnit, WeightUnit } from "@/types/recipeData";
 import type { StagePanelProps } from "../stageConfig";
 import {
-  AdditiveUnitSelect,
   AmountUnitField,
-  convertIngredientAmount,
   getPlannedIngredientAmounts,
-  IngredientBasisSelect,
-  IngredientUnitSelect,
-  type AdditionBasis
+  PlannedAdditionDialog,
+  type PlannedAdditionDialogItem
 } from "./additionDialogShared";
-import { LogRecipeNoteDialog, StatusTile, WorkRow } from "./StagePanelShared";
+import {
+  buildAdditiveLines,
+  buildIngredientLines,
+  buildNoteLines,
+  formatGravity,
+  formatLoggedAmount,
+  formatNumber,
+  formatVolume,
+  getAdditiveAmount,
+  getIngredientAmount,
+  latestLoggedItem,
+  LogRecipeNoteDialog,
+  StatusTile,
+  WarningsPanel,
+  WorkRow
+} from "./StagePanelShared";
 
 type AdditionSource = "recipe_ingredient" | "recipe_additive" | "manual";
 type AdditionKind = "INGREDIENT" | "OTHER";
 
-type PlannedSecondaryAddition = {
-  title: string;
-  name: string;
-  kind: AdditionKind;
-  source: AdditionSource;
-  amount?: number;
-  unit?: string;
-  weightAmount?: number;
-  weightUnit?: string;
-  volumeAmount?: number;
-  volumeUnit?: string;
-  basis?: AdditionBasis;
-  recipeIngredientId?: string;
-  recipeAdditiveId?: string;
-  meta?: Record<string, any>;
-};
+type PlannedSecondaryAddition = PlannedAdditionDialogItem;
 
 type StabilizerPlan = {
   volumeL: number;
@@ -104,101 +95,8 @@ const SUPPLEMENTAL_GRAM_THRESHOLD = 0.01;
 const SUPPLEMENTAL_CAMPDEN_THRESHOLD = 0.01;
 const SUPPLEMENTAL_VOLUME_THRESHOLD_L = 0.04;
 
-function fmtAmount(value?: string, unit?: string) {
-  const v = (value ?? "").trim();
-  if (!v) return null;
-  return unit ? `${v} ${unit}` : v;
-}
-
-function fmtGravity(value?: number | null) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(3);
-}
-
-function fmtNumber(value?: number | null, decimals = 2) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return value.toFixed(decimals).replace(/\.?0+$/, "");
-}
-
-function fmtVolume(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) return "—";
-  return `${fmtNumber(liters * L_TO_VOLUME[unit])} ${unit}`;
-}
-
-function fmtVolumeWithZero(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") {
-  if (typeof liters !== "number" || !Number.isFinite(liters) || liters < 0) return "—";
-  return `${fmtNumber(liters * L_TO_VOLUME[unit])} ${unit}`;
-}
-
-function fmtLoggedAmount(addition?: { amount: number | null; unit: string | null } | null) {
-  if (!addition || typeof addition.amount !== "number") return null;
-  return [fmtNumber(addition.amount), addition.unit].filter(Boolean).join(" ");
-}
-
-function latestLoggedAddition<T extends { datetime: string | null }>(items?: T[]) {
-  if (!items?.length) return null;
-  return [...items].sort((a, b) => {
-    const aTime = a.datetime ? new Date(a.datetime).getTime() : 0;
-    const bTime = b.datetime ? new Date(b.datetime).getTime() : 0;
-    return bTime - aTime;
-  })[0];
-}
-
-function getRecipeAmount(line: IngredientLine) {
-  const src = line.amounts.basis === "volume" ? line.amounts.volume : line.amounts.weight;
-  const amount = Number(src.value);
-  if (!Number.isFinite(amount)) return {};
-  return { amount, unit: src.unit };
-}
-
-function getAdditiveAmount(line: AdditiveLine) {
-  const amount = Number(line.amount);
-  if (!Number.isFinite(amount)) return {};
-  return { amount, unit: line.unit };
-}
-
-function ingredientDisplay(line: IngredientLine) {
-  const name = (line.name ?? "").trim() || "—";
-  const weight = fmtAmount(line.amounts.weight.value, line.amounts.weight.unit);
-  const volume = fmtAmount(line.amounts.volume.value, line.amounts.volume.unit);
-  const primary = line.amounts.basis === "volume" ? (volume ?? weight) : (weight ?? volume);
-  const secondary =
-    line.amounts.basis === "volume"
-      ? weight && weight !== primary
-        ? weight
-        : null
-      : volume && volume !== primary
-        ? volume
-        : null;
-
-  return { name, primary, secondary };
-}
-
-function buildSecondaryLines(lines: IngredientLine[]) {
-  return lines
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({ line, ...ingredientDisplay(line) }));
-}
-
-function buildAdditiveLines(lines: AdditiveLine[]) {
-  return lines
-    .filter((line) => (line.name ?? "").trim().length > 0)
-    .map((line) => ({
-      line,
-      name: line.name.trim(),
-      amount: fmtAmount(line.amount, line.unit)
-    }));
-}
-
-function getNoteText(note: NoteLine) {
-  return (note.content ?? [])
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join("\n");
-}
-
-function buildSecondaryNotes(notes: NoteLine[]) {
-  return notes.map((note) => ({ note, text: getNoteText(note) })).filter((item) => item.text.length > 0);
+function fmtVolumeWithZero(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal", locale?: string) {
+  return formatVolume(liters, unit, locale, { allowZero: true });
 }
 
 function getEntryTime(entry: StagePanelProps["ctx"]["brew"]["entries"][number]) {
@@ -292,7 +190,7 @@ function getSecondaryVolumeBreakdown(ctx: StagePanelProps["ctx"]) {
 
   for (const line of ctx.recipe.secondaryIngredients) {
     if (!(line.name ?? "").trim()) continue;
-    const logged = latestLoggedAddition(ctx.recipe.actual.additionsByRecipeIngredientId[String(line.lineId)]);
+    const logged = latestLoggedItem(ctx.recipe.actual.additionsByRecipeIngredientId[String(line.lineId)]);
     const loggedVolume = loggedSecondaryVolumeL(line, logged);
     if (loggedVolume != null) {
       loggedVolumeL += loggedVolume;
@@ -327,7 +225,7 @@ function getSecondaryVolumeBreakdown(ctx: StagePanelProps["ctx"]) {
   } as const;
 }
 
-function getStabilizerPlan(ctx: StagePanelProps["ctx"]): StabilizerPlan | null {
+function getStabilizerPlan(ctx: StagePanelProps["ctx"], locale?: string): StabilizerPlan | null {
   const currentVolume = ctx.brew.current_volume_liters;
   const baseVolumeL =
     typeof currentVolume === "number" && Number.isFinite(currentVolume) && currentVolume > 0
@@ -355,7 +253,7 @@ function getStabilizerPlan(ctx: StagePanelProps["ctx"]): StabilizerPlan | null {
   const recipePh = ctx.recipe.stabilizerPlan?.phReading?.trim();
   const defaultPh =
     typeof latestPh === "number" && Number.isFinite(latestPh)
-      ? fmtNumber(latestPh, 2)
+      ? formatNumber(latestPh, 2, locale)
       : recipePh
         ? recipePh
         : "3.6";
@@ -386,7 +284,7 @@ function getLoggedStabilizerAdditions(ctx: StagePanelProps["ctx"]) {
 }
 
 function getLatestLoggedStabilizer(additions: ReturnType<typeof getLoggedStabilizerAdditions>) {
-  return latestLoggedAddition(additions);
+  return latestLoggedItem(additions);
 }
 
 function getSupplementalStabilizerPlan(
@@ -501,6 +399,7 @@ function getSupplementalStabilizerPlan(
 }
 
 export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: StagePanelProps) {
+  const { i18n } = useTranslation();
   const [additionDialog, setAdditionDialog] = React.useState<PlannedSecondaryAddition | null>(null);
   const [stabilizerDialogOpen, setStabilizerDialogOpen] = React.useState(false);
   const [bulkAgeConfirmOpen, setBulkAgeConfirmOpen] = React.useState(false);
@@ -510,15 +409,14 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     text: string;
     recipeNoteId: string;
   } | null>(null);
-  const [warningsOpen, setWarningsOpen] = React.useState(true);
   const pendingSecondaryIngredientAction = React.useRef<(() => void | Promise<void>) | null>(null);
 
   const secondaryLines = React.useMemo(
-    () => buildSecondaryLines(ctx.recipe.secondaryIngredients),
+    () => buildIngredientLines(ctx.recipe.secondaryIngredients),
     [ctx.recipe.secondaryIngredients]
   );
   const secondaryNotes = React.useMemo(
-    () => buildSecondaryNotes(ctx.recipe.secondaryNotes),
+    () => buildNoteLines(ctx.recipe.secondaryNotes),
     [ctx.recipe.secondaryNotes]
   );
   const additiveLines = React.useMemo(() => buildAdditiveLines(ctx.recipe.additives), [ctx.recipe.additives]);
@@ -536,6 +434,13 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   );
 
   const canEdit = status === "current";
+  const locale = i18n.resolvedLanguage;
+  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtGravity = (value?: number | null) => formatGravity(value, locale);
+  const fmtVolume = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
+    formatVolume(value, unit, locale);
+  const fmtLoggedAmount = (addition?: { amount: number | null; unit: string | null } | null) =>
+    formatLoggedAmount(addition, locale);
   const missingSecondary = secondaryLines.filter((line) => !loggedIngredientIds.has(String(line.line.lineId)));
   const missingAdditives = additiveLines.filter((line) => !loggedAdditiveIds.has(String(line.line.lineId)));
   const ingredientDoneCount = secondaryLines.length - missingSecondary.length;
@@ -546,7 +451,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
   const readyForBulkAge = hasCurrentVolume;
-  const stabilizerPlan = getStabilizerPlan(ctx);
+  const stabilizerPlan = getStabilizerPlan(ctx, locale);
   const usesRecipeStabilizers = Boolean(ctx.recipe.stabilizerPlan?.enabled);
   const loggedStabilizerAdditions = getLoggedStabilizerAdditions(ctx);
   const hasLoggedStabilizers = loggedStabilizerAdditions.length > 0;
@@ -556,7 +461,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   const logMissingSecondary = async () => {
     await helpers.addAdditions(
       missingSecondary.map((item) => {
-        const { amount, unit } = getRecipeAmount(item.line);
+        const { amount, unit } = getIngredientAmount(item.line);
         return {
           name: item.name,
           amount,
@@ -823,31 +728,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         </div>
       ) : null}
 
-      {warnings.length > 0 ? (
-        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium"
-            onClick={() => setWarningsOpen((open) => !open)}
-          >
-            <span>
-              {t("brews.warnings", "Warnings")} · {warnings.length}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {warningsOpen ? t("hide", "Hide") : t("show", "Show")}
-            </span>
-          </button>
-          {warningsOpen ? (
-            <div className="space-y-2 border-t border-yellow-500/20 px-3 py-3">
-              {warnings.map((warning) => (
-                <div key={warning.id} className="text-sm">
-                  {warning.message(t)}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <WarningsPanel warnings={warnings} defaultOpen />
 
       <Accordion type="multiple" defaultValue={["secondary-ingredients", "additives", "notes"]}>
         <AccordionItem value="secondary-ingredients">
@@ -867,10 +748,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 <ul className="space-y-1">
                   {secondaryLines.map((item) => {
                     const isLogged = loggedIngredientIds.has(String(item.line.lineId));
-                    const loggedAddition = latestLoggedAddition(
+                    const loggedAddition = latestLoggedItem(
                       ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
                     );
-                    const { amount, unit } = getRecipeAmount(item.line);
+                    const { amount, unit } = getIngredientAmount(item.line);
                     return (
                       <WorkRow
                         key={item.line.lineId}
@@ -922,7 +803,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 <ul className="space-y-1">
                   {additiveLines.map((item) => {
                     const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
-                    const loggedAddition = latestLoggedAddition(
+                  const loggedAddition = latestLoggedItem(
                       ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
                     );
                     const { amount, unit } = getAdditiveAmount(item.line);
@@ -994,7 +875,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         </AccordionItem>
       </Accordion>
 
-      <LogSecondaryAdditionDialog
+      <PlannedAdditionDialog
         planned={additionDialog}
         onOpenChange={(open) => {
           if (!open) setAdditionDialog(null);
@@ -1003,6 +884,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
           await helpers.addAddition(input);
           setAdditionDialog(null);
         }}
+        defaultTitle={t("brews.secondary.logAddition", "Log addition")}
       />
       <LogStabilizersDialog
         open={stabilizerDialogOpen}
@@ -1080,215 +962,6 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   );
 }
 
-function LogSecondaryAdditionDialog({
-  planned,
-  onOpenChange,
-  onSave
-}: {
-  planned: PlannedSecondaryAddition | null;
-  onOpenChange: (open: boolean) => void;
-  onSave: (input: {
-    name: string;
-    amount?: number;
-    unit?: string;
-    note?: string;
-    recipeIngredientId?: string;
-    recipeAdditiveId?: string;
-    kind?: AdditionKind;
-    source?: AdditionSource;
-    meta?: Record<string, any>;
-    datetime?: string;
-  }) => Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const [name, setName] = React.useState("");
-  const [amount, setAmount] = React.useState("");
-  const [unit, setUnit] = React.useState("");
-  const [basis, setBasis] = React.useState<AdditionBasis>("other");
-  const [amountTouched, setAmountTouched] = React.useState(false);
-  const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
-  const [note, setNote] = React.useState("");
-  const [datetime, setDatetime] = React.useState<Date>(new Date());
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!planned) return;
-    setName(planned.name);
-    setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
-    setUnit(planned.unit ?? "");
-    setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
-    setAmountTouched(false);
-    setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
-    setNote("");
-    setDatetime(new Date());
-  }, [planned]);
-
-  const usesIngredientUnits = planned?.source === "recipe_ingredient";
-  const usesAdditiveUnits = planned?.source === "recipe_additive";
-
-  const changeAmount = (value: string) => {
-    if (!isValidNumber(value)) return;
-    setAmount(value);
-    if (usesAdditiveUnits) {
-      setAmountTouched(true);
-      setAmountDim(inferAdditiveAmountDimFromUnit(unit));
-    }
-  };
-
-  const changeBasis = (nextBasis: AdditionBasis) => {
-    setBasis(nextBasis);
-    if (!planned || nextBasis === "other") return;
-
-    if (nextBasis === "weight") {
-      setAmount(typeof planned.weightAmount === "number" ? String(planned.weightAmount) : "");
-      setUnit(planned.weightUnit ?? "g");
-      return;
-    }
-
-    setAmount(typeof planned.volumeAmount === "number" ? String(planned.volumeAmount) : "");
-    setUnit(planned.volumeUnit ?? "L");
-  };
-
-  const changeUnit = (nextUnit: string) => {
-    if (usesIngredientUnits) {
-      setAmount(convertIngredientAmount(amount, unit, nextUnit, basis));
-      setUnit(nextUnit);
-      return;
-    }
-
-    if (usesAdditiveUnits) {
-      const fromUnit = unit;
-      const doConvert = shouldConvertAdditiveAmount({
-        amountStr: amount,
-        fromUnit,
-        toUnit: nextUnit,
-        amountTouched,
-        amountDim
-      });
-      const nextAmount =
-        doConvert && amount.trim().length > 0
-          ? convertAdditiveAmount({
-              amountStr: amount,
-              fromUnit,
-              toUnit: nextUnit
-            })
-          : amount;
-
-      setAmount(nextAmount);
-      setUnit(nextUnit);
-      setAmountDim(
-        nextAdditiveAmountDimOnUnitChange({
-          fromUnit,
-          toUnit: nextUnit,
-          prevAmountDim: amountDim
-        })
-      );
-      return;
-    }
-
-    setUnit(nextUnit);
-  };
-
-  const save = async () => {
-    if (!planned) return;
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
-    const parsedAmount = amount.trim() ? Number(amount) : undefined;
-    setIsSaving(true);
-    try {
-      await onSave({
-        name: trimmedName,
-        amount: typeof parsedAmount === "number" && Number.isFinite(parsedAmount) ? parsedAmount : undefined,
-        unit: unit.trim() || planned.unit,
-        note: note.trim() || undefined,
-        recipeIngredientId: planned.recipeIngredientId,
-        recipeAdditiveId: planned.recipeAdditiveId,
-        kind: planned.kind,
-        source: planned.source,
-        datetime: datetime.toISOString(),
-        meta: {
-          ...(planned.meta ?? {}),
-          plannedName: planned.name,
-          plannedAmount: planned.amount,
-          plannedUnit: planned.unit,
-          actualBasis: usesIngredientUnits ? basis : undefined,
-          plannedBasis: planned.basis,
-          plannedWeightAmount: planned.weightAmount,
-          plannedWeightUnit: planned.weightUnit,
-          plannedVolumeAmount: planned.volumeAmount,
-          plannedVolumeUnit: planned.volumeUnit
-        }
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={Boolean(planned)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>{planned?.title ?? t("brews.secondary.logAddition", "Log addition")}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>{t("name", "Name")}</Label>
-            <Input value={name} onChange={(event) => setName(event.target.value)} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("amount", "Amount")}</Label>
-            {usesIngredientUnits ? (
-              <IngredientBasisSelect value={basis} onValueChange={changeBasis} t={t} />
-            ) : null}
-            <AmountUnitField
-              amount={amount}
-              unit={unit}
-              onAmountChange={changeAmount}
-              unitControl={
-                usesIngredientUnits ? (
-                  <IngredientUnitSelect
-                    basis={basis}
-                    value={unit}
-                    onValueChange={changeUnit}
-                  />
-                ) : usesAdditiveUnits ? (
-                  <AdditiveUnitSelect value={unit} onValueChange={changeUnit} />
-                ) : undefined
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("note", "Note")}</Label>
-            <Textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder={t("optional", "Optional")}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("date", "Date")}</Label>
-            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            {t("cancel", "Cancel")}
-          </Button>
-          <Button onClick={save} disabled={isSaving || !name.trim()}>
-            {t("save", "Save")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function LogStabilizersDialog({
   open,
   onOpenChange,
@@ -1312,7 +985,13 @@ function LogStabilizersDialog({
     extra?: { phReading?: number; datetime?: string }
   ) => Promise<void>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage;
+  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtVolume = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
+    formatVolume(value, unit, locale);
+  const fmtVolumeWithLocale = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
+    fmtVolumeWithZero(value, unit, locale);
   const [ph, setPh] = React.useState("");
   const [takingPh, setTakingPh] = React.useState(true);
   const [stabilizerType, setStabilizerType] = React.useState<"kmeta" | "nameta">("kmeta");
@@ -1471,7 +1150,7 @@ function LogStabilizersDialog({
             />
             <InfoRow
               label={t("brews.secondary.secondaryVolumeForStabilizers", "Secondary volume")}
-              value={fmtVolumeWithZero(plan.secondaryVolumeL, plan.volumeUnit)}
+              value={fmtVolumeWithLocale(plan.secondaryVolumeL, plan.volumeUnit)}
             />
             <InfoRow
               label={t("brews.secondary.adjustedVolumeForStabilizers", "Adjusted volume")}
