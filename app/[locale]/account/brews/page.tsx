@@ -72,7 +72,7 @@ export default function AccountBrews() {
     console.error(error);
     return (
       <div className="text-center my-4">
-        {t("error.generic", "Something went wrong loading brews.")}
+        {t("brews.error.loadList", "Something went wrong loading brews.")}
       </div>
     );
   }

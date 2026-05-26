@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -15,12 +15,10 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AccountPagination } from "@/components/account/pagination";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
@@ -33,18 +31,13 @@ import {
 } from "@/components/ui/input-group";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PagedResults } from "@/components/ui/paged-results";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
-import type { VolumeUnit } from "@/types/recipeData";
 
 type RecipeRow = { id: number; name: string };
-type BrewVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
-type PreferredUnits = "US" | "METRIC";
-
-function getPreferredVolumeUnit(preferred: PreferredUnits | null): BrewVolumeUnit {
-  return preferred === "METRIC" ? "L" : "gal";
-}
 
 export default function NewBrewClient() {
   const { t } = useTranslation();
@@ -61,7 +54,7 @@ export default function NewBrewClient() {
     }));
   }, [accountInfo?.recipes, t]);
 
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const {
     filteredData,
     pageData,
@@ -79,30 +72,44 @@ export default function NewBrewClient() {
     searchKey: "name"
   });
 
-  // optional “draft” fields for the new brew
+  const [selectedRecipe, setSelectedRecipe] = useState<RecipeRow | null>(null);
   const [nameDraft, setNameDraft] = useState<string>("");
-  const [volumeDraft, setVolumeDraft] = useState<string>("");
-  const [volumeUnit, setVolumeUnit] = useState<BrewVolumeUnit>("gal");
-
-  useEffect(() => {
-    try {
-      const preferred = localStorage.getItem("units") as PreferredUnits | null;
-      setVolumeUnit(getPreferredVolumeUnit(preferred));
-    } catch {
-      setVolumeUnit("gal");
-    }
-  }, []);
 
   if (isError) {
     console.error(error);
     return (
       <div className="text-center my-6">
-        {t("error.generic", "Something went wrong.")}
+        {t("error", "Something went wrong.")}
       </div>
     );
   }
 
   if (isLoading) return <NewBrewSkeleton />;
+
+  const openStartDialog = (recipe: RecipeRow) => {
+    setSelectedRecipe(recipe);
+    setNameDraft(recipe.name);
+  };
+
+  const createSelectedBrew = async () => {
+    if (!selectedRecipe) return;
+
+    try {
+      const brew = await createMutation.mutateAsync({
+        recipe_id: selectedRecipe.id,
+        name: nameDraft.trim() ? nameDraft.trim() : selectedRecipe.name
+      });
+
+      setSelectedRecipe(null);
+      router.push(`/account/brews/${brew.id}`);
+    } catch (e) {
+      console.error(e);
+      toast({
+        description: t("error", "Something went wrong."),
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="my-6 space-y-4">
@@ -114,158 +121,135 @@ export default function NewBrewClient() {
         </Button>
       </div>
 
-      {/* Optional: basic setup fields */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="text-sm text-muted-foreground">
-          {t(
-            "brews.new.help",
-            "Pick a recipe to start a brew. (Optional) set a name and starting volume."
-          )}
-        </div>
+      <PagedResults
+        scroll
+        scrollClassName="sm:max-h-[60vh]"
+        controls={
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">
+              {t("brews.newBrew.help", "Pick a recipe to start a brew. You can name the brew before it is created.")}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 justify-between">
+              <InputGroup className="w-full sm:max-w-sm">
+                <InputGroupInput
+                  value={searchValue}
+                  onChange={(e) => search(e.target.value)}
+                  placeholder={t("search", "Search")}
+                  disabled={createMutation.isPending}
+                />
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    title={t("clear", "Clear")}
+                    onClick={clearSearch}
+                    className={cn({ hidden: searchValue.length === 0 })}
+                    disabled={createMutation.isPending}
+                  >
+                    <X />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <div className="text-sm font-medium">{t("name", "Name")}</div>
-            <Input
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              placeholder={t("brews.new.namePlaceholder", "e.g. January Batch")}
-              disabled={createMutation.isPending}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-sm font-medium">
-              {t("brews.new.volumeLiters", "Starting volume")}
-            </div>
-            <InputGroup className="h-12">
-              <InputGroupInput
-                value={volumeDraft}
-                onChange={(e) => setVolumeDraft(e.target.value)}
-                inputMode="decimal"
-                placeholder="—"
-                disabled={createMutation.isPending}
-                onFocus={(e) => e.target.select()}
-                className="h-full text-lg"
-              />
-              <InputGroupAddon
-                align="inline-end"
-                className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1"
-              >
-                <Separator orientation="vertical" className="h-12" />
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {t("pagination.perPage", "Per page")}
+                </span>
                 <Select
-                  value={volumeUnit}
-                  onValueChange={(value) =>
-                    setVolumeUnit(value as BrewVolumeUnit)
-                  }
+                  value={String(pageSize)}
+                  onValueChange={(val) => setPageSize(parseInt(val, 10))}
                   disabled={createMutation.isPending}
                 >
-                  <SelectTrigger className="p-2 border-none mr-2 w-20">
+                  <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                    <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                    <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
-                    <SelectSeparator />
-                    <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                    <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                    {[5, 10, 20, 50].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </InputGroupAddon>
-            </InputGroup>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <InputGroup className="w-full sm:max-w-sm">
-          <InputGroupInput
-            value={searchValue}
-            onChange={(e) => search(e.target.value)}
-            placeholder={t("search", "Search")}
-            disabled={createMutation.isPending}
-          />
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              title={t("clear", "Clear")}
-              onClick={clearSearch}
-              className={cn({ hidden: searchValue.length === 0 })}
-              disabled={createMutation.isPending}
-            >
-              <X />
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
-
-        {/* page size (you can reuse your Select UI if you want; keeping it minimal) */}
-      </div>
-
-      {/* Cards */}
-      <div className="flex flex-wrap justify-center gap-4 py-2">
-        {pageData.length > 0 ? (
-          pageData.map((rec) => (
-            <RecipeStartCard
-              key={rec.id}
-              recipe={rec}
-              isCreating={createMutation.isPending}
-              onStart={async () => {
-                try {
-                  const vol =
-                    volumeDraft.trim().length === 0
-                      ? undefined
-                      : Number(volumeDraft) * VOLUME_TO_L[volumeUnit];
-
-                  if (vol !== undefined && !Number.isFinite(vol)) {
-                    toast({
-                      description: t("error.invalidNumber", "Invalid number."),
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  const brew = await createMutation.mutateAsync({
-                    recipe_id: rec.id,
-                    name: nameDraft.trim() ? nameDraft.trim() : undefined,
-                    current_volume_liters: vol
-                  });
-
-                  router.push(`/account/brews/${brew.id}`);
-                } catch (e) {
-                  console.error(e);
-                  toast({
-                    description: t("error.generic", "Something went wrong."),
-                    variant: "destructive"
-                  });
-                }
-              }}
+        }
+        footer={
+          filteredData.length > 0 && totalPages > 1 ? (
+            <AccountPagination
+              page={page}
+              totalPages={totalPages}
+              canPrev={page > 1}
+              canNext={page < totalPages}
+              onPrev={prevPage}
+              onNext={nextPage}
+              onGoTo={goToPage}
             />
-          ))
-        ) : (
-          <p className="w-full text-center mt-6">
-            {filteredData.length === 0
-              ? t("noResults", "No results found.")
-              : t("accountPage.noRecipes", "No recipes found.")}
-          </p>
-        )}
-      </div>
+          ) : null
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {pageData.length > 0 ? (
+            pageData.map((rec) => (
+              <RecipeStartCard
+                key={rec.id}
+                recipe={rec}
+                isCreating={createMutation.isPending}
+                onStart={() => openStartDialog(rec)}
+              />
+            ))
+          ) : (
+            <p className="col-span-full text-center mt-6">
+              {recipes.length === 0
+                ? t("accountPage.noRecipes", "No recipes found.")
+                : t("noResults", "No results found.")}
+            </p>
+          )}
+        </div>
+      </PagedResults>
 
-      {/* Pagination */}
-      {filteredData.length > 0 && totalPages > 1 && (
-        <AccountPagination
-          page={page}
-          totalPages={totalPages}
-          canPrev={page > 1}
-          canNext={page < totalPages}
-          onPrev={prevPage}
-          onNext={nextPage}
-          onGoTo={goToPage}
-        />
-      )}
+      <Dialog
+        open={Boolean(selectedRecipe)}
+        onOpenChange={(open) => {
+          if (!open && !createMutation.isPending) setSelectedRecipe(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("brews.newBrew.confirmTitle", "Start brew")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {selectedRecipe
+                ? t("brews.newBrew.confirmHelp", "Create a brew from {{recipeName}}.", {
+                    recipeName: selectedRecipe.name
+                  })
+                : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-brew-name">{t("name", "Name")}</Label>
+              <Input
+                id="new-brew-name"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder={t("brews.newBrew.namePlaceholder", "e.g. January Batch")}
+                disabled={createMutation.isPending}
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setSelectedRecipe(null)} disabled={createMutation.isPending}>
+              {t("cancel", "Cancel")}
+            </Button>
+            <Button onClick={createSelectedBrew} disabled={createMutation.isPending || !selectedRecipe}>
+              {createMutation.isPending ? t("creating", "Creating...") : t("start", "Start")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -277,12 +261,12 @@ function RecipeStartCard({
 }: {
   recipe: { id: number; name: string };
   isCreating: boolean;
-  onStart: () => Promise<void>;
+  onStart: () => void;
 }) {
   const { t } = useTranslation();
 
   return (
-    <Card className="w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none">
+    <Card className="w-full">
       <CardHeader className="p-3 pb-2">
         <CardTitle className="text-base leading-snug text-center line-clamp-2">
           {recipe.name}
@@ -321,19 +305,13 @@ function NewBrewSkeleton() {
     <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
       <div className="my-6 space-y-4">
         <Skeleton className="h-8 w-[220px]" />
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-          <Skeleton className="h-4 w-[520px]" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Skeleton className="h-9 w-full rounded-md" />
-            <Skeleton className="h-9 w-full rounded-md" />
-          </div>
-        </div>
+        <Skeleton className="h-4 w-full max-w-[520px]" />
         <Skeleton className="h-9 w-full sm:max-w-sm rounded-md" />
-        <div className="flex flex-wrap justify-center gap-4 py-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 py-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card
               key={i}
-              className="w-full sm:w-[20rem] lg:w-[18rem] xl:w-[20rem] sm:max-w-none"
+              className="w-full"
             >
               <CardHeader className="p-3 pb-2">
                 <Skeleton className="h-5 w-[75%] mx-auto" />

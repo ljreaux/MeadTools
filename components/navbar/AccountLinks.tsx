@@ -33,6 +33,9 @@ function AccountLinks() {
             <DropdownMenuItem onClick={() => router.push("/account")}>
               <p className="text-center w-full"> {t("account.label")}</p>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/account/brews")}>
+              <p className="text-center w-full"> {t("brews.title")}</p>
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/account/hydrometer")}
             >

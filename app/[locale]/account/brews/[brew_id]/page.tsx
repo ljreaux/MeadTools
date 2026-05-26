@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { Check, Filter, Pencil, PencilOff, Scale, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Filter, Pencil, PencilOff, Scale, Trash2, X } from "lucide-react";
 
 import {
   AccountBrewEntry,
@@ -56,6 +56,9 @@ import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import {
   AdditiveUnitSelect,
   AmountUnitField,
+  getBrewItemKey,
+  getBrewItemLabel,
+  getUnitLabel,
   IngredientBasisSelect,
   IngredientUnitSelect,
   type AdditionBasis
@@ -65,6 +68,7 @@ type HeaderVolumeUnit = "gal" | "L";
 type HistoryView = "stages" | "metrics" | "charts";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
 type HistorySortOrder = "oldest" | "newest";
+type BrewT = ReturnType<typeof useTranslation>["t"];
 
 const BREW_STAGE_ORDER = Object.values(BREW_STAGE);
 const HISTORY_FILTER_TYPES: Record<HistoryFilter, string[]> = {
@@ -83,6 +87,25 @@ const METRIC_ENTRY_TYPES = new Set<string>([
   BREW_ENTRY_TYPE.PACKAGING,
   BREW_ENTRY_TYPE.ADDITION
 ]);
+
+function translateTimelineTitle(t: BrewT, title: string) {
+  const titleKeys: Record<string, string> = {
+    "Estimated ABV": "brews.complete.abv",
+    "Final gravity": "brews.primary.fg",
+    "Gravity reading": "brew.gravity",
+    Issue: "issue",
+    "Original gravity": "brews.primary.og",
+    Packaged: "brews.packaged.packaging",
+    "pH reading": "brew.ph",
+    "Stage Change": "brews.stageChange",
+    "Stage change": "brews.stageChange",
+    "Temperature check": "brew.temperature",
+    Tasting: "tasting",
+    "Volume recorded": "brews.volume.recordCurrent"
+  };
+  const key = titleKeys[title];
+  return key ? t(key, title) : title;
+}
 
 export default function BrewPageClient() {
   const { t, i18n } = useTranslation();
@@ -206,13 +229,32 @@ export default function BrewPageClient() {
   const formatAdditionEntry = (entry: AccountBrewEntry) => {
     const data = entry.data as Partial<BrewAdditionData> | null;
     if (!data?.name) return t("brews.entryTypes.ADDITION", "Addition");
+    const nameKey = typeof data.meta?.nameKey === "string" ? data.meta.nameKey : null;
+    const name = nameKey ? t(nameKey, data.name) : getBrewItemLabel(t, data.name);
 
     const amount =
       data.amount != null && Number.isFinite(Number(data.amount))
         ? `: ${normalizeNumberString(Number(data.amount), 2, i18n.resolvedLanguage)}`
         : "";
     const unit = data.unit ? ` ${data.unit}` : "";
-    return `${data.name}${amount}${unit}`;
+    const goFermWater =
+      data.source === "recipe_go_ferm" || data.meta?.goFerm === true
+        ? typeof data.meta?.actualWaterAmount === "number" && Number.isFinite(data.meta.actualWaterAmount)
+          ? data.meta.actualWaterAmount
+          : typeof data.meta?.plannedWaterAmount === "number" && Number.isFinite(data.meta.plannedWaterAmount)
+            ? data.meta.plannedWaterAmount
+            : null
+        : null;
+    const goFermWaterDetail =
+      goFermWater != null && data.meta?.goFermUsed !== false
+        ? ` · ${t("brews.planned.goFermWater", "Go-Ferm water")}: ${normalizeNumberString(
+            goFermWater,
+            0,
+            i18n.resolvedLanguage
+          )} ${data.meta?.actualWaterUnit || data.meta?.plannedWaterUnit || "mL"}`
+        : "";
+
+    return `${name}${amount}${unit}${goFermWaterDetail}`;
   };
 
   const formatVolumeEntry = (entry: AccountBrewEntry) => {
@@ -244,7 +286,7 @@ export default function BrewPageClient() {
   };
 
   const formatTimelineEntryLabel = (entry: AccountBrewEntry) => {
-    if (entry.title) return entry.title;
+    if (entry.title) return translateTimelineTitle(t, entry.title);
 
     if (entry.type === BREW_ENTRY_TYPE.GRAVITY) return t("gravity", "Gravity");
     if (entry.type === BREW_ENTRY_TYPE.TEMPERATURE) return t("temperature", "Temperature");
@@ -526,7 +568,7 @@ export default function BrewPageClient() {
       value: formatAbv(displayEstimatedAbv)
     },
     {
-      label: t("brews.recipe.targetVolume", "Target volume"),
+      label: t("brews.recipeTargetVolume", "Target volume"),
       value: formatVolume(displayTargetVolume)
     },
     {
@@ -576,7 +618,7 @@ export default function BrewPageClient() {
     } catch (err) {
       console.error("Error updating brew metadata:", err);
       toast({
-        description: t("error.generic", "Something went wrong."),
+        description: t("error", "Something went wrong."),
         variant: "destructive"
       });
       throw err;
@@ -594,7 +636,7 @@ export default function BrewPageClient() {
     const trimmed = batchValue.trim();
     if (trimmed && (!Number.isInteger(Number(trimmed)) || Number(trimmed) < 1)) {
       toast({
-        description: t("error.generic", "Something went wrong."),
+        description: t("error", "Something went wrong."),
         variant: "destructive"
       });
       return;
@@ -612,7 +654,7 @@ export default function BrewPageClient() {
 
     if (Number.isNaN(date.getTime())) {
       toast({
-        description: t("error.generic", "Something went wrong."),
+        description: t("error", "Something went wrong."),
         variant: "destructive"
       });
       return;
@@ -675,9 +717,12 @@ export default function BrewPageClient() {
     meta?: Record<string, any>;
     datetime?: string;
   }) {
+    const nameKey =
+      typeof input.meta?.nameKey === "string" ? input.meta.nameKey : getBrewItemKey(input.meta?.plannedName ?? input.name);
+    const displayName = nameKey ? t(nameKey, getBrewItemLabel(t, input.name)) : getBrewItemLabel(t, input.name);
     await addEntry(
       entryPayload.addition({
-        name: input.name,
+        name: displayName,
         recipeIngredientId: input.recipeIngredientId,
         recipeAdditiveId: input.recipeAdditiveId,
         amount: input.amount,
@@ -685,7 +730,11 @@ export default function BrewPageClient() {
         note: input.note ?? null,
         kind: input.kind,
         source: input.source,
-        meta: input.meta,
+        meta: {
+          ...(input.meta ?? {}),
+          nameKey: nameKey ?? undefined,
+          plannedName: input.meta?.plannedName ?? input.name
+        },
         datetime: input.datetime
       })
     );
@@ -722,7 +771,7 @@ export default function BrewPageClient() {
 
   if (isError || !brew) {
     console.error(error);
-    return <div className="text-center my-4">{t("error.generic", "Something went wrong loading this brew.")}</div>;
+    return <div className="text-center my-4">{t("brews.error.loadDetail", "Something went wrong loading this brew.")}</div>;
   }
 
   const historyFilterOptions: Array<{ value: HistoryFilter; label: string }> = [
@@ -805,6 +854,13 @@ export default function BrewPageClient() {
 
   return (
     <div className="space-y-6 sm:mt-6 mt-12">
+      <Button asChild variant="secondary" size="sm">
+        <Link href="/account/brews">
+          <ArrowLeft className="h-4 w-4" />
+          {t("brews.backToList", "Back to brews")}
+        </Link>
+      </Button>
+
       {/* Header */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1355,7 +1411,7 @@ function EditBrewEntryDialog({
     setPh(typeof (entry.data as any)?.ph === "number" ? String((entry.data as any).ph) : "");
 
     const addition = entry.data as Partial<BrewAdditionData> | null;
-    setAdditionName(addition?.name ?? entry.title ?? "");
+    setAdditionName(addition?.name ? getBrewItemLabel(t, addition.name) : entry.title ? translateTimelineTitle(t, entry.title) : "");
     setAdditionAmount(typeof addition?.amount === "number" ? String(addition.amount) : "");
     setAdditionUnit(addition?.unit ?? "");
     setAdditionBasis(inferAdditionBasis(addition?.unit ?? ""));
@@ -1459,6 +1515,9 @@ function EditBrewEntryDialog({
       );
       const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? Number(additionAmount) : undefined;
       if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
+      const existingMeta = ((entry.data as any) ?? {}).meta ?? {};
+      const nextNameKey =
+        typeof existingMeta.nameKey === "string" ? existingMeta.nameKey : getBrewItemKey(existingMeta.plannedName ?? additionName);
       const nextData = {
         ...withoutVersion(entry.data),
         name: additionName.trim(),
@@ -1467,10 +1526,14 @@ function EditBrewEntryDialog({
         meta:
           additionComponents.length > 0
             ? {
-                ...(((entry.data as any) ?? {}).meta ?? {}),
+                ...existingMeta,
+                nameKey: nextNameKey ?? undefined,
                 components: nextComponents
               }
-            : ((entry.data as any) ?? {}).meta
+            : {
+                ...existingMeta,
+                nameKey: nextNameKey ?? undefined
+              }
       };
       patch.title = additionName.trim() || entry.title;
       patch.data = nextData;
@@ -1594,14 +1657,14 @@ function EditBrewEntryDialog({
                 <Input inputMode="decimal" value={temperature} onChange={(event) => setTemperature(event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>{t("units", "Units")}</Label>
+                <Label>{t("UNITS", "Units")}</Label>
                 <Select value={tempUnits} onValueChange={setTempUnits}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="F">F</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="F">{getUnitLabel(t, "F")}</SelectItem>
+                    <SelectItem value="C">{getUnitLabel(t, "C")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1627,7 +1690,7 @@ function EditBrewEntryDialog({
                   <div className="space-y-2">
                     {additionComponents.map((component, index) => (
                       <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
-                        <div className="self-center text-sm">{component.name}</div>
+                        <div className="self-center text-sm">{getBrewItemLabel(t, component.name)}</div>
                         <AmountUnitField
                           amount={String(component.amount)}
                           unit={component.unit}
@@ -1699,11 +1762,11 @@ function EditBrewEntryDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gal">gal</SelectItem>
-                    <SelectItem value="qt">qt</SelectItem>
-                    <SelectItem value="pt">pt</SelectItem>
-                    <SelectItem value="L">L</SelectItem>
-                    <SelectItem value="mL">mL</SelectItem>
+                    <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
+                    <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
+                    <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
+                    <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
+                    <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1724,11 +1787,11 @@ function EditBrewEntryDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="gal">gal</SelectItem>
-                      <SelectItem value="qt">qt</SelectItem>
-                      <SelectItem value="pt">pt</SelectItem>
-                      <SelectItem value="L">L</SelectItem>
-                      <SelectItem value="mL">mL</SelectItem>
+                      <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
+                      <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
+                      <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
+                      <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
+                      <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

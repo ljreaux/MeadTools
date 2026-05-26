@@ -329,7 +329,7 @@ function HydrometerLinkPanel({
                   } catch (error) {
                     console.error(error);
                     toast({
-                      description: t("error.generic", "Something went wrong."),
+                      description: t("error", "Something went wrong."),
                       variant: "destructive"
                     });
                   }
@@ -396,7 +396,7 @@ function HydrometerLinkPanel({
                 } catch (error) {
                   console.error(error);
                   toast({
-                    description: t("error.generic", "Something went wrong."),
+                    description: t("error", "Something went wrong."),
                     variant: "destructive"
                   });
                 }

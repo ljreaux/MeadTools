@@ -25,6 +25,7 @@ import type { IngredientLine, RecipeUnitDefaults, VolumeUnit, WeightUnit } from 
 import type { StagePanelProps } from "../stageConfig";
 import {
   AmountUnitField,
+  getBrewItemLabel,
   getPlannedIngredientAmounts,
   PlannedAdditionDialog,
   type PlannedAdditionDialogItem
@@ -755,7 +756,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={loggedAddition?.name || item.name}
+                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                         detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
                         amount={fmtLoggedAmount(loggedAddition) ?? item.primary}
                         isLogged={isLogged}
@@ -810,7 +811,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={loggedAddition?.name || item.name}
+                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                         amount={fmtLoggedAmount(loggedAddition) ?? item.amount}
                         isLogged={isLogged}
                         disabled={!canEdit}

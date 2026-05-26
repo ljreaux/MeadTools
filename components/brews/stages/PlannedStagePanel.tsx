@@ -11,6 +11,7 @@ import type { NutrientKey } from "@/types/nutrientData";
 
 import type { StagePanelProps } from "../stageConfig";
 import { buildAdditiveLines, buildIngredientLines, formatNumber } from "./StagePanelShared";
+import { getBrewItemLabel } from "./additionDialogShared";
 
 const nutrientLabels: Record<NutrientKey, string> = {
   fermO: "Fermaid O",
@@ -163,7 +164,7 @@ export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
                   value: String(nutrientPlan.derived.numberOfAdditions)
                 },
                 ...nutrientRows.map((row) => ({
-                  label: row.label,
+                  label: getBrewItemLabel(t, row.label),
                   value: `${fmtNumber(row.total)} g total / ${fmtNumber(
                     row.perAddition
                   )} g each`
@@ -217,6 +218,7 @@ export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
         <section className="grid gap-3 md:grid-cols-2">
           {additiveList.length > 0 ? (
             <AdditiveList
+              t={t}
               title={t("brews.planned.additives", "Additives")}
               items={additiveList}
             />
@@ -263,7 +265,7 @@ function IngredientList({
             >
               <div className="min-w-0">
                 <div className="text-sm font-medium leading-tight line-clamp-1">
-                  {item.name}
+                  {getBrewItemLabel(t, item.name)}
                 </div>
                 {item.secondary ? (
                   <div className="mt-0.5 text-xs text-muted-foreground">
@@ -286,9 +288,11 @@ function IngredientList({
 }
 
 function AdditiveList({
+  t,
   title,
   items
 }: {
+  t: StagePanelProps["t"];
   title: string;
   items: ReturnType<typeof buildAdditiveLines>;
 }) {
@@ -302,7 +306,7 @@ function AdditiveList({
             className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2"
           >
             <div className="text-sm font-medium leading-tight">
-              {item.name}
+              {getBrewItemLabel(t, item.name)}
             </div>
             <div className="shrink-0 text-sm text-muted-foreground">
               {item.amount ?? "—"}

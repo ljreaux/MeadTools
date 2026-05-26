@@ -293,7 +293,7 @@ export function BrewStagePath({
 
                 {actions.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">{t("brews.actions", "Actions")}</div>
+                    <div className="text-sm font-medium">{t("brews.actionsLabel", "Actions")}</div>
                     <div className="flex flex-wrap gap-2">
                       {actions.map((a) => (
                         <Button

@@ -27,6 +27,7 @@ import {
   WorkRow
 } from "./StagePanelShared";
 import {
+  getBrewItemLabel,
   getPlannedIngredientAmounts,
   PlannedAdditionDialog,
   type PlannedAdditionDialogItem
@@ -565,7 +566,7 @@ export function PrimaryStagePanel({
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={loggedAddition?.name || item.name}
+                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                         detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
                         amount={fmtLoggedAmount(loggedAddition) ?? item.primary}
                         isLogged={isLogged}
@@ -614,7 +615,7 @@ export function PrimaryStagePanel({
                   return (
                     <WorkRow
                       key={item.line.lineId}
-                      title={loggedAddition?.name || item.name}
+                      title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                       amount={fmtLoggedAmount(loggedAddition) ?? item.amount}
                       isLogged={isLogged}
                       disabled={!canEdit}
@@ -689,7 +690,7 @@ export function PrimaryStagePanel({
                           index: row.index
                         })}
                         detail={displayComponents
-                          .map((item) => `${item.name}: ${fmtNumber(item.amount)} ${item.unit}`)
+                          .map((item) => `${getBrewItemLabel(t, item.name)}: ${fmtNumber(item.amount)} ${item.unit}`)
                           .join(", ")}
                         amount={`${fmtNumber(total)} g`}
                         isLogged={isLogged}
