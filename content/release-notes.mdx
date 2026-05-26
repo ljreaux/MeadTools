@@ -1,83 +1,73 @@
-# MeadTools v3.5
+# MeadTools v4.0
 
-This release focuses on usability, clarity, and polish. v3.5 introduces several new tools, major visual improvements, and a long list of fixes that make MeadTools easier and more enjoyable to use.
+MeadTools 4.0 is a major release centered on brew tracking. This update turns recipes into a fuller brewing workflow, with stage-by-stage tracking, richer brew history, charts, and polish across the tools that support planning, fermentation, and packaging.
 
-## New Features
+## New Brew Tracking Workflow
 
-### Recipe Ratings & Comments
+### Stage-Based Brew Management
 
-Recipes can now be rated and commented on.
+Brews now move through a clearer lifecycle, with dedicated workflows for each major stage.
 
-- Leave notes, feedback, or reminders on your recipes
-- Quickly track what worked (or didn’t)
-- Lays the groundwork for future community features
+- Planned brews can be created and prepared before fermentation starts
+- Primary fermentation has a focused stage panel for recording key events
+- Secondary, bulk aging, packaged, and complete stages now have their own workflows
+- Stage completion logic is more consistent across the brew dashboard
 
 ---
+
+### Brew Entries and Timeline Improvements
+
+Brew history is easier to review and maintain.
+
+- Timeline entries are clearer and more consistent
+- Nutrient additions and brew entries can be refined after they are created
+- Original gravity, yeast, volume, and other key brew events are better represented
+- Brew activity is easier to scan across the account brew pages
+
+---
+
+### Brew Charts
+
+Brew logs and device logs now include charting support.
+
+- Review brew progress visually over time
+- Compare fermentation activity with recorded brew events
+- Hydrometer-related brew views have been updated to support the new charting experience
+
+---
+
+## Calculator and Recipe Updates
 
 ### Bottling Calculator
 
-A brand-new bottling calculator has been added.
+The bottling calculator has been updated as part of the 4.0 release.
 
-- Estimate how many bottles you’ll need
-- Supports different bottle sizes
-- Helpful for planning packaging day and avoiding surprises
-
----
-
-### Per-Ingredient Units
-
-Each ingredient line now has its **own unit selection**.
-
-- Mix weights and volumes freely within the same recipe
-- No longer locked into a single unit system
-- Makes recipes clearer and more flexible, especially for real-world brewing
+- Bottle planning is now integrated with the broader tool polish in this release
+- Layout and behavior have been tightened for a smoother calculator experience
 
 ---
 
-### Improved Language Support
+### Public Recipe Search
 
-MeadTools now behaves correctly across different languages.
+Public recipe search now keeps the search input and results in sync more reliably.
 
-- Saved recipes remain language-agnostic
-- Ingredients, yeasts, and additives display in your selected language
-- Switching languages no longer resets or breaks recipe data
-
----
-
-### Nutrient Calculator Improvements
-
-The nutrient calculator received significant improvements, resulting in:
-
-- More reliable yeast selection behavior
-- Better syncing between yeast choice and nitrogen targets
-- Clearer handling when manually adjusting YAN values
-  The math hasn’t changed — the experience has improved.
+- Search text behaves more predictably
+- Result updates better match what is shown in the input
 
 ---
 
-## Major UI Updates
+## UI Polish and Reliability
 
-### Visual Refresh
+This release includes a broad polish pass across the new brew tracking surfaces.
 
-Large portions of the app have been visually updated.
-
-- Cleaner layouts and spacing
-- More consistent inputs and controls
-- Better readability across desktop and mobile
-  These changes make MeadTools feel faster, clearer, and more cohesive.
-
----
-
-## Bug Fixes & Stability Improvements
-
-- Fixed navigation issues in the hydrometer dashboard
-- Improved behavior when loading saved recipes
-- More resilient searchable inputs
-- Numerous edge-case fixes across calculators and forms
+- Brew dashboards and detail pages have cleaner layouts
+- Stage panels share more consistent patterns
+- Account navigation better reflects the available brew tools
+- Brew data handling is more resilient across the new workflow
+- OpenAPI and seed data have been updated for the expanded brew model
 
 ---
 
 ## Looking Ahead
 
-v3.5 strengthens the foundation for future features while delivering meaningful improvements today. Expect continued UI refinement, expanded tools, and deeper recipe insights in upcoming releases.
-Thanks to everyone using MeadTools and sharing feedback.
+MeadTools 4.0 lays the foundation for deeper brew tracking and better recipe-to-brew workflows. The focus for this release is getting the core brewing lifecycle into the app in a way that is useful today and ready to grow from here.
