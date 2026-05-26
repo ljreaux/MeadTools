@@ -37,6 +37,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import type { GravityReadingRole } from "@/lib/utils/entryPayload";
+import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
 export type EntryType =
   | typeof BREW_ENTRY_TYPE.NOTE
@@ -206,7 +207,7 @@ export default function AddBrewEntryDialog({
     } catch (err) {
       console.error(err);
       toast({
-        description: t("error.generic", "Something went wrong."),
+        description: t("error", "Something went wrong."),
         variant: "destructive"
       });
     }
@@ -328,8 +329,8 @@ export default function AddBrewEntryDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="F">F</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="F">{getUnitLabel(t, "F")}</SelectItem>
+                    <SelectItem value="C">{getUnitLabel(t, "C")}</SelectItem>
                   </SelectContent>
                 </Select>
                 </InputGroupAddon>

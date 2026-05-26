@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import lodash from "lodash";
 
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
@@ -81,6 +82,83 @@ const additiveWeightUnits = ["g", "mg", "kg", "oz", "lbs"];
 const additiveVolumeUnits = ["ml", "liters", "fl_oz", "quarts", "gal", "tsp", "tbsp"];
 const additiveCountUnits = ["units"];
 
+const unitTranslationKeys: Record<string, string> = {
+  C: "units.C",
+  F: "units.F",
+  fl_oz: "FLOZ",
+  g: "G",
+  gal: "GALS",
+  kg: "units.kg",
+  L: "units.L",
+  lb: "LBS",
+  lbs: "LBS",
+  liters: "units.L",
+  mg: "units.mg",
+  ml: "units.mL",
+  mL: "units.mL",
+  oz: "OZ",
+  pt: "units.pt",
+  qt: "units.qt",
+  quarts: "QUARTS",
+  tbsp: "TBSP",
+  tsp: "TSP",
+  units: "units.units"
+};
+
+const unitDisplayFallbacks: Record<string, string> = {
+  C: "°C",
+  F: "°F",
+  fl_oz: "fl oz",
+  imp_fl_oz: "imp fl oz",
+  imp_gal: "imp gal",
+  imp_pt: "imp pt",
+  imp_qt: "imp qt",
+  liters: "L",
+  ml: "mL",
+  quarts: "qt"
+};
+
+export function getUnitLabel(t: TFunction, unit: string) {
+  const key = unitTranslationKeys[unit] ?? `units.${unit}`;
+  return t(key, unitDisplayFallbacks[unit] ?? unit);
+}
+
+export function getBrewItemKey(name?: string | null) {
+  const value = (name ?? "").trim();
+  if (!value) return null;
+
+  const normalized = value.toLowerCase();
+  const explicitKeys: Record<string, string> = {
+    "campden tablets": "campden",
+    dap: "nutrients.dap",
+    "fermaid k": "nutrients.fermK",
+    "fermaid o": "nutrients.fermO",
+    "go-ferm": "nuteResults.gfTypes.gf",
+    "go-ferm protect": "nuteResults.gfTypes.gfProtect",
+    "go-ferm sterol flash": "nuteResults.gfTypes.gfSterol",
+    "k-meta": "kMeta",
+    "na-meta": "naMeta",
+    none: "none",
+    other: "other.label",
+    "potassium metabisulfite": "kMeta",
+    "potassium sorbate": "kSorbate",
+    protect: "nuteResults.gfTypes.gfProtect",
+    "sodium metabisulfite": "naMeta",
+    sorbate: "sorbate",
+    "sterol-flash": "nuteResults.gfTypes.gfSterol"
+  };
+
+  return explicitKeys[normalized] ?? lodash.camelCase(value);
+}
+
+export function getBrewItemLabel(t: TFunction, name?: string | null) {
+  const value = (name ?? "").trim();
+  if (!value) return "";
+
+  const key = getBrewItemKey(value) ?? value;
+  return t(key, value);
+}
+
 function fmtNumber(value?: number | null, decimals = 2) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return normalizeNumberString(value, decimals);
@@ -147,6 +225,8 @@ export function IngredientUnitSelect({
   onValueChange: (value: string) => void;
   triggerClassName?: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className={triggerClassName ?? "p-2 border-none mr-2 w-20"}>
@@ -155,7 +235,7 @@ export function IngredientUnitSelect({
       <SelectContent>
         {(basis === "weight" ? ingredientWeightUnits : ingredientVolumeUnits).map((item) => (
           <SelectItem key={item} value={item}>
-            {item}
+            {getUnitLabel(t, item)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -225,6 +305,8 @@ export function AdditiveUnitSelect({
   onValueChange: (value: string) => void;
   triggerClassName?: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className={triggerClassName ?? "p-2 border-none mr-2 w-16"}>
@@ -233,19 +315,19 @@ export function AdditiveUnitSelect({
       <SelectContent>
         {additiveWeightUnits.map((item) => (
           <SelectItem key={item} value={item}>
-            {item}
+            {getUnitLabel(t, item)}
           </SelectItem>
         ))}
         <SelectSeparator />
         {additiveVolumeUnits.map((item) => (
           <SelectItem key={item} value={item}>
-            {item}
+            {getUnitLabel(t, item)}
           </SelectItem>
         ))}
         <SelectSeparator />
         {additiveCountUnits.map((item) => (
           <SelectItem key={item} value={item}>
-            {item}
+            {getUnitLabel(t, item)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -288,7 +370,7 @@ export function PlannedAdditionDialog({
 
   React.useEffect(() => {
     if (!planned) return;
-    setName(planned.name);
+    setName(planned.source === "recipe_go_ferm" ? planned.name : getBrewItemLabel(t, planned.name));
     setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
     setUnit(planned.unit ?? "");
     setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
@@ -297,7 +379,7 @@ export function PlannedAdditionDialog({
     setNote("");
     setDatetime(new Date());
     setComponents(planned.components ?? []);
-  }, [planned]);
+  }, [planned, t]);
 
   const usesIngredientUnits = planned?.source === "recipe_ingredient";
   const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
@@ -399,7 +481,7 @@ export function PlannedAdditionDialog({
     setIsSaving(true);
     try {
       await onSave({
-        name: trimmedName,
+        name: getBrewItemLabel(t, trimmedName),
         amount: actualAmount,
         unit: unit.trim() || planned.unit,
         note: note.trim() || undefined,
@@ -410,6 +492,7 @@ export function PlannedAdditionDialog({
         datetime: datetime.toISOString(),
         meta: {
           ...(planned.meta ?? {}),
+          nameKey: planned.meta?.nameKey ?? getBrewItemKey(planned.name) ?? undefined,
           plannedName: planned.name,
           plannedAmount: planned.amount,
           plannedUnit: planned.unit,
@@ -473,7 +556,7 @@ export function PlannedAdditionDialog({
               <div className="space-y-2">
                 {components.map((component, index) => (
                   <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
-                    <div className="self-center text-sm">{component.name}</div>
+                    <div className="self-center text-sm">{getBrewItemLabel(t, component.name)}</div>
                     <AmountUnitField
                       amount={String(component.amount)}
                       unit={component.unit}

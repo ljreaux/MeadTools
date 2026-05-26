@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
 type DialogVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
 type PreferredUnits = "US" | "METRIC";
@@ -188,11 +189,11 @@ export function RecordVolumeDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                  <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                  <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
-                  <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                  <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                  <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
+                  <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
+                  <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
+                  <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
+                  <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -231,12 +232,12 @@ export function RecordVolumeDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                    <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                    <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
+                    <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
+                    <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
+                    <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
                     <SelectSeparator />
-                    <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                    <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                    <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
+                    <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
                   </SelectContent>
                 </Select>
               </InputGroupAddon>

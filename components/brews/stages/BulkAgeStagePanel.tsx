@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { StagePanelProps } from "../stageConfig";
 import {
+  getBrewItemLabel,
   getPlannedIngredientAmounts,
   PlannedAdditionDialog,
   type PlannedAdditionDialogItem
@@ -140,7 +141,7 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
               return (
                 <WorkRow
                   key={`ingredient-${item.line.lineId}`}
-                  title={loggedAddition?.name || item.name}
+                  title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                   detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
                   amount={formatLoggedAmount(loggedAddition, locale) ?? item.primary}
                   isLogged={false}
@@ -171,7 +172,7 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
               return (
                 <WorkRow
                   key={`additive-${item.line.lineId}`}
-                  title={loggedAddition?.name || item.name}
+                  title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
                   amount={formatLoggedAmount(loggedAddition, locale) ?? item.amount}
                   isLogged={false}
                   disabled={!canEdit}

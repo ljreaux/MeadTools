@@ -103,7 +103,7 @@ export default function LinkAccountBrewRecipePage() {
           {t("brews.planned.linkRecipeTitle", "Link a recipe")}
         </h2>
         <p className="text-destructive mt-3">
-          {t("error.generic", "Something went wrong.")}
+          {t("error", "Something went wrong.")}
         </p>
       </div>
     );
@@ -223,7 +223,7 @@ export default function LinkAccountBrewRecipePage() {
                   } catch (err) {
                     console.error(err);
                     toast({
-                      description: t("error.generic", "Something went wrong."),
+                      description: t("error", "Something went wrong."),
                       variant: "destructive"
                     });
                   } finally {
