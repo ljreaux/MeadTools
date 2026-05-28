@@ -17,9 +17,11 @@ import { Separator } from "@/components/ui/separator";
 import useAbv from "@/hooks/useAbv";
 import useRefrac from "@/hooks/useRefrac";
 import { cn } from "@/lib/utils";
-import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
 import TooltipHelper from "@/components/Tooltips";
+import { useMemo } from "react";
+import { toSG } from "@/lib/utils/unitConverter";
 
 function RefractometerCorrection() {
   const { t, i18n } = useTranslation();
@@ -35,7 +37,16 @@ function RefractometerCorrection() {
     correctedBrix
   } = useRefrac();
 
-  const abv = useAbv(ogProps.value, correctedFg.toString());
+  // convert og to SG value to avoid abv bugs
+  const og = useMemo(() => {
+    if (ogUnitProps.value == "Brix") {
+      return toSG(parseNumber(ogProps.value)).toString();
+    }
+
+    return ogProps.value;
+  }, [ogProps.value]);
+
+  const abv = useAbv(og, correctedFg.toString());
   const warn = correctionFactorProps.value !== "1";
   const fgInvalid = fgUnitProps.value === "SG";
 
