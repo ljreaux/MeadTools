@@ -87,6 +87,7 @@ export function BrewStagePath({
     stage === "PRIMARY"
       ? (recipe.derived?.volume.primaryL ?? recipe.effective.currentVolumeL)
       : recipe.effective.currentVolumeL;
+  const recipeVolumeUnit = recipe.recipeData?.unitDefaults.volume ?? recipe.derived?.volume.unit ?? "gal";
 
   useEffect(() => {
     setActiveId(stage);
@@ -364,6 +365,7 @@ export function BrewStagePath({
           open={recordVolumeOpen}
           onOpenChange={setRecordVolumeOpen}
           currentVolumeLiters={current_volume_liters ?? fallbackRecordVolumeLiters}
+          defaultVolumeUnit={recipeVolumeUnit}
           intent={recordVolumeIntent}
           onSave={async (volume, meta) => {
             await patchBrewMetadata({ current_volume_liters: volume });

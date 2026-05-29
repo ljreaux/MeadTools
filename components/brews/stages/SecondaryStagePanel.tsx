@@ -19,6 +19,13 @@ import {
   VOLUME_TO_L,
   WEIGHT_TO_KG
 } from "@/lib/utils/recipeDataCalculations";
+import {
+  roundEditableAmount,
+  scaleAdditiveSuggestions,
+  scaleSecondaryIngredientSuggestions,
+  type ScaledAdditiveSuggestion,
+  type ScaledIngredientSuggestion
+} from "@/lib/utils/brewTrackingScaling";
 import { calcABV } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import type { IngredientLine, RecipeUnitDefaults, VolumeUnit, WeightUnit } from "@/types/recipeData";
@@ -410,6 +417,15 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     text: string;
     recipeNoteId: string;
   } | null>(null);
+  const [scaledSecondarySuggestions, setScaledSecondarySuggestions] = React.useState<
+    Map<string, ScaledIngredientSuggestion>
+  >(new Map());
+  const [scaledAdditiveSuggestions, setScaledAdditiveSuggestions] = React.useState<
+    Map<string, ScaledAdditiveSuggestion>
+  >(new Map());
+  const [loggingMissingSecondary, setLoggingMissingSecondary] = React.useState(false);
+  const [loggingMissingAdditives, setLoggingMissingAdditives] = React.useState(false);
+  const [loggingSupplementalStabilizers, setLoggingSupplementalStabilizers] = React.useState(false);
   const pendingSecondaryIngredientAction = React.useRef<(() => void | Promise<void>) | null>(null);
 
   const secondaryLines = React.useMemo(
@@ -435,6 +451,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   );
 
   const canEdit = status === "current";
+  const recipeBaseVolumeL =
+    typeof ctx.recipe.derived?.volume.totalL === "number" && Number.isFinite(ctx.recipe.derived.volume.totalL)
+      ? ctx.recipe.derived.volume.totalL
+      : null;
   const locale = i18n.resolvedLanguage;
   const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
   const fmtGravity = (value?: number | null) => formatGravity(value, locale);
@@ -451,6 +471,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     typeof ctx.brew.current_volume_liters === "number" &&
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
+  const canScaleSuggestions = canEdit && hasCurrentVolume && recipeBaseVolumeL != null && recipeBaseVolumeL > 0;
   const readyForBulkAge = hasCurrentVolume;
   const stabilizerPlan = getStabilizerPlan(ctx, locale);
   const usesRecipeStabilizers = Boolean(ctx.recipe.stabilizerPlan?.enabled);
@@ -459,28 +480,112 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   const supplementalStabilizerPlan =
     usesRecipeStabilizers && hasLoggedStabilizers ? getSupplementalStabilizerPlan(ctx, stabilizerPlan) : null;
 
-  const logMissingSecondary = async () => {
-    await helpers.addAdditions(
-      missingSecondary.map((item) => {
-        const { amount, unit } = getIngredientAmount(item.line);
-        return {
-          name: item.name,
-          amount,
-          unit,
-          recipeIngredientId: String(item.line.lineId),
-          kind: "INGREDIENT" as const,
-          source: "recipe_ingredient" as const,
-          meta: {
-            plannedAmount: amount,
-            plannedUnit: unit,
-            stage: "SECONDARY"
-          }
-        };
+  const getScaledIngredientSuggestion = (lineId: string) => scaledSecondarySuggestions.get(String(lineId));
+  const getScaledAdditiveSuggestion = (lineId: string) => scaledAdditiveSuggestions.get(String(lineId));
+
+  const getSecondaryIngredientAmount = (line: IngredientLine) => {
+    const scaled = getScaledIngredientSuggestion(line.lineId);
+    if (scaled) return { amount: scaled.basisAmount, unit: scaled.basisUnit };
+    return getIngredientAmount(line);
+  };
+
+  const getSecondaryIngredientPlannedAmounts = (line: IngredientLine) => {
+    const planned = getPlannedIngredientAmounts(line);
+    const scaled = getScaledIngredientSuggestion(line.lineId);
+    if (!scaled) return planned;
+
+    return {
+      basis: planned.basis,
+      weightAmount: scaled.weightAmount,
+      weightUnit: scaled.weightUnit,
+      volumeAmount: scaled.volumeAmount,
+      volumeUnit: scaled.volumeUnit
+    };
+  };
+
+  const getSecondaryIngredientDisplay = (item: (typeof secondaryLines)[number]) => {
+    const scaled = getScaledIngredientSuggestion(item.line.lineId);
+    if (!scaled) {
+      return {
+        amount: item.primary,
+        detail: item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null
+      };
+    }
+
+    const alternate =
+      item.line.amounts.basis === "volume"
+        ? `${fmtNumber(scaled.weightAmount)} ${scaled.weightUnit}`
+        : `${fmtNumber(scaled.volumeAmount)} ${scaled.volumeUnit}`;
+
+    return {
+      amount: `${fmtNumber(scaled.basisAmount)} ${scaled.basisUnit}`,
+      detail: `${t("brews.planned.altAmount", "Alt")}: ${alternate}`
+    };
+  };
+
+  const getSecondaryAdditiveAmount = (lineId: string, fallback: ReturnType<typeof getAdditiveAmount>) => {
+    const scaled = getScaledAdditiveSuggestion(lineId);
+    if (scaled) return { amount: scaled.amount, unit: scaled.unit };
+    return fallback;
+  };
+
+  const getSecondaryAdditiveDisplay = (item: (typeof additiveLines)[number]) => {
+    const scaled = getScaledAdditiveSuggestion(item.line.lineId);
+    return scaled ? `${fmtNumber(scaled.amount)} ${scaled.unit}` : item.amount;
+  };
+
+  const scaleSecondaryToCurrentVolume = () => {
+    setScaledSecondarySuggestions(
+      scaleSecondaryIngredientSuggestions({
+        lines: ctx.recipe.secondaryIngredients,
+        loggedIds: loggedIngredientIds,
+        currentVolumeL: ctx.brew.current_volume_liters,
+        recipeBaseVolumeL
       })
     );
   };
 
+  const scaleAdditivesToCurrentVolume = () => {
+    setScaledAdditiveSuggestions(
+      scaleAdditiveSuggestions({
+        lines: ctx.recipe.additives,
+        loggedIds: loggedAdditiveIds,
+        currentVolumeL: ctx.brew.current_volume_liters,
+        recipeBaseVolumeL
+      })
+    );
+  };
+
+  const logMissingSecondary = async () => {
+    if (loggingMissingSecondary) return;
+    setLoggingMissingSecondary(true);
+    try {
+      await helpers.addAdditions(
+        missingSecondary.map((item) => {
+          const { amount, unit } = getSecondaryIngredientAmount(item.line);
+          return {
+            name: item.name,
+            amount,
+            unit,
+            recipeIngredientId: String(item.line.lineId),
+            kind: "INGREDIENT" as const,
+            source: "recipe_ingredient" as const,
+            meta: {
+              plannedAmount: amount,
+              plannedUnit: unit,
+              ...getSecondaryIngredientPlannedAmounts(item.line),
+              stage: "SECONDARY"
+            }
+          };
+        })
+      );
+    } finally {
+      setLoggingMissingSecondary(false);
+    }
+  };
+
   const runSecondaryIngredientAction = (action: () => void | Promise<void>) => {
+    if (loggingMissingSecondary) return;
     if (usesRecipeStabilizers && !hasLoggedStabilizers) {
       pendingSecondaryIngredientAction.current = action;
       setSecondaryBeforeStabilizersOpen(true);
@@ -491,120 +596,132 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
   };
 
   const logMissingAdditives = async () => {
-    await helpers.addAdditions(
-      missingAdditives.map((item) => {
-        const { amount, unit } = getAdditiveAmount(item.line);
-        return {
-          name: item.name,
-          amount,
-          unit,
-          recipeAdditiveId: String(item.line.lineId),
-          kind: "OTHER" as const,
-          source: "recipe_additive" as const,
-          meta: {
-            plannedAmount: amount,
-            plannedUnit: unit,
-            stage: "SECONDARY"
-          }
-        };
-      })
-    );
+    if (loggingMissingAdditives) return;
+    setLoggingMissingAdditives(true);
+    try {
+      await helpers.addAdditions(
+        missingAdditives.map((item) => {
+          const { amount, unit } = getSecondaryAdditiveAmount(item.line.lineId, getAdditiveAmount(item.line));
+          return {
+            name: item.name,
+            amount,
+            unit,
+            recipeAdditiveId: String(item.line.lineId),
+            kind: "OTHER" as const,
+            source: "recipe_additive" as const,
+            meta: {
+              plannedAmount: amount,
+              plannedUnit: unit,
+              stage: "SECONDARY"
+            }
+          };
+        })
+      );
+    } finally {
+      setLoggingMissingAdditives(false);
+    }
   };
 
   const logSupplementalStabilizers = async () => {
     if (!supplementalStabilizerPlan || !stabilizerPlan) return;
+    if (loggingSupplementalStabilizers) return;
+    setLoggingSupplementalStabilizers(true);
 
-    const sulfiteName =
-      supplementalStabilizerPlan.sulfiteForm === "campden"
-        ? "Campden tablets"
-        : supplementalStabilizerPlan.stabilizerType === "kmeta"
-          ? "Potassium metabisulfite"
-          : "Sodium metabisulfite";
-    const sulfiteAmount =
-      supplementalStabilizerPlan.sulfiteForm === "campden"
-        ? supplementalStabilizerPlan.additional.campden
-        : supplementalStabilizerPlan.additional.sulfite;
-    const sulfiteUnit = supplementalStabilizerPlan.sulfiteForm === "campden" ? "tablets" : "g";
-    const inputs = [
-      supplementalStabilizerPlan.additional.sorbate > SUPPLEMENTAL_GRAM_THRESHOLD
-        ? {
-            name: "Potassium sorbate",
-            amount: supplementalStabilizerPlan.additional.sorbate,
-            unit: "g",
-            kind: "OTHER" as const,
-            source: "manual" as const,
-            note: t(
-              "brews.secondary.supplementalStabilizerNote",
-              "Supplemental stabilizer addition after secondary dilution changed."
-            ),
-            meta: {
-              stage: "SECONDARY",
-              stabilizer: true,
-              supplemental: true,
-              stabilizerKind: "sorbate",
-              stabilizerType: supplementalStabilizerPlan.stabilizerType,
-              volumeLiters: stabilizerPlan.volumeL,
-              adjustedTotalVolumeLiters: stabilizerPlan.adjustedTotalVolumeL,
-              secondaryVolumeLiters: stabilizerPlan.secondaryVolumeL,
-              abv: stabilizerPlan.abv,
-              dilutedAbv: stabilizerPlan.dilutedAbv,
-              recalculatedRequiredAmount: supplementalStabilizerPlan.required.sorbate,
-              priorLoggedAmount: supplementalStabilizerPlan.logged.sorbate,
-              additionalAmount: supplementalStabilizerPlan.additional.sorbate,
-              calculatedUnit: "g",
-              plannedAmount: supplementalStabilizerPlan.additional.sorbate,
-              plannedUnit: "g"
+    try {
+      const sulfiteName =
+        supplementalStabilizerPlan.sulfiteForm === "campden"
+          ? "Campden tablets"
+          : supplementalStabilizerPlan.stabilizerType === "kmeta"
+            ? "Potassium metabisulfite"
+            : "Sodium metabisulfite";
+      const sulfiteAmount =
+        supplementalStabilizerPlan.sulfiteForm === "campden"
+          ? supplementalStabilizerPlan.additional.campden
+          : supplementalStabilizerPlan.additional.sulfite;
+      const sulfiteUnit = supplementalStabilizerPlan.sulfiteForm === "campden" ? "tablets" : "g";
+      const inputs = [
+        supplementalStabilizerPlan.additional.sorbate > SUPPLEMENTAL_GRAM_THRESHOLD
+          ? {
+              name: "Potassium sorbate",
+              amount: supplementalStabilizerPlan.additional.sorbate,
+              unit: "g",
+              kind: "OTHER" as const,
+              source: "manual" as const,
+              note: t(
+                "brews.secondary.supplementalStabilizerNote",
+                "Supplemental stabilizer addition after secondary dilution changed."
+              ),
+              meta: {
+                stage: "SECONDARY",
+                stabilizer: true,
+                supplemental: true,
+                stabilizerKind: "sorbate",
+                stabilizerType: supplementalStabilizerPlan.stabilizerType,
+                volumeLiters: stabilizerPlan.volumeL,
+                adjustedTotalVolumeLiters: stabilizerPlan.adjustedTotalVolumeL,
+                secondaryVolumeLiters: stabilizerPlan.secondaryVolumeL,
+                abv: stabilizerPlan.abv,
+                dilutedAbv: stabilizerPlan.dilutedAbv,
+                recalculatedRequiredAmount: supplementalStabilizerPlan.required.sorbate,
+                priorLoggedAmount: supplementalStabilizerPlan.logged.sorbate,
+                additionalAmount: supplementalStabilizerPlan.additional.sorbate,
+                calculatedUnit: "g",
+                plannedAmount: supplementalStabilizerPlan.additional.sorbate,
+                plannedUnit: "g"
+              }
             }
-          }
-        : null,
-      sulfiteAmount >
-      (supplementalStabilizerPlan.sulfiteForm === "campden"
-        ? SUPPLEMENTAL_CAMPDEN_THRESHOLD
-        : SUPPLEMENTAL_GRAM_THRESHOLD)
-        ? {
-            name: sulfiteName,
-            amount: sulfiteAmount,
-            unit: sulfiteUnit,
-            kind: "OTHER" as const,
-            source: "manual" as const,
-            note: t(
-              "brews.secondary.supplementalStabilizerNote",
-              "Supplemental stabilizer addition after secondary dilution changed."
-            ),
-            meta: {
-              stage: "SECONDARY",
-              stabilizer: true,
-              supplemental: true,
-              stabilizerKind: "sulfite",
-              sulfiteForm: supplementalStabilizerPlan.sulfiteForm,
-              stabilizerType: supplementalStabilizerPlan.stabilizerType,
-              volumeLiters: stabilizerPlan.volumeL,
-              adjustedTotalVolumeLiters: stabilizerPlan.adjustedTotalVolumeL,
-              secondaryVolumeLiters: stabilizerPlan.secondaryVolumeL,
-              abv: stabilizerPlan.abv,
-              dilutedAbv: stabilizerPlan.dilutedAbv,
-              recalculatedRequiredAmount:
-                supplementalStabilizerPlan.sulfiteForm === "campden"
-                  ? supplementalStabilizerPlan.required.campden
-                  : supplementalStabilizerPlan.required.sulfite,
-              priorLoggedAmount:
-                supplementalStabilizerPlan.sulfiteForm === "campden"
-                  ? supplementalStabilizerPlan.logged.campden
-                  : supplementalStabilizerPlan.logged.sulfite,
-              additionalAmount: sulfiteAmount,
-              calculatedUnit: sulfiteUnit,
-              plannedAmount: sulfiteAmount,
-              plannedUnit: sulfiteUnit,
-              sulfiteAmount: supplementalStabilizerPlan.required.sulfite,
-              sulfiteUnit: "g",
-              campdenAmount: supplementalStabilizerPlan.required.campden,
-              campdenUnit: "tablets"
+          : null,
+        sulfiteAmount >
+        (supplementalStabilizerPlan.sulfiteForm === "campden"
+          ? SUPPLEMENTAL_CAMPDEN_THRESHOLD
+          : SUPPLEMENTAL_GRAM_THRESHOLD)
+          ? {
+              name: sulfiteName,
+              amount: sulfiteAmount,
+              unit: sulfiteUnit,
+              kind: "OTHER" as const,
+              source: "manual" as const,
+              note: t(
+                "brews.secondary.supplementalStabilizerNote",
+                "Supplemental stabilizer addition after secondary dilution changed."
+              ),
+              meta: {
+                stage: "SECONDARY",
+                stabilizer: true,
+                supplemental: true,
+                stabilizerKind: "sulfite",
+                sulfiteForm: supplementalStabilizerPlan.sulfiteForm,
+                stabilizerType: supplementalStabilizerPlan.stabilizerType,
+                volumeLiters: stabilizerPlan.volumeL,
+                adjustedTotalVolumeLiters: stabilizerPlan.adjustedTotalVolumeL,
+                secondaryVolumeLiters: stabilizerPlan.secondaryVolumeL,
+                abv: stabilizerPlan.abv,
+                dilutedAbv: stabilizerPlan.dilutedAbv,
+                recalculatedRequiredAmount:
+                  supplementalStabilizerPlan.sulfiteForm === "campden"
+                    ? supplementalStabilizerPlan.required.campden
+                    : supplementalStabilizerPlan.required.sulfite,
+                priorLoggedAmount:
+                  supplementalStabilizerPlan.sulfiteForm === "campden"
+                    ? supplementalStabilizerPlan.logged.campden
+                    : supplementalStabilizerPlan.logged.sulfite,
+                additionalAmount: sulfiteAmount,
+                calculatedUnit: sulfiteUnit,
+                plannedAmount: sulfiteAmount,
+                plannedUnit: sulfiteUnit,
+                sulfiteAmount: supplementalStabilizerPlan.required.sulfite,
+                sulfiteUnit: "g",
+                campdenAmount: supplementalStabilizerPlan.required.campden,
+                campdenUnit: "tablets"
+              }
             }
-          }
-        : null
-    ].filter((input): input is NonNullable<typeof input> => Boolean(input));
+          : null
+      ].filter((input): input is NonNullable<typeof input> => Boolean(input));
 
-    if (inputs.length > 0) await helpers.addAdditions(inputs);
+      if (inputs.length > 0) await helpers.addAdditions(inputs);
+    } finally {
+      setLoggingSupplementalStabilizers(false);
+    }
   };
 
   return (
@@ -652,7 +769,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={!canEdit}
+                disabled={!canEdit || loggingMissingSecondary}
                 onClick={() => runSecondaryIngredientAction(logMissingSecondary)}
               >
                 {t("brews.secondary.logMissingAdditions", "Log missing additions")}
@@ -676,6 +793,12 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
             ) : null}
             <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => helpers.openRecordVolume?.()}>
               {t("brews.actions.logVolume", "Record volume")}
+            </Button>
+            <Button size="sm" variant="secondary" disabled={!canScaleSuggestions} onClick={scaleSecondaryToCurrentVolume}>
+              {t("brews.secondary.scaleSecondaryIngredients", "Scale secondary ingredients")}
+            </Button>
+            <Button size="sm" variant="secondary" disabled={!canScaleSuggestions} onClick={scaleAdditivesToCurrentVolume}>
+              {t("brews.secondary.scaleAdditives", "Scale additives")}
             </Button>
           </div>
         </div>
@@ -722,7 +845,12 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
             />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="destructive" disabled={!canEdit} onClick={logSupplementalStabilizers}>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={!canEdit || loggingSupplementalStabilizers}
+              onClick={logSupplementalStabilizers}
+            >
               {t("brews.secondary.logSupplementalStabilizers", "Log supplemental stabilizers")}
             </Button>
           </div>
@@ -740,7 +868,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
             <div className="space-y-2">
               <Button
                 size="sm"
-                disabled={!canEdit || missingSecondary.length === 0}
+                disabled={!canEdit || missingSecondary.length === 0 || loggingMissingSecondary}
                 onClick={() => runSecondaryIngredientAction(logMissingSecondary)}
               >
                 {t("brews.secondary.logMissing", "Log missing")}
@@ -752,13 +880,14 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                     const loggedAddition = latestLoggedItem(
                       ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
                     );
-                    const { amount, unit } = getIngredientAmount(item.line);
+                    const { amount, unit } = getSecondaryIngredientAmount(item.line);
+                    const display = getSecondaryIngredientDisplay(item);
                     return (
                       <WorkRow
                         key={item.line.lineId}
                         title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                        detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
-                        amount={fmtLoggedAmount(loggedAddition) ?? item.primary}
+                        detail={display.detail}
+                        amount={fmtLoggedAmount(loggedAddition) ?? display.amount}
                         isLogged={isLogged}
                         disabled={!canEdit}
                         loggedLabel={t("brews.primary.logged", "Logged")}
@@ -772,7 +901,7 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                               source: "recipe_ingredient",
                               amount,
                               unit,
-                              ...getPlannedIngredientAmounts(item.line),
+                              ...getSecondaryIngredientPlannedAmounts(item.line),
                               recipeIngredientId: String(item.line.lineId),
                               meta: { plannedAmount: amount, plannedUnit: unit, stage: "SECONDARY" }
                             })
@@ -797,22 +926,26 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              <Button size="sm" disabled={!canEdit || missingAdditives.length === 0} onClick={logMissingAdditives}>
+              <Button
+                size="sm"
+                disabled={!canEdit || missingAdditives.length === 0 || loggingMissingAdditives}
+                onClick={logMissingAdditives}
+              >
                 {t("brews.secondary.logMissingAdditives", "Log missing additives")}
               </Button>
               {additiveLines.length ? (
                 <ul className="space-y-1">
                   {additiveLines.map((item) => {
                     const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
-                  const loggedAddition = latestLoggedItem(
+                    const loggedAddition = latestLoggedItem(
                       ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
                     );
-                    const { amount, unit } = getAdditiveAmount(item.line);
+                    const { amount, unit } = getSecondaryAdditiveAmount(item.line.lineId, getAdditiveAmount(item.line));
                     return (
                       <WorkRow
                         key={item.line.lineId}
                         title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                        amount={fmtLoggedAmount(loggedAddition) ?? item.amount}
+                        amount={fmtLoggedAmount(loggedAddition) ?? getSecondaryAdditiveDisplay(item)}
                         isLogged={isLogged}
                         disabled={!canEdit}
                         loggedLabel={t("brews.primary.logged", "Logged")}
@@ -1032,18 +1165,20 @@ function LogStabilizersDialog({
   const sulfiteAdditionName = sulfiteForm === "powder" ? sulfiteName : "Campden tablets";
   const sulfiteAmount = sulfiteForm === "powder" ? results.sulfite : results.campden;
   const sulfiteUnit = sulfiteForm === "powder" ? "g" : "tablets";
+  const editableSorbateAmount = roundEditableAmount(results.sorbate);
+  const editableSulfiteAmount = roundEditableAmount(sulfiteAmount);
   const actualSorbateAmount = parseNumber(sorbateAmount);
   const actualSulfiteAmount = parseNumber(sulfiteActualAmount);
   const sorbateChanged =
-    Number.isFinite(actualSorbateAmount) && Math.abs(actualSorbateAmount - results.sorbate) > 0.0005;
+    Number.isFinite(actualSorbateAmount) && Math.abs(actualSorbateAmount - editableSorbateAmount) > 0.0005;
   const sulfiteChanged =
-    Number.isFinite(actualSulfiteAmount) && Math.abs(actualSulfiteAmount - sulfiteAmount) > 0.0005;
+    Number.isFinite(actualSulfiteAmount) && Math.abs(actualSulfiteAmount - editableSulfiteAmount) > 0.0005;
 
   React.useEffect(() => {
     if (!open || !plan) return;
-    if (!sorbateTouched) setSorbateAmount(fmtNumber(results.sorbate, 3));
-    if (!sulfiteTouched) setSulfiteActualAmount(fmtNumber(sulfiteAmount, sulfiteForm === "powder" ? 3 : 2));
-  }, [open, plan, results.sorbate, sorbateTouched, sulfiteAmount, sulfiteForm, sulfiteTouched]);
+    if (!sorbateTouched) setSorbateAmount(fmtNumber(editableSorbateAmount, 2));
+    if (!sulfiteTouched) setSulfiteActualAmount(fmtNumber(editableSulfiteAmount, 2));
+  }, [open, plan, editableSorbateAmount, sorbateTouched, editableSulfiteAmount, sulfiteForm, sulfiteTouched]);
 
   if (!plan) return null;
 

@@ -166,6 +166,7 @@ export function PrimaryStagePanel({
     text: string;
     recipeNoteId: string;
   } | null>(null);
+  const [loggingMissingIngredients, setLoggingMissingIngredients] = React.useState(false);
   const primaryLines = React.useMemo(
     () => buildIngredientLines(ctx.recipe.primaryIngredients, { secondaryOnly: true }),
     [ctx.recipe.primaryIngredients]
@@ -231,7 +232,8 @@ export function PrimaryStagePanel({
   const locale = i18n.resolvedLanguage;
   const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
   const fmtGravity = (value?: number | null) => formatGravity(value, locale);
-  const fmtVolume = (value?: number | null) => formatVolume(value, "gal", locale);
+  const primaryVolumeUnit = ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal";
+  const fmtVolume = (value?: number | null) => formatVolume(value, primaryVolumeUnit, locale);
   const fmtLoggedAmount = (addition?: { amount: number | null; unit: string | null } | null) =>
     formatLoggedAmount(addition, locale);
   const nutrientDisabledReason = !hasNutrientBasis
@@ -335,19 +337,25 @@ export function PrimaryStagePanel({
     });
   };
   const logMissingIngredients = async () => {
-    await helpers.addAdditions(
-      missingIngredients.map((item) => {
-        const { amount, unit } = getIngredientAmount(item.line);
-        return {
-          name: item.name,
-          amount,
-          unit,
-          recipeIngredientId: String(item.line.lineId),
-          source: "recipe_ingredient" as const,
-          meta: { plannedAmount: amount, plannedUnit: unit }
-        };
-      })
-    );
+    if (loggingMissingIngredients) return;
+    setLoggingMissingIngredients(true);
+    try {
+      await helpers.addAdditions(
+        missingIngredients.map((item) => {
+          const { amount, unit } = getIngredientAmount(item.line);
+          return {
+            name: item.name,
+            amount,
+            unit,
+            recipeIngredientId: String(item.line.lineId),
+            source: "recipe_ingredient" as const,
+            meta: { plannedAmount: amount, plannedUnit: unit }
+          };
+        })
+      );
+    } finally {
+      setLoggingMissingIngredients(false);
+    }
   };
   const pitchPending = !hasNutrientBasis || !hasLoggedYeast || (hasPlannedGoFerm && !hasLoggedGoFerm);
   const nutrientsPending = !pitchPending && hasRemainingNutrients;
@@ -413,7 +421,7 @@ export function PrimaryStagePanel({
           </div>
           <div className="flex flex-wrap gap-2">
             {missingIngredients.length > 0 ? (
-              <Button size="sm" variant="secondary" disabled={!canEdit} onClick={logMissingIngredients}>
+              <Button size="sm" variant="secondary" disabled={!canEdit || loggingMissingIngredients} onClick={logMissingIngredients}>
                 {t("brews.primary.logMissingIngredients", "Log missing ingredients")}
               </Button>
             ) : null}
@@ -552,7 +560,11 @@ export function PrimaryStagePanel({
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              <Button size="sm" disabled={!canEdit || missingIngredients.length === 0} onClick={logMissingIngredients}>
+              <Button
+                size="sm"
+                disabled={!canEdit || missingIngredients.length === 0 || loggingMissingIngredients}
+                onClick={logMissingIngredients}
+              >
                 {t("brews.primary.logMissing", "Log missing")}
               </Button>
               {primaryLines.length ? (
