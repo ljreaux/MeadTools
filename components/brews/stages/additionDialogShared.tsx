@@ -63,6 +63,14 @@ export type PlannedAdditionDialogItem = {
   }>;
 };
 
+type EditableAdditionComponent = {
+  key: string;
+  name: string;
+  amount: string;
+  unit: string;
+  plannedAmount: number;
+};
+
 export type PlannedAdditionSaveInput = {
   name: string;
   amount?: number;
@@ -365,20 +373,25 @@ export function PlannedAdditionDialog({
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
   const [datetime, setDatetime] = React.useState<Date>(new Date());
-  const [components, setComponents] = React.useState<PlannedAdditionDialogItem["components"]>([]);
+  const [components, setComponents] = React.useState<EditableAdditionComponent[]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (!planned) return;
     setName(planned.source === "recipe_go_ferm" ? planned.name : getBrewItemLabel(t, planned.name));
-    setAmount(typeof planned.amount === "number" ? String(planned.amount) : "");
+    setAmount(typeof planned.amount === "number" ? fmtNumber(planned.amount) : "");
     setUnit(planned.unit ?? "");
     setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
     setAmountTouched(false);
     setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
     setNote("");
     setDatetime(new Date());
-    setComponents(planned.components ?? []);
+    setComponents(
+      (planned.components ?? []).map((component) => ({
+        ...component,
+        amount: fmtNumber(component.amount)
+      }))
+    );
   }, [planned, t]);
 
   const usesIngredientUnits = planned?.source === "recipe_ingredient";
@@ -465,8 +478,14 @@ export function PlannedAdditionDialog({
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    const parsedAmount = amount.trim() ? Number(amount) : undefined;
-    const actualComponents = components ?? [];
+    const parsedAmount = amount.trim() ? parseNumber(amount) : undefined;
+    const actualComponents = (components ?? []).map((component) => {
+      const parsed = parseNumber(component.amount);
+      return {
+        ...component,
+        amount: Number.isFinite(parsed) ? parsed : 0
+      };
+    });
     const componentTotal = actualComponents.reduce((sum, component) => {
       const value = Number(component.amount);
       return sum + (Number.isFinite(value) ? value : 0);
@@ -565,7 +584,7 @@ export function PlannedAdditionDialog({
                         const next = [...components];
                         next[index] = {
                           ...component,
-                          amount: Number(value)
+                          amount: value
                         };
                         setComponents(next);
                       }}

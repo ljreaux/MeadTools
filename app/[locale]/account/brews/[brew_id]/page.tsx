@@ -51,7 +51,7 @@ import { BrewAdditionData, BrewPackagingData, GravityReadingRole, entryPayload }
 import { useCreateBrewEntry, useDeleteBrewEntry, usePatchBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
 import { calcABV } from "@/lib/utils/unitConverter";
-import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
+import { isValidNumber, normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import {
   AdditiveUnitSelect,
@@ -64,7 +64,6 @@ import {
   type AdditionBasis
 } from "@/components/brews/stages/additionDialogShared";
 
-type HeaderVolumeUnit = "gal" | "L";
 type HistoryView = "stages" | "metrics" | "charts";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
 type HistorySortOrder = "oldest" | "newest";
@@ -140,24 +139,13 @@ export default function BrewPageClient() {
     setStartValue(toDateTimeLocalValue(brew.start_date));
   }, [brew]);
 
-  const [preferredVolumeUnit, setPreferredVolumeUnit] = useState<HeaderVolumeUnit>("gal");
-
-  useEffect(() => {
-    try {
-      const storedUnits = localStorage.getItem("units");
-      setPreferredVolumeUnit(storedUnits === "METRIC" ? "L" : "gal");
-    } catch {
-      setPreferredVolumeUnit("gal");
-    }
-  }, []);
-
-  const formatVolume = (liters?: number | null) => {
+  const formatVolume = (liters?: number | null, unit: keyof typeof L_TO_VOLUME = "gal") => {
     if (typeof liters !== "number" || !Number.isFinite(liters) || liters <= 0) {
       return "—";
     }
 
-    const converted = liters * L_TO_VOLUME[preferredVolumeUnit];
-    return `${normalizeNumberString(converted, 2, i18n.resolvedLanguage)} ${preferredVolumeUnit}`;
+    const converted = liters * L_TO_VOLUME[unit];
+    return `${normalizeNumberString(converted, 2, i18n.resolvedLanguage)} ${unit}`;
   };
 
   const formatGravity = (gravity?: number | null) => {
@@ -231,12 +219,26 @@ export default function BrewPageClient() {
     if (!data?.name) return t("brews.entryTypes.ADDITION", "Addition");
     const nameKey = typeof data.meta?.nameKey === "string" ? data.meta.nameKey : null;
     const name = nameKey ? t(nameKey, data.name) : getBrewItemLabel(t, data.name);
+    const components = Array.isArray(data.meta?.components)
+      ? data.meta.components
+          .map((component: any) => {
+            const componentName = getBrewItemLabel(t, component?.name ?? component?.key ?? "");
+            const componentAmount =
+              typeof component?.amount === "number" && Number.isFinite(component.amount)
+                ? normalizeNumberString(component.amount, 2, i18n.resolvedLanguage)
+                : null;
+            const componentUnit = typeof component?.unit === "string" && component.unit ? component.unit : "";
+            return componentName && componentAmount ? `${componentName}: ${componentAmount} ${componentUnit}`.trim() : null;
+          })
+          .filter((component): component is string => Boolean(component))
+      : [];
 
     const amount =
       data.amount != null && Number.isFinite(Number(data.amount))
         ? `: ${normalizeNumberString(Number(data.amount), 2, i18n.resolvedLanguage)}`
         : "";
     const unit = data.unit ? ` ${data.unit}` : "";
+    const componentDetail = components.length ? ` · ${components.join(", ")}` : "";
     const goFermWater =
       data.source === "recipe_go_ferm" || data.meta?.goFerm === true
         ? typeof data.meta?.actualWaterAmount === "number" && Number.isFinite(data.meta.actualWaterAmount)
@@ -254,7 +256,7 @@ export default function BrewPageClient() {
           )} ${data.meta?.actualWaterUnit || data.meta?.plannedWaterUnit || "mL"}`
         : "";
 
-    return `${name}${amount}${unit}${goFermWaterDetail}`;
+    return `${name}${amount}${unit}${componentDetail}${goFermWaterDetail}`;
   };
 
   const formatVolumeEntry = (entry: AccountBrewEntry) => {
@@ -553,6 +555,7 @@ export default function BrewPageClient() {
     brewRecipe.derived.volume.secondaryL > 0
       ? brewRecipe.derived.volume.secondaryL
       : null;
+  const recipeVolumeUnit = brewRecipe.recipeData?.unitDefaults.volume ?? brewRecipe.derived?.volume.unit ?? "gal";
 
   const recipeSummaryItems = [
     {
@@ -569,15 +572,15 @@ export default function BrewPageClient() {
     },
     {
       label: t("brews.recipeTargetVolume", "Target volume"),
-      value: formatVolume(displayTargetVolume)
+      value: formatVolume(displayTargetVolume, recipeVolumeUnit)
     },
     {
       label: t("recipeBuilder.resultsLabels.totalPrimary"),
-      value: formatVolume(displayPrimaryVolume)
+      value: formatVolume(displayPrimaryVolume, recipeVolumeUnit)
     },
     {
       label: t("brews.recipeTotalSecondaryVolume", "Total secondary volume"),
-      value: formatVolume(displaySecondaryVolume)
+      value: formatVolume(displaySecondaryVolume, recipeVolumeUnit)
     }
   ];
 
@@ -943,7 +946,7 @@ export default function BrewPageClient() {
               />
               <SummaryField
                 label={t("brews.volume.currentVolume", "Current volume")}
-                value={formatVolume(brew.current_volume_liters)}
+                value={formatVolume(brew.current_volume_liters, recipeVolumeUnit)}
                 action={
                   <Button
                     size="icon"
@@ -1055,6 +1058,7 @@ export default function BrewPageClient() {
         open={recordVolumeOpen}
         onOpenChange={setRecordVolumeOpen}
         currentVolumeLiters={recordVolumeCurrentLiters}
+        defaultVolumeUnit={recipeVolumeUnit}
         onSave={(volume, meta) =>
           recordCurrentVolume({
             liters: volume,
@@ -1379,7 +1383,7 @@ function EditBrewEntryDialog({
   }) => Promise<void>;
   onDelete: (entryId: string) => Promise<void>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [datetime, setDatetime] = useState<Date>(new Date());
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -1391,7 +1395,7 @@ function EditBrewEntryDialog({
   const [additionAmount, setAdditionAmount] = useState("");
   const [additionUnit, setAdditionUnit] = useState("");
   const [additionBasis, setAdditionBasis] = useState<AdditionBasis>("other");
-  const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: number; unit: string }>>([]);
+  const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: string; unit: string }>>([]);
   const [volume, setVolume] = useState("");
   const [volumeUnit, setVolumeUnit] = useState("");
   const [packagingRows, setPackagingRows] = useState<
@@ -1421,7 +1425,10 @@ function EditBrewEntryDialog({
             .map((component: any) => ({
               key: String(component?.key ?? ""),
               name: String(component?.name ?? component?.key ?? ""),
-              amount: typeof component?.amount === "number" && Number.isFinite(component.amount) ? component.amount : 0,
+              amount:
+                typeof component?.amount === "number" && Number.isFinite(component.amount)
+                  ? normalizeNumberString(component.amount, 2, i18n.resolvedLanguage)
+                  : "0",
               unit: typeof component?.unit === "string" && component.unit ? component.unit : "g"
             }))
             .filter((component) => component.key && component.name)
@@ -1505,15 +1512,18 @@ function EditBrewEntryDialog({
     }
 
     if (entry.type === BREW_ENTRY_TYPE.ADDITION) {
-      const nextComponents = additionComponents.map((component) => ({
-        ...component,
-        amount: Number(component.amount)
-      }));
+      const nextComponents = additionComponents.map((component) => {
+        const amount = parseNumber(component.amount);
+        return {
+          ...component,
+          amount: Number.isFinite(amount) ? amount : 0
+        };
+      });
       const componentTotal = nextComponents.reduce(
         (sum, component) => sum + (Number.isFinite(component.amount) ? component.amount : 0),
         0
       );
-      const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? Number(additionAmount) : undefined;
+      const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? parseNumber(additionAmount) : undefined;
       if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
       const existingMeta = ((entry.data as any) ?? {}).meta ?? {};
       const nextNameKey =
@@ -1692,14 +1702,14 @@ function EditBrewEntryDialog({
                       <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
                         <div className="self-center text-sm">{getBrewItemLabel(t, component.name)}</div>
                         <AmountUnitField
-                          amount={String(component.amount)}
+                          amount={component.amount}
                           unit={component.unit}
                           onAmountChange={(value) => {
-                            const nextAmount = Number(value);
+                            if (!isValidNumber(value)) return;
                             setAdditionComponents((items) =>
                               items.map((item, itemIndex) =>
                                 itemIndex === index
-                                  ? { ...item, amount: Number.isFinite(nextAmount) ? nextAmount : item.amount }
+                                  ? { ...item, amount: value }
                                   : item
                               )
                             );

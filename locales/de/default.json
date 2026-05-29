@@ -581,6 +581,8 @@
       "recipeAdditives": "Rezeptzusätze",
       "recipeNotes": "Sekundäre Rezeptnotizen",
       "recipeNoteTitle": "Sekundäre Rezeptnotiz hinzufügen",
+      "scaleAdditives": "Skalierungszusätze",
+      "scaleSecondaryIngredients": "Skalierung sekundärer Zutaten",
       "secondaryBeforeStabilizersHelp": "Dieses Rezept verwendet Stabilisatoren. Sekundäre Zutaten werden normalerweise nach den Stabilisatoren protokolliert, damit die Dosierung auf aktuellem Volumen und ABV basiert.",
       "secondaryBeforeStabilizersTitle": "Zugaben vor Stabilisatoren protokollieren?",
       "secondaryVolumeForStabilizers": "Sekundärvolumen",

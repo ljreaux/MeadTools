@@ -191,11 +191,6 @@ export default function AccountBrews() {
             />
           )}
 
-          {isLoading && (
-            <div className="flex justify-center pt-2">
-              <Skeleton className="h-10 w-[260px]" />
-            </div>
-          )}
         </>
       )}
     </div>

@@ -31,8 +31,11 @@ import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
-type DialogVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
+type DialogVolumeUnit = VolumeUnit;
 type PreferredUnits = "US" | "METRIC";
+const US_VOLUME_UNITS: DialogVolumeUnit[] = ["gal", "qt", "pt", "fl_oz"];
+const METRIC_VOLUME_UNITS: DialogVolumeUnit[] = ["L", "mL"];
+const IMPERIAL_VOLUME_UNITS: DialogVolumeUnit[] = ["imp_gal", "imp_qt", "imp_pt", "imp_fl_oz"];
 
 function getPreferredVolumeUnit(preferred: PreferredUnits | null): DialogVolumeUnit {
   return preferred === "METRIC" ? "L" : "gal";
@@ -62,6 +65,7 @@ export function RecordVolumeDialog({
   open,
   onOpenChange,
   currentVolumeLiters,
+  defaultVolumeUnit,
   intent = "current",
   onSave
 }: {
@@ -69,6 +73,7 @@ export function RecordVolumeDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentVolumeLiters: number | null;
+  defaultVolumeUnit?: DialogVolumeUnit;
   intent?: "current" | "secondaryVolume";
   onSave: (
     currentVolumeLiters: number,
@@ -90,7 +95,7 @@ export function RecordVolumeDialog({
   React.useEffect(() => {
     try {
       const preferred = localStorage.getItem("units") as PreferredUnits | null;
-      const nextUnit = getPreferredVolumeUnit(preferred);
+      const nextUnit = defaultVolumeUnit ?? getPreferredVolumeUnit(preferred);
       setPreferredUnit(nextUnit);
       setDisplayUnit(nextUnit);
       setVolumeUnit(nextUnit);
@@ -99,7 +104,7 @@ export function RecordVolumeDialog({
       setDisplayUnit("gal");
       setVolumeUnit("gal");
     }
-  }, []);
+  }, [defaultVolumeUnit]);
 
   const currentVolumeDisplay = React.useMemo(
     () => formatDisplayVolume(currentVolumeLiters, displayUnit),
@@ -189,11 +194,23 @@ export function RecordVolumeDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
-                  <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
-                  <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
-                  <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
-                  <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
+                  {US_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  {METRIC_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  {IMPERIAL_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -232,12 +249,23 @@ export function RecordVolumeDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gal">{getUnitLabel(t, "gal")}</SelectItem>
-                    <SelectItem value="qt">{getUnitLabel(t, "qt")}</SelectItem>
-                    <SelectItem value="pt">{getUnitLabel(t, "pt")}</SelectItem>
+                    {US_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
                     <SelectSeparator />
-                    <SelectItem value="L">{getUnitLabel(t, "L")}</SelectItem>
-                    <SelectItem value="mL">{getUnitLabel(t, "mL")}</SelectItem>
+                    {METRIC_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
+                    <SelectSeparator />
+                    {IMPERIAL_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </InputGroupAddon>

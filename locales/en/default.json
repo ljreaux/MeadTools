@@ -581,6 +581,8 @@
       "recipeAdditives": "Recipe additives",
       "recipeNotes": "Recipe secondary notes",
       "recipeNoteTitle": "Add recipe secondary note",
+      "scaleAdditives": "Scale additives",
+      "scaleSecondaryIngredients": "Scale secondary ingredients",
       "secondaryBeforeStabilizersHelp": "This recipe uses stabilizers. Secondary ingredients are usually logged after stabilizers so the dosage is based on the current volume and ABV.",
       "secondaryBeforeStabilizersTitle": "Log additions before stabilizers?",
       "secondaryVolumeForStabilizers": "Secondary volume",
