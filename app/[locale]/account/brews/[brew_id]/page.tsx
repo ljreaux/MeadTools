@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 
 import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { BrewTimelineCharts } from "@/components/brews/BrewTimelineCharts";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
@@ -1070,7 +1071,7 @@ export default function BrewPageClient() {
         }
       />
       <Dialog open={startDateDialogOpen} onOpenChange={setStartDateDialogOpen}>
-        <DialogContent>
+        <DialogContent className={BREW_TRACKER_DIALOG_CONTENT_CLASS}>
           <DialogHeader>
             <DialogTitle>{t("start", "Start")}</DialogTitle>
           </DialogHeader>
@@ -1079,7 +1080,7 @@ export default function BrewPageClient() {
             onChange={(value) => setStartValue(value ? toDateTimeLocalValue(value.toISOString()) : "")}
             hourCycle={12}
           />
-          <DialogFooter>
+          <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
             <Button
               variant="secondary"
               onClick={() => {
@@ -1631,7 +1632,7 @@ function EditBrewEntryDialog({
 
   return (
     <Dialog open={Boolean(entry)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle>{t("edit", "Edit")}</DialogTitle>
         </DialogHeader>
@@ -1894,7 +1895,7 @@ function EditBrewEntryDialog({
 
         </div>
 
-        <DialogFooter className="gap-2 sm:justify-between">
+        <DialogFooter className={`${BREW_TRACKER_DIALOG_FOOTER_CLASS} sm:justify-between`}>
           {canDelete ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -1903,7 +1904,7 @@ function EditBrewEntryDialog({
                   {t("delete", "Delete")}
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className={BREW_TRACKER_DIALOG_CONTENT_CLASS}>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t("brews.deleteEntryTitle", "Delete this entry?")}</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -1913,7 +1914,7 @@ function EditBrewEntryDialog({
                     )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
+                <AlertDialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
                   <AlertDialogCancel disabled={isSaving}>{t("cancel", "Cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1931,7 +1932,7 @@ function EditBrewEntryDialog({
           ) : (
             <div />
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
               {t("cancel", "Cancel")}
             </Button>

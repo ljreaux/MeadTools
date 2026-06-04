@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 
 export type LogOriginalGravityInput = {
   chosenOg: number;
@@ -105,7 +106,7 @@ export function LogOriginalGravityDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[520px]`}>
         <DialogHeader>
           <DialogTitle>{t("brews.actions.logOg", "Log OG")}</DialogTitle>
           <DialogDescription>
@@ -172,7 +173,7 @@ export function LogOriginalGravityDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>

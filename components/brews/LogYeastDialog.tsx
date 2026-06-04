@@ -24,6 +24,7 @@ import {
 import SearchableInput from "@/components/ui/SearchableInput";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { AmountUnitField } from "@/components/brews/stages/additionDialogShared";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import type { BrewPlannedYeast } from "@/lib/utils/buildBrewRecipeStageData";
 import { isValidNumber } from "@/lib/utils/validateInput";
@@ -199,7 +200,7 @@ export function LogYeastDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle>{t("brews.actions.logYeast", "Log yeast")}</DialogTitle>
         </DialogHeader>
@@ -303,7 +304,7 @@ export function LogYeastDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>
