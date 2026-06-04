@@ -437,7 +437,7 @@ export async function sendRecipeActivityEmailsForDate(summaryDate: Date) {
   });
 
   let sent = 0;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://meadtools.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://meadtools.com";
 
   for (const row of rows as DailyRow[]) {
     const owner = row.recipe.users;
