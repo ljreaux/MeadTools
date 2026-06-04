@@ -7,7 +7,7 @@ const {
   RESET_PASSWORD_SECRET = "",
   EMAIL_USER,
   EMAIL_PASS,
-  NEXT_PUBLIC_BASE_URL,
+  NEXT_PUBLIC_BASE_URL
 } = process.env;
 
 /**
@@ -31,12 +31,12 @@ export async function POST(req: NextRequest) {
   if (!user) {
     // Do not reveal if the user exists
     return NextResponse.json({
-      message: "If that email exists, a reset link has been sent.",
+      message: "If that email exists, a reset link has been sent."
     });
   }
 
   const token = jwt.sign({ userId: user.id }, RESET_PASSWORD_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "15m"
   });
 
   const resetUrl = `${NEXT_PUBLIC_BASE_URL}/reset-password?token=${token}`;
@@ -47,19 +47,19 @@ export async function POST(req: NextRequest) {
     secure: false,
     auth: {
       user: EMAIL_USER,
-      pass: EMAIL_PASS,
-    },
+      pass: EMAIL_PASS
+    }
   });
 
   await transporter.sendMail({
     to: email,
-    from: EMAIL_USER,
+    from: { name: "MeadTools", address: EMAIL_USER! },
     subject: "Reset your MeadTools password",
     html: `
       <p>Click the link below to reset your password:</p>
       <p><a href="${resetUrl}">${resetUrl}</a></p>
       <p>This link will expire in 15 minutes.</p>
-    `,
+    `
   });
 
   return NextResponse.json({ message: "Reset link sent." });
