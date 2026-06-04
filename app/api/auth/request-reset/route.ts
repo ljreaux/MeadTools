@@ -57,8 +57,7 @@ export async function POST(req: NextRequest) {
     subject: "Reset your MeadTools password",
     html: `
       <p>Click the link below to reset your password:</p>
-      <p><a href="${resetUrl}">${resetUrl}</a></p>
-      <p>This link will expire in 15 minutes.</p>
+      <p><a href="${resetUrl}">This link</a> will expire in 15 minutes.</p>
     `
   });
 
