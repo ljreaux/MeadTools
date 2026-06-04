@@ -37,6 +37,7 @@ import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import type { GravityReadingRole } from "@/lib/utils/entryPayload";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS } from "@/components/brews/brewTrackerDialog";
 import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
 export type EntryType =
@@ -239,7 +240,7 @@ export default function AddBrewEntryDialog({
         </DialogTrigger>
       ) : null}
 
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle>{t("brew.addEntry", "Add entry")}</DialogTitle>
         </DialogHeader>
@@ -372,7 +373,7 @@ export default function AddBrewEntryDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="secondary"

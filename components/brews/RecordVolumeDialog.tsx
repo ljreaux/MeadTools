@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
 type DialogVolumeUnit = VolumeUnit;
@@ -151,7 +152,7 @@ export function RecordVolumeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={BREW_TRACKER_DIALOG_CONTENT_CLASS}>
         <DialogHeader>
           <DialogTitle>
             {isSecondaryVolume
@@ -287,7 +288,7 @@ export function RecordVolumeDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button
             variant="secondary"
             onClick={() => onOpenChange(false)}

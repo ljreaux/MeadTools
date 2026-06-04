@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -277,7 +278,7 @@ export function DateConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -286,7 +287,7 @@ export function DateConfirmDialog({
           <Label>{t("date", "Date")}</Label>
           <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
         </div>
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>
@@ -327,7 +328,7 @@ export function LogRecipeNoteDialog({
 
   return (
     <Dialog open={Boolean(note)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[520px]`}>
         <DialogHeader>
           <DialogTitle>{note?.title ?? t("brews.primary.addNote", "Add note")}</DialogTitle>
         </DialogHeader>
@@ -342,7 +343,7 @@ export function LogRecipeNoteDialog({
             <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>

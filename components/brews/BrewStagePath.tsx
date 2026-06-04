@@ -1,6 +1,7 @@
 import { BREW_ENTRY_TYPE, type BrewStage } from "@/lib/brewEnums";
 import { Path, PathActivePanel, PathContent, PathHeader, PathItem, PathList, PathTitle } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { useRouter } from "next/navigation";
@@ -449,7 +450,7 @@ function StageMoveDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -457,7 +458,7 @@ function StageMoveDateDialog({
           <div className="text-sm font-medium">{t("date", "Date")}</div>
           <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
         </div>
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>
@@ -506,7 +507,7 @@ function StageMoveReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -576,7 +577,7 @@ function StageMoveReviewDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             {t("cancel", "Cancel")}
           </Button>
