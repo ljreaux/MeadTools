@@ -105,6 +105,7 @@
     "password": "Password",
     "register": "Register",
     "reset": "Send reset link",
+    "resetPassword": "Reset Password",
     "theme": {
       "dark": "Dark",
       "light": "Light",

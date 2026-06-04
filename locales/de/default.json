@@ -105,6 +105,7 @@
     "password": "Passwort",
     "register": "Registrieren",
     "reset": "Link zum Zurücksetzen senden",
+    "resetPassword": "Passwort zurücksetzen",
     "theme": {
       "dark": "Dunkel",
       "light": "Hell",

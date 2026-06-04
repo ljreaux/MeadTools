@@ -123,7 +123,7 @@ export default function ResetPasswordPage() {
           className="col-span-3"
           loading={loading}
         >
-          {t("accountPage.reset", "Reset Password")}
+          {t("accountPage.resetPassword", "Reset Password")}
         </LoadingButton>
       </form>
     </div>
