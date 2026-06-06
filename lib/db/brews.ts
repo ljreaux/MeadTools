@@ -3,7 +3,8 @@ import {
   Prisma,
   brew_stage,
   brew_entry_type,
-  temp_units
+  temp_units,
+  gravity_unit
 } from "@prisma/client";
 import { calcABV } from "@/lib/utils/unitConverter";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
@@ -18,6 +19,7 @@ export type BrewListItem = {
   batch_number: number | null;
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
+  gravity_unit_preference: gravity_unit;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -56,6 +58,7 @@ export type BrewForApp = {
   batch_number: number | null;
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
+  gravity_unit_preference: gravity_unit;
 
   latest_gravity: number | null;
 
@@ -81,6 +84,7 @@ export type PatchBrewMetadataInput = {
   stage?: brew_stage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
+  gravity_unit_preference?: gravity_unit;
   end_date?: string | Date | null; // allow ISO string from client
   stage_change_datetime?: string | Date;
 };
@@ -130,6 +134,7 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
       batch_number: true,
       current_volume_liters: true,
       requested_email_alerts: true,
+      gravity_unit_preference: true,
       latest_gravity: true,
       recipe_id: true,
       recipes: { select: { name: true } },
@@ -147,6 +152,7 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
     batch_number: b.batch_number,
     current_volume_liters: b.current_volume_liters,
     requested_email_alerts: b.requested_email_alerts ?? false,
+    gravity_unit_preference: b.gravity_unit_preference ?? gravity_unit.SG,
 
     recipe_id: b.recipe_id,
     recipe_name: b.recipes?.name ?? null,
@@ -265,6 +271,9 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
         stage: true,
         batch_number: true,
         current_volume_liters: true,
+        requested_email_alerts: true,
+        gravity_unit_preference: true,
+        latest_gravity: true,
         recipe_id: true
       }
     });
@@ -287,6 +296,7 @@ export async function getBrewForApp(
       batch_number: true,
       current_volume_liters: true,
       requested_email_alerts: true,
+      gravity_unit_preference: true,
       latest_gravity: true,
 
       recipe_id: true,
@@ -349,6 +359,7 @@ export async function getBrewForApp(
     batch_number: brew.batch_number,
     current_volume_liters: brew.current_volume_liters,
     requested_email_alerts: brew.requested_email_alerts ?? false,
+    gravity_unit_preference: brew.gravity_unit_preference ?? gravity_unit.SG,
 
     latest_gravity: brew.latest_gravity,
 
@@ -489,6 +500,16 @@ export async function patchBrewMetadata(
       data.requested_email_alerts = Boolean(input.requested_email_alerts);
     }
 
+    if ("gravity_unit_preference" in input) {
+      if (
+        input.gravity_unit_preference !== gravity_unit.SG &&
+        input.gravity_unit_preference !== gravity_unit.BRIX
+      ) {
+        throw new Error("Invalid gravity_unit_preference");
+      }
+      data.gravity_unit_preference = input.gravity_unit_preference;
+    }
+
     // end_date (null to reopen)
     if ("end_date" in input) {
       const v = input.end_date;
@@ -596,6 +617,7 @@ export async function patchBrewMetadata(
         batch_number: true,
         current_volume_liters: true,
         requested_email_alerts: true,
+        gravity_unit_preference: true,
         latest_gravity: true,
         recipe_id: true,
         recipes: { select: { name: true } }

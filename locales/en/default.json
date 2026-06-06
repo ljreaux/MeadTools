@@ -384,6 +384,16 @@
       "loadDetail": "Something went wrong loading this brew.",
       "loadList": "Something went wrong loading brews."
     },
+    "gravity": {
+      "applyRefractometerCorrection": "Apply refractometer correction",
+      "convertedSgPreview": "Converted SG: {{sg}}",
+      "corrected": "corrected",
+      "correctedSgPreview": "Corrected SG: {{sg}}",
+      "correctionFactor": "Correction factor",
+      "correctionOg": "OG: {{og}}",
+      "enteredBrix": "{{brix}}",
+      "unitPreference": "Gravity unit preference"
+    },
     "history": {
       "filters": {
         "additions": "Additions",

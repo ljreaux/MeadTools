@@ -12,11 +12,17 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Separator } from "@/components/ui/separator";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
+import { GRAVITY_UNITS, type GravityUnit } from "@/lib/brewEnums";
+import { toBrix, toSG } from "@/lib/utils/unitConverter";
+import { formatBrixNumber, formatSgDisplay } from "@/lib/utils/gravityFormatting";
+import type { GravityEntryDisplayData } from "@/lib/utils/entryPayload";
 
 export type LogOriginalGravityInput = {
   chosenOg: number;
@@ -25,12 +31,67 @@ export type LogOriginalGravityInput = {
   estimatedFg: number;
   fermentableSg: number;
   warningAcknowledged: boolean;
+  ogDisplay?: GravityEntryDisplayData;
   note?: string;
   datetime?: string;
 };
 
 function formatGravity(value?: number | null) {
-  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(3) : "";
+  return formatSgDisplay(value, undefined, "");
+}
+
+function formatGravityForUnit(value: number | null, unit: GravityUnit) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "";
+  return unit === GRAVITY_UNITS.BRIX
+    ? formatBrixNumber(toBrix(value), undefined, "")
+    : formatGravity(value);
+}
+
+function gravityInputToSg(value: string, unit: GravityUnit) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return NaN;
+  return unit === GRAVITY_UNITS.BRIX ? toSG(parsed) : parsed;
+}
+
+function GravityInputWithUnits({
+  value,
+  unit,
+  onValueChange,
+  onUnitChange
+}: {
+  value: string;
+  unit: GravityUnit;
+  onValueChange: (value: string) => void;
+  onUnitChange: (unit: GravityUnit) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <InputGroup className="h-12">
+      <InputGroupInput
+        inputMode="decimal"
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        onFocus={(event) => event.target.select()}
+        className="h-full text-lg"
+      />
+      <InputGroupAddon
+        align="inline-end"
+        className="mr-1 whitespace-nowrap px-1 text-xs sm:text-sm"
+      >
+        <Separator orientation="vertical" className="h-12" />
+        <Select value={unit} onValueChange={(next) => onUnitChange(next as GravityUnit)}>
+          <SelectTrigger className="mr-2 w-24 border-none p-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={GRAVITY_UNITS.SG}>{t("SG", "SG")}</SelectItem>
+            <SelectItem value={GRAVITY_UNITS.BRIX}>{t("BRIX")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </InputGroupAddon>
+    </InputGroup>
+  );
 }
 
 export function LogOriginalGravityDialog({
@@ -39,6 +100,7 @@ export function LogOriginalGravityDialog({
   suggestedOg,
   suggestedOgSource,
   estimatedFg,
+  gravityUnitPreference = GRAVITY_UNITS.SG,
   onSave
 }: {
   open: boolean;
@@ -46,25 +108,30 @@ export function LogOriginalGravityDialog({
   suggestedOg: number | null;
   suggestedOgSource: "actualized_recipe" | "recipe" | "measured";
   estimatedFg: number | null;
+  gravityUnitPreference?: GravityUnit;
   onSave: (input: LogOriginalGravityInput) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [og, setOg] = React.useState("");
+  const [ogUnit, setOgUnit] = React.useState<GravityUnit>(gravityUnitPreference);
   const [fg, setFg] = React.useState("");
+  const [fgUnit, setFgUnit] = React.useState<GravityUnit>(gravityUnitPreference);
   const [note, setNote] = React.useState("");
   const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) return;
-    setOg(formatGravity(suggestedOg));
-    setFg(formatGravity(estimatedFg));
+    setOgUnit(gravityUnitPreference);
+    setFgUnit(gravityUnitPreference);
+    setOg(formatGravityForUnit(suggestedOg, gravityUnitPreference));
+    setFg(formatGravityForUnit(estimatedFg, gravityUnitPreference));
     setNote("");
     setDatetime(new Date());
-  }, [estimatedFg, open, suggestedOg]);
+  }, [estimatedFg, gravityUnitPreference, open, suggestedOg]);
 
-  const parsedOg = Number(og);
-  const parsedFg = Number(fg);
+  const parsedOg = gravityInputToSg(og, ogUnit);
+  const parsedFg = gravityInputToSg(fg, fgUnit);
   const hasSuggested = typeof suggestedOg === "number" && Number.isFinite(suggestedOg) && suggestedOg > 1;
   const differsFromSuggested = hasSuggested && Number.isFinite(parsedOg) && Math.abs(parsedOg - suggestedOg) > 0.0005;
   const fermentableSg = Number.isFinite(parsedOg) && Number.isFinite(parsedFg) ? 1 + (parsedOg - parsedFg) : null;
@@ -95,6 +162,12 @@ export function LogOriginalGravityDialog({
         estimatedFg: parsedFg,
         fermentableSg,
         warningAcknowledged: differsFromSuggested,
+        ogDisplay: {
+          enteredValue: Number(og),
+          enteredUnit: ogUnit,
+          convertedGravity: parsedOg,
+          refractometerCorrectionApplied: false
+        },
         note: note.trim() || undefined,
         datetime: datetime.toISOString()
       });
@@ -124,20 +197,32 @@ export function LogOriginalGravityDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t("brews.primary.og", "Original gravity")}</Label>
-              <Input
-                inputMode="decimal"
+              <GravityInputWithUnits
                 value={og}
-                onChange={(event) => setOg(event.target.value)}
-                onFocus={(event) => event.target.select()}
+                unit={ogUnit}
+                onValueChange={setOg}
+                onUnitChange={(nextUnit) => {
+                  const currentSg = gravityInputToSg(og, ogUnit);
+                  setOgUnit(nextUnit);
+                  if (Number.isFinite(currentSg)) {
+                    setOg(formatGravityForUnit(currentSg, nextUnit));
+                  }
+                }}
               />
             </div>
             <div className="space-y-2">
               <Label>{t("brews.primary.estimatedFg", "Estimated FG")}</Label>
-              <Input
-                inputMode="decimal"
+              <GravityInputWithUnits
                 value={fg}
-                onChange={(event) => setFg(event.target.value)}
-                onFocus={(event) => event.target.select()}
+                unit={fgUnit}
+                onValueChange={setFg}
+                onUnitChange={(nextUnit) => {
+                  const currentSg = gravityInputToSg(fg, fgUnit);
+                  setFgUnit(nextUnit);
+                  if (Number.isFinite(currentSg)) {
+                    setFg(formatGravityForUnit(currentSg, nextUnit));
+                  }
+                }}
               />
             </div>
           </div>

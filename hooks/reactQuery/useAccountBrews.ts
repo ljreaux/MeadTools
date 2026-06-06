@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import type { BrewEntryType, BrewStage } from "@/lib/brewEnums";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import type { TempUnits } from "@/lib/brewEnums";
+import type { GravityUnit, TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
 import type {
   BrewAdditionData,
@@ -24,6 +24,7 @@ export type AccountBrewListItem = {
   batch_number: number | null;
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnit;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -67,6 +68,7 @@ export type AccountBrew = {
   batch_number: number | null;
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnit;
 
   latest_gravity: number | null;
 
@@ -230,6 +232,7 @@ export type PatchAccountBrewMetadataInput = {
   stage?: BrewStage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
+  gravity_unit_preference?: GravityUnit;
   end_date?: string | null; // ISO or null
   stage_change_datetime?: string;
 };

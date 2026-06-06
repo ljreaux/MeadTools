@@ -14,6 +14,16 @@ export type BrewAdditionSource =
   | "manual";
 export type GravityReadingRole = "OG" | "FG" | "GENERAL";
 export type GravityReadingSource = "measured" | "recipe" | "nutrient_basis" | "abv_estimate";
+export type GravityEntryUnit = "SG" | "BRIX";
+
+export type GravityEntryDisplayData = {
+  enteredValue?: number;
+  enteredUnit?: GravityEntryUnit;
+  convertedGravity?: number;
+  refractometerCorrectionApplied?: boolean;
+  correctionFactor?: number;
+  ogUsed?: number;
+};
 
 export type BrewAbvEstimateData = {
   abv: number;
@@ -43,6 +53,7 @@ export type GravityPayloadOptions = {
   hidden?: boolean;
   nutrientBasis?: BrewNutrientBasisData;
   abvEstimate?: BrewAbvEstimateData;
+  display?: GravityEntryDisplayData;
 };
 
 export type BrewAdditionData = {
@@ -114,7 +125,8 @@ export const entryPayload = {
         recipeValue: options.recipeValue,
         hidden: options.hidden,
         nutrientBasis: options.nutrientBasis,
-        abvEstimate: options.abvEstimate
+        abvEstimate: options.abvEstimate,
+        display: options.display
       },
       note
     };

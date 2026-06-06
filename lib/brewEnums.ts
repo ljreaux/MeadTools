@@ -34,3 +34,10 @@ export const TEMP_UNITS = {
 } as const;
 
 export type TempUnits = (typeof TEMP_UNITS)[keyof typeof TEMP_UNITS];
+
+export const GRAVITY_UNITS = {
+  SG: "SG",
+  BRIX: "BRIX"
+} as const;
+
+export type GravityUnit = (typeof GRAVITY_UNITS)[keyof typeof GRAVITY_UNITS];
