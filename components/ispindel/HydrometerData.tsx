@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { toBrix } from "@/lib/utils/unitConverter";
 import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
+import { formatBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";
 
 import {
   Dialog,
@@ -257,6 +258,45 @@ export function HydrometerData({
     return ticks;
   }, [hasData, data]);
 
+  const formatGravityAxis = useCallback(
+    (val: number) =>
+      gravityUnits === "Brix"
+        ? formatBrixDisplay(Number(val), t("BRIX"), lang)
+        : formatSgDisplay(Number(val), lang),
+    [gravityUnits, lang, t]
+  );
+
+  const tooltipFormatter = useCallback(
+    (value: any, name: any, item: any) => {
+      const key = String(item?.dataKey ?? name ?? "");
+      const label = chartConfig[key as keyof typeof chartConfig]?.label ?? name;
+      let displayValue = value;
+      if (key === "gravity" && typeof value === "number") {
+        displayValue =
+          gravityUnits === "Brix"
+            ? formatBrixDisplay(value, t("BRIX"), lang)
+            : formatSgDisplay(value, lang);
+      }
+
+      return (
+        <>
+          <div className="flex items-center gap-2">
+            <div
+              className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+              style={{ backgroundColor: item?.color }}
+            />
+            <span className="text-muted-foreground">{label}</span>
+          </div>
+          <span className="mx-2 font-mono font-medium tabular-nums text-foreground">
+            {displayValue}
+            {key === "gravity" ? "" : item?.unit}
+          </span>
+        </>
+      );
+    },
+    [chartConfig, gravityUnits, lang, t]
+  );
+
   // ---------- handlers ----------
   const handleDivDownload = useCallback(async () => {
     if (!hasData) return;
@@ -382,11 +422,7 @@ export function HydrometerData({
               ticks={generateTicks(dataMin, dataMax, 0.005)}
               allowDecimals
               tickMargin={8}
-              tickFormatter={(val) =>
-                gravityUnits === "Brix"
-                  ? Number(val).toFixed(2)
-                  : Number(val).toFixed(3)
-              }
+              tickFormatter={formatGravityAxis}
             />
           ) : null}
 
@@ -446,6 +482,7 @@ export function HydrometerData({
             cursor={false}
             content={
               <ChartTooltipContent
+                formatter={tooltipFormatter}
                 labelFormatter={(val) => {
                   const date = new Date(val);
                   return date.toLocaleString(lang, {
@@ -664,11 +701,7 @@ export function HydrometerData({
                   tickMargin={8}
                   dataKey={"gravity"}
                   yAxisId={"gravity"}
-                  tickFormatter={(val) =>
-                    gravityUnits === "Brix"
-                      ? Number(val).toFixed(2)
-                      : Number(val).toFixed(3)
-                  }
+                  tickFormatter={formatGravityAxis}
                   padding={yPadding}
                   hide={!checkObj.gravity}
                 />
@@ -732,6 +765,7 @@ export function HydrometerData({
                 cursor={false}
                 content={
                   <ChartTooltipContent
+                    formatter={tooltipFormatter}
                     labelFormatter={(val) => {
                       const date = new Date(val);
                       return date.toLocaleString(lang, {

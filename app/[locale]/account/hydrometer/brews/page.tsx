@@ -41,7 +41,7 @@ import { X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import Tooltip from "@/components/Tooltips";
-import { normalizeNumberString } from "@/lib/utils/validateInput";
+import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -240,12 +240,7 @@ function BrewRow({
   const { mutateAsync: updateEmailAlerts } = useUpdateEmailAlerts();
   const [checked, setChecked] = useState(brew.requested_email_alerts);
 
-  const gravity = normalizeNumberString(
-    brew.latest_gravity ?? 0,
-    3,
-    i18n.resolvedLanguage,
-    true
-  );
+  const gravity = formatSgDisplay(brew.latest_gravity, i18n.resolvedLanguage);
 
   return (
     <TableRow>
@@ -270,7 +265,7 @@ function BrewRow({
         {brew.end_date ? formatDate(brew.end_date) : t("ongoing", "Ongoing")}
       </TableCell>
 
-      <TableCell>{gravity !== "0.000" ? gravity : "—"}</TableCell>
+      <TableCell>{gravity}</TableCell>
 
       <TableCell>
         <div className="w-full flex items-center">

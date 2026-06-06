@@ -1,4 +1,4 @@
-import { BREW_ENTRY_TYPE, type BrewStage } from "@/lib/brewEnums";
+import { BREW_ENTRY_TYPE, GRAVITY_UNITS, type BrewStage, type GravityUnit } from "@/lib/brewEnums";
 import { Path, PathActivePanel, PathContent, PathHeader, PathItem, PathList, PathTitle } from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
@@ -28,6 +28,7 @@ type BrewStagePathProps = {
   onMoveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
   entries: BrewEntry[];
   current_volume_liters: number | null;
+  gravity_unit_preference?: GravityUnit;
   recipe: BrewRecipeStageData;
   patchBrewMetadata: BrewStageHelpers["patchBrewMetadata"];
   linkRecipeHref?: string;
@@ -56,6 +57,7 @@ export function BrewStagePath({
   onMoveToStage,
   entries,
   current_volume_liters,
+  gravity_unit_preference = GRAVITY_UNITS.SG,
   recipe,
   patchBrewMetadata,
   linkRecipeHref,
@@ -389,12 +391,14 @@ export function BrewStagePath({
           }
           suggestedOgSource={suggestedOgSource}
           estimatedFg={estimatedFg}
+          gravityUnitPreference={gravity_unit_preference}
           onSave={async (input) => {
             await addEntry(
               entryPayload.gravity(input.chosenOg, input.note ?? null, {
                 readingRole: "OG",
                 source: "measured",
-                datetime: input.datetime
+                datetime: input.datetime,
+                display: input.ogDisplay
               })
             );
             await addEntry(

@@ -50,3 +50,5 @@ next-env.d.ts
 AGENTS.md
 # Sentry Config File
 .env.sentry-build-plugin
+# next-agents-md
+.next-docs/

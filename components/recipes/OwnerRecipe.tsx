@@ -34,6 +34,7 @@ import { useBanner } from "../ui/banner";
 import { useSaveRecipe } from "@/hooks/useSaveRecipe";
 import { useAccountBrews } from "@/hooks/reactQuery/useAccountBrews";
 import { Skeleton } from "../ui/skeleton";
+import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 
 const buildCardConfig = ({
   recipeId,
@@ -355,7 +356,7 @@ function ConnectedBrews({ recipeId }: { recipeId: number }) {
                     <dt className="text-muted-foreground">
                       {t("brews.secondary.latestGravity", "Latest gravity")}
                     </dt>
-                    <dd>{brew.latest_gravity ?? "—"}</dd>
+                    <dd>{formatSgDisplay(brew.latest_gravity, i18n.resolvedLanguage)}</dd>
                   </div>
                 </dl>
               </div>

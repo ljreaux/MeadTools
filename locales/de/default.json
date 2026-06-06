@@ -384,6 +384,16 @@
       "loadDetail": "Beim Laden dieses Brauvorgangs ist ein Fehler aufgetreten.",
       "loadList": "Beim Laden der Biere ist ein Fehler aufgetreten."
     },
+    "gravity": {
+      "applyRefractometerCorrection": "Refraktometerkorrektur anwenden",
+      "convertedSgPreview": "Umgewandelte SG: {{sg}}",
+      "corrected": "korrigiert",
+      "correctedSgPreview": "Korrigierte SG: {{sg}}",
+      "correctionFactor": "Korrekturfaktor",
+      "correctionOg": "Korrektur OG: {{og}}",
+      "enteredBrix": "{{brix}}",
+      "unitPreference": "Schwerkrafteinheit-Präferenz"
+    },
     "history": {
       "filters": {
         "additions": "Zusätze",

@@ -6,6 +6,7 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
 import type { AdditiveLine, IngredientLine, NoteLine, RecipeUnitDefaults } from "@/types/recipeData";
@@ -19,7 +20,7 @@ export function formatNumber(value?: number | null, decimals = 2, locale?: strin
 }
 
 export function formatGravity(value?: number | null, locale?: string, fallback = "—") {
-  return formatNumber(value, 3, locale, fallback);
+  return formatSgDisplay(value, locale, fallback);
 }
 
 export function formatVolume(

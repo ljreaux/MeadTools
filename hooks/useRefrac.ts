@@ -1,4 +1,4 @@
-import { toBrix, toSG } from "@/lib/utils/unitConverter";
+import { refractometerCorrectedSg, toBrix, toSG } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ const useRefrac = () => {
   const ogBrix = ogUnits === "Brix" ? parseNumber(og) : toBrix(parseNumber(og));
   const fgBrix = fgUnits === "Brix" ? parseNumber(fg) : toBrix(parseNumber(fg));
 
-  const correctedFg = refracCalc(ogBrix, fgBrix, parseNumber(correctionFactor));
+  const correctedFg = refractometerCorrectedSg(ogBrix, fgBrix, parseNumber(correctionFactor));
 
   const changeOgUnits = () => {
     if (ogUnits === "SG") {
@@ -75,7 +75,3 @@ const useRefrac = () => {
 };
 
 export default useRefrac;
-
-function refracCalc(ogBr: number, fgBr: number, corFac: number) {
-  return -0.002349 * (ogBr / corFac) + 0.006276 * (fgBr / corFac) + 1;
-}
