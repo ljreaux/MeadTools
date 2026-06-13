@@ -1430,6 +1430,8 @@
     "description": "Brauer haben diese Chargen aus diesem Rezept geteilt.",
     "empty": "Für dieses Rezept wurden noch keine öffentlichen Ansätze geteilt.",
     "title": "Öffentliche Ansätze",
+    "unavailableDescription": "Dieser Ansatz ist privat, wurde entfernt oder der Link ist nicht mehr gültig.",
+    "unavailableTitle": "Ansatz nicht verfügbar",
     "viewBrew": "Ansatz ansehen"
   },
   "publicRecipes": {
