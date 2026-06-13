@@ -25,9 +25,11 @@ export type AccountBrewListItem = {
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
   gravity_unit_preference: GravityUnit;
+  public: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
   entry_count: number;
   latest_gravity: number | null;
@@ -69,11 +71,13 @@ export type AccountBrew = {
   current_volume_liters: number | null;
   requested_email_alerts: boolean;
   gravity_unit_preference: GravityUnit;
+  public: boolean;
 
   latest_gravity: number | null;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
   recipe_snapshot: BrewRecipeSnapshot | null;
   entry_count: number;
@@ -233,6 +237,7 @@ export type PatchAccountBrewMetadataInput = {
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
   gravity_unit_preference?: GravityUnit;
+  public?: boolean;
   end_date?: string | null; // ISO or null
   stage_change_datetime?: string;
 };

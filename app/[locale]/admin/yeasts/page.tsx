@@ -4,9 +4,14 @@ import { PaginatedTable } from "@/components/PaginatedTable";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Button } from "@/components/ui/button";
 
 function YeastDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: yeasts, isLoading, isError } = useYeastsQuery();
 
   if (isLoading) return <Loading />;
@@ -14,11 +19,8 @@ function YeastDashboard() {
   if (!yeasts) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl">Yeasts</h1>
-        <Link href={"/admin/yeasts/new-yeast"}>Add New Yeast</Link>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader title={t("admin.nav.yeasts", "Yeasts")} actions={<Button asChild><Link href="/admin/yeasts/new-yeast"><Plus />{t("admin.yeasts.add", "Add yeast")}</Link></Button>} />
 
       <PaginatedTable
         data={yeasts}
@@ -33,6 +35,7 @@ function YeastDashboard() {
         pageSize={10}
         onRowClick={(yeast) => router.push(`/admin/yeasts/${yeast.id}`)}
         searchKey={["name", "brand", "nitrogen_requirement"]}
+        getRowKey={(yeast) => yeast.id}
       />
     </div>
   );

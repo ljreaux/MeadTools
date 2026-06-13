@@ -3,18 +3,35 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   BREW_TRACKER_DIALOG_CONTENT_CLASS,
   BREW_TRACKER_DIALOG_FOOTER_CLASS,
   BREW_TRACKER_WIDE_DIALOG_CONTENT_CLASS
 } from "@/components/brews/brewTrackerDialog";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
@@ -33,7 +50,12 @@ import {
 } from "@/lib/utils/brewTrackingScaling";
 import { calcABV } from "@/lib/utils/unitConverter";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import type { IngredientLine, RecipeUnitDefaults, VolumeUnit, WeightUnit } from "@/types/recipeData";
+import type {
+  IngredientLine,
+  RecipeUnitDefaults,
+  VolumeUnit,
+  WeightUnit
+} from "@/types/recipeData";
 import type { StagePanelProps } from "../stageConfig";
 import {
   AmountUnitField,
@@ -108,18 +130,28 @@ const SUPPLEMENTAL_GRAM_THRESHOLD = 0.01;
 const SUPPLEMENTAL_CAMPDEN_THRESHOLD = 0.01;
 const SUPPLEMENTAL_VOLUME_THRESHOLD_L = 0.04;
 
-function fmtVolumeWithZero(liters?: number | null, unit: RecipeUnitDefaults["volume"] = "gal", locale?: string) {
+function fmtVolumeWithZero(
+  liters?: number | null,
+  unit: RecipeUnitDefaults["volume"] = "gal",
+  locale?: string
+) {
   return formatVolume(liters, unit, locale, { allowZero: true });
 }
 
-function getEntryTime(entry: StagePanelProps["ctx"]["brew"]["entries"][number]) {
+function getEntryTime(
+  entry: StagePanelProps["ctx"]["brew"]["entries"][number]
+) {
   const value = (entry as any).datetime ?? entry.createdAt;
   return typeof value === "string" ? new Date(value).getTime() : 0;
 }
 
 function latestLoggedPh(ctx: StagePanelProps["ctx"]) {
   const entry = ctx.brew.entries
-    .filter((item) => item.type === BREW_ENTRY_TYPE.PH && typeof (item.data as any)?.ph === "number")
+    .filter(
+      (item) =>
+        item.type === BREW_ENTRY_TYPE.PH &&
+        typeof (item.data as any)?.ph === "number"
+    )
     .sort((a, b) => getEntryTime(b) - getEntryTime(a))[0];
 
   const ph = (entry?.data as any)?.ph;
@@ -164,8 +196,20 @@ function plannedSecondaryVolumeL(line: IngredientLine) {
   return amount * VOLUME_TO_L[unit];
 }
 
-function loggedSecondaryVolumeL(line: IngredientLine, addition?: { amount: number | null; unit: string | null; meta: Record<string, any> | null } | null) {
-  if (!addition || typeof addition.amount !== "number" || !Number.isFinite(addition.amount) || addition.amount <= 0) {
+function loggedSecondaryVolumeL(
+  line: IngredientLine,
+  addition?: {
+    amount: number | null;
+    unit: string | null;
+    meta: Record<string, any> | null;
+  } | null
+) {
+  if (
+    !addition ||
+    typeof addition.amount !== "number" ||
+    !Number.isFinite(addition.amount) ||
+    addition.amount <= 0
+  ) {
     return null;
   }
 
@@ -180,8 +224,17 @@ function loggedSecondaryVolumeL(line: IngredientLine, addition?: { amount: numbe
 
   if (addition.meta?.actualBasis === "volume") {
     const metaUnit = normalizeVolumeUnit(addition.meta?.plannedVolumeUnit);
-    const metaAmount = typeof addition.meta?.plannedVolumeAmount === "number" ? addition.meta.plannedVolumeAmount : null;
-    if (metaUnit && metaAmount != null && Number.isFinite(metaAmount) && metaAmount > 0) return metaAmount * VOLUME_TO_L[metaUnit];
+    const metaAmount =
+      typeof addition.meta?.plannedVolumeAmount === "number"
+        ? addition.meta.plannedVolumeAmount
+        : null;
+    if (
+      metaUnit &&
+      metaAmount != null &&
+      Number.isFinite(metaAmount) &&
+      metaAmount > 0
+    )
+      return metaAmount * VOLUME_TO_L[metaUnit];
   }
 
   return null;
@@ -190,7 +243,11 @@ function loggedSecondaryVolumeL(line: IngredientLine, addition?: { amount: numbe
 function toIngredientSg(line: IngredientLine) {
   const brix = parseNumber(line.brix);
   if (!Number.isFinite(brix)) return null;
-  const sg = 1.00001 + 0.0038661 * brix + 1.3488 * 10 ** -5 * brix ** 2 + 4.3074 * 10 ** -8 * brix ** 3;
+  const sg =
+    1.00001 +
+    0.0038661 * brix +
+    1.3488 * 10 ** -5 * brix ** 2 +
+    4.3074 * 10 ** -8 * brix ** 3;
   return Number.isFinite(sg) && sg > 0 ? sg : null;
 }
 
@@ -203,7 +260,9 @@ function getSecondaryVolumeBreakdown(ctx: StagePanelProps["ctx"]) {
 
   for (const line of ctx.recipe.secondaryIngredients) {
     if (!(line.name ?? "").trim()) continue;
-    const logged = latestLoggedItem(ctx.recipe.actual.additionsByRecipeIngredientId[String(line.lineId)]);
+    const logged = latestLoggedItem(
+      ctx.recipe.actual.additionsByRecipeIngredientId[String(line.lineId)]
+    );
     const loggedVolume = loggedSecondaryVolumeL(line, logged);
     if (loggedVolume != null) {
       loggedVolumeL += loggedVolume;
@@ -238,29 +297,50 @@ function getSecondaryVolumeBreakdown(ctx: StagePanelProps["ctx"]) {
   } as const;
 }
 
-function getStabilizerPlan(ctx: StagePanelProps["ctx"], locale?: string): StabilizerPlan | null {
+function getStabilizerPlan(
+  ctx: StagePanelProps["ctx"],
+  locale?: string
+): StabilizerPlan | null {
   const currentVolume = ctx.brew.current_volume_liters;
   const baseVolumeL =
-    typeof currentVolume === "number" && Number.isFinite(currentVolume) && currentVolume > 0
+    typeof currentVolume === "number" &&
+    Number.isFinite(currentVolume) &&
+    currentVolume > 0
       ? currentVolume
       : null;
 
   if (baseVolumeL == null) return null;
 
-  const og = ctx.recipe.actual.originalGravity?.gravity ?? ctx.recipe.derived?.gravity.ogPrimary ?? null;
+  const og =
+    ctx.recipe.actual.originalGravity?.gravity ??
+    ctx.recipe.derived?.gravity.ogPrimary ??
+    null;
   const fg =
     ctx.recipe.actual.finalGravity?.gravity ??
-    (ctx.recipe.recipeData?.fg != null ? parseNumber(String(ctx.recipe.recipeData.fg)) : null);
-  const hasLoggedOgFg = Boolean(ctx.recipe.actual.originalGravity && ctx.recipe.actual.finalGravity);
+    (ctx.recipe.recipeData?.fg != null
+      ? parseNumber(String(ctx.recipe.recipeData.fg))
+      : null);
+  const hasLoggedOgFg = Boolean(
+    ctx.recipe.actual.originalGravity && ctx.recipe.actual.finalGravity
+  );
   const loggedAbv =
-    typeof og === "number" && Number.isFinite(og) && typeof fg === "number" && Number.isFinite(fg) ? calcABV(og, fg) : null;
-  const abv = typeof loggedAbv === "number" && Number.isFinite(loggedAbv) ? loggedAbv : null;
+    typeof og === "number" &&
+    Number.isFinite(og) &&
+    typeof fg === "number" &&
+    Number.isFinite(fg)
+      ? calcABV(og, fg)
+      : null;
+  const abv =
+    typeof loggedAbv === "number" && Number.isFinite(loggedAbv)
+      ? loggedAbv
+      : null;
 
   if (abv == null) return null;
 
   const secondaryVolume = getSecondaryVolumeBreakdown(ctx);
   const adjustedTotalVolumeL = baseVolumeL + secondaryVolume.totalVolumeL;
-  const dilutedAbv = adjustedTotalVolumeL > 0 ? (abv * baseVolumeL) / adjustedTotalVolumeL : abv;
+  const dilutedAbv =
+    adjustedTotalVolumeL > 0 ? (abv * baseVolumeL) / adjustedTotalVolumeL : abv;
 
   const latestPh = latestLoggedPh(ctx);
   const recipePh = ctx.recipe.stabilizerPlan?.phReading?.trim();
@@ -284,19 +364,26 @@ function getStabilizerPlan(ctx: StagePanelProps["ctx"], locale?: string): Stabil
     baseAbv: abv,
     dilutedAbv,
     defaultPh,
-    phSource: latestPh != null ? "latest_logged" : recipePh ? "recipe" : "default",
+    phSource:
+      latestPh != null ? "latest_logged" : recipePh ? "recipe" : "default",
     stabilizerType: ctx.recipe.stabilizerPlan?.type ?? "kmeta",
-    volumeUnit: ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal"
+    volumeUnit:
+      ctx.recipe.recipeData?.unitDefaults.volume ??
+      ctx.recipe.derived?.volume.unit ??
+      "gal"
   };
 }
 
 function getLoggedStabilizerAdditions(ctx: StagePanelProps["ctx"]) {
   return ctx.recipe.actual.additions.filter(
-    (addition) => addition.meta?.stabilizer === true && addition.meta?.stage === "SECONDARY"
+    (addition) =>
+      addition.meta?.stabilizer === true && addition.meta?.stage === "SECONDARY"
   );
 }
 
-function getLatestLoggedStabilizer(additions: ReturnType<typeof getLoggedStabilizerAdditions>) {
+function getLatestLoggedStabilizer(
+  additions: ReturnType<typeof getLoggedStabilizerAdditions>
+) {
   return latestLoggedItem(additions);
 }
 
@@ -311,11 +398,13 @@ function getSupplementalStabilizerPlan(
 
   const latest = getLatestLoggedStabilizer(additions);
   const latestSecondaryVolumeL =
-    typeof latest?.meta?.secondaryVolumeLiters === "number" && Number.isFinite(latest.meta.secondaryVolumeLiters)
+    typeof latest?.meta?.secondaryVolumeLiters === "number" &&
+    Number.isFinite(latest.meta.secondaryVolumeLiters)
       ? latest.meta.secondaryVolumeLiters
       : null;
   const latestAdjustedTotalVolumeL =
-    typeof latest?.meta?.adjustedTotalVolumeLiters === "number" && Number.isFinite(latest.meta.adjustedTotalVolumeLiters)
+    typeof latest?.meta?.adjustedTotalVolumeLiters === "number" &&
+    Number.isFinite(latest.meta.adjustedTotalVolumeLiters)
       ? latest.meta.adjustedTotalVolumeLiters
       : null;
   const currentVolumeL =
@@ -325,33 +414,46 @@ function getSupplementalStabilizerPlan(
       ? ctx.brew.current_volume_liters
       : null;
   const secondaryDilutionIncreased =
-    latestSecondaryVolumeL != null && plan.secondaryVolumeL > latestSecondaryVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
+    latestSecondaryVolumeL != null &&
+    plan.secondaryVolumeL >
+      latestSecondaryVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
   const measuredVolumeOverEstimate =
     latestAdjustedTotalVolumeL != null &&
     currentVolumeL != null &&
-    currentVolumeL > latestAdjustedTotalVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
+    currentVolumeL >
+      latestAdjustedTotalVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
 
   if (latestSecondaryVolumeL != null || latestAdjustedTotalVolumeL != null) {
     if (!secondaryDilutionIncreased && !measuredVolumeOverEstimate) return null;
   }
 
   const stabilizerType =
-    latest?.meta?.stabilizerType === "nameta" || latest?.meta?.stabilizerType === "kmeta"
+    latest?.meta?.stabilizerType === "nameta" ||
+    latest?.meta?.stabilizerType === "kmeta"
       ? latest.meta.stabilizerType
       : plan.stabilizerType;
-  const sulfiteForm = latest?.meta?.sulfiteForm === "campden" ? "campden" : "powder";
+  const sulfiteForm =
+    latest?.meta?.sulfiteForm === "campden" ? "campden" : "powder";
   const ph =
     typeof latest?.meta?.ph === "number" && Number.isFinite(latest.meta.ph)
       ? String(latest.meta.ph)
       : plan.defaultPh;
   const latestBaseVolumeL =
-    typeof latest?.meta?.baseVolumeLiters === "number" && Number.isFinite(latest.meta.baseVolumeLiters)
+    typeof latest?.meta?.baseVolumeLiters === "number" &&
+    Number.isFinite(latest.meta.baseVolumeLiters)
       ? latest.meta.baseVolumeLiters
       : null;
   const latestBaseAbv =
-    typeof latest?.meta?.baseAbv === "number" && Number.isFinite(latest.meta.baseAbv) ? latest.meta.baseAbv : null;
+    typeof latest?.meta?.baseAbv === "number" &&
+    Number.isFinite(latest.meta.baseAbv)
+      ? latest.meta.baseAbv
+      : null;
   const requiredVolumeL =
-    measuredVolumeOverEstimate && !secondaryDilutionIncreased && currentVolumeL != null ? currentVolumeL : plan.volumeL;
+    measuredVolumeOverEstimate &&
+    !secondaryDilutionIncreased &&
+    currentVolumeL != null
+      ? currentVolumeL
+      : plan.volumeL;
   const requiredAbv =
     measuredVolumeOverEstimate &&
     !secondaryDilutionIncreased &&
@@ -371,7 +473,10 @@ function getSupplementalStabilizerPlan(
   const logged = additions.reduce(
     (acc, addition) => {
       const kind = addition.meta?.stabilizerKind;
-      const amount = typeof addition.amount === "number" && Number.isFinite(addition.amount) ? addition.amount : 0;
+      const amount =
+        typeof addition.amount === "number" && Number.isFinite(addition.amount)
+          ? addition.amount
+          : 0;
       const unit = addition.unit ?? "";
 
       if (kind === "sorbate") {
@@ -411,27 +516,39 @@ function getSupplementalStabilizerPlan(
   };
 }
 
-export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: StagePanelProps) {
+export function SecondaryStagePanel({
+  t,
+  status,
+  ctx,
+  helpers,
+  warnings = [],
+  readOnly = false
+}: StagePanelProps) {
   const { i18n } = useTranslation();
-  const [additionDialog, setAdditionDialog] = React.useState<PlannedSecondaryAddition | null>(null);
+  const [additionDialog, setAdditionDialog] =
+    React.useState<PlannedSecondaryAddition | null>(null);
   const [stabilizerDialogOpen, setStabilizerDialogOpen] = React.useState(false);
   const [bulkAgeConfirmOpen, setBulkAgeConfirmOpen] = React.useState(false);
   const [packageConfirmOpen, setPackageConfirmOpen] = React.useState(false);
-  const [secondaryBeforeStabilizersOpen, setSecondaryBeforeStabilizersOpen] = React.useState(false);
+  const [secondaryBeforeStabilizersOpen, setSecondaryBeforeStabilizersOpen] =
+    React.useState(false);
   const [recipeNoteDialog, setRecipeNoteDialog] = React.useState<{
     text: string;
     recipeNoteId: string;
   } | null>(null);
-  const [scaledSecondarySuggestions, setScaledSecondarySuggestions] = React.useState<
-    Map<string, ScaledIngredientSuggestion>
-  >(new Map());
-  const [scaledAdditiveSuggestions, setScaledAdditiveSuggestions] = React.useState<
-    Map<string, ScaledAdditiveSuggestion>
-  >(new Map());
-  const [loggingMissingSecondary, setLoggingMissingSecondary] = React.useState(false);
-  const [loggingMissingAdditives, setLoggingMissingAdditives] = React.useState(false);
-  const [loggingSupplementalStabilizers, setLoggingSupplementalStabilizers] = React.useState(false);
-  const pendingSecondaryIngredientAction = React.useRef<(() => void | Promise<void>) | null>(null);
+  const [scaledSecondarySuggestions, setScaledSecondarySuggestions] =
+    React.useState<Map<string, ScaledIngredientSuggestion>>(new Map());
+  const [scaledAdditiveSuggestions, setScaledAdditiveSuggestions] =
+    React.useState<Map<string, ScaledAdditiveSuggestion>>(new Map());
+  const [loggingMissingSecondary, setLoggingMissingSecondary] =
+    React.useState(false);
+  const [loggingMissingAdditives, setLoggingMissingAdditives] =
+    React.useState(false);
+  const [loggingSupplementalStabilizers, setLoggingSupplementalStabilizers] =
+    React.useState(false);
+  const pendingSecondaryIngredientAction = React.useRef<
+    (() => void | Promise<void>) | null
+  >(null);
 
   const secondaryLines = React.useMemo(
     () => buildIngredientLines(ctx.recipe.secondaryIngredients),
@@ -441,7 +558,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     () => buildNoteLines(ctx.recipe.secondaryNotes),
     [ctx.recipe.secondaryNotes]
   );
-  const additiveLines = React.useMemo(() => buildAdditiveLines(ctx.recipe.additives), [ctx.recipe.additives]);
+  const additiveLines = React.useMemo(
+    () => buildAdditiveLines(ctx.recipe.additives),
+    [ctx.recipe.additives]
+  );
   const loggedIngredientIds = React.useMemo(
     () => new Set(ctx.recipe.actual.loggedRecipeIngredientIds),
     [ctx.recipe.actual.loggedRecipeIngredientIds]
@@ -455,38 +575,57 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     [ctx.recipe.actual.loggedRecipeSecondaryNoteIds]
   );
 
-  const canEdit = status === "current";
+  const canEdit = status === "current" && !readOnly;
   const recipeBaseVolumeL =
-    typeof ctx.recipe.derived?.volume.totalL === "number" && Number.isFinite(ctx.recipe.derived.volume.totalL)
+    typeof ctx.recipe.derived?.volume.totalL === "number" &&
+    Number.isFinite(ctx.recipe.derived.volume.totalL)
       ? ctx.recipe.derived.volume.totalL
       : null;
   const locale = i18n.resolvedLanguage;
-  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtNumber = (value?: number | null, decimals = 2) =>
+    formatNumber(value, decimals, locale);
   const fmtGravity = (value?: number | null) => formatGravity(value, locale);
-  const fmtVolume = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
-    formatVolume(value, unit, locale);
-  const fmtLoggedAmount = (addition?: { amount: number | null; unit: string | null } | null) =>
-    formatLoggedAmount(addition, locale);
-  const missingSecondary = secondaryLines.filter((line) => !loggedIngredientIds.has(String(line.line.lineId)));
-  const missingAdditives = additiveLines.filter((line) => !loggedAdditiveIds.has(String(line.line.lineId)));
+  const fmtVolume = (
+    value?: number | null,
+    unit: RecipeUnitDefaults["volume"] = "gal"
+  ) => formatVolume(value, unit, locale);
+  const fmtLoggedAmount = (
+    addition?: { amount: number | null; unit: string | null } | null
+  ) => formatLoggedAmount(addition, locale);
+  const missingSecondary = secondaryLines.filter(
+    (line) => !loggedIngredientIds.has(String(line.line.lineId))
+  );
+  const missingAdditives = additiveLines.filter(
+    (line) => !loggedAdditiveIds.has(String(line.line.lineId))
+  );
   const ingredientDoneCount = secondaryLines.length - missingSecondary.length;
   const additiveDoneCount = additiveLines.length - missingAdditives.length;
-  const notesDoneCount = secondaryNotes.filter((item) => loggedNoteIds.has(String(item.note.lineId))).length;
+  const notesDoneCount = secondaryNotes.filter((item) =>
+    loggedNoteIds.has(String(item.note.lineId))
+  ).length;
   const hasCurrentVolume =
     typeof ctx.brew.current_volume_liters === "number" &&
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
-  const canScaleSuggestions = canEdit && hasCurrentVolume && recipeBaseVolumeL != null && recipeBaseVolumeL > 0;
+  const canScaleSuggestions =
+    canEdit &&
+    hasCurrentVolume &&
+    recipeBaseVolumeL != null &&
+    recipeBaseVolumeL > 0;
   const readyForBulkAge = hasCurrentVolume;
   const stabilizerPlan = getStabilizerPlan(ctx, locale);
   const usesRecipeStabilizers = Boolean(ctx.recipe.stabilizerPlan?.enabled);
   const loggedStabilizerAdditions = getLoggedStabilizerAdditions(ctx);
   const hasLoggedStabilizers = loggedStabilizerAdditions.length > 0;
   const supplementalStabilizerPlan =
-    usesRecipeStabilizers && hasLoggedStabilizers ? getSupplementalStabilizerPlan(ctx, stabilizerPlan) : null;
+    usesRecipeStabilizers && hasLoggedStabilizers
+      ? getSupplementalStabilizerPlan(ctx, stabilizerPlan)
+      : null;
 
-  const getScaledIngredientSuggestion = (lineId: string) => scaledSecondarySuggestions.get(String(lineId));
-  const getScaledAdditiveSuggestion = (lineId: string) => scaledAdditiveSuggestions.get(String(lineId));
+  const getScaledIngredientSuggestion = (lineId: string) =>
+    scaledSecondarySuggestions.get(String(lineId));
+  const getScaledAdditiveSuggestion = (lineId: string) =>
+    scaledAdditiveSuggestions.get(String(lineId));
 
   const getSecondaryIngredientAmount = (line: IngredientLine) => {
     const scaled = getScaledIngredientSuggestion(line.lineId);
@@ -508,12 +647,16 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     };
   };
 
-  const getSecondaryIngredientDisplay = (item: (typeof secondaryLines)[number]) => {
+  const getSecondaryIngredientDisplay = (
+    item: (typeof secondaryLines)[number]
+  ) => {
     const scaled = getScaledIngredientSuggestion(item.line.lineId);
     if (!scaled) {
       return {
         amount: item.primary,
-        detail: item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null
+        detail: item.secondary
+          ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}`
+          : null
       };
     }
 
@@ -528,13 +671,18 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     };
   };
 
-  const getSecondaryAdditiveAmount = (lineId: string, fallback: ReturnType<typeof getAdditiveAmount>) => {
+  const getSecondaryAdditiveAmount = (
+    lineId: string,
+    fallback: ReturnType<typeof getAdditiveAmount>
+  ) => {
     const scaled = getScaledAdditiveSuggestion(lineId);
     if (scaled) return { amount: scaled.amount, unit: scaled.unit };
     return fallback;
   };
 
-  const getSecondaryAdditiveDisplay = (item: (typeof additiveLines)[number]) => {
+  const getSecondaryAdditiveDisplay = (
+    item: (typeof additiveLines)[number]
+  ) => {
     const scaled = getScaledAdditiveSuggestion(item.line.lineId);
     return scaled ? `${fmtNumber(scaled.amount)} ${scaled.unit}` : item.amount;
   };
@@ -606,7 +754,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
     try {
       await helpers.addAdditions(
         missingAdditives.map((item) => {
-          const { amount, unit } = getSecondaryAdditiveAmount(item.line.lineId, getAdditiveAmount(item.line));
+          const { amount, unit } = getSecondaryAdditiveAmount(
+            item.line.lineId,
+            getAdditiveAmount(item.line)
+          );
           return {
             name: item.name,
             amount,
@@ -643,9 +794,11 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         supplementalStabilizerPlan.sulfiteForm === "campden"
           ? supplementalStabilizerPlan.additional.campden
           : supplementalStabilizerPlan.additional.sulfite;
-      const sulfiteUnit = supplementalStabilizerPlan.sulfiteForm === "campden" ? "tablets" : "g";
+      const sulfiteUnit =
+        supplementalStabilizerPlan.sulfiteForm === "campden" ? "tablets" : "g";
       const inputs = [
-        supplementalStabilizerPlan.additional.sorbate > SUPPLEMENTAL_GRAM_THRESHOLD
+        supplementalStabilizerPlan.additional.sorbate >
+        SUPPLEMENTAL_GRAM_THRESHOLD
           ? {
               name: "Potassium sorbate",
               amount: supplementalStabilizerPlan.additional.sorbate,
@@ -667,7 +820,8 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 secondaryVolumeLiters: stabilizerPlan.secondaryVolumeL,
                 abv: stabilizerPlan.abv,
                 dilutedAbv: stabilizerPlan.dilutedAbv,
-                recalculatedRequiredAmount: supplementalStabilizerPlan.required.sorbate,
+                recalculatedRequiredAmount:
+                  supplementalStabilizerPlan.required.sorbate,
                 priorLoggedAmount: supplementalStabilizerPlan.logged.sorbate,
                 additionalAmount: supplementalStabilizerPlan.additional.sorbate,
                 calculatedUnit: "g",
@@ -734,7 +888,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
       <div className="grid gap-3 sm:grid-cols-4">
         <StatusTile
           label={t("brews.secondary.currentVolume", "Current volume")}
-          value={fmtVolume(ctx.brew.current_volume_liters, stabilizerPlan?.volumeUnit)}
+          value={fmtVolume(
+            ctx.brew.current_volume_liters,
+            stabilizerPlan?.volumeUnit
+          )}
           tone={hasCurrentVolume ? "ok" : "warn"}
         />
         <StatusTile
@@ -749,7 +906,11 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         />
         <StatusTile
           label={t("brewStage.BULK_AGE", "Bulk Age")}
-          value={readyForBulkAge ? t("brews.secondary.ready", "Ready") : t("brews.secondary.needsReview", "Needs review")}
+          value={
+            readyForBulkAge
+              ? t("brews.secondary.ready", "Ready")
+              : t("brews.secondary.needsReview", "Needs review")
+          }
           tone={readyForBulkAge ? "ok" : "warn"}
         />
       </div>
@@ -759,8 +920,14 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
           <div className="min-w-0">
             <div className="text-sm font-medium">
               {readyForBulkAge
-                ? t("brews.secondary.focusReady", "Ready to move into bulk aging")
-                : t("brews.secondary.focusTracking", "Keep secondary additions and volume current")}
+                ? t(
+                    "brews.secondary.focusReady",
+                    "Ready to move into bulk aging"
+                  )
+                : t(
+                    "brews.secondary.focusTracking",
+                    "Keep secondary additions and volume current"
+                  )}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {t(
@@ -775,15 +942,29 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 size="sm"
                 variant="secondary"
                 disabled={!canEdit || loggingMissingSecondary}
-                onClick={() => runSecondaryIngredientAction(logMissingSecondary)}
+                onClick={() =>
+                  runSecondaryIngredientAction(logMissingSecondary)
+                }
               >
-                {t("brews.secondary.logMissingAdditions", "Log missing additions")}
+                {t(
+                  "brews.secondary.logMissingAdditions",
+                  "Log missing additions"
+                )}
               </Button>
             ) : null}
-            <Button size="sm" disabled={!canEdit} onClick={() => setBulkAgeConfirmOpen(true)}>
+            <Button
+              size="sm"
+              disabled={!canEdit}
+              onClick={() => setBulkAgeConfirmOpen(true)}
+            >
               {t("brews.secondary.moveToBulkAge", "Move to Bulk Age")}
             </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setPackageConfirmOpen(true)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canEdit}
+              onClick={() => setPackageConfirmOpen(true)}
+            >
               {t("brews.secondary.bottlePackage", "Bottle / Package")}
             </Button>
             {usesRecipeStabilizers && !hasLoggedStabilizers ? (
@@ -796,13 +977,31 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 {t("brews.secondary.logStabilizers", "Log stabilizers")}
               </Button>
             ) : null}
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => helpers.openRecordVolume?.()}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canEdit}
+              onClick={() => helpers.openRecordVolume?.()}
+            >
               {t("brews.actions.logVolume", "Record volume")}
             </Button>
-            <Button size="sm" variant="secondary" disabled={!canScaleSuggestions} onClick={scaleSecondaryToCurrentVolume}>
-              {t("brews.secondary.scaleSecondaryIngredients", "Scale secondary ingredients")}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canScaleSuggestions}
+              onClick={scaleSecondaryToCurrentVolume}
+            >
+              {t(
+                "brews.secondary.scaleSecondaryIngredients",
+                "Scale secondary ingredients"
+              )}
             </Button>
-            <Button size="sm" variant="secondary" disabled={!canScaleSuggestions} onClick={scaleAdditivesToCurrentVolume}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canScaleSuggestions}
+              onClick={scaleAdditivesToCurrentVolume}
+            >
               {t("brews.secondary.scaleAdditives", "Scale additives")}
             </Button>
           </div>
@@ -812,7 +1011,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
       {supplementalStabilizerPlan ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-3 text-sm">
           <div className="font-medium text-destructive">
-            {t("brews.secondary.supplementalStabilizersTitle", "Additional stabilizers may be needed")}
+            {t(
+              "brews.secondary.supplementalStabilizersTitle",
+              "Additional stabilizers may be needed"
+            )}
           </div>
           <div className="mt-1 text-muted-foreground">
             {t(
@@ -856,7 +1058,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
               disabled={!canEdit || loggingSupplementalStabilizers}
               onClick={logSupplementalStabilizers}
             >
-              {t("brews.secondary.logSupplementalStabilizers", "Log supplemental stabilizers")}
+              {t(
+                "brews.secondary.logSupplementalStabilizers",
+                "Log supplemental stabilizers"
+              )}
             </Button>
           </div>
         </div>
@@ -864,35 +1069,56 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
 
       <WarningsPanel warnings={warnings} defaultOpen />
 
-      <Accordion type="multiple" defaultValue={["secondary-ingredients", "additives", "notes"]}>
+      <Accordion
+        type="multiple"
+        defaultValue={["secondary-ingredients", "additives", "notes"]}
+      >
         <AccordionItem value="secondary-ingredients">
           <AccordionTrigger>
-            {t("brews.secondary.ingredients", "Secondary ingredients")} · {ingredientDoneCount}/{secondaryLines.length}
+            {t("brews.secondary.ingredients", "Secondary ingredients")} ·{" "}
+            {ingredientDoneCount}/{secondaryLines.length}
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               <Button
                 size="sm"
-                disabled={!canEdit || missingSecondary.length === 0 || loggingMissingSecondary}
-                onClick={() => runSecondaryIngredientAction(logMissingSecondary)}
+                disabled={
+                  !canEdit ||
+                  missingSecondary.length === 0 ||
+                  loggingMissingSecondary
+                }
+                onClick={() =>
+                  runSecondaryIngredientAction(logMissingSecondary)
+                }
               >
                 {t("brews.secondary.logMissing", "Log missing")}
               </Button>
               {secondaryLines.length ? (
                 <ul className="space-y-1">
                   {secondaryLines.map((item) => {
-                    const isLogged = loggedIngredientIds.has(String(item.line.lineId));
-                    const loggedAddition = latestLoggedItem(
-                      ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
+                    const isLogged = loggedIngredientIds.has(
+                      String(item.line.lineId)
                     );
-                    const { amount, unit } = getSecondaryIngredientAmount(item.line);
+                    const loggedAddition = latestLoggedItem(
+                      ctx.recipe.actual.additionsByRecipeIngredientId[
+                        String(item.line.lineId)
+                      ]
+                    );
+                    const { amount, unit } = getSecondaryIngredientAmount(
+                      item.line
+                    );
                     const display = getSecondaryIngredientDisplay(item);
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
+                        title={getBrewItemLabel(
+                          t,
+                          loggedAddition?.name || item.name
+                        )}
                         detail={display.detail}
-                        amount={fmtLoggedAmount(loggedAddition) ?? display.amount}
+                        amount={
+                          fmtLoggedAmount(loggedAddition) ?? display.amount
+                        }
                         isLogged={isLogged}
                         disabled={!canEdit}
                         loggedLabel={t("brews.primary.logged", "Logged")}
@@ -900,15 +1126,24 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                         onLog={() =>
                           runSecondaryIngredientAction(() =>
                             setAdditionDialog({
-                              title: t("brews.secondary.logIngredient", "Log secondary ingredient"),
+                              title: t(
+                                "brews.secondary.logIngredient",
+                                "Log secondary ingredient"
+                              ),
                               name: item.name,
                               kind: "INGREDIENT",
                               source: "recipe_ingredient",
                               amount,
                               unit,
-                              ...getSecondaryIngredientPlannedAmounts(item.line),
+                              ...getSecondaryIngredientPlannedAmounts(
+                                item.line
+                              ),
                               recipeIngredientId: String(item.line.lineId),
-                              meta: { plannedAmount: amount, plannedUnit: unit, stage: "SECONDARY" }
+                              meta: {
+                                plannedAmount: amount,
+                                plannedUnit: unit,
+                                stage: "SECONDARY"
+                              }
                             })
                           )
                         }
@@ -918,7 +1153,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                 </ul>
               ) : (
                 <EmptyState>
-                  {t("brews.secondary.noSecondaryIngredients", "No secondary ingredients found in the linked recipe.")}
+                  {t(
+                    "brews.secondary.noSecondaryIngredients",
+                    "No secondary ingredients found in the linked recipe."
+                  )}
                 </EmptyState>
               )}
             </div>
@@ -927,44 +1165,72 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
 
         <AccordionItem value="additives">
           <AccordionTrigger>
-            {t("brews.secondary.recipeAdditives", "Recipe additives")} · {additiveDoneCount}/{additiveLines.length}
+            {t("brews.secondary.recipeAdditives", "Recipe additives")} ·{" "}
+            {additiveDoneCount}/{additiveLines.length}
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               <Button
                 size="sm"
-                disabled={!canEdit || missingAdditives.length === 0 || loggingMissingAdditives}
+                disabled={
+                  !canEdit ||
+                  missingAdditives.length === 0 ||
+                  loggingMissingAdditives
+                }
                 onClick={logMissingAdditives}
               >
-                {t("brews.secondary.logMissingAdditives", "Log missing additives")}
+                {t(
+                  "brews.secondary.logMissingAdditives",
+                  "Log missing additives"
+                )}
               </Button>
               {additiveLines.length ? (
                 <ul className="space-y-1">
                   {additiveLines.map((item) => {
-                    const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
-                    const loggedAddition = latestLoggedItem(
-                      ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
+                    const isLogged = loggedAdditiveIds.has(
+                      String(item.line.lineId)
                     );
-                    const { amount, unit } = getSecondaryAdditiveAmount(item.line.lineId, getAdditiveAmount(item.line));
+                    const loggedAddition = latestLoggedItem(
+                      ctx.recipe.actual.additionsByRecipeAdditiveId[
+                        String(item.line.lineId)
+                      ]
+                    );
+                    const { amount, unit } = getSecondaryAdditiveAmount(
+                      item.line.lineId,
+                      getAdditiveAmount(item.line)
+                    );
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                        amount={fmtLoggedAmount(loggedAddition) ?? getSecondaryAdditiveDisplay(item)}
+                        title={getBrewItemLabel(
+                          t,
+                          loggedAddition?.name || item.name
+                        )}
+                        amount={
+                          fmtLoggedAmount(loggedAddition) ??
+                          getSecondaryAdditiveDisplay(item)
+                        }
                         isLogged={isLogged}
                         disabled={!canEdit}
                         loggedLabel={t("brews.primary.logged", "Logged")}
                         actionLabel={t("brews.primary.log", "Log")}
                         onLog={() =>
                           setAdditionDialog({
-                            title: t("brews.secondary.logAdditive", "Log additive"),
+                            title: t(
+                              "brews.secondary.logAdditive",
+                              "Log additive"
+                            ),
                             name: item.name,
                             kind: "OTHER",
                             source: "recipe_additive",
                             amount,
                             unit,
                             recipeAdditiveId: String(item.line.lineId),
-                            meta: { plannedAmount: amount, plannedUnit: unit, stage: "SECONDARY" }
+                            meta: {
+                              plannedAmount: amount,
+                              plannedUnit: unit,
+                              stage: "SECONDARY"
+                            }
                           })
                         }
                       />
@@ -972,7 +1238,12 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
                   })}
                 </ul>
               ) : (
-                <EmptyState>{t("brews.secondary.noRecipeAdditives", "No recipe additives found.")}</EmptyState>
+                <EmptyState>
+                  {t(
+                    "brews.secondary.noRecipeAdditives",
+                    "No recipe additives found."
+                  )}
+                </EmptyState>
               )}
             </div>
           </AccordionContent>
@@ -980,7 +1251,8 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
 
         <AccordionItem value="notes">
           <AccordionTrigger>
-            {t("brews.secondary.recipeNotes", "Recipe secondary notes")} · {notesDoneCount}/{secondaryNotes.length}
+            {t("brews.secondary.recipeNotes", "Recipe secondary notes")} ·{" "}
+            {notesDoneCount}/{secondaryNotes.length}
           </AccordionTrigger>
           <AccordionContent>
             {secondaryNotes.length ? (
@@ -1007,7 +1279,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
               </ul>
             ) : (
               <EmptyState>
-                {t("brews.secondary.noRecipeNotes", "No secondary notes found in the linked recipe.")}
+                {t(
+                  "brews.secondary.noRecipeNotes",
+                  "No secondary notes found in the linked recipe."
+                )}
               </EmptyState>
             )}
           </AccordionContent>
@@ -1034,7 +1309,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
             await helpers.addEntry(
               entryPayload.ph(
                 extra.phReading,
-                t("brews.secondary.stabilizerPhNote", "pH reading recorded while logging stabilizers."),
+                t(
+                  "brews.secondary.stabilizerPhNote",
+                  "pH reading recorded while logging stabilizers."
+                ),
                 extra.datetime
               )
             );
@@ -1073,7 +1351,10 @@ export function SecondaryStagePanel({ t, status, ctx, helpers, warnings = [] }: 
         note={
           recipeNoteDialog
             ? {
-                title: t("brews.secondary.recipeNoteTitle", "Add recipe secondary note"),
+                title: t(
+                  "brews.secondary.recipeNoteTitle",
+                  "Add recipe secondary note"
+                ),
                 text: recipeNoteDialog.text
               }
             : null
@@ -1126,15 +1407,24 @@ function LogStabilizersDialog({
 }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage;
-  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
-  const fmtVolume = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
-    formatVolume(value, unit, locale);
-  const fmtVolumeWithLocale = (value?: number | null, unit: RecipeUnitDefaults["volume"] = "gal") =>
-    fmtVolumeWithZero(value, unit, locale);
+  const fmtNumber = (value?: number | null, decimals = 2) =>
+    formatNumber(value, decimals, locale);
+  const fmtVolume = (
+    value?: number | null,
+    unit: RecipeUnitDefaults["volume"] = "gal"
+  ) => formatVolume(value, unit, locale);
+  const fmtVolumeWithLocale = (
+    value?: number | null,
+    unit: RecipeUnitDefaults["volume"] = "gal"
+  ) => fmtVolumeWithZero(value, unit, locale);
   const [ph, setPh] = React.useState("");
   const [takingPh, setTakingPh] = React.useState(true);
-  const [stabilizerType, setStabilizerType] = React.useState<"kmeta" | "nameta">("kmeta");
-  const [sulfiteForm, setSulfiteForm] = React.useState<"powder" | "campden">("powder");
+  const [stabilizerType, setStabilizerType] = React.useState<
+    "kmeta" | "nameta"
+  >("kmeta");
+  const [sulfiteForm, setSulfiteForm] = React.useState<"powder" | "campden">(
+    "powder"
+  );
   const [sorbateAmount, setSorbateAmount] = React.useState("");
   const [sulfiteActualAmount, setSulfiteActualAmount] = React.useState("");
   const [phTouched, setPhTouched] = React.useState(false);
@@ -1165,25 +1455,41 @@ function LogStabilizersDialog({
     totalVolumeL: plan?.volumeL ?? 0,
     abv: plan?.abv ?? 0
   });
-  const sulfiteName = stabilizerType === "kmeta" ? "Potassium metabisulfite" : "Sodium metabisulfite";
+  const sulfiteName =
+    stabilizerType === "kmeta"
+      ? "Potassium metabisulfite"
+      : "Sodium metabisulfite";
   const sulfiteShortName = stabilizerType === "kmeta" ? "K-Meta" : "Na-Meta";
-  const sulfiteAdditionName = sulfiteForm === "powder" ? sulfiteName : "Campden tablets";
-  const sulfiteAmount = sulfiteForm === "powder" ? results.sulfite : results.campden;
+  const sulfiteAdditionName =
+    sulfiteForm === "powder" ? sulfiteName : "Campden tablets";
+  const sulfiteAmount =
+    sulfiteForm === "powder" ? results.sulfite : results.campden;
   const sulfiteUnit = sulfiteForm === "powder" ? "g" : "tablets";
   const editableSorbateAmount = roundEditableAmount(results.sorbate);
   const editableSulfiteAmount = roundEditableAmount(sulfiteAmount);
   const actualSorbateAmount = parseNumber(sorbateAmount);
   const actualSulfiteAmount = parseNumber(sulfiteActualAmount);
   const sorbateChanged =
-    Number.isFinite(actualSorbateAmount) && Math.abs(actualSorbateAmount - editableSorbateAmount) > 0.0005;
+    Number.isFinite(actualSorbateAmount) &&
+    Math.abs(actualSorbateAmount - editableSorbateAmount) > 0.0005;
   const sulfiteChanged =
-    Number.isFinite(actualSulfiteAmount) && Math.abs(actualSulfiteAmount - editableSulfiteAmount) > 0.0005;
+    Number.isFinite(actualSulfiteAmount) &&
+    Math.abs(actualSulfiteAmount - editableSulfiteAmount) > 0.0005;
 
   React.useEffect(() => {
     if (!open || !plan) return;
     if (!sorbateTouched) setSorbateAmount(fmtNumber(editableSorbateAmount, 2));
-    if (!sulfiteTouched) setSulfiteActualAmount(fmtNumber(editableSulfiteAmount, 2));
-  }, [open, plan, editableSorbateAmount, sorbateTouched, editableSulfiteAmount, sulfiteForm, sulfiteTouched]);
+    if (!sulfiteTouched)
+      setSulfiteActualAmount(fmtNumber(editableSulfiteAmount, 2));
+  }, [
+    open,
+    plan,
+    editableSorbateAmount,
+    sorbateTouched,
+    editableSulfiteAmount,
+    sulfiteForm,
+    sulfiteTouched
+  ]);
 
   if (!plan) return null;
 
@@ -1229,30 +1535,42 @@ function LogStabilizersDialog({
         [
           {
             name: "Potassium sorbate",
-            amount: Number.isFinite(actualSorbateAmount) ? actualSorbateAmount : results.sorbate,
+            amount: Number.isFinite(actualSorbateAmount)
+              ? actualSorbateAmount
+              : results.sorbate,
             unit: "g",
             kind: "OTHER",
             source: "manual",
             datetime: datetime.toISOString(),
-            note: t("brews.secondary.stabilizerAdditionNote", "Stabilizer addition calculated for secondary."),
+            note: t(
+              "brews.secondary.stabilizerAdditionNote",
+              "Stabilizer addition calculated for secondary."
+            ),
             meta: {
               ...commonMeta,
               stabilizerKind: "sorbate",
               calculatedAmount: results.sorbate,
               calculatedUnit: "g",
               actualAmountChanged: sorbateChanged,
-              plannedAmount: Number.isFinite(actualSorbateAmount) ? actualSorbateAmount : results.sorbate,
+              plannedAmount: Number.isFinite(actualSorbateAmount)
+                ? actualSorbateAmount
+                : results.sorbate,
               plannedUnit: "g"
             }
           },
           {
             name: sulfiteAdditionName,
-            amount: Number.isFinite(actualSulfiteAmount) ? actualSulfiteAmount : sulfiteAmount,
+            amount: Number.isFinite(actualSulfiteAmount)
+              ? actualSulfiteAmount
+              : sulfiteAmount,
             unit: sulfiteUnit,
             kind: "OTHER",
             source: "manual",
             datetime: datetime.toISOString(),
-            note: t("brews.secondary.stabilizerAdditionNote", "Stabilizer addition calculated for secondary."),
+            note: t(
+              "brews.secondary.stabilizerAdditionNote",
+              "Stabilizer addition calculated for secondary."
+            ),
             meta: {
               ...commonMeta,
               stabilizerKind: "sulfite",
@@ -1260,7 +1578,9 @@ function LogStabilizersDialog({
               calculatedAmount: sulfiteAmount,
               calculatedUnit: sulfiteUnit,
               actualAmountChanged: sulfiteChanged,
-              plannedAmount: Number.isFinite(actualSulfiteAmount) ? actualSulfiteAmount : sulfiteAmount,
+              plannedAmount: Number.isFinite(actualSulfiteAmount)
+                ? actualSulfiteAmount
+                : sulfiteAmount,
               plannedUnit: sulfiteUnit,
               sulfiteAmount: results.sulfite,
               sulfiteUnit: "g",
@@ -1269,7 +1589,9 @@ function LogStabilizersDialog({
             }
           }
         ],
-        shouldLogPhReading ? { phReading: Number(phForCalc), datetime: datetime.toISOString() } : undefined
+        shouldLogPhReading
+          ? { phReading: Number(phForCalc), datetime: datetime.toISOString() }
+          : undefined
       );
     } finally {
       setIsSaving(false);
@@ -1280,24 +1602,41 @@ function LogStabilizersDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={BREW_TRACKER_WIDE_DIALOG_CONTENT_CLASS}>
         <DialogHeader>
-          <DialogTitle>{t("brews.secondary.logStabilizers", "Log stabilizers")}</DialogTitle>
+          <DialogTitle>
+            {t("brews.secondary.logStabilizers", "Log stabilizers")}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-3">
             <InfoRow
-              label={t("brews.secondary.baseVolumeForStabilizers", "Base volume")}
+              label={t(
+                "brews.secondary.baseVolumeForStabilizers",
+                "Base volume"
+              )}
               value={fmtVolume(plan.baseVolumeL, plan.volumeUnit)}
             />
             <InfoRow
-              label={t("brews.secondary.secondaryVolumeForStabilizers", "Secondary volume")}
-              value={fmtVolumeWithLocale(plan.secondaryVolumeL, plan.volumeUnit)}
+              label={t(
+                "brews.secondary.secondaryVolumeForStabilizers",
+                "Secondary volume"
+              )}
+              value={fmtVolumeWithLocale(
+                plan.secondaryVolumeL,
+                plan.volumeUnit
+              )}
             />
             <InfoRow
-              label={t("brews.secondary.adjustedVolumeForStabilizers", "Adjusted volume")}
+              label={t(
+                "brews.secondary.adjustedVolumeForStabilizers",
+                "Adjusted volume"
+              )}
               value={fmtVolume(plan.adjustedTotalVolumeL, plan.volumeUnit)}
             />
-            <InfoRow label={t("brews.secondary.baseAbv", "Base ABV")} value={`${fmtNumber(plan.baseAbv)}%`} />
+            <InfoRow
+              label={t("brews.secondary.baseAbv", "Base ABV")}
+              value={`${fmtNumber(plan.baseAbv)}%`}
+            />
             <InfoRow
               label={t("brews.secondary.dilutedAbv", "Diluted ABV")}
               value={`${fmtNumber(plan.dilutedAbv)}%`}
@@ -1314,7 +1653,9 @@ function LogStabilizersDialog({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-4">
-              <Label>{t("brews.secondary.takingPh", "Taking a pH reading?")}</Label>
+              <Label>
+                {t("brews.secondary.takingPh", "Taking a pH reading?")}
+              </Label>
               <Switch checked={takingPh} onCheckedChange={setTakingPh} />
             </div>
             {takingPh ? (
@@ -1338,46 +1679,70 @@ function LogStabilizersDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t("type", "Type")}</Label>
-              <Select value={stabilizerType} onValueChange={(value) => setStabilizerType(value as "kmeta" | "nameta")}>
+              <Select
+                value={stabilizerType}
+                onValueChange={(value) =>
+                  setStabilizerType(value as "kmeta" | "nameta")
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kmeta">{t("kMeta", "K-Meta")}</SelectItem>
-                  <SelectItem value="nameta">{t("naMeta", "Na-Meta")}</SelectItem>
+                  <SelectItem value="nameta">
+                    {t("naMeta", "Na-Meta")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label>{t("brews.secondary.sulfiteForm", "Sulfite form")}</Label>
-              <Select value={sulfiteForm} onValueChange={(value) => setSulfiteForm(value as "powder" | "campden")}>
+              <Select
+                value={sulfiteForm}
+                onValueChange={(value) =>
+                  setSulfiteForm(value as "powder" | "campden")
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="powder">{sulfiteShortName}</SelectItem>
-                  <SelectItem value="campden">{t("campden", "Campden Tablets")}</SelectItem>
+                  <SelectItem value="campden">
+                    {t("campden", "Campden Tablets")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-            <div className="font-medium">{t("brews.secondary.calculatedStabilizers", "Calculated additions")}</div>
+            <div className="font-medium">
+              {t(
+                "brews.secondary.calculatedStabilizers",
+                "Calculated additions"
+              )}
+            </div>
             <div className="mt-2 space-y-1 text-muted-foreground">
               <div>
                 {t("sorbate", "Sorbate")}: {fmtNumber(results.sorbate, 3)} g
               </div>
               <div>
-                {sulfiteForm === "powder" ? sulfiteShortName : t("campden", "Campden Tablets")}:{" "}
-                {fmtNumber(sulfiteAmount, sulfiteForm === "powder" ? 3 : 2)} {sulfiteUnit}
+                {sulfiteForm === "powder"
+                  ? sulfiteShortName
+                  : t("campden", "Campden Tablets")}
+                : {fmtNumber(sulfiteAmount, sulfiteForm === "powder" ? 3 : 2)}{" "}
+                {sulfiteUnit}
               </div>
             </div>
           </div>
 
           <div className="space-y-3 rounded-md border border-border bg-background/40 px-3 py-3">
-            <div className="text-sm font-medium">{t("brews.secondary.actualAmounts", "Actual amounts")}</div>
+            <div className="text-sm font-medium">
+              {t("brews.secondary.actualAmounts", "Actual amounts")}
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>{t("sorbate", "Sorbate")}</Label>
@@ -1392,7 +1757,11 @@ function LogStabilizersDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label>{sulfiteForm === "powder" ? sulfiteShortName : t("campden", "Campden Tablets")}</Label>
+                <Label>
+                  {sulfiteForm === "powder"
+                    ? sulfiteShortName
+                    : t("campden", "Campden Tablets")}
+                </Label>
                 <AmountUnitField
                   amount={sulfiteActualAmount}
                   unit={sulfiteUnit}
@@ -1416,12 +1785,20 @@ function LogStabilizersDialog({
 
           <div className="space-y-2">
             <Label>{t("date", "Date")}</Label>
-            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+            <DateTimePicker
+              value={datetime}
+              onChange={(value) => value && setDatetime(value)}
+              hourCycle={12}
+            />
           </div>
         </div>
 
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={save} disabled={isSaving}>
@@ -1470,19 +1847,34 @@ function ConfirmBulkAgeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}
+      >
         <DialogHeader>
-          <DialogTitle>{t("brews.secondary.confirmBulkAgeTitle", "Move to bulk aging?")}</DialogTitle>
+          <DialogTitle>
+            {t("brews.secondary.confirmBulkAgeTitle", "Move to bulk aging?")}
+          </DialogTitle>
         </DialogHeader>
         <div className="text-sm text-muted-foreground">
-          {t("brews.secondary.confirmBulkAgeHelp", "This moves the brew out of Secondary and into the bulk age stage.")}
+          {t(
+            "brews.secondary.confirmBulkAgeHelp",
+            "This moves the brew out of Secondary and into the bulk age stage."
+          )}
         </div>
         <div className="space-y-2">
           <Label>{t("date", "Date")}</Label>
-          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          <DateTimePicker
+            value={datetime}
+            onChange={(value) => value && setDatetime(value)}
+            hourCycle={12}
+          />
         </div>
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={confirm} disabled={isSaving}>
@@ -1522,9 +1914,13 @@ function ConfirmPackageDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}
+      >
         <DialogHeader>
-          <DialogTitle>{t("brews.secondary.confirmPackageTitle", "Move to packaging?")}</DialogTitle>
+          <DialogTitle>
+            {t("brews.secondary.confirmPackageTitle", "Move to packaging?")}
+          </DialogTitle>
         </DialogHeader>
         <div className="text-sm text-muted-foreground">
           {t(
@@ -1534,10 +1930,18 @@ function ConfirmPackageDialog({
         </div>
         <div className="space-y-2">
           <Label>{t("date", "Date")}</Label>
-          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          <DateTimePicker
+            value={datetime}
+            onChange={(value) => value && setDatetime(value)}
+            hourCycle={12}
+          />
         </div>
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={confirm} disabled={isSaving}>
@@ -1572,9 +1976,16 @@ function ConfirmSecondaryBeforeStabilizersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}
+      >
         <DialogHeader>
-          <DialogTitle>{t("brews.secondary.secondaryBeforeStabilizersTitle", "Log additions before stabilizers?")}</DialogTitle>
+          <DialogTitle>
+            {t(
+              "brews.secondary.secondaryBeforeStabilizersTitle",
+              "Log additions before stabilizers?"
+            )}
+          </DialogTitle>
         </DialogHeader>
         <div className="text-sm text-muted-foreground">
           {t(
@@ -1583,7 +1994,11 @@ function ConfirmSecondaryBeforeStabilizersDialog({
           )}
         </div>
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={confirm} disabled={isSaving}>

@@ -5,13 +5,19 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Input } from "./ui/input";
+import { useEffect, useState } from "react";
 import Fuse from "fuse.js";
-import { LucideX } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "./ui/input-group";
 interface PaginatedTableProps<T> {
   data: T[];
   columns: {
@@ -22,6 +28,7 @@ interface PaginatedTableProps<T> {
   pageSize?: number;
   onRowClick?: (item: T) => void;
   searchKey?: keyof T | (keyof T)[];
+  getRowKey?: (item: T) => React.Key;
 }
 
 export function PaginatedTable<T>({
@@ -30,18 +37,22 @@ export function PaginatedTable<T>({
   pageSize = 10,
   onRowClick,
   searchKey,
+  getRowKey
 }: PaginatedTableProps<T>) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const keys = Array.isArray(searchKey)
     ? searchKey.map(String)
-    : [String(searchKey)];
+    : searchKey
+      ? [String(searchKey)]
+      : [];
 
   const filteredData =
     searchKey && search
       ? new Fuse(data, {
           keys,
-          threshold: 0.4,
+          threshold: 0.4
         })
           .search(search)
           .map((r) => r.item)
@@ -52,101 +63,119 @@ export function PaginatedTable<T>({
   const end = start + pageSize;
   const pageData = filteredData.slice(start, end);
 
+  useEffect(() => {
+    if (page > 0 && page >= totalPages) setPage(Math.max(0, totalPages - 1));
+  }, [page, totalPages]);
+
   return (
     <div className="space-y-4">
       {searchKey && (
-        <div className="flex items-center gap-2">
-          <label htmlFor="search" className="text-sm font-medium">
-            Search:
-          </label>
-          <div className="relative max-w-sm">
-            <Input
-              id="search"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              placeholder={`Search ${
-                Array.isArray(searchKey)
-                  ? searchKey.map((key) => String(key)).join(", ")
-                  : String(searchKey)
-              }`}
-              className="pr-8" // Add space for the clear button
-            />
-            {search && (
-              <button
-                type="button"
+        <InputGroup className="max-w-xl">
+          <InputGroupAddon>
+            <Search className="size-4" />
+          </InputGroupAddon>
+          <InputGroupInput
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            placeholder={t("search", "Search")}
+          />
+          {search && (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                title={t("clear", "Clear")}
                 onClick={() => {
                   setSearch("");
                   setPage(0);
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <LucideX />
-              </button>
-            )}
-          </div>
-        </div>
+                <X />
+              </InputGroupButton>
+            </InputGroupAddon>
+          )}
+        </InputGroup>
       )}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((col) => (
-              <TableHead key={String(col.key)}>{col.header}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pageData.map((item, i) => (
-            <TableRow
-              key={i}
-              className={onRowClick ? "cursor-pointer hover:bg-muted" : ""}
-              onClick={onRowClick ? () => onRowClick(item) : undefined}
-            >
-              {columns.map((col) => {
-                const isEmpty =
-                  item[col.key] === null ||
-                  item[col.key] === undefined ||
-                  item[col.key] === "";
-                return (
-                  <TableCell
-                    key={String(col.key)}
-                    className={isEmpty ? "text-muted-foreground" : ""}
-                  >
-                    {col.render
-                      ? col.render(item)
-                      : isEmpty
-                        ? "—"
-                        : String(item[col.key])}
-                  </TableCell>
-                );
-              })}
+      <div className="overflow-x-auto rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((col) => (
+                <TableHead key={String(col.key)}>{col.header}</TableHead>
+              ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {pageData.length ? (
+              pageData.map((item, i) => (
+                <TableRow
+                  key={getRowKey?.(item) ?? i}
+                  className={onRowClick ? "cursor-pointer hover:bg-muted" : ""}
+                  onClick={onRowClick ? () => onRowClick(item) : undefined}
+                >
+                  {columns.map((col) => {
+                    const isEmpty =
+                      item[col.key] === null ||
+                      item[col.key] === undefined ||
+                      item[col.key] === "";
+                    return (
+                      <TableCell
+                        key={String(col.key)}
+                        className={isEmpty ? "text-muted-foreground" : ""}
+                      >
+                        {col.render
+                          ? col.render(item)
+                          : isEmpty
+                            ? "—"
+                            : String(item[col.key])}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-28 text-center text-muted-foreground"
+                >
+                  {t("noResults", "No results found.")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
         <span>
-          Showing{" "}
+          {t("showing", "Showing")}{" "}
           {filteredData.length === 0
             ? "0"
             : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
         </span>
 
         <div className="flex items-center gap-4">
-          <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-            Previous
+          <Button
+            variant="outline"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            {t("previous", "Previous")}
           </Button>
           <span>
-            Page {page + 1} of {totalPages}
+            {t("pageOf", "Page {{page}} of {{total}}", {
+              page: totalPages ? page + 1 : 1,
+              total: totalPages || 1
+            })}
           </span>
           <Button
+            variant="outline"
             disabled={page >= totalPages - 1}
             onClick={() => setPage((p) => p + 1)}
           >
-            Next
+            {t("next", "Next")}
           </Button>
         </div>
       </div>

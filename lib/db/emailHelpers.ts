@@ -42,11 +42,13 @@ export function stripMarkdown(md: string): string {
 
 export async function sendEmail({
   to,
+  fromName = "MeadTools Alerts",
   subject,
   text,
   html
 }: {
   to: string;
+  fromName?: string;
   subject: string;
   text: string;
   html?: string;
@@ -63,7 +65,7 @@ export async function sendEmail({
   });
 
   await transporter.sendMail({
-    from: { name: "MeadTools Alerts", address: user },
+    from: { name: fromName, address: user },
     to,
     subject,
     text,

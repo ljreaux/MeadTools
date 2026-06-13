@@ -5,14 +5,6 @@ import { useTranslation } from "react-i18next";
 import Link from "next/link";
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,7 +12,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { X, Search } from "lucide-react";
 
@@ -34,13 +26,11 @@ import {
 import { AccountPagination } from "@/components/account/pagination";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 
-import {
-  useAccountBrews,
-  type AccountBrewListItem
-} from "@/hooks/reactQuery/useAccountBrews";
+import { useAccountBrews } from "@/hooks/reactQuery/useAccountBrews";
+import { BrewList } from "@/components/brews/BrewList";
 
 export default function AccountBrews() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { data: brews = [], isLoading, isError, error } = useAccountBrews();
 
   const [pageSize, setPageSize] = useState(10);
@@ -61,12 +51,6 @@ export default function AccountBrews() {
     pageSize,
     searchKey: ["name", "id", "recipe_name", "stage"]
   });
-
-  const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-    dateStyle: "short",
-    timeStyle: "short"
-  });
-  const formatDate = (date: string | Date) => formatter.format(new Date(date));
 
   if (isError) {
     console.error(error);
@@ -142,42 +126,12 @@ export default function AccountBrews() {
         </div>
       ) : (
         <>
-          <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    className={cn(
-                      "sticky left-0 z-10 bg-card border-r",
-                      "min-w-28 sm:min-w-72"
-                    )}
-                  >
-                    {t("name")}
-                  </TableHead>
-
-                  <TableHead>{t("brews.stage")}</TableHead>
-                  <TableHead>{t("brews.recipe")}</TableHead>
-                  <TableHead>{t("brews.startDate")}</TableHead>
-                  <TableHead>{t("brews.endDate")}</TableHead>
-                  <TableHead>{t("brews.entries")}</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {isLoading ? (
-                  <AccountBrewsTableSkeleton rows={pageSize} />
-                ) : (
-                  pageData.map((brew) => (
-                    <AccountBrewRow
-                      key={brew.id}
-                      brew={brew}
-                      formatDate={formatDate}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <BrewList
+            brews={pageData}
+            detailHref={(brewId) => `/account/brews/${brewId}`}
+            loading={isLoading}
+            loadingRows={pageSize}
+          />
 
           {!isLoading && totalPages > 1 && (
             <AccountPagination
@@ -190,104 +144,8 @@ export default function AccountBrews() {
               onGoTo={goToPage}
             />
           )}
-
         </>
       )}
     </div>
-  );
-}
-
-function AccountBrewRow({
-  brew,
-  formatDate
-}: {
-  brew: AccountBrewListItem;
-  formatDate: (d: string | Date) => string;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <TableRow>
-      <TableCell
-        className={cn(
-          "sticky left-0 z-10 bg-card border-r font-medium truncate",
-          "max-w-28 sm:max-w-72"
-        )}
-      >
-        <Link
-          href={`/account/brews/${brew.id}`}
-          className="underline block truncate"
-          title={brew.name || brew.id}
-        >
-          {brew.name || brew.id}
-        </Link>
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {t(`brewStage.${brew.stage}`)}
-      </TableCell>
-
-      <TableCell>
-        {brew.recipe_id ? (
-          <Link
-            href={`/recipes/${brew.recipe_id}`}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-          >
-            {brew.recipe_name || t("open")}
-          </Link>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {formatDate(brew.start_date)}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {brew.end_date ? formatDate(brew.end_date) : t("ongoing")}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {brew.entry_count ?? 0}
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function AccountBrewsTableSkeleton({ rows = 10 }: { rows?: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, i) => (
-        <TableRow key={i}>
-          <TableCell
-            className={cn(
-              "sticky left-0 z-10 bg-card border-r",
-              "min-w-28 sm:min-w-72",
-              "max-w-28 sm:max-w-72",
-              "truncate"
-            )}
-          >
-            <Skeleton className="h-4 w-full max-w-[14rem]" />
-          </TableCell>
-
-          <TableCell>
-            <Skeleton className="h-4 w-[90px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-8 w-[120px] rounded-md" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[110px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[110px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[40px]" />
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
   );
 }

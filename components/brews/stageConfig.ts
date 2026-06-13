@@ -65,7 +65,10 @@ export type StagePrereq = {
   isMet: (ctx: BrewStageContext) => boolean;
   hint?: (t: TFunction) => string;
   actionLabel?: (t: TFunction) => string;
-  run?: (helpers: BrewStageHelpers, ctx: BrewStageContext) => Promise<void> | void;
+  run?: (
+    helpers: BrewStageHelpers,
+    ctx: BrewStageContext
+  ) => Promise<void> | void;
 };
 
 export type BrewStageHelpers = {
@@ -129,7 +132,10 @@ export type StageAction = {
   id: string;
   label: (t: TFunction) => string;
   when?: (status: StageStatus, ctx: BrewStageContext) => boolean;
-  run: (helpers: BrewStageHelpers, ctx: BrewStageContext) => Promise<void> | void;
+  run: (
+    helpers: BrewStageHelpers,
+    ctx: BrewStageContext
+  ) => Promise<void> | void;
   variant?: "default" | "secondary" | "destructive";
 };
 
@@ -139,6 +145,7 @@ export type StagePanelProps = {
   ctx: BrewStageContext;
   helpers: BrewStageHelpers;
   warnings?: StageWarning[];
+  readOnly?: boolean;
 };
 
 export type StageWarning = {
@@ -271,7 +278,8 @@ function hasMissingPlannedNutrients(ctx: BrewStageContext) {
 
   const remaining = ctx.recipe.actual.remainingNutrientGrams;
   return Object.values(remaining ?? {}).some(
-    (amount) => typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
+    (amount) =>
+      typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
   );
 }
 
@@ -320,16 +328,32 @@ function getLatestSecondaryIngredientAdditionTime(ctx: BrewStageContext) {
   return latest;
 }
 
-function hasEntryAfter(ctx: BrewStageContext, type: BrewEntryType, after: number) {
-  return ctx.brew.entries.some((entry) => entry.type === type && getTime(entry.datetime ?? entry.createdAt) >= after);
+function hasEntryAfter(
+  ctx: BrewStageContext,
+  type: BrewEntryType,
+  after: number
+) {
+  return ctx.brew.entries.some(
+    (entry) =>
+      entry.type === type && getTime(entry.datetime ?? entry.createdAt) >= after
+  );
 }
 
 function needsSecondaryFollowupReadings(ctx: BrewStageContext) {
-  const latestSecondaryAdditionTime = getLatestSecondaryIngredientAdditionTime(ctx);
+  const latestSecondaryAdditionTime =
+    getLatestSecondaryIngredientAdditionTime(ctx);
   if (latestSecondaryAdditionTime === 0) return false;
 
-  const hasGravityAfterSecondary = hasEntryAfter(ctx, BREW_ENTRY_TYPE.GRAVITY, latestSecondaryAdditionTime);
-  const hasVolumeAfterSecondary = hasEntryAfter(ctx, BREW_ENTRY_TYPE.VOLUME, latestSecondaryAdditionTime);
+  const hasGravityAfterSecondary = hasEntryAfter(
+    ctx,
+    BREW_ENTRY_TYPE.GRAVITY,
+    latestSecondaryAdditionTime
+  );
+  const hasVolumeAfterSecondary = hasEntryAfter(
+    ctx,
+    BREW_ENTRY_TYPE.VOLUME,
+    latestSecondaryAdditionTime
+  );
 
   return !hasGravityAfterSecondary || !hasVolumeAfterSecondary;
 }
@@ -339,7 +363,9 @@ function hasOutstandingBulkAgeItems(ctx: BrewStageContext) {
 }
 
 function hasPackagingEntry(ctx: BrewStageContext) {
-  return ctx.brew.entries.some((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING);
+  return ctx.brew.entries.some(
+    (entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING
+  );
 }
 
 function hasPackagedVolume(ctx: BrewStageContext) {
@@ -435,8 +461,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.prereq.linkRecipeHardHint",
             "Brew tracking needs a linked recipe before primary can start."
           ),
-        actionLabel: (t) =>
-          t("brews.planned.linkRecipeAction", "Link recipe"),
+        actionLabel: (t) => t("brews.planned.linkRecipeAction", "Link recipe"),
         run: ({ openLinkRecipePage }) => {
           openLinkRecipePage?.();
         }
@@ -553,7 +578,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
           t(
             "brews.warn.primaryIngredientsMissing",
             "Not all primary ingredients have been added to this brew yet."
-        ),
+          ),
         isActive: (ctx) => hasMissingPrimaryIngredients(ctx),
         when: (status) => status === "current"
       },
@@ -601,8 +626,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
     prereqs: [
       {
         id: "primaryHasGravity",
-        label: (t) =>
-          t("brews.prereq.originalGravity", "Log original gravity"),
+        label: (t) => t("brews.prereq.originalGravity", "Log original gravity"),
         isMet: (ctx) => hasOriginalGravity(ctx),
         hint: (t) =>
           t(
@@ -654,8 +678,7 @@ export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
             "brews.prereq.volumeHint",
             "Record the total volume after transferring to secondary so stabilizers and later additions can use the right batch size."
           ),
-        actionLabel: (t) =>
-          t("brews.actions.logVolume", "Record volume"),
+        actionLabel: (t) => t("brews.actions.logVolume", "Record volume"),
         run: ({ openRecordVolume }) => {
           openRecordVolume?.();
         }

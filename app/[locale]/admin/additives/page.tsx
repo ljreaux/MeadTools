@@ -5,9 +5,14 @@ import { PaginatedTable } from "@/components/PaginatedTable";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
+import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Button } from "@/components/ui/button";
 
 function AdditiveDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const { data: additives, isLoading, isError } = useAdditivesQuery();
 
@@ -16,11 +21,18 @@ function AdditiveDashboard() {
   if (!additives) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl">Additives</h1>
-        <Link href={"/admin/additives/new-additive"}>Add New Additive</Link>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title={t("admin.nav.additives", "Additives")}
+        actions={
+          <Button asChild>
+            <Link href="/admin/additives/new-additive">
+              <Plus />
+              {t("admin.additives.add", "Add additive")}
+            </Link>
+          </Button>
+        }
+      />
 
       <PaginatedTable
         data={additives}
@@ -34,6 +46,7 @@ function AdditiveDashboard() {
           router.push(`/admin/additives/${additive.id}`)
         }
         searchKey={["name"]}
+        getRowKey={(additive) => additive.id}
       />
     </div>
   );

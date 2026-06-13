@@ -28,13 +28,26 @@ import {
   WorkRow
 } from "./StagePanelShared";
 
-export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: StagePanelProps) {
+export function BulkAgeStagePanel({
+  t,
+  status,
+  ctx,
+  helpers,
+  warnings = [],
+  readOnly = false
+}: StagePanelProps) {
   const { i18n } = useTranslation();
-  const [additionDialog, setAdditionDialog] = React.useState<PlannedAdditionDialogItem | null>(null);
-  const [stageMove, setStageMove] = React.useState<"PACKAGED" | "COMPLETE" | null>(null);
+  const [additionDialog, setAdditionDialog] =
+    React.useState<PlannedAdditionDialogItem | null>(null);
+  const [stageMove, setStageMove] = React.useState<
+    "PACKAGED" | "COMPLETE" | null
+  >(null);
 
-  const canEdit = status === "current";
-  const unit = ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal";
+  const canEdit = status === "current" && !readOnly;
+  const unit =
+    ctx.recipe.recipeData?.unitDefaults.volume ??
+    ctx.recipe.derived?.volume.unit ??
+    "gal";
   const finalGravity = ctx.recipe.actual.finalGravity?.gravity ?? null;
   const hasCurrentVolume =
     typeof ctx.brew.current_volume_liters === "number" &&
@@ -58,12 +71,22 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
     () => buildAdditiveLines(ctx.recipe.additives),
     [ctx.recipe.additives]
   );
-  const missingSecondary = secondaryLines.filter((item) => !loggedIngredientIds.has(String(item.line.lineId)));
-  const missingAdditives = additiveLines.filter((item) => !loggedAdditiveIds.has(String(item.line.lineId)));
+  const missingSecondary = secondaryLines.filter(
+    (item) => !loggedIngredientIds.has(String(item.line.lineId))
+  );
+  const missingAdditives = additiveLines.filter(
+    (item) => !loggedAdditiveIds.has(String(item.line.lineId))
+  );
   const outstandingCount = missingSecondary.length + missingAdditives.length;
   const locale = i18n.resolvedLanguage;
 
-  const openEntry = (type: typeof BREW_ENTRY_TYPE.NOTE | typeof BREW_ENTRY_TYPE.TASTING | typeof BREW_ENTRY_TYPE.ISSUE | typeof BREW_ENTRY_TYPE.GRAVITY) => {
+  const openEntry = (
+    type:
+      | typeof BREW_ENTRY_TYPE.NOTE
+      | typeof BREW_ENTRY_TYPE.TASTING
+      | typeof BREW_ENTRY_TYPE.ISSUE
+      | typeof BREW_ENTRY_TYPE.GRAVITY
+  ) => {
     helpers.openAddEntry?.({
       presetType: type,
       allowedTypes: [type]
@@ -96,54 +119,103 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
       </div>
 
       <StageFocusActions
-        title={t("brews.bulkAge.focus", "Track aging notes and package when ready")}
+        title={t(
+          "brews.bulkAge.focus",
+          "Track aging notes and package when ready"
+        )}
         description={t(
           "brews.bulkAge.workflowHint",
           "Notes are the main log here; use readings and outstanding items only when they help."
         )}
       >
-            <Button size="sm" disabled={!canEdit} onClick={() => openEntry(BREW_ENTRY_TYPE.NOTE)}>
-              {t("brews.bulkAge.addNote", "Add note")}
-            </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => openEntry(BREW_ENTRY_TYPE.TASTING)}>
-              {t("brews.bulkAge.addTasting", "Add tasting")}
-            </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => openEntry(BREW_ENTRY_TYPE.GRAVITY)}>
-              {t("brews.actions.logGravity", "Log gravity")}
-            </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => helpers.openRecordVolume?.()}>
-              {t("brews.actions.logVolume", "Record volume")}
-            </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setStageMove("PACKAGED")}>
-              {t("brews.bulkAge.moveToPackaged", "Move to Packaged")}
-            </Button>
-            <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setStageMove("COMPLETE")}>
-              {t("brews.bulkAge.markComplete", "Mark Complete")}
-            </Button>
-            <Button size="sm" variant="ghost" disabled={!canEdit} onClick={() => openEntry(BREW_ENTRY_TYPE.ISSUE)}>
-              {t("brews.bulkAge.addIssue", "Add issue")}
-            </Button>
+        <Button
+          size="sm"
+          disabled={!canEdit}
+          onClick={() => openEntry(BREW_ENTRY_TYPE.NOTE)}
+        >
+          {t("brews.bulkAge.addNote", "Add note")}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!canEdit}
+          onClick={() => openEntry(BREW_ENTRY_TYPE.TASTING)}
+        >
+          {t("brews.bulkAge.addTasting", "Add tasting")}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!canEdit}
+          onClick={() => openEntry(BREW_ENTRY_TYPE.GRAVITY)}
+        >
+          {t("brews.actions.logGravity", "Log gravity")}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!canEdit}
+          onClick={() => helpers.openRecordVolume?.()}
+        >
+          {t("brews.actions.logVolume", "Record volume")}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!canEdit}
+          onClick={() => setStageMove("PACKAGED")}
+        >
+          {t("brews.bulkAge.moveToPackaged", "Move to Packaged")}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!canEdit}
+          onClick={() => setStageMove("COMPLETE")}
+        >
+          {t("brews.bulkAge.markComplete", "Mark Complete")}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!canEdit}
+          onClick={() => openEntry(BREW_ENTRY_TYPE.ISSUE)}
+        >
+          {t("brews.bulkAge.addIssue", "Add issue")}
+        </Button>
       </StageFocusActions>
 
       <WarningsPanel warnings={warnings} />
 
       <div className="space-y-2">
         <div className="text-sm font-medium">
-          {t("brews.bulkAge.outstandingRecipeItems", "Outstanding recipe items")} · {outstandingCount}
+          {t(
+            "brews.bulkAge.outstandingRecipeItems",
+            "Outstanding recipe items"
+          )}{" "}
+          · {outstandingCount}
         </div>
         {outstandingCount > 0 ? (
           <ul className="space-y-1">
             {missingSecondary.map((item) => {
               const loggedAddition = latestLoggedItem(
-                ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
+                ctx.recipe.actual.additionsByRecipeIngredientId[
+                  String(item.line.lineId)
+                ]
               );
               const { amount, unit } = getIngredientAmount(item.line);
               return (
                 <WorkRow
                   key={`ingredient-${item.line.lineId}`}
                   title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                  detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
-                  amount={formatLoggedAmount(loggedAddition, locale) ?? item.primary}
+                  detail={
+                    item.secondary
+                      ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}`
+                      : null
+                  }
+                  amount={
+                    formatLoggedAmount(loggedAddition, locale) ?? item.primary
+                  }
                   isLogged={false}
                   disabled={!canEdit}
                   loggedLabel={t("brews.primary.logged", "Logged")}
@@ -158,7 +230,11 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
                       unit,
                       ...getPlannedIngredientAmounts(item.line),
                       recipeIngredientId: String(item.line.lineId),
-                      meta: { plannedAmount: amount, plannedUnit: unit, stage: "BULK_AGE" }
+                      meta: {
+                        plannedAmount: amount,
+                        plannedUnit: unit,
+                        stage: "BULK_AGE"
+                      }
                     })
                   }
                 />
@@ -166,14 +242,18 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
             })}
             {missingAdditives.map((item) => {
               const loggedAddition = latestLoggedItem(
-                ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
+                ctx.recipe.actual.additionsByRecipeAdditiveId[
+                  String(item.line.lineId)
+                ]
               );
               const { amount, unit } = getAdditiveAmount(item.line);
               return (
                 <WorkRow
                   key={`additive-${item.line.lineId}`}
                   title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                  amount={formatLoggedAmount(loggedAddition, locale) ?? item.amount}
+                  amount={
+                    formatLoggedAmount(loggedAddition, locale) ?? item.amount
+                  }
                   isLogged={false}
                   disabled={!canEdit}
                   loggedLabel={t("brews.primary.logged", "Logged")}
@@ -187,7 +267,11 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
                       amount,
                       unit,
                       recipeAdditiveId: String(item.line.lineId),
-                      meta: { plannedAmount: amount, plannedUnit: unit, stage: "BULK_AGE" }
+                      meta: {
+                        plannedAmount: amount,
+                        plannedUnit: unit,
+                        stage: "BULK_AGE"
+                      }
                     })
                   }
                 />
@@ -196,7 +280,10 @@ export function BulkAgeStagePanel({ t, status, ctx, helpers, warnings = [] }: St
           </ul>
         ) : (
           <div className="text-sm text-muted-foreground">
-            {t("brews.bulkAge.noOutstandingItems", "No outstanding linked recipe items.")}
+            {t(
+              "brews.bulkAge.noOutstandingItems",
+              "No outstanding linked recipe items."
+            )}
           </div>
         )}
       </div>

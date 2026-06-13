@@ -10,7 +10,11 @@ import { cn } from "@/lib/utils";
 import type { NutrientKey } from "@/types/nutrientData";
 
 import type { StagePanelProps } from "../stageConfig";
-import { buildAdditiveLines, buildIngredientLines, formatNumber } from "./StagePanelShared";
+import {
+  buildAdditiveLines,
+  buildIngredientLines,
+  formatNumber
+} from "./StagePanelShared";
 import { getBrewItemLabel } from "./additionDialogShared";
 
 const nutrientLabels: Record<NutrientKey, string> = {
@@ -40,10 +44,15 @@ function buildNutrientRows(
     .filter((row) => row.total > 0);
 }
 
-export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
+export function PlannedStagePanel({
+  t,
+  ctx,
+  readOnly = false
+}: StagePanelProps) {
   const { i18n } = useTranslation();
   const locale = i18n.resolvedLanguage;
-  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtNumber = (value?: number | null, decimals = 2) =>
+    formatNumber(value, decimals, locale);
   const primaryList = React.useMemo(
     () => buildIngredientLines(ctx.recipe.primaryIngredients),
     [ctx.recipe.primaryIngredients]
@@ -88,11 +97,13 @@ export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
               )}
             </div>
           </div>
-          <Button asChild size="sm">
-            <Link href={`/account/brews/${ctx.brew.id}/link`}>
-              {t("brews.planned.linkRecipeAction", "Link recipe")}
-            </Link>
-          </Button>
+          {!readOnly ? (
+            <Button asChild size="sm">
+              <Link href={`/account/brews/${ctx.brew.id}/link`}>
+                {t("brews.planned.linkRecipeAction", "Link recipe")}
+              </Link>
+            </Button>
+          ) : null}
         </section>
       ) : null}
 
@@ -123,8 +134,7 @@ export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
                 {
                   label: t("yeastStrain", "Strain"),
                   value:
-                    [yeast.brand, yeast.strain].filter(Boolean).join(" ") ||
-                    "—"
+                    [yeast.brand, yeast.strain].filter(Boolean).join(" ") || "—"
                 },
                 {
                   label: t("brews.planned.yeastAmount", "Amount"),
@@ -227,7 +237,10 @@ export function PlannedStagePanel({ t, ctx }: StagePanelProps) {
           {secondaryList.length > 0 ? (
             <IngredientList
               t={t}
-              title={t("brews.planned.secondaryIngredients", "Secondary ingredients")}
+              title={t(
+                "brews.planned.secondaryIngredients",
+                "Secondary ingredients"
+              )}
               empty=""
               items={secondaryList}
             />
@@ -330,7 +343,12 @@ function InfoBlock({
   rows: Array<{ label: string; value: React.ReactNode }>;
 }) {
   return (
-    <div className={cn("rounded-md border border-border bg-background/40 p-3", className)}>
+    <div
+      className={cn(
+        "rounded-md border border-border bg-background/40 p-3",
+        className
+      )}
+    >
       <div className="flex items-center gap-2 text-sm font-medium">
         {icon}
         {title}

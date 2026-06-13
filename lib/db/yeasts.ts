@@ -1,4 +1,5 @@
 import prisma from "../prisma";
+import { Prisma } from "@prisma/client";
 
 // Get all yeasts
 export async function getAllYeasts() {
@@ -64,7 +65,31 @@ export async function createYeast(data: {
   low_temp: number;
   high_temp: number;
 }) {
-  return prisma.yeasts.create({ data });
+  try {
+    return await prisma.yeasts.create({ data });
+  } catch (error) {
+    if (!isIdUniqueConstraintError(error)) throw error;
+
+    await prisma.$executeRaw`
+      SELECT setval(
+        pg_get_serial_sequence('yeasts', 'id'),
+        COALESCE((SELECT MAX(id) FROM yeasts), 0) + 1,
+        false
+      )
+    `;
+
+    return prisma.yeasts.create({ data });
+  }
+}
+
+function isIdUniqueConstraintError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    (Array.isArray(error.meta?.target)
+      ? error.meta.target.includes("id")
+      : error.meta?.target === "id")
+  );
 }
 
 export async function updateYeast(

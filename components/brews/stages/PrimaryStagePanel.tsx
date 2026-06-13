@@ -5,7 +5,12 @@ import { useTranslation } from "react-i18next";
 import type { NutrientKey } from "@/types/nutrientData";
 import type { StagePanelProps } from "../stageConfig";
 import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
 import { parseNumber } from "@/lib/utils/validateInput";
@@ -39,8 +44,15 @@ const goFermOptions = [
   { value: "sterol-flash", label: "nuteResults.gfTypes.gfSterol" }
 ] as const;
 
-function calculateGoFermFromYeastAmount(type: string, yeastAmountG?: number | null) {
-  if (typeof yeastAmountG !== "number" || !Number.isFinite(yeastAmountG) || yeastAmountG <= 0) {
+function calculateGoFermFromYeastAmount(
+  type: string,
+  yeastAmountG?: number | null
+) {
+  if (
+    typeof yeastAmountG !== "number" ||
+    !Number.isFinite(yeastAmountG) ||
+    yeastAmountG <= 0
+  ) {
     return null;
   }
 
@@ -85,12 +97,20 @@ function loggedNutrientComponents(
   if (!Array.isArray(components)) return fallback;
 
   return fallback.map((planned) => {
-    const actual = components.find((component) => component?.key === planned.key);
+    const actual = components.find(
+      (component) => component?.key === planned.key
+    );
     const amount = actual?.amount;
     return {
       ...planned,
-      amount: typeof amount === "number" && Number.isFinite(amount) ? amount : planned.amount,
-      unit: typeof actual?.unit === "string" && actual.unit ? actual.unit : planned.unit
+      amount:
+        typeof amount === "number" && Number.isFinite(amount)
+          ? amount
+          : planned.amount,
+      unit:
+        typeof actual?.unit === "string" && actual.unit
+          ? actual.unit
+          : planned.unit
     };
   });
 }
@@ -110,8 +130,13 @@ function getNutrientRows(ctx: StagePanelProps["ctx"]) {
   const totals = plan.derived.nutrientAdditions.totalGrams;
   const otherName = plan.effectiveData.settings.other.name.trim();
   const loggedCount = ctx.recipe.actual.loggedNutrientAdditionCount ?? 0;
-  const plannedCount = Math.max(0, Math.floor(plan.derived.numberOfAdditions || 0));
-  const hasComponentLogs = keys.some((key) => (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0) > 0);
+  const plannedCount = Math.max(
+    0,
+    Math.floor(plan.derived.numberOfAdditions || 0)
+  );
+  const hasComponentLogs = keys.some(
+    (key) => (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0) > 0
+  );
   const remaining = keys.reduce<Record<NutrientKey, number>>(
     (acc, key) => {
       const logged = hasComponentLogs
@@ -123,23 +148,32 @@ function getNutrientRows(ctx: StagePanelProps["ctx"]) {
     { fermO: 0, fermK: 0, dap: 0, other: 0 }
   );
   const hasRemaining = keys.some((key) => remaining[key] > 0.01);
-  const suggestedRowsRemaining = Math.max(plannedCount - loggedCount, hasRemaining ? 1 : 0);
-  const targetCount = Math.max(plannedCount, loggedCount + (hasRemaining ? 1 : 0));
+  const suggestedRowsRemaining = Math.max(
+    plannedCount - loggedCount,
+    hasRemaining ? 1 : 0
+  );
+  const targetCount = Math.max(
+    plannedCount,
+    loggedCount + (hasRemaining ? 1 : 0)
+  );
 
-  const buildComponents = (divisor: number, useRemaining: boolean) => keys
-    .filter((key) => selected[key])
-    .map((key) => {
-      const amountSource = useRemaining ? remaining[key] / Math.max(1, divisor) : per[key];
-      const amount = Number.isFinite(amountSource) ? amountSource : 0;
-      return {
-        key,
-        name: key === "other" && otherName ? otherName : nutrientLabels[key],
-        amount,
-        unit: "g",
-        plannedAmount: amount
-      };
-    })
-    .filter((component) => component.amount > 0);
+  const buildComponents = (divisor: number, useRemaining: boolean) =>
+    keys
+      .filter((key) => selected[key])
+      .map((key) => {
+        const amountSource = useRemaining
+          ? remaining[key] / Math.max(1, divisor)
+          : per[key];
+        const amount = Number.isFinite(amountSource) ? amountSource : 0;
+        return {
+          key,
+          name: key === "other" && otherName ? otherName : nutrientLabels[key],
+          amount,
+          unit: "g",
+          plannedAmount: amount
+        };
+      })
+      .filter((component) => component.amount > 0);
 
   return Array.from({ length: targetCount }, (_, index) => {
     const rowIndex = index + 1;
@@ -157,22 +191,36 @@ export function PrimaryStagePanel({
   status,
   ctx,
   helpers,
-  warnings = []
+  warnings = [],
+  readOnly = false
 }: StagePanelProps) {
   const { i18n } = useTranslation();
-  const [additionDialog, setAdditionDialog] = React.useState<PlannedAddition | null>(null);
-  const [yeastDialogMode, setYeastDialogMode] = React.useState<"planned" | "manual" | null>(null);
+  const [additionDialog, setAdditionDialog] =
+    React.useState<PlannedAddition | null>(null);
+  const [yeastDialogMode, setYeastDialogMode] = React.useState<
+    "planned" | "manual" | null
+  >(null);
   const [recipeNoteDialog, setRecipeNoteDialog] = React.useState<{
     text: string;
     recipeNoteId: string;
   } | null>(null);
-  const [loggingMissingIngredients, setLoggingMissingIngredients] = React.useState(false);
+  const [loggingMissingIngredients, setLoggingMissingIngredients] =
+    React.useState(false);
   const primaryLines = React.useMemo(
-    () => buildIngredientLines(ctx.recipe.primaryIngredients, { secondaryOnly: true }),
+    () =>
+      buildIngredientLines(ctx.recipe.primaryIngredients, {
+        secondaryOnly: true
+      }),
     [ctx.recipe.primaryIngredients]
   );
-  const additiveLines = React.useMemo(() => buildAdditiveLines(ctx.recipe.additives), [ctx.recipe.additives]);
-  const primaryNotes = React.useMemo(() => buildNoteLines(ctx.recipe.primaryNotes), [ctx.recipe.primaryNotes]);
+  const additiveLines = React.useMemo(
+    () => buildAdditiveLines(ctx.recipe.additives),
+    [ctx.recipe.additives]
+  );
+  const primaryNotes = React.useMemo(
+    () => buildNoteLines(ctx.recipe.primaryNotes),
+    [ctx.recipe.primaryNotes]
+  );
   const nutrientRows = React.useMemo(() => getNutrientRows(ctx), [ctx]);
 
   const loggedIngredientIds = React.useMemo(
@@ -193,34 +241,51 @@ export function PrimaryStagePanel({
   );
 
   const missingIngredients = React.useMemo(
-    () => primaryLines.filter((line) => !loggedIngredientIds.has(String(line.line.lineId))),
+    () =>
+      primaryLines.filter(
+        (line) => !loggedIngredientIds.has(String(line.line.lineId))
+      ),
     [primaryLines, loggedIngredientIds]
   );
 
-  const canEdit = status === "current";
+  const canEdit = status === "current" && !readOnly;
   const recipeOg = ctx.recipe.derived?.gravity.ogPrimary ?? null;
   const suggestedOg = ctx.recipe.actual.suggestedOriginalGravity ?? recipeOg;
   const nutrientBasis = ctx.recipe.actual.nutrientBasis;
   const hasNutrientBasis = Boolean(nutrientBasis);
   const ogDiffersFromSuggestion = Boolean(
     nutrientBasis &&
-      typeof suggestedOg === "number" &&
-      Number.isFinite(suggestedOg) &&
-      Math.abs(nutrientBasis.basis.chosenOg - suggestedOg) > 0.0005
+    typeof suggestedOg === "number" &&
+    Number.isFinite(suggestedOg) &&
+    Math.abs(nutrientBasis.basis.chosenOg - suggestedOg) > 0.0005
   );
   const estimatedFg = getEstimatedFg(ctx);
   const finalGravity = ctx.recipe.actual.finalGravity?.gravity ?? null;
-  const fgDelta = typeof finalGravity === "number" && estimatedFg != null ? Math.abs(finalGravity - estimatedFg) : null;
+  const fgDelta =
+    typeof finalGravity === "number" && estimatedFg != null
+      ? Math.abs(finalGravity - estimatedFg)
+      : null;
   const fgOutsideEstimate = typeof fgDelta === "number" && fgDelta > 0.005;
   const ingredientDoneCount = primaryLines.length - missingIngredients.length;
-  const additiveDoneCount = additiveLines.filter((line) => loggedAdditiveIds.has(String(line.line.lineId))).length;
-  const notesDoneCount = primaryNotes.filter((item) => loggedNoteIds.has(String(item.note.lineId))).length;
-  const nutrientDoneCount = ctx.recipe.actual.loggedNutrientAdditionCount ?? loggedNutrientIndexes.size;
-  const hasRemainingNutrients = Object.values(ctx.recipe.actual.remainingNutrientGrams ?? {}).some(
-    (amount) => typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
+  const additiveDoneCount = additiveLines.filter((line) =>
+    loggedAdditiveIds.has(String(line.line.lineId))
+  ).length;
+  const notesDoneCount = primaryNotes.filter((item) =>
+    loggedNoteIds.has(String(item.note.lineId))
+  ).length;
+  const nutrientDoneCount =
+    ctx.recipe.actual.loggedNutrientAdditionCount ?? loggedNutrientIndexes.size;
+  const hasRemainingNutrients = Object.values(
+    ctx.recipe.actual.remainingNutrientGrams ?? {}
+  ).some(
+    (amount) =>
+      typeof amount === "number" && Number.isFinite(amount) && amount > 0.01
   );
   const goFerm = ctx.recipe.nutrientPlan?.derived.goFerm;
-  const hasPlannedGoFerm = typeof goFerm?.amount === "number" && Number.isFinite(goFerm.amount) && goFerm.amount > 0;
+  const hasPlannedGoFerm =
+    typeof goFerm?.amount === "number" &&
+    Number.isFinite(goFerm.amount) &&
+    goFerm.amount > 0;
   const hasLoggedGoFerm = Boolean(ctx.recipe.actual.goFermAddition);
   const hasLoggedOg = Boolean(ctx.recipe.actual.originalGravity);
   const hasLoggedYeast = Boolean(ctx.recipe.actual.yeastAddition);
@@ -230,31 +295,49 @@ export function PrimaryStagePanel({
     Number.isFinite(ctx.brew.current_volume_liters) &&
     ctx.brew.current_volume_liters > 0;
   const locale = i18n.resolvedLanguage;
-  const fmtNumber = (value?: number | null, decimals = 2) => formatNumber(value, decimals, locale);
+  const fmtNumber = (value?: number | null, decimals = 2) =>
+    formatNumber(value, decimals, locale);
   const fmtGravity = (value?: number | null) => formatGravity(value, locale);
-  const primaryVolumeUnit = ctx.recipe.recipeData?.unitDefaults.volume ?? ctx.recipe.derived?.volume.unit ?? "gal";
-  const fmtVolume = (value?: number | null) => formatVolume(value, primaryVolumeUnit, locale);
-  const fmtLoggedAmount = (addition?: { amount: number | null; unit: string | null } | null) =>
-    formatLoggedAmount(addition, locale);
+  const primaryVolumeUnit =
+    ctx.recipe.recipeData?.unitDefaults.volume ??
+    ctx.recipe.derived?.volume.unit ??
+    "gal";
+  const fmtVolume = (value?: number | null) =>
+    formatVolume(value, primaryVolumeUnit, locale);
+  const fmtLoggedAmount = (
+    addition?: { amount: number | null; unit: string | null } | null
+  ) => formatLoggedAmount(addition, locale);
   const nutrientDisabledReason = !hasNutrientBasis
     ? t("brews.primary.nutrientsNeedOg", "Log OG first.")
     : !hasLoggedYeast
-      ? t("brews.primary.nutrientsNeedYeast", "Log yeast before nutrient additions.")
+      ? t(
+          "brews.primary.nutrientsNeedYeast",
+          "Log yeast before nutrient additions."
+        )
       : hasPlannedGoFerm && !hasLoggedGoFerm
-        ? t("brews.primary.nutrientsNeedGoFermDecision", "Log Go-Ferm or mark it not used before nutrient additions.")
+        ? t(
+            "brews.primary.nutrientsNeedGoFermDecision",
+            "Log Go-Ferm or mark it not used before nutrient additions."
+          )
         : null;
   const actualYeastAmountG = ctx.recipe.actual.yeastAddition?.amount;
   const yeastRowTitle =
     ctx.recipe.actual.yeastAddition?.name ||
-    [ctx.recipe.yeast?.brand, ctx.recipe.yeast?.strain].filter(Boolean).join(" ");
+    [ctx.recipe.yeast?.brand, ctx.recipe.yeast?.strain]
+      .filter(Boolean)
+      .join(" ");
   const yeastRowAmount =
     typeof ctx.recipe.actual.yeastAddition?.amount === "number"
       ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${ctx.recipe.actual.yeastAddition.unit || "g"}`
       : typeof ctx.recipe.yeast?.plannedAmountG === "number"
         ? `${fmtNumber(ctx.recipe.yeast.plannedAmountG)} g`
         : null;
-  const plannedGoFermType = ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm";
-  const actualYeastGoFerm = calculateGoFermFromYeastAmount(plannedGoFermType, actualYeastAmountG);
+  const plannedGoFermType =
+    ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm";
+  const actualYeastGoFerm = calculateGoFermFromYeastAmount(
+    plannedGoFermType,
+    actualYeastAmountG
+  );
   const defaultGoFermAmount = actualYeastGoFerm?.amount ?? goFerm?.amount;
   const defaultGoFermWater = actualYeastGoFerm?.water ?? goFerm?.water;
   const loggedGoFerm = ctx.recipe.actual.goFermAddition;
@@ -265,7 +348,8 @@ export function PrimaryStagePanel({
       : typeof loggedGoFerm?.meta?.plannedWaterAmount === "number"
         ? loggedGoFerm.meta.plannedWaterAmount
         : null;
-  const goFermRowTitle = loggedGoFerm?.name || t("brews.primary.goFerm", "Go-Ferm");
+  const goFermRowTitle =
+    loggedGoFerm?.name || t("brews.primary.goFerm", "Go-Ferm");
   const goFermRowAmount =
     loggedGoFerm && !loggedGoFermUsed
       ? "0 g"
@@ -298,7 +382,9 @@ export function PrimaryStagePanel({
         plannedWaterUnit: "mL"
       }
     });
-  const nextNutrientRow = nutrientRows.find((row) => row.index > nutrientDoneCount);
+  const nextNutrientRow = nutrientRows.find(
+    (row) => row.index > nutrientDoneCount
+  );
   const openNutrientRow = (row: (typeof nutrientRows)[number]) => {
     const total = row.components.reduce((sum, item) => sum + item.amount, 0);
     setAdditionDialog({
@@ -320,7 +406,8 @@ export function PrimaryStagePanel({
   };
   const markGoFermNotUsed = async () => {
     await helpers.addAddition({
-      name: ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm",
+      name:
+        ctx.recipe.nutrientPlan?.effectiveData.inputs.goFermType || "Go-Ferm",
       kind: "NUTRIENT",
       source: "recipe_go_ferm",
       amount: 0,
@@ -357,23 +444,40 @@ export function PrimaryStagePanel({
       setLoggingMissingIngredients(false);
     }
   };
-  const pitchPending = !hasNutrientBasis || !hasLoggedYeast || (hasPlannedGoFerm && !hasLoggedGoFerm);
+  const pitchPending =
+    !hasNutrientBasis ||
+    !hasLoggedYeast ||
+    (hasPlannedGoFerm && !hasLoggedGoFerm);
   const nutrientsPending = !pitchPending && hasRemainingNutrients;
   const fgPending = !pitchPending && !nutrientsPending && !hasLoggedFg;
-  const transferPending = !pitchPending && !nutrientsPending && !fgPending && !hasLoggedSecondaryVolume;
+  const transferPending =
+    !pitchPending &&
+    !nutrientsPending &&
+    !fgPending &&
+    !hasLoggedSecondaryVolume;
   const workflowFocus = pitchPending
     ? t("brews.primary.focusPitch", "Pitch yeast and record starting details")
     : nutrientsPending
       ? t("brews.primary.focusNutrients", "Keep up with nutrient additions")
       : fgPending
-        ? t("brews.primary.focusFg", "Take final gravity when fermentation is finished")
+        ? t(
+            "brews.primary.focusFg",
+            "Take final gravity when fermentation is finished"
+          )
         : transferPending
-          ? t("brews.primary.focusTransfer", "Transfer to secondary and record the new volume")
+          ? t(
+              "brews.primary.focusTransfer",
+              "Transfer to secondary and record the new volume"
+            )
           : t("brews.primary.focusReady", "Ready to move to secondary");
 
   const openReading = () => {
     helpers.openAddEntry?.({
-      allowedTypes: [BREW_ENTRY_TYPE.GRAVITY, BREW_ENTRY_TYPE.TEMPERATURE, BREW_ENTRY_TYPE.PH]
+      allowedTypes: [
+        BREW_ENTRY_TYPE.GRAVITY,
+        BREW_ENTRY_TYPE.TEMPERATURE,
+        BREW_ENTRY_TYPE.PH
+      ]
     });
   };
 
@@ -385,16 +489,31 @@ export function PrimaryStagePanel({
           value={
             ctx.recipe.actual.originalGravity
               ? fmtGravity(ctx.recipe.actual.originalGravity.gravity)
-              : typeof suggestedOg === "number" && Number.isFinite(suggestedOg) && suggestedOg > 1
-                ? t("brews.primary.suggestedOgAvailable", "Suggested OG available")
+              : typeof suggestedOg === "number" &&
+                  Number.isFinite(suggestedOg) &&
+                  suggestedOg > 1
+                ? t(
+                    "brews.primary.suggestedOgAvailable",
+                    "Suggested OG available"
+                  )
                 : "—"
           }
-          tone={ctx.recipe.actual.originalGravity && !ogDiffersFromSuggestion ? "ok" : "warn"}
+          tone={
+            ctx.recipe.actual.originalGravity && !ogDiffersFromSuggestion
+              ? "ok"
+              : "warn"
+          }
         />
         <StatusTile
           label={t("brews.primary.fg", "Final gravity")}
           value={fmtGravity(finalGravity)}
-          tone={ctx.recipe.actual.finalGravity ? (fgOutsideEstimate ? "warn" : "ok") : "warn"}
+          tone={
+            ctx.recipe.actual.finalGravity
+              ? fgOutsideEstimate
+                ? "warn"
+                : "ok"
+              : "warn"
+          }
         />
         <StatusTile
           label={t("brews.primary.currentVolume", "Current volume")}
@@ -421,12 +540,24 @@ export function PrimaryStagePanel({
           </div>
           <div className="flex flex-wrap gap-2">
             {missingIngredients.length > 0 ? (
-              <Button size="sm" variant="secondary" disabled={!canEdit || loggingMissingIngredients} onClick={logMissingIngredients}>
-                {t("brews.primary.logMissingIngredients", "Log missing ingredients")}
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!canEdit || loggingMissingIngredients}
+                onClick={logMissingIngredients}
+              >
+                {t(
+                  "brews.primary.logMissingIngredients",
+                  "Log missing ingredients"
+                )}
               </Button>
             ) : null}
             {pitchPending && !hasNutrientBasis ? (
-              <Button size="sm" disabled={!canEdit} onClick={() => helpers.openOriginalGravityDialog?.()}>
+              <Button
+                size="sm"
+                disabled={!canEdit}
+                onClick={() => helpers.openOriginalGravityDialog?.()}
+              >
                 {t("brews.actions.logOg", "Log OG")}
               </Button>
             ) : null}
@@ -434,7 +565,9 @@ export function PrimaryStagePanel({
               <Button
                 size="sm"
                 disabled={!canEdit}
-                onClick={() => setYeastDialogMode(ctx.recipe.yeast ? "planned" : "manual")}
+                onClick={() =>
+                  setYeastDialogMode(ctx.recipe.yeast ? "planned" : "manual")
+                }
               >
                 {t("brews.actions.logYeast", "Log yeast")}
               </Button>
@@ -454,13 +587,24 @@ export function PrimaryStagePanel({
               </Button>
             ) : null}
             {fgPending ? (
-              <Button size="sm" onClick={() => helpers.openFinalGravityDialog?.()} disabled={!canEdit}>
+              <Button
+                size="sm"
+                onClick={() => helpers.openFinalGravityDialog?.()}
+                disabled={!canEdit}
+              >
                 {t("brews.actions.logFg", "Log FG")}
               </Button>
             ) : null}
             {transferPending ? (
-              <Button size="sm" onClick={() => helpers.openRecordVolume?.()} disabled={!canEdit}>
-                {t("brews.actions.logSecondaryVolume", "Record secondary volume")}
+              <Button
+                size="sm"
+                onClick={() => helpers.openRecordVolume?.()}
+                disabled={!canEdit}
+              >
+                {t(
+                  "brews.actions.logSecondaryVolume",
+                  "Record secondary volume"
+                )}
               </Button>
             ) : null}
             <Button
@@ -472,7 +616,12 @@ export function PrimaryStagePanel({
               {t("brews.moveToSecondary", "Move to Secondary")}
             </Button>
             {hasLoggedOg ? (
-              <Button size="sm" variant="secondary" disabled={!canEdit} onClick={openReading}>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!canEdit}
+                onClick={openReading}
+              >
                 {t("brews.actions.logReading", "Log reading")}
               </Button>
             ) : null}
@@ -488,16 +637,21 @@ export function PrimaryStagePanel({
             "brews.warn.finalGravityEstimateMismatchWithValues",
             "Final gravity is not close to the recipe’s estimated FG."
           )}{" "}
-          {t("brews.primary.estimatedFg", "Estimated FG")}: {fmtGravity(estimatedFg)},{" "}
-          {t("brews.primary.loggedFg", "Logged FG")}: {fmtGravity(finalGravity)}.
+          {t("brews.primary.estimatedFg", "Estimated FG")}:{" "}
+          {fmtGravity(estimatedFg)}, {t("brews.primary.loggedFg", "Logged FG")}:{" "}
+          {fmtGravity(finalGravity)}.
         </div>
       ) : null}
 
       {ogDiffersFromSuggestion && nutrientBasis ? (
         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
-          {t("brews.primary.ogDiffersFromSuggestion", "Logged OG differs from the suggested OG used for planning.")}{" "}
-          {t("brews.primary.suggestedOg", "Suggested OG")}: {fmtGravity(suggestedOg)},{" "}
-          {t("brews.primary.loggedOg", "Logged OG")}: {fmtGravity(nutrientBasis.basis.chosenOg)}.
+          {t(
+            "brews.primary.ogDiffersFromSuggestion",
+            "Logged OG differs from the suggested OG used for planning."
+          )}{" "}
+          {t("brews.primary.suggestedOg", "Suggested OG")}:{" "}
+          {fmtGravity(suggestedOg)}, {t("brews.primary.loggedOg", "Logged OG")}:{" "}
+          {fmtGravity(nutrientBasis.basis.chosenOg)}.
         </div>
       ) : null}
 
@@ -536,7 +690,12 @@ export function PrimaryStagePanel({
                     actionLabel={t("brews.primary.log", "Log")}
                   />
                   {!hasLoggedGoFerm ? (
-                    <Button size="sm" variant="secondary" disabled={!canEdit} onClick={markGoFermNotUsed}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={!canEdit}
+                      onClick={markGoFermNotUsed}
+                    >
                       {t("brews.primary.markGoFermNotUsed", "Mark not used")}
                     </Button>
                   ) : null}
@@ -544,9 +703,17 @@ export function PrimaryStagePanel({
               ) : null}
 
               {!hasLoggedYeast ? (
-                <Button size="sm" variant="secondary" disabled={!canEdit} onClick={() => setYeastDialogMode("manual")}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!canEdit}
+                  onClick={() => setYeastDialogMode("manual")}
+                >
                   {ctx.recipe.yeast
-                    ? t("brews.primary.logDifferentYeast", "Log different yeast")
+                    ? t(
+                        "brews.primary.logDifferentYeast",
+                        "Log different yeast"
+                      )
                     : t("brews.actions.logYeast", "Log yeast")}
                 </Button>
               ) : null}
@@ -556,13 +723,18 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="ingredients">
           <AccordionTrigger>
-            {t("brews.primary.ingredients", "Primary ingredients")} · {ingredientDoneCount}/{primaryLines.length}
+            {t("brews.primary.ingredients", "Primary ingredients")} ·{" "}
+            {ingredientDoneCount}/{primaryLines.length}
           </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               <Button
                 size="sm"
-                disabled={!canEdit || missingIngredients.length === 0 || loggingMissingIngredients}
+                disabled={
+                  !canEdit ||
+                  missingIngredients.length === 0 ||
+                  loggingMissingIngredients
+                }
                 onClick={logMissingIngredients}
               >
                 {t("brews.primary.logMissing", "Log missing")}
@@ -570,16 +742,27 @@ export function PrimaryStagePanel({
               {primaryLines.length ? (
                 <ul className="space-y-1">
                   {primaryLines.map((item) => {
-                    const isLogged = loggedIngredientIds.has(String(item.line.lineId));
+                    const isLogged = loggedIngredientIds.has(
+                      String(item.line.lineId)
+                    );
                     const loggedAddition = latestLoggedItem(
-                      ctx.recipe.actual.additionsByRecipeIngredientId[String(item.line.lineId)]
+                      ctx.recipe.actual.additionsByRecipeIngredientId[
+                        String(item.line.lineId)
+                      ]
                     );
                     const { amount, unit } = getIngredientAmount(item.line);
                     return (
                       <WorkRow
                         key={item.line.lineId}
-                        title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
-                        detail={item.secondary ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}` : null}
+                        title={getBrewItemLabel(
+                          t,
+                          loggedAddition?.name || item.name
+                        )}
+                        detail={
+                          item.secondary
+                            ? `${t("brews.planned.altAmount", "Alt")}: ${item.secondary}`
+                            : null
+                        }
                         amount={fmtLoggedAmount(loggedAddition) ?? item.primary}
                         isLogged={isLogged}
                         disabled={!canEdit}
@@ -587,7 +770,10 @@ export function PrimaryStagePanel({
                         actionLabel={t("brews.primary.log", "Log")}
                         onLog={() =>
                           setAdditionDialog({
-                            title: t("brews.primary.logIngredient", "Log ingredient"),
+                            title: t(
+                              "brews.primary.logIngredient",
+                              "Log ingredient"
+                            ),
                             name: item.name,
                             kind: "INGREDIENT",
                             source: "recipe_ingredient",
@@ -604,7 +790,10 @@ export function PrimaryStagePanel({
                 </ul>
               ) : (
                 <EmptyState>
-                  {t("brews.primary.noPrimaryIngredients", "No primary ingredients found in the linked recipe.")}
+                  {t(
+                    "brews.primary.noPrimaryIngredients",
+                    "No primary ingredients found in the linked recipe."
+                  )}
                 </EmptyState>
               )}
             </div>
@@ -613,21 +802,29 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="additives">
           <AccordionTrigger>
-            {t("brews.primary.additives", "Planned additives")} · {additiveDoneCount}/{additiveLines.length}
+            {t("brews.primary.additives", "Planned additives")} ·{" "}
+            {additiveDoneCount}/{additiveLines.length}
           </AccordionTrigger>
           <AccordionContent>
             {additiveLines.length ? (
               <ul className="space-y-1">
                 {additiveLines.map((item) => {
-                  const isLogged = loggedAdditiveIds.has(String(item.line.lineId));
+                  const isLogged = loggedAdditiveIds.has(
+                    String(item.line.lineId)
+                  );
                   const loggedAddition = latestLoggedItem(
-                    ctx.recipe.actual.additionsByRecipeAdditiveId[String(item.line.lineId)]
+                    ctx.recipe.actual.additionsByRecipeAdditiveId[
+                      String(item.line.lineId)
+                    ]
                   );
                   const { amount, unit } = getAdditiveAmount(item.line);
                   return (
                     <WorkRow
                       key={item.line.lineId}
-                      title={getBrewItemLabel(t, loggedAddition?.name || item.name)}
+                      title={getBrewItemLabel(
+                        t,
+                        loggedAddition?.name || item.name
+                      )}
                       amount={fmtLoggedAmount(loggedAddition) ?? item.amount}
                       isLogged={isLogged}
                       disabled={!canEdit}
@@ -651,7 +848,10 @@ export function PrimaryStagePanel({
               </ul>
             ) : (
               <EmptyState>
-                {t("brews.primary.noAdditives", "No planned additives found in the linked recipe.")}
+                {t(
+                  "brews.primary.noAdditives",
+                  "No planned additives found in the linked recipe."
+                )}
               </EmptyState>
             )}
           </AccordionContent>
@@ -659,7 +859,8 @@ export function PrimaryStagePanel({
 
         <AccordionItem value="nutrients">
           <AccordionTrigger>
-            {t("brews.primary.nutrients", "Nutrients")} · {nutrientDoneCount}/{nutrientRows.length}
+            {t("brews.primary.nutrients", "Nutrients")} · {nutrientDoneCount}/
+            {nutrientRows.length}
           </AccordionTrigger>
           <AccordionContent>
             {nutrientRows.length ? (
@@ -670,7 +871,9 @@ export function PrimaryStagePanel({
                     "This schedule uses logged OG, linked primary additions, yeast, and Go-Ferm. Change the schedule settings in the recipe builder for now."
                   )}
                 </div>
-                {hasNutrientBasis && ctx.recipe.actual.missingActualPrimaryIngredientIds.length > 0 ? (
+                {hasNutrientBasis &&
+                ctx.recipe.actual.missingActualPrimaryIngredientIds.length >
+                  0 ? (
                   <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-muted-foreground">
                     {t(
                       "brews.primary.nutrientsUsingPlannedIngredients",
@@ -678,8 +881,13 @@ export function PrimaryStagePanel({
                     )}
                   </div>
                 ) : null}
-                {nutrientDoneCount >= Math.max(0, Math.floor(ctx.recipe.nutrientPlan?.derived.numberOfAdditions || 0)) &&
-                hasRemainingNutrients ? (
+                {nutrientDoneCount >=
+                  Math.max(
+                    0,
+                    Math.floor(
+                      ctx.recipe.nutrientPlan?.derived.numberOfAdditions || 0
+                    )
+                  ) && hasRemainingNutrients ? (
                   <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-muted-foreground">
                     {t(
                       "brews.primary.nutrientsRemainingAfterPlan",
@@ -690,19 +898,32 @@ export function PrimaryStagePanel({
                 <ul className="space-y-1">
                   {nutrientRows.map((row) => {
                     const isLogged = row.index <= nutrientDoneCount;
-                    const loggedAddition = loggedNutrientAdditionForIndex(ctx.recipe.actual.additions, row.index);
+                    const loggedAddition = loggedNutrientAdditionForIndex(
+                      ctx.recipe.actual.additions,
+                      row.index
+                    );
                     const displayComponents = isLogged
                       ? loggedNutrientComponents(loggedAddition, row.components)
                       : row.components;
-                    const total = displayComponents.reduce((sum, item) => sum + item.amount, 0);
+                    const total = displayComponents.reduce(
+                      (sum, item) => sum + item.amount,
+                      0
+                    );
                     return (
                       <WorkRow
                         key={row.index}
-                        title={t("brews.primary.nutrientAddition", "Nutrient addition {{index}}", {
-                          index: row.index
-                        })}
+                        title={t(
+                          "brews.primary.nutrientAddition",
+                          "Nutrient addition {{index}}",
+                          {
+                            index: row.index
+                          }
+                        )}
                         detail={displayComponents
-                          .map((item) => `${getBrewItemLabel(t, item.name)}: ${fmtNumber(item.amount)} ${item.unit}`)
+                          .map(
+                            (item) =>
+                              `${getBrewItemLabel(t, item.name)}: ${fmtNumber(item.amount)} ${item.unit}`
+                          )
                           .join(", ")}
                         amount={`${fmtNumber(total)} g`}
                         isLogged={isLogged}
@@ -717,14 +938,20 @@ export function PrimaryStagePanel({
                 </ul>
               </div>
             ) : (
-              <EmptyState>{t("brews.primary.noNutrients", "No planned nutrient additions found.")}</EmptyState>
+              <EmptyState>
+                {t(
+                  "brews.primary.noNutrients",
+                  "No planned nutrient additions found."
+                )}
+              </EmptyState>
             )}
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="notes">
           <AccordionTrigger>
-            {t("brews.primary.recipeNotes", "Recipe primary notes")} · {notesDoneCount}/{primaryNotes.length}
+            {t("brews.primary.recipeNotes", "Recipe primary notes")} ·{" "}
+            {notesDoneCount}/{primaryNotes.length}
           </AccordionTrigger>
           <AccordionContent>
             {primaryNotes.length ? (
@@ -751,7 +978,10 @@ export function PrimaryStagePanel({
               </ul>
             ) : (
               <EmptyState>
-                {t("brews.primary.noRecipeNotes", "No primary notes found in the linked recipe.")}
+                {t(
+                  "brews.primary.noRecipeNotes",
+                  "No primary notes found in the linked recipe."
+                )}
               </EmptyState>
             )}
           </AccordionContent>
@@ -789,7 +1019,10 @@ export function PrimaryStagePanel({
         note={
           recipeNoteDialog
             ? {
-                title: t("brews.primary.recipeNoteTitle", "Add recipe primary note"),
+                title: t(
+                  "brews.primary.recipeNoteTitle",
+                  "Add recipe primary note"
+                ),
                 text: recipeNoteDialog.text
               }
             : null

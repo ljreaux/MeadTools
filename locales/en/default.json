@@ -142,6 +142,53 @@
   "additivesHeading": "Additives and Additional Ingredients",
   "adjunctAmount": "Adjunct Amount in sample (g):",
   "adjunctConcentration": "Adjunct Concentration (PPM):",
+  "admin": {
+    "additives": {
+      "add": "Add additive"
+    },
+    "brews": {
+      "description": "Inspect every brew in the tracker without changing owner data.",
+      "searchPlaceholder": "Search brews, recipes, or owners"
+    },
+    "ingredients": {
+      "add": "Add ingredient"
+    },
+    "nav": {
+      "additives": "Additives",
+      "brews": "Brews",
+      "ingredients": "Ingredients",
+      "overview": "Overview",
+      "recipes": "Recipes",
+      "users": "Users",
+      "yeasts": "Yeasts"
+    },
+    "overview": {
+      "activeBrews": "{{count}} active",
+      "description": "Review site activity and open an administrative workspace.",
+      "privateRecipes": "{{count}} private",
+      "title": "Overview"
+    },
+    "owner": "Owner",
+    "readOnly": "Read only",
+    "recipes": {
+      "back": "Back to recipes",
+      "description": "Open public and private recipes in a read-only administrative view.",
+      "searchPlaceholder": "Search name or owner"
+    },
+    "title": "Admin",
+    "users": {
+      "confirmResetDescription": "Send a password reset link to {{email}}? The link will expire in 15 minutes.",
+      "confirmResetTitle": "Send password reset?",
+      "resetError": "The password reset link could not be sent.",
+      "resetSentDescription": "A password reset link was sent to {{email}}.",
+      "resetSentTitle": "Reset link sent",
+      "sendingReset": "Sending...",
+      "sendReset": "Send password reset"
+    },
+    "yeasts": {
+      "add": "Add yeast"
+    }
+  },
   "advancedNutrition": {
     "label": "Advanced Nutrition",
     "yanContribution": "Edit YAN Contribution",
@@ -412,6 +459,7 @@
       },
       "noFilteredEntries": "No entries match the selected filters.",
       "noMetricEntries": "No matching metric entries.",
+      "notes": "Notes",
       "sort": {
         "label": "Sort",
         "newest": "Newest first",
@@ -606,6 +654,11 @@
       "takingPh": "Taking a pH reading?",
       "workflowHint": "Log additions as they happen and keep volume current before bulk aging."
     },
+    "share": {
+      "action": "Share brew",
+      "copied": "Public brew link copied.",
+      "title": "Shared brew: {{name}}"
+    },
     "stage": "Stage",
     "stageChange": "Stage change",
     "stageDesc": {
@@ -621,6 +674,14 @@
     "startDate": "Start Date",
     "stayHere": "You are here",
     "title": "Brew Tracker",
+    "visibility": {
+      "label": "Visibility",
+      "private": "Private",
+      "privateDescription": "Only you and admins can view this brew.",
+      "public": "Public",
+      "publicDescription": "Public brews can be viewed from public recipe pages.",
+      "recipeMustBePublic": "Make the recipe public before sharing this brew."
+    },
     "volume": {
       "currentVolume": "Current volume",
       "enterVolume": "Volume",
@@ -1364,6 +1425,13 @@
   },
   "private": "Private Recipe?",
   "prunes": "Prunes",
+  "publicBrews": {
+    "backToRecipe": "Back to recipe",
+    "description": "Brewers have shared these batches from this recipe.",
+    "empty": "No public brews have been shared for this recipe yet.",
+    "title": "Public brews",
+    "viewBrew": "View brew"
+  },
   "publicRecipes": {
     "fail": " Failed to load recipes. Please try again later.",
     "title": "Public Recipes"

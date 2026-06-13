@@ -21,6 +21,7 @@ model brews {
   requested_email_alerts Boolean?  @default(false)
   sb_alert_sent          Boolean?  @default(false)
   fg_alert_sent          Boolean?  @default(false)
+  public                 Boolean   @default(false)
 
   // brew-tracking additions
   stage                   brew_stage   @default(PLANNED)

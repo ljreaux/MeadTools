@@ -56,6 +56,30 @@ Public recipe search now keeps the search input and results in sync more reliabl
 
 ---
 
+### Public Brew Sharing
+
+Brewers can now share selected brew trackers from their public recipes.
+
+- Brews remain private by default and can only be published when their recipe is public
+- Public recipe pages link to published brews with their stage history, notes, metrics, and charts
+- Account brew pages include a share action that uses the public recipe-scoped link
+- Shared brew trackers are read-only and retain the familiar account tracker layout
+
+---
+
+## Admin Updates
+
+The admin area has been refreshed to match the rest of MeadTools more closely.
+
+- A new admin overview links to users, brews, recipes, and catalog data
+- Admins can review complete brew trackers and private recipes without mutation controls
+- Admin tables, search, pagination, navigation, and responsive layouts are more consistent
+- User administration can send password reset links directly from the user editor
+- Admin access is available from the account menu for administrators
+- Ingredient and yeast creation now recovers from stale database ID sequences
+
+---
+
 ## UI Polish and Reliability
 
 This release includes a broad polish pass across the new brew tracking surfaces.
@@ -64,7 +88,8 @@ This release includes a broad polish pass across the new brew tracking surfaces.
 - Stage panels share more consistent patterns
 - Account navigation better reflects the available brew tools
 - Brew data handling is more resilient across the new workflow
-- OpenAPI and seed data have been updated for the expanded brew model
+- OpenAPI documentation now covers the expanded brew model, admin endpoints, and public recipe brew routes
+- Seed data has been updated for the expanded brew model
 
 ---
 
