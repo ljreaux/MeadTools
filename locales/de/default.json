@@ -142,6 +142,53 @@
   "additivesHeading": "Zusätze und weitere Zutaten",
   "adjunctAmount": "Zusatzmenge in Probe (g):",
   "adjunctConcentration": "Zusatzkonzentration (PPM):",
+  "admin": {
+    "additives": {
+      "add": "Zusatzstoff hinzufügen"
+    },
+    "brews": {
+      "description": "Alle Ansätze im Tracker ansehen, ohne die Daten der Besitzer zu ändern.",
+      "searchPlaceholder": "Ansätze, Rezepte oder Besitzer suchen"
+    },
+    "ingredients": {
+      "add": "Zutat hinzufügen"
+    },
+    "nav": {
+      "additives": "Zusatzstoffe",
+      "brews": "Ansätze",
+      "ingredients": "Zutaten",
+      "overview": "Übersicht",
+      "recipes": "Rezepte",
+      "users": "Benutzer",
+      "yeasts": "Hefen"
+    },
+    "overview": {
+      "activeBrews": "{{count}} aktiv",
+      "description": "Website-Aktivitäten prüfen und einen Administrationsbereich öffnen.",
+      "privateRecipes": "{{count}} privat",
+      "title": "Übersicht"
+    },
+    "owner": "Besitzer",
+    "readOnly": "Schreibgeschützt",
+    "recipes": {
+      "back": "Zurück zu den Rezepten",
+      "description": "Öffentliche und private Rezepte in einer schreibgeschützten Verwaltungsansicht öffnen.",
+      "searchPlaceholder": "Name oder Besitzer suchen"
+    },
+    "title": "Administratorbereich",
+    "users": {
+      "confirmResetDescription": "Einen Link zum Zurücksetzen des Passworts an {{email}} senden? Der Link läuft nach 15 Minuten ab.",
+      "confirmResetTitle": "Link zum Zurücksetzen senden?",
+      "resetError": "Der Link zum Zurücksetzen des Passworts konnte nicht gesendet werden.",
+      "resetSentDescription": "Ein Link zum Zurücksetzen des Passworts wurde an {{email}} gesendet.",
+      "resetSentTitle": "Link zum Zurücksetzen gesendet",
+      "sendingReset": "Wird gesendet...",
+      "sendReset": "Link zum Zurücksetzen senden"
+    },
+    "yeasts": {
+      "add": "Hefe hinzufügen"
+    }
+  },
   "advancedNutrition": {
     "label": "Erweiterte Einstellungen",
     "yanContribution": "YAN-Anteil bearbeiten",
@@ -412,6 +459,7 @@
       },
       "noFilteredEntries": "Keine Einträge entsprechen den ausgewählten Filtern.",
       "noMetricEntries": "Keine passenden Metrikeinträge.",
+      "notes": "Notizen",
       "sort": {
         "label": "Sortieren",
         "newest": "Neueste zuerst",
@@ -606,6 +654,11 @@
       "takingPh": "pH-Messung erfassen?",
       "workflowHint": "Protokolliere Zugaben, sobald sie passieren, und halte das Volumen vor der Reifelagerung aktuell."
     },
+    "share": {
+      "action": "Ansatz teilen",
+      "copied": "Link zum öffentlichen Ansatz kopiert.",
+      "title": "Geteilter Ansatz: {{name}}"
+    },
     "stage": "Bühne",
     "stageChange": "Phasenwechsel",
     "stageDesc": {
@@ -621,6 +674,14 @@
     "startDate": "Startdatum",
     "stayHere": "Du bist hier",
     "title": "Brew Tracker",
+    "visibility": {
+      "label": "Sichtbarkeit",
+      "private": "Privat",
+      "privateDescription": "Nur du und Admins können diesen Ansatz ansehen.",
+      "public": "Öffentlich",
+      "publicDescription": "Öffentliche Ansätze können über öffentliche Rezeptseiten angesehen werden.",
+      "recipeMustBePublic": "Veröffentliche zuerst das Rezept, bevor du diesen Ansatz teilst."
+    },
     "volume": {
       "currentVolume": "Aktuelles Volumen",
       "enterVolume": "Volumen",
@@ -1364,6 +1425,13 @@
   },
   "private": "Privates Rezept?",
   "prunes": "Trockenpflaumen",
+  "publicBrews": {
+    "backToRecipe": "Zurück zum Rezept",
+    "description": "Brauer haben diese Chargen aus diesem Rezept geteilt.",
+    "empty": "Für dieses Rezept wurden noch keine öffentlichen Ansätze geteilt.",
+    "title": "Öffentliche Ansätze",
+    "viewBrew": "Ansatz ansehen"
+  },
   "publicRecipes": {
     "fail": " Rezepte konnten nicht geladen werden. Bitte versuche es später noch einmal.",
     "title": "Öffentliche Rezepte"

@@ -9,10 +9,10 @@ function AdminDashboard({ children }: { children: React.ReactNode }) {
   if (loading) return <Loading />;
 
   return (
-    <section className="w-full flex justify-center items-center sm:pt-24 pt-[6rem]">
-      <div className="relative flex flex-col md:p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+    <section className="flex w-full justify-center pb-12 pt-24 sm:pt-28">
+      <div className="relative flex w-11/12 max-w-[1200px] flex-col gap-6 rounded-xl bg-background px-4 py-6 sm:px-8 sm:py-8 md:p-12">
         <AdminNav />
-        {children}
+        <main>{children}</main>
       </div>
     </section>
   );

@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import Loading from "@/components/loading";
 import { PaginatedTable } from "@/components/PaginatedTable";
 import { useAdminUsersQuery } from "@/hooks/reactQuery/useAdminUsersQuery";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { useTranslation } from "react-i18next";
 
 function UserDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: users, isLoading, isError, error } = useAdminUsersQuery();
 
   if (isLoading) return <Loading />;
@@ -23,8 +26,8 @@ function UserDashboard() {
     .sort((a, b) => a.role.localeCompare(b.role));
 
   return (
-    <div>
-      <h1 className="text-2xl">Users</h1>
+    <div className="space-y-6">
+      <AdminPageHeader title={t("admin.nav.users", "Users")} />
 
       <PaginatedTable
         data={sorted}
@@ -38,6 +41,7 @@ function UserDashboard() {
         pageSize={10}
         onRowClick={(user) => router.push(`/admin/users/${user.id}`)}
         searchKey={["email", "public_username", "role"]}
+        getRowKey={(user) => user.id}
       />
     </div>
   );

@@ -1,8 +1,30 @@
-import { BREW_ENTRY_TYPE, GRAVITY_UNITS, type BrewStage, type GravityUnit } from "@/lib/brewEnums";
-import { Path, PathActivePanel, PathContent, PathHeader, PathItem, PathList, PathTitle } from "@/components/ui/path";
+import {
+  BREW_ENTRY_TYPE,
+  GRAVITY_UNITS,
+  type BrewStage,
+  type GravityUnit
+} from "@/lib/brewEnums";
+import {
+  Path,
+  PathActivePanel,
+  PathContent,
+  PathHeader,
+  PathItem,
+  PathList,
+  PathTitle
+} from "@/components/ui/path";
 import { Button } from "@/components/ui/button";
-import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  BREW_TRACKER_DIALOG_CONTENT_CLASS,
+  BREW_TRACKER_DIALOG_FOOTER_CLASS
+} from "@/components/brews/brewTrackerDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -38,6 +60,7 @@ type BrewStagePathProps = {
   addEntry: BrewStageHelpers["addEntry"];
   patchEntry?: BrewStageHelpers["patchEntry"];
   hasRecipeLinked: boolean;
+  readOnly?: boolean;
 };
 
 function idxOf(stage: BrewStage) {
@@ -66,31 +89,46 @@ export function BrewStagePath({
   addAdditions,
   addEntry,
   patchEntry,
-  hasRecipeLinked
+  hasRecipeLinked,
+  readOnly = false
 }: BrewStagePathProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const currentIdx = idxOf(stage);
   const [activeId, setActiveId] = useState<BrewStage>(stage);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
-  const [recordVolumeIntent, setRecordVolumeIntent] = useState<RecordVolumeIntent>("current");
+  const [recordVolumeIntent, setRecordVolumeIntent] =
+    useState<RecordVolumeIntent>("current");
   const [originalGravityOpen, setOriginalGravityOpen] = useState(false);
   const [reviewStage, setReviewStage] = useState<BrewStage | null>(null);
-  const [pendingStageMove, setPendingStageMove] = useState<BrewStage | null>(null);
+  const [pendingStageMove, setPendingStageMove] = useState<BrewStage | null>(
+    null
+  );
 
   const numericRecipeFg =
-    typeof recipe.recipeData?.fg === "string" ? Number(recipe.recipeData.fg) : recipe.recipeData?.fg;
-  const suggestedOg = recipe.actual.suggestedOriginalGravity ?? recipe.derived?.gravity.ogPrimary ?? null;
-  const suggestedOgSource = recipe.actual.suggestedOriginalGravitySource ?? "recipe";
+    typeof recipe.recipeData?.fg === "string"
+      ? Number(recipe.recipeData.fg)
+      : recipe.recipeData?.fg;
+  const suggestedOg =
+    recipe.actual.suggestedOriginalGravity ??
+    recipe.derived?.gravity.ogPrimary ??
+    null;
+  const suggestedOgSource =
+    recipe.actual.suggestedOriginalGravitySource ?? "recipe";
   const estimatedFg =
-    typeof numericRecipeFg === "number" && Number.isFinite(numericRecipeFg) && numericRecipeFg > 0
+    typeof numericRecipeFg === "number" &&
+    Number.isFinite(numericRecipeFg) &&
+    numericRecipeFg > 0
       ? numericRecipeFg
       : null;
   const fallbackRecordVolumeLiters =
     stage === "PRIMARY"
       ? (recipe.derived?.volume.primaryL ?? recipe.effective.currentVolumeL)
       : recipe.effective.currentVolumeL;
-  const recipeVolumeUnit = recipe.recipeData?.unitDefaults.volume ?? recipe.derived?.volume.unit ?? "gal";
+  const recipeVolumeUnit =
+    recipe.recipeData?.unitDefaults.volume ??
+    recipe.derived?.volume.unit ??
+    "gal";
 
   useEffect(() => {
     setActiveId(stage);
@@ -106,18 +144,34 @@ export function BrewStagePath({
       <PathHeader>
         <div className="space-y-0.5">
           <PathTitle>{t("stage", "Stage")}</PathTitle>
-          <div className="text-base font-semibold">{t(`brewStage.${stage}`)}</div>
+          <div className="text-base font-semibold">
+            {t(`brewStage.${stage}`)}
+          </div>
         </div>
 
-        <div className="text-sm text-muted-foreground">{t("brews.stagePathHint", "Click a stage to see actions.")}</div>
+        <div className="text-sm text-muted-foreground">
+          {t("brews.stagePathHint", "Click a stage to see actions.")}
+        </div>
       </PathHeader>
 
       <PathContent className="space-y-3">
         <PathList>
           {STAGE_FLOW.map((s, i) => {
-            const state = i < currentIdx ? "complete" : i === currentIdx ? "current" : "upcoming";
+            const state =
+              i < currentIdx
+                ? "complete"
+                : i === currentIdx
+                  ? "current"
+                  : "upcoming";
 
-            return <PathItem key={s} id={s} label={t(`brewStage.${s}`)} state={state} />;
+            return (
+              <PathItem
+                key={s}
+                id={s}
+                label={t(`brewStage.${s}`)}
+                state={state}
+              />
+            );
           })}
         </PathList>
 
@@ -144,7 +198,8 @@ export function BrewStagePath({
                 id: brewId,
                 entries,
                 current_volume_liters,
-                effective_current_volume_liters: recipe.effective.currentVolumeL,
+                effective_current_volume_liters:
+                  recipe.effective.currentVolumeL,
                 latest_gravity: recipe.actual.latestGravity,
                 effective_latest_gravity: recipe.effective.latestGravity
               }
@@ -161,18 +216,23 @@ export function BrewStagePath({
                 setReviewStage(to);
               },
               openRecordVolume: () => {
-                setRecordVolumeIntent(stage === "PRIMARY" ? "secondaryVolume" : "current");
+                setRecordVolumeIntent(
+                  stage === "PRIMARY" ? "secondaryVolume" : "current"
+                );
                 setRecordVolumeOpen(true);
               },
               openOriginalGravityDialog: () => setOriginalGravityOpen(true),
               openFinalGravityDialog: () => {
                 const recipeFg = recipe.recipeData?.fg;
-                const numericRecipeFg = typeof recipeFg === "string" ? Number(recipeFg) : recipeFg;
+                const numericRecipeFg =
+                  typeof recipeFg === "string" ? Number(recipeFg) : recipeFg;
                 openAddEntry?.({
                   presetType: BREW_ENTRY_TYPE.GRAVITY,
                   gravityRole: "FG",
                   gravityDefaultValue:
-                    typeof numericRecipeFg === "number" && Number.isFinite(numericRecipeFg) && numericRecipeFg > 0
+                    typeof numericRecipeFg === "number" &&
+                    Number.isFinite(numericRecipeFg) &&
+                    numericRecipeFg > 0
                       ? numericRecipeFg
                       : undefined,
                   gravitySource: "measured"
@@ -180,7 +240,11 @@ export function BrewStagePath({
               },
               acceptRecipeOriginalGravity: async () => {
                 const recipeOg = recipe.derived?.gravity.ogPrimary;
-                if (typeof recipeOg !== "number" || !Number.isFinite(recipeOg) || recipeOg <= 1) {
+                if (
+                  typeof recipeOg !== "number" ||
+                  !Number.isFinite(recipeOg) ||
+                  recipeOg <= 1
+                ) {
                   return;
                 }
                 await addEntry(
@@ -205,52 +269,73 @@ export function BrewStagePath({
             const moveDecision = getStageMoveDecision(s, stage, ctx);
             const unmet = moveDecision.unmet;
 
-            const actions = (cfg.actions ?? []).filter((a) => (a.when ? a.when(status, ctx) : true));
+            const actions = (cfg.actions ?? []).filter((a) =>
+              a.when ? a.when(status, ctx) : true
+            );
             const visiblePrereqs =
-              stage === "PRIMARY" && s === "SECONDARY" && !ctx.recipe.actual.originalGravity
+              stage === "PRIMARY" &&
+              s === "SECONDARY" &&
+              !ctx.recipe.actual.originalGravity
                 ? prereqs.filter((p) => p.id !== "primaryHasFinalGravity")
                 : prereqs;
 
             const Panel = cfg.Panel;
             const isBlocked = !moveDecision.allowed && !moveDecision.isNoOp;
-            const warnings = (cfg.warnings ?? []).filter((w) => w.isActive(ctx) && w.when(status, ctx));
+            const warnings = (cfg.warnings ?? []).filter(
+              (w) => w.isActive(ctx) && w.when(status, ctx)
+            );
             return (
               <div className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-medium">{cfg.title(t)}</div>
 
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      if (stage === "PRIMARY" && s === "SECONDARY") {
-                        setReviewStage(s);
-                        return;
+                  {!readOnly ? (
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (stage === "PRIMARY" && s === "SECONDARY") {
+                          setReviewStage(s);
+                          return;
+                        }
+                        if (!moveDecision.allowed) return;
+                        setPendingStageMove(s);
+                      }}
+                      disabled={
+                        moveDecision.isNoOp ||
+                        (isBlocked &&
+                          !(stage === "PRIMARY" && s === "SECONDARY"))
                       }
-                      if (!moveDecision.allowed) return;
-                      setPendingStageMove(s);
-                    }}
-                    disabled={moveDecision.isNoOp || (isBlocked && !(stage === "PRIMARY" && s === "SECONDARY"))}
-                    title={
-                      isBlocked
-                        ? t("brews.prereqsNotMet", "Some items are not complete yet.")
-                        : moveDecision.isNoOp
+                      title={
+                        isBlocked
+                          ? t(
+                              "brews.prereqsNotMet",
+                              "Some items are not complete yet."
+                            )
+                          : moveDecision.isNoOp
+                            ? t("brews.stayHere", "You are here")
+                            : undefined
+                      }
+                    >
+                      {status === "past"
+                        ? t("brews.moveBack", "Move back to this stage")
+                        : status === "current"
                           ? t("brews.stayHere", "You are here")
-                          : undefined
-                    }
-                  >
-                    {status === "past"
-                      ? t("brews.moveBack", "Move back to this stage")
-                      : status === "current"
-                        ? t("brews.stayHere", "You are here")
-                        : t("brews.moveToStage", "Move to this stage")}
-                  </Button>
+                          : t("brews.moveToStage", "Move to this stage")}
+                    </Button>
+                  ) : null}
                 </div>
 
-                {cfg.description ? <div className="text-sm text-muted-foreground">{cfg.description(t)}</div> : null}
+                {cfg.description ? (
+                  <div className="text-sm text-muted-foreground">
+                    {cfg.description(t)}
+                  </div>
+                ) : null}
 
                 {status === "future" && visiblePrereqs.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">{t("brews.beforeYouProceed", "Before you proceed")}</div>
+                    <div className="text-sm font-medium">
+                      {t("brews.beforeYouProceed", "Before you proceed")}
+                    </div>
 
                     <ul className="text-sm text-muted-foreground list-disc pl-5">
                       {visiblePrereqs.map((p) => {
@@ -261,17 +346,29 @@ export function BrewStagePath({
                               <div className="min-w-0 flex-1">
                                 <span>{p.label(t)}</span>
                                 {!ok && p.hint ? (
-                                  <span className="block text-xs opacity-90 mt-1">{p.hint(t)}</span>
+                                  <span className="block text-xs opacity-90 mt-1">
+                                    {p.hint(t)}
+                                  </span>
                                 ) : null}
                               </div>
 
-                              {!ok && p.id === "primaryHasGravity" ? (
-                                <Button size="sm" variant="secondary" onClick={() => p.run?.(helpers, ctx)}>
+                              {!readOnly &&
+                              !ok &&
+                              p.id === "primaryHasGravity" ? (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => p.run?.(helpers, ctx)}
+                                >
                                   {t("brews.actions.logOg", "Log OG")}
                                 </Button>
                               ) : null}
 
-                              {!ok && p.id !== "primaryHasGravity" && p.run && p.actionLabel ? (
+                              {!readOnly &&
+                              !ok &&
+                              p.id !== "primaryHasGravity" &&
+                              p.run &&
+                              p.actionLabel ? (
                                 <Button
                                   size="sm"
                                   variant="secondary"
@@ -289,15 +386,20 @@ export function BrewStagePath({
 
                     {unmet.length > 0 && (
                       <div className="text-xs text-muted-foreground">
-                        {t("brews.prereqsNotMet", "Some items are not complete yet.")}
+                        {t(
+                          "brews.prereqsNotMet",
+                          "Some items are not complete yet."
+                        )}
                       </div>
                     )}
                   </div>
                 )}
 
-                {actions.length > 0 && (
+                {!readOnly && actions.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">{t("brews.actionsLabel", "Actions")}</div>
+                    <div className="text-sm font-medium">
+                      {t("brews.actionsLabel", "Actions")}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {actions.map((a) => (
                         <Button
@@ -313,112 +415,148 @@ export function BrewStagePath({
                   </div>
                 )}
 
-                {Panel ? <Panel t={t} status={status} ctx={ctx} helpers={helpers} warnings={warnings} /> : null}
+                {Panel ? (
+                  <div
+                    className={
+                      readOnly ? "[&_button:disabled]:hidden" : undefined
+                    }
+                  >
+                    <Panel
+                      t={t}
+                      status={status}
+                      ctx={ctx}
+                      helpers={helpers}
+                      warnings={warnings}
+                      readOnly={readOnly}
+                    />
+                  </div>
+                ) : null}
 
                 {!Panel && warnings.length > 0 && (
                   <div className="space-y-2">
                     {warnings.map((w) => (
-                      <div key={w.id} className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+                      <div
+                        key={w.id}
+                        className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm"
+                      >
                         {w.message(t)}
                       </div>
                     ))}
                   </div>
                 )}
 
-                <StageMoveReviewDialog
-                  open={reviewStage === s}
-                  onOpenChange={(open) => {
-                    if (!open) setReviewStage(null);
-                  }}
-                  title={t("brews.moveToSecondary", "Move to Secondary")}
-                  required={STAGE_CONFIG.SECONDARY.prereqs ?? []}
-                  warnings={STAGE_CONFIG.PRIMARY.warnings ?? []}
-                  ctx={ctx}
-                  helpers={helpers}
-                  onMove={async (stageChangeDatetime) => {
-                    const decision = getStageMoveDecision("SECONDARY", stage, ctx);
-                    if (!decision.allowed) return;
-                    await onMoveToStage("SECONDARY", stageChangeDatetime);
-                    setActiveId("SECONDARY");
-                    setReviewStage(null);
-                  }}
-                />
-                <StageMoveDateDialog
-                  open={pendingStageMove === s}
-                  onOpenChange={(open) => {
-                    if (!open) setPendingStageMove(null);
-                  }}
-                  title={
-                    status === "past"
-                      ? t("brews.moveBack", "Move back to this stage")
-                      : t("brews.moveToStage", "Move to this stage")
-                  }
-                  onMove={async (datetime) => {
-                    await onMoveToStage(s, datetime);
-                    setActiveId(s);
-                    setPendingStageMove(null);
-                  }}
-                />
+                {!readOnly ? (
+                  <StageMoveReviewDialog
+                    open={reviewStage === s}
+                    onOpenChange={(open) => {
+                      if (!open) setReviewStage(null);
+                    }}
+                    title={t("brews.moveToSecondary", "Move to Secondary")}
+                    required={STAGE_CONFIG.SECONDARY.prereqs ?? []}
+                    warnings={STAGE_CONFIG.PRIMARY.warnings ?? []}
+                    ctx={ctx}
+                    helpers={helpers}
+                    onMove={async (stageChangeDatetime) => {
+                      const decision = getStageMoveDecision(
+                        "SECONDARY",
+                        stage,
+                        ctx
+                      );
+                      if (!decision.allowed) return;
+                      await onMoveToStage("SECONDARY", stageChangeDatetime);
+                      setActiveId("SECONDARY");
+                      setReviewStage(null);
+                    }}
+                  />
+                ) : null}
+                {!readOnly ? (
+                  <StageMoveDateDialog
+                    open={pendingStageMove === s}
+                    onOpenChange={(open) => {
+                      if (!open) setPendingStageMove(null);
+                    }}
+                    title={
+                      status === "past"
+                        ? t("brews.moveBack", "Move back to this stage")
+                        : t("brews.moveToStage", "Move to this stage")
+                    }
+                    onMove={async (datetime) => {
+                      await onMoveToStage(s, datetime);
+                      setActiveId(s);
+                      setPendingStageMove(null);
+                    }}
+                  />
+                ) : null}
               </div>
             );
           }}
         />
-        <RecordVolumeDialog
-          t={t}
-          open={recordVolumeOpen}
-          onOpenChange={setRecordVolumeOpen}
-          currentVolumeLiters={current_volume_liters ?? fallbackRecordVolumeLiters}
-          defaultVolumeUnit={recipeVolumeUnit}
-          intent={recordVolumeIntent}
-          onSave={async (volume, meta) => {
-            await patchBrewMetadata({ current_volume_liters: volume });
-            await addEntry(
-              entryPayload.volume({
-                liters: volume,
-                displayValue: meta.displayValue,
-                displayUnit: meta.displayUnit,
-                startingLiters: meta.startingLiters,
-                datetime: meta.datetime
-              })
-            );
-          }}
-        />
-        <LogOriginalGravityDialog
-          open={originalGravityOpen}
-          onOpenChange={setOriginalGravityOpen}
-          suggestedOg={
-            typeof suggestedOg === "number" && Number.isFinite(suggestedOg) && suggestedOg > 1 ? suggestedOg : null
-          }
-          suggestedOgSource={suggestedOgSource}
-          estimatedFg={estimatedFg}
-          gravityUnitPreference={gravity_unit_preference}
-          onSave={async (input) => {
-            await addEntry(
-              entryPayload.gravity(input.chosenOg, input.note ?? null, {
-                readingRole: "OG",
-                source: "measured",
-                datetime: input.datetime,
-                display: input.ogDisplay
-              })
-            );
-            await addEntry(
-              entryPayload.gravity(input.fermentableSg, null, {
-                readingRole: "GENERAL",
-                source: "nutrient_basis",
-                hidden: true,
-                datetime: input.datetime,
-                nutrientBasis: {
-                  chosenOg: input.chosenOg,
-                  suggestedOg: input.suggestedOg,
-                  suggestedOgSource: input.suggestedOgSource,
-                  estimatedFg: input.estimatedFg,
-                  fermentableSg: input.fermentableSg,
-                  warningAcknowledged: input.warningAcknowledged
-                }
-              })
-            );
-          }}
-        />
+        {!readOnly ? (
+          <RecordVolumeDialog
+            t={t}
+            open={recordVolumeOpen}
+            onOpenChange={setRecordVolumeOpen}
+            currentVolumeLiters={
+              current_volume_liters ?? fallbackRecordVolumeLiters
+            }
+            defaultVolumeUnit={recipeVolumeUnit}
+            intent={recordVolumeIntent}
+            onSave={async (volume, meta) => {
+              await patchBrewMetadata({ current_volume_liters: volume });
+              await addEntry(
+                entryPayload.volume({
+                  liters: volume,
+                  displayValue: meta.displayValue,
+                  displayUnit: meta.displayUnit,
+                  startingLiters: meta.startingLiters,
+                  datetime: meta.datetime
+                })
+              );
+            }}
+          />
+        ) : null}
+        {!readOnly ? (
+          <LogOriginalGravityDialog
+            open={originalGravityOpen}
+            onOpenChange={setOriginalGravityOpen}
+            suggestedOg={
+              typeof suggestedOg === "number" &&
+              Number.isFinite(suggestedOg) &&
+              suggestedOg > 1
+                ? suggestedOg
+                : null
+            }
+            suggestedOgSource={suggestedOgSource}
+            estimatedFg={estimatedFg}
+            gravityUnitPreference={gravity_unit_preference}
+            onSave={async (input) => {
+              await addEntry(
+                entryPayload.gravity(input.chosenOg, input.note ?? null, {
+                  readingRole: "OG",
+                  source: "measured",
+                  datetime: input.datetime,
+                  display: input.ogDisplay
+                })
+              );
+              await addEntry(
+                entryPayload.gravity(input.fermentableSg, null, {
+                  readingRole: "GENERAL",
+                  source: "nutrient_basis",
+                  hidden: true,
+                  datetime: input.datetime,
+                  nutrientBasis: {
+                    chosenOg: input.chosenOg,
+                    suggestedOg: input.suggestedOg,
+                    suggestedOgSource: input.suggestedOgSource,
+                    estimatedFg: input.estimatedFg,
+                    fermentableSg: input.fermentableSg,
+                    warningAcknowledged: input.warningAcknowledged
+                  }
+                })
+              );
+            }}
+          />
+        ) : null}
       </PathContent>
     </Path>
   );
@@ -454,16 +592,26 @@ function StageMoveDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[480px]`}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
           <div className="text-sm font-medium">{t("date", "Date")}</div>
-          <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          <DateTimePicker
+            value={datetime}
+            onChange={(value) => value && setDatetime(value)}
+            hourCycle={12}
+          />
         </div>
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={move} disabled={isSaving}>
@@ -498,10 +646,17 @@ function StageMoveReviewDialog({
   const [yeastOpen, setYeastOpen] = useState(false);
   const [datetime, setDatetime] = useState<Date>(new Date());
   const unmet = required.filter((item) => !item.isMet(ctx));
-  const hasOriginalGravity = required.find((item) => item.id === "primaryHasGravity")?.isMet(ctx) ?? true;
-  const visibleRequired = required.filter((item) => item.id !== "primaryHasFinalGravity" || hasOriginalGravity);
+  const hasOriginalGravity =
+    required.find((item) => item.id === "primaryHasGravity")?.isMet(ctx) ??
+    true;
+  const visibleRequired = required.filter(
+    (item) => item.id !== "primaryHasFinalGravity" || hasOriginalGravity
+  );
   const activeWarnings = warnings
-    .filter((warning, index, all) => all.findIndex((item) => item.id === warning.id) === index)
+    .filter(
+      (warning, index, all) =>
+        all.findIndex((item) => item.id === warning.id) === index
+    )
     .filter((warning) => warning.isActive(ctx));
   const canMove = unmet.length === 0;
 
@@ -511,14 +666,18 @@ function StageMoveReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="text-sm font-medium">{t("brews.requiredBeforeMoving", "Required before moving")}</div>
+            <div className="text-sm font-medium">
+              {t("brews.requiredBeforeMoving", "Required before moving")}
+            </div>
             <ul className="space-y-2">
               {visibleRequired.map((item) => {
                 const ok = item.isMet(ctx);
@@ -533,21 +692,38 @@ function StageMoveReviewDialog({
                         {item.label(t)}
                       </span>
                       {!ok && item.hint ? (
-                        <div className="mt-1 text-xs text-muted-foreground">{item.hint(t)}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {item.hint(t)}
+                        </div>
                       ) : null}
                     </div>
                     {!ok && item.id === "primaryHasGravity" ? (
-                      <Button size="sm" variant="secondary" onClick={() => item.run?.(helpers, ctx)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => item.run?.(helpers, ctx)}
+                      >
                         {t("brews.actions.logOg", "Log OG")}
                       </Button>
                     ) : null}
                     {!ok && item.id === "primaryHasYeast" ? (
-                      <Button size="sm" variant="secondary" onClick={() => setYeastOpen(true)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setYeastOpen(true)}
+                      >
                         {t("brews.actions.logYeast", "Log yeast")}
                       </Button>
                     ) : null}
-                    {!ok && item.id !== "primaryHasGravity" && item.run && item.actionLabel ? (
-                      <Button size="sm" variant="secondary" onClick={() => item.run?.(helpers, ctx)}>
+                    {!ok &&
+                    item.id !== "primaryHasGravity" &&
+                    item.run &&
+                    item.actionLabel ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => item.run?.(helpers, ctx)}
+                      >
                         {item.actionLabel(t)}
                       </Button>
                     ) : null}
@@ -558,7 +734,9 @@ function StageMoveReviewDialog({
           </div>
 
           <div className="space-y-2">
-            <div className="text-sm font-medium">{t("brews.warnings", "Warnings")}</div>
+            <div className="text-sm font-medium">
+              {t("brews.warnings", "Warnings")}
+            </div>
             {activeWarnings.length ? (
               <ul className="space-y-2">
                 {activeWarnings.map((warning) => (
@@ -571,13 +749,19 @@ function StageMoveReviewDialog({
                 ))}
               </ul>
             ) : (
-              <div className="text-sm text-muted-foreground">{t("brews.noWarnings", "No active warnings.")}</div>
+              <div className="text-sm text-muted-foreground">
+                {t("brews.noWarnings", "No active warnings.")}
+              </div>
             )}
           </div>
 
           <div className="space-y-2">
             <div className="text-sm font-medium">{t("date", "Date")}</div>
-            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+            <DateTimePicker
+              value={datetime}
+              onChange={(value) => value && setDatetime(value)}
+              hourCycle={12}
+            />
           </div>
         </div>
 
@@ -585,7 +769,10 @@ function StageMoveReviewDialog({
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             {t("cancel", "Cancel")}
           </Button>
-          <Button disabled={!canMove} onClick={() => onMove(datetime.toISOString())}>
+          <Button
+            disabled={!canMove}
+            onClick={() => onMove(datetime.toISOString())}
+          >
             {t("brews.moveToSecondary", "Move to Secondary")}
           </Button>
         </DialogFooter>

@@ -4,15 +4,15 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 
-import type {
-  AccountBrewEntry,
-  AccountBrewLinkedDevice
-} from "@/hooks/reactQuery/useAccountBrews";
+import type { AccountBrewLinkedDevice } from "@/hooks/reactQuery/useAccountBrews";
 import {
   useLinkHydrometerDeviceToAccountBrew,
   useUnlinkHydrometerDeviceFromAccountBrew
 } from "@/hooks/reactQuery/useAccountBrews";
-import { useHydrometerInfo, type Device } from "@/hooks/reactQuery/useHydrometerInfo";
+import {
+  useHydrometerInfo,
+  type Device
+} from "@/hooks/reactQuery/useHydrometerInfo";
 import { useBrewLogs, type Log } from "@/hooks/reactQuery/useHydrometerLogs";
 import {
   HydrometerData,
@@ -20,12 +20,44 @@ import {
   type TempUnits
 } from "@/components/ispindel/HydrometerData";
 import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { calcABV } from "@/lib/utils/unitConverter";
+import type { BrewViewEntry, BrewViewLog } from "@/types/brewView";
+
+type WirelessLog = {
+  datetime: string;
+  temperature: number;
+  temp_units?: BrewViewLog["temp_units"];
+  battery?: number | null;
+  gravity: number;
+  calculated_gravity: number | null;
+};
+
+type BrewChartEntry = Pick<
+  BrewViewEntry,
+  "datetime" | "type" | "gravity" | "temperature" | "temp_units" | "data"
+>;
 
 function getTime(value: string) {
   const time = new Date(value).getTime();
@@ -36,12 +68,14 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function getManualTemperatureUnits(entries: AccountBrewEntry[]): TempUnits {
+function getManualTemperatureUnits(entries: BrewChartEntry[]): TempUnits {
   const entryUnits = entries.find(
     (entry) =>
       entry.type === BREW_ENTRY_TYPE.TEMPERATURE &&
       isFiniteNumber(entry.temperature) &&
-      (entry.temp_units === "F" || entry.temp_units === "C" || entry.temp_units === "K")
+      (entry.temp_units === "F" ||
+        entry.temp_units === "C" ||
+        entry.temp_units === "K")
   )?.temp_units;
 
   if (entryUnits === "F" || entryUnits === "C" || entryUnits === "K") {
@@ -51,15 +85,18 @@ function getManualTemperatureUnits(entries: AccountBrewEntry[]): TempUnits {
   return "F";
 }
 
-function getWirelessTemperatureUnits(logs: Log[]): TempUnits {
+function getWirelessTemperatureUnits(logs: WirelessLog[]): TempUnits {
   const logUnits = logs.find(
-    (log) => log.temp_units === "F" || log.temp_units === "C" || log.temp_units === "K"
+    (log) =>
+      log.temp_units === "F" || log.temp_units === "C" || log.temp_units === "K"
   )?.temp_units;
 
   return logUnits ?? "F";
 }
 
-export function buildManualBrewChartData(entries: AccountBrewEntry[]): HydrometerChartData[] {
+export function buildManualBrewChartData(
+  entries: BrewChartEntry[]
+): HydrometerChartData[] {
   const points: HydrometerChartData[] = [];
 
   for (const entry of entries) {
@@ -74,7 +111,9 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
     } | null;
 
     if (data?.source === "abv_estimate") {
-      const abv = isFiniteNumber(data.abvEstimate?.abv) ? data.abvEstimate.abv : entry.gravity;
+      const abv = isFiniteNumber(data.abvEstimate?.abv)
+        ? data.abvEstimate.abv
+        : entry.gravity;
       if (isFiniteNumber(abv)) {
         points.push({
           date: entry.datetime,
@@ -86,14 +125,20 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
 
     if (data?.hidden) continue;
 
-    if (entry.type === BREW_ENTRY_TYPE.GRAVITY && isFiniteNumber(entry.gravity)) {
+    if (
+      entry.type === BREW_ENTRY_TYPE.GRAVITY &&
+      isFiniteNumber(entry.gravity)
+    ) {
       points.push({
         date: entry.datetime,
         gravity: entry.gravity
       });
     }
 
-    if (entry.type === BREW_ENTRY_TYPE.TEMPERATURE && isFiniteNumber(entry.temperature)) {
+    if (
+      entry.type === BREW_ENTRY_TYPE.TEMPERATURE &&
+      isFiniteNumber(entry.temperature)
+    ) {
       points.push({
         date: entry.datetime,
         temperature: entry.temperature
@@ -129,11 +174,19 @@ export function buildManualBrewChartData(entries: AccountBrewEntry[]): Hydromete
     .sort((a, b) => getTime(a.date) - getTime(b.date));
 }
 
-export function buildWirelessHydrometerChartData(logs: Log[]): HydrometerChartData[] {
+export function buildWirelessHydrometerChartData(
+  logs: WirelessLog[]
+): HydrometerChartData[] {
   const points: HydrometerChartData[] = [];
-  const sortedLogs = [...logs].sort((a, b) => getTime(a.datetime) - getTime(b.datetime));
+  const sortedLogs = [...logs].sort(
+    (a, b) => getTime(a.datetime) - getTime(b.datetime)
+  );
   const deviceOriginalGravity = sortedLogs
-    .map((log) => (isFiniteNumber(log.calculated_gravity) ? log.calculated_gravity : log.gravity))
+    .map((log) =>
+      isFiniteNumber(log.calculated_gravity)
+        ? log.calculated_gravity
+        : log.gravity
+    )
     .find(isFiniteNumber);
 
   for (const log of sortedLogs) {
@@ -150,7 +203,9 @@ export function buildWirelessHydrometerChartData(logs: Log[]): HydrometerChartDa
     points.push({
       date: log.datetime,
       gravity: isFiniteNumber(gravity) ? gravity : undefined,
-      temperature: isFiniteNumber(log.temperature) ? log.temperature : undefined,
+      temperature: isFiniteNumber(log.temperature)
+        ? log.temperature
+        : undefined,
       battery: isFiniteNumber(log.battery) ? log.battery : undefined,
       ...(isFiniteNumber(abv) ? { abv: Math.max(abv, 0) } : {})
     });
@@ -172,16 +227,10 @@ export function BrewTimelineCharts({
   linkedDevices
 }: {
   brewId: string;
-  entries: AccountBrewEntry[];
+  entries: BrewChartEntry[];
   linkedDevices: AccountBrewLinkedDevice[];
 }) {
-  const { t } = useTranslation();
   const { data: logs = [], isLoading: logsLoading } = useBrewLogs(brewId);
-
-  const manualChartData = useMemo(() => buildManualBrewChartData(entries), [entries]);
-  const wirelessChartData = useMemo(() => buildWirelessHydrometerChartData(logs), [logs]);
-  const manualTempUnits = useMemo(() => getManualTemperatureUnits(entries), [entries]);
-  const wirelessTempUnits = useMemo(() => getWirelessTemperatureUnits(logs), [logs]);
 
   return (
     <div className="space-y-4">
@@ -192,13 +241,59 @@ export function BrewTimelineCharts({
         logsLoading={logsLoading}
       />
 
+      <BrewTimelineChartsView
+        entries={entries}
+        logs={logs}
+        logsLoading={logsLoading}
+      />
+    </div>
+  );
+}
+
+export function BrewTimelineChartsView({
+  entries,
+  logs,
+  logsLoading = false
+}: {
+  entries: BrewChartEntry[];
+  logs: WirelessLog[];
+  logsLoading?: boolean;
+}) {
+  const { t } = useTranslation();
+  const manualChartData = useMemo(
+    () => buildManualBrewChartData(entries),
+    [entries]
+  );
+  const wirelessChartData = useMemo(
+    () => buildWirelessHydrometerChartData(logs),
+    [logs]
+  );
+  const manualTempUnits = useMemo(
+    () => getManualTemperatureUnits(entries),
+    [entries]
+  );
+  const wirelessTempUnits = useMemo(
+    () => getWirelessTemperatureUnits(logs),
+    [logs]
+  );
+
+  return (
+    <div className="space-y-4">
       {logsLoading || wirelessChartData.length ? (
-        <ChartSection title={t("brews.charts.wirelessTitle", "Wireless hydrometer readings")}>
+        <ChartSection
+          title={t(
+            "brews.charts.wirelessTitle",
+            "Wireless hydrometer readings"
+          )}
+        >
           <HydrometerData
             chartData={wirelessChartData}
             tempUnits={wirelessTempUnits}
             loading={logsLoading}
-            name={t("brews.charts.wirelessTitle", "Wireless hydrometer readings")}
+            name={t(
+              "brews.charts.wirelessTitle",
+              "Wireless hydrometer readings"
+            )}
           />
         </ChartSection>
       ) : (
@@ -211,7 +306,9 @@ export function BrewTimelineCharts({
       )}
 
       {manualChartData.length ? (
-        <ChartSection title={t("brews.charts.manualTitle", "Manual timeline readings")}>
+        <ChartSection
+          title={t("brews.charts.manualTitle", "Manual timeline readings")}
+        >
           <HydrometerData
             chartData={manualChartData}
             tempUnits={manualTempUnits}
@@ -265,10 +362,16 @@ function HydrometerLinkPanel({
   const devices = hydrometerInfo?.devices ?? [];
   const linkableDevices = devices.filter((device) => !device.brew_id);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
-  const selectedDevice = linkableDevices.find((device) => device.id === selectedDeviceId);
+  const selectedDevice = linkableDevices.find(
+    (device) => device.id === selectedDeviceId
+  );
   const hasActiveLinkedDevice = linkedDevices.length > 0;
-  const linkedNames = linkedDevices.map((device) => device.device_name || device.id).join(", ");
-  const logDeviceIds = Array.from(new Set(logs.map((log) => log.device_id).filter(Boolean)));
+  const linkedNames = linkedDevices
+    .map((device) => device.device_name || device.id)
+    .join(", ");
+  const logDeviceIds = Array.from(
+    new Set(logs.map((log) => log.device_id).filter(Boolean))
+  );
   const logDeviceNames = logDeviceIds.map((deviceId) => {
     const device = devices.find((item) => item.id === deviceId);
     return device?.device_name || deviceId;
@@ -280,14 +383,23 @@ function HydrometerLinkPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("brews.charts.hydrometerLinkTitle", "Wireless hydrometer")}</CardTitle>
+        <CardTitle>
+          {t("brews.charts.hydrometerLinkTitle", "Wireless hydrometer")}
+        </CardTitle>
         <CardDescription className="space-y-1">
           <span className="block">
             {linkedDevices.length
-              ? t("brews.charts.activeLinkedDevices", "Active device: {{devices}}", {
-                  devices: linkedNames
-                })
-              : t("brews.charts.noActiveLinkedDevice", "No active wireless hydrometer device is attached to this brew.")}
+              ? t(
+                  "brews.charts.activeLinkedDevices",
+                  "Active device: {{devices}}",
+                  {
+                    devices: linkedNames
+                  }
+                )
+              : t(
+                  "brews.charts.noActiveLinkedDevice",
+                  "No active wireless hydrometer device is attached to this brew."
+                )}
           </span>
           {logDeviceNames.length ? (
             <span className="block">
@@ -343,21 +455,32 @@ function HydrometerLinkPanel({
           </>
         ) : logsLoading ? (
           <div className="text-sm text-muted-foreground">
-            {t("brews.charts.checkingWirelessBrew", "Checking wireless hydrometer status...")}
+            {t(
+              "brews.charts.checkingWirelessBrew",
+              "Checking wireless hydrometer status..."
+            )}
           </div>
         ) : (
           <>
             <Select
               value={selectedDeviceId}
               onValueChange={setSelectedDeviceId}
-              disabled={isLoading || linkDevice.isPending || !linkableDevices.length}
+              disabled={
+                isLoading || linkDevice.isPending || !linkableDevices.length
+              }
             >
               <SelectTrigger className="w-full sm:max-w-md">
                 <SelectValue
                   placeholder={
                     linkableDevices.length
-                      ? t("brews.charts.selectDevice", "Select a hydrometer device")
-                      : t("brews.charts.noAvailableDevices", "No available hydrometer devices")
+                      ? t(
+                          "brews.charts.selectDevice",
+                          "Select a hydrometer device"
+                        )
+                      : t(
+                          "brews.charts.noAvailableDevices",
+                          "No available hydrometer devices"
+                        )
                   }
                 />
               </SelectTrigger>

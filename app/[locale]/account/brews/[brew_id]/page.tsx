@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, Filter, Pencil, PencilOff, Scale, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Filter, Pencil, PencilOff, Scale, Share2, Trash2, X } from "lucide-react";
 
 import {
   AccountBrewEntry,
@@ -676,6 +676,43 @@ export default function BrewPageClient() {
     setStartDateDialogOpen(false);
   }
 
+  async function sharePublicBrew() {
+    if (
+      !brew?.public ||
+      !brew.recipe_id ||
+      brew.recipe_private !== false
+    ) {
+      return;
+    }
+
+    const url = `${window.location.origin}/recipes/${brew.recipe_id}/brews/${brew.id}`;
+    const title = t("brews.share.title", "Shared brew: {{name}}", {
+      name: brew.name || brew.recipe_name || t("brew", "Brew")
+    });
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        description: t("brews.share.copied", "Public brew link copied.")
+      });
+    } catch (error) {
+      console.error("Error sharing public brew:", error);
+      toast({
+        description: t("error", "Something went wrong."),
+        variant: "destructive"
+      });
+    }
+  }
+
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
@@ -920,6 +957,19 @@ export default function BrewPageClient() {
               )}
             </div>
           </div>
+          {brew.public &&
+          brew.recipe_id &&
+          brew.recipe_private === false ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={sharePublicBrew}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("brews.share.action", "Share brew")}
+            </Button>
+          ) : null}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -1009,6 +1059,43 @@ export default function BrewPageClient() {
                         await saveMetadata({
                           requested_email_alerts: checked
                         });
+                      }}
+                    />
+                  </div>
+                }
+              />
+              <SummaryField
+                label={t("brews.visibility.label", "Visibility")}
+                value={
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-foreground">
+                        {brew.public
+                          ? t("brews.visibility.public", "Public")
+                          : t("brews.visibility.private", "Private")}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {brew.recipe_private !== false
+                          ? t(
+                              "brews.visibility.recipeMustBePublic",
+                              "Make the recipe public before sharing this brew."
+                            )
+                          : brew.public
+                          ? t(
+                              "brews.visibility.publicDescription",
+                              "Public brews can be viewed from public recipe pages."
+                            )
+                          : t(
+                              "brews.visibility.privateDescription",
+                              "Only you and admins can view this brew."
+                            )}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={brew.public}
+                      disabled={brew.recipe_private !== false}
+                      onCheckedChange={async (checked) => {
+                        await saveMetadata({ public: checked });
                       }}
                     />
                   </div>

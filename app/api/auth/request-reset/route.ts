@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import { getUserByEmail } from "@/lib/db/users";
-
-const {
-  RESET_PASSWORD_SECRET = "",
-  EMAIL_USER,
-  EMAIL_PASS,
-  NEXT_PUBLIC_BASE_URL
-} = process.env;
+import { sendPasswordResetEmail } from "@/lib/auth/passwordReset";
 
 /**
  * Request password reset
@@ -35,31 +27,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const token = jwt.sign({ userId: user.id }, RESET_PASSWORD_SECRET, {
-    expiresIn: "15m"
-  });
-
-  const resetUrl = `${NEXT_PUBLIC_BASE_URL}/reset-password?token=${token}`;
-
-  const transporter = nodemailer.createTransport({
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS
-    }
-  });
-
-  await transporter.sendMail({
-    to: email,
-    from: { name: "MeadTools", address: EMAIL_USER! },
-    subject: "Reset your MeadTools password",
-    html: `
-      <p>Click the link below to reset your password:</p>
-      <p><a href="${resetUrl}">This link</a> will expire in 15 minutes.</p>
-    `
-  });
+  await sendPasswordResetEmail({ userId: user.id, email: user.email });
 
   return NextResponse.json({ message: "Reset link sent." });
 }

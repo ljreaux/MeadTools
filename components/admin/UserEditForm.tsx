@@ -29,6 +29,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import { qk } from "@/lib/db/queryKeys";
 import { User } from "@/hooks/reactQuery/useAdminUsersQuery";
+import { KeyRound } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   user: User;
@@ -36,6 +38,7 @@ interface Props {
 
 export default function UserEditForm({ user }: Props) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const fetchWithAuth = useFetchWithAuth();
@@ -107,6 +110,37 @@ export default function UserEditForm({ user }: Props) {
     }
   });
 
+  const sendPasswordResetMutation = useMutation({
+    mutationFn: async () => {
+      await fetchWithAuth<{ message: string }>(
+        `/api/admin/users/${user.id}/password-reset`,
+        { method: "POST" }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: t("admin.users.resetSentTitle", "Reset link sent"),
+        description: t(
+          "admin.users.resetSentDescription",
+          "A password reset link was sent to {{email}}.",
+          { email: user.email }
+        )
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: t("errorLabel", "Error"),
+        description:
+          err.message ||
+          t(
+            "admin.users.resetError",
+            "The password reset link could not be sent."
+          ),
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await updateUserMutation.mutateAsync(formData);
@@ -118,6 +152,7 @@ export default function UserEditForm({ user }: Props) {
 
   const isSaving = updateUserMutation.isPending;
   const isDeleting = deleteUserMutation.isPending;
+  const isSendingReset = sendPasswordResetMutation.isPending;
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -185,10 +220,48 @@ export default function UserEditForm({ user }: Props) {
         <Label htmlFor="updateToken">Generate new hydro token</Label>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-3">
         <Button type="submit" disabled={isSaving}>
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isSendingReset}
+            >
+              <KeyRound />
+              {isSendingReset
+                ? t("admin.users.sendingReset", "Sending...")
+                : t("admin.users.sendReset", "Send password reset")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("admin.users.confirmResetTitle", "Send password reset?")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t(
+                  "admin.users.confirmResetDescription",
+                  "Send a password reset link to {{email}}? The link will expire in 15 minutes.",
+                  { email: user.email }
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                type="button"
+                onClick={() => sendPasswordResetMutation.mutate()}
+              >
+                {t("admin.users.sendReset", "Send password reset")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

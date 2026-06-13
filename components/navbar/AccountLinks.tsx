@@ -33,6 +33,13 @@ function AccountLinks() {
             <DropdownMenuItem onClick={() => router.push("/account")}>
               <p className="text-center w-full"> {t("account.label")}</p>
             </DropdownMenuItem>
+            {user.role === "admin" ? (
+              <DropdownMenuItem onClick={() => router.push("/admin")}>
+                <p className="w-full text-center">
+                  {t("admin.title", "Admin")}
+                </p>
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem onClick={() => router.push("/account/brews")}>
               <p className="text-center w-full"> {t("brews.title")}</p>
             </DropdownMenuItem>

@@ -255,9 +255,27 @@ export async function getRecipeInfo(recipeId: number) {
   }
 }
 export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
-  return prisma.recipes.update({
-    where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer
-    data: fields
+  const recipeId = parseInt(id, 10);
+
+  if (fields.private !== true) {
+    return prisma.recipes.update({
+      where: { id: recipeId },
+      data: fields
+    });
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const recipe = await tx.recipes.update({
+      where: { id: recipeId },
+      data: fields
+    });
+
+    await tx.brews.updateMany({
+      where: { recipe_id: recipeId },
+      data: { public: false }
+    });
+
+    return recipe;
   });
 }
 

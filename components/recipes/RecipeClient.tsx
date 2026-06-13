@@ -13,7 +13,11 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { RecipeProvider } from "../providers/RecipeProvider";
 import { useTranslation } from "react-i18next";
 
-const RecipePage = () => {
+const RecipePage = ({
+  mode = "default"
+}: {
+  mode?: "default" | "admin-readonly";
+}) => {
   const params = useParams<{ id: string }>();
   const id = params.id;
 
@@ -84,13 +88,24 @@ const RecipePage = () => {
       : recipe.ratings.find((r) => r.user_id === userId)?.rating;
 
   const isOwner = userId === ownerId;
+  const isAdminReadOnly = mode === "admin-readonly";
 
   return (
     <RecipeProvider>
-      {isOwner ? (
+      {isOwner && !isAdminReadOnly ? (
         <OwnerRecipe pdfRedirect={pdfRedirect} recipe={recipe} />
       ) : (
-        <PublicRecipe recipe={recipe} userRating={userRating} />
+        <PublicRecipe
+          recipe={recipe}
+          userRating={userRating}
+          embedded={isAdminReadOnly}
+          backHref={isAdminReadOnly ? "/admin/recipes" : undefined}
+          capabilities={
+            isAdminReadOnly
+              ? { canSaveCopy: false, canRate: false, canComment: false }
+              : undefined
+          }
+        />
       )}
     </RecipeProvider>
   );
