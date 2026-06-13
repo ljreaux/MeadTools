@@ -1430,6 +1430,8 @@
     "description": "Brewers have shared these batches from this recipe.",
     "empty": "No public brews have been shared for this recipe yet.",
     "title": "Public brews",
+    "unavailableDescription": "This brew is private, was removed, or the link is no longer valid.",
+    "unavailableTitle": "Brew unavailable",
     "viewBrew": "View brew"
   },
   "publicRecipes": {
