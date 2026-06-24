@@ -354,6 +354,7 @@
   "brews": {
     "actions": {
       "addEntry": "Eintrag hinzufügen",
+      "label": "Aktionen",
       "logFg": "FG protokollieren",
       "logGoFerm": "Go-Ferm protokollieren",
       "logGravity": "Gravitation protokollieren",
@@ -420,6 +421,14 @@
       "recentNotes": "Aktuelle Notizen",
       "recentTastings": "Aktuelle Verkostungen"
     },
+    "delete": {
+      "confirm": "Sud löschen",
+      "deleting": "Wird gelöscht...",
+      "description": "Dadurch werden {{name}} und die Timeline-Einträge dauerhaft gelöscht. Verknüpfte Hydrometer-Geräte werden getrennt, und drahtlose Messprotokolle für diesen Sud werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "error": "Beim Löschen dieses Suds ist etwas schiefgelaufen.",
+      "success": "Sud gelöscht.",
+      "title": "Diesen Sud löschen?"
+    },
     "deleteEntryDescription": "Dies entfernt den Eintrag aus der Sud-Zeitleiste. Diese Aktion kann nicht rückgängig gemacht werden.",
     "deleteEntryTitle": "Diesen Eintrag löschen?",
     "endDate": "Enddatum",
@@ -430,6 +439,20 @@
     "error": {
       "loadDetail": "Beim Laden dieses Brauvorgangs ist ein Fehler aufgetreten.",
       "loadList": "Beim Laden der Biere ist ein Fehler aufgetreten."
+    },
+    "filters": {
+      "allStages": "Alle Phasen",
+      "clear": "Filter zurücksetzen",
+      "endFrom": "Beendet nach",
+      "endTo": "Beendet vor",
+      "label": "Filter",
+      "recipe": {
+        "all": "Alle Rezepte",
+        "label": "Rezept",
+        "none": "Kein verknüpftes Rezept"
+      },
+      "startFrom": "Gestartet nach",
+      "startTo": "Gestartet vor"
     },
     "gravity": {
       "applyRefractometerCorrection": "Refraktometerkorrektur anwenden",
@@ -658,6 +681,10 @@
       "action": "Ansatz teilen",
       "copied": "Link zum öffentlichen Ansatz kopiert.",
       "title": "Geteilter Ansatz: {{name}}"
+    },
+    "sort": {
+      "endDate": "Nach Enddatum sortieren",
+      "startDate": "Nach Startdatum sortieren"
     },
     "stage": "Bühne",
     "stageChange": "Phasenwechsel",

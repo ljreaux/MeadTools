@@ -354,6 +354,7 @@
   "brews": {
     "actions": {
       "addEntry": "Add entry",
+      "label": "Actions",
       "logFg": "Log FG",
       "logGoFerm": "Log Go-Ferm",
       "logGravity": "Log gravity",
@@ -420,6 +421,14 @@
       "recentNotes": "Recent notes",
       "recentTastings": "Recent tastings"
     },
+    "delete": {
+      "confirm": "Delete brew",
+      "deleting": "Deleting...",
+      "description": "This will permanently delete {{name}} and its timeline entries. Linked hydrometer devices will be detached, and wireless logs for this brew will also be deleted. This action cannot be undone.",
+      "error": "Something went wrong deleting this brew.",
+      "success": "Brew deleted.",
+      "title": "Delete this brew?"
+    },
     "deleteEntryDescription": "This removes the entry from the brew timeline. This action cannot be undone.",
     "deleteEntryTitle": "Delete this entry?",
     "endDate": "End Date",
@@ -430,6 +439,20 @@
     "error": {
       "loadDetail": "Something went wrong loading this brew.",
       "loadList": "Something went wrong loading brews."
+    },
+    "filters": {
+      "allStages": "All stages",
+      "clear": "Clear filters",
+      "endFrom": "Ended after",
+      "endTo": "Ended before",
+      "label": "Filters",
+      "recipe": {
+        "all": "All recipes",
+        "label": "Recipe",
+        "none": "No linked recipe"
+      },
+      "startFrom": "Started after",
+      "startTo": "Started before"
     },
     "gravity": {
       "applyRefractometerCorrection": "Apply refractometer correction",
@@ -658,6 +681,10 @@
       "action": "Share brew",
       "copied": "Public brew link copied.",
       "title": "Shared brew: {{name}}"
+    },
+    "sort": {
+      "endDate": "Sort by end date",
+      "startDate": "Sort by start date"
     },
     "stage": "Stage",
     "stageChange": "Stage change",
