@@ -2,7 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, Filter, Pencil, PencilOff, Scale, Share2, Trash2, X } from "lucide-react";
@@ -11,6 +11,7 @@ import {
   AccountBrewEntry,
   CreateBrewEntryInput,
   useAccountBrew,
+  useDeleteAccountBrew,
   usePatchAccountBrewMetadata
 } from "@/hooks/reactQuery/useAccountBrews";
 
@@ -111,11 +112,13 @@ function translateTimelineTitle(t: BrewT, title: string) {
 
 export default function BrewPageClient() {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const params = useParams<{ brew_id: string }>();
   const brewId = params?.brew_id;
 
   const { data: brew, isLoading, isError, error } = useAccountBrew(brewId);
   const { mutateAsync: patchMeta } = usePatchAccountBrewMetadata();
+  const deleteBrewMutation = useDeleteAccountBrew();
   const [nameEditable, setNameEditable] = useState(false);
   const [batchEditable, setBatchEditable] = useState(false);
   const [nameValue, setNameValue] = useState("");
@@ -123,6 +126,7 @@ export default function BrewPageClient() {
   const [startValue, setStartValue] = useState("");
   const [startDateDialogOpen, setStartDateDialogOpen] = useState(false);
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
+  const [isDeletingBrew, setIsDeletingBrew] = useState(false);
 
   const formatter = useMemo(
     () =>
@@ -713,6 +717,27 @@ export default function BrewPageClient() {
     }
   }
 
+  async function handleDeleteBrew() {
+    if (!brew) return;
+
+    try {
+      setIsDeletingBrew(true);
+      await deleteBrewMutation.mutateAsync(brew.id);
+      toast({ description: t("brews.delete.success", "Brew deleted.") });
+      router.push("/account/brews");
+    } catch {
+      toast({
+        description: t(
+          "brews.delete.error",
+          "Something went wrong deleting this brew."
+        ),
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeletingBrew(false);
+    }
+  }
+
   useEffect(() => {
     if (brew?.recipe_snapshot?.dataV2) {
       hydrate(brew.recipe_snapshot.dataV2);
@@ -957,19 +982,26 @@ export default function BrewPageClient() {
               )}
             </div>
           </div>
-          {brew.public &&
-          brew.recipe_id &&
-          brew.recipe_private === false ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={sharePublicBrew}
-            >
-              <Share2 className="h-4 w-4" />
-              {t("brews.share.action", "Share brew")}
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {brew.public &&
+            brew.recipe_id &&
+            brew.recipe_private === false ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={sharePublicBrew}
+              >
+                <Share2 className="h-4 w-4" />
+                {t("brews.share.action", "Share brew")}
+              </Button>
+            ) : null}
+            <DeleteBrewDialogButton
+              brewName={brew.name || brew.id}
+              isDeleting={isDeletingBrew}
+              onDelete={handleDeleteBrew}
+            />
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -2222,6 +2254,65 @@ function SummaryField({ label, value, action }: { label: string; value: ReactNod
         </div>
       </dd>
     </div>
+  );
+}
+
+function DeleteBrewDialogButton({
+  brewName,
+  isDeleting,
+  onDelete
+}: {
+  brewName: string;
+  isDeleting: boolean;
+  onDelete: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          disabled={isDeleting}
+        >
+          <Trash2 className="h-4 w-4" />
+          {t("brews.delete.confirm", "Delete brew")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className={BREW_TRACKER_DIALOG_CONTENT_CLASS}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {t("brews.delete.title", "Delete this brew?")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t(
+              "brews.delete.description",
+              "This will permanently delete {{name}} and its timeline entries. Linked hydrometer devices will be detached, and wireless logs for this brew will also be deleted. This action cannot be undone.",
+              { name: brewName }
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
+          <AlertDialogCancel disabled={isDeleting}>
+            {t("cancel", "Cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={isDeleting}
+            onClick={(event) => {
+              event.preventDefault();
+              void onDelete();
+            }}
+          >
+            {isDeleting
+              ? t("brews.delete.deleting", "Deleting...")
+              : t("brews.delete.confirm", "Delete brew")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
