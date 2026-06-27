@@ -206,8 +206,6 @@ export function BrewStagePath({
             };
             const helpers = {
               moveToStage: async (to: BrewStage, datetime?: string) => {
-                const decision = getStageMoveDecision(to, stage, ctx);
-                if (!decision.allowed) return;
                 await onMoveToStage(to, datetime);
                 setActiveId(to);
               },
