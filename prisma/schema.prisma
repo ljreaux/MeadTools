@@ -4,34 +4,36 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model brews {
-  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  start_date             DateTime   @default(now()) @db.Timestamptz(6)
-  end_date               DateTime?  @db.Timestamptz(6)
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  start_date             DateTime  @default(now()) @db.Timestamptz(6)
+  end_date               DateTime? @db.Timestamptz(6)
   user_id                Int?
-  latest_gravity         Float?     @db.Real
+  latest_gravity         Float?    @db.Real
   recipe_id              Int?
   name                   String?
-  requested_email_alerts Boolean?   @default(false)
-  sb_alert_sent          Boolean?   @default(false)
-  fg_alert_sent          Boolean?   @default(false)
+  requested_email_alerts Boolean?  @default(false)
+  sb_alert_sent          Boolean?  @default(false)
+  fg_alert_sent          Boolean?  @default(false)
+  public                 Boolean   @default(false)
 
   // brew-tracking additions
-  stage                 brew_stage @default(PLANNED)
-  batch_number          Int?
-  current_volume_liters Float?     @db.Real
-  recipe_snapshot       Json?      // keep as Json (no @db.JsonB) to avoid churn vs pulled schema
+  stage                   brew_stage   @default(PLANNED)
+  batch_number            Int?
+  current_volume_liters   Float?       @db.Real
+  recipe_snapshot         Json? // keep as Json (no @db.JsonB) to avoid churn vs pulled schema
+  gravity_unit_preference gravity_unit @default(SG)
 
   // relations
   entries brew_entries[]
-  recipes recipes? @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users   users?   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipes recipes?       @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users   users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   devices devices[]
   logs    logs[]
 
@@ -47,11 +49,11 @@ model brew_entries {
 
   type  brew_entry_type
   title String?
-  note  String? @db.Text
+  note  String?         @db.Text
 
   // optional typed fields
-  gravity     Float?     @db.Real
-  temperature Float?     @db.Real
+  gravity     Float?      @db.Real
+  temperature Float?      @db.Real
   temp_units  temp_units?
 
   // flexible payload
@@ -90,17 +92,17 @@ model ingredients {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model logs {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  datetime           DateTime  @default(now()) @db.Timestamptz(6)
-  angle              Float     @db.Real
-  temperature        Float     @db.Real
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  datetime           DateTime   @default(now()) @db.Timestamptz(6)
+  angle              Float      @db.Real
+  temperature        Float      @db.Real
   temp_units         temp_units
-  battery            Float     @db.Real
-  gravity            Float     @db.Real
+  battery            Float      @db.Real
+  gravity            Float      @db.Real
   interval           Int
-  calculated_gravity Float?    @db.Real
-  device_id          String?   @db.Uuid
-  brew_id            String?   @db.Uuid
+  calculated_gravity Float?     @db.Real
+  device_id          String?    @db.Uuid
+  brew_id            String?    @db.Uuid
 
   // leaving logs alone if a brew is deleted:
   brews   brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -123,8 +125,8 @@ model recipes {
   secondaryNotes  String[]
 
   // NEW
-  dataV2   Json?
-  version  Int   @default(1)
+  dataV2  Json?
+  version Int   @default(1)
 
   private               Boolean   @default(false)
   lastActivityEmailAt   DateTime? @db.Timestamptz(6)
@@ -132,7 +134,7 @@ model recipes {
 
   brews          brews[]
   devices        devices[]
-  users          users? @relation(fields: [user_id], references: [id])
+  users          users?                  @relation(fields: [user_id], references: [id])
   comments       comments[]
   ratings        recipe_ratings[]
   daily_activity recipe_daily_activity[]
@@ -239,8 +241,8 @@ model comments {
 
   comment String @db.Text
 
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @updatedAt
   deleted_at DateTime?
 
   recipe recipes @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -277,7 +279,7 @@ model recipe_daily_activity {
 
   summary_date DateTime @db.Date
   changes      Json?
-  emailed      Boolean @default(false)
+  emailed      Boolean  @default(false)
   created_at   DateTime @default(now()) @db.Timestamptz(6)
 
   recipe recipes @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
@@ -291,6 +293,11 @@ enum temp_units {
   F
   C
   K
+}
+
+enum gravity_unit {
+  SG
+  BRIX
 }
 
 enum additive_unit {
@@ -312,6 +319,7 @@ enum additive_unit {
 enum brew_entry_type {
   NOTE
   GRAVITY
+  VOLUME
   TEMPERATURE
   PH
   ADDITION

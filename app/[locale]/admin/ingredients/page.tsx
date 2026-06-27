@@ -5,9 +5,14 @@ import { PaginatedTable } from "@/components/PaginatedTable";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
+import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Button } from "@/components/ui/button";
 
 function IngredientDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // React Query-based fetch
   const { data: ingredients, isLoading, isError } = useIngredientsQuery(); // no category needed here
@@ -17,13 +22,18 @@ function IngredientDashboard() {
   if (!ingredients) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl">Ingredients</h1>
-        <Link href={"/admin/ingredients/new-ingredient"}>
-          Add New Ingredient
-        </Link>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title={t("admin.nav.ingredients", "Ingredients")}
+        actions={
+          <Button asChild>
+            <Link href="/admin/ingredients/new-ingredient">
+              <Plus />
+              {t("admin.ingredients.add", "Add ingredient")}
+            </Link>
+          </Button>
+        }
+      />
 
       <PaginatedTable
         data={ingredients}
@@ -38,6 +48,7 @@ function IngredientDashboard() {
           router.push(`/admin/ingredients/${ingredient.id}`)
         }
         searchKey={["name", "category"]}
+        getRowKey={(ingredient) => ingredient.id}
       />
     </div>
   );

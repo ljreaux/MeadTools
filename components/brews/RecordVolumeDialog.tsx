@@ -28,9 +28,15 @@ import {
   InputGroupInput
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
+import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 
-type DialogVolumeUnit = Extract<VolumeUnit, "gal" | "qt" | "pt" | "L" | "mL">;
+type DialogVolumeUnit = VolumeUnit;
 type PreferredUnits = "US" | "METRIC";
+const US_VOLUME_UNITS: DialogVolumeUnit[] = ["gal", "qt", "pt", "fl_oz"];
+const METRIC_VOLUME_UNITS: DialogVolumeUnit[] = ["L", "mL"];
+const IMPERIAL_VOLUME_UNITS: DialogVolumeUnit[] = ["imp_gal", "imp_qt", "imp_pt", "imp_fl_oz"];
 
 function getPreferredVolumeUnit(preferred: PreferredUnits | null): DialogVolumeUnit {
   return preferred === "METRIC" ? "L" : "gal";
@@ -48,29 +54,49 @@ function formatDisplayVolume(
   return `${converted.toFixed(2)} ${unit}`;
 }
 
+function formatSignedDisplayVolume(liters: number, unit: DialogVolumeUnit) {
+  if (!Number.isFinite(liters)) return null;
+  const converted = liters * L_TO_VOLUME[unit];
+  const sign = converted > 0 ? "+" : "";
+  return `${sign}${converted.toFixed(2)} ${unit}`;
+}
+
 export function RecordVolumeDialog({
   t,
   open,
   onOpenChange,
   currentVolumeLiters,
+  defaultVolumeUnit,
+  intent = "current",
   onSave
 }: {
   t: TFunction;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentVolumeLiters: number | null;
-  onSave: (currentVolumeLiters: number) => Promise<void>;
+  defaultVolumeUnit?: DialogVolumeUnit;
+  intent?: "current" | "secondaryVolume";
+  onSave: (
+    currentVolumeLiters: number,
+    meta: {
+      displayValue: number;
+      displayUnit: DialogVolumeUnit;
+      startingLiters?: number;
+      datetime?: string;
+    }
+  ) => Promise<void>;
 }) {
   const [preferredUnit, setPreferredUnit] = React.useState<DialogVolumeUnit>("gal");
   const [displayUnit, setDisplayUnit] = React.useState<DialogVolumeUnit>("gal");
   const [volumeValue, setVolumeValue] = React.useState("");
   const [volumeUnit, setVolumeUnit] = React.useState<DialogVolumeUnit>("gal");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     try {
       const preferred = localStorage.getItem("units") as PreferredUnits | null;
-      const nextUnit = getPreferredVolumeUnit(preferred);
+      const nextUnit = defaultVolumeUnit ?? getPreferredVolumeUnit(preferred);
       setPreferredUnit(nextUnit);
       setDisplayUnit(nextUnit);
       setVolumeUnit(nextUnit);
@@ -79,7 +105,7 @@ export function RecordVolumeDialog({
       setDisplayUnit("gal");
       setVolumeUnit("gal");
     }
-  }, []);
+  }, [defaultVolumeUnit]);
 
   const currentVolumeDisplay = React.useMemo(
     () => formatDisplayVolume(currentVolumeLiters, displayUnit),
@@ -90,19 +116,34 @@ export function RecordVolumeDialog({
     if (open) {
       setVolumeValue("");
       setVolumeUnit(preferredUnit);
+      setDatetime(new Date());
     }
   }, [open, preferredUnit]);
 
   const parsed = Number(volumeValue);
+  const isSecondaryVolume = intent === "secondaryVolume";
+  const hasStartingVolume =
+    typeof currentVolumeLiters === "number" &&
+    Number.isFinite(currentVolumeLiters) &&
+    currentVolumeLiters > 0;
+  const inputLiters = parsed * VOLUME_TO_L[volumeUnit];
+  const resultingVolumeLiters = inputLiters;
   const isValid =
-    Number.isFinite(parsed) && parsed > 0 && !isSaving;
+    Number.isFinite(parsed) &&
+    parsed > 0 &&
+    !isSaving;
 
   const save = async () => {
     if (!Number.isFinite(parsed) || parsed <= 0) return;
 
     setIsSaving(true);
     try {
-      await onSave(parsed * VOLUME_TO_L[volumeUnit]);
+      await onSave(resultingVolumeLiters, {
+        displayValue: parsed,
+        displayUnit: volumeUnit,
+        startingLiters: isSecondaryVolume ? currentVolumeLiters ?? undefined : undefined,
+        datetime: datetime.toISOString()
+      });
       onOpenChange(false);
     } finally {
       setIsSaving(false);
@@ -111,28 +152,37 @@ export function RecordVolumeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={BREW_TRACKER_DIALOG_CONTENT_CLASS}>
         <DialogHeader>
           <DialogTitle>
-            {t("brews.primary.setVolume", "Record current volume")}
+            {isSecondaryVolume
+              ? t("brews.primary.recordSecondaryVolume", "Record secondary volume")
+              : t("brews.volume.recordCurrent", "Record current volume")}
           </DialogTitle>
           <DialogDescription>
-            {t(
-              "brews.primary.setVolumeDesc",
-              "Record the current batch volume before moving to secondary."
-            )}
+            {isSecondaryVolume
+              ? t(
+                  "brews.primary.recordSecondaryVolumeDesc",
+                  "Enter the total volume after transferring to secondary. This becomes the batch volume used for stabilizers and later additions."
+                )
+              : t(
+                  "brews.volume.recordCurrentDesc",
+                  "Record the current batch volume for this brew."
+                )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1">
             <div className="text-sm font-medium">
-              {t("brews.primary.currentVolume", "Current volume")}
+              {isSecondaryVolume
+                ? t("brews.primary.previousVolume", "Previous volume")
+                : t("brews.volume.currentVolume", "Current volume")}
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">
                 {currentVolumeDisplay ??
-                  t("brews.primary.noVolume", "No volume recorded yet.")}
+                  t("brews.volume.noVolume", "No volume recorded yet.")}
               </div>
               <Select
                 value={displayUnit}
@@ -145,11 +195,23 @@ export function RecordVolumeDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                  <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                  <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
-                  <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                  <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                  {US_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  {METRIC_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
+                  <SelectSeparator />
+                  {IMPERIAL_VOLUME_UNITS.map((unit) => (
+                    <SelectItem key={unit} value={unit}>
+                      {getUnitLabel(t, unit)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -157,14 +219,20 @@ export function RecordVolumeDialog({
 
           <div className="space-y-2">
             <div className="text-sm font-medium">
-              {t("brews.primary.enterVolume", "Volume")}
+              {isSecondaryVolume
+                ? t("brews.primary.enterSecondaryVolume", "Volume after transfer")
+                : t("brews.volume.enterVolume", "Volume")}
             </div>
             <InputGroup className="h-10">
               <InputGroupInput
                 inputMode="decimal"
                 value={volumeValue}
                 onChange={(e) => setVolumeValue(e.target.value)}
-                placeholder={t("brews.primary.volumePlaceholder", "Enter volume")}
+                placeholder={
+                  isSecondaryVolume
+                    ? t("brews.primary.secondaryVolumePlaceholder", "Enter volume after transfer")
+                    : t("brews.volume.placeholder", "Enter volume")
+                }
                 disabled={isSaving}
                 onFocus={(e) => e.target.select()}
                 className="h-full text-lg"
@@ -182,20 +250,45 @@ export function RecordVolumeDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gal">{t("units.gal", "gal")}</SelectItem>
-                    <SelectItem value="qt">{t("units.qt", "qt")}</SelectItem>
-                    <SelectItem value="pt">{t("units.pt", "pt")}</SelectItem>
+                    {US_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
                     <SelectSeparator />
-                    <SelectItem value="L">{t("units.L", "L")}</SelectItem>
-                    <SelectItem value="mL">{t("units.mL", "mL")}</SelectItem>
+                    {METRIC_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
+                    <SelectSeparator />
+                    {IMPERIAL_VOLUME_UNITS.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {getUnitLabel(t, unit)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </InputGroupAddon>
             </InputGroup>
+            {isSecondaryVolume && hasStartingVolume && Number.isFinite(parsed) && parsed > 0 ? (
+              <div className="text-xs text-muted-foreground">
+                {t("brews.primary.volumeChange", "Volume change")}:{" "}
+                {formatSignedDisplayVolume(
+                  resultingVolumeLiters - currentVolumeLiters,
+                  volumeUnit
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">{t("date", "Date")}</div>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button
             variant="secondary"
             onClick={() => onOpenChange(false)}
@@ -204,7 +297,9 @@ export function RecordVolumeDialog({
             {t("cancel", "Cancel")}
           </Button>
           <Button onClick={save} disabled={!isValid}>
-            {t("save", "Save")}
+            {isSecondaryVolume
+              ? t("brews.primary.saveSecondaryVolume", "Save volume")
+              : t("save", "Save")}
           </Button>
         </DialogFooter>
       </DialogContent>

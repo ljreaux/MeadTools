@@ -3,8 +3,16 @@ import {
   Prisma,
   brew_stage,
   brew_entry_type,
-  temp_units
+  temp_units,
+  gravity_unit
 } from "@prisma/client";
+import { calcABV } from "@/lib/utils/unitConverter";
+import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
+import {
+  projectBrewView,
+  projectBrewViewListItem
+} from "@/lib/brews/projectBrewView";
+import type { BrewViewDetail, BrewViewListItem } from "@/types/brewView";
 
 export type BrewListItem = {
   id: string;
@@ -13,10 +21,15 @@ export type BrewListItem = {
   end_date: Date | null;
 
   stage: brew_stage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: gravity_unit;
+  public: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
   entry_count: number;
   latest_gravity: number | null;
@@ -51,25 +64,39 @@ export type BrewForApp = {
   stage: brew_stage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: gravity_unit;
+  public: boolean;
 
   latest_gravity: number | null;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
   recipe_snapshot: Prisma.JsonValue | null;
   entry_count: number;
 
+  linked_devices: Array<{
+    id: string;
+    device_name: string | null;
+  }>;
   entries: BrewEntryForApp[];
   entries_by_stage: EntriesByStage;
 };
 
 export type PatchBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string | Date;
   stage?: brew_stage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
+  gravity_unit_preference?: gravity_unit;
+  public?: boolean;
   end_date?: string | Date | null; // allow ISO string from client
+  stage_change_datetime?: string | Date;
 };
 
 export type CreateBrewEntryInput = {
@@ -114,10 +141,14 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
       start_date: true,
       end_date: true,
       stage: true,
+      batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
+      gravity_unit_preference: true,
+      public: true,
       latest_gravity: true,
       recipe_id: true,
-      recipes: { select: { name: true } },
+      recipes: { select: { name: true, private: true } },
       _count: { select: { entries: true } }
     }
   });
@@ -129,10 +160,15 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
     end_date: b.end_date,
 
     stage: b.stage,
+    batch_number: b.batch_number,
     current_volume_liters: b.current_volume_liters,
+    requested_email_alerts: b.requested_email_alerts ?? false,
+    gravity_unit_preference: b.gravity_unit_preference ?? gravity_unit.SG,
+    public: b.public ?? false,
 
     recipe_id: b.recipe_id,
     recipe_name: b.recipes?.name ?? null,
+    recipe_private: b.recipes?.private ?? null,
 
     entry_count: b._count.entries,
     latest_gravity: b.latest_gravity
@@ -230,7 +266,7 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
     };
 
     // 5) Create brew
-    return tx.brews.create({
+    const brew = await tx.brews.create({
       data: {
         user_id: userId,
         recipe_id: recipeId,
@@ -248,9 +284,22 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
         stage: true,
         batch_number: true,
         current_volume_liters: true,
-        recipe_id: true
+        requested_email_alerts: true,
+        gravity_unit_preference: true,
+        public: true,
+        latest_gravity: true,
+        recipe_id: true,
+        recipes: { select: { name: true, private: true } }
       }
     });
+
+    return {
+      ...brew,
+      recipe_name: brew.recipes?.name ?? null,
+      recipe_private: brew.recipes?.private ?? null,
+      entry_count: 0,
+      recipes: undefined
+    };
   });
 }
 
@@ -269,12 +318,22 @@ export async function getBrewForApp(
       stage: true,
       batch_number: true,
       current_volume_liters: true,
+      requested_email_alerts: true,
+      gravity_unit_preference: true,
+      public: true,
       latest_gravity: true,
 
       recipe_id: true,
       recipe_snapshot: true,
 
-      recipes: { select: { name: true } },
+      recipes: { select: { name: true, private: true } },
+      devices: {
+        orderBy: [{ device_name: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          device_name: true
+        }
+      },
 
       entries: {
         orderBy: { datetime: "asc" },
@@ -323,15 +382,23 @@ export async function getBrewForApp(
     stage: brew.stage,
     batch_number: brew.batch_number,
     current_volume_liters: brew.current_volume_liters,
+    requested_email_alerts: brew.requested_email_alerts ?? false,
+    gravity_unit_preference: brew.gravity_unit_preference ?? gravity_unit.SG,
+    public: brew.public ?? false,
 
     latest_gravity: brew.latest_gravity,
 
     recipe_id: brew.recipe_id,
     recipe_name: brew.recipes?.name ?? null,
+    recipe_private: brew.recipes?.private ?? null,
 
     recipe_snapshot: (brew.recipe_snapshot as Prisma.JsonValue) ?? null,
     entry_count: brew._count.entries,
 
+    linked_devices: brew.devices.map((device) => ({
+      id: device.id,
+      device_name: device.device_name ?? null
+    })),
     entries,
     entries_by_stage
   };
@@ -348,8 +415,12 @@ export async function patchBrewMetadata(
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
+        name: true,
+        batch_number: true,
         stage: true,
-        end_date: true
+        start_date: true,
+        end_date: true,
+        recipe_id: true
       }
     });
 
@@ -362,11 +433,75 @@ export async function patchBrewMetadata(
     let endDateWasSet = false;
     let endDateWasCleared = false;
 
+    // recipe_id
+    if ("recipe_id" in input) {
+      const recipeId = Number(input.recipe_id);
+      if (!Number.isFinite(recipeId)) throw new Error("Invalid recipe_id");
+
+      const recipe = await tx.recipes.findFirst({
+        where: { id: recipeId, user_id: userId },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          dataV2: true
+        }
+      });
+      if (!recipe) throw new Error("Recipe not found");
+
+      const max = await tx.brews.aggregate({
+        where: { recipe_id: recipeId, user_id: userId },
+        _max: { batch_number: true }
+      });
+
+      data.recipe_id = recipeId;
+      data.recipe_snapshot = {
+        id: recipe.id,
+        name: recipe.name,
+        version: recipe.version,
+        dataV2: recipe.dataV2 as any,
+        snapshottedAt: new Date().toISOString(),
+        source: "planned_stage_link"
+      };
+
+      if (input.batch_number === undefined && existing.batch_number == null) {
+        data.batch_number = (max._max.batch_number ?? 0) + 1;
+      }
+
+      if (input.name === undefined && !existing.name) {
+        data.name = recipe.name;
+      }
+    }
+
     // name
     if ("name" in input) {
       const v = input.name;
       data.name =
-        typeof v === "string" ? (v.trim() ? v.trim() : null) : v ?? null;
+        typeof v === "string" ? (v.trim() ? v.trim() : null) : (v ?? null);
+    }
+
+    // batch_number
+    if ("batch_number" in input) {
+      const v = input.batch_number;
+      if (v === null) {
+        data.batch_number = null;
+      } else {
+        const n = Number(v);
+        if (!Number.isInteger(n) || n < 1) {
+          throw new Error("Invalid batch_number");
+        }
+        data.batch_number = n;
+      }
+    }
+
+    // start_date
+    if ("start_date" in input) {
+      const d =
+        input.start_date instanceof Date
+          ? input.start_date
+          : new Date(input.start_date as any);
+      if (Number.isNaN(d.getTime())) throw new Error("Invalid start_date");
+      data.start_date = d;
     }
 
     // stage
@@ -392,6 +527,34 @@ export async function patchBrewMetadata(
       data.requested_email_alerts = Boolean(input.requested_email_alerts);
     }
 
+    if ("gravity_unit_preference" in input) {
+      if (
+        input.gravity_unit_preference !== gravity_unit.SG &&
+        input.gravity_unit_preference !== gravity_unit.BRIX
+      ) {
+        throw new Error("Invalid gravity_unit_preference");
+      }
+      data.gravity_unit_preference = input.gravity_unit_preference;
+    }
+
+    if ("public" in input) {
+      if (input.public) {
+        const recipeId = (data.recipe_id ?? existing.recipe_id) as
+          | number
+          | null;
+        if (recipeId == null) throw new Error("Recipe not found");
+
+        const publicRecipe = await tx.recipes.findFirst({
+          where: { id: recipeId, user_id: userId, private: false },
+          select: { id: true }
+        });
+        if (!publicRecipe) {
+          throw new Error("Recipe must be public before publishing brew");
+        }
+      }
+      data.public = Boolean(input.public);
+    }
+
     // end_date (null to reopen)
     if ("end_date" in input) {
       const v = input.end_date;
@@ -405,6 +568,20 @@ export async function patchBrewMetadata(
         data.end_date = d;
         endDateWasSet = true;
       }
+    }
+
+    let stageChangeDatetime = new Date();
+    if (
+      "stage_change_datetime" in input &&
+      input.stage_change_datetime != null
+    ) {
+      const d =
+        input.stage_change_datetime instanceof Date
+          ? input.stage_change_datetime
+          : new Date(input.stage_change_datetime as any);
+      if (Number.isNaN(d.getTime()))
+        throw new Error("Invalid stage_change_datetime");
+      stageChangeDatetime = d;
     }
 
     // 2) Apply your “stage/end_date” rules to the FINAL payload
@@ -424,6 +601,18 @@ export async function patchBrewMetadata(
     if (stageIsComplete && !endDateWasSet && !endDateWasCleared) {
       data.end_date = existing.end_date ?? new Date();
       // ^ keep existing end_date if already set, otherwise set now
+    }
+
+    if (endDateWasCleared && finalStageCandidate === brew_stage.COMPLETE) {
+      throw new Error("Cannot clear end_date while brew is complete");
+    }
+
+    const nextStartDate = (data.start_date ?? existing.start_date) as Date;
+    const nextEndDate =
+      "end_date" in data ? (data.end_date as Date | null) : existing.end_date;
+
+    if (nextEndDate && nextStartDate > nextEndDate) {
+      throw new Error("start_date must be before end_date");
     }
 
     if (Object.keys(data).length === 0) {
@@ -449,7 +638,7 @@ export async function patchBrewMetadata(
           brew_id: brewId,
           user_id: userId,
           type: brew_entry_type.STAGE_CHANGE,
-          datetime: new Date(),
+          datetime: stageChangeDatetime,
           title: "Stage change",
           note: null,
           data: {
@@ -462,7 +651,7 @@ export async function patchBrewMetadata(
     }
 
     // 5) Return the updated metadata (same style you’ve been using)
-    return tx.brews.findFirst({
+    const updatedBrew = await tx.brews.findFirst({
       where: { id: brewId, user_id: userId },
       select: {
         id: true,
@@ -473,10 +662,22 @@ export async function patchBrewMetadata(
         batch_number: true,
         current_volume_liters: true,
         requested_email_alerts: true,
+        gravity_unit_preference: true,
+        public: true,
         latest_gravity: true,
-        recipe_id: true
+        recipe_id: true,
+        recipes: { select: { name: true, private: true } }
       }
     });
+
+    if (!updatedBrew) return null;
+
+    return {
+      ...updatedBrew,
+      recipe_name: updatedBrew.recipes?.name ?? null,
+      recipe_private: updatedBrew.recipes?.private ?? null,
+      recipes: undefined
+    };
   });
 }
 
@@ -513,6 +714,120 @@ export async function deleteBrewForApp(brewId: string, userId: number) {
   return { message: "Brew deleted successfully." };
 }
 
+export async function getPublicBrewsForRecipe(
+  recipeId: number
+): Promise<BrewViewListItem[]> {
+  const rows = await prisma.brews.findMany({
+    where: {
+      recipe_id: recipeId,
+      public: true,
+      recipes: { private: false }
+    },
+    orderBy: [{ start_date: "desc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      start_date: true,
+      end_date: true,
+      stage: true,
+      batch_number: true,
+      current_volume_liters: true,
+      gravity_unit_preference: true,
+      public: true,
+      latest_gravity: true,
+      recipe_id: true,
+      recipes: { select: { name: true } },
+      users: { select: { public_username: true, active: true } },
+      _count: { select: { entries: true } }
+    }
+  });
+
+  return rows.map((brew) =>
+    projectBrewViewListItem({
+      ...brew,
+      recipe_name: brew.recipes?.name ?? null,
+      entry_count: brew._count.entries,
+      owner:
+        brew.users?.active && brew.users.public_username
+          ? { displayName: brew.users.public_username }
+          : null
+    })
+  );
+}
+
+export async function getPublicBrewForRecipe(
+  recipeId: number,
+  brewId: string
+): Promise<BrewViewDetail | null> {
+  const brew = await prisma.brews.findFirst({
+    where: {
+      id: brewId,
+      recipe_id: recipeId,
+      public: true,
+      recipes: { private: false }
+    },
+    select: {
+      id: true,
+      name: true,
+      start_date: true,
+      end_date: true,
+      stage: true,
+      batch_number: true,
+      current_volume_liters: true,
+      gravity_unit_preference: true,
+      public: true,
+      latest_gravity: true,
+      recipe_id: true,
+      recipe_snapshot: true,
+      recipes: { select: { name: true } },
+      users: { select: { public_username: true, active: true } },
+      entries: {
+        orderBy: [{ datetime: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          datetime: true,
+          type: true,
+          title: true,
+          note: true,
+          gravity: true,
+          temperature: true,
+          temp_units: true,
+          data: true
+        }
+      },
+      _count: { select: { entries: true } }
+    }
+  });
+
+  if (!brew) return null;
+
+  const entries: BrewEntryForApp[] = brew.entries.map((entry) => ({
+    id: entry.id,
+    datetime: entry.datetime,
+    type: entry.type,
+    title: entry.title ?? null,
+    note: entry.note ?? null,
+    gravity: entry.gravity ?? null,
+    temperature: entry.temperature ?? null,
+    temp_units: entry.temp_units ?? null,
+    data: (entry.data as Prisma.JsonValue) ?? null,
+    user_id: null
+  }));
+
+  return projectBrewView({
+    ...brew,
+    recipe_name: brew.recipes?.name ?? null,
+    entry_count: brew._count.entries,
+    owner:
+      brew.users?.active && brew.users.public_username
+        ? { displayName: brew.users.public_username }
+        : null,
+    entries,
+    entries_by_stage: groupEntriesByStage(brew.stage, entries),
+    logs: []
+  });
+}
+
 function isBrewStage(v: any): v is brew_stage {
   return (
     typeof v === "string" && Object.values(brew_stage).includes(v as brew_stage)
@@ -539,7 +854,7 @@ function getInitialStageForEntries(
  * entry to the current stage, then advance whenever a STAGE_CHANGE entry moves
  * the brew to a new stage.
  */
-function groupEntriesByStage(
+export function groupEntriesByStage(
   currentStage: brew_stage,
   entries: BrewEntryForApp[]
 ): EntriesByStage {
@@ -564,6 +879,291 @@ function groupEntriesByStage(
   return order
     .filter((s) => map.has(s))
     .map((s) => ({ stage: s, entries: map.get(s)! }));
+}
+
+async function syncLatestGravity(
+  tx: Prisma.TransactionClient,
+  brewId: string
+): Promise<number | null> {
+  const gravityEntries = await tx.brew_entries.findMany({
+    where: {
+      brew_id: brewId,
+      gravity: { not: null }
+    },
+    orderBy: [{ datetime: "desc" }, { id: "desc" }],
+    select: { gravity: true, data: true }
+  });
+
+  const latestGravity =
+    gravityEntries.find((entry) => {
+      const data = entry.data as any;
+      return !data?.hidden && data?.source !== "nutrient_basis";
+    })?.gravity ?? null;
+
+  await tx.brews.update({
+    where: { id: brewId },
+    data: { latest_gravity: latestGravity }
+  });
+
+  return latestGravity;
+}
+
+async function syncEstimatedAbvEntry(
+  tx: Prisma.TransactionClient,
+  brewId: string,
+  userId: number
+): Promise<void> {
+  const brew = await tx.brews.findFirst({
+    where: { id: brewId, user_id: userId },
+    select: {
+      id: true,
+      current_volume_liters: true,
+      latest_gravity: true,
+      recipe_snapshot: true
+    }
+  });
+  if (!brew) throw new Error("Brew not found");
+
+  const entries = await tx.brew_entries.findMany({
+    where: { brew_id: brewId },
+    orderBy: [{ datetime: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      datetime: true,
+      type: true,
+      title: true,
+      note: true,
+      gravity: true,
+      data: true
+    }
+  });
+
+  const abvEstimateEntryIds = entries
+    .filter((entry) => (entry.data as any)?.source === "abv_estimate")
+    .map((entry) => entry.id);
+
+  if (abvEstimateEntryIds.length > 0) {
+    await tx.brew_entries.deleteMany({
+      where: {
+        id: { in: abvEstimateEntryIds },
+        brew_id: brewId
+      }
+    });
+  }
+
+  const visibleEntries = entries.filter(
+    (entry) => !(entry.data as any)?.hidden
+  );
+  const snapshotEntries = visibleEntries.filter((entry) => {
+    const data = entry.data as any;
+    if (entry.type === brew_entry_type.VOLUME) return true;
+    if (entry.type === brew_entry_type.ADDITION) {
+      return data?.kind === "INGREDIENT" && data?.meta?.stage === "SECONDARY";
+    }
+    if (entry.type !== brew_entry_type.GRAVITY) return false;
+    return (
+      data?.readingRole === "OG" ||
+      (data?.readingRole === "FG" &&
+        (data?.source ?? "measured") === "measured")
+    );
+  });
+
+  const createdSnapshots = new Set<string>();
+
+  for (const event of snapshotEntries) {
+    const entriesThroughEvent = visibleEntries.filter((entry) => {
+      const entryTime = entry.datetime.getTime();
+      const eventTime = event.datetime.getTime();
+      return (
+        entryTime < eventTime ||
+        (entryTime === eventTime && entry.id <= event.id)
+      );
+    });
+    const isOriginalGravityEvent =
+      event.type === brew_entry_type.GRAVITY &&
+      (event.data as any)?.readingRole === "OG";
+
+    if (
+      isOriginalGravityEvent &&
+      typeof event.gravity === "number" &&
+      Number.isFinite(event.gravity)
+    ) {
+      const snapshotKey = `${event.id}:0`;
+      if (createdSnapshots.has(snapshotKey)) continue;
+      createdSnapshots.add(snapshotKey);
+
+      await tx.brew_entries.create({
+        data: {
+          brew_id: brewId,
+          user_id: userId,
+          type: brew_entry_type.GRAVITY,
+          datetime: event.datetime,
+          title: "Estimated ABV",
+          note: null,
+          gravity: 0,
+          data: {
+            readingRole: "GENERAL",
+            source: "abv_estimate",
+            hidden: true,
+            abvEstimate: {
+              abv: 0,
+              og: event.gravity,
+              fg: null,
+              ogEntryId: event.id,
+              fgEntryId: null,
+              eventEntryId: event.id,
+              eventType: event.type
+            }
+          }
+        }
+      });
+      continue;
+    }
+
+    const latestVolumeEntry = [...entriesThroughEvent]
+      .reverse()
+      .find((entry) => {
+        const liters = (entry.data as any)?.liters;
+        return (
+          entry.type === brew_entry_type.VOLUME &&
+          typeof liters === "number" &&
+          Number.isFinite(liters) &&
+          liters > 0
+        );
+      });
+    const currentVolumeLiters =
+      typeof (latestVolumeEntry?.data as any)?.liters === "number" &&
+      Number.isFinite((latestVolumeEntry?.data as any).liters)
+        ? (latestVolumeEntry?.data as any).liters
+        : brew.current_volume_liters;
+    const stageData = buildBrewRecipeStageData({
+      recipeSnapshot: brew.recipe_snapshot as any,
+      currentVolumeLiters,
+      latestGravity: brew.latest_gravity,
+      entries: entriesThroughEvent.map((entry) => ({
+        id: entry.id,
+        datetime: entry.datetime.toISOString(),
+        type: entry.type,
+        title: entry.title,
+        note: entry.note,
+        gravity: entry.gravity,
+        data: entry.data
+      }))
+    });
+    const originalGravityEntry = stageData.actual.originalGravity;
+    const finalGravityEntry = stageData.actual.finalGravity;
+    const volumeData = event.data as any;
+    const fallbackAbv =
+      typeof originalGravityEntry?.gravity === "number" &&
+      Number.isFinite(originalGravityEntry.gravity) &&
+      typeof finalGravityEntry?.gravity === "number" &&
+      Number.isFinite(finalGravityEntry.gravity)
+        ? calcABV(originalGravityEntry.gravity, finalGravityEntry.gravity)
+        : null;
+    const volumeAdjustedAbv =
+      event.type === brew_entry_type.VOLUME &&
+      typeof volumeData?.startingLiters === "number" &&
+      Number.isFinite(volumeData.startingLiters) &&
+      volumeData.startingLiters > 0 &&
+      typeof volumeData?.liters === "number" &&
+      Number.isFinite(volumeData.liters) &&
+      volumeData.liters > 0 &&
+      typeof fallbackAbv === "number" &&
+      Number.isFinite(fallbackAbv)
+        ? (fallbackAbv * volumeData.startingLiters) / volumeData.liters
+        : null;
+    const abv =
+      typeof volumeAdjustedAbv === "number" &&
+      Number.isFinite(volumeAdjustedAbv)
+        ? volumeAdjustedAbv
+        : typeof stageData.actual.currentAbv === "number" &&
+            Number.isFinite(stageData.actual.currentAbv)
+          ? stageData.actual.currentAbv
+          : fallbackAbv;
+
+    if (
+      !originalGravityEntry ||
+      typeof abv !== "number" ||
+      !Number.isFinite(abv)
+    ) {
+      continue;
+    }
+
+    const roundedAbv = Math.max(Math.round(abv * 1000) / 1000, 0);
+    const snapshotKey = `${event.id}:${roundedAbv}`;
+    if (createdSnapshots.has(snapshotKey)) continue;
+    createdSnapshots.add(snapshotKey);
+
+    await tx.brew_entries.create({
+      data: {
+        brew_id: brewId,
+        user_id: userId,
+        type: brew_entry_type.GRAVITY,
+        datetime: event.datetime,
+        title: "Estimated ABV",
+        note: null,
+        gravity: roundedAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: roundedAbv,
+            og: originalGravityEntry.gravity,
+            fg: finalGravityEntry?.gravity ?? null,
+            ogEntryId: originalGravityEntry.entryId,
+            fgEntryId: finalGravityEntry?.entryId ?? null,
+            eventEntryId: event.id,
+            eventType: event.type,
+            currentVolumeLiters
+          }
+        }
+      }
+    });
+  }
+}
+
+function shouldSyncEstimatedAbvForEntry(entry: {
+  type: brew_entry_type;
+  data?: Prisma.JsonValue | null;
+}) {
+  const data = entry.data as any;
+  if (data?.source === "abv_estimate") return false;
+  if (entry.type === brew_entry_type.VOLUME) return true;
+  if (entry.type === brew_entry_type.ADDITION)
+    return data?.kind === "INGREDIENT" && data?.meta?.stage === "SECONDARY";
+  if (entry.type !== brew_entry_type.GRAVITY) return false;
+  return (
+    data?.readingRole === "OG" ||
+    (data?.readingRole === "FG" && (data?.source ?? "measured") === "measured")
+  );
+}
+
+async function syncCurrentVolume(
+  tx: Prisma.TransactionClient,
+  brewId: string
+): Promise<number | null> {
+  const latestVolumeEntry = await tx.brew_entries.findFirst({
+    where: {
+      brew_id: brewId,
+      type: brew_entry_type.VOLUME
+    },
+    orderBy: [{ datetime: "desc" }, { id: "desc" }],
+    select: { data: true }
+  });
+
+  const liters = (latestVolumeEntry?.data as any)?.liters;
+  const currentVolume =
+    typeof liters === "number" && Number.isFinite(liters) && liters > 0
+      ? liters
+      : null;
+
+  await tx.brews.update({
+    where: { id: brewId },
+    data: { current_volume_liters: currentVolume }
+  });
+
+  return currentVolume;
 }
 
 export async function createBrewEntryForApp(
@@ -595,22 +1195,34 @@ export async function createBrewEntryForApp(
     dtRaw == null
       ? new Date()
       : dtRaw instanceof Date
-      ? dtRaw
-      : new Date(dtRaw);
+        ? dtRaw
+        : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
-  await prisma.brew_entries.create({
-    data: {
-      brew_id: brewId,
-      user_id: userId,
-      type: input.type,
-      datetime,
-      title: input.title ?? null,
-      note: input.note ?? null,
-      gravity: input.gravity ?? null,
-      temperature: input.temperature ?? null,
-      temp_units: input.temp_units ?? null,
-      data: (input.data as any) ?? null
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.create({
+      data: {
+        brew_id: brewId,
+        user_id: userId,
+        type: input.type,
+        datetime,
+        title: input.title ?? null,
+        note: input.note ?? null,
+        gravity: input.gravity ?? null,
+        temperature: input.temperature ?? null,
+        temp_units: input.temp_units ?? null,
+        data: (input.data as any) ?? null
+      }
+    });
+
+    await syncLatestGravity(tx, brewId);
+    if (
+      shouldSyncEstimatedAbvForEntry({ type: input.type, data: input.data })
+    ) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
+    if (input.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
     }
   });
 
@@ -633,7 +1245,8 @@ export async function patchBrewEntryForApp(
       },
       select: {
         id: true,
-        type: true
+        type: true,
+        data: true
       }
     });
 
@@ -707,6 +1320,19 @@ export async function patchBrewEntryForApp(
       data
     });
 
+    await syncLatestGravity(tx, brewId);
+    if (
+      shouldSyncEstimatedAbvForEntry({
+        type: entry.type,
+        data: ("data" in input ? input.data : entry.data) ?? entry.data
+      })
+    ) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
+    if (entry.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
+    }
+
     // 4) return the updated entry (consistent shape)
     return tx.brew_entries.findUnique({
       where: { id: entryId },
@@ -739,7 +1365,7 @@ export async function deleteBrewEntryForApp(
       brew_id: brewId,
       brews: { user_id: userId }
     },
-    select: { id: true, type: true }
+    select: { id: true, type: true, data: true }
   });
 
   if (!entry) throw new Error("Entry not found");
@@ -749,7 +1375,17 @@ export async function deleteBrewEntryForApp(
     throw new Error("Cannot delete stage change entry");
   }
 
-  await prisma.brew_entries.delete({ where: { id: entryId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.brew_entries.delete({ where: { id: entryId } });
+    await syncLatestGravity(tx, brewId);
+    if (shouldSyncEstimatedAbvForEntry(entry)) {
+      await syncEstimatedAbvEntry(tx, brewId, userId);
+    }
+    if (entry.type === brew_entry_type.VOLUME) {
+      await syncCurrentVolume(tx, brewId);
+    }
+  });
+
   return { message: "Entry deleted successfully." };
 }
 
@@ -799,6 +1435,36 @@ export async function attachDeviceToBrewForApp(
 
     return { message: "Device attached", device_id: deviceId, brew_id: brewId };
   });
+}
+
+export async function removeDeviceFromBrew(
+  id: string,
+  brew_id: string,
+  user_id: number
+) {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const brew = await tx.brews.findFirst({
+        where: { user_id, id: brew_id }
+      });
+      if (!brew) throw new Error("Brew not found");
+
+      const device = await tx.devices.findFirst({
+        where: { id, user_id, brew_id }
+      });
+      if (!device) throw new Error("Device not found");
+
+      const detachedDevice = await tx.devices.update({
+        where: { id: device.id },
+        data: { brew_id: null }
+      });
+
+      return [brew, detachedDevice];
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 function parseDateOrThrow(v: any, label: string): Date {

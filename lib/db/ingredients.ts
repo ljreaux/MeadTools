@@ -1,4 +1,5 @@
 import prisma from "../prisma"; // Import Prisma client
+import { Prisma } from "@prisma/client";
 
 // Fetch all ingredients
 export async function getAllIngredients() {
@@ -60,9 +61,35 @@ export async function createIngredient(data: {
   water_content: number;
   category: string;
 }) {
-  return prisma.ingredients.create({
-    data,
-  });
+  try {
+    return await prisma.ingredients.create({
+      data,
+    });
+  } catch (error) {
+    if (!isIdUniqueConstraintError(error)) throw error;
+
+    await prisma.$executeRaw`
+      SELECT setval(
+        pg_get_serial_sequence('ingredients', 'id'),
+        COALESCE((SELECT MAX(id) FROM ingredients), 0) + 1,
+        false
+      )
+    `;
+
+    return prisma.ingredients.create({
+      data,
+    });
+  }
+}
+
+function isIdUniqueConstraintError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    (Array.isArray(error.meta?.target)
+      ? error.meta.target.includes("id")
+      : error.meta?.target === "id")
+  );
 }
 
 export async function updateIngredient(

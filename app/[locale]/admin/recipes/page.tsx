@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAdminRecipesQuery } from "@/hooks/reactQuery/useAdminRecipesQuery";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-import { Input } from "@/components/ui/input";
+import { AccountPagination } from "@/components/account/pagination";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
-import Loading from "@/components/loading";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
 import {
   Table,
   TableBody,
@@ -15,128 +22,130 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { LucideX } from "lucide-react";
+import { useAdminRecipesQuery } from "@/hooks/reactQuery/useAdminRecipesQuery";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const PAGE_SIZE = 10;
 
-function RecipesDashboard() {
-  const [page, setPage] = useState(1); // backend is 1-based
+export default function RecipesDashboard() {
+  const { t } = useTranslation();
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-
-  const debouncedSearch = useDebouncedValue(search, 400);
-
-  // Reset to first page whenever the debounced search term changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  const { data, isLoading, isError, isFetching } = useAdminRecipesQuery({
+  const debouncedSearch = useDebouncedValue(search, 350);
+  const { data, isLoading, isError } = useAdminRecipesQuery({
     page,
     limit: PAGE_SIZE,
     search: debouncedSearch || undefined
   });
 
-  if (isLoading && !data) {
-    return <Loading />;
-  }
-
-  if (isError) {
-    return <div>An error has occured.</div>;
-  }
-
-  if (!data) return null;
-
-  const { recipes, totalCount, totalPages } = data;
+  useEffect(() => setPage(1), [debouncedSearch]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl">Recipes</h1>
-
-      {/* Search input (hits DB, not local Fuse) */}
-      <div className="flex items-center gap-2">
-        <label htmlFor="search" className="text-sm font-medium">
-          Search:
-        </label>
-        <div className="relative max-w-sm">
-          <Input
-            id="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, username…"
-            className="pr-8"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <LucideX />
-            </button>
-          )}
-        </div>
-        {isFetching && (
-          <span className="text-xs text-muted-foreground">Updating…</span>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title={t("admin.nav.recipes", "Recipes")}
+        description={t(
+          "admin.recipes.description",
+          "Open public and private recipes in a read-only administrative view."
         )}
-      </div>
-
-      {/* Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Username</TableHead>
-            <TableHead>Private Recipe</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {recipes.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center">
-                No recipes found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            recipes.map((recipe) => (
-              <TableRow key={recipe.id}>
-                <TableCell>{recipe.name}</TableCell>
-                <TableCell>{recipe.public_username || "—"}</TableCell>
-                <TableCell>{recipe.private ? "Yes" : "No"}</TableCell>
-              </TableRow>
-            ))
+      />
+      <InputGroup className="max-w-xl">
+        <InputGroupAddon>
+          <Search className="size-4" />
+        </InputGroupAddon>
+        <InputGroupInput
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t(
+            "admin.recipes.searchPlaceholder",
+            "Search name or owner"
           )}
-        </TableBody>
-      </Table>
-
-      {/* Pagination (uses totalCount/totalPages from DB) */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
-        <span>
-          Showing{" "}
-          {totalCount === 0
-            ? "0"
-            : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(
-                page * PAGE_SIZE,
-                totalCount
-              )} of ${totalCount}`}
-        </span>
-
-        <div className="flex items-center gap-4">
-          <Button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-            Previous
-          </Button>
-          <span>
-            Page {page} of {totalPages || 1}
-          </span>
-          <Button
-            disabled={page >= (totalPages || 1)}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
+        />
+        {search ? (
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              title={t("clear", "Clear")}
+              onClick={() => setSearch("")}
+            >
+              <X />
+            </InputGroupButton>
+          </InputGroupAddon>
+        ) : null}
+      </InputGroup>
+      {isError ? (
+        <div className="rounded-md border border-destructive/40 p-4 text-sm text-destructive">
+          {t("error.generic", "Something went wrong.")}
         </div>
+      ) : null}
+      <div className="overflow-x-auto rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("name", "Name")}</TableHead>
+              <TableHead>{t("admin.owner", "Owner")}</TableHead>
+              <TableHead>{t("private", "Private")}</TableHead>
+              <TableHead className="text-right">
+                {t("actions", "Actions")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: PAGE_SIZE }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell
+                    colSpan={4}
+                    className="h-12 animate-pulse bg-muted/20"
+                  />
+                </TableRow>
+              ))
+            ) : data?.recipes.length ? (
+              data.recipes.map((recipe) => (
+                <TableRow key={recipe.id}>
+                  <TableCell className="font-medium">{recipe.name}</TableCell>
+                  <TableCell>{recipe.public_username || "-"}</TableCell>
+                  <TableCell>
+                    {recipe.private ? t("yes", "Yes") : t("no", "No")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="sm" variant="secondary">
+                      <Link href={`/admin/recipes/${recipe.id}`}>
+                        {t("view", "View")}
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="h-28 text-center text-muted-foreground"
+                >
+                  {t("recipes.none", "No recipes found.")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm text-muted-foreground">
+          {t("showingCount", "Showing {{shown}} of {{total}}", {
+            shown: data?.recipes.length ?? 0,
+            total: data?.totalCount ?? 0
+          })}
+        </span>
+        <AccountPagination
+          page={page}
+          totalPages={data?.totalPages ?? 1}
+          canPrev={page > 1}
+          canNext={page < (data?.totalPages ?? 1)}
+          onPrev={() => setPage((value) => value - 1)}
+          onNext={() => setPage((value) => value + 1)}
+          onGoTo={setPage}
+        />
       </div>
     </div>
   );
 }
-
-export default RecipesDashboard;

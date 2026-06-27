@@ -6,14 +6,16 @@ import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
+import { randomUUID as uuid } from "crypto";
 import ShortUniqueId from "short-unique-id";
-import { endBrew, startBrew } from "@/lib/db/iSpindel";
+import { addRecipeToBrew, endBrew, startBrew } from "@/lib/db/iSpindel";
 import {
   brew_entry_type,
   brew_stage,
   Prisma,
   temp_units
 } from "@prisma/client";
+import { calcABV } from "@/lib/utils/unitConverter";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");
@@ -71,10 +73,15 @@ async function main() {
   await prisma.additives.createMany({ data: ADDITIVES });
   console.log("Additives seeded.");
 
+  const hydrometerSeedUser =
+    users.find((user) => user.role === "user") ?? users[0];
   const devices = await Promise.all(
-    users.map((user, i) =>
+    ["Active", "Planning", "Completed", "Available"].map((scenario) =>
       prisma.devices.create({
-        data: { device_name: `Test Hydrometer ${i + 1}`, user_id: user.id }
+        data: {
+          device_name: `${scenario} Test Hydrometer`,
+          user_id: hydrometerSeedUser.id
+        }
       })
     )
   );
@@ -90,6 +97,14 @@ async function main() {
     }))
   });
   const recipeIds = recipes.map((r) => r.id);
+  const hydrometerSeedRecipe =
+    recipes.find(
+      (recipe) =>
+        recipe.user_id === hydrometerSeedUser.id &&
+        recipe.name === "Key Lime Pie"
+    ) ??
+    recipes.find((recipe) => recipe.user_id === hydrometerSeedUser.id) ??
+    recipes[0];
   console.log("Recipes Seeded");
 
   // comments
@@ -118,10 +133,59 @@ async function main() {
   console.log("Recipe Ratings seeded.");
 
   await Promise.all(
-    devices.map((device, i) =>
-      startBrew(device.id, device.user_id, `Test Brew ${i + 1}`)
-    )
+    devices
+      .filter((device) => !device.device_name?.startsWith("Available"))
+      .map((device) => {
+        const prefix =
+          device.device_name?.replace(" Test Hydrometer", "") || "Active";
+        return startBrew(device.id, device.user_id, `${prefix} Test Brew`);
+      })
   );
+
+  const planningBrew = await prisma.brews.findFirst({
+    where: {
+      user_id: hydrometerSeedUser.id,
+      name: "Planning Test Brew"
+    },
+    select: { id: true }
+  });
+
+  if (planningBrew && hydrometerSeedRecipe) {
+    await addRecipeToBrew(
+      hydrometerSeedRecipe.id,
+      planningBrew.id,
+      hydrometerSeedUser.id
+    );
+  }
+
+  const completedBrew = await prisma.brews.findFirst({
+    where: {
+      user_id: hydrometerSeedUser.id,
+      name: "Completed Test Brew"
+    },
+    select: { id: true }
+  });
+
+  if (completedBrew && hydrometerSeedRecipe) {
+    await addRecipeToBrew(
+      hydrometerSeedRecipe.id,
+      completedBrew.id,
+      hydrometerSeedUser.id
+    );
+    await prisma.brews.update({
+      where: { id: completedBrew.id },
+      data: { name: "Completed Key Lime Pie Test Brew" }
+    });
+  }
+
+  await prisma.brews.create({
+    data: {
+      user_id: hydrometerSeedUser.id,
+      name: "Unlinked Test Brew",
+      stage: brew_stage.PRIMARY,
+      start_date: new Date()
+    }
+  });
 
   console.log("Brews Seeded");
 
@@ -155,98 +219,152 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
+function gallonsToLiters(gallons: number) {
+  return gallons * 3.785411784;
+}
+
 export async function generateLogs() {
   const brews = await prisma.brews.findMany();
   const devices = await prisma.devices.findMany();
 
-  const intervalMinutes = 15;
-  const intervalMs = intervalMinutes * 60 * 1000;
-
-  const now = new Date();
-  const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const steps = Math.floor((now.getTime() - start.getTime()) / intervalMs);
-
   for (const brew of brews) {
+    if (brew.name?.startsWith("Planning")) continue;
+
     const device = devices.find((d) => d.brew_id === brew.id);
     if (!device) continue;
 
     // Make re-runs stable per brew by clearing existing logs
     await prisma.logs.deleteMany({ where: { brew_id: brew.id } });
 
-    // --- Temperature: gentle random walk ---
-    let temp = 70 + randn() * 0.6; // start near 70
-    const tempTarget = 70; // mean reversion target
-    const maxTempStep = 0.25; // max change per reading (15m)
+    const isCompletedRecipeBrew = brew.name?.startsWith("Completed Key Lime Pie");
+    const durationDays = isCompletedRecipeBrew ? 14 : 7;
+    const logStart = new Date(
+      Date.now() - durationDays * 24 * 60 * 60 * 1000
+    );
 
-    // --- Gravity: downward trend + jitter ---
-    const gStart = 1.1;
-    const gEnd = 1.0;
-    let lastGravity = gStart;
+    await prisma.brews.update({
+      where: { id: brew.id },
+      data: { start_date: logStart }
+    });
 
-    for (let step = 0; step <= steps; step++) {
-      const t = step / steps;
-      const datetime = new Date(start.getTime() + step * intervalMs);
+    const lastGravity = await createHydrometerLogSeries({
+      brewId: brew.id,
+      deviceId: device.id,
+      startDate: logStart,
+      durationDays,
+      gStart: isCompletedRecipeBrew ? 1.06 : 1.1,
+      gEnd: isCompletedRecipeBrew ? 0.996 : 1,
+      tempTarget: isCompletedRecipeBrew ? 66 : 70
+    });
 
-      // Base gravity trend (slightly curved so it slows near the end)
-      const curved = 1 - Math.pow(1 - t, 2); // ease out
-      const baseGravity = lerp(gStart, gEnd, curved);
+    await prisma.brews.update({
+      where: { id: brew.id },
+      data: { latest_gravity: Number(lastGravity.toFixed(4)) }
+    });
 
-      // Measurement noise (tiny) + occasional positive blip
-      const noise = randn() * 0.0006; // ~±0.001-ish range
-      const blip = Math.random() < 0.03 ? Math.abs(randn()) * 0.0015 : 0; // 3% chance
-
-      // Combine, but keep it mostly non-increasing (allow tiny rises)
-      let gravity = baseGravity + noise + blip;
-
-      // Prevent insane jumps compared to last reading
-      const maxJump = 0.003; // max 0.003 SG between adjacent readings
-      gravity = clamp(gravity, lastGravity - maxJump, lastGravity + maxJump);
-
-      // Keep within plausible bounds
-      gravity = clamp(gravity, gEnd, gStart);
-
-      // Update lastGravity but also ensure it *eventually* reaches gEnd
-      lastGravity = gravity;
-
-      // Temp update: mean-reverting random walk + bounded step
-      // Pull slightly toward 70 + small noise, then clamp per-step and overall range.
-      const proposed =
-        temp +
-        (tempTarget - temp) * 0.05 + // mean reversion
-        randn() * 0.12; // random component
-
-      const stepLimited = clamp(
-        proposed,
-        temp - maxTempStep,
-        temp + maxTempStep
-      );
-      temp = clamp(stepLimited, 65, 75);
-
-      // Angle: correlate with gravity but with some noise
-      const angleBase = lerp(25, 65, curved);
-      const angle = clamp(angleBase + randn() * 1.2, 10, 80);
-
-      // Battery: slow decline with tiny noise
-      const battery = clamp(lerp(4.2, 3.8, t) + randn() * 0.01, 3.6, 4.25);
-
-      await prisma.logs.create({
-        data: {
-          datetime,
-          angle: Number(angle.toFixed(2)),
-          temperature: Number(temp.toFixed(2)),
-          temp_units: "F",
-          battery: Number(battery.toFixed(2)),
-          gravity: Number(gravity.toFixed(4)),
-          calculated_gravity: Number(gravity.toFixed(4)),
-          interval: intervalMinutes * 60, // adjust if your app expects minutes
-          brew_id: brew.id,
-          device_id: device.id
-        }
-      });
+    if (brew.name?.startsWith("Completed")) {
+      await endBrew(device.id, brew.id, device.user_id);
     }
-
-    await endBrew(device.id, brew.id, device.user_id);
   }
+}
+
+async function createHydrometerLogSeries({
+  brewId,
+  deviceId,
+  startDate,
+  durationDays = 7,
+  gStart = 1.1,
+  gEnd = 1,
+  tempTarget = 70
+}: {
+  brewId: string | null;
+  deviceId: string;
+  startDate?: Date;
+  durationDays?: number;
+  gStart?: number;
+  gEnd?: number;
+  tempTarget?: number;
+}) {
+  const intervalMinutes = 15;
+  const intervalMs = intervalMinutes * 60 * 1000;
+
+  const now = startDate
+    ? new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000)
+    : new Date();
+  const start =
+    startDate ?? new Date(now.getTime() - durationDays * 24 * 60 * 60 * 1000);
+  const steps = Math.floor((now.getTime() - start.getTime()) / intervalMs);
+
+  // --- Temperature: gentle random walk ---
+  let temp = tempTarget + randn() * 0.6; // start near target
+  const maxTempStep = 0.25; // max change per reading (15m)
+
+  // --- Gravity: downward trend + jitter ---
+  let lastGravity = gStart;
+
+  for (let step = 0; step <= steps; step++) {
+    const t = step / steps;
+    const datetime = new Date(start.getTime() + step * intervalMs);
+
+    // Base gravity trend (slightly curved so it slows near the end)
+    const curved = 1 - Math.pow(1 - t, 2); // ease out
+    const baseGravity = lerp(gStart, gEnd, curved);
+
+    // Measurement noise (tiny) + occasional positive blip
+    const noise = randn() * 0.0006; // ~±0.001-ish range
+    const blip = Math.random() < 0.03 ? Math.abs(randn()) * 0.0015 : 0; // 3% chance
+
+    // Combine, but keep it mostly non-increasing (allow tiny rises)
+    let gravity = baseGravity + noise + blip;
+
+    // Prevent insane jumps compared to last reading
+    const maxJump = 0.003; // max 0.003 SG between adjacent readings
+    gravity = clamp(gravity, lastGravity - maxJump, lastGravity + maxJump);
+
+    // Keep within plausible bounds
+    gravity = clamp(gravity, gEnd, gStart);
+
+    // Update lastGravity but also ensure it *eventually* reaches gEnd
+    lastGravity = gravity;
+
+    // Temp update: mean-reverting random walk + bounded step
+    // Pull slightly toward 70 + small noise, then clamp per-step and overall range.
+    const proposed =
+      temp +
+      (tempTarget - temp) * 0.05 + // mean reversion
+      randn() * 0.12; // random component
+
+    const stepLimited = clamp(
+      proposed,
+      temp - maxTempStep,
+      temp + maxTempStep
+    );
+    temp = clamp(stepLimited, 65, 75);
+
+    // Angle: correlate with gravity but with some noise
+    const angleBase = lerp(25, 65, curved);
+    const angle = clamp(angleBase + randn() * 1.2, 10, 80);
+
+    // Battery: slow decline with tiny noise
+    const battery = clamp(lerp(4.2, 3.8, t) + randn() * 0.01, 3.6, 4.25);
+
+    await prisma.logs.create({
+      data: {
+        datetime,
+        angle: Number(angle.toFixed(2)),
+        temperature: Number(temp.toFixed(2)),
+        temp_units: "F",
+        battery: Number(battery.toFixed(2)),
+        gravity: Number(gravity.toFixed(4)),
+        calculated_gravity: Number(gravity.toFixed(4)),
+        interval: intervalMinutes * 60, // adjust if your app expects minutes
+        brew_id: brewId,
+        device_id: deviceId
+      }
+    });
+  }
+
+  return lastGravity;
 }
 
 async function clearDb() {
@@ -323,12 +441,22 @@ function assertSeedSafe() {
 }
 export async function generateBrewEntries() {
   const brews = await prisma.brews.findMany({
+    orderBy: [{ name: "asc" }, { start_date: "asc" }],
     select: {
       id: true,
+      name: true,
       user_id: true,
       start_date: true,
       end_date: true,
-      stage: true
+      stage: true,
+      recipe_id: true,
+      recipes: {
+        select: {
+          name: true,
+          dataV2: true
+        }
+      },
+      devices: { select: { id: true } }
     }
   });
 
@@ -338,21 +466,34 @@ export async function generateBrewEntries() {
     // Make reruns stable
     await prisma.brew_entries.deleteMany({ where: { brew_id: brew.id } });
 
-    // Pick a couple timestamps
+    if (brew.name?.startsWith("Planning")) {
+      await prisma.brews.update({
+        where: { id: brew.id },
+        data: { stage: brew_stage.PLANNED, end_date: null }
+      });
+      continue;
+    }
+
+    if (brew.name?.startsWith("Completed Key Lime Pie")) {
+      await seedCompletedKeyLimePieEntries(brew);
+      continue;
+    }
+
     const t0 = new Date(brew.start_date.getTime() + 1 * 60 * 60 * 1000);
-    const t1 = new Date(brew.start_date.getTime() + 24 * 60 * 60 * 1000);
-    const t2 = new Date(brew.start_date.getTime() + 48 * 60 * 60 * 1000);
-    const t3 = brew.end_date
-      ? new Date(brew.end_date.getTime() - 2 * 60 * 60 * 1000)
-      : new Date(brew.start_date.getTime() + 72 * 60 * 60 * 1000);
+    const t1 = new Date(brew.start_date.getTime() + 6 * 60 * 60 * 1000);
+    const t2 = new Date(brew.start_date.getTime() + 18 * 60 * 60 * 1000);
+    const t3 = new Date(brew.start_date.getTime() + 36 * 60 * 60 * 1000);
+    const t4 = new Date(brew.start_date.getTime() + 54 * 60 * 60 * 1000);
+    const ogEntryId = uuid();
 
-    // Decide "final" stage for seed consistency
-    const finalStage = brew.end_date ? brew_stage.COMPLETE : brew_stage.PRIMARY;
-
-    // Ensure brew.stage matches what the timeline implies
     await prisma.brews.update({
       where: { id: brew.id },
-      data: { stage: finalStage }
+      data: {
+        stage: brew.name?.startsWith("Completed")
+          ? brew_stage.COMPLETE
+          : brew_stage.PRIMARY,
+        ...(brew.name?.startsWith("Completed") ? {} : { end_date: null })
+      }
     });
 
     await prisma.brew_entries.createMany({
@@ -374,47 +515,95 @@ export async function generateBrewEntries() {
 
         // A note
         {
+          id: ogEntryId,
           brew_id: brew.id,
           user_id: brew.user_id,
           datetime: t1,
+          type: brew_entry_type.GRAVITY,
+          title: "Original gravity",
+          note: null,
+          gravity: 1.1,
+          data: {
+            readingRole: "OG",
+            source: "measured"
+          } as Prisma.JsonObject
+        },
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t1,
+          type: brew_entry_type.GRAVITY,
+          title: "Estimated ABV",
+          note: null,
+          gravity: 0,
+          data: {
+            readingRole: "GENERAL",
+            source: "abv_estimate",
+            hidden: true,
+            abvEstimate: {
+              abv: 0,
+              og: 1.1,
+              fg: null,
+              ogEntryId,
+              fgEntryId: null,
+              eventEntryId: ogEntryId,
+              eventType: brew_entry_type.GRAVITY
+            }
+          } as Prisma.JsonObject
+        },
+
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t2,
           type: brew_entry_type.NOTE,
           title: "Started fermentation",
           note: "Pitched yeast and set airlock. Keeping this one simple for seed data.",
-          data: null
+          data: Prisma.JsonNull
         },
 
-        // A gravity entry
         {
           brew_id: brew.id,
           user_id: brew.user_id,
-          datetime: t2,
+          datetime: t3,
           type: brew_entry_type.GRAVITY,
           title: "Gravity reading",
           note: null,
-          gravity: 1.04,
-          data: { source: "manual" } as Prisma.JsonObject
+          gravity: 1.055,
+          data: {
+            readingRole: "GENERAL",
+            source: "measured"
+          } as Prisma.JsonObject
         },
 
-        // A temperature entry
         {
           brew_id: brew.id,
           user_id: brew.user_id,
-          datetime: t2,
+          datetime: t3,
           type: brew_entry_type.TEMPERATURE,
           title: "Temperature check",
           note: null,
           temperature: 70,
           temp_units: temp_units.F,
-          data: null
+          data: Prisma.JsonNull
         },
 
-        // If the brew is ended, add a stage change to COMPLETE near the end
-        ...(brew.end_date
+        {
+          brew_id: brew.id,
+          user_id: brew.user_id,
+          datetime: t4,
+          type: brew_entry_type.PH,
+          title: "pH reading",
+          note: null,
+          data: { ph: 3.42 } as Prisma.JsonObject
+        },
+
+        ...(brew.name?.startsWith("Completed")
           ? ([
               {
                 brew_id: brew.id,
                 user_id: brew.user_id,
-                datetime: t3,
+                datetime: new Date(t4.getTime() + 12 * 60 * 60 * 1000),
                 type: brew_entry_type.STAGE_CHANGE,
                 title: "Stage change",
                 note: "Marking brew complete (seed).",
@@ -431,4 +620,365 @@ export async function generateBrewEntries() {
   }
 
   console.log("Brew entries seeded");
+}
+
+async function seedCompletedKeyLimePieEntries(brew: {
+  id: string;
+  name: string | null;
+  user_id: number | null;
+  start_date: Date;
+  recipe_id: number | null;
+  recipes: { name: string | null; dataV2: Prisma.JsonValue } | null;
+}) {
+  if (!brew.user_id) return;
+
+  const t0 = new Date(brew.start_date.getTime() + 1 * 60 * 60 * 1000);
+  const t1 = new Date(brew.start_date.getTime() + 6 * 60 * 60 * 1000);
+  const t2 = new Date(brew.start_date.getTime() + 12 * 60 * 60 * 1000);
+  const t3 = new Date(brew.start_date.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const t4 = new Date(brew.start_date.getTime() + 5 * 24 * 60 * 60 * 1000);
+  const t5 = new Date(brew.start_date.getTime() + 10 * 24 * 60 * 60 * 1000);
+  const t6 = new Date(brew.start_date.getTime() + 11 * 24 * 60 * 60 * 1000);
+  const t7 = new Date(brew.start_date.getTime() + 12 * 24 * 60 * 60 * 1000);
+  const t8 = new Date(brew.start_date.getTime() + 13 * 24 * 60 * 60 * 1000);
+  const completeAt = new Date(brew.start_date.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+  const primaryVolumeGal = 5.0075;
+  const secondaryVolumeGal = 5.54;
+  const packagedVolumeGal = 5.25;
+  const primaryVolumeL = gallonsToLiters(primaryVolumeGal);
+  const secondaryVolumeL = gallonsToLiters(secondaryVolumeGal);
+  const og = 1.06;
+  const fg = 0.996;
+  const baseAbv = Math.max(Math.round(calcABV(og, fg) * 1000) / 1000, 0);
+  const secondaryAbv = Math.max(Math.round(((baseAbv * primaryVolumeL) / secondaryVolumeL) * 1000) / 1000, 0);
+  const ogEntryId = uuid();
+  const fgEntryId = uuid();
+  const secondaryAdditionEntryId = uuid();
+  const secondaryVolumeEntryId = uuid();
+
+  await prisma.brews.update({
+    where: { id: brew.id },
+    data: {
+      stage: brew_stage.COMPLETE,
+      end_date: completeAt,
+      current_volume_liters: gallonsToLiters(packagedVolumeGal),
+      latest_gravity: 0.996
+    }
+  });
+
+  await prisma.brew_entries.createMany({
+    data: [
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t0,
+        type: brew_entry_type.STAGE_CHANGE,
+        title: "Stage change",
+        note: null,
+        data: {
+          from: brew_stage.PLANNED,
+          to: brew_stage.PRIMARY,
+          source: "seed"
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t1,
+        type: brew_entry_type.VOLUME,
+        title: "Volume recorded",
+        note: "Primary batch volume from the Key Lime Pie recipe.",
+        data: {
+          liters: primaryVolumeL,
+          displayValue: primaryVolumeGal,
+          displayUnit: "gal"
+        } as Prisma.JsonObject
+      },
+      {
+        id: ogEntryId,
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t1,
+        type: brew_entry_type.GRAVITY,
+        title: "Original gravity",
+        note: "Matches the Key Lime Pie recipe target.",
+        gravity: og,
+        data: {
+          readingRole: "OG",
+          source: "measured",
+          recipeValue: og
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t1,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: 0,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: 0,
+            og,
+            fg: null,
+            ogEntryId,
+            fgEntryId: null,
+            eventEntryId: ogEntryId,
+            eventType: brew_entry_type.GRAVITY
+          }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t1,
+        type: brew_entry_type.TEMPERATURE,
+        title: "Temperature check",
+        note: "D47 fermentation temperature.",
+        temperature: 66,
+        temp_units: temp_units.F,
+        data: Prisma.JsonNull
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t2,
+        type: brew_entry_type.ADDITION,
+        title: "Honey",
+        note: "Primary honey addition from recipe.",
+        data: {
+          kind: "INGREDIENT",
+          source: "recipe_ingredient",
+          name: "Honey",
+          amount: 8,
+          unit: "lb",
+          recipeIngredientId: "8wmg6sg23q"
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t3,
+        type: brew_entry_type.GRAVITY,
+        title: "Gravity reading",
+        note: "Fermentation is active.",
+        gravity: 1.032,
+        data: {
+          readingRole: "GENERAL",
+          source: "measured"
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t3,
+        type: brew_entry_type.PH,
+        title: "pH reading",
+        note: "Bright acidity from lime must.",
+        data: { ph: 3.28 } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t4,
+        type: brew_entry_type.GRAVITY,
+        title: "Gravity reading",
+        note: "Approaching terminal gravity.",
+        gravity: 1.006,
+        data: {
+          readingRole: "GENERAL",
+          source: "measured"
+        } as Prisma.JsonObject
+      },
+      {
+        id: fgEntryId,
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t5,
+        type: brew_entry_type.GRAVITY,
+        title: "Final gravity",
+        note: "Finished at the recipe FG.",
+        gravity: fg,
+        data: {
+          readingRole: "FG",
+          source: "measured",
+          recipeValue: fg
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t5,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: baseAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: baseAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: fgEntryId,
+            eventType: brew_entry_type.GRAVITY,
+            currentVolumeLiters: primaryVolumeL
+          }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t5,
+        type: brew_entry_type.STAGE_CHANGE,
+        title: "Stage change",
+        note: "Primary fermentation complete.",
+        data: {
+          from: brew_stage.PRIMARY,
+          to: brew_stage.SECONDARY,
+          source: "seed"
+        } as Prisma.JsonObject
+      },
+      {
+        id: secondaryAdditionEntryId,
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t6,
+        type: brew_entry_type.ADDITION,
+        title: "Key Lime Juice",
+        note: "Secondary addition from recipe.",
+        data: {
+          kind: "INGREDIENT",
+          source: "recipe_ingredient",
+          name: "Key Lime Juice",
+          amount: 2.0972,
+          unit: "lb",
+          recipeIngredientId: "gbl0yyixla",
+          meta: { stage: "SECONDARY" }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t6,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: secondaryAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: secondaryAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: secondaryAdditionEntryId,
+            eventType: brew_entry_type.ADDITION,
+            currentVolumeLiters: primaryVolumeL
+          }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t6,
+        type: brew_entry_type.ADDITION,
+        title: "Lactose",
+        note: "Creamy pie-style body.",
+        data: {
+          kind: "OTHER",
+          source: "recipe_additive",
+          name: "Lactose",
+          amount: 1,
+          unit: "lbs",
+          recipeAdditiveId: "4oo64hlfm4"
+        } as Prisma.JsonObject
+      },
+      {
+        id: secondaryVolumeEntryId,
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t7,
+        type: brew_entry_type.VOLUME,
+        title: "Volume recorded",
+        note: "Volume after secondary Key Lime Pie additions.",
+        data: {
+          liters: secondaryVolumeL,
+          displayValue: secondaryVolumeGal,
+          displayUnit: "gal",
+          startingLiters: primaryVolumeL
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t7,
+        type: brew_entry_type.GRAVITY,
+        title: "Estimated ABV",
+        note: null,
+        gravity: secondaryAbv,
+        data: {
+          readingRole: "GENERAL",
+          source: "abv_estimate",
+          hidden: true,
+          abvEstimate: {
+            abv: secondaryAbv,
+            og,
+            fg,
+            ogEntryId,
+            fgEntryId,
+            eventEntryId: secondaryVolumeEntryId,
+            eventType: brew_entry_type.VOLUME,
+            currentVolumeLiters: secondaryVolumeL
+          }
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t7,
+        type: brew_entry_type.PH,
+        title: "pH reading",
+        note: "Post-lime addition pH.",
+        data: { ph: 3.18 } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: t8,
+        type: brew_entry_type.PACKAGING,
+        title: "Packaged",
+        note: "Packaged sample batch.",
+        data: {
+          packagedVolumeLiters: gallonsToLiters(packagedVolumeGal),
+          displayValue: packagedVolumeGal,
+          displayUnit: "gal"
+        } as Prisma.JsonObject
+      },
+      {
+        brew_id: brew.id,
+        user_id: brew.user_id,
+        datetime: completeAt,
+        type: brew_entry_type.STAGE_CHANGE,
+        title: "Stage change",
+        note: "Completed and ready for chart testing.",
+        data: {
+          from: brew_stage.SECONDARY,
+          to: brew_stage.COMPLETE,
+          source: "seed"
+        } as Prisma.JsonObject
+      }
+    ]
+  });
 }

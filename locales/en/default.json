@@ -105,6 +105,7 @@
     "password": "Password",
     "register": "Register",
     "reset": "Send reset link",
+    "resetPassword": "Reset Password",
     "theme": {
       "dark": "Dark",
       "light": "Light",
@@ -121,6 +122,7 @@
     "viewRecipe": "View Recipe"
   },
   "accountSettings": "Account Settings",
+  "add": "Add",
   "adding": "Are you adding Stabilizers?",
   "additionalLinks": {
     "about": "About",
@@ -140,6 +142,53 @@
   "additivesHeading": "Additives and Additional Ingredients",
   "adjunctAmount": "Adjunct Amount in sample (g):",
   "adjunctConcentration": "Adjunct Concentration (PPM):",
+  "admin": {
+    "additives": {
+      "add": "Add additive"
+    },
+    "brews": {
+      "description": "Inspect every brew in the tracker without changing owner data.",
+      "searchPlaceholder": "Search brews, recipes, or owners"
+    },
+    "ingredients": {
+      "add": "Add ingredient"
+    },
+    "nav": {
+      "additives": "Additives",
+      "brews": "Brews",
+      "ingredients": "Ingredients",
+      "overview": "Overview",
+      "recipes": "Recipes",
+      "users": "Users",
+      "yeasts": "Yeasts"
+    },
+    "overview": {
+      "activeBrews": "{{count}} active",
+      "description": "Review site activity and open an administrative workspace.",
+      "privateRecipes": "{{count}} private",
+      "title": "Overview"
+    },
+    "owner": "Owner",
+    "readOnly": "Read only",
+    "recipes": {
+      "back": "Back to recipes",
+      "description": "Open public and private recipes in a read-only administrative view.",
+      "searchPlaceholder": "Search name or owner"
+    },
+    "title": "Admin",
+    "users": {
+      "confirmResetDescription": "Send a password reset link to {{email}}? The link will expire in 15 minutes.",
+      "confirmResetTitle": "Send password reset?",
+      "resetError": "The password reset link could not be sent.",
+      "resetSentDescription": "A password reset link was sent to {{email}}.",
+      "resetSentTitle": "Reset link sent",
+      "sendingReset": "Sending...",
+      "sendReset": "Send password reset"
+    },
+    "yeasts": {
+      "add": "Add yeast"
+    }
+  },
   "advancedNutrition": {
     "label": "Advanced Nutrition",
     "yanContribution": "Edit YAN Contribution",
@@ -149,6 +198,8 @@
     "loginError": "You are not authorized to view this recipe, login or contact the recipe owner to make sure this is a public recipe.",
     "notCurrentUser": "This is another user's recipe, you will need to make a copy to your account to save changes."
   },
+  "amount": "Amount",
+  "amounts": "Amounts",
   "AND": "and",
   "appleJuice": "Apple Juice",
   "apples": "Apples",
@@ -204,9 +255,11 @@
     }
   },
   "auto": "Auto",
+  "back": "Back",
   "backToList": "Back to Public Recipe List",
   "banana": "Banana",
   "batchDetails": "Batch Details",
+  "batchNumber": "Batch",
   "batchSize": "Batch Size:",
   "beet": "Beet",
   "belgianCandiSyrup": "Belgian Candi Syrup",
@@ -291,14 +344,396 @@
     }
   },
   "boysenberry": "Boysenberry",
+  "brew": {
+    "addEntry": "Add entry",
+    "addGravity": "Add gravity reading",
+    "gravity": "Gravity",
+    "ph": "pH",
+    "temperature": "Temperature"
+  },
   "brews": {
+    "actions": {
+      "addEntry": "Add entry",
+      "label": "Actions",
+      "logFg": "Log FG",
+      "logGoFerm": "Log Go-Ferm",
+      "logGravity": "Log gravity",
+      "logOg": "Log OG",
+      "logReading": "Log reading",
+      "logSecondaryVolume": "Record secondary volume",
+      "logVolume": "Record volume",
+      "logYeast": "Log yeast",
+      "startPrimary": "Start primary fermentation"
+    },
+    "actionsLabel": "Actions",
+    "actualFg": "Actual FG",
+    "actualOg": "Actual OG",
+    "backToList": "Back to brews",
+    "beforeYouProceed": "Before you proceed",
+    "bulkAge": {
+      "addIssue": "Add issue",
+      "addNote": "Add note",
+      "addTasting": "Add tasting",
+      "currentVolume": "Current volume",
+      "finalGravity": "Final gravity",
+      "focus": "Track aging notes and package when ready",
+      "latestGravity": "Latest gravity",
+      "logAddition": "Log addition",
+      "logAdditive": "Log additive",
+      "logIngredient": "Log ingredient",
+      "markComplete": "Mark Complete",
+      "moveToPackaged": "Move to Packaged",
+      "noOutstandingItems": "No outstanding linked recipe items.",
+      "outstandingItems": "Outstanding items",
+      "outstandingRecipeItems": "Outstanding recipe items",
+      "workflowHint": "Notes are the main log here; use readings and outstanding items only when they help."
+    },
+    "charts": {
+      "activeLinkedDevices": "Active device: {{devices}}",
+      "checkingWirelessBrew": "Checking wireless hydrometer status...",
+      "historicalWirelessLogs": "Wireless logs are associated with this brew from: {{devices}}.",
+      "hydrometerLinkTitle": "Wireless hydrometer",
+      "linkDevice": "Link hydrometer",
+      "linkedHydrometerNoLogsToast": "Linked hydrometer. New readings will appear here as they are recorded.",
+      "linkedHydrometerToast": "Linked hydrometer and adopted {{count}} log entries.",
+      "manualTitle": "Manual timeline readings",
+      "noActiveLinkedDevice": "No active wireless hydrometer device is attached to this brew.",
+      "noAvailableDevices": "No available hydrometer devices",
+      "noManualReadings": "No manual gravity, temperature, or pH readings have been logged yet.",
+      "noWirelessReadings": "No wireless hydrometer readings are associated with this brew.",
+      "openHydrometerBrew": "Open hydrometer brew",
+      "selectDevice": "Select a hydrometer device",
+      "unlinkedHydrometerToast": "Hydrometer unlinked. Existing wireless logs remain with this brew.",
+      "unlinkHydrometer": "Unlink hydrometer",
+      "unlinkingHydrometer": "Unlinking...",
+      "wirelessTitle": "Wireless hydrometer readings"
+    },
+    "complete": {
+      "abv": "ABV",
+      "addEntryHint": "Add any final reading, tasting, issue, or note.",
+      "completed": "Completed",
+      "finalGravity": "Final gravity",
+      "noFinalNotes": "No tastings or notes recorded yet.",
+      "noPackaging": "No packaging details recorded.",
+      "originalGravity": "Original gravity",
+      "packagedVolume": "Packaged volume",
+      "packagingRecap": "Packaging recap",
+      "recentNotes": "Recent notes",
+      "recentTastings": "Recent tastings"
+    },
+    "delete": {
+      "confirm": "Delete brew",
+      "deleting": "Deleting...",
+      "description": "This will permanently delete {{name}} and its timeline entries. Linked hydrometer devices will be detached, and wireless logs for this brew will also be deleted. This action cannot be undone.",
+      "error": "Something went wrong deleting this brew.",
+      "success": "Brew deleted.",
+      "title": "Delete this brew?"
+    },
+    "deleteEntryDescription": "This removes the entry from the brew timeline. This action cannot be undone.",
+    "deleteEntryTitle": "Delete this entry?",
     "endDate": "End Date",
     "entries": "Entries",
+    "entryTypes": {
+      "ADDITION": "Addition"
+    },
+    "error": {
+      "loadDetail": "Something went wrong loading this brew.",
+      "loadList": "Something went wrong loading brews."
+    },
+    "filters": {
+      "allStages": "All stages",
+      "clear": "Clear filters",
+      "endFrom": "Ended after",
+      "endTo": "Ended before",
+      "label": "Filters",
+      "recipe": {
+        "all": "All recipes",
+        "label": "Recipe",
+        "none": "No linked recipe"
+      },
+      "startFrom": "Started after",
+      "startTo": "Started before"
+    },
+    "gravity": {
+      "applyRefractometerCorrection": "Apply refractometer correction",
+      "convertedSgPreview": "Converted SG: {{sg}}",
+      "corrected": "corrected",
+      "correctedSgPreview": "Corrected SG: {{sg}}",
+      "correctionFactor": "Correction factor",
+      "correctionOg": "OG: {{og}}",
+      "enteredBrix": "{{brix}}",
+      "unitPreference": "Gravity unit preference"
+    },
+    "history": {
+      "filters": {
+        "additions": "Additions",
+        "all": "All",
+        "label": "Filters",
+        "notes": "Notes",
+        "packaging": "Packaging",
+        "readings": "Readings",
+        "stageChanges": "Stage changes",
+        "volume": "Volume"
+      },
+      "metrics": {
+        "additions": "Additions",
+        "readings": "Readings",
+        "volume": "Volume & packaging"
+      },
+      "noFilteredEntries": "No entries match the selected filters.",
+      "noMetricEntries": "No matching metric entries.",
+      "notes": "Notes",
+      "sort": {
+        "label": "Sort",
+        "newest": "Newest first",
+        "oldest": "Oldest first"
+      },
+      "title": "History",
+      "views": {
+        "charts": "Charts",
+        "metrics": "Metrics",
+        "stages": "Stages"
+      }
+    },
     "label": "Brews",
+    "moveBack": "Move back to this stage",
+    "moveToSecondary": "Move to Secondary",
+    "moveToStage": "Move to this stage",
+    "new": "New Brew",
+    "newBrew": {
+      "confirmHelp": "Create a brew from {{recipeName}}.",
+      "confirmTitle": "Start brew",
+      "help": "Pick a recipe to start a brew. You can name the brew before it is created.",
+      "namePlaceholder": "e.g. January Batch"
+    },
+    "none": "No brews yet.",
+    "noWarnings": "No active warnings.",
+    "packaged": {
+      "completion": "Completion",
+      "focus": "Record packaging details and finish the brew",
+      "latestPackaging": "Latest packaging",
+      "needsPackaging": "Needs packaging",
+      "noPackageRows": "No package rows recorded.",
+      "packageCount": "Package count",
+      "packagedVolume": "Packaged volume",
+      "packages": "packages",
+      "packaging": "Packaging",
+      "ready": "Ready",
+      "savePackaging": "Save packaging",
+      "volumeEntryNote": "Packaged volume",
+      "workflowHint": "Save package sizes, counts, and volume before marking the brew complete."
+    },
+    "planned": {
+      "additions": "Additions",
+      "additives": "Additives",
+      "altAmount": "Alt",
+      "createRecipe": "Create recipe",
+      "goFermWater": "Go-Ferm water",
+      "grabList": "What to grab for primary",
+      "linkRecipeAction": "Link recipe",
+      "linkRecipeRequiredHelp": "Brew tracking needs a linked recipe before primary can start.",
+      "linkRecipeTitle": "Link a recipe",
+      "noGrabItems": "No primary ingredients found in the linked recipe.",
+      "noManualGrabItems": "No planned ingredients are available until a recipe is linked.",
+      "nutrients": "Nutrients",
+      "phNotTracked": "Not tracked",
+      "secondaryIngredients": "Secondary ingredients",
+      "yeast": "Yeast",
+      "yeastAmount": "Amount"
+    },
+    "prereq": {
+      "finalGravity": "Log final gravity",
+      "finalGravityHint": "Log a measured FG before moving out of primary.",
+      "linkRecipe": "Link a recipe",
+      "linkRecipeHardHint": "Brew tracking needs a linked recipe before primary can start.",
+      "originalGravity": "Log original gravity",
+      "originalGravityHint": "Log a measured OG or accept the recipe OG before moving out of primary.",
+      "packagedVolume": "Record packaged volume",
+      "packagedVolumeHint": "Record the packaged volume so the final brew summary has a usable yield.",
+      "packagingRecorded": "Record packaging details",
+      "packagingRecordedHint": "Save bottle, keg, or mixed packaging details before completing the brew.",
+      "volume": "Record secondary volume",
+      "volumeHint": "Record the total volume after transferring to secondary so stabilizers and later additions can use the right batch size.",
+      "yeast": "Log yeast",
+      "yeastHint": "Log at least one yeast addition before moving out of primary."
+    },
+    "prereqsNotMet": "Some items are not complete yet.",
+    "primary": {
+      "actualizedRecipeOg": "logged ingredients",
+      "additives": "Planned additives",
+      "addNote": "Add note",
+      "currentVolume": "Current volume",
+      "enterSecondaryVolume": "Volume after transfer",
+      "estimatedFg": "Estimated FG",
+      "fermentableSg": "Fermentable SG",
+      "fg": "Final gravity",
+      "focusFg": "Take final gravity when fermentation is finished",
+      "focusNutrients": "Keep up with nutrient additions",
+      "focusPitch": "Pitch yeast and record starting details",
+      "focusReady": "Ready to move to secondary",
+      "focusTransfer": "Transfer to secondary and record the new volume",
+      "goFerm": "Go-Ferm",
+      "goFermNotUsed": "Go-Ferm not used.",
+      "ingredients": "Primary ingredients",
+      "log": "Log",
+      "logAddition": "Log addition",
+      "logAdditive": "Log additive",
+      "logDifferentYeast": "Log different yeast",
+      "logged": "Logged",
+      "loggedFg": "Logged FG",
+      "loggedOg": "Logged OG",
+      "logGoFerm": "Log Go-Ferm",
+      "logIngredient": "Log ingredient",
+      "logMissing": "Log missing",
+      "logMissingIngredients": "Log missing ingredients",
+      "logNextNutrient": "Log next nutrient",
+      "logNutrients": "Log nutrients",
+      "logOgDesc": "Original gravity also sets the nutrient calculation basis for primary.",
+      "markGoFermNotUsed": "Mark not used",
+      "measuredOg": "measured OG",
+      "noAdditives": "No planned additives found in the linked recipe.",
+      "noNutrients": "No planned nutrient additions found.",
+      "noPrimaryIngredients": "No primary ingredients found in the linked recipe.",
+      "noRecipeNotes": "No primary notes found in the linked recipe.",
+      "nutrientAddition": "Nutrient addition {{index}}",
+      "nutrients": "Nutrients",
+      "nutrientsNeedGoFermDecision": "Log Go-Ferm or mark it not used before nutrient additions.",
+      "nutrientsNeedOg": "Log OG first.",
+      "nutrientsNeedYeast": "Log yeast before nutrient additions.",
+      "nutrientsRecipeBuilderNotice": "This schedule uses logged OG, linked primary additions, yeast, and Go-Ferm. Change the schedule settings in the recipe builder for now.",
+      "nutrientsRemainingAfterPlan": "Planned nutrient additions are complete, but some nutrient amount remains. Add an extra nutrient addition to finish the schedule.",
+      "nutrientsUsingPlannedIngredients": "Some linked primary ingredients have not been logged yet, so their planned amounts are being used for nutrient recalculation.",
+      "og": "Original gravity",
+      "ogDiffersFromSuggestion": "Logged OG differs from the suggested OG used for planning.",
+      "ogOverrideWarning": "This OG differs from the suggested value. Confirm the estimated FG so nutrients are calculated from the intended fermentable gravity.",
+      "previousVolume": "Previous volume",
+      "recipeNotes": "Recipe primary notes",
+      "recipeNoteTitle": "Add recipe primary note",
+      "recipeOg": "recipe OG",
+      "recordSecondaryVolume": "Record secondary volume",
+      "recordSecondaryVolumeDesc": "Enter the total volume after transferring to secondary. This becomes the batch volume used for stabilizers and later additions.",
+      "required": "Required",
+      "saveSecondaryVolume": "Save volume",
+      "secondaryVolumePlaceholder": "Enter volume after transfer",
+      "suggestedOg": "Suggested OG",
+      "suggestedOgAvailable": "Suggested OG available",
+      "volumeChange": "Volume change",
+      "workflowHint": "Use the sections below for planned items; keep notes and readings available any time.",
+      "yeast": "Yeast"
+    },
     "recipe": "Recipe",
+    "recipeTargetVolume": "Target volume",
+    "recipeTotalSecondaryVolume": "Total secondary volume",
+    "requiredBeforeMoving": "Required before moving",
+    "secondary": {
+      "actualAmounts": "Actual amounts",
+      "actualStabilizerWarning": "Warning: actual stabilizer amounts differ from the calculated recommendation. Double-check before saving.",
+      "additionalNeeded": "additional",
+      "additions": "Secondary additions",
+      "adjustedVolumeForStabilizers": "Adjusted volume",
+      "baseAbv": "Base ABV",
+      "baseVolumeForStabilizers": "Base volume",
+      "bottlePackage": "Bottle / Package",
+      "calculatedStabilizers": "Calculated additions",
+      "confirmBulkAgeHelp": "This moves the brew out of Secondary and into the bulk age stage.",
+      "confirmBulkAgeTitle": "Move to bulk aging?",
+      "confirmPackageHelp": "This skips bulk aging and moves the brew directly to the packaged stage.",
+      "confirmPackageTitle": "Move to packaging?",
+      "currentVolume": "Current volume",
+      "dilutedAbv": "Diluted ABV",
+      "focusReady": "Ready to move into bulk aging",
+      "focusTracking": "Keep secondary additions and volume current",
+      "ingredients": "Secondary ingredients",
+      "latestGravity": "Latest gravity",
+      "logAddition": "Log addition",
+      "logAdditive": "Log additive",
+      "logIngredient": "Log secondary ingredient",
+      "logMissing": "Log missing",
+      "logMissingAdditions": "Log missing additions",
+      "logMissingAdditives": "Log missing additives",
+      "logStabilizers": "Log stabilizers",
+      "logSupplementalStabilizers": "Log supplemental stabilizers",
+      "moveToBulkAge": "Move to Bulk Age",
+      "needsReview": "Needs review",
+      "noRecipeAdditives": "No recipe additives found.",
+      "noRecipeNotes": "No secondary notes found in the linked recipe.",
+      "noSecondaryIngredients": "No secondary ingredients found in the linked recipe.",
+      "plannedSecondaryVolumeUsed": "Some secondary volume is still based on planned recipe amounts. Logging actual secondary additions will refine the stabilizer calculation.",
+      "ready": "Ready",
+      "recipeAdditives": "Recipe additives",
+      "recipeNotes": "Recipe secondary notes",
+      "recipeNoteTitle": "Add recipe secondary note",
+      "scaleAdditives": "Scale additives",
+      "scaleSecondaryIngredients": "Scale secondary ingredients",
+      "secondaryBeforeStabilizersHelp": "This recipe uses stabilizers. Secondary ingredients are usually logged after stabilizers so the dosage is based on the current volume and ABV.",
+      "secondaryBeforeStabilizersTitle": "Log additions before stabilizers?",
+      "secondaryVolumeForStabilizers": "Secondary volume",
+      "stabilizerAdditionNote": "Stabilizer addition calculated for secondary.",
+      "stabilizerPhNote": "pH reading recorded while logging stabilizers.",
+      "sulfiteForm": "Sulfite form",
+      "supplementalStabilizerNote": "Supplemental stabilizer addition after secondary dilution changed.",
+      "supplementalStabilizersHelp": "The logged secondary additions increased dilution after stabilizers were logged. Review the supplemental amounts before adding them.",
+      "supplementalStabilizersTitle": "Additional stabilizers may be needed",
+      "takingPh": "Taking a pH reading?",
+      "workflowHint": "Log additions as they happen and keep volume current before bulk aging."
+    },
+    "share": {
+      "action": "Share brew",
+      "copied": "Public brew link copied.",
+      "title": "Shared brew: {{name}}"
+    },
+    "sort": {
+      "endDate": "Sort by end date",
+      "startDate": "Sort by start date"
+    },
     "stage": "Stage",
+    "stageChange": "Stage change",
+    "stageDesc": {
+      "bulkAge": "Track aging notes, occasional readings, and packaging readiness.",
+      "complete": "Review final stats, packaging, and tasting notes.",
+      "packaged": "Record bottle, keg, or package details before completion.",
+      "planned": "Get everything ready before you start."
+    },
+    "stagePanel": {
+      "title": "Brew tracker"
+    },
+    "stagePathHint": "Click a stage to see actions.",
     "startDate": "Start Date",
-    "title": "Brew Tracker"
+    "stayHere": "You are here",
+    "title": "Brew Tracker",
+    "visibility": {
+      "label": "Visibility",
+      "private": "Private",
+      "privateDescription": "Only you and admins can view this brew.",
+      "public": "Public",
+      "publicDescription": "Public brews can be viewed from public recipe pages.",
+      "recipeMustBePublic": "Make the recipe public before sharing this brew."
+    },
+    "volume": {
+      "currentVolume": "Current volume",
+      "enterVolume": "Volume",
+      "noVolume": "No volume recorded yet.",
+      "placeholder": "Enter volume",
+      "recordCurrent": "Record current volume",
+      "recordCurrentDesc": "Record the current batch volume for this brew."
+    },
+    "warn": {
+      "additivesMissing": "Some linked recipe additives haven’t been logged yet.",
+      "bulkAgeOutstandingItems": "Some linked recipe ingredients or additives have not been logged yet.",
+      "currentVolumeMissing": "Current volume has not been recorded yet.",
+      "finalGravityEstimateMismatch": "Final gravity is not close to the recipe’s estimated FG.",
+      "finalGravityEstimateMismatchWithValues": "Final gravity is not close to the recipe’s estimated FG.",
+      "finalGravityMissing": "Final gravity has not been logged yet.",
+      "nutrientsMissing": "Some planned nutrient additions haven’t been logged yet.",
+      "originalGravityMissing": "Original gravity has not been logged yet.",
+      "packagedVolumeMissing": "Packaged volume has not been recorded yet.",
+      "packagingMissing": "Packaging details have not been recorded yet.",
+      "primaryIngredientsMissing": "Not all primary ingredients have been added to this brew yet.",
+      "secondaryFollowupReadingsMissing": "Secondary additions can change gravity and volume. Take a gravity reading and record current volume before moving on.",
+      "secondaryIngredientsMissing": "Some planned secondary additions haven’t been logged yet.",
+      "yeastMissing": "Yeast has not been logged yet."
+    },
+    "warnings": "Warnings"
   },
   "brewStage": {
     "BACKSWEETENED": "Backsweetened",
@@ -360,6 +795,7 @@
   "cherryTart": "Cherry, Tart",
   "chitosan": "Chitosan",
   "citricAcid": "Citric Acid",
+  "clear": "Clear",
   "clearSearch": "Clear Search",
   "cloudUrl": "Cloud URL",
   "co2Vol": "Enter your volumes of CO2:",
@@ -373,15 +809,19 @@
   "correctionFactor": "Correction Factor:",
   "cranberry": "Cranberry",
   "cranberryJuice": "Cranberry Juice",
+  "creating": "Creating...",
   "cucumber": "Cucumber",
   "currantBlack": "Currant, Black",
   "currantRed": "Currant, Red",
+  "current": "Current",
   "curTemp": "Current Temp:",
   "customIngredient": "Custom Ingredient",
   "darkCornSyrup": "Dark Corn Syrup",
   "date": "Date",
   "datesDried": "Dates, Dried",
   "defaultPath": "Set Default Path",
+  "delete": "Delete",
+  "deleted": "Deleted.",
   "deleteLogsDescription": "This will permanently delete all logs for this brew or device from {{start_date}} to {{end_date}}. This action cannot be undone. ",
   "demararaSugar": "Demarara Sugar",
   "desiredOG": "Enter your desired original gravity",
@@ -474,6 +914,7 @@
     "versionNote": "Last released version: 1.0.3",
     "videoTitle": "MeadTools overview"
   },
+  "disableEdit": "Disable editing",
   "donate": {
     "dialog": {
       "cancel": "Don't Show again",
@@ -494,10 +935,14 @@
   "email": "Email:",
   "emailAlerts": {
     "disabled": "You will no longer receive email alerts for this brew.",
-    "enabled": "You will receive email alerts for this brew."
+    "enabled": "You will receive email alerts for this brew.",
+    "title": "Email alerts"
   },
   "emptyNotes": "Press the button below to add a Note.",
+  "end": "End",
   "enterTemp": "Enter your temperature:",
+  "entries": "entries",
+  "entry": "entry",
   "error": "Something went wrong",
   "errorLabel": "Error",
   "estateTannin": "Estate Tannin",
@@ -520,11 +965,14 @@
   "ftBlancSoft": "FT Blanc Soft",
   "ftRouge": "FT Rouge",
   "ftRougeBerry": "FT Rouge Berry",
+  "g": "g",
   "G": "g",
+  "gal": "gal",
   "GAL": "Gallons",
   "gallonScaledAdjunct": "Scaled Adjunct g/gallon:",
   "GALS": "gal",
   "gfDetails": "Go-Ferm Details",
+  "Go-Ferm": "Go-Ferm",
   "goFermType": "Go-Ferm Type",
   "gooseberry": "Gooseberry",
   "grapefruit": "Grapefruit",
@@ -536,6 +984,7 @@
   "gravityLabel": "Enter Gravity:",
   "greeting": "Hello",
   "guava": "Guava",
+  "hide": "Hide",
   "honey": "Honey",
   "honeydewMelon": "Honeydew Melon",
   "hydrometerFG": "Enter Hydrometer FG:",
@@ -645,6 +1094,7 @@
     "unknownBrew": "your brew",
     "updateCoefficients": "Update Coefficients (iSpindel Only)"
   },
+  "issue": "Issue",
   "jackfruit": "Jackfruit",
   "jalapeno": "Jalapeño",
   "juice": "Juice",
@@ -751,6 +1201,7 @@
       "w15": "W15"
     }
   },
+  "lastUpdated": "Last updated",
   "LBS": "lbs",
   "legacyRecipeMessage": "Legacy Recipes are no longer supported, please use the contact page to resolve this issue.",
   "lemonJuice": "Lemon Juice",
@@ -773,6 +1224,7 @@
       "title": "Login Successful!"
     }
   },
+  "logout": "Log Out",
   "lychee": "Lychee",
   "malicAcid": "Malic Acid",
   "mango": "Mango",
@@ -806,7 +1258,8 @@
     "label": "Nitrogen Requirement",
     "low": "Low",
     "medium": "Medium",
-    "veryHigh": "Very High"
+    "veryHigh": "Very High",
+    "veryLow": "Very Low"
   },
   "name": "Name:",
   "nameRequired": "Recipe name is required.",
@@ -816,9 +1269,14 @@
   "newNote": "New Note",
   "no": "No",
   "noDevices": "No Devices Yet.",
+  "noEntries": "No entries yet.",
   "noLogs": "  No logs to display for this date range",
+  "none": "None",
+  "noRecipe": "No recipe linked.",
   "noRecipesFound": "No recipes found.",
+  "noResults": "No results found.",
   "noSorb": "No Sorbate Needed!",
+  "note": "Note",
   "notes": {
     "details": "Date, Gravity, etc.",
     "note": "Note",
@@ -831,6 +1289,9 @@
   "numberOfAdditions": "Number of Additions",
   "numOfPages": "Page {{start_page}} of {{end_page}}",
   "nuteAmounts": "Nutrient Amounts",
+  "nuteLabels": {
+    "targetYAN": "Target YAN"
+  },
   "nuteResults": {
     "gfTypes": {
       "gf": "Go-Ferm",
@@ -876,11 +1337,16 @@
   "oakChips": "Oak Chips",
   "oakCubes": "Oak Cubes",
   "oakSpirals": "Oak Spirals",
+  "off": "Off",
   "offset": "Offset PPM",
   "OG": "OG",
   "ogHeading": "Estimated OG Without Reading",
   "ogLabel": "Enter OG:",
+  "on": "On",
+  "ongoing": "ongoing",
   "onion": "Onion",
+  "open": "Open",
+  "optional": "Optional",
   "optiRed": "Opti-Red",
   "optiWhite": "Opti-White",
   "orangeJuice": "Orange Juice",
@@ -986,6 +1452,15 @@
   },
   "private": "Private Recipe?",
   "prunes": "Prunes",
+  "publicBrews": {
+    "backToRecipe": "Back to recipe",
+    "description": "Brewers have shared these batches from this recipe.",
+    "empty": "No public brews have been shared for this recipe yet.",
+    "title": "Public brews",
+    "unavailableDescription": "This brew is private, was removed, or the link is no longer valid.",
+    "unavailableTitle": "Brew unavailable",
+    "viewBrew": "View brew"
+  },
   "publicRecipes": {
     "fail": " Failed to load recipes. Please try again later.",
     "title": "Public Recipes"
@@ -1031,6 +1506,7 @@
   "rating": {
     "success": "Thanks for your {{draftRating}} mug rating."
   },
+  "recipe": "Recipe",
   "recipeBuilder": {
     "addNew": "Add new Ingredient",
     "homeHeading": "Recipe Builder",
@@ -1064,6 +1540,15 @@
   },
   "recipeNotFound": "The requested recipe does not exist.",
   "recipeNotFoundTitle": "Recipe Not Found",
+  "recipes": {
+    "connectedBrews": {
+      "count": "Linked brews: {{count}}",
+      "description": "Brews created from this recipe appear here.",
+      "empty": "No brews are linked to this recipe yet.",
+      "openBrew": "Open brew",
+      "title": "Connected brews"
+    }
+  },
   "recipeSuccess": "Recipe created successfully.",
   "recipeUpdate": "Recipe updated successfully.",
   "redStar": {
@@ -1081,6 +1566,7 @@
   "redWineTannin": "Red Wine Tannin",
   "refractometerFG": "Enter Refractometer FG:",
   "refractometerHeading": "Refractometer Correction Calculator",
+  "remove": "Remove",
   "reset": "Reset",
   "resetAll": "Reset All",
   "resetPassword": {
@@ -1090,8 +1576,10 @@
   "rhubarb": "Rhubarb",
   "sampleChartLabel": "Bellow is a sample chart using iSpindel Data provided by silentrob.",
   "sampleSize": "Sample Size (ml):",
+  "save": "Save",
   "SAVE": "Save",
   "saveCopy": "Save a Copy of this Recipe",
+  "saved": "Saved.",
   "savedRecipes": "Saved Recipes",
   "saveLocally": "Save Locally",
   "saving": "Saving…",
@@ -1114,6 +1602,7 @@
   "send": "Send",
   "servingSize": "Serving Size",
   "SG": "SG",
+  "show": "Show",
   "showBrix": "Show Brix?",
   "sideNav": {
     "abv": "ABV",
@@ -1126,6 +1615,7 @@
     "tempCorrection": "Hydrometer Temperature Correction"
   },
   "solutionVolume": "Stock Solution Volume (ml):",
+  "sorbate": "Sorbate",
   "sorbateHeading": "Sorbate Addition Calculator",
   "sorghumSyrup": "Sorghum Syrup",
   "sortLabel": "Sort",
@@ -1136,6 +1626,11 @@
   },
   "sparkolloid": "Sparkolloid",
   "stabilizersHeading": "Stabilizers",
+  "stabilizers": {
+    "label": "Stabilizers"
+  },
+  "stage": "Stage",
+  "start": "Start",
   "stockSolutionConcentration": "Concentration (%):",
   "strawberry": "Strawberry",
   "SUBMIT": "Submit",
@@ -1145,11 +1640,13 @@
   "sugPerServe": "Sugar per servings",
   "sulfiteHeading": "Sulfite Addition Calculator",
   "tableSugar": "Table Sugar",
+  "tablets": "tablets",
   "tangerine": "Tangerine",
   "tanninComplex": "Tannin Complex",
   "tanninRicheExtra": "Tannin Riche Extra",
   "targetYan": "Target YAN",
   "tartaricAcid": "Tartaric Acid",
+  "tasting": "Tasting",
   "TBSP": "tbsp",
   "tempCorrectionHeading": "Temperature Correction Calculator",
   "temperature": "Temperature",
@@ -1208,6 +1705,7 @@
     "notify": "If you check this box, you will receive daily email notifications to the email on file if you receive any new comments or ratings. ",
     "refractometerWarning": "This value should only be adjusted if you have spent time calculating the correction factor for your specific refractometer. More info can be found "
   },
+  "title": "Title",
   "tomato": "Tomato",
   "tomatoJuice": "Tomato Juice",
   "toNextBatchVolume": "Fill batch to next {{volumeUnit}}",
@@ -1271,10 +1769,25 @@
     "finalStep": "Click <backLink>here</backLink> to go back to the recipe builder and get started! Redo the tutorial at any time at <tutorialLink>meadtools.com/tutorial</tutorialLink>",
     "redoTutorial": "Redo the tutorial at any time at"
   },
+  "type": "Type",
   "unathorized": "Unathorized",
+  "unit": "Unit",
   "UNITS": "Units",
   "units": {
-    "gpl": "g/L"
+    "C": "°C",
+    "F": "°F",
+    "gpl": "g/L",
+    "imp_fl_oz": "imp fl oz",
+    "imp_gal": "imp gal",
+    "imp_pt": "imp pt",
+    "imp_qt": "imp qt",
+    "kg": "kg",
+    "L": "L",
+    "mg": "mg",
+    "mL": "mL",
+    "pt": "pt",
+    "qt": "qt",
+    "units": "units"
   },
   "unnamedDevice": "Unnamed device",
   "unnamedIngredient": "Unnamed",
@@ -1287,9 +1800,11 @@
   "vol1": "Volume One:",
   "vol2": "Volume Two:",
   "volInvalid": "Please enter a valid volume of CO2",
+  "volume": "Volume",
   "volumeUnits": "Volume Units:",
   "water": "Water",
   "watermelon": "Watermelon",
+  "weight": "Weight",
   "yeastAmount": "Yeast Amount",
   "yeastBrand": "Yeast Brand",
   "yeastDetails": "Yeast Details",

@@ -21,6 +21,18 @@ export const toSG = (gravityReading: number) => {
   );
 };
 
+export function refractometerCorrectedSg(
+  originalGravityBrix: number,
+  finalGravityBrix: number,
+  correctionFactor = 1
+) {
+  return (
+    -0.002349 * (originalGravityBrix / correctionFactor) +
+    0.006276 * (finalGravityBrix / correctionFactor) +
+    1
+  );
+}
+
 export function calcSb(SG: number) {
   const afterDecimal = SG - 1;
   return 1 + Math.round((afterDecimal * 2000) / 3) / 1000;

@@ -14,9 +14,11 @@ export const BREW_ENTRY_TYPE = {
   TASTING: "TASTING",
   ISSUE: "ISSUE",
   GRAVITY: "GRAVITY",
+  VOLUME: "VOLUME",
   TEMPERATURE: "TEMPERATURE",
   PH: "PH",
   STAGE_CHANGE: "STAGE_CHANGE",
+  PACKAGING: "PACKAGING",
   // later:
   ADDITION: "ADDITION"
   // NUTRIENT: "NUTRIENT",
@@ -32,3 +34,10 @@ export const TEMP_UNITS = {
 } as const;
 
 export type TempUnits = (typeof TEMP_UNITS)[keyof typeof TEMP_UNITS];
+
+export const GRAVITY_UNITS = {
+  SG: "SG",
+  BRIX: "BRIX"
+} as const;
+
+export type GravityUnit = (typeof GRAVITY_UNITS)[keyof typeof GRAVITY_UNITS];

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -241,17 +242,25 @@ function DevicePage() {
               </AlertDialogContent>
             </AlertDialog>
           ) : (
-            <Button
-              variant="destructive"
-              disabled={isEnding}
-              onClick={async () => {
-                await endBrew(device!.id, device!.brew_id);
-              }}
-            >
-              {isEnding
-                ? t("iSpindelDashboard.ending", "Ending…")
-                : t("iSpindelDashboard.endBrew", { brew_name: brewName })}
-            </Button>
+            <>
+              <Button variant="secondary" asChild>
+                <Link href={`/account/brews/${device!.brew_id}`}>
+                  {t("brews.charts.openTrackedBrew", "Open brew")}
+                </Link>
+              </Button>
+
+              <Button
+                variant="destructive"
+                disabled={isEnding}
+                onClick={async () => {
+                  await endBrew(device!.id, device!.brew_id);
+                }}
+              >
+                {isEnding
+                  ? t("iSpindelDashboard.ending", "Ending…")
+                  : t("iSpindelDashboard.endBrew", { brew_name: brewName })}
+              </Button>
+            </>
           )}
         </div>
       </div>

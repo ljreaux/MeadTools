@@ -4,9 +4,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import type { BrewEntryType, BrewStage } from "@/lib/brewEnums";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import type { TempUnits } from "@/lib/brewEnums";
+import type { GravityUnit, TempUnits } from "@/lib/brewEnums";
 import { qk } from "@/lib/db/queryKeys";
-import { BrewAdditionData } from "@/lib/utils/entryPayload";
+import type {
+  BrewAdditionData,
+  BrewPackagingData,
+  BrewVolumeData,
+  GravityPayloadOptions
+} from "@/lib/utils/entryPayload";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 
 export type AccountBrewListItem = {
   id: string;
@@ -15,10 +21,15 @@ export type AccountBrewListItem = {
   end_date: string | null;
 
   stage: BrewStage;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnit;
+  public: boolean;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
   entry_count: number;
   latest_gravity: number | null;
@@ -44,6 +55,11 @@ export type AccountEntriesByStage = Array<{
   entries: AccountBrewEntry[];
 }>;
 
+export type AccountBrewLinkedDevice = {
+  id: string;
+  device_name: string | null;
+};
+
 export type AccountBrew = {
   id: string;
   name: string | null;
@@ -53,15 +69,20 @@ export type AccountBrew = {
   stage: BrewStage;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnit;
+  public: boolean;
 
   latest_gravity: number | null;
 
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
 
-  recipe_snapshot: any | null;
+  recipe_snapshot: BrewRecipeSnapshot | null;
   entry_count: number;
 
+  linked_devices: AccountBrewLinkedDevice[];
   entries: AccountBrewEntry[];
   entries_by_stage: AccountEntriesByStage;
 };
@@ -83,7 +104,14 @@ export type CreateBrewEntryInput =
       title?: string | null;
       note?: string | null;
       gravity: number; // required for GRAVITY
-      data?: any | null;
+      data?: GravityPayloadOptions | null;
+    }
+  | {
+      type: typeof BREW_ENTRY_TYPE.VOLUME;
+      datetime?: string;
+      title?: string | null;
+      note?: string | null;
+      data: BrewVolumeData;
     }
   | {
       type: typeof BREW_ENTRY_TYPE.TEMPERATURE;
@@ -103,11 +131,29 @@ export type CreateBrewEntryInput =
       data: { ph: number } & Record<string, any>;
     }
   | {
+      type: typeof BREW_ENTRY_TYPE.PACKAGING;
+      datetime?: string;
+      title?: string | null;
+      note?: string | null;
+      data: BrewPackagingData;
+    }
+  | {
       type: typeof BREW_ENTRY_TYPE.ADDITION;
+      datetime?: string;
       title?: string | null;
       note?: string | null;
       data: BrewAdditionData;
     };
+
+export type PatchBrewEntryInput = {
+  datetime?: string;
+  title?: string | null;
+  note?: string | null;
+  gravity?: number | null;
+  temperature?: number | null;
+  temp_units?: TempUnits | null;
+  data?: any | null;
+};
 const accountBrewsQk = qk.accountBrews;
 
 export function useAccountBrews() {
@@ -183,11 +229,17 @@ export function useCreateAccountBrew() {
  * PATCH /api/brews/:brewId  (metadata only)
  */
 export type PatchAccountBrewMetadataInput = {
+  recipe_id?: number;
   name?: string | null;
+  batch_number?: number | null;
+  start_date?: string;
   stage?: BrewStage;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
+  gravity_unit_preference?: GravityUnit;
+  public?: boolean;
   end_date?: string | null; // ISO or null
+  stage_change_datetime?: string;
 };
 
 export function usePatchAccountBrewMetadata() {
@@ -226,6 +278,9 @@ export function usePatchAccountBrewMetadata() {
         (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old)
       );
       queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.list()
+      });
+      queryClient.invalidateQueries({
         queryKey: accountBrewsQk.detail(vars.brewId)
       });
     }
@@ -250,6 +305,103 @@ export function useDeleteAccountBrew() {
         (old) => (old ? old.filter((b) => b.id !== brewId) : old)
       );
       queryClient.removeQueries({ queryKey: accountBrewsQk.detail(brewId) });
+    }
+  });
+}
+
+export type LinkHydrometerDeviceToAccountBrewInput = {
+  brewId: string;
+  deviceId: string;
+  fromBrewId?: string | null;
+};
+
+export function useLinkHydrometerDeviceToAccountBrew() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      brewId,
+      deviceId,
+      fromBrewId
+    }: LinkHydrometerDeviceToAccountBrewInput) => {
+      await fetchWithAuth(`/api/brews/${brewId}/attach-device`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: deviceId
+        })
+      });
+
+      const adoptBody: Record<string, unknown> = { device_id: deviceId };
+      if (fromBrewId !== undefined) {
+        adoptBody.from_brew_id = fromBrewId;
+      }
+
+      return await fetchWithAuth<{
+        message: string;
+        adopted_count: number;
+        brew_id: string;
+        device_id: string;
+      }>(`/api/brews/${brewId}/adopt-logs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(adoptBody)
+      });
+    },
+    onSuccess: (_, { brewId, deviceId }) => {
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerBrewLogs(brewId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.detail(brewId)
+      });
+      queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
+    }
+  });
+}
+
+export function useUnlinkHydrometerDeviceFromAccountBrew() {
+  const fetchWithAuth = useFetchWithAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      brewId,
+      deviceId
+    }: {
+      brewId: string;
+      deviceId: string;
+    }) => {
+      const [brew, device] = await fetchWithAuth<[any, any]>("/api/brews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: deviceId,
+          brew_id: brewId
+        })
+      });
+
+      return { brew, device };
+    },
+    onSuccess: (_, { brewId, deviceId }) => {
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
+      queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerBrewLogs(brewId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountBrewsQk.detail(brewId)
+      });
+      queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
     }
   });
 }

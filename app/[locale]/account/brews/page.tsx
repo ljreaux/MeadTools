@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
+import { Search, Trash2, X } from "lucide-react";
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -20,9 +24,10 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Search } from "lucide-react";
+import { BREW_STAGE } from "@/lib/brewEnums";
+import { toast } from "@/hooks/use-toast";
 
 import {
   InputGroup,
@@ -36,24 +41,133 @@ import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 
 import {
   useAccountBrews,
-  type AccountBrewListItem
+  useDeleteAccountBrew
 } from "@/hooks/reactQuery/useAccountBrews";
-import { BrewTrackingUnavailable } from "@/components/brews/BrewTrackingUnavailable";
-import { BREW_TRACKING_ENABLED } from "@/lib/featureFlags";
+import {
+  BrewList,
+  type BrewListDisplayItem,
+  type BrewListSortKey,
+  type BrewListSortDirection
+} from "@/components/brews/BrewList";
 
-export default function AccountBrews() {
-  if (!BREW_TRACKING_ENABLED) {
-    return <BrewTrackingUnavailable />;
-  }
+const ALL_STAGES = "all";
+const ALL_RECIPES = "all";
+const NO_RECIPE = "none";
 
-  return <AccountBrewsContent />;
+function getDateTime(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
 }
 
-function AccountBrewsContent() {
-  const { t, i18n } = useTranslation();
+export default function AccountBrews() {
+  const { t } = useTranslation();
   const { data: brews = [], isLoading, isError, error } = useAccountBrews();
+  const deleteBrewMutation = useDeleteAccountBrew();
 
   const [pageSize, setPageSize] = useState(10);
+  const [stageFilter, setStageFilter] = useState(ALL_STAGES);
+  const [recipeFilter, setRecipeFilter] = useState(ALL_RECIPES);
+  const [sort, setSort] = useState<{
+    key: BrewListSortKey;
+    direction: BrewListSortDirection;
+  } | null>(null);
+  const [deletingBrewId, setDeletingBrewId] = useState<string | null>(null);
+
+  const recipeOptions = useMemo(() => {
+    const recipes = new Map<number, string>();
+
+    brews.forEach((brew) => {
+      if (brew.recipe_id) {
+        recipes.set(
+          brew.recipe_id,
+          brew.recipe_name || String(brew.recipe_id)
+        );
+      }
+    });
+
+    return Array.from(recipes, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [brews]);
+
+  const filteredBrews = useMemo(() => {
+    return brews.filter((brew) => {
+      if (stageFilter !== ALL_STAGES && brew.stage !== stageFilter) {
+        return false;
+      }
+
+      if (recipeFilter === NO_RECIPE && brew.recipe_id) {
+        return false;
+      }
+
+      if (
+        recipeFilter !== ALL_RECIPES &&
+        recipeFilter !== NO_RECIPE &&
+        brew.recipe_id !== Number(recipeFilter)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [brews, recipeFilter, stageFilter]);
+
+  const sortBy = useMemo(() => {
+    if (!sort) return undefined;
+
+    return [
+      (a: BrewListDisplayItem, b: BrewListDisplayItem) => {
+        const aTime = getDateTime(a[sort.key]);
+        const bTime = getDateTime(b[sort.key]);
+
+        if (aTime === null && bTime === null) return 0;
+        if (aTime === null) return sort.direction === "asc" ? 1 : -1;
+        if (bTime === null) return sort.direction === "asc" ? -1 : 1;
+
+        return sort.direction === "asc" ? aTime - bTime : bTime - aTime;
+      }
+    ];
+  }, [sort]);
+
+  const clearFilters = () => {
+    setStageFilter(ALL_STAGES);
+    setRecipeFilter(ALL_RECIPES);
+  };
+
+  const hasFilters =
+    stageFilter !== ALL_STAGES || recipeFilter !== ALL_RECIPES;
+
+  const handleSort = (key: BrewListSortKey) => {
+    setSort((current) => {
+      if (current?.key === key) {
+        return {
+          key,
+          direction: current.direction === "asc" ? "desc" : "asc"
+        };
+      }
+
+      return { key, direction: "desc" };
+    });
+  };
+
+  const handleDeleteBrew = async (brew: BrewListDisplayItem) => {
+    try {
+      setDeletingBrewId(brew.id);
+      await deleteBrewMutation.mutateAsync(brew.id);
+      toast({ description: t("brews.delete.success", "Brew deleted.") });
+    } catch {
+      toast({
+        description: t(
+          "brews.delete.error",
+          "Something went wrong deleting this brew."
+        ),
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingBrewId(null);
+    }
+  };
 
   const {
     filteredData,
@@ -67,22 +181,17 @@ function AccountBrewsContent() {
     goToPage,
     totalPages
   } = useFuzzySearch({
-    data: brews,
+    data: filteredBrews,
     pageSize,
-    searchKey: ["name", "id", "recipe_name", "stage"]
+    searchKey: ["name", "id", "recipe_name", "stage"],
+    sortBy
   });
-
-  const formatter = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-    dateStyle: "short",
-    timeStyle: "short"
-  });
-  const formatDate = (date: string | Date) => formatter.format(new Date(date));
 
   if (isError) {
     console.error(error);
     return (
       <div className="text-center my-4">
-        {t("error.generic", "Something went wrong loading brews.")}
+        {t("brews.error.loadList", "Something went wrong loading brews.")}
       </div>
     );
   }
@@ -146,48 +255,95 @@ function AccountBrewsContent() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("brews.stage")}
+          </span>
+          <Select
+            value={stageFilter}
+            onValueChange={setStageFilter}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_STAGES}>
+                {t("brews.filters.allStages", "All stages")}
+              </SelectItem>
+              {Object.values(BREW_STAGE).map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {t(`brewStage.${stage}`, stage)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("brews.filters.recipe.label", "Recipe")}
+          </span>
+          <Select
+            value={recipeFilter}
+            onValueChange={setRecipeFilter}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_RECIPES}>
+                {t("brews.filters.recipe.all", "All recipes")}
+              </SelectItem>
+              <SelectItem value={NO_RECIPE}>
+                {t("brews.filters.recipe.none", "No linked recipe")}
+              </SelectItem>
+              {recipeOptions.map((recipe) => (
+                <SelectItem key={recipe.id} value={String(recipe.id)}>
+                  {recipe.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {hasFilters ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            disabled={isLoading}
+          >
+            <X />
+            {t("brews.filters.clear", "Clear filters")}
+          </Button>
+        ) : null}
+      </div>
+
       {showEmptyState ? (
         <div className="text-center my-4">
-          {searchValue ? t("noResults") : t("brews.none")}
+          {searchValue || hasFilters ? t("noResults") : t("brews.none")}
         </div>
       ) : (
         <>
-          <div className="w-full overflow-x-auto rounded-md border border-border bg-card">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    className={cn(
-                      "sticky left-0 z-10 bg-card border-r",
-                      "min-w-28 sm:min-w-72"
-                    )}
-                  >
-                    {t("name")}
-                  </TableHead>
-
-                  <TableHead>{t("brews.stage")}</TableHead>
-                  <TableHead>{t("brews.recipe")}</TableHead>
-                  <TableHead>{t("brews.startDate")}</TableHead>
-                  <TableHead>{t("brews.endDate")}</TableHead>
-                  <TableHead>{t("brews.entries")}</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {isLoading ? (
-                  <AccountBrewsTableSkeleton rows={pageSize} />
-                ) : (
-                  pageData.map((brew) => (
-                    <AccountBrewRow
-                      key={brew.id}
-                      brew={brew}
-                      formatDate={formatDate}
-                    />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <BrewList
+            brews={pageData}
+            detailHref={(brewId) => `/account/brews/${brewId}`}
+            loading={isLoading}
+            loadingRows={pageSize}
+            sort={sort}
+            onSort={handleSort}
+            renderActions={(brew) => (
+              <DeleteBrewButton
+                brew={brew}
+                isDeleting={deletingBrewId === brew.id}
+                onDelete={handleDeleteBrew}
+              />
+            )}
+          />
 
           {!isLoading && totalPages > 1 && (
             <AccountPagination
@@ -200,109 +356,68 @@ function AccountBrewsContent() {
               onGoTo={goToPage}
             />
           )}
-
-          {isLoading && (
-            <div className="flex justify-center pt-2">
-              <Skeleton className="h-10 w-[260px]" />
-            </div>
-          )}
         </>
       )}
     </div>
   );
 }
 
-function AccountBrewRow({
+function DeleteBrewButton({
   brew,
-  formatDate
+  isDeleting,
+  onDelete
 }: {
-  brew: AccountBrewListItem;
-  formatDate: (d: string | Date) => string;
+  brew: BrewListDisplayItem;
+  isDeleting: boolean;
+  onDelete: (brew: BrewListDisplayItem) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const brewName = brew.name || brew.id;
 
   return (
-    <TableRow>
-      <TableCell
-        className={cn(
-          "sticky left-0 z-10 bg-card border-r font-medium truncate",
-          "max-w-28 sm:max-w-72"
-        )}
-      >
-        <Link
-          href={`/account/brews/${brew.id}`}
-          className="underline block truncate"
-          title={brew.name || brew.id}
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          title={t("brews.delete.confirm", "Delete brew")}
+          disabled={isDeleting}
         >
-          {brew.name || brew.id}
-        </Link>
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {t(`brewStage.${brew.stage}`)}
-      </TableCell>
-
-      <TableCell>
-        {brew.recipe_id ? (
-          <Link
-            href={`/recipes/${brew.recipe_id}`}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-          >
-            {brew.recipe_name || t("open")}
-          </Link>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {formatDate(brew.start_date)}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {brew.end_date ? formatDate(brew.end_date) : t("ongoing")}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap">
-        {brew.entry_count ?? 0}
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function AccountBrewsTableSkeleton({ rows = 10 }: { rows?: number }) {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, i) => (
-        <TableRow key={i}>
-          <TableCell
-            className={cn(
-              "sticky left-0 z-10 bg-card border-r",
-              "min-w-28 sm:min-w-72",
-              "max-w-28 sm:max-w-72",
-              "truncate"
+          <Trash2 />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {t("brews.delete.title", "Delete this brew?")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {t(
+              "brews.delete.description",
+              "This will permanently delete {{name}} and its timeline entries. Linked hydrometer devices will be detached, and wireless logs for this brew will also be deleted. This action cannot be undone.",
+              { name: brewName }
             )}
-          >
-            <Skeleton className="h-4 w-full max-w-[14rem]" />
-          </TableCell>
-
-          <TableCell>
-            <Skeleton className="h-4 w-[90px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-8 w-[120px] rounded-md" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[110px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[110px]" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="h-4 w-[40px]" />
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>
+            {t("cancel", "Cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onDelete(brew)}
+              disabled={isDeleting}
+            >
+              {isDeleting
+                ? t("brews.delete.deleting", "Deleting...")
+                : t("brews.delete.confirm", "Delete brew")}
+            </Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

@@ -3360,6 +3360,7 @@
                 "enum": [
                   "NOTE",
                   "GRAVITY",
+                  "VOLUME",
                   "TEMPERATURE",
                   "PH",
                   "ADDITION",
@@ -3428,6 +3429,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -3481,6 +3483,7 @@
         "enum": [
           "NOTE",
           "GRAVITY",
+          "VOLUME",
           "TEMPERATURE",
           "PH",
           "ADDITION",
@@ -3551,6 +3554,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -3668,6 +3672,19 @@
                 "type": "number",
                 "nullable": true
               },
+              "requested_email_alerts": {
+                "type": "boolean"
+              },
+              "gravity_unit_preference": {
+                "type": "string",
+                "enum": [
+                  "SG",
+                  "BRIX"
+                ]
+              },
+              "public": {
+                "type": "boolean"
+              },
               "latest_gravity": {
                 "type": "number",
                 "nullable": true
@@ -3678,6 +3695,10 @@
               },
               "recipe_name": {
                 "type": "string",
+                "nullable": true
+              },
+              "recipe_private": {
+                "type": "boolean",
                 "nullable": true
               },
               "recipe_snapshot": {
@@ -4136,6 +4157,7 @@
                       "enum": [
                         "NOTE",
                         "GRAVITY",
+                        "VOLUME",
                         "TEMPERATURE",
                         "PH",
                         "ADDITION",
@@ -4219,6 +4241,7 @@
                             "enum": [
                               "NOTE",
                               "GRAVITY",
+                              "VOLUME",
                               "TEMPERATURE",
                               "PH",
                               "ADDITION",
@@ -4313,6 +4336,19 @@
             "type": "number",
             "nullable": true
           },
+          "requested_email_alerts": {
+            "type": "boolean"
+          },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ]
+          },
+          "public": {
+            "type": "boolean"
+          },
           "latest_gravity": {
             "type": "number",
             "nullable": true
@@ -4323,6 +4359,10 @@
           },
           "recipe_name": {
             "type": "string",
+            "nullable": true
+          },
+          "recipe_private": {
+            "type": "boolean",
             "nullable": true
           },
           "recipe_snapshot": {
@@ -4781,6 +4821,7 @@
                   "enum": [
                     "NOTE",
                     "GRAVITY",
+                    "VOLUME",
                     "TEMPERATURE",
                     "PH",
                     "ADDITION",
@@ -4864,6 +4905,7 @@
                         "enum": [
                           "NOTE",
                           "GRAVITY",
+                          "VOLUME",
                           "TEMPERATURE",
                           "PH",
                           "ADDITION",
@@ -4917,6 +4959,13 @@
             }
           }
         }
+      },
+      "GravityUnitResponse": {
+        "type": "string",
+        "enum": [
+          "SG",
+          "BRIX"
+        ]
       },
       "BrewRecipeSnapshotResponse": {
         "type": "object",
@@ -5368,6 +5417,7 @@
             "enum": [
               "NOTE",
               "GRAVITY",
+              "VOLUME",
               "TEMPERATURE",
               "PH",
               "ADDITION",
@@ -5448,6 +5498,7 @@
                   "enum": [
                     "NOTE",
                     "GRAVITY",
+                    "VOLUME",
                     "TEMPERATURE",
                     "PH",
                     "ADDITION",
@@ -5553,6 +5604,18 @@
             "type": "boolean",
             "nullable": true
           },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ],
+            "nullable": true
+          },
+          "public": {
+            "type": "boolean",
+            "nullable": true
+          },
           "end_date": {
             "type": "string",
             "nullable": true
@@ -5601,12 +5664,30 @@
             "type": "boolean",
             "nullable": true
           },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ]
+          },
+          "public": {
+            "type": "boolean"
+          },
           "latest_gravity": {
             "type": "number",
             "nullable": true
           },
           "recipe_id": {
             "type": "number",
+            "nullable": true
+          },
+          "recipe_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipe_private": {
+            "type": "boolean",
             "nullable": true
           }
         },
@@ -5682,9 +5763,26 @@
                     "COMPLETE"
                   ]
                 },
+                "batch_number": {
+                  "type": "number",
+                  "nullable": true
+                },
                 "current_volume_liters": {
                   "type": "number",
                   "nullable": true
+                },
+                "requested_email_alerts": {
+                  "type": "boolean"
+                },
+                "gravity_unit_preference": {
+                  "type": "string",
+                  "enum": [
+                    "SG",
+                    "BRIX"
+                  ]
+                },
+                "public": {
+                  "type": "boolean"
                 },
                 "recipe_id": {
                   "type": "number",
@@ -5692,6 +5790,10 @@
                 },
                 "recipe_name": {
                   "type": "string",
+                  "nullable": true
+                },
+                "recipe_private": {
+                  "type": "boolean",
                   "nullable": true
                 },
                 "entry_count": {
@@ -5736,9 +5838,26 @@
               "COMPLETE"
             ]
           },
+          "batch_number": {
+            "type": "number",
+            "nullable": true
+          },
           "current_volume_liters": {
             "type": "number",
             "nullable": true
+          },
+          "requested_email_alerts": {
+            "type": "boolean"
+          },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ]
+          },
+          "public": {
+            "type": "boolean"
           },
           "recipe_id": {
             "type": "number",
@@ -5746,6 +5865,10 @@
           },
           "recipe_name": {
             "type": "string",
+            "nullable": true
+          },
+          "recipe_private": {
+            "type": "boolean",
             "nullable": true
           },
           "entry_count": {
@@ -5815,9 +5938,38 @@
                 "type": "number",
                 "nullable": true
               },
+              "requested_email_alerts": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "gravity_unit_preference": {
+                "type": "string",
+                "enum": [
+                  "SG",
+                  "BRIX"
+                ]
+              },
+              "public": {
+                "type": "boolean"
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
               "recipe_id": {
                 "type": "number",
                 "nullable": true
+              },
+              "recipe_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "recipe_private": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "entry_count": {
+                "type": "number"
               }
             }
           }
@@ -5830,6 +5982,582 @@
             "type": "string",
             "enum": [
               "Failed to create brew.",
+              "Server misconfiguration"
+            ]
+          }
+        }
+      },
+      "UpdateHydrometerBrewRequestBody": {
+        "type": "object",
+        "properties": {
+          "brew_id": {
+            "type": "string",
+            "nullable": false
+          },
+          "device_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "brew_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateHydrometerBrewResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string",
+                "nullable": true
+              },
+              "user_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "requested_email_alerts": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "sb_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "fg_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "PLANNED",
+                  "PRIMARY",
+                  "SECONDARY",
+                  "BULK_AGE",
+                  "STABILIZED",
+                  "BACKSWEETENED",
+                  "PACKAGED",
+                  "COMPLETE"
+                ]
+              },
+              "batch_number": {
+                "type": "number",
+                "nullable": true
+              },
+              "current_volume_liters": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_snapshot": {
+                "type": "object",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "start_date": {
+                      "type": "string"
+                    },
+                    "end_date": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "user_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "latest_gravity": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "recipe_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "requested_email_alerts": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "sb_alert_sent": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "fg_alert_sent": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "PLANNED",
+                        "PRIMARY",
+                        "SECONDARY",
+                        "BULK_AGE",
+                        "STABILIZED",
+                        "BACKSWEETENED",
+                        "PACKAGED",
+                        "COMPLETE"
+                      ]
+                    },
+                    "batch_number": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "current_volume_liters": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "recipe_snapshot": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "device_name": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "brew_id": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "recipe_id": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "coefficients": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "brews": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "nullable": true
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "HydrometerBrewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "user_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "latest_gravity": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "requested_email_alerts": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "sb_alert_sent": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "fg_alert_sent": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "PRIMARY",
+              "SECONDARY",
+              "BULK_AGE",
+              "STABILIZED",
+              "BACKSWEETENED",
+              "PACKAGED",
+              "COMPLETE"
+            ]
+          },
+          "batch_number": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_volume_liters": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_snapshot": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "EndHydrometerBrewResponse": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "user_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "latest_gravity": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "recipe_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "requested_email_alerts": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "sb_alert_sent": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "fg_alert_sent": {
+                  "type": "boolean",
+                  "nullable": true
+                },
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "PLANNED",
+                    "PRIMARY",
+                    "SECONDARY",
+                    "BULK_AGE",
+                    "STABILIZED",
+                    "BACKSWEETENED",
+                    "PACKAGED",
+                    "COMPLETE"
+                  ]
+                },
+                "batch_number": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "current_volume_liters": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "recipe_snapshot": {
+                  "type": "object",
+                  "nullable": true
+                }
+              }
+            },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "device_name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "brew_id": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "recipe_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "coefficients": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "brews": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "nullable": true
+                }
+              }
+            }
+          ]
+        }
+      },
+      "HydrometerBrewDevicePairItemResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string",
+                "nullable": true
+              },
+              "user_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "requested_email_alerts": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "sb_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "fg_alert_sent": {
+                "type": "boolean",
+                "nullable": true
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "PLANNED",
+                  "PRIMARY",
+                  "SECONDARY",
+                  "BULK_AGE",
+                  "STABILIZED",
+                  "BACKSWEETENED",
+                  "PACKAGED",
+                  "COMPLETE"
+                ]
+              },
+              "batch_number": {
+                "type": "number",
+                "nullable": true
+              },
+              "current_volume_liters": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_snapshot": {
+                "type": "object",
+                "nullable": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "device_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "brew_id": {
+                "type": "string",
+                "nullable": true
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "coefficients": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "brews": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "HydrometerDeviceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "device_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "brew_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "coefficients": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "brews": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "nullable": true
+          }
+        }
+      },
+      "HydrometerDeviceBrewResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HydrometerBrewValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Missing device_id or brew_name",
+              "Missing brew_id",
+              "Missing device_id for ending brew",
+              "Missing brew_id or recipe_id"
+            ]
+          }
+        }
+      },
+      "HydrometerBrewErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to get brews.",
+              "Failed to create brew.",
+              "Failed to update brew.",
+              "Failed to delete brew.",
               "Server misconfiguration"
             ]
           }
@@ -6174,108 +6902,11 @@
           }
         }
       },
-      "HydrometerBrewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "start_date": {
-            "type": "string"
-          },
-          "end_date": {
-            "type": "string",
-            "nullable": true
-          },
-          "user_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "latest_gravity": {
-            "type": "number",
-            "nullable": true
-          },
-          "recipe_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "requested_email_alerts": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "sb_alert_sent": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "fg_alert_sent": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "stage": {
-            "type": "string",
-            "enum": [
-              "PLANNED",
-              "PRIMARY",
-              "SECONDARY",
-              "BULK_AGE",
-              "STABILIZED",
-              "BACKSWEETENED",
-              "PACKAGED",
-              "COMPLETE"
-            ]
-          },
-          "batch_number": {
-            "type": "number",
-            "nullable": true
-          },
-          "current_volume_liters": {
-            "type": "number",
-            "nullable": true
-          },
-          "recipe_snapshot": {
-            "type": "object",
-            "nullable": true
-          }
-        }
-      },
       "HydrometerBrewAlertResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string"
-          }
-        }
-      },
-      "HydrometerBrewValidationErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Missing device_id or brew_name",
-              "Missing brew_id",
-              "Missing device_id for ending brew",
-              "Missing brew_id or recipe_id"
-            ]
-          }
-        }
-      },
-      "HydrometerBrewErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Failed to get brews.",
-              "Failed to create brew.",
-              "Failed to update brew.",
-              "Failed to delete brew.",
-              "Server misconfiguration"
-            ]
           }
         }
       },
@@ -6375,485 +7006,6 @@
         }
       },
       "StartHydrometerBrewResponse": {
-        "type": "array",
-        "items": {
-          "oneOf": [
-            {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "start_date": {
-                  "type": "string"
-                },
-                "end_date": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "user_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "latest_gravity": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "recipe_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "name": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "requested_email_alerts": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "sb_alert_sent": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "fg_alert_sent": {
-                  "type": "boolean",
-                  "nullable": true
-                },
-                "stage": {
-                  "type": "string",
-                  "enum": [
-                    "PLANNED",
-                    "PRIMARY",
-                    "SECONDARY",
-                    "BULK_AGE",
-                    "STABILIZED",
-                    "BACKSWEETENED",
-                    "PACKAGED",
-                    "COMPLETE"
-                  ]
-                },
-                "batch_number": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "current_volume_liters": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "recipe_snapshot": {
-                  "type": "object",
-                  "nullable": true
-                }
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "device_name": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "brew_id": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "recipe_id": {
-                  "type": "number",
-                  "nullable": true
-                },
-                "coefficients": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
-                  }
-                },
-                "brews": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "nullable": true
-                }
-              }
-            }
-          ]
-        }
-      },
-      "HydrometerBrewDevicePairItemResponse": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "start_date": {
-                "type": "string"
-              },
-              "end_date": {
-                "type": "string",
-                "nullable": true
-              },
-              "user_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "latest_gravity": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              },
-              "requested_email_alerts": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "sb_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "fg_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "stage": {
-                "type": "string",
-                "enum": [
-                  "PLANNED",
-                  "PRIMARY",
-                  "SECONDARY",
-                  "BULK_AGE",
-                  "STABILIZED",
-                  "BACKSWEETENED",
-                  "PACKAGED",
-                  "COMPLETE"
-                ]
-              },
-              "batch_number": {
-                "type": "number",
-                "nullable": true
-              },
-              "current_volume_liters": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_snapshot": {
-                "type": "object",
-                "nullable": true
-              }
-            }
-          },
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "device_name": {
-                "type": "string",
-                "nullable": true
-              },
-              "brew_id": {
-                "type": "string",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "coefficients": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "brews": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "nullable": true
-              }
-            }
-          }
-        ]
-      },
-      "HydrometerDeviceResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "device_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "brew_id": {
-            "type": "string",
-            "nullable": true
-          },
-          "recipe_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "coefficients": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "brews": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "nullable": true
-          }
-        }
-      },
-      "HydrometerDeviceBrewResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "UpdateHydrometerBrewRequestBody": {
-        "type": "object",
-        "properties": {
-          "brew_id": {
-            "type": "string",
-            "nullable": false
-          },
-          "device_id": {
-            "type": "string",
-            "nullable": true
-          },
-          "brew_name": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "UpdateHydrometerBrewResponse": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "start_date": {
-                "type": "string"
-              },
-              "end_date": {
-                "type": "string",
-                "nullable": true
-              },
-              "user_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "latest_gravity": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_id": {
-                "type": "number",
-                "nullable": true
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              },
-              "requested_email_alerts": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "sb_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "fg_alert_sent": {
-                "type": "boolean",
-                "nullable": true
-              },
-              "stage": {
-                "type": "string",
-                "enum": [
-                  "PLANNED",
-                  "PRIMARY",
-                  "SECONDARY",
-                  "BULK_AGE",
-                  "STABILIZED",
-                  "BACKSWEETENED",
-                  "PACKAGED",
-                  "COMPLETE"
-                ]
-              },
-              "batch_number": {
-                "type": "number",
-                "nullable": true
-              },
-              "current_volume_liters": {
-                "type": "number",
-                "nullable": true
-              },
-              "recipe_snapshot": {
-                "type": "object",
-                "nullable": true
-              }
-            }
-          },
-          {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "start_date": {
-                      "type": "string"
-                    },
-                    "end_date": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "user_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "latest_gravity": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "recipe_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "name": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "requested_email_alerts": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "sb_alert_sent": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "fg_alert_sent": {
-                      "type": "boolean",
-                      "nullable": true
-                    },
-                    "stage": {
-                      "type": "string",
-                      "enum": [
-                        "PLANNED",
-                        "PRIMARY",
-                        "SECONDARY",
-                        "BULK_AGE",
-                        "STABILIZED",
-                        "BACKSWEETENED",
-                        "PACKAGED",
-                        "COMPLETE"
-                      ]
-                    },
-                    "batch_number": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "current_volume_liters": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "recipe_snapshot": {
-                      "type": "object",
-                      "nullable": true
-                    }
-                  }
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "device_name": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "brew_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "recipe_id": {
-                      "type": "number",
-                      "nullable": true
-                    },
-                    "coefficients": {
-                      "type": "array",
-                      "items": {
-                        "type": "number"
-                      }
-                    },
-                    "brews": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "nullable": true
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "EndHydrometerBrewResponse": {
         "type": "array",
         "items": {
           "oneOf": [
@@ -7718,6 +7870,1776 @@
         "properties": {
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "PublicRecipeBrewPathParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "brew_id": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicRecipeBrewResponse": {
+        "type": "object",
+        "properties": {
+          "brew": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string",
+                "nullable": true
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "PLANNED",
+                  "PRIMARY",
+                  "SECONDARY",
+                  "BULK_AGE",
+                  "STABILIZED",
+                  "BACKSWEETENED",
+                  "PACKAGED",
+                  "COMPLETE"
+                ]
+              },
+              "batch_number": {
+                "type": "number",
+                "nullable": true
+              },
+              "current_volume_liters": {
+                "type": "number",
+                "nullable": true
+              },
+              "gravity_unit_preference": {
+                "type": "string",
+                "enum": [
+                  "SG",
+                  "BRIX"
+                ]
+              },
+              "latest_gravity": {
+                "type": "number",
+                "nullable": true
+              },
+              "public": {
+                "type": "boolean"
+              },
+              "recipe_id": {
+                "type": "number",
+                "nullable": true
+              },
+              "recipe_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "entry_count": {
+                "type": "number"
+              },
+              "owner": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string"
+                  }
+                },
+                "nullable": true
+              },
+              "recipe_snapshot": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "number"
+                  },
+                  "dataV2": {
+                    "type": "object",
+                    "properties": {
+                      "version": {
+                        "type": "number",
+                        "enum": [
+                          2
+                        ]
+                      },
+                      "unitDefaults": {
+                        "type": "object",
+                        "properties": {
+                          "weight": {
+                            "type": "string",
+                            "enum": [
+                              "kg",
+                              "g",
+                              "lb",
+                              "oz"
+                            ]
+                          },
+                          "volume": {
+                            "type": "string",
+                            "enum": [
+                              "L",
+                              "mL",
+                              "gal",
+                              "qt",
+                              "pt",
+                              "fl_oz",
+                              "imp_gal",
+                              "imp_qt",
+                              "imp_pt",
+                              "imp_fl_oz"
+                            ]
+                          }
+                        }
+                      },
+                      "ingredients": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "lineId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "ref": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "catalog"
+                                      ]
+                                    },
+                                    "ingredientId": {
+                                      "oneOf": [
+                                        {
+                                          "type": "number"
+                                        },
+                                        {
+                                          "type": "string"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": [
+                                        "custom"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            "category": {
+                              "type": "string"
+                            },
+                            "brix": {
+                              "type": "string"
+                            },
+                            "secondary": {
+                              "type": "boolean"
+                            },
+                            "amounts": {
+                              "type": "object",
+                              "properties": {
+                                "weight": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    },
+                                    "unit": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "volume": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    },
+                                    "unit": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "enum": [
+                                    "weight",
+                                    "volume"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "fg": {
+                        "type": "string"
+                      },
+                      "additives": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "lineId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "amount": {
+                              "type": "string"
+                            },
+                            "unit": {
+                              "type": "string"
+                            },
+                            "amountTouched": {
+                              "type": "boolean"
+                            },
+                            "amountDim": {
+                              "type": "string",
+                              "enum": [
+                                "weight",
+                                "volume",
+                                "count",
+                                "unknown"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "stabilizers": {
+                        "type": "object",
+                        "properties": {
+                          "adding": {
+                            "type": "boolean"
+                          },
+                          "takingPh": {
+                            "type": "boolean"
+                          },
+                          "phReading": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "kmeta",
+                              "nameta"
+                            ]
+                          }
+                        }
+                      },
+                      "notes": {
+                        "type": "object",
+                        "properties": {
+                          "primary": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "lineId": {
+                                  "type": "string"
+                                },
+                                "content": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "secondary": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "lineId": {
+                                  "type": "string"
+                                },
+                                "content": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "nutrients": {
+                        "type": "object",
+                        "properties": {
+                          "version": {
+                            "type": "number",
+                            "enum": [
+                              2
+                            ]
+                          },
+                          "inputs": {
+                            "type": "object",
+                            "properties": {
+                              "volume": {
+                                "type": "string"
+                              },
+                              "volumeUnits": {
+                                "type": "string",
+                                "enum": [
+                                  "gal",
+                                  "liter"
+                                ]
+                              },
+                              "sg": {
+                                "type": "string"
+                              },
+                              "offsetPpm": {
+                                "type": "string"
+                              },
+                              "numberOfAdditions": {
+                                "type": "string"
+                              },
+                              "goFermType": {
+                                "type": "string",
+                                "enum": [
+                                  "Go-Ferm",
+                                  "protect",
+                                  "sterol-flash",
+                                  "none"
+                                ]
+                              },
+                              "yeastAmountG": {
+                                "type": "string"
+                              },
+                              "yeastAmountTouched": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          "selected": {
+                            "type": "object",
+                            "properties": {
+                              "yeastBrand": {
+                                "type": "string"
+                              },
+                              "yeastStrain": {
+                                "type": "string"
+                              },
+                              "yeastId": {
+                                "type": "number"
+                              },
+                              "nitrogenRequirement": {
+                                "type": "string",
+                                "enum": [
+                                  "Very Low",
+                                  "Low",
+                                  "Medium",
+                                  "High",
+                                  "Very High"
+                                ]
+                              },
+                              "schedule": {
+                                "type": "string",
+                                "enum": [
+                                  "tbe",
+                                  "tosna",
+                                  "justK",
+                                  "dap",
+                                  "oAndk",
+                                  "oAndDap",
+                                  "kAndDap",
+                                  "other"
+                                ]
+                              },
+                              "selectedNutrients": {
+                                "type": "object",
+                                "properties": {
+                                  "fermO": {
+                                    "type": "boolean"
+                                  },
+                                  "fermK": {
+                                    "type": "boolean"
+                                  },
+                                  "dap": {
+                                    "type": "boolean"
+                                  },
+                                  "other": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "settings": {
+                            "type": "object",
+                            "properties": {
+                              "yanContribution": {
+                                "type": "object",
+                                "properties": {
+                                  "fermO": {
+                                    "type": "string"
+                                  },
+                                  "fermK": {
+                                    "type": "string"
+                                  },
+                                  "dap": {
+                                    "type": "string"
+                                  },
+                                  "other": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "maxGpl": {
+                                "type": "object",
+                                "properties": {
+                                  "fermO": {
+                                    "type": "string"
+                                  },
+                                  "fermK": {
+                                    "type": "string"
+                                  },
+                                  "dap": {
+                                    "type": "string"
+                                  },
+                                  "other": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "maxGplTouched": {
+                                "type": "boolean"
+                              },
+                              "other": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "adjustments": {
+                            "type": "object",
+                            "properties": {
+                              "adjustAllowed": {
+                                "type": "boolean"
+                              },
+                              "providedYanPpm": {
+                                "type": "object",
+                                "properties": {
+                                  "fermO": {
+                                    "type": "string"
+                                  },
+                                  "fermK": {
+                                    "type": "string"
+                                  },
+                                  "dap": {
+                                    "type": "string"
+                                  },
+                                  "other": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "flags": {
+                        "type": "object",
+                        "properties": {
+                          "advanced": {
+                            "type": "boolean"
+                          },
+                          "private": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    },
+                    "nullable": true
+                  },
+                  "snapshottedAt": {
+                    "type": "string"
+                  }
+                },
+                "nullable": true
+              },
+              "entries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "datetime": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "NOTE",
+                        "GRAVITY",
+                        "VOLUME",
+                        "TEMPERATURE",
+                        "PH",
+                        "ADDITION",
+                        "NUTRIENT",
+                        "RACKING",
+                        "STABILIZATION",
+                        "BACKSWEETENING",
+                        "PACKAGING",
+                        "TASTING",
+                        "STAGE_CHANGE",
+                        "ISSUE"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "note": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "gravity": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "temperature": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "temp_units": {
+                      "type": "string",
+                      "enum": [
+                        "F",
+                        "C",
+                        "K"
+                      ],
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              },
+              "entries_by_stage": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "PLANNED",
+                        "PRIMARY",
+                        "SECONDARY",
+                        "BULK_AGE",
+                        "STABILIZED",
+                        "BACKSWEETENED",
+                        "PACKAGED",
+                        "COMPLETE"
+                      ]
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "datetime": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "NOTE",
+                              "GRAVITY",
+                              "VOLUME",
+                              "TEMPERATURE",
+                              "PH",
+                              "ADDITION",
+                              "NUTRIENT",
+                              "RACKING",
+                              "STABILIZATION",
+                              "BACKSWEETENING",
+                              "PACKAGING",
+                              "TASTING",
+                              "STAGE_CHANGE",
+                              "ISSUE"
+                            ]
+                          },
+                          "title": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "note": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "gravity": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "temperature": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "temp_units": {
+                            "type": "string",
+                            "enum": [
+                              "F",
+                              "C",
+                              "K"
+                            ],
+                            "nullable": true
+                          },
+                          "data": {
+                            "type": "object",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "logs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "datetime": {
+                      "type": "string"
+                    },
+                    "temperature": {
+                      "type": "number"
+                    },
+                    "temp_units": {
+                      "type": "string",
+                      "enum": [
+                        "F",
+                        "C",
+                        "K"
+                      ]
+                    },
+                    "battery": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "gravity": {
+                      "type": "number"
+                    },
+                    "calculated_gravity": {
+                      "type": "number",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublicBrewDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "PRIMARY",
+              "SECONDARY",
+              "BULK_AGE",
+              "STABILIZED",
+              "BACKSWEETENED",
+              "PACKAGED",
+              "COMPLETE"
+            ]
+          },
+          "batch_number": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_volume_liters": {
+            "type": "number",
+            "nullable": true
+          },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ]
+          },
+          "latest_gravity": {
+            "type": "number",
+            "nullable": true
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "entry_count": {
+            "type": "number"
+          },
+          "owner": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "nullable": true
+          },
+          "recipe_snapshot": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "number"
+              },
+              "dataV2": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "enum": [
+                      2
+                    ]
+                  },
+                  "unitDefaults": {
+                    "type": "object",
+                    "properties": {
+                      "weight": {
+                        "type": "string",
+                        "enum": [
+                          "kg",
+                          "g",
+                          "lb",
+                          "oz"
+                        ]
+                      },
+                      "volume": {
+                        "type": "string",
+                        "enum": [
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz"
+                        ]
+                      }
+                    }
+                  },
+                  "ingredients": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lineId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "ref": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "catalog"
+                                  ]
+                                },
+                                "ingredientId": {
+                                  "oneOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "string"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "custom"
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "brix": {
+                          "type": "string"
+                        },
+                        "secondary": {
+                          "type": "boolean"
+                        },
+                        "amounts": {
+                          "type": "object",
+                          "properties": {
+                            "weight": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "volume": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                },
+                                "unit": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "weight",
+                                "volume"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "fg": {
+                    "type": "string"
+                  },
+                  "additives": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lineId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "amountTouched": {
+                          "type": "boolean"
+                        },
+                        "amountDim": {
+                          "type": "string",
+                          "enum": [
+                            "weight",
+                            "volume",
+                            "count",
+                            "unknown"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "stabilizers": {
+                    "type": "object",
+                    "properties": {
+                      "adding": {
+                        "type": "boolean"
+                      },
+                      "takingPh": {
+                        "type": "boolean"
+                      },
+                      "phReading": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "kmeta",
+                          "nameta"
+                        ]
+                      }
+                    }
+                  },
+                  "notes": {
+                    "type": "object",
+                    "properties": {
+                      "primary": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "lineId": {
+                              "type": "string"
+                            },
+                            "content": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "secondary": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "lineId": {
+                              "type": "string"
+                            },
+                            "content": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "nutrients": {
+                    "type": "object",
+                    "properties": {
+                      "version": {
+                        "type": "number",
+                        "enum": [
+                          2
+                        ]
+                      },
+                      "inputs": {
+                        "type": "object",
+                        "properties": {
+                          "volume": {
+                            "type": "string"
+                          },
+                          "volumeUnits": {
+                            "type": "string",
+                            "enum": [
+                              "gal",
+                              "liter"
+                            ]
+                          },
+                          "sg": {
+                            "type": "string"
+                          },
+                          "offsetPpm": {
+                            "type": "string"
+                          },
+                          "numberOfAdditions": {
+                            "type": "string"
+                          },
+                          "goFermType": {
+                            "type": "string",
+                            "enum": [
+                              "Go-Ferm",
+                              "protect",
+                              "sterol-flash",
+                              "none"
+                            ]
+                          },
+                          "yeastAmountG": {
+                            "type": "string"
+                          },
+                          "yeastAmountTouched": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "selected": {
+                        "type": "object",
+                        "properties": {
+                          "yeastBrand": {
+                            "type": "string"
+                          },
+                          "yeastStrain": {
+                            "type": "string"
+                          },
+                          "yeastId": {
+                            "type": "number"
+                          },
+                          "nitrogenRequirement": {
+                            "type": "string",
+                            "enum": [
+                              "Very Low",
+                              "Low",
+                              "Medium",
+                              "High",
+                              "Very High"
+                            ]
+                          },
+                          "schedule": {
+                            "type": "string",
+                            "enum": [
+                              "tbe",
+                              "tosna",
+                              "justK",
+                              "dap",
+                              "oAndk",
+                              "oAndDap",
+                              "kAndDap",
+                              "other"
+                            ]
+                          },
+                          "selectedNutrients": {
+                            "type": "object",
+                            "properties": {
+                              "fermO": {
+                                "type": "boolean"
+                              },
+                              "fermK": {
+                                "type": "boolean"
+                              },
+                              "dap": {
+                                "type": "boolean"
+                              },
+                              "other": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "settings": {
+                        "type": "object",
+                        "properties": {
+                          "yanContribution": {
+                            "type": "object",
+                            "properties": {
+                              "fermO": {
+                                "type": "string"
+                              },
+                              "fermK": {
+                                "type": "string"
+                              },
+                              "dap": {
+                                "type": "string"
+                              },
+                              "other": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "maxGpl": {
+                            "type": "object",
+                            "properties": {
+                              "fermO": {
+                                "type": "string"
+                              },
+                              "fermK": {
+                                "type": "string"
+                              },
+                              "dap": {
+                                "type": "string"
+                              },
+                              "other": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "maxGplTouched": {
+                            "type": "boolean"
+                          },
+                          "other": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "adjustments": {
+                        "type": "object",
+                        "properties": {
+                          "adjustAllowed": {
+                            "type": "boolean"
+                          },
+                          "providedYanPpm": {
+                            "type": "object",
+                            "properties": {
+                              "fermO": {
+                                "type": "string"
+                              },
+                              "fermK": {
+                                "type": "string"
+                              },
+                              "dap": {
+                                "type": "string"
+                              },
+                              "other": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "flags": {
+                    "type": "object",
+                    "properties": {
+                      "advanced": {
+                        "type": "boolean"
+                      },
+                      "private": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "nullable": true
+              },
+              "snapshottedAt": {
+                "type": "string"
+              }
+            },
+            "nullable": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "datetime": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "NOTE",
+                    "GRAVITY",
+                    "VOLUME",
+                    "TEMPERATURE",
+                    "PH",
+                    "ADDITION",
+                    "NUTRIENT",
+                    "RACKING",
+                    "STABILIZATION",
+                    "BACKSWEETENING",
+                    "PACKAGING",
+                    "TASTING",
+                    "STAGE_CHANGE",
+                    "ISSUE"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "gravity": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "temperature": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "temp_units": {
+                  "type": "string",
+                  "enum": [
+                    "F",
+                    "C",
+                    "K"
+                  ],
+                  "nullable": true
+                },
+                "data": {
+                  "type": "object",
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "entries_by_stage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "PLANNED",
+                    "PRIMARY",
+                    "SECONDARY",
+                    "BULK_AGE",
+                    "STABILIZED",
+                    "BACKSWEETENED",
+                    "PACKAGED",
+                    "COMPLETE"
+                  ]
+                },
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "datetime": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "NOTE",
+                          "GRAVITY",
+                          "VOLUME",
+                          "TEMPERATURE",
+                          "PH",
+                          "ADDITION",
+                          "NUTRIENT",
+                          "RACKING",
+                          "STABILIZATION",
+                          "BACKSWEETENING",
+                          "PACKAGING",
+                          "TASTING",
+                          "STAGE_CHANGE",
+                          "ISSUE"
+                        ]
+                      },
+                      "title": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "note": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "gravity": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "temperature": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "temp_units": {
+                        "type": "string",
+                        "enum": [
+                          "F",
+                          "C",
+                          "K"
+                        ],
+                        "nullable": true
+                      },
+                      "data": {
+                        "type": "object",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "datetime": {
+                  "type": "string"
+                },
+                "temperature": {
+                  "type": "number"
+                },
+                "temp_units": {
+                  "type": "string",
+                  "enum": [
+                    "F",
+                    "C",
+                    "K"
+                  ]
+                },
+                "battery": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "gravity": {
+                  "type": "number"
+                },
+                "calculated_gravity": {
+                  "type": "number",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublicBrewOwnerResponse": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicBrewEntryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "datetime": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "NOTE",
+              "GRAVITY",
+              "VOLUME",
+              "TEMPERATURE",
+              "PH",
+              "ADDITION",
+              "NUTRIENT",
+              "RACKING",
+              "STABILIZATION",
+              "BACKSWEETENING",
+              "PACKAGING",
+              "TASTING",
+              "STAGE_CHANGE",
+              "ISSUE"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "gravity": {
+            "type": "number",
+            "nullable": true
+          },
+          "temperature": {
+            "type": "number",
+            "nullable": true
+          },
+          "temp_units": {
+            "type": "string",
+            "enum": [
+              "F",
+              "C",
+              "K"
+            ],
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "PublicBrewEntriesByStageResponse": {
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "PRIMARY",
+              "SECONDARY",
+              "BULK_AGE",
+              "STABILIZED",
+              "BACKSWEETENED",
+              "PACKAGED",
+              "COMPLETE"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "datetime": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "NOTE",
+                    "GRAVITY",
+                    "VOLUME",
+                    "TEMPERATURE",
+                    "PH",
+                    "ADDITION",
+                    "NUTRIENT",
+                    "RACKING",
+                    "STABILIZATION",
+                    "BACKSWEETENING",
+                    "PACKAGING",
+                    "TASTING",
+                    "STAGE_CHANGE",
+                    "ISSUE"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "note": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "gravity": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "temperature": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "temp_units": {
+                  "type": "string",
+                  "enum": [
+                    "F",
+                    "C",
+                    "K"
+                  ],
+                  "nullable": true
+                },
+                "data": {
+                  "type": "object",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublicBrewLogResponse": {
+        "type": "object",
+        "properties": {
+          "datetime": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number"
+          },
+          "temp_units": {
+            "type": "string",
+            "enum": [
+              "F",
+              "C",
+              "K"
+            ]
+          },
+          "battery": {
+            "type": "number",
+            "nullable": true
+          },
+          "gravity": {
+            "type": "number"
+          },
+          "calculated_gravity": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "PublicBrewValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid recipe ID",
+              "Missing brew_id"
+            ]
+          }
+        }
+      },
+      "PublicBrewNotFoundErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Brew not found"
+            ]
+          }
+        }
+      },
+      "PublicBrewFetchErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to fetch public brews",
+              "Failed to fetch public brew"
+            ]
+          }
+        }
+      },
+      "PublicRecipeBrewsPathParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicRecipeBrewsResponse": {
+        "type": "object",
+        "properties": {
+          "brews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "PLANNED",
+                    "PRIMARY",
+                    "SECONDARY",
+                    "BULK_AGE",
+                    "STABILIZED",
+                    "BACKSWEETENED",
+                    "PACKAGED",
+                    "COMPLETE"
+                  ]
+                },
+                "batch_number": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "current_volume_liters": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "gravity_unit_preference": {
+                  "type": "string",
+                  "enum": [
+                    "SG",
+                    "BRIX"
+                  ]
+                },
+                "latest_gravity": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "public": {
+                  "type": "boolean"
+                },
+                "recipe_id": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "recipe_name": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "entry_count": {
+                  "type": "number"
+                },
+                "owner": {
+                  "type": "object",
+                  "properties": {
+                    "displayName": {
+                      "type": "string"
+                    }
+                  },
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublicBrewListItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "PRIMARY",
+              "SECONDARY",
+              "BULK_AGE",
+              "STABILIZED",
+              "BACKSWEETENED",
+              "PACKAGED",
+              "COMPLETE"
+            ]
+          },
+          "batch_number": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_volume_liters": {
+            "type": "number",
+            "nullable": true
+          },
+          "gravity_unit_preference": {
+            "type": "string",
+            "enum": [
+              "SG",
+              "BRIX"
+            ]
+          },
+          "latest_gravity": {
+            "type": "number",
+            "nullable": true
+          },
+          "public": {
+            "type": "boolean"
+          },
+          "recipe_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "recipe_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "entry_count": {
+            "type": "number"
+          },
+          "owner": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "nullable": true
           }
         }
       },
@@ -15883,6 +17805,44 @@
         }
       }
     },
+    "/admin/brews": {
+      "get": {
+        "operationId": "get-admin-brews",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/admin/summary": {
+      "get": {
+        "operationId": "get-admin-summary",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/users/{id}": {
       "get": {
         "operationId": "get-users-{id}",
@@ -16118,6 +18078,44 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/admin/brews/{brew_id}": {
+      "get": {
+        "operationId": "get-admin-brews-{brew_id}",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/password-reset": {
+      "post": {
+        "operationId": "post-admin-users-{id}-password-reset",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
@@ -16631,6 +18629,81 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "patch-brews",
+        "summary": "Update hydrometer brew",
+        "description": "Renames a brew when brew_name is provided, otherwise detaches the device.",
+        "tags": [
+          "Brews"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHydrometerBrewRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateHydrometerBrewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HydrometerBrewValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HydrometerBrewErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/brews/{brew_id}": {
@@ -17133,6 +19206,59 @@
         }
       }
     },
+    "/recipes/{id}/brews": {
+      "get": {
+        "operationId": "get-recipes-{id}-brews",
+        "summary": "List public brews for recipe",
+        "description": "Returns brews whose owners explicitly made them public for the given public recipe. Private recipes and private brews return an empty list.",
+        "tags": [
+          "Brews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRecipeBrewsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrewValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrewFetchErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/brews/{brew_id}/entries/{entry_id}": {
       "patch": {
         "operationId": "patch-brews-{brew_id}-entries-{entry_id}",
@@ -17307,6 +19433,78 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BrewEntryDeleteErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{id}/brews/{brew_id}": {
+      "get": {
+        "operationId": "get-recipes-{id}-brews-{brew_id}",
+        "summary": "Get public brew for recipe",
+        "description": "Returns the read-only tracker data for a brew whose owner explicitly made it public and whose linked recipe is public.",
+        "tags": [
+          "Brews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "brew_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRecipeBrewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrewValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrewNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBrewFetchErrorResponse"
                 }
               }
             }

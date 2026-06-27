@@ -865,6 +865,7 @@ export type BrewStageResponse =
 export type BrewEntryTypeResponse =
   | "NOTE"
   | "GRAVITY"
+  | "VOLUME"
   | "TEMPERATURE"
   | "PH"
   | "ADDITION"
@@ -878,6 +879,7 @@ export type BrewEntryTypeResponse =
   | "ISSUE";
 
 export type TemperatureUnitResponse = "F" | "C" | "K";
+export type GravityUnitResponse = "SG" | "BRIX";
 
 export type BrewPathParams = {
   brew_id: string;
@@ -894,9 +896,14 @@ export type BrewListItemResponse = {
   start_date: string;
   end_date: string | null;
   stage: BrewStageResponse;
+  batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnitResponse;
+  public: boolean;
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
   entry_count: number;
   latest_gravity: number | null;
 };
@@ -953,9 +960,13 @@ export type BrewResponse = {
   stage: BrewStageResponse;
   batch_number: number | null;
   current_volume_liters: number | null;
+  requested_email_alerts: boolean;
+  gravity_unit_preference: GravityUnitResponse;
+  public: boolean;
   latest_gravity: number | null;
   recipe_id: number | null;
   recipe_name: string | null;
+  recipe_private: boolean | null;
   recipe_snapshot: BrewRecipeSnapshotResponse | null;
   entry_count: number;
   entries: BrewEntryResponse[];
@@ -977,7 +988,14 @@ export type CreateBrewResponse = {
     stage: BrewStageResponse;
     batch_number: number | null;
     current_volume_liters: number | null;
+    requested_email_alerts: boolean | null;
+    gravity_unit_preference: GravityUnitResponse;
+    public: boolean;
+    latest_gravity: number | null;
     recipe_id: number | null;
+    recipe_name: string | null;
+    recipe_private: boolean | null;
+    entry_count: number;
   };
 };
 
@@ -986,6 +1004,8 @@ export type UpdateBrewRequestBody = {
   stage?: BrewStageResponse;
   current_volume_liters?: number | null;
   requested_email_alerts?: boolean;
+  gravity_unit_preference?: GravityUnitResponse;
+  public?: boolean;
   end_date?: string | null;
 };
 
@@ -998,9 +1018,110 @@ export type UpdateBrewResponse = {
   batch_number: number | null;
   current_volume_liters: number | null;
   requested_email_alerts: boolean | null;
+  gravity_unit_preference: GravityUnitResponse;
+  public: boolean;
   latest_gravity: number | null;
   recipe_id: number | null;
+  recipe_name: string | null;
+  recipe_private: boolean | null;
 } | null;
+
+export type PublicRecipeBrewsPathParams = {
+  id: string;
+};
+
+export type PublicRecipeBrewPathParams = {
+  id: string;
+  brew_id: string;
+};
+
+export type PublicBrewOwnerResponse = {
+  displayName: string;
+};
+
+export type PublicBrewListItemResponse = {
+  id: string;
+  name: string | null;
+  start_date: string;
+  end_date: string | null;
+  stage: BrewStageResponse;
+  batch_number: number | null;
+  current_volume_liters: number | null;
+  gravity_unit_preference: GravityUnitResponse;
+  latest_gravity: number | null;
+  public: boolean;
+  recipe_id: number | null;
+  recipe_name: string | null;
+  entry_count: number;
+  owner: PublicBrewOwnerResponse | null;
+};
+
+export type PublicBrewEntryResponse = {
+  id: string;
+  datetime: string;
+  type: BrewEntryTypeResponse;
+  title: string | null;
+  note: string | null;
+  gravity: number | null;
+  temperature: number | null;
+  temp_units: TemperatureUnitResponse | null;
+  data: object | null;
+};
+
+export type PublicBrewEntriesByStageResponse = {
+  stage: BrewStageResponse;
+  entries: PublicBrewEntryResponse[];
+};
+
+export type PublicBrewLogResponse = {
+  datetime: string;
+  temperature: number;
+  temp_units: TemperatureUnitResponse;
+  battery: number | null;
+  gravity: number;
+  calculated_gravity: number | null;
+};
+
+export type PublicBrewDetailResponse = {
+  id: string;
+  name: string | null;
+  start_date: string;
+  end_date: string | null;
+  stage: BrewStageResponse;
+  batch_number: number | null;
+  current_volume_liters: number | null;
+  gravity_unit_preference: GravityUnitResponse;
+  latest_gravity: number | null;
+  public: boolean;
+  recipe_id: number | null;
+  recipe_name: string | null;
+  entry_count: number;
+  owner: PublicBrewOwnerResponse | null;
+  recipe_snapshot: BrewRecipeSnapshotResponse | null;
+  entries: PublicBrewEntryResponse[];
+  entries_by_stage: PublicBrewEntriesByStageResponse[];
+  logs: PublicBrewLogResponse[];
+};
+
+export type PublicRecipeBrewsResponse = {
+  brews: PublicBrewListItemResponse[];
+};
+
+export type PublicRecipeBrewResponse = {
+  brew: PublicBrewDetailResponse;
+};
+
+export type PublicBrewValidationErrorResponse = {
+  error: "Invalid recipe ID" | "Missing brew_id";
+};
+
+export type PublicBrewNotFoundErrorResponse = {
+  error: "Brew not found";
+};
+
+export type PublicBrewFetchErrorResponse = {
+  error: "Failed to fetch public brews" | "Failed to fetch public brew";
+};
 
 export type CreateBrewEntryRequestBody = {
   type: BrewEntryTypeResponse;

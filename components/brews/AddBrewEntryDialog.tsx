@@ -29,12 +29,21 @@ import {
   InputGroupText
 } from "@/components/ui/input-group";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
-import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
+import { BREW_ENTRY_TYPE, GRAVITY_UNITS } from "@/lib/brewEnums";
 import type { TempUnits } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
+import type { GravityReadingRole } from "@/lib/utils/entryPayload";
+import { BREW_TRACKER_DIALOG_CONTENT_CLASS } from "@/components/brews/brewTrackerDialog";
+import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
+import type { GravityUnit } from "@/lib/brewEnums";
+import { refractometerCorrectedSg, toBrix, toSG } from "@/lib/utils/unitConverter";
+import { formatSgAsBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";
+import TooltipHelper from "@/components/Tooltips";
 
 export type EntryType =
   | typeof BREW_ENTRY_TYPE.NOTE
@@ -46,6 +55,9 @@ export type EntryType =
 export type OpenAddEntryArgs = {
   presetType?: EntryType;
   allowedTypes?: EntryType[];
+  gravityRole?: GravityReadingRole;
+  gravityDefaultValue?: number;
+  gravitySource?: "measured" | "recipe";
 };
 const ALL_ENTRY_TYPES: Array<{ value: EntryType; label: string }> = [
   { value: BREW_ENTRY_TYPE.NOTE, label: "Note" },
@@ -61,6 +73,12 @@ export default function AddBrewEntryDialog({
   allowedTypes,
   defaultType,
   presetType,
+  gravityRole,
+  gravityDefaultValue,
+  gravitySource = "measured",
+  gravityUnitPreference = GRAVITY_UNITS.SG,
+  correctionOg,
+  onGravityUnitPreferenceChange,
   triggerLabel,
   open: openProp,
   onOpenChange: onOpenChangeProp,
@@ -70,6 +88,12 @@ export default function AddBrewEntryDialog({
   allowedTypes?: EntryType[];
   defaultType?: EntryType;
   presetType?: EntryType; // open modal already set to this
+  gravityRole?: GravityReadingRole;
+  gravityDefaultValue?: number;
+  gravitySource?: "measured" | "recipe";
+  gravityUnitPreference?: GravityUnit;
+  correctionOg?: number | null;
+  onGravityUnitPreferenceChange?: (unit: GravityUnit) => void | Promise<void>;
   triggerLabel?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -99,28 +123,96 @@ export default function AddBrewEntryDialog({
 
   const [title, setTitle] = React.useState<string>("");
   const [note, setNote] = React.useState<string>("");
+  const [datetime, setDatetime] = React.useState<Date>(new Date());
 
   const [gravity, setGravity] = React.useState<string>("");
+  const [gravityUnit, setGravityUnit] = React.useState<GravityUnit>(gravityUnitPreference);
+  const [applyRefractometerCorrection, setApplyRefractometerCorrection] = React.useState(false);
+  const [correctionFactor, setCorrectionFactor] = React.useState("1");
   const [temperature, setTemperature] = React.useState<string>("");
   const [tempUnits, setTempUnits] = React.useState<TempUnits>("F" as TempUnits);
 
   const [ph, setPh] = React.useState<string>("");
 
+  const hasCorrectionOg =
+    typeof correctionOg === "number" &&
+    Number.isFinite(correctionOg) &&
+    correctionOg > 1;
+  const canApplyRefractometerCorrection =
+    gravityUnit === GRAVITY_UNITS.BRIX && hasCorrectionOg;
+
+  const formatDefaultGravity = React.useCallback(
+    (value?: number) => {
+      if (typeof value !== "number" || !Number.isFinite(value)) return "";
+      return gravityUnitPreference === GRAVITY_UNITS.BRIX
+        ? toBrix(value).toFixed(2)
+        : value.toFixed(3);
+    },
+    [gravityUnitPreference]
+  );
+
   function reset() {
     setType(initialType);
     setTitle("");
     setNote("");
-    setGravity("");
+    setDatetime(new Date());
+    setGravityUnit(gravityUnitPreference);
+    setGravity(formatDefaultGravity(gravityDefaultValue));
+    setApplyRefractometerCorrection(false);
+    setCorrectionFactor("1");
     setTemperature("");
     setTempUnits("F" as TempUnits);
     setPh("");
   }
+
+  React.useEffect(() => {
+    if (!open) return;
+    setType(initialType);
+    setGravityUnit(gravityUnitPreference);
+    setGravity(formatDefaultGravity(gravityDefaultValue));
+    setApplyRefractometerCorrection(false);
+    setCorrectionFactor("1");
+  }, [formatDefaultGravity, gravityDefaultValue, gravityUnitPreference, initialType, open]);
+
+  React.useEffect(() => {
+    if (!canApplyRefractometerCorrection) {
+      setApplyRefractometerCorrection(false);
+    }
+  }, [canApplyRefractometerCorrection]);
+
+  const gravityPreview = React.useMemo(() => {
+    if (type !== BREW_ENTRY_TYPE.GRAVITY) return null;
+    const enteredValue = Number(gravity);
+    if (!Number.isFinite(enteredValue)) return null;
+    if (gravityUnit === GRAVITY_UNITS.SG) return enteredValue;
+
+    if (applyRefractometerCorrection && hasCorrectionOg) {
+      const factor = Number(correctionFactor);
+      if (!Number.isFinite(factor) || factor <= 0) return null;
+      return refractometerCorrectedSg(
+        toBrix(correctionOg!),
+        enteredValue,
+        factor
+      );
+    }
+
+    return toSG(enteredValue);
+  }, [
+    applyRefractometerCorrection,
+    correctionFactor,
+    correctionOg,
+    gravity,
+    gravityUnit,
+    hasCorrectionOg,
+    type
+  ]);
 
   function buildInput(): CreateBrewEntryInput {
     const trimmedTitle = title.trim();
     const titleOrNull = trimmedTitle ? trimmedTitle : null;
     const trimmedNote = note.trim();
     const noteOrNull = trimmedNote ? trimmedNote : null;
+    const datetimeIso = datetime.toISOString();
 
     // NOTE / TASTING / ISSUE
     if (
@@ -130,22 +222,57 @@ export default function AddBrewEntryDialog({
     ) {
       // you can use entryPayload here, or inline.
       if (type === BREW_ENTRY_TYPE.NOTE)
-        return entryPayload.note(noteOrNull ?? "", titleOrNull);
+        return entryPayload.note(noteOrNull ?? "", titleOrNull, null, datetimeIso);
       if (type === BREW_ENTRY_TYPE.TASTING)
-        return entryPayload.tasting(noteOrNull ?? "", titleOrNull ?? "Tasting");
-      return entryPayload.issue(noteOrNull ?? "", titleOrNull ?? "Issue");
+        return entryPayload.tasting(noteOrNull ?? "", titleOrNull ?? "Tasting", datetimeIso);
+      return entryPayload.issue(noteOrNull ?? "", titleOrNull ?? "Issue", datetimeIso);
     }
 
     if (type === BREW_ENTRY_TYPE.GRAVITY) {
-      const n = Number(gravity);
-      if (!Number.isFinite(n)) throw new Error("Invalid gravity");
-      return entryPayload.gravity(n, noteOrNull);
+      const enteredValue = Number(gravity);
+      if (!Number.isFinite(enteredValue)) throw new Error("Invalid gravity");
+      const factor = Number(correctionFactor);
+      if (
+        gravityUnit === GRAVITY_UNITS.BRIX &&
+        applyRefractometerCorrection &&
+        (!Number.isFinite(factor) || factor <= 0)
+      ) {
+        throw new Error("Invalid correction factor");
+      }
+      const sg =
+        gravityUnit === GRAVITY_UNITS.SG
+          ? enteredValue
+          : applyRefractometerCorrection && hasCorrectionOg
+            ? refractometerCorrectedSg(toBrix(correctionOg!), enteredValue, factor)
+            : toSG(enteredValue);
+      return entryPayload.gravity(sg, noteOrNull, {
+        readingRole: gravityRole ?? "GENERAL",
+        source: gravitySource,
+        datetime: datetimeIso,
+        display: {
+          enteredValue,
+          enteredUnit: gravityUnit,
+          convertedGravity: sg,
+          refractometerCorrectionApplied:
+            gravityUnit === GRAVITY_UNITS.BRIX && applyRefractometerCorrection,
+          correctionFactor:
+            gravityUnit === GRAVITY_UNITS.BRIX && applyRefractometerCorrection
+              ? factor
+              : undefined,
+          ogUsed:
+            gravityUnit === GRAVITY_UNITS.BRIX &&
+            applyRefractometerCorrection &&
+            hasCorrectionOg
+              ? correctionOg!
+              : undefined
+        }
+      });
     }
 
     if (type === BREW_ENTRY_TYPE.TEMPERATURE) {
       const n = Number(temperature);
       if (!Number.isFinite(n)) throw new Error("Invalid temperature");
-      return entryPayload.temperature(n, tempUnits, noteOrNull);
+      return entryPayload.temperature(n, tempUnits, noteOrNull, datetimeIso);
     }
 
     // PH
@@ -155,6 +282,7 @@ export default function AddBrewEntryDialog({
     const input: CreateBrewEntryInput = {
       type: BREW_ENTRY_TYPE.PH,
       title: titleOrNull ?? "pH reading",
+      datetime: datetimeIso,
       note: noteOrNull,
       data: { ph: n }
     };
@@ -171,7 +299,7 @@ export default function AddBrewEntryDialog({
     } catch (err) {
       console.error(err);
       toast({
-        description: t("error.generic", "Something went wrong."),
+        description: t("error", "Something went wrong."),
         variant: "destructive"
       });
     }
@@ -203,7 +331,7 @@ export default function AddBrewEntryDialog({
         </DialogTrigger>
       ) : null}
 
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
         <DialogHeader>
           <DialogTitle>{t("brew.addEntry", "Add entry")}</DialogTitle>
         </DialogHeader>
@@ -229,6 +357,11 @@ export default function AddBrewEntryDialog({
               </Select>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>{t("date", "Date")}</Label>
+            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+          </div>
 
           {showTitle && (
             <div className="space-y-2">
@@ -257,9 +390,93 @@ export default function AddBrewEntryDialog({
                   align="inline-end"
                   className="mr-1 text-xs sm:text-sm"
                 >
-                  <InputGroupText>SG</InputGroupText>
+                  <Separator orientation="vertical" className="h-12" />
+                  <Select
+                    value={gravityUnit}
+                    onValueChange={(value) => {
+                      const nextUnit = value as GravityUnit;
+                      const currentValue = Number(gravity);
+                      if (Number.isFinite(currentValue) && nextUnit !== gravityUnit) {
+                        setGravity(
+                          nextUnit === GRAVITY_UNITS.BRIX
+                            ? toBrix(currentValue).toFixed(2)
+                            : toSG(currentValue).toFixed(3)
+                        );
+                      }
+                      setGravityUnit(nextUnit);
+                      void onGravityUnitPreferenceChange?.(nextUnit);
+                    }}
+                  >
+                    <SelectTrigger className="mr-2 w-24 border-none p-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GRAVITY_UNITS.SG}>{t("SG", "SG")}</SelectItem>
+                      <SelectItem value={GRAVITY_UNITS.BRIX}>{t("BRIX")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </InputGroupAddon>
               </InputGroup>
+              {gravityUnit === GRAVITY_UNITS.BRIX ? (
+                <div className="space-y-3 rounded-md border border-border bg-background/40 p-3">
+                  {canApplyRefractometerCorrection ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <Label htmlFor="refractometer-correction" className="text-sm">
+                        {t(
+                          "brews.gravity.applyRefractometerCorrection",
+                          "Apply refractometer correction"
+                        )}
+                      </Label>
+                      <Switch
+                        id="refractometer-correction"
+                        checked={applyRefractometerCorrection}
+                        onCheckedChange={setApplyRefractometerCorrection}
+                      />
+                    </div>
+                  ) : null}
+
+                  {applyRefractometerCorrection && canApplyRefractometerCorrection ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <Label>{t("brews.gravity.correctionFactor", "Correction factor")}</Label>
+                        <TooltipHelper
+                          body={t("tiptext.refractometerWarning")}
+                          link="https://www.brewersfriend.com/how-to-determine-your-refractometers-wort-correction-factor/"
+                          variant={correctionFactor !== "1" ? "warning" : "muted"}
+                        />
+                      </div>
+                      <Input
+                        inputMode="decimal"
+                        value={correctionFactor}
+                        onChange={(event) => setCorrectionFactor(event.target.value)}
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        {t("brews.gravity.correctionOg", "OG: {{og}}", {
+                          og: formatSgDisplay(correctionOg, undefined)
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {gravityPreview != null ? (
+                    <div className="text-sm text-muted-foreground">
+                      {applyRefractometerCorrection && canApplyRefractometerCorrection
+                        ? t("brews.gravity.correctedSgPreview", "Corrected SG: {{sg}}", {
+                            sg: formatSgDisplay(gravityPreview, undefined)
+                          })
+                        : t("brews.gravity.convertedSgPreview", "Converted SG: {{sg}}", {
+                            sg: formatSgDisplay(gravityPreview, undefined)
+                          })}
+                    </div>
+                  ) : null}
+
+                  {gravityPreview != null ? (
+                    <div className="text-xs text-muted-foreground">
+                      {formatSgAsBrixDisplay(gravityPreview, t("BRIX"), undefined)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -288,8 +505,8 @@ export default function AddBrewEntryDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="F">F</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="F">{getUnitLabel(t, "F")}</SelectItem>
+                    <SelectItem value="C">{getUnitLabel(t, "C")}</SelectItem>
                   </SelectContent>
                 </Select>
                 </InputGroupAddon>
@@ -331,7 +548,7 @@ export default function AddBrewEntryDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="secondary"
