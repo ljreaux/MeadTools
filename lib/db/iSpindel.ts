@@ -606,20 +606,33 @@ export async function startBrew(
 
 export async function endBrew(id: string, brew_id: string, user_id: number) {
   try {
-    const brew = await prisma.brews.update({
-      where: { user_id, id: brew_id },
-      data: { end_date: new Date() }
-    });
+    return await prisma.$transaction(async (tx) => {
+      const brew = await tx.brews.findFirst({
+        where: { user_id, id: brew_id },
+        select: { id: true }
+      });
+      if (!brew) throw new Error("Brew not found");
 
-    const device = await prisma.devices.update({
-      where: { id },
-      data: { brew_id: null }
-    });
+      const device = await tx.devices.findFirst({
+        where: { id, user_id, brew_id }
+      });
+      if (!device) throw new Error("Device not found");
 
-    return [brew, device];
+      const completedBrew = await tx.brews.update({
+        where: { id: brew_id, user_id },
+        data: { end_date: new Date() }
+      });
+
+      const detachedDevice = await tx.devices.update({
+        where: { id: device.id },
+        data: { brew_id: null }
+      });
+
+      return [completedBrew, detachedDevice];
+    });
   } catch (error) {
     console.error(error);
-    throw new Error("Error ending brew.");
+    throw error;
   }
 }
 
