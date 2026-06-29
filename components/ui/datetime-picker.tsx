@@ -295,8 +295,7 @@ const TimePeriodSelect = React.forwardRef<
 
 TimePeriodSelect.displayName = "TimePeriodSelect";
 
-interface TimePickerInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TimePickerInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   picker: TimePickerType;
   date?: Date | null;
   onDateChange?: (date: Date | undefined) => void;
@@ -650,7 +649,7 @@ const DateTimePicker = React.forwardRef<
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 z-[51]">
+        <PopoverContent className="w-auto p-0 z-[60]">
           <Calendar
             mode="single"
             selected={value}
