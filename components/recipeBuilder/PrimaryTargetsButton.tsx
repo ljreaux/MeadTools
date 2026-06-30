@@ -13,6 +13,14 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import Tooltip from "@/components/Tooltips";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 import {
   AlertDialog,
@@ -25,8 +33,11 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 
-import { toSG } from "@/lib/utils/unitConverter";
+import { calcABV, calcOG, toSG } from "@/lib/utils/unitConverter";
 import { VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
+import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
+
+type TargetUnit = "SG" | "ABV";
 
 type RatioDraft = {
   lineId: string;
@@ -52,15 +63,16 @@ function sugarContribution(volumeL: number, sg: number) {
 }
 
 export default function PrimaryTargetsButton() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const {
-    data: { unitDefaults, ingredients },
+    data: { fg, unitDefaults, ingredients },
     setPrimaryTargetsWithRatios
   } = useRecipe();
 
   const [open, setOpen] = useState(false);
   const [{ og, volume }, setOgAndVolume] = useState({ og: "", volume: "" });
+  const [targetUnit, setTargetUnit] = useState<TargetUnit>("SG");
 
   const primaryLines = useMemo(() => {
     return ingredients.filter((l) => {
@@ -221,38 +233,76 @@ export default function PrimaryTargetsButton() {
     };
   }, [draftRatios, primaryLines]);
 
-  const ogNum = useMemo(() => {
-    const n = parseNumber(og);
-    return Number.isFinite(n) ? n : NaN;
-  }, [og]);
+  const estimatedFg = parseNumber(fg);
+  const targetOg = useMemo(() => {
+    const target = parseNumber(og);
+    if (targetUnit === "SG") return target;
+
+    try {
+      return calcOG(target, estimatedFg);
+    } catch {
+      return NaN;
+    }
+  }, [estimatedFg, og, targetUnit]);
 
   const ogMaxFinite = Number.isFinite(ogBounds.maxOg);
+  const maxTargetAbv = ogMaxFinite
+    ? calcABV(Math.min(ogBounds.maxOg, 1.3), estimatedFg)
+    : NaN;
+  const enteredTarget = parseNumber(og);
   const ogTooHigh =
     og.trim() !== "" &&
     ogMaxFinite &&
-    Number.isFinite(ogNum) &&
-    ogNum > ogBounds.maxOg + 0.0005; // tiny tolerance
+    (targetUnit === "ABV"
+      ? !Number.isFinite(enteredTarget) ||
+        enteredTarget < 0 ||
+        enteredTarget > maxTargetAbv
+      : Number.isFinite(targetOg) &&
+        targetOg > ogBounds.maxOg + 0.0005); // tiny tolerance
 
   const ogWarningText = useMemo(() => {
+    const isAbv = targetUnit === "ABV";
+
     if (!ogMaxFinite) {
       if (ogBounds.reason === "non-fermentable")
-        return t("primaryTargets.ogImpossible");
-      return t("primaryTargets.ogUnknown");
+        return t(
+          isAbv
+            ? "primaryTargets.abvImpossible"
+            : "primaryTargets.ogImpossible"
+        );
+      return t(
+        isAbv ? "primaryTargets.abvUnknown" : "primaryTargets.ogUnknown"
+      );
     }
 
-    const maxDisp = ogBounds.maxOg.toFixed(3);
+    const maxDisp = isAbv
+      ? maxTargetAbv.toFixed(2)
+      : ogBounds.maxOg.toFixed(3);
+
     if (ogTooHigh) {
-      return t("primaryTargets.ogTooHigh", {
-        maxDisp
-      });
+      return t(
+        isAbv ? "primaryTargets.abvTooHigh" : "primaryTargets.ogTooHigh",
+        { maxDisp }
+      );
     }
 
-    return t("primaryTargets.ogRange", { maxDisp });
-  }, [ogMaxFinite, ogBounds, ogTooHigh, t]);
+    return t(
+      isAbv ? "primaryTargets.abvRange" : "primaryTargets.ogRange",
+      { maxDisp }
+    );
+  }, [
+    maxTargetAbv,
+    ogMaxFinite,
+    ogBounds,
+    ogTooHigh,
+    t,
+    targetUnit
+  ]);
 
   const canSubmit =
     og.trim() !== "" &&
     volume.trim() !== "" &&
+    Number.isFinite(targetOg) &&
     primaryLines.length > 0 &&
     Number.isFinite(ratiosSum) &&
     Math.abs(ratiosSum - 100) < 0.5 &&
@@ -260,7 +310,7 @@ export default function PrimaryTargetsButton() {
 
   const handleSubmit = () => {
     setPrimaryTargetsWithRatios({
-      targetOg: parseNumber(og),
+      targetOg,
       targetVolume: parseNumber(volume),
       ratios: draftRatios.map((r) => ({
         lineId: r.lineId,
@@ -270,6 +320,30 @@ export default function PrimaryTargetsButton() {
 
     setOpen(false);
     setOgAndVolume({ og: "", volume: "" });
+  };
+
+  const handleTargetUnitChange = (nextUnit: TargetUnit) => {
+    const currentTarget = parseNumber(og);
+
+    if (!Number.isFinite(currentTarget) || !Number.isFinite(estimatedFg)) {
+      setTargetUnit(nextUnit);
+      return;
+    }
+
+    try {
+      const convertedTarget =
+        nextUnit === "ABV"
+          ? calcABV(currentTarget, estimatedFg)
+          : calcOG(currentTarget, estimatedFg);
+
+      setTargetUnit(nextUnit);
+      setOgAndVolume({
+        og: convertedTarget.toFixed(nextUnit === "ABV" ? 2 : 3),
+        volume
+      });
+    } catch {
+      // Keep the current unit and value so the validation remains visible.
+    }
   };
 
   const handleClose = () => {
@@ -305,7 +379,11 @@ export default function PrimaryTargetsButton() {
             <div className="grid gap-1">
               <InputGroup className="h-12">
                 <InputGroupInput
-                  placeholder={t("placeholder.og")}
+                  placeholder={
+                    targetUnit === "ABV"
+                      ? t("placeholder.abv")
+                      : t("placeholder.og")
+                  }
                   value={og}
                   onChange={(e) => {
                     if (isValidNumber(e.target.value)) {
@@ -315,12 +393,27 @@ export default function PrimaryTargetsButton() {
                   inputMode="decimal"
                   onFocus={(e) => e.target.select()}
                   className="text-lg"
+                  aria-invalid={ogTooHigh}
                 />
                 <InputGroupAddon
                   align="inline-end"
-                  className="mr-1 text-xs sm:text-sm"
+                  className="mr-1 whitespace-nowrap px-1 text-xs sm:text-sm"
                 >
-                  {t("SG")}
+                  <Separator orientation="vertical" className="h-12" />
+                  <Select
+                    value={targetUnit}
+                    onValueChange={(value) =>
+                      handleTargetUnitChange(value as TargetUnit)
+                    }
+                  >
+                    <SelectTrigger className="mr-2 w-24 border-none p-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-[1001]">
+                      <SelectItem value="SG">{t("SG")}</SelectItem>
+                      <SelectItem value="ABV">{t("ABV")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </InputGroupAddon>
               </InputGroup>
 
@@ -332,6 +425,16 @@ export default function PrimaryTargetsButton() {
               >
                 {ogWarningText}
               </p>
+              {targetUnit === "ABV" && Number.isFinite(estimatedFg) ? (
+                <p className="text-xs text-muted-foreground">
+                  {t("primaryTargets.abvFgBasis", {
+                    fg: formatSgDisplay(
+                      estimatedFg,
+                      i18n.resolvedLanguage ?? i18n.language
+                    )
+                  })}
+                </p>
+              ) : null}
             </div>
 
             {/* Volume */}
