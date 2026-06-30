@@ -8,6 +8,35 @@ export const calcABV = (OG: number, FG: number) => {
   return ABV;
 };
 
+export const calcOG = (ABV: number, FG: number) => {
+  if (!Number.isFinite(ABV) || ABV < 0) {
+    throw new RangeError("ABV must be a non-negative finite number");
+  }
+
+  if (!Number.isFinite(FG) || FG <= 0) {
+    throw new RangeError("FG must be a positive finite number");
+  }
+
+  let low = FG;
+  let high = Math.max(1.3, FG);
+
+  if (calcABV(high, FG) < ABV) {
+    throw new RangeError("ABV is outside the supported OG range");
+  }
+
+  for (let i = 0; i < 60; i++) {
+    const OG = (low + high) / 2;
+
+    if (calcABV(OG, FG) < ABV) {
+      low = OG;
+    } else {
+      high = OG;
+    }
+  }
+
+  return (low + high) / 2;
+};
+
 export const toBrix = (value: number) => {
   return -668.962 + 1262.45 * value - 776.43 * value ** 2 + 182.94 * value ** 3;
 };

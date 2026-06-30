@@ -992,6 +992,7 @@
   "ingredient": "Zutat",
   "ingredientTooltip": "Wenn Sie eine Zutat aus der Liste auswählen, wird der Brix-Wert automatisch eingetragen. Wenn Sie eine benutzerdefinierte Zutat verwenden möchten, wählen Sie eine aus der Liste aus und ändern Sie den Namen. Beispiel: Blaubeerblütenhonig: Wählen Sie Honig aus und ändern Sie den Namen. ",
   "initialDetails": {
+    "abvOutOfRange": "Gib einen ABV zwischen 0 und {{maxDisp}} % ein.",
     "title": "Erste Details"
   },
   "invalidCoefficients": "Bitte füllen Sie alle Koeffizienten mit gültigen Zahlenwerten aus.",
@@ -1418,6 +1419,7 @@
   "pH": "Misst du den pH-Wert?",
   "pineapple": "Ananas",
   "placeholder": {
+    "abv": "ABV eingeben",
     "og": "Enter OG",
     "volume": "Lautstärke eingeben"
   },
@@ -1428,6 +1430,11 @@
   "PPM": "PPM",
   "pricklyPear": "Kaktusfeige",
   "primaryTargets": {
+    "abvFgBasis": "Der ABV wird anhand des geschätzten Endgewichts des Rezepts von {{fg}} berechnet.",
+    "abvImpossible": "Diese Verhältnisse enthalten eine nicht vergärbare Zutat (SG ≤ 1). ABV-Ziele über 0 % sind nicht erreichbar.",
+    "abvRange": "Erreichbarer ABV-Bereich mit diesen Verhältnissen: 0–{{maxDisp}} %",
+    "abvTooHigh": "Der Ziel-ABV liegt über dem maximal erreichbaren ABV für diese Verhältnisse (max. {{maxDisp}} %).",
+    "abvUnknown": "Der maximal erreichbare ABV kann anhand der aktuellen Verhältnisse nicht berechnet werden.",
     "dialogDesc": "Die Verhältnisse sollten sich zu 100 % summieren. Dadurch werden die Hauptbestandteile so skaliert, dass sie Ihren Zielvorgaben entsprechen.",
     "dialogTitle": "Primäre Ziele",
     "locked": "Verwendung von aktuellen Kennzahlen",
@@ -1676,7 +1683,7 @@
     "brix": "Brix misst die Menge an gelösten Feststoffen in einer Flüssigkeit. 1g Haushaltszucker in 100ml Wasser sind 1 Brix, es sind also ungefähr der prozentuale Zuckeranteil. Du kannst die Einheit Brix mit einem Refraktometer messen, sie durch die Nährstoffgehaltsangaben berechnen oder mit dem entsprechenden Rechner den SG-Wert zu Brix umrechnen, um sie dann hier als Zuckeranteil zu verwenden.",
     "campden": "Hinweis: Campden-Tabletten werden größtenteils nur noch in den USA als Alternative zu Kaliumdisulfitpulver verwendet. Campden-Tabletten variieren etwas in der Menge an freiem SO2, die sie enthalten. MeadTools geht bei der Berechnung davon aus, dass eine Campden-Tablette 75PPM freies SO2 enthält.",
     "delleUnits": "Delle-Einheiten sind eine Maßeinheit für mikrobielle Stabilität. Je höher die Zahl, desto wahrscheinlicher ist der Met/Wein stabil, ohne weitere Zusätze oder Stabilisierungsmethoden zu benötigen. Delle-Einheiten werden Anhand von Restzucker und Alkoholgehalt berechnet. 73 Delle-Einheiten werden von den meisten als stabil angesehen, aber der Wert variiert. Alkoholtoleranz wird bei der Dell-Stabilität NICHT berücksichtigt. Mehr dazu: ",
-    "desiredDetailsForm": "In diesem Teil erhältst Du die Daten für einen Ausgangsmost mit der gewünschten anfänglichen spezifischen Dichte (\"OG\") und dem gewünschten Volumen. Wenn Du dieses Formular verwendest, nachdem Du andere Zutaten eingegeben hast, werden alle Zutaten außer einem Honigdatensatz und einem Wasserdatensatz gelöscht.",
+    "desiredDetailsForm": "Dieses Formular dient zur Ermittlung der ersten Maische mit der gewünschten Stammwürze und dem gewünschten Volumen. Wenn Sie dieses Formular verwenden, nachdem Sie die anderen Zutaten eingegeben haben, werden alle Zutaten außer einer Honigzeile und einer Wasserzeile gelöscht. ",
     "emailAlerts": "Dadurch werden Warnmeldungen an die E-Mail-Adresse gesendet, die Du gespeichert hast, wenn sich dieses Gebräu der 1/3-Zuckergrenze nähert und wenn es sich 1.000 nähert",
     "estimatedFg": "Wenn du nicht vor hast, die Gärung vorzeitig zu beenden, ist es vermutlich am besten, dieses Feld bei 0.996 zu belassen. Diese Schätzung wird für die meisten Rezepte genau genug sein.",
     "estOG": "Die ursprüngliche Formel befindet sich leider auf einer Website, die nicht mehr funktioniert. Ich habe den ursprünglichen Blog-Artikel auf dieser Website aufbewahrt.  ",
