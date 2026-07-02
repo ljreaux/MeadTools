@@ -745,6 +745,11 @@
     "SECONDARY": "Sekundär",
     "STABILIZED": "Stabilisiert"
   },
+  "brewTrackerDialog": {
+    "actionButton": "Brew Tracker anzeigen",
+    "description": "Verfolge deinen Brauprozess vom Rezept bis zum fertigen Produkt. Erstelle ein Rezept und melde dich anschließend in deinem Konto an, um den neuen Brauprozess-Tracker zu nutzen.",
+    "title": "Brew Tracker"
+  },
   "brewVolume": "Gib das Volumen Deines Gebräus ein:",
   "BRIX": "Brix",
   "brixHeading": "Brix",

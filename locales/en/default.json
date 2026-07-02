@@ -745,6 +745,11 @@
     "SECONDARY": "Secondary",
     "STABILIZED": "Stabilized"
   },
+  "brewTrackerDialog": {
+    "actionButton": "View Brew Tracker",
+    "description": "Track your brew from recipe to finish. Create a recipe, then open your account to start using the new brew tracker.",
+    "title": "Brew Tracker"
+  },
   "brewVolume": "Enter your volume of your brew:",
   "BRIX": "Brix",
   "brixHeading": "Brix Conversion Calculator",
