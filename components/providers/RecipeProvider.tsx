@@ -30,11 +30,12 @@ import {
   inferAdditiveAmountDimFromUnit,
   shouldConvertAdditiveAmount,
   nextAdditiveAmountDimOnUnitChange
-} from "@/lib/utils/recipeDataCalculations";
-import calculateRecipeDerivedState, {
+} from "@meadtools/core/recipe";
+import {
+  calculateRecipeDerivedState,
   calculateRecipeStabilizerResults,
   type RecipeDerivedState
-} from "@/lib/utils/calculateRecipeDerivedState";
+} from "@meadtools/core/derived";
 import {
   createContext,
   ReactNode,
@@ -45,11 +46,11 @@ import {
   useState,
   useRef
 } from "react";
-import { calculateOriginalGravity } from "@/lib/utils/recipeDataCalculations";
+import { calculateOriginalGravity } from "@meadtools/core/recipe";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
-import { toSG } from "@/lib/utils/unitConverter";
+import { toSG } from "@meadtools/core/gravity";
 import { initialNutrientData, NutrientData } from "@/types/nutrientData";
 
 type HydratePayload = Pick<

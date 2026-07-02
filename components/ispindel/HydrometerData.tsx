@@ -34,8 +34,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
-import { toBrix } from "@/lib/utils/unitConverter";
-import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
+import { toBrix } from "@meadtools/core/gravity";
+import { toCelsius, toFahrenheit } from "@meadtools/core/temperature";
 import { formatBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";
 
 import {

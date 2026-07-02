@@ -39,7 +39,7 @@ import {
 } from "@/components/ispindel/HydrometerData";
 
 import { toast } from "@/hooks/use-toast";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 import { qk } from "@/lib/db/queryKeys";
 
 import {

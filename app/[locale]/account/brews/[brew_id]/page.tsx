@@ -51,8 +51,8 @@ import {
 import { BREW_ENTRY_TYPE, BREW_STAGE, GRAVITY_UNITS, type BrewStage, type GravityUnit } from "@/lib/brewEnums";
 import { BrewAdditionData, BrewPackagingData, GravityReadingRole, entryPayload } from "@/lib/utils/entryPayload";
 import { useCreateBrewEntry, useDeleteBrewEntry, usePatchBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
-import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
-import { calcABV, refractometerCorrectedSg, toBrix, toSG } from "@/lib/utils/unitConverter";
+import { L_TO_VOLUME, VOLUME_TO_L } from "@meadtools/core/recipe";
+import { calcABV, refractometerCorrectedSg, toBrix, toSG } from "@meadtools/core/gravity";
 import { isValidNumber, normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { formatBrixDisplay, formatSgAsBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";

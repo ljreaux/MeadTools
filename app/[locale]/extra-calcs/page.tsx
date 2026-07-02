@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbv from "@/hooks/useAbv";
 import AbvLine from "@/components/extraCalcs/AbvLine";
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import {
   isValidNumber,
   normalizeNumberString,

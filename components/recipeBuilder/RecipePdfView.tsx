@@ -4,7 +4,7 @@
 import { useMemo } from "react";
 import lodash from "lodash";
 import { useTranslation } from "react-i18next";
-import { toBrix, calcSb } from "@/lib/utils/unitConverter";
+import { toBrix, calcSb } from "@meadtools/core/gravity";
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 
 import type { NutrientKey } from "@/types/nutrientData";

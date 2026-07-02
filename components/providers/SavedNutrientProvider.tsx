@@ -1,6 +1,6 @@
 "use client";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import {
   FullNutrientData,

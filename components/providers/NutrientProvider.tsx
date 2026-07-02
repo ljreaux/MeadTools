@@ -14,11 +14,12 @@ import {
   scheduleFromSelected
 } from "@/types/nutrientData";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
-import calculateNutrientDerivedState, {
+import {
+  calculateNutrientDerivedState,
   type NutrientDerivedState
-} from "@/lib/utils/calculateNutrientDerivedState";
+} from "@meadtools/core/nutrients";
 type NutrientUI = {
   data: NutrientData;
 

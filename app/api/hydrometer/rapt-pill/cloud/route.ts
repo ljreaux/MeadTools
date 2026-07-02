@@ -5,7 +5,7 @@ import {
   updateBrewGravity,
   verifyToken,
 } from "@/lib/db/iSpindel";
-import { toFahrenheit } from "@/lib/utils/temperature";
+import { toFahrenheit } from "@meadtools/core/temperature";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 import type { BrewViewEntry, BrewViewLog } from "@/types/brewView";
 
 type WirelessLog = {

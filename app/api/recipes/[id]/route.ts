@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { deleteRecipe, getRecipeInfo, updateRecipe } from "@/lib/db/recipes";
-import type { RecipeDataV2Response } from "../../openapi-types";
+import type { RecipeDataV2Response } from "@meadtools/api-contract";
 
 export type RecipePathParams = {
   id: string;

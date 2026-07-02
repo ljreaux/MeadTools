@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
-import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
+import { L_TO_VOLUME } from "@meadtools/core/recipe";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
 import type { AdditiveLine, IngredientLine, NoteLine, RecipeUnitDefaults } from "@/types/recipeData";
 import * as React from "react";

@@ -15,7 +15,7 @@ import {
   Prisma,
   temp_units
 } from "@prisma/client";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");

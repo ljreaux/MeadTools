@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { toCelsius, toFahrenheit } from "@/lib/utils/temperature";
+import { toCelsius, toFahrenheit } from "@meadtools/core/temperature";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
 

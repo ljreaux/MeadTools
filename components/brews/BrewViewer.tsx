@@ -19,8 +19,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { BREW_ENTRY_TYPE, type BrewStage } from "@/lib/brewEnums";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
-import { L_TO_VOLUME } from "@/lib/utils/recipeDataCalculations";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { L_TO_VOLUME } from "@meadtools/core/recipe";
+import { calcABV } from "@meadtools/core/gravity";
 import type {
   BrewViewCapabilities,
   BrewViewDetail,

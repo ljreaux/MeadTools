@@ -1,6 +1,6 @@
 "use client";
 
-import { blendingArr, blendValues } from "@/lib/utils/blendValues";
+import { blendingArr, blendValues } from "@meadtools/core/blend";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";

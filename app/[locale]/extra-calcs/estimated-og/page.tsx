@@ -7,7 +7,7 @@ import AbvLine from "@/components/extraCalcs/AbvLine";
 import Tooltip from "@/components/Tooltips";
 import { Separator } from "@/components/ui/separator";
 
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import {
   isValidNumber,
   normalizeNumberString,

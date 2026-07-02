@@ -14,9 +14,9 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { temperatureCorrection, toFahrenheit } from "@/lib/utils/temperature";
+import { temperatureCorrection, toFahrenheit } from "@meadtools/core/temperature";
 import { useState } from "react";
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import {
   isValidNumber,
   parseNumber,

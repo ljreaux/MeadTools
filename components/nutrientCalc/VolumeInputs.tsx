@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "../ui/select";
-import { calcSb, toBrix } from "@/lib/utils/unitConverter";
+import { calcSb, toBrix } from "@meadtools/core/gravity";
 import { useTranslation } from "react-i18next";
 import Tooltip from "../Tooltips";
 import {

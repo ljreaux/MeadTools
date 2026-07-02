@@ -19,9 +19,9 @@ import {
   Recipe,
   RecipeData
 } from "@/types/recipeDataTypes";
-import { calcABV, toBrix, toSG } from "@/lib/utils/unitConverter";
+import { calcABV, toBrix, toSG } from "@meadtools/core/gravity";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { blendValues } from "@/lib/utils/blendValues";
+import { blendValues } from "@meadtools/core/blend";
 import lodash from "lodash";
 import { useTranslation } from "react-i18next";
 import { SavedNutrientProvider } from "./SavedNutrientProvider";
