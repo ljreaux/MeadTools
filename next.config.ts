@@ -4,7 +4,12 @@ import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  pageExtensions: ["md", "mdx", "ts", "tsx"]
+  pageExtensions: ["md", "mdx", "ts", "tsx"],
+  transpilePackages: [
+    "@meadtools/api-contract",
+    "@meadtools/core",
+    "@meadtools/schemas"
+  ]
 };
 
 const withMDX = createMDX({

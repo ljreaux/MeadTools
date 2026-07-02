@@ -33,8 +33,8 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 
-import { calcABV, calcOG, toSG } from "@/lib/utils/unitConverter";
-import { VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
+import { calcABV, calcOG, toSG } from "@meadtools/core/gravity";
+import { VOLUME_TO_L } from "@meadtools/core/recipe";
 import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 
 type TargetUnit = "SG" | "ABV";

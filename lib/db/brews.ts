@@ -6,7 +6,7 @@ import {
   temp_units,
   gravity_unit
 } from "@prisma/client";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import {
   projectBrewView,

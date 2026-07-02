@@ -1,4 +1,4 @@
-import { toSG } from "@/lib/utils/unitConverter";
+import { toSG } from "@meadtools/core/gravity";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 

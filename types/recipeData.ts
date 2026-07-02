@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { initialNutrientData, NutrientData } from "./nutrientData";
+import { isRecipeDataV2 } from "@meadtools/schemas/recipe";
 
 export const genLineId = () => nanoid(10);
 
@@ -267,29 +268,7 @@ export const initialRecipeData = (
 /* ------------------------------ Type guards ------------------------------ */
 
 export const isRecipeData = (x: unknown): x is RecipeData => {
-  if (!x || typeof x !== "object") return false;
-  const obj = x as Record<string, unknown>;
-  const unitDefaults = obj.unitDefaults as Record<string, unknown> | undefined;
-  const stabilizers = obj.stabilizers as Record<string, unknown> | undefined;
-  const notes = obj.notes as Record<string, unknown> | undefined;
-
-  return (
-    obj.version === 2 &&
-    !!unitDefaults &&
-    typeof unitDefaults.weight === "string" &&
-    typeof unitDefaults.volume === "string" &&
-    Array.isArray(obj.ingredients) &&
-    typeof obj.fg === "string" &&
-    Array.isArray(obj.additives) &&
-    !!stabilizers &&
-    typeof stabilizers.adding === "boolean" &&
-    typeof stabilizers.takingPh === "boolean" &&
-    typeof stabilizers.phReading === "string" &&
-    typeof stabilizers.type === "string" &&
-    !!notes &&
-    Array.isArray(notes.primary) &&
-    Array.isArray(notes.secondary)
-  );
+  return isRecipeDataV2(x);
 };
 
 export type BlendInput = {

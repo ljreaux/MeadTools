@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicRecipesPage } from "@/lib/db/recipes";
-import type { RecipeDataV2Response } from "../../openapi-types";
+import type { RecipeDataV2Response } from "@meadtools/api-contract";
 
 export type PublicRecipesQueryParams = {
   page?: string;

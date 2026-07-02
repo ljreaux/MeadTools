@@ -25,7 +25,7 @@ import {
   type UnitDim,
   VOLUME_TO_L,
   WEIGHT_TO_KG
-} from "@/lib/utils/recipeDataCalculations";
+} from "@meadtools/core/recipe";
 import { isValidNumber, normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import type { IngredientLine, VolumeUnit, WeightUnit } from "@/types/recipeData";
 

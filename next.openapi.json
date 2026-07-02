@@ -99,7 +99,10 @@
   },
   "apiDir": "./app/api",
   "routerType": "app",
-  "schemaDir": "./app/api",
+  "schemaDir": [
+    "./app/api",
+    "./packages/api-contract/src"
+  ],
   "schemaType": "typescript",
   "schemaFiles": [],
   "docsUrl": "api-docs",

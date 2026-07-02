@@ -41,7 +41,7 @@ import type { GravityReadingRole } from "@/lib/utils/entryPayload";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS } from "@/components/brews/brewTrackerDialog";
 import { getUnitLabel } from "@/components/brews/stages/additionDialogShared";
 import type { GravityUnit } from "@/lib/brewEnums";
-import { refractometerCorrectedSg, toBrix, toSG } from "@/lib/utils/unitConverter";
+import { refractometerCorrectedSg, toBrix, toSG } from "@meadtools/core/gravity";
 import { formatSgAsBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";
 import TooltipHelper from "@/components/Tooltips";
 

@@ -1,6 +1,7 @@
-import calculateRecipeDerivedApiResponse, {
-  type RecipeDerivedApiResponse
-} from "@/lib/utils/calculateRecipeDerivedApiResponse";
+import {
+  calculateRecipeDerivedApiResponse,
+  type RecipeDerivedApiResponse as CoreRecipeDerivedApiResponse
+} from "@meadtools/core/derived";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import type {
   BrewAdditionData,
@@ -10,10 +11,11 @@ import type {
 } from "@/lib/utils/entryPayload";
 import type { RecipeData, IngredientLine, AdditiveLine, Notes, VolumeUnit, WeightUnit } from "@/types/recipeData";
 import { isRecipeData } from "@/types/recipeData";
-import calculateNutrientDerivedState, {
+import {
+  calculateNutrientDerivedState,
   calculateEffectiveNutrientData,
   type NutrientDerivedState
-} from "@/lib/utils/calculateNutrientDerivedState";
+} from "@meadtools/core/nutrients";
 import type { NitrogenRequirement, NutrientData, NutrientKey } from "@/types/nutrientData";
 import {
   calculateOriginalGravity,
@@ -24,9 +26,11 @@ import {
   normalizeIngredientLine,
   VOLUME_TO_L,
   WEIGHT_TO_KG
-} from "@/lib/utils/recipeDataCalculations";
-import { calcABV, toSG } from "@/lib/utils/unitConverter";
+} from "@meadtools/core/recipe";
+import { calcABV, toSG } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
+
+type RecipeDerivedApiResponse = CoreRecipeDerivedApiResponse<RecipeData>;
 
 export type BrewRecipeSnapshot = {
   id: number;

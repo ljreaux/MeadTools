@@ -1,4 +1,4 @@
-import { refractometerCorrectedSg, toBrix, toSG } from "@/lib/utils/unitConverter";
+import { refractometerCorrectedSg, toBrix, toSG } from "@meadtools/core/gravity";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useState } from "react";
 

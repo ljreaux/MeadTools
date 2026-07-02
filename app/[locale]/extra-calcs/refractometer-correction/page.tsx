@@ -21,7 +21,7 @@ import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
 import TooltipHelper from "@/components/Tooltips";
 import { useMemo } from "react";
-import { toSG } from "@/lib/utils/unitConverter";
+import { toSG } from "@meadtools/core/gravity";
 
 function RefractometerCorrection() {
   const { t, i18n } = useTranslation();

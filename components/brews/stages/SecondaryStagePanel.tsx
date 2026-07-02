@@ -35,12 +35,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { entryPayload } from "@/lib/utils/entryPayload";
-import { calculateRecipeStabilizerResults } from "@/lib/utils/calculateRecipeDerivedState";
+import { calculateRecipeStabilizerResults } from "@meadtools/core/derived";
 import {
   L_TO_VOLUME,
   VOLUME_TO_L,
   WEIGHT_TO_KG
-} from "@/lib/utils/recipeDataCalculations";
+} from "@meadtools/core/recipe";
 import {
   roundEditableAmount,
   scaleAdditiveSuggestions,
@@ -48,7 +48,7 @@ import {
   type ScaledAdditiveSuggestion,
   type ScaledIngredientSuggestion
 } from "@/lib/utils/brewTrackingScaling";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import type {
   IngredientLine,

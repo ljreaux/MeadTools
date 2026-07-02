@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
-import { calcABV, calcOG } from "@/lib/utils/unitConverter";
+import { calcABV, calcOG } from "@meadtools/core/gravity";
 
 import {
   InputGroup,

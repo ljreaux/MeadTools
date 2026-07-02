@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { getRecipeInfo } from "@/lib/db/recipes";
-import calculateRecipeDerivedApiResponse from "@/lib/utils/calculateRecipeDerivedApiResponse";
+import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import { isRecipeData } from "@/types/recipeData";
 
 /**

@@ -1,4 +1,4 @@
-import { toBrix } from "@/lib/utils/unitConverter";
+import { toBrix } from "@meadtools/core/gravity";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
 
 export function formatSgDisplay(value?: number | null, locale?: string, fallback = "—") {

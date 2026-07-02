@@ -1,0 +1,23 @@
+{
+  "name": "@meadtools/schemas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./nutrient": "./src/nutrient.ts",
+    "./recipe": "./src/recipe.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

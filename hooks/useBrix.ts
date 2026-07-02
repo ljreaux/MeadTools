@@ -1,4 +1,4 @@
-import { toBrix, toSG } from "@/lib/utils/unitConverter";
+import { toBrix, toSG } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

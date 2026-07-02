@@ -20,7 +20,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import type { TFunction } from "i18next";
-import { L_TO_VOLUME, VOLUME_TO_L } from "@/lib/utils/recipeDataCalculations";
+import { L_TO_VOLUME, VOLUME_TO_L } from "@meadtools/core/recipe";
 import type { VolumeUnit } from "@/types/recipeData";
 import {
   InputGroup,

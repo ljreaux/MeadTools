@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { calcABV, toBrix } from "@/lib/utils/unitConverter";
+import { calcABV, toBrix } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 function normalizeNumber(n: number): number {

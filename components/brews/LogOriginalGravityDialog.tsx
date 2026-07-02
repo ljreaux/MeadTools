@@ -20,7 +20,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Separator } from "@/components/ui/separator";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { GRAVITY_UNITS, type GravityUnit } from "@/lib/brewEnums";
-import { toBrix, toSG } from "@/lib/utils/unitConverter";
+import { toBrix, toSG } from "@meadtools/core/gravity";
 import { formatBrixNumber, formatSgDisplay } from "@/lib/utils/gravityFormatting";
 import type { GravityEntryDisplayData } from "@/lib/utils/entryPayload";
 

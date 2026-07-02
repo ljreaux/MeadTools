@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { calcABV } from "@/lib/utils/unitConverter";
+import { calcABV } from "@meadtools/core/gravity";
 import type { BrewPackagingData } from "@/lib/utils/entryPayload";
 import type { StagePanelProps } from "../stageConfig";
 import {
