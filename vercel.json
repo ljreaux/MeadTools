@@ -1,4 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "apps/web/.next",
   "crons": [
     {
       "path": "/api/cron/daily-recipe-activity",

@@ -62,6 +62,16 @@ function ensureEnvLocal() {
   );
 }
 
+function ensureWebEnvLocal() {
+  const workspaceEnv = path.resolve(process.cwd(), ".env.local");
+  const webEnv = path.resolve(process.cwd(), "apps/web/.env.local");
+
+  if (!existsSync(webEnv)) {
+    copyFileSync(workspaceEnv, webEnv);
+    console.log("✅ Copied workspace .env.local to apps/web/.env.local");
+  }
+}
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -112,6 +122,7 @@ async function waitForDb() {
 
 async function main() {
   ensureEnvLocal();
+  ensureWebEnvLocal();
   const envLocal = loadEnvLocal();
 
   console.log("▶ Starting docker db...");
@@ -120,12 +131,12 @@ async function main() {
   await waitForDb();
 
   console.log("▶ Pushing Prisma schema...");
-  run("npx", ["prisma", "db", "push"]);
+  run("npm", ["run", "db:push", "--workspace", "@meadtools/web"]);
 
   console.log("▶ Seeding database...");
   // Force opt-in for destructive ops (your seed guard expects this)
   const env = { ...process.env, ALLOW_DB_RESET: "true" };
-  run("npx", ["prisma", "db", "seed"], { env });
+  run("npm", ["run", "db:seed", "--workspace", "@meadtools/web"], { env });
 
   // i18nexus optional
   const key = process.env.I18NEXUS_API_KEY || envLocal.I18NEXUS_API_KEY;
