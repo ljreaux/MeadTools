@@ -14,9 +14,10 @@ const SHARED_PATHS = [
   "packages/",
   "scripts/",
   "package.json",
-  "package-lock.json",
   "tsconfig.base.json",
 ];
+
+const LOCKFILE = "package-lock.json";
 
 const TARGET_CONFIGURATION = {
   web: ["vercel.json"],
@@ -49,12 +50,26 @@ export function isTargetAffected(target, changedPaths) {
 }
 
 export function classifyAppImpact(changedPaths) {
-  return Object.fromEntries(
+  const impact = Object.fromEntries(
     TARGETS.map((target) => [
       target,
       isTargetAffected(target, changedPaths),
     ]),
   );
+
+  if (changedPaths.includes(LOCKFILE)) {
+    const lockfileHasManifestContext = changedPaths.some(
+      (changedPath) =>
+        changedPath === "package.json" ||
+        /^(?:apps|packages)\/[^/]+\/package\.json$/.test(changedPath),
+    );
+
+    if (!lockfileHasManifestContext) {
+      return Object.fromEntries(TARGETS.map((target) => [target, true]));
+    }
+  }
+
+  return impact;
 }
 
 function readChangedPaths(base, head) {
