@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -6,11 +6,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.glow} />
       <View style={styles.content}>
-        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.mark}>
-          <View style={[styles.cell, styles.cellTopLeft]} />
-          <View style={[styles.cell, styles.cellTopRight]} />
-          <View style={[styles.cell, styles.cellBottom]} />
-        </View>
+        <Image
+          accessibilityIgnoresInvertColors
+          source={require('@/assets/images/meadtools-logo.png')}
+          style={styles.mark}
+        />
         <Text accessibilityRole="header" style={styles.brand}>
           MEADTOOLS
         </Text>
@@ -43,32 +43,9 @@ const styles = StyleSheet.create({
     gap: 28,
   },
   mark: {
-    width: 156,
-    height: 144,
-  },
-  cell: {
-    position: 'absolute',
-    width: 72,
-    height: 82,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: '#171717',
-    transform: [{ rotate: '30deg' }],
-  },
-  cellTopLeft: {
-    top: 0,
-    left: 14,
-    backgroundColor: '#343434',
-  },
-  cellTopRight: {
-    top: 0,
-    right: 14,
-    backgroundColor: '#F7B733',
-  },
-  cellBottom: {
-    bottom: 0,
-    left: 42,
-    backgroundColor: '#D68400',
+    width: 196,
+    height: 168,
+    resizeMode: 'contain',
   },
   brand: {
     color: '#FAFAFA',
