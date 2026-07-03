@@ -1,24 +1,6 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
-export type ContactRequestBody = {
-  user_name: string;
-  user_email: string;
-  message: string;
-};
-
-export type ContactSuccessResponse = {
-  message: "Email sent successfully";
-};
-
-export type ContactValidationErrorResponse = {
-  message: "All fields are required";
-};
-
-export type ContactSendErrorResponse = {
-  message: "Failed to send email";
-};
-
 /**
  * Send contact message
  * @description Sends a contact form message to the MeadTools support inbox.

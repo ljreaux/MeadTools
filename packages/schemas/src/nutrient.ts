@@ -27,7 +27,7 @@ export const nutrientScheduleSchema = z.enum([
 export const nutrientKeySchema = z.enum(["fermO", "fermK", "dap", "other"]);
 
 const numericInputSchema = z.string();
-const nutrientRecordSchema = z.object({
+export const nutrientRecordSchema = z.object({
   fermO: numericInputSchema,
   fermK: numericInputSchema,
   dap: numericInputSchema,
@@ -41,9 +41,7 @@ export const selectedNutrientsSchema = z.object({
   other: z.boolean()
 });
 
-export const nutrientDataV2Schema = z.object({
-  version: z.literal(2),
-  inputs: z.object({
+export const nutrientInputsSchema = z.object({
     volume: numericInputSchema,
     volumeUnits: nutrientVolumeUnitSchema,
     sg: numericInputSchema,
@@ -52,27 +50,33 @@ export const nutrientDataV2Schema = z.object({
     goFermType: goFermTypeSchema,
     yeastAmountG: numericInputSchema,
     yeastAmountTouched: z.boolean()
-  }),
-  selected: z.object({
+});
+export const nutrientSelectedSchema = z.object({
     yeastBrand: z.string(),
     yeastStrain: z.string(),
     yeastId: z.number().int().optional(),
     nitrogenRequirement: nitrogenRequirementSchema,
     schedule: nutrientScheduleSchema,
     selectedNutrients: selectedNutrientsSchema
-  }),
-  settings: z.object({
+});
+export const nutrientSettingsSchema = z.object({
     yanContribution: nutrientRecordSchema,
     maxGpl: nutrientRecordSchema,
     maxGplTouched: z.boolean(),
     other: z.object({
       name: z.string()
     })
-  }),
-  adjustments: z.object({
+});
+export const nutrientAdjustmentsSchema = z.object({
     adjustAllowed: z.boolean(),
     providedYanPpm: nutrientRecordSchema
-  })
+});
+export const nutrientDataV2Schema = z.object({
+  version: z.literal(2),
+  inputs: nutrientInputsSchema,
+  selected: nutrientSelectedSchema,
+  settings: nutrientSettingsSchema,
+  adjustments: nutrientAdjustmentsSchema
 });
 
 export type NutrientDataV2 = z.infer<typeof nutrientDataV2Schema>;

@@ -2,20 +2,6 @@ import { createIngredients, getIngredients } from "@/lib/db/bjcp-ingredients";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
-export type BjcpIngredientResponse = {
-  id: string;
-  created_at: string;
-  label: string | null;
-  category: string | null;
-  value: string | null;
-};
-
-export type BjcpIngredientsResponse = BjcpIngredientResponse[];
-
-export type BjcpIngredientsFetchErrorResponse = {
-  error: "Failed to fetch ingredients";
-};
-
 /**
  * List BJCP ingredients
  * @description Returns the BJCP ingredient catalog used by recipe-building tools.
