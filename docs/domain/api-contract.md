@@ -14,7 +14,7 @@ Before the Zod migration, `public/openapi.json` was regenerated with
 - Canonical endpoint-path SHA-256:
   `4610d8687942691b4d6a411907359deca3fb67c00a6f34dd7acc8ad3ee38076c`
 - Reviewed Zod document SHA-256:
-  `49844af6db83344c1ec241652d1251f4c3e361b01cb7caff56e7d9de030a06ce`
+  `1c0c6673a150cb99377bfe86772b604c4911aad4347a808c7688f7090b43a562`
 
 The parity test preserves the complete pre-migration `paths` object: routes,
 methods, parameters, descriptions, response statuses, and component references.
@@ -22,6 +22,12 @@ Zod now generates the component schemas, including explicit required and
 nullable semantics, so the full document has a separately reviewed baseline.
 The canonical hashes sort object keys; array order and all values remain
 significant.
+
+The native API readiness update intentionally adds `client_entry_id` to
+`CreateBrewEntryRequestBody` and HTTP 409 documentation to the create-entry
+operation. The endpoint parity test removes only that new response before
+comparing against the pre-migration paths hash, proving all earlier endpoint
+documentation remains unchanged.
 
 Run:
 

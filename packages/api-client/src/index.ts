@@ -1,6 +1,15 @@
 import {
+  accountInfoResponseSchema,
+  brewResponseSchema,
+  brewsResponseSchema,
+  createBrewEntryRequestBodySchema,
+  createBrewEntryResponseSchema,
   recipeDataV2Schema,
   recipeDerivedStateResponseBodySchema,
+  type AccountRecipeResponse,
+  type BrewListItemResponse,
+  type BrewResponse,
+  type CreateBrewEntryRequestBody,
   type RecipeDataV2Input,
   type RecipeDerivedStateResponseBody
 } from "@meadtools/api-contract";
@@ -96,6 +105,20 @@ async function requestHeaders(options: MeadToolsApiClientOptions) {
 export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
 
+  async function request(path: string, init: Omit<ApiRequestInit, "headers">) {
+    const response = await options.fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers: await requestHeaders(options)
+    });
+    const body = await readJson(response);
+
+    if (!response.ok) {
+      throw new MeadToolsApiError(response.status, body);
+    }
+
+    return body;
+  }
+
   return {
     async calculateRecipeDerived(
       recipeData: RecipeDataV2Input
@@ -107,25 +130,92 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
         );
       }
 
-      const response = await options.fetch(`${baseUrl}/api/recipes/derived`, {
+      const body = await request("/api/recipes/derived", {
         method: "POST",
-        headers: await requestHeaders(options),
         body: JSON.stringify(recipeData)
       });
-      const body = await readJson(response);
-
-      if (!response.ok) {
-        throw new MeadToolsApiError(response.status, body);
-      }
-
-      if (!recipeDerivedStateResponseBodySchema.safeParse(body).success) {
+      const parsed = recipeDerivedStateResponseBodySchema.safeParse(body);
+      if (!parsed.success) {
         throw new MeadToolsContractError(
           "Response does not match the MeadTools API contract",
           body
         );
       }
 
-      return body as RecipeDerivedStateResponseBody;
+      return parsed.data;
+    },
+
+    async listRecipes(): Promise<AccountRecipeResponse[]> {
+      const body = await request("/api/auth/account-info", {
+        method: "GET"
+      });
+      const parsed = accountInfoResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Recipe list response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data.recipes;
+    },
+
+    async listBrews(): Promise<BrewListItemResponse[]> {
+      const body = await request("/api/brews", { method: "GET" });
+      const parsed = brewsResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew list response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data.brews;
+    },
+
+    async getBrew(brewId: string): Promise<BrewResponse> {
+      const body = await request(
+        `/api/brews/${encodeURIComponent(brewId)}`,
+        { method: "GET" }
+      );
+      const parsed = brewResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
+    },
+
+    async createBrewEntry(
+      brewId: string,
+      input: CreateBrewEntryRequestBody
+    ): Promise<BrewResponse> {
+      if (!createBrewEntryRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Brew entry does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request(
+        `/api/brews/${encodeURIComponent(brewId)}/entries`,
+        {
+          method: "POST",
+          body: JSON.stringify(input)
+        }
+      );
+      const parsed = createBrewEntryResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew entry response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data.brew;
     }
   };
 }

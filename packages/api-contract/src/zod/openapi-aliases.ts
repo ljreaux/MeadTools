@@ -48,6 +48,7 @@ import {
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
   brewEntryDeleteErrorResponseSchema,
+  brewEntryIdConflictErrorResponseSchema,
   brewEntryPathParamsSchema,
   brewEntryResponseSchema,
   brewEntryTypeResponseSchema,
@@ -343,6 +344,7 @@ export const BrewDeviceActionErrorResponse = brewDeviceActionErrorResponseSchema
 export const BrewEntriesByStageResponse = brewEntriesByStageResponseSchema;
 export const BrewEntryCreateErrorResponse = brewEntryCreateErrorResponseSchema;
 export const BrewEntryDeleteErrorResponse = brewEntryDeleteErrorResponseSchema;
+export const BrewEntryIdConflictErrorResponse = brewEntryIdConflictErrorResponseSchema;
 export const BrewEntryPathParams = brewEntryPathParamsSchema;
 export const BrewEntryResponse = brewEntryResponseSchema;
 export const BrewEntryTypeResponse = brewEntryTypeResponseSchema;

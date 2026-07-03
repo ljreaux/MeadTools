@@ -7,6 +7,7 @@ import {
   gravity_unit
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
+import { createBrewEntryIdempotently } from "@/lib/brews/createBrewEntryIdempotently";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 import {
@@ -102,6 +103,7 @@ export type PatchBrewMetadataInput = {
 
 export type CreateBrewEntryInput = {
   type: brew_entry_type;
+  client_entry_id?: string;
 
   datetime?: string | Date;
   title?: string | null;
@@ -1201,18 +1203,45 @@ export async function createBrewEntryForApp(
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
   await prisma.$transaction(async (tx) => {
-    await tx.brew_entries.create({
-      data: {
-        brew_id: brewId,
-        user_id: userId,
-        type: input.type,
-        datetime,
-        title: input.title ?? null,
-        note: input.note ?? null,
-        gravity: input.gravity ?? null,
-        temperature: input.temperature ?? null,
-        temp_units: input.temp_units ?? null,
-        data: (input.data as any) ?? null
+    const entryData = {
+      brew_id: brewId,
+      user_id: userId,
+      type: input.type,
+      datetime,
+      title: input.title ?? null,
+      note: input.note ?? null,
+      gravity: input.gravity ?? null,
+      temperature: input.temperature ?? null,
+      temp_units: input.temp_units ?? null,
+      data: (input.data as any) ?? null
+    };
+
+    await createBrewEntryIdempotently({
+      brewId,
+      userId,
+      clientEntryId: input.client_entry_id,
+      create: async (clientEntryId) => {
+        const select = {
+          id: true,
+          brew_id: true,
+          user_id: true
+        } as const;
+
+        if (clientEntryId) {
+          await tx.brew_entries.createMany({
+            data: [{ id: clientEntryId, ...entryData }],
+            skipDuplicates: true
+          });
+          return tx.brew_entries.findUniqueOrThrow({
+            where: { id: clientEntryId },
+            select
+          });
+        }
+
+        return tx.brew_entries.create({
+          data: entryData,
+          select
+        });
       }
     });
 

@@ -138,10 +138,14 @@ const brewEntryMutationObjectSchema = z.object({
 });
 export const createBrewEntryRequestBodySchema =
   brewEntryMutationObjectSchema.extend({
-    type: brewEntryTypeResponseSchema, stage_to: brewStageResponseSchema.optional()
+    type: brewEntryTypeResponseSchema,
+    stage_to: brewStageResponseSchema.optional(),
+    client_entry_id: z.string().uuid().optional()
   });
 export const createBrewEntryResponseSchema =
   z.object({ brew: brewResponseSchema });
+export const brewEntryIdConflictErrorResponseSchema =
+  z.object({ error: z.literal("Entry ID is already in use") });
 export const updateBrewEntryRequestBodySchema =
   brewEntryMutationObjectSchema;
 export const updateBrewEntryResponseSchema =
@@ -173,7 +177,10 @@ const errorEnum = <T extends string>(values: [T, ...T[]]) =>
 export const authenticatedRouteErrorResponseSchema =
   errorEnum(["Authorization header missing", "Token missing", "Invalid token or unauthorized access", "Invalid or expired token", "User not found", "Server misconfiguration"]);
 export const brewValidationErrorResponseSchema =
-  errorEnum(["Invalid JSON body", "Missing recipe_id", "Missing brew_id", "Missing entry_id"]);
+  errorEnum([
+    "Invalid JSON body", "Missing recipe_id", "Missing brew_id",
+    "Missing entry_id", "Invalid client_entry_id"
+  ]);
 export const brewFetchErrorResponseSchema =
   errorEnum(["Failed to fetch brews.", "Failed to fetch brew.", "Server misconfiguration"]);
 export const brewCreateErrorResponseSchema =

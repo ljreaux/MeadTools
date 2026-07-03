@@ -15,7 +15,7 @@
     "build:i18n": "npx i18nexus pull && npx prisma generate && next build --webpack",
     "start": "next start",
     "start:i18n": "npx i18nexus pull && next start",
-    "test": "npm run test:core && npm run test:schemas && npm run test:api-contract && npm run test:api-client && npm run test:brew-domain && node --import tsx --test lib/utils/*.test.ts",
+    "test": "npm run test:core && npm run test:schemas && npm run test:api-contract && npm run test:api-client && npm run test:brew-domain && node --import tsx --test lib/brews/*.test.ts lib/utils/*.test.ts",
     "openapi:generate": "next-openapi-gen generate && node scripts/normalize-zod-openapi.mjs",
     "contracts:generate": "node scripts/generate-api-contract-types.mjs",
     "test:api-contract": "npm test --workspace @meadtools/api-contract",

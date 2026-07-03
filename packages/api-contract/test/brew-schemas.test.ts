@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  brewEntryIdConflictErrorResponseSchema,
   brewEntryResponseSchema,
   createBrewEntryRequestBodySchema,
   publicBrewFetchErrorResponseSchema,
@@ -27,6 +28,7 @@ test("brew entry schemas preserve nullable readings and arbitrary JSON data", ()
     createBrewEntryRequestBodySchema.safeParse({
       type: "STAGE_CHANGE",
       stage_to: "SECONDARY",
+      client_entry_id: "00000000-0000-4000-8000-000000000001",
       data: null
     }).success,
     true
@@ -48,6 +50,19 @@ test("brew schemas reject invalid enums while preserving literal errors", () => 
   assert.equal(
     createBrewEntryRequestBodySchema.safeParse({ type: "UNKNOWN" }).success,
     false
+  );
+  assert.equal(
+    createBrewEntryRequestBodySchema.safeParse({
+      type: "NOTE",
+      client_entry_id: "not-a-uuid"
+    }).success,
+    false
+  );
+  assert.equal(
+    brewEntryIdConflictErrorResponseSchema.safeParse({
+      error: "Entry ID is already in use"
+    }).success,
+    true
   );
   assert.equal(
     publicBrewFetchErrorResponseSchema.safeParse({

@@ -1,5 +1,7 @@
 import { createBrewEntryForApp } from "@/lib/db/brews";
+import { BrewEntryIdConflictError } from "@/lib/brews/createBrewEntryIdempotently";
 import { verifyUser } from "@/lib/userAccessFunctions";
+import { createBrewEntryRequestBodySchema } from "@meadtools/api-contract/brews";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -12,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
  * @add 404:AuthenticatedRouteErrorResponse
+ * @add 409:BrewEntryIdConflictErrorResponse
  * @add 500:BrewEntryCreateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -34,11 +37,28 @@ export async function POST(
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (
+    body.client_entry_id !== undefined &&
+    !createBrewEntryRequestBodySchema.shape.client_entry_id.safeParse(
+      body.client_entry_id
+    ).success
+  ) {
+    return NextResponse.json(
+      { error: "Invalid client_entry_id" },
+      { status: 400 }
+    );
+  }
 
   try {
     const brew = await createBrewEntryForApp(userId, brew_id, body);
     return NextResponse.json({ brew }, { status: 201 });
   } catch (err) {
+    if (err instanceof BrewEntryIdConflictError) {
+      return NextResponse.json(
+        { error: "Entry ID is already in use" },
+        { status: 409 }
+      );
+    }
     console.error("Error creating entry:", err);
     return NextResponse.json(
       { error: "Failed to create entry." },
