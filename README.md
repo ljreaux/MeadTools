@@ -43,6 +43,10 @@ MeadTools runs locally using Next.js 16, PostgreSQL, and Docker for a consistent
 
 The recommended setup uses a Dockerized Postgres database and a one-command bootstrap script so new developers can get up and running quickly.
 
+The repository is an npm workspace: the production Next.js application lives
+in `apps/web`, while reusable domain, schema, contract, and API client packages
+live in `packages`.
+
 ---
 
 ## Prerequisites
@@ -79,6 +83,7 @@ npm run dev:setup
 This command will:
 
 - Create .env.local from .env.example if it doesn’t exist
+- Copy the local environment into the web workspace
 - Start PostgreSQL via Docker
 - Wait for the database to become healthy
 - Push the Prisma schema
@@ -102,8 +107,8 @@ If you prefer to run steps individually:
 
 ```bash
     npm run db:up
-    npx prisma db push
-    ALLOW_DB_RESET=true npx prisma db seed
+    npm run db:push --workspace @meadtools/web
+    ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web
     npm run dev
 ```
 
@@ -137,7 +142,7 @@ MeadTools uses i18nexus for translation management.
 
 ### Default behavior
 
-- Translations are loaded from local JSON files under locales/
+- Translations are loaded from local JSON files under apps/web/locales/
 - No API key is required to run the app
 
 ### Optional live translation sync

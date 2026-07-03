@@ -100,7 +100,7 @@
   "apiDir": "./app/api",
   "routerType": "app",
   "schemaDir": [
-    "./packages/api-contract/src/zod"
+    "../../packages/api-contract/src/zod"
   ],
   "schemaType": "zod",
   "schemaFiles": [],

@@ -20,7 +20,10 @@ function sortJson(value: unknown): unknown {
 }
 
 test("generated OpenAPI document matches the reviewed Zod baseline", async () => {
-  const documentUrl = new URL("../../../public/openapi.json", import.meta.url);
+  const documentUrl = new URL(
+    "../../../apps/web/public/openapi.json",
+    import.meta.url
+  );
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as unknown;
   const canonicalDocument = JSON.stringify(sortJson(document));
   const actualHash = createHash("sha256")
@@ -35,7 +38,10 @@ test("generated OpenAPI document matches the reviewed Zod baseline", async () =>
 });
 
 test("idempotency contract preserves all pre-existing endpoint documentation", async () => {
-  const documentUrl = new URL("../../../public/openapi.json", import.meta.url);
+  const documentUrl = new URL(
+    "../../../apps/web/public/openapi.json",
+    import.meta.url
+  );
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
     paths: Record<
       string,

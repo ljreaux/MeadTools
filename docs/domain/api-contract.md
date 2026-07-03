@@ -7,7 +7,7 @@ from them.
 
 ## OpenAPI compatibility
 
-Before the Zod migration, `public/openapi.json` was regenerated with
+Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 `next-openapi-gen` and captured as the endpoint compatibility baseline.
 
 - Paths: 52
@@ -44,7 +44,7 @@ the baseline.
 
 The OpenAPI generator uses Zod schema mode. It scans:
 
-- `app/api` for Route Handlers and their OpenAPI annotations.
+- `apps/web/app/api` for Route Handlers and their OpenAPI annotations.
 - `packages/api-contract/src/zod` for runtime schemas.
 
 `scripts/normalize-zod-openapi.mjs` then preserves the established PascalCase
