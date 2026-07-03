@@ -18,7 +18,7 @@
     "start": "npm run start --workspace @meadtools/web",
     "start:i18n": "npm run start:i18n --workspace @meadtools/web",
     "test": "npm run test:core && npm run test:schemas && npm run test:api-contract && npm run test:api-client && npm run test:brew-domain && npm test --workspace @meadtools/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run prisma:generate --workspace @meadtools/web && npm run typecheck --workspaces --if-present",
     "openapi:generate": "npm run openapi:generate --workspace @meadtools/web",
     "contracts:generate": "node scripts/generate-api-contract-types.mjs",
     "test:api-contract": "npm test --workspace @meadtools/api-contract",
