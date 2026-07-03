@@ -6,8 +6,8 @@ tests protect them while the calculation kernel moves into shared packages.
 ## Golden fixture provenance
 
 The fixtures in
-`lib/utils/__fixtures__/recipeDerivedFixtures.ts` were established before the
-recipe-derived calculation graph was moved into `@meadtools/core`.
+`apps/web/lib/utils/__fixtures__/recipeDerivedFixtures.ts` were established
+before the recipe-derived calculation graph was moved into `@meadtools/core`.
 
 The process used to create them was:
 
@@ -23,7 +23,7 @@ The process used to create them was:
    that its serialized response matches the same golden result.
 
 The values were captured on 2026-07-02. At that point, the recipe, nutrient,
-and stabilizer calculations still lived in `lib/utils`. Gravity and
+and stabilizer calculations still lived in `apps/web/lib/utils`. Gravity and
 temperature primitives had already moved to `@meadtools/core`, with their own
 parity tests.
 

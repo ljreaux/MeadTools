@@ -29,8 +29,9 @@ component types.
 Database queries, ownership checks, private-recipe access, mutations, and
 Route Handler response decisions remain in the web/API application.
 
-Compatibility modules under `lib/` and `types/` re-export the package API so
-existing callers retain their current import paths while the extraction settles.
+Compatibility modules under `apps/web/lib/` and `apps/web/types/` re-export the
+package API so existing callers retain their current import paths while the
+extraction settles.
 
 ## Verification
 
@@ -41,5 +42,5 @@ existing titles, defaults, linkage metadata, and measurement shapes. Run:
 
 ```sh
 npm run test:brew-domain
-npm run typecheck --workspaces --if-present
+npm run typecheck
 ```

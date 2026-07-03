@@ -45,7 +45,10 @@ jobs:
         run: git diff --exit-code -- packages/api-contract/src/contracts.ts packages/api-contract/src/zod/openapi-aliases.ts
 
       - name: Typecheck workspaces
-        run: npm run typecheck --workspaces --if-present
+        run: npm run typecheck
+
+      - name: Verify shared package boundaries
+        run: npm run check:package-boundaries
 
       - name: Run test suites
         run: npm test
@@ -54,4 +57,4 @@ jobs:
         run: npm run openapi:generate
 
       - name: Verify generated OpenAPI is committed
-        run: git diff --exit-code -- public/openapi.json
+        run: git diff --exit-code -- apps/web/public/openapi.json

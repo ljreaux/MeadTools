@@ -1,9 +1,11 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+import { fileURLToPath } from "node:url";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   pageExtensions: ["md", "mdx", "ts", "tsx"],
   transpilePackages: [
     "@meadtools/api-contract",

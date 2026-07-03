@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-const documentUrl = new URL("../public/openapi.json", import.meta.url);
+const documentUrl = new URL("../apps/web/public/openapi.json", import.meta.url);
 const aliasesUrl = new URL(
   "../packages/api-contract/src/zod/openapi-aliases.ts",
   import.meta.url
