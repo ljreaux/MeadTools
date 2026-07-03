@@ -1,1630 +1,592 @@
-export type WeightUnit = "kg" | "g" | "lb" | "oz";
-
-export type VolumeUnit =
-  | "L"
-  | "mL"
-  | "gal"
-  | "qt"
-  | "pt"
-  | "fl_oz"
-  | "imp_gal"
-  | "imp_qt"
-  | "imp_pt"
-  | "imp_fl_oz";
-
-export type RecipeUnitDefaultsResponse = {
-  weight: WeightUnit;
-  volume: VolumeUnit;
-};
-
-export type IngredientRefResponse =
-  | {
-      kind: "catalog";
-      ingredientId: number | string;
-    }
-  | {
-      kind: "custom";
-    };
-
-export type RecipeAmountInputResponse = {
-  value: string;
-  unit: string;
-};
-
-export type IngredientLineAmountsResponse = {
-  weight: RecipeAmountInputResponse;
-  volume: RecipeAmountInputResponse;
-  basis: "weight" | "volume";
-};
-
-export type IngredientLineResponse = {
-  lineId: string;
-  name: string;
-  ref: IngredientRefResponse;
-  category: string;
-  brix: string;
-  secondary: boolean;
-  amounts: IngredientLineAmountsResponse;
-};
-
-export type AdditiveAmountDim = "weight" | "volume" | "count" | "unknown";
-
-export type AdditiveLineResponse = {
-  lineId: string;
-  name: string;
-  amount: string;
-  unit: string;
-  amountTouched: boolean;
-  amountDim: AdditiveAmountDim;
-};
-
-export type StabilizersResponse = {
-  adding: boolean;
-  takingPh: boolean;
-  phReading: string;
-  type: "kmeta" | "nameta";
-};
-
-export type NoteLineResponse = {
-  lineId: string;
-  content: string[];
-};
-
-export type NotesResponse = {
-  primary: NoteLineResponse[];
-  secondary: NoteLineResponse[];
-};
-
-export type NutrientVolumeUnit = "gal" | "liter";
-export type GoFermType = "Go-Ferm" | "protect" | "sterol-flash" | "none";
-export type NitrogenRequirement =
-  | "Very Low"
-  | "Low"
-  | "Medium"
-  | "High"
-  | "Very High";
-export type NutrientScheduleType =
-  | "tbe"
-  | "tosna"
-  | "justK"
-  | "dap"
-  | "oAndk"
-  | "oAndDap"
-  | "kAndDap"
-  | "other";
-
-export type SelectedNutrientsResponse = {
-  fermO: boolean;
-  fermK: boolean;
-  dap: boolean;
-  other: boolean;
-};
-
-export type NutrientAmountsByKeyResponse = {
-  fermO: string;
-  fermK: string;
-  dap: string;
-  other: string;
-};
-
-export type NutrientAdjustmentsResponse = {
-  adjustAllowed: boolean;
-  providedYanPpm: NutrientAmountsByKeyResponse;
-};
-
-export type NutrientSettingsResponse = {
-  yanContribution: NutrientAmountsByKeyResponse;
-  maxGpl: NutrientAmountsByKeyResponse;
-  maxGplTouched: boolean;
-  other: {
-    name: string;
-  };
-};
-
-export type NutrientInputsResponse = {
-  volume: string;
-  volumeUnits: NutrientVolumeUnit;
-  sg: string;
-  offsetPpm: string;
-  numberOfAdditions: string;
-  goFermType: GoFermType;
-  yeastAmountG: string;
-  yeastAmountTouched: boolean;
-};
-
-export type NutrientSelectedResponse = {
-  yeastBrand: string;
-  yeastStrain: string;
-  yeastId?: number;
-  nitrogenRequirement: NitrogenRequirement;
-  schedule: NutrientScheduleType;
-  selectedNutrients: SelectedNutrientsResponse;
-};
-
-export type NutrientDataResponse = {
-  version: 2;
-  inputs: NutrientInputsResponse;
-  selected: NutrientSelectedResponse;
-  settings: NutrientSettingsResponse;
-  adjustments: NutrientAdjustmentsResponse;
-};
-
-export type RecipeDataV2Response = {
-  version: 2;
-  unitDefaults: RecipeUnitDefaultsResponse;
-  ingredients: IngredientLineResponse[];
-  fg: string;
-  additives: AdditiveLineResponse[];
-  stabilizers: StabilizersResponse;
-  notes: NotesResponse;
-  nutrients?: NutrientDataResponse;
-  flags?: {
-    advanced?: boolean;
-    private?: boolean;
-  };
-};
-
-export type NutrientAdditionsDerivedResponse = {
-  totalGrams: NutrientAmountsByKeyNumberResponse;
-  perAddition: NutrientAmountsByKeyNumberResponse;
-};
-
-export type NutrientAmountsByKeyNumberResponse = {
-  fermO: number;
-  fermK: number;
-  dap: number;
-  other: number;
-};
-
-export type NutrientDerivedStateResponse = {
-  targetYanPpm: number;
-  remainingYanPpm: number;
-  numberOfAdditions: number;
-  nutrientAdditions: NutrientAdditionsDerivedResponse;
-  providedYanPpm: NutrientAmountsByKeyNumberResponse;
-  goFerm: {
-    amount: number;
-    water: number;
-  };
-};
-
-export type RecipeStabilizerResultsResponse = {
-  sorbate: number;
-  sulfite: number;
-  campden: number;
-};
-
-export type RecipeDerivedStateResponse = {
-  gravity: {
-    ogPrimary: number;
-    backsweetenedFg: number;
-    totalForAbv: number;
-  };
-  volume: {
-    unit: VolumeUnit;
-    primary: number;
-    secondary: number;
-    total: number;
-    primaryL: number;
-    secondaryL: number;
-    totalL: number;
-  };
-  alcohol: {
-    abv: number;
-    delle: number;
-  };
-  stabilizers: RecipeStabilizerResultsResponse;
-  nutrients: NutrientDerivedStateResponse;
-};
-
-export type RecipeDerivedStateResponseBody = {
-  recipeData: RecipeDataV2Response;
-  derived: RecipeDerivedStateResponse;
-};
-
-export type RecipeDerivedValidationErrorResponse = {
-  error: "Invalid recipe data payload.";
-};
-
-export type RecipeDerivedByIdValidationErrorResponse = {
-  error: "Invalid recipe ID" | "Recipe does not have valid dataV2.";
-};
-
-export type RecipeDerivedFailureErrorResponse = {
-  error:
-    | "Failed to calculate recipe derived state"
-    | "An error occurred while fetching the recipe";
-};
-
-export type ApiErrorResponse = {
-  error: string;
-};
-
-export type AdditiveUnitResponse =
-  | "g"
-  | "ml"
-  | "tsp"
-  | "oz"
-  | "units"
-  | "mg"
-  | "kg"
-  | "lbs"
-  | "liters"
-  | "fl_oz"
-  | "quarts"
-  | "gal"
-  | "tbsp";
-
-export type AdditiveResponse = {
-  id: string;
-  created_at: string;
-  name: string;
-  dosage: number;
-  unit: AdditiveUnitResponse;
-};
-
-export type AdditivesResponse = AdditiveResponse[];
-
-export type AdditiveByIdResponse = AdditiveResponse;
-
-export type AdditiveQueryParams = {
-  name?: string;
-};
-
-export type AdditiveByIdPathParams = {
-  id: string;
-};
-
-export type AdditivesFetchErrorResponse = {
-  error: "Failed to fetch additives";
-};
-
-export type AdditiveNotFoundErrorResponse = {
-  error: "Additive not found";
-};
-
-export type AdditiveFetchErrorResponse = {
-  error: "Failed to fetch additive";
-};
-
-export type CreateAdditiveRequestBody = {
-  name: string;
-  dosage: number | string;
-  unit: AdditiveUnitResponse | "fl oz";
-};
-
-export type UpdateAdditiveRequestBody = Partial<CreateAdditiveRequestBody>;
-
-export type CreateAdditiveValidationErrorResponse = {
-  error: "Missing required fields";
-};
-
-export type CreateAdditiveFailureErrorResponse = {
-  error: "Failed to create additive" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type UpdateAdditiveFailureErrorResponse = {
-  error: "Failed to update additive" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type DeleteAdditiveSuccessResponse = {
-  message: string;
-};
-
-export type DeleteAdditiveFailureErrorResponse = {
-  error: "Failed to delete additive" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type IngredientResponse = {
-  id: number;
-  name: string;
-  sugar_content: string;
-  water_content: string;
-  category: string;
-};
-
-export type IngredientsResponse = IngredientResponse[];
-
-export type IngredientByIdResponse = IngredientResponse | null;
-
-export type IngredientQueryParams = {
-  category?: string;
-  name?: string;
-};
-
-export type IngredientByIdPathParams = {
-  id: string;
-};
-
-export type IngredientsFetchErrorResponse = {
-  error: "Failed to fetch ingredients";
-};
-
-export type IngredientByIdErrorResponse = ApiErrorResponse;
-
-export type CreateIngredientRequestBody = {
-  name: string;
-  sugar_content: number;
-  water_content: number;
-  category: string;
-};
-
-export type UpdateIngredientRequestBody = Partial<CreateIngredientRequestBody>;
-
-export type CreateIngredientFailureErrorResponse = ApiErrorResponse;
-
-export type UpdateIngredientFailureErrorResponse = ApiErrorResponse;
-
-export type DeleteIngredientSuccessResponse = {
-  message: string;
-};
-
-export type DeleteIngredientFailureErrorResponse = ApiErrorResponse;
-
-export type YeastBrandResponse =
-  | "Lalvin"
-  | "Fermentis"
-  | "Mangrove Jack"
-  | "Red Star"
-  | "Other";
-
-export type YeastNitrogenRequirementResponse =
-  | "Very Low"
-  | "Low"
-  | "Medium"
-  | "High"
-  | "Very High";
-
-export type YeastResponse = {
-  id: number;
-  brand: YeastBrandResponse;
-  name: string;
-  nitrogen_requirement: YeastNitrogenRequirementResponse;
-  tolerance: string;
-  low_temp: string;
-  high_temp: string;
-};
-
-export type YeastsResponse = YeastResponse[];
-
-export type YeastLookupResponse = YeastResponse | YeastsResponse;
-
-export type YeastByIdResponse = YeastResponse | null;
-
-export type YeastQueryParams = {
-  brand?: string;
-  name?: string;
-  id?: string;
-};
-
-export type YeastByIdPathParams = {
-  id: string;
-};
-
-export type YeastNotFoundErrorResponse = ApiErrorResponse;
-
-export type YeastsFetchErrorResponse = {
-  error: "Failed to fetch yeasts";
-};
-
-export type YeastByIdErrorResponse = ApiErrorResponse;
-
-export type CreateYeastRequestBody = {
-  brand: YeastBrandResponse | string;
-  name: string;
-  nitrogen_requirement: YeastNitrogenRequirementResponse;
-  tolerance: number;
-  low_temp: number;
-  high_temp: number;
-};
-
-export type UpdateYeastRequestBody = Partial<CreateYeastRequestBody>;
-
-export type CreateYeastValidationErrorResponse = {
-  error: "Yeast name is required";
-};
-
-export type CreateYeastFailureErrorResponse = {
-  error: "Failed to create yeast" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type UpdateYeastFailureErrorResponse = ApiErrorResponse;
-
-export type DeleteYeastSuccessResponse = {
-  message: string;
-};
-
-export type DeleteYeastFailureErrorResponse = ApiErrorResponse;
-
-export type LoginRequestBody = {
-  email: string;
-  password: string;
-};
-
-export type LoginSuccessResponse = {
-  message: "Successfully logged in!";
-  accessToken: string;
-  refreshToken: string;
-  role: string | null;
-  email: string;
-  id: number;
-};
-
-export type LoginMissingCredentialsErrorResponse = {
-  error: "Please provide email and password";
-};
-
-export type LoginInvalidCredentialsErrorResponse = {
-  error: "Invalid email or password";
-};
-
-export type LoginFailureErrorResponse = {
-  error: "Failed to log in user";
-};
-
-export type RegisterRequestBody = {
-  email: string;
-  password: string;
-  public_username?: string;
-};
-
-export type RegisterSuccessResponse = {
-  message: "Thank you for signing up!";
-  accessToken: string;
-  refreshToken: string;
-  role: string | null;
-  email: string;
-};
-
-export type RegisterValidationErrorResponse = {
-  error: "Email and password are required." | "A user by that email already exists";
-};
-
-export type RegisterFailureErrorResponse = {
-  error: "Failed to register user";
-};
-
-export type RefreshTokenRequestBody = {
-  email: string;
-  refreshToken: string;
-};
-
-export type RefreshTokenSuccessResponse = {
-  accessToken: string;
-};
-
-export type RefreshTokenValidationErrorResponse = {
-  error: "Email and refreshToken are required";
-};
-
-export type RefreshTokenInvalidEmailErrorResponse = {
-  error: "Invalid email";
-};
-
-export type RefreshTokenFailureErrorResponse = {
-  error: "Invalid refresh token" | "Failed to refresh token";
-};
-
-export type RequestPasswordResetBody = {
-  email: string;
-};
-
-export type RequestPasswordResetSuccessResponse = {
-  message: "If that email exists, a reset link has been sent." | "Reset link sent.";
-};
-
-export type RequestPasswordResetValidationErrorResponse = {
-  error: "Email is required";
-};
-
-export type ResetPasswordRequestBody = {
-  token: string;
-  password: string;
-};
-
-export type ResetPasswordSuccessResponse = {
-  message: "Password updated successfully.";
-};
-
-export type ResetPasswordValidationErrorResponse = {
-  error: "Missing token or password.";
-};
-
-export type ResetPasswordInvalidTokenErrorResponse = {
-  error: "Invalid or expired token.";
-};
-
-export type VerifyTokenRequestBody = {
-  token: string;
-  provider: "google";
-  email?: string;
-};
-
-export type VerifyTokenUserResponse = {
-  id: number;
-  email: string;
-  role: string;
-};
-
-export type VerifyTokenSuccessResponse = {
-  token: string;
-  user: VerifyTokenUserResponse;
-};
-
-export type VerifyTokenValidationErrorResponse = {
-  error: "Invalid provider" | "Email required when using access token";
-};
-
-export type VerifyTokenUnauthorizedErrorResponse = {
-  error: "Invalid token" | "Invalid ID token";
-};
-
-export type VerifyTokenNotFoundErrorResponse = {
-  error: "User not found";
-};
-
-export type VerifyTokenFailureErrorResponse = {
-  error: "Authentication failed";
-};
-
-export type AccountUserResponse = {
-  id: number;
-  email: string;
-  password?: undefined;
-  google_id: string | null;
-  role: string | null;
-  hydro_token: string | null;
-  public_username: string | null;
-  google_avatar_url: string | null;
-  show_google_avatar: boolean;
-  active: boolean;
-  isGoogleUser: boolean;
-};
-
-export type AccountRecipeOwnerResponse = {
-  public_username: string | null;
-};
-
-export type AccountRecipeResponse = {
-  id: number;
-  user_id: number | null;
-  name: string;
-  recipeData: string;
-  yanFromSource: string | null;
-  yanContribution: string;
-  nutrientData: string;
-  advanced: boolean;
-  nuteInfo: string | null;
-  primaryNotes: string[][];
-  secondaryNotes: string[][];
-  dataV2: RecipeDataV2Response | null;
-  version: number;
-  private: boolean;
-  lastActivityEmailAt: string | null;
-  activityEmailsEnabled: boolean;
-  users: AccountRecipeOwnerResponse | null;
-  public_username: string | null;
-};
-
-export type AccountInfoResponse = {
-  user: AccountUserResponse;
-  recipes: AccountRecipeResponse[];
-};
-
-export type AccountInfoUnauthorizedErrorResponse = {
-  error: "Unauthorized";
-};
-
-export type AccountInfoNotFoundErrorResponse = {
-  error: "User not found";
-};
-
-export type AccountInfoFetchErrorResponse = {
-  error: "Failed to fetch account info";
-};
-
-export type UpdateAccountInfoRequestBody = {
-  email?: string;
-  password?: string;
-  public_username?: string;
-  google_id?: string;
-  hydro_token?: string;
-  role?: string;
-};
-
-export type UpdateAccountInfoResponse = Omit<
-  AccountUserResponse,
-  "isGoogleUser"
->;
-
-export type UpdateAccountInfoErrorResponse = {
-  error: "Failed to update account info";
-};
-
-export type CreateUsernameRequestBody = {
-  public_username: string;
-};
-
-export type CreateUsernameSuccessResponse = {
-  message: "Public username successfully updated.";
-  public_username: string | null;
-};
-
-export type CreateUsernameValidationErrorResponse = {
-  error: "Public username is required.";
-};
-
-export type CreateUsernameFailureErrorResponse = {
-  error: "Failed to update public username." | "Server misconfiguration";
-};
-
-export type CreateRecipeRequestBody = {
-  name: string;
-  dataV2: RecipeDataV2Response;
-  private?: boolean;
-  activityEmailsEnabled?: boolean;
-  lastActivityEmailAt?: string | null;
-};
-
-export type CreateRecipeResponse = {
-  recipe: {
-    id: number;
-    user_id: number | null;
-    name: string;
-    recipeData: string;
-    yanFromSource: string | null;
-    yanContribution: string;
-    nutrientData: string;
-    advanced: boolean;
-    nuteInfo: string | null;
-    primaryNotes: string[];
-    secondaryNotes: string[];
-    dataV2: RecipeDataV2Response | null;
-    version: number;
-    private: boolean;
-    lastActivityEmailAt: string | null;
-    activityEmailsEnabled: boolean;
-  };
-};
-
-export type CreateRecipeValidationErrorResponse = {
-  error: "Name and recipe data are required." | "Invalid dataV2 payload.";
-};
-
-export type CreateRecipeFailureErrorResponse = {
-  error: "Failed to create recipe" | "Server misconfiguration";
-};
-
-export type UpdateRecipeRequestBody = Partial<CreateRecipeRequestBody>;
-
-export type UpdateRecipeResponse = CreateRecipeResponse["recipe"];
-
-export type UpdateRecipeValidationErrorResponse = {
-  error: "Invalid recipe ID" | "Invalid payload";
-};
-
-export type UpdateRecipeForbiddenErrorResponse = {
-  error: "You are not authorized to update this recipe";
-};
-
-export type UpdateRecipeFailureErrorResponse = {
-  error: "Failed to update recipe" | "Server misconfiguration";
-};
-
-export type DeleteRecipeSuccessResponse = {
-  message: string;
-};
-
-export type DeleteRecipeForbiddenErrorResponse = {
-  error: "You are not authorized to delete this recipe";
-};
-
-export type DeleteRecipeFailureErrorResponse = {
-  error: "Failed to delete recipe" | "Server misconfiguration";
-};
-
-export type RateRecipeRequestBody = {
-  rating: number;
-};
-
-export type RecipeRatingAggregateResponse = {
-  recipe_id: number;
-  averageRating: number;
-  numberOfRatings: number;
-  userRating: number;
-};
-
-export type RateRecipeResponse = {
-  rating: RecipeRatingAggregateResponse;
-};
-
-export type RateRecipeValidationErrorResponse = {
-  error: "Invalid recipe ID" | "Rating is a required field";
-};
-
-export type RateRecipeFailureErrorResponse = {
-  error: "Failed to add rating" | "Server misconfiguration";
-};
-
-export type CreateRecipeCommentRequestBody = {
-  comment: string;
-  parent_id?: string | null;
-};
-
-export type RecipeCommentResponse = {
-  id: string;
-  recipe_id: number;
-  user_id: number;
-  parent_id: string | null;
-  comment: string;
-  created_at: string;
-  updated_at: string;
-};
-
-export type CreateRecipeCommentResponse = {
-  comment: RecipeCommentResponse;
-};
-
-export type CreateRecipeCommentValidationErrorResponse = {
-  error: "Invalid recipe ID" | "Comment text is required";
-};
-
-export type CreateRecipeCommentFailureErrorResponse = {
-  error: "Failed to add comment" | "Server misconfiguration";
-};
-
-export type RecipeCommentListPathParams = {
-  id: string;
-};
-
-export type RecipeCommentRepliesPathParams = {
-  id: string;
-  commentId: string;
-};
-
-export type RecipeCommentListQueryParams = {
-  limit?: number;
-  cursor?: string;
-  order?: "asc" | "desc";
-};
-
-export type RecipeCommentAuthorResponse = {
-  public_username: string | null;
-  avatarUrl: string | null;
-  active?: boolean;
-};
-
-export type RecipeCommentListItemResponse = {
-  id: string;
-  recipe_id: number;
-  user_id: number;
-  parent_id: string | null;
-  comment: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  reply_count: number;
-  author: RecipeCommentAuthorResponse | null;
-};
-
-export type RecipeCommentsPageResponse = {
-  data: RecipeCommentListItemResponse[];
-  nextCursor: string | null;
-  totalCount: number;
-};
-
-export type RecipeCommentsValidationErrorResponse = {
-  error: "Invalid recipe id" | "Missing commentId";
-};
-
-export type RecipeCommentsFetchErrorResponse = {
-  error: "Failed to fetch comments";
-};
-
-export type RecipeCommentPathParams = {
-  id: string;
-};
-
-export type UpdateRecipeCommentRequestBody = {
-  comment: string;
-};
-
-export type UpdateRecipeCommentResponse = {
-  comment: RecipeCommentResponse;
-};
-
-export type DeleteRecipeCommentResponse = {
-  deleted: {
-    id: string;
-    deleted_at: string | null;
-  };
-};
-
-export type UpdateRecipeCommentValidationErrorResponse = {
-  error: "Comment text is required";
-};
-
-export type UpdateRecipeCommentFailureErrorResponse = {
-  error: "Failed to update comment" | "Server misconfiguration";
-};
-
-export type DeleteRecipeCommentFailureErrorResponse = {
-  error: "Failed to delete comment" | "Server misconfiguration";
-};
-
-export type BrewStageResponse =
-  | "PLANNED"
-  | "PRIMARY"
-  | "SECONDARY"
-  | "BULK_AGE"
-  | "STABILIZED"
-  | "BACKSWEETENED"
-  | "PACKAGED"
-  | "COMPLETE";
-
-export type BrewEntryTypeResponse =
-  | "NOTE"
-  | "GRAVITY"
-  | "VOLUME"
-  | "TEMPERATURE"
-  | "PH"
-  | "ADDITION"
-  | "NUTRIENT"
-  | "RACKING"
-  | "STABILIZATION"
-  | "BACKSWEETENING"
-  | "PACKAGING"
-  | "TASTING"
-  | "STAGE_CHANGE"
-  | "ISSUE";
-
-export type TemperatureUnitResponse = "F" | "C" | "K";
-export type GravityUnitResponse = "SG" | "BRIX";
-
-export type BrewPathParams = {
-  brew_id: string;
-};
-
-export type BrewEntryPathParams = {
-  brew_id: string;
-  entry_id: string;
-};
-
-export type BrewListItemResponse = {
-  id: string;
-  name: string | null;
-  start_date: string;
-  end_date: string | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  requested_email_alerts: boolean;
-  gravity_unit_preference: GravityUnitResponse;
-  public: boolean;
-  recipe_id: number | null;
-  recipe_name: string | null;
-  recipe_private: boolean | null;
-  entry_count: number;
-  latest_gravity: number | null;
-};
-
-export type BrewsResponse = {
-  brews: BrewListItemResponse[];
-};
-
-export type BrewRecipeSnapshotResponse = {
-  id: number;
-  name: string;
-  version: number;
-  dataV2: RecipeDataV2Response | null;
-  snapshottedAt: string;
-};
-
-export type BrewEntryResponse = {
-  id: string;
-  datetime: string;
-  type: BrewEntryTypeResponse;
-  title: string | null;
-  note: string | null;
-  gravity: number | null;
-  temperature: number | null;
-  temp_units: TemperatureUnitResponse | null;
-  data: object | null;
-  user_id: number | null;
-};
-
-export type BrewEntryWithBrewIdResponse = {
-  brew_id: string;
-  id: string;
-  datetime: string;
-  type: BrewEntryTypeResponse;
-  title: string | null;
-  note: string | null;
-  gravity: number | null;
-  temperature: number | null;
-  temp_units: TemperatureUnitResponse | null;
-  data: object | null;
-  user_id: number | null;
-};
-
-export type BrewEntriesByStageResponse = {
-  stage: BrewStageResponse;
-  entries: BrewEntryResponse[];
-};
-
-export type BrewResponse = {
-  id: string;
-  name: string | null;
-  start_date: string;
-  end_date: string | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  requested_email_alerts: boolean;
-  gravity_unit_preference: GravityUnitResponse;
-  public: boolean;
-  latest_gravity: number | null;
-  recipe_id: number | null;
-  recipe_name: string | null;
-  recipe_private: boolean | null;
-  recipe_snapshot: BrewRecipeSnapshotResponse | null;
-  entry_count: number;
-  entries: BrewEntryResponse[];
-  entries_by_stage: BrewEntriesByStageResponse[];
-};
-
-export type CreateBrewRequestBody = {
-  recipe_id: number;
-  name?: string | null;
-  current_volume_liters?: number | null;
-};
-
-export type CreateBrewResponse = {
-  brew: {
-    id: string;
-    name: string | null;
-    start_date: string;
-    end_date: string | null;
-    stage: BrewStageResponse;
-    batch_number: number | null;
-    current_volume_liters: number | null;
-    requested_email_alerts: boolean | null;
-    gravity_unit_preference: GravityUnitResponse;
-    public: boolean;
-    latest_gravity: number | null;
-    recipe_id: number | null;
-    recipe_name: string | null;
-    recipe_private: boolean | null;
-    entry_count: number;
-  };
-};
-
-export type UpdateBrewRequestBody = {
-  name?: string | null;
-  stage?: BrewStageResponse;
-  current_volume_liters?: number | null;
-  requested_email_alerts?: boolean;
-  gravity_unit_preference?: GravityUnitResponse;
-  public?: boolean;
-  end_date?: string | null;
-};
-
-export type UpdateBrewResponse = {
-  id: string;
-  name: string | null;
-  start_date: string;
-  end_date: string | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  requested_email_alerts: boolean | null;
-  gravity_unit_preference: GravityUnitResponse;
-  public: boolean;
-  latest_gravity: number | null;
-  recipe_id: number | null;
-  recipe_name: string | null;
-  recipe_private: boolean | null;
-} | null;
-
-export type PublicRecipeBrewsPathParams = {
-  id: string;
-};
-
-export type PublicRecipeBrewPathParams = {
-  id: string;
-  brew_id: string;
-};
-
-export type PublicBrewOwnerResponse = {
-  displayName: string;
-};
-
-export type PublicBrewListItemResponse = {
-  id: string;
-  name: string | null;
-  start_date: string;
-  end_date: string | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  gravity_unit_preference: GravityUnitResponse;
-  latest_gravity: number | null;
-  public: boolean;
-  recipe_id: number | null;
-  recipe_name: string | null;
-  entry_count: number;
-  owner: PublicBrewOwnerResponse | null;
-};
-
-export type PublicBrewEntryResponse = {
-  id: string;
-  datetime: string;
-  type: BrewEntryTypeResponse;
-  title: string | null;
-  note: string | null;
-  gravity: number | null;
-  temperature: number | null;
-  temp_units: TemperatureUnitResponse | null;
-  data: object | null;
-};
-
-export type PublicBrewEntriesByStageResponse = {
-  stage: BrewStageResponse;
-  entries: PublicBrewEntryResponse[];
-};
-
-export type PublicBrewLogResponse = {
-  datetime: string;
-  temperature: number;
-  temp_units: TemperatureUnitResponse;
-  battery: number | null;
-  gravity: number;
-  calculated_gravity: number | null;
-};
-
-export type PublicBrewDetailResponse = {
-  id: string;
-  name: string | null;
-  start_date: string;
-  end_date: string | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  gravity_unit_preference: GravityUnitResponse;
-  latest_gravity: number | null;
-  public: boolean;
-  recipe_id: number | null;
-  recipe_name: string | null;
-  entry_count: number;
-  owner: PublicBrewOwnerResponse | null;
-  recipe_snapshot: BrewRecipeSnapshotResponse | null;
-  entries: PublicBrewEntryResponse[];
-  entries_by_stage: PublicBrewEntriesByStageResponse[];
-  logs: PublicBrewLogResponse[];
-};
-
-export type PublicRecipeBrewsResponse = {
-  brews: PublicBrewListItemResponse[];
-};
-
-export type PublicRecipeBrewResponse = {
-  brew: PublicBrewDetailResponse;
-};
-
-export type PublicBrewValidationErrorResponse = {
-  error: "Invalid recipe ID" | "Missing brew_id";
-};
-
-export type PublicBrewNotFoundErrorResponse = {
-  error: "Brew not found";
-};
-
-export type PublicBrewFetchErrorResponse = {
-  error: "Failed to fetch public brews" | "Failed to fetch public brew";
-};
-
-export type CreateBrewEntryRequestBody = {
-  type: BrewEntryTypeResponse;
-  datetime?: string;
-  title?: string | null;
-  note?: string | null;
-  gravity?: number | null;
-  temperature?: number | null;
-  temp_units?: TemperatureUnitResponse | null;
-  data?: object | null;
-  stage_to?: BrewStageResponse;
-};
-
-export type CreateBrewEntryResponse = {
-  brew: BrewResponse;
-};
-
-export type UpdateBrewEntryRequestBody = {
-  datetime?: string;
-  title?: string | null;
-  note?: string | null;
-  gravity?: number | null;
-  temperature?: number | null;
-  temp_units?: TemperatureUnitResponse | null;
-  data?: object | null;
-};
-
-export type UpdateBrewEntryResponse = {
-  entry: BrewEntryWithBrewIdResponse | null;
-};
-
-export type DeleteBrewSuccessResponse = {
-  message: "Brew deleted successfully.";
-};
-
-export type DeleteBrewEntrySuccessResponse = {
-  message: "Entry deleted successfully.";
-};
-
-export type AttachDeviceToBrewRequestBody = {
-  device_id: string;
-  force?: boolean;
-};
-
-export type AttachDeviceToBrewResponse = {
-  message: "Device already attached" | "Device attached";
-  device_id: string;
-  brew_id: string;
-};
-
-export type AdoptLogsForBrewRequestBody = {
-  device_id: string;
-  start_date?: string;
-  end_date?: string;
-  from_brew_id?: string | null;
-};
-
-export type AdoptLogsForBrewResponse = {
-  message: "Logs adopted";
-  adopted_count: number;
-  brew_id: string;
-  device_id: string;
-};
-
-export type AuthenticatedRouteErrorResponse = {
-  error:
-    | "Authorization header missing"
-    | "Token missing"
-    | "Invalid token or unauthorized access"
-    | "Invalid or expired token"
-    | "User not found"
-    | "Server misconfiguration";
-};
-
-export type BrewValidationErrorResponse = {
-  error:
-    | "Invalid JSON body"
-    | "Missing recipe_id"
-    | "Missing brew_id"
-    | "Missing entry_id";
-};
-
-export type BrewFetchErrorResponse = {
-  error: "Failed to fetch brews." | "Failed to fetch brew." | "Server misconfiguration";
-};
-
-export type BrewCreateErrorResponse = {
-  error: "Failed to create brew." | "Server misconfiguration";
-};
-
-export type BrewUpdateErrorResponse = {
-  error: "Failed to update brew." | "Server misconfiguration";
-};
-
-export type BrewDeleteErrorResponse = {
-  error: "Failed to delete brew." | "Server misconfiguration";
-};
-
-export type BrewEntryCreateErrorResponse = {
-  error: "Failed to create entry." | "Server misconfiguration";
-};
-
-export type BrewEntryUpdateErrorResponse = {
-  error: "Failed to update entry." | "Server misconfiguration";
-};
-
-export type BrewEntryDeleteErrorResponse = {
-  error: "Failed to delete entry." | "Server misconfiguration";
-};
-
-export type BrewDeviceActionErrorResponse = {
-  error:
-    | "Missing device_id"
-    | "Brew not found"
-    | "Device not found"
-    | "Device already attached to another brew"
-    | "Invalid start_date"
-    | "Invalid end_date"
-    | "Failed"
-    | "Server misconfiguration";
-};
-
-export type AdminAuthErrorResponse = {
-  error:
-    | "Authorization header missing"
-    | "Token missing"
-    | "Invalid token or unauthorized access"
-    | "Invalid or expired token"
-    | "User not found"
-    | "Server misconfiguration"
-    | "Unauthorized access"
-    | "Forbidden – admin access required."
-    | "Failed to verify admin";
-};
-
-export type AdminRecipesQueryParams = {
-  page?: string;
-  limit?: string;
-  query?: string;
-};
-
-export type AdminRecipeListItemResponse = {
-  id: number;
-  user_id: number | null;
-  name: string;
-  recipeData: string;
-  yanFromSource: string | null;
-  yanContribution: string;
-  nutrientData: string;
-  advanced: boolean;
-  nuteInfo: string | null;
-  primaryNotes: string[][];
-  secondaryNotes: string[][];
-  dataV2: RecipeDataV2Response | null;
-  version: number;
-  private: boolean;
-  lastActivityEmailAt: string | null;
-  activityEmailsEnabled: boolean;
-  users: {
-    public_username: string | null;
-    active: boolean;
-  } | null;
-  public_username: string;
-  averageRating: number;
-  numberOfRatings: number;
-};
-
-export type AdminRecipesPageResponse = {
-  recipes: AdminRecipeListItemResponse[];
-  totalCount: number;
-  totalPages: number;
-  page: number;
-  limit: number;
-};
-
-export type AdminRecipesFetchErrorResponse = {
-  error: "Failed to fetch recipes" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type AdminUserPathParams = {
-  id: string;
-};
-
-export type AdminUserListItemResponse = {
-  id: number;
-  email: string;
-  role: string | null;
-  google_id: string | null;
-  public_username: string | null;
-  hydro_token: string | null;
-  active: boolean;
-};
-
-export type AdminUsersResponse = AdminUserListItemResponse[];
-
-export type AdminUserResponse = {
-  id: number;
-  email: string;
-  password: string | null;
-  google_id: string | null;
-  role: string | null;
-  hydro_token: string | null;
-  public_username: string | null;
-  google_avatar_url: string | null;
-  show_google_avatar: boolean;
-  active: boolean;
-};
-
-export type UpdateAdminUserRequestBody = {
-  email?: string;
-  password?: string;
-  role?: string;
-  public_username?: string;
-  google_id?: string;
-  hydro_token?: string;
-  updateToken?: boolean;
-};
-
-export type DeleteAdminUserSuccessResponse = {
-  message: "User deleted successfully";
-};
-
-export type AdminUsersFetchErrorResponse = {
-  error: "Failed to fetch users" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type AdminUserNotFoundErrorResponse = {
-  error: "User not found";
-};
-
-export type AdminUserFetchErrorResponse = {
-  error: "Failed to fetch user" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type AdminUserUpdateErrorResponse = {
-  error: "Failed to update user" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type AdminUserDeleteErrorResponse = {
-  error: "Failed to delete user" | "Server misconfiguration" | "Failed to verify admin";
-};
-
-export type CreateBjcpIngredientRequestBody = {
-  label?: string | null;
-  category?: string | null;
-  value?: string | null;
-};
-
-export type CreateBjcpIngredientFailureErrorResponse = ApiErrorResponse;
-
-export type HydrometerDevicePathParams = {
-  device_id: string;
-};
-
-export type HydrometerLogPathParams = {
-  id: string;
-};
-
-export type HydrometerLogsQueryParams = {
-  device_id: string;
-  start_date: string;
-  end_date?: string;
-};
-
-export type HydrometerLogMutationQueryParams = {
-  device_id: string;
-};
-
-export type HydrometerLogMutationParams = {
-  id: string;
-  device_id: string;
-};
-
-export type HydrometerLogRangeDeleteQueryParams = {
-  device_id: string;
-  start_date: string;
-  end_date: string;
-};
-
-export type HydrometerDeviceBrewResponse = {
-  id: string;
-  name: string | null;
-};
-
-export type HydrometerDeviceResponse = {
-  id: string;
-  device_name: string | null;
-  brew_id: string | null;
-  recipe_id: number | null;
-  coefficients: number[];
-  brews?: HydrometerDeviceBrewResponse | null;
-};
-
-export type HydrometerAccountResponse = {
-  hydro_token: string | null;
-  devices: HydrometerDeviceResponse[];
-};
-
-export type HydrometerTokenResponse = {
-  token: string;
-};
-
-export type HydrometerBrewResponse = {
-  id: string;
-  start_date: string;
-  end_date: string | null;
-  user_id: number | null;
-  latest_gravity: number | null;
-  recipe_id: number | null;
-  name: string | null;
-  requested_email_alerts: boolean | null;
-  sb_alert_sent: boolean | null;
-  fg_alert_sent: boolean | null;
-  stage: BrewStageResponse;
-  batch_number: number | null;
-  current_volume_liters: number | null;
-  recipe_snapshot: object | null;
-};
-
-export type HydrometerBrewsResponse = HydrometerBrewResponse[];
-
-export type StartHydrometerBrewRequestBody = {
-  device_id: string;
-  brew_name: string;
-};
-
-export type HydrometerBrewDevicePairItemResponse =
-  | HydrometerBrewResponse
-  | HydrometerDeviceResponse;
-
-export type StartHydrometerBrewResponse =
-  HydrometerBrewDevicePairItemResponse[];
-
-export type UpdateHydrometerBrewRequestBody = {
-  brew_id: string;
-  device_id?: string;
-  brew_name?: string | null;
-};
-
-export type RenameHydrometerBrewResponse = HydrometerBrewResponse;
-
-export type EndHydrometerBrewResponse = HydrometerBrewDevicePairItemResponse[];
-
-export type UpdateHydrometerBrewResponse =
-  | HydrometerBrewResponse
-  | EndHydrometerBrewResponse;
-
-export type LinkRecipeToHydrometerBrewRequestBody = {
-  recipe_id?: number;
-  requested_email_alerts?: boolean;
-};
-
-export type LinkRecipeToHydrometerBrewResponse = HydrometerBrewResponse;
-
-export type HydrometerBrewAlertResponse = {
-  message: string;
-};
-
-export type UpdateHydrometerBrewRecipeOrAlertsResponse =
-  | LinkRecipeToHydrometerBrewResponse
-  | HydrometerBrewAlertResponse;
-
-export type DeleteHydrometerBrewResponse = {
-  message: "Brew deleted successfully.";
-};
-
-export type UpdateHydrometerDeviceRequestBody = {
-  coefficients: number[];
-};
-
-export type DeleteHydrometerDeviceResponse = {
-  message: string;
-};
-
-export type HydrometerLogResponse = {
-  id: string;
-  datetime: string;
-  angle: number;
-  temperature: number;
-  temp_units: TemperatureUnitResponse;
-  battery: number;
-  gravity: number;
-  interval: number;
-  calculated_gravity: number | null;
-  device_id: string | null;
-  brew_id: string | null;
-};
-
-export type HydrometerLogsResponse = HydrometerLogResponse[];
-
-export type UpdateHydrometerLogRequestBody = {
-  angle?: number | string;
-  temperature?: number | string;
-  temp_units?: "F" | "C";
-  battery?: number | string;
-  gravity?: number | string;
-  interval?: number | string;
-  calculated_gravity?: number | string;
-  dateTime?: string;
-};
-
-export type DeleteHydrometerLogsInRangeResponse = {
-  message: string;
-};
-
-export type HydrometerIngestRequestBody = {
-  token: string;
-  name: string;
-  angle?: number;
-  temperature: number;
-  temp_units?: "F" | "C";
-  battery?: number;
-  gravity: number;
-  interval?: number;
-};
-
-export type RaptPillCloudIngestRequestBody = HydrometerIngestRequestBody;
-
-export type RaptPillRegisterRequestBody = {
-  token: string;
-  name: string;
-  gravity: number;
-};
-
-export type TiltColor =
-  | "BLUE"
-  | "BLACK"
-  | "RED"
-  | "ORANGE"
-  | "YELLOW"
-  | "PURPLE"
-  | "PINK";
-
-export type TiltIngestQueryParams = {
-  token: string;
-};
-
-export type TiltIngestRequestBody = {
-  Beer: string;
-  Temp: number | string;
-  SG: number | string;
-  Color: TiltColor;
-  Comment?: string;
-  Timepoint?: number | string;
-};
-
-export type HydrometerAuthErrorResponse = {
-  error: "Missing token" | "Invalid token";
-};
-
-export type HydrometerAccountErrorResponse = {
-  error:
-    | "Failed to fetch hydro_token"
-    | "Failed to create hydro_token"
-    | "Server misconfiguration";
-};
-
-export type HydrometerBrewValidationErrorResponse = {
-  error:
-    | "Missing device_id or brew_name"
-    | "Missing brew_id"
-    | "Missing device_id for ending brew"
-    | "Missing brew_id or recipe_id";
-};
-
-export type HydrometerBrewErrorResponse = {
-  error:
-    | "Failed to get brews."
-    | "Failed to create brew."
-    | "Failed to update brew."
-    | "Failed to delete brew."
-    | "Server misconfiguration";
-};
-
-export type HydrometerDeviceErrorResponse = {
-  error:
-    | "Failed to update device."
-    | "Failed to delete device."
-    | "Server misconfiguration";
-};
-
-export type HydrometerLogValidationErrorResponse = {
-  error:
-    | "Date or Device Id error"
-    | "Missing device_id parameter"
-    | "Must provide a device id."
-    | "Missing device_id, start_date, or end_date parameters"
-    | "Unsupported content type"
-    | "Missing required fields"
-    | "Error deleting log.";
-};
-
-export type HydrometerLogErrorResponse = {
-  error:
-    | "Failed to fetch logs."
-    | "Failed to update log."
-    | "Failed to delete log."
-    | "Error deleting log."
-    | "Failed to log"
-    | "Failed to log Tilt data"
-    | "Server misconfiguration";
-};
-
-export type RaptPillRegisterErrorResponse = {
-  error: "Failed to get device info";
-};
+// Generated by scripts/generate-api-contract-types.mjs.
+// Do not edit directly; update the corresponding Zod schema instead.
+import type { z } from "zod";
+import {
+  accountInfoFetchErrorResponseSchema,
+  accountInfoNotFoundErrorResponseSchema,
+  accountInfoResponseSchema,
+  accountInfoUnauthorizedErrorResponseSchema,
+  accountRecipeOwnerResponseSchema,
+  accountRecipeResponseSchema,
+  accountUserResponseSchema,
+  additiveAmountDimSchema,
+  additiveByIdPathParamsSchema,
+  additiveByIdResponseSchema,
+  additiveFetchErrorResponseSchema,
+  additiveLineResponseSchema,
+  additiveNotFoundErrorResponseSchema,
+  additiveQueryParamsSchema,
+  additiveResponseSchema,
+  additiveUnitResponseSchema,
+  additivesFetchErrorResponseSchema,
+  additivesResponseSchema,
+  adminAuthErrorResponseSchema,
+  adminRecipeListItemResponseSchema,
+  adminRecipesFetchErrorResponseSchema,
+  adminRecipesPageResponseSchema,
+  adminRecipesQueryParamsSchema,
+  adminUserDeleteErrorResponseSchema,
+  adminUserFetchErrorResponseSchema,
+  adminUserListItemResponseSchema,
+  adminUserNotFoundErrorResponseSchema,
+  adminUserPathParamsSchema,
+  adminUserResponseSchema,
+  adminUserUpdateErrorResponseSchema,
+  adminUsersFetchErrorResponseSchema,
+  adminUsersResponseSchema,
+  adoptLogsForBrewRequestBodySchema,
+  adoptLogsForBrewResponseSchema,
+  apiErrorResponseSchema,
+  attachDeviceToBrewRequestBodySchema,
+  attachDeviceToBrewResponseSchema,
+  authenticatedRouteErrorResponseSchema,
+  bjcpIngredientResponseSchema,
+  bjcpIngredientsFetchErrorResponseSchema,
+  bjcpIngredientsResponseSchema,
+  brewCreateErrorResponseSchema,
+  brewDeleteErrorResponseSchema,
+  brewDeviceActionErrorResponseSchema,
+  brewEntriesByStageResponseSchema,
+  brewEntryCreateErrorResponseSchema,
+  brewEntryDeleteErrorResponseSchema,
+  brewEntryPathParamsSchema,
+  brewEntryResponseSchema,
+  brewEntryTypeResponseSchema,
+  brewEntryUpdateErrorResponseSchema,
+  brewEntryWithBrewIdResponseSchema,
+  brewFetchErrorResponseSchema,
+  brewListItemResponseSchema,
+  brewPathParamsSchema,
+  brewRecipeSnapshotResponseSchema,
+  brewResponseSchema,
+  brewStageResponseSchema,
+  brewUpdateErrorResponseSchema,
+  brewValidationErrorResponseSchema,
+  brewsResponseSchema,
+  contactRequestBodySchema,
+  contactSendErrorResponseSchema,
+  contactSuccessResponseSchema,
+  contactValidationErrorResponseSchema,
+  createAdditiveFailureErrorResponseSchema,
+  createAdditiveRequestBodySchema,
+  createAdditiveValidationErrorResponseSchema,
+  createBjcpIngredientFailureErrorResponseSchema,
+  createBjcpIngredientRequestBodySchema,
+  createBrewEntryRequestBodySchema,
+  createBrewEntryResponseSchema,
+  createBrewRequestBodySchema,
+  createBrewResponseSchema,
+  createIngredientFailureErrorResponseSchema,
+  createIngredientRequestBodySchema,
+  createRecipeCommentFailureErrorResponseSchema,
+  createRecipeCommentRequestBodySchema,
+  createRecipeCommentResponseSchema,
+  createRecipeCommentValidationErrorResponseSchema,
+  createRecipeFailureErrorResponseSchema,
+  createRecipeRequestBodySchema,
+  createRecipeResponseSchema,
+  createRecipeValidationErrorResponseSchema,
+  createUsernameFailureErrorResponseSchema,
+  createUsernameRequestBodySchema,
+  createUsernameSuccessResponseSchema,
+  createUsernameValidationErrorResponseSchema,
+  createYeastFailureErrorResponseSchema,
+  createYeastRequestBodySchema,
+  createYeastValidationErrorResponseSchema,
+  deleteAdditiveFailureErrorResponseSchema,
+  deleteAdditiveSuccessResponseSchema,
+  deleteAdminUserSuccessResponseSchema,
+  deleteBrewEntrySuccessResponseSchema,
+  deleteBrewSuccessResponseSchema,
+  deleteHydrometerBrewResponseSchema,
+  deleteHydrometerDeviceResponseSchema,
+  deleteHydrometerLogsInRangeResponseSchema,
+  deleteIngredientFailureErrorResponseSchema,
+  deleteIngredientSuccessResponseSchema,
+  deleteRecipeCommentFailureErrorResponseSchema,
+  deleteRecipeCommentResponseSchema,
+  deleteRecipeFailureErrorResponseSchema,
+  deleteRecipeForbiddenErrorResponseSchema,
+  deleteRecipeSuccessResponseSchema,
+  deleteYeastFailureErrorResponseSchema,
+  deleteYeastSuccessResponseSchema,
+  endHydrometerBrewResponseSchema,
+  getRecipeResponseSchema,
+  goFermTypeSchema,
+  gravityUnitResponseSchema,
+  hydrometerAccountErrorResponseSchema,
+  hydrometerAccountResponseSchema,
+  hydrometerAuthErrorResponseSchema,
+  hydrometerBrewAlertResponseSchema,
+  hydrometerBrewDevicePairItemResponseSchema,
+  hydrometerBrewErrorResponseSchema,
+  hydrometerBrewResponseSchema,
+  hydrometerBrewValidationErrorResponseSchema,
+  hydrometerBrewsResponseSchema,
+  hydrometerDeviceBrewResponseSchema,
+  hydrometerDeviceErrorResponseSchema,
+  hydrometerDevicePathParamsSchema,
+  hydrometerDeviceResponseSchema,
+  hydrometerIngestRequestBodySchema,
+  hydrometerLogErrorResponseSchema,
+  hydrometerLogMutationParamsSchema,
+  hydrometerLogMutationQueryParamsSchema,
+  hydrometerLogPathParamsSchema,
+  hydrometerLogRangeDeleteQueryParamsSchema,
+  hydrometerLogResponseSchema,
+  hydrometerLogValidationErrorResponseSchema,
+  hydrometerLogsQueryParamsSchema,
+  hydrometerLogsResponseSchema,
+  hydrometerTokenResponseSchema,
+  ingredientByIdErrorResponseSchema,
+  ingredientByIdPathParamsSchema,
+  ingredientByIdResponseSchema,
+  ingredientLineAmountsResponseSchema,
+  ingredientLineResponseSchema,
+  ingredientQueryParamsSchema,
+  ingredientRefResponseSchema,
+  ingredientResponseSchema,
+  ingredientsFetchErrorResponseSchema,
+  ingredientsResponseSchema,
+  invalidRecipeIdErrorResponseSchema,
+  linkRecipeToHydrometerBrewRequestBodySchema,
+  linkRecipeToHydrometerBrewResponseSchema,
+  loginFailureErrorResponseSchema,
+  loginInvalidCredentialsErrorResponseSchema,
+  loginMissingCredentialsErrorResponseSchema,
+  loginRequestBodySchema,
+  loginSuccessResponseSchema,
+  nitrogenRequirementSchema,
+  noteLineResponseSchema,
+  notesResponseSchema,
+  nutrientAdditionsDerivedResponseSchema,
+  nutrientAdjustmentsResponseSchema,
+  nutrientAmountsByKeyNumberResponseSchema,
+  nutrientAmountsByKeyResponseSchema,
+  nutrientDataResponseSchema,
+  nutrientDerivedStateResponseSchema,
+  nutrientInputsResponseSchema,
+  nutrientScheduleTypeSchema,
+  nutrientSelectedResponseSchema,
+  nutrientSettingsResponseSchema,
+  nutrientVolumeUnitSchema,
+  publicBrewDetailResponseSchema,
+  publicBrewEntriesByStageResponseSchema,
+  publicBrewEntryResponseSchema,
+  publicBrewFetchErrorResponseSchema,
+  publicBrewListItemResponseSchema,
+  publicBrewLogResponseSchema,
+  publicBrewNotFoundErrorResponseSchema,
+  publicBrewOwnerResponseSchema,
+  publicBrewValidationErrorResponseSchema,
+  publicRecipeBrewPathParamsSchema,
+  publicRecipeBrewResponseSchema,
+  publicRecipeBrewsPathParamsSchema,
+  publicRecipeBrewsResponseSchema,
+  publicRecipeListItemResponseSchema,
+  publicRecipeOwnerResponseSchema,
+  publicRecipesFetchErrorResponseSchema,
+  publicRecipesPageResponseSchema,
+  publicRecipesQueryParamsSchema,
+  raptPillCloudIngestRequestBodySchema,
+  raptPillRegisterErrorResponseSchema,
+  raptPillRegisterRequestBodySchema,
+  rateRecipeFailureErrorResponseSchema,
+  rateRecipeRequestBodySchema,
+  rateRecipeResponseSchema,
+  rateRecipeValidationErrorResponseSchema,
+  recipeAmountInputResponseSchema,
+  recipeCommentAuthorResponseSchema,
+  recipeCommentListItemResponseSchema,
+  recipeCommentListPathParamsSchema,
+  recipeCommentListQueryParamsSchema,
+  recipeCommentPathParamsSchema,
+  recipeCommentRepliesPathParamsSchema,
+  recipeCommentResponseSchema,
+  recipeCommentsFetchErrorResponseSchema,
+  recipeCommentsPageResponseSchema,
+  recipeCommentsValidationErrorResponseSchema,
+  recipeDataV2ResponseSchema,
+  recipeDerivedByIdValidationErrorResponseSchema,
+  recipeDerivedFailureErrorResponseSchema,
+  recipeDerivedStateResponseBodySchema,
+  recipeDerivedStateResponseSchema,
+  recipeDerivedValidationErrorResponseSchema,
+  recipeDetailResponseSchema,
+  recipeFetchErrorResponseSchema,
+  recipeForbiddenErrorResponseSchema,
+  recipeNotFoundErrorResponseSchema,
+  recipeOwnerResponseSchema,
+  recipePathParamsSchema,
+  recipeRatingAggregateResponseSchema,
+  recipeRatingResponseSchema,
+  recipeStabilizerResultsResponseSchema,
+  recipeUnitDefaultsResponseSchema,
+  refreshTokenFailureErrorResponseSchema,
+  refreshTokenInvalidEmailErrorResponseSchema,
+  refreshTokenRequestBodySchema,
+  refreshTokenSuccessResponseSchema,
+  refreshTokenValidationErrorResponseSchema,
+  registerFailureErrorResponseSchema,
+  registerRequestBodySchema,
+  registerSuccessResponseSchema,
+  registerValidationErrorResponseSchema,
+  renameHydrometerBrewResponseSchema,
+  requestPasswordResetBodySchema,
+  requestPasswordResetSuccessResponseSchema,
+  requestPasswordResetValidationErrorResponseSchema,
+  resetPasswordInvalidTokenErrorResponseSchema,
+  resetPasswordRequestBodySchema,
+  resetPasswordSuccessResponseSchema,
+  resetPasswordValidationErrorResponseSchema,
+  selectedNutrientsResponseSchema,
+  stabilizersResponseSchema,
+  startHydrometerBrewRequestBodySchema,
+  startHydrometerBrewResponseSchema,
+  temperatureUnitResponseSchema,
+  tiltColorSchema,
+  tiltIngestQueryParamsSchema,
+  tiltIngestRequestBodySchema,
+  updateAccountInfoErrorResponseSchema,
+  updateAccountInfoRequestBodySchema,
+  updateAccountInfoResponseSchema,
+  updateAdditiveFailureErrorResponseSchema,
+  updateAdditiveRequestBodySchema,
+  updateAdminUserRequestBodySchema,
+  updateBrewEntryRequestBodySchema,
+  updateBrewEntryResponseSchema,
+  updateBrewRequestBodySchema,
+  updateBrewResponseSchema,
+  updateHydrometerBrewRecipeOrAlertsResponseSchema,
+  updateHydrometerBrewRequestBodySchema,
+  updateHydrometerBrewResponseSchema,
+  updateHydrometerDeviceRequestBodySchema,
+  updateHydrometerLogRequestBodySchema,
+  updateIngredientFailureErrorResponseSchema,
+  updateIngredientRequestBodySchema,
+  updateRecipeCommentFailureErrorResponseSchema,
+  updateRecipeCommentRequestBodySchema,
+  updateRecipeCommentResponseSchema,
+  updateRecipeCommentValidationErrorResponseSchema,
+  updateRecipeFailureErrorResponseSchema,
+  updateRecipeForbiddenErrorResponseSchema,
+  updateRecipeRequestBodySchema,
+  updateRecipeResponseSchema,
+  updateRecipeValidationErrorResponseSchema,
+  updateYeastFailureErrorResponseSchema,
+  updateYeastRequestBodySchema,
+  verifyTokenFailureErrorResponseSchema,
+  verifyTokenNotFoundErrorResponseSchema,
+  verifyTokenRequestBodySchema,
+  verifyTokenSuccessResponseSchema,
+  verifyTokenUnauthorizedErrorResponseSchema,
+  verifyTokenUserResponseSchema,
+  verifyTokenValidationErrorResponseSchema,
+  volumeUnitSchema,
+  weightUnitSchema,
+  yeastBrandResponseSchema,
+  yeastByIdErrorResponseSchema,
+  yeastByIdPathParamsSchema,
+  yeastByIdResponseSchema,
+  yeastLookupResponseSchema,
+  yeastNitrogenRequirementResponseSchema,
+  yeastNotFoundErrorResponseSchema,
+  yeastQueryParamsSchema,
+  yeastResponseSchema,
+  yeastsFetchErrorResponseSchema,
+  yeastsResponseSchema,
+} from "./schemas";
+
+export type AccountInfoFetchErrorResponse = z.infer<typeof accountInfoFetchErrorResponseSchema>;
+export type AccountInfoNotFoundErrorResponse = z.infer<typeof accountInfoNotFoundErrorResponseSchema>;
+export type AccountInfoResponse = z.infer<typeof accountInfoResponseSchema>;
+export type AccountInfoUnauthorizedErrorResponse = z.infer<typeof accountInfoUnauthorizedErrorResponseSchema>;
+export type AccountRecipeOwnerResponse = z.infer<typeof accountRecipeOwnerResponseSchema>;
+export type AccountRecipeResponse = z.infer<typeof accountRecipeResponseSchema>;
+export type AccountUserResponse = z.infer<typeof accountUserResponseSchema>;
+export type AdditiveAmountDim = z.infer<typeof additiveAmountDimSchema>;
+export type AdditiveByIdPathParams = z.infer<typeof additiveByIdPathParamsSchema>;
+export type AdditiveByIdResponse = z.infer<typeof additiveByIdResponseSchema>;
+export type AdditiveFetchErrorResponse = z.infer<typeof additiveFetchErrorResponseSchema>;
+export type AdditiveLineResponse = z.infer<typeof additiveLineResponseSchema>;
+export type AdditiveNotFoundErrorResponse = z.infer<typeof additiveNotFoundErrorResponseSchema>;
+export type AdditiveQueryParams = z.infer<typeof additiveQueryParamsSchema>;
+export type AdditiveResponse = z.infer<typeof additiveResponseSchema>;
+export type AdditivesFetchErrorResponse = z.infer<typeof additivesFetchErrorResponseSchema>;
+export type AdditivesResponse = z.infer<typeof additivesResponseSchema>;
+export type AdditiveUnitResponse = z.infer<typeof additiveUnitResponseSchema>;
+export type AdminAuthErrorResponse = z.infer<typeof adminAuthErrorResponseSchema>;
+export type AdminRecipeListItemResponse = z.infer<typeof adminRecipeListItemResponseSchema>;
+export type AdminRecipesFetchErrorResponse = z.infer<typeof adminRecipesFetchErrorResponseSchema>;
+export type AdminRecipesPageResponse = z.infer<typeof adminRecipesPageResponseSchema>;
+export type AdminRecipesQueryParams = z.infer<typeof adminRecipesQueryParamsSchema>;
+export type AdminUserDeleteErrorResponse = z.infer<typeof adminUserDeleteErrorResponseSchema>;
+export type AdminUserFetchErrorResponse = z.infer<typeof adminUserFetchErrorResponseSchema>;
+export type AdminUserListItemResponse = z.infer<typeof adminUserListItemResponseSchema>;
+export type AdminUserNotFoundErrorResponse = z.infer<typeof adminUserNotFoundErrorResponseSchema>;
+export type AdminUserPathParams = z.infer<typeof adminUserPathParamsSchema>;
+export type AdminUserResponse = z.infer<typeof adminUserResponseSchema>;
+export type AdminUsersFetchErrorResponse = z.infer<typeof adminUsersFetchErrorResponseSchema>;
+export type AdminUsersResponse = z.infer<typeof adminUsersResponseSchema>;
+export type AdminUserUpdateErrorResponse = z.infer<typeof adminUserUpdateErrorResponseSchema>;
+export type AdoptLogsForBrewRequestBody = z.infer<typeof adoptLogsForBrewRequestBodySchema>;
+export type AdoptLogsForBrewResponse = z.infer<typeof adoptLogsForBrewResponseSchema>;
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
+export type AttachDeviceToBrewRequestBody = z.infer<typeof attachDeviceToBrewRequestBodySchema>;
+export type AttachDeviceToBrewResponse = z.infer<typeof attachDeviceToBrewResponseSchema>;
+export type AuthenticatedRouteErrorResponse = z.infer<typeof authenticatedRouteErrorResponseSchema>;
+export type BjcpIngredientResponse = z.infer<typeof bjcpIngredientResponseSchema>;
+export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFetchErrorResponseSchema>;
+export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
+export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
+export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSchema>;
+export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionErrorResponseSchema>;
+export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
+export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
+export type BrewEntryDeleteErrorResponse = z.infer<typeof brewEntryDeleteErrorResponseSchema>;
+export type BrewEntryPathParams = z.infer<typeof brewEntryPathParamsSchema>;
+export type BrewEntryResponse = z.infer<typeof brewEntryResponseSchema>;
+export type BrewEntryTypeResponse = z.infer<typeof brewEntryTypeResponseSchema>;
+export type BrewEntryUpdateErrorResponse = z.infer<typeof brewEntryUpdateErrorResponseSchema>;
+export type BrewEntryWithBrewIdResponse = z.infer<typeof brewEntryWithBrewIdResponseSchema>;
+export type BrewFetchErrorResponse = z.infer<typeof brewFetchErrorResponseSchema>;
+export type BrewListItemResponse = z.infer<typeof brewListItemResponseSchema>;
+export type BrewPathParams = z.infer<typeof brewPathParamsSchema>;
+export type BrewRecipeSnapshotResponse = z.infer<typeof brewRecipeSnapshotResponseSchema>;
+export type BrewResponse = z.infer<typeof brewResponseSchema>;
+export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
+export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
+export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;
+export type BrewValidationErrorResponse = z.infer<typeof brewValidationErrorResponseSchema>;
+export type ContactRequestBody = z.infer<typeof contactRequestBodySchema>;
+export type ContactSendErrorResponse = z.infer<typeof contactSendErrorResponseSchema>;
+export type ContactSuccessResponse = z.infer<typeof contactSuccessResponseSchema>;
+export type ContactValidationErrorResponse = z.infer<typeof contactValidationErrorResponseSchema>;
+export type CreateAdditiveFailureErrorResponse = z.infer<typeof createAdditiveFailureErrorResponseSchema>;
+export type CreateAdditiveRequestBody = z.infer<typeof createAdditiveRequestBodySchema>;
+export type CreateAdditiveValidationErrorResponse = z.infer<typeof createAdditiveValidationErrorResponseSchema>;
+export type CreateBjcpIngredientFailureErrorResponse = z.infer<typeof createBjcpIngredientFailureErrorResponseSchema>;
+export type CreateBjcpIngredientRequestBody = z.infer<typeof createBjcpIngredientRequestBodySchema>;
+export type CreateBrewEntryRequestBody = z.infer<typeof createBrewEntryRequestBodySchema>;
+export type CreateBrewEntryResponse = z.infer<typeof createBrewEntryResponseSchema>;
+export type CreateBrewRequestBody = z.infer<typeof createBrewRequestBodySchema>;
+export type CreateBrewResponse = z.infer<typeof createBrewResponseSchema>;
+export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
+export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
+export type CreateRecipeCommentFailureErrorResponse = z.infer<typeof createRecipeCommentFailureErrorResponseSchema>;
+export type CreateRecipeCommentRequestBody = z.infer<typeof createRecipeCommentRequestBodySchema>;
+export type CreateRecipeCommentResponse = z.infer<typeof createRecipeCommentResponseSchema>;
+export type CreateRecipeCommentValidationErrorResponse = z.infer<typeof createRecipeCommentValidationErrorResponseSchema>;
+export type CreateRecipeFailureErrorResponse = z.infer<typeof createRecipeFailureErrorResponseSchema>;
+export type CreateRecipeRequestBody = z.infer<typeof createRecipeRequestBodySchema>;
+export type CreateRecipeResponse = z.infer<typeof createRecipeResponseSchema>;
+export type CreateRecipeValidationErrorResponse = z.infer<typeof createRecipeValidationErrorResponseSchema>;
+export type CreateUsernameFailureErrorResponse = z.infer<typeof createUsernameFailureErrorResponseSchema>;
+export type CreateUsernameRequestBody = z.infer<typeof createUsernameRequestBodySchema>;
+export type CreateUsernameSuccessResponse = z.infer<typeof createUsernameSuccessResponseSchema>;
+export type CreateUsernameValidationErrorResponse = z.infer<typeof createUsernameValidationErrorResponseSchema>;
+export type CreateYeastFailureErrorResponse = z.infer<typeof createYeastFailureErrorResponseSchema>;
+export type CreateYeastRequestBody = z.infer<typeof createYeastRequestBodySchema>;
+export type CreateYeastValidationErrorResponse = z.infer<typeof createYeastValidationErrorResponseSchema>;
+export type DeleteAdditiveFailureErrorResponse = z.infer<typeof deleteAdditiveFailureErrorResponseSchema>;
+export type DeleteAdditiveSuccessResponse = z.infer<typeof deleteAdditiveSuccessResponseSchema>;
+export type DeleteAdminUserSuccessResponse = z.infer<typeof deleteAdminUserSuccessResponseSchema>;
+export type DeleteBrewEntrySuccessResponse = z.infer<typeof deleteBrewEntrySuccessResponseSchema>;
+export type DeleteBrewSuccessResponse = z.infer<typeof deleteBrewSuccessResponseSchema>;
+export type DeleteHydrometerBrewResponse = z.infer<typeof deleteHydrometerBrewResponseSchema>;
+export type DeleteHydrometerDeviceResponse = z.infer<typeof deleteHydrometerDeviceResponseSchema>;
+export type DeleteHydrometerLogsInRangeResponse = z.infer<typeof deleteHydrometerLogsInRangeResponseSchema>;
+export type DeleteIngredientFailureErrorResponse = z.infer<typeof deleteIngredientFailureErrorResponseSchema>;
+export type DeleteIngredientSuccessResponse = z.infer<typeof deleteIngredientSuccessResponseSchema>;
+export type DeleteRecipeCommentFailureErrorResponse = z.infer<typeof deleteRecipeCommentFailureErrorResponseSchema>;
+export type DeleteRecipeCommentResponse = z.infer<typeof deleteRecipeCommentResponseSchema>;
+export type DeleteRecipeFailureErrorResponse = z.infer<typeof deleteRecipeFailureErrorResponseSchema>;
+export type DeleteRecipeForbiddenErrorResponse = z.infer<typeof deleteRecipeForbiddenErrorResponseSchema>;
+export type DeleteRecipeSuccessResponse = z.infer<typeof deleteRecipeSuccessResponseSchema>;
+export type DeleteYeastFailureErrorResponse = z.infer<typeof deleteYeastFailureErrorResponseSchema>;
+export type DeleteYeastSuccessResponse = z.infer<typeof deleteYeastSuccessResponseSchema>;
+export type EndHydrometerBrewResponse = z.infer<typeof endHydrometerBrewResponseSchema>;
+export type GetRecipeResponse = z.infer<typeof getRecipeResponseSchema>;
+export type GoFermType = z.infer<typeof goFermTypeSchema>;
+export type GravityUnitResponse = z.infer<typeof gravityUnitResponseSchema>;
+export type HydrometerAccountErrorResponse = z.infer<typeof hydrometerAccountErrorResponseSchema>;
+export type HydrometerAccountResponse = z.infer<typeof hydrometerAccountResponseSchema>;
+export type HydrometerAuthErrorResponse = z.infer<typeof hydrometerAuthErrorResponseSchema>;
+export type HydrometerBrewAlertResponse = z.infer<typeof hydrometerBrewAlertResponseSchema>;
+export type HydrometerBrewDevicePairItemResponse = z.infer<typeof hydrometerBrewDevicePairItemResponseSchema>;
+export type HydrometerBrewErrorResponse = z.infer<typeof hydrometerBrewErrorResponseSchema>;
+export type HydrometerBrewResponse = z.infer<typeof hydrometerBrewResponseSchema>;
+export type HydrometerBrewsResponse = z.infer<typeof hydrometerBrewsResponseSchema>;
+export type HydrometerBrewValidationErrorResponse = z.infer<typeof hydrometerBrewValidationErrorResponseSchema>;
+export type HydrometerDeviceBrewResponse = z.infer<typeof hydrometerDeviceBrewResponseSchema>;
+export type HydrometerDeviceErrorResponse = z.infer<typeof hydrometerDeviceErrorResponseSchema>;
+export type HydrometerDevicePathParams = z.infer<typeof hydrometerDevicePathParamsSchema>;
+export type HydrometerDeviceResponse = z.infer<typeof hydrometerDeviceResponseSchema>;
+export type HydrometerIngestRequestBody = z.infer<typeof hydrometerIngestRequestBodySchema>;
+export type HydrometerLogErrorResponse = z.infer<typeof hydrometerLogErrorResponseSchema>;
+export type HydrometerLogMutationParams = z.infer<typeof hydrometerLogMutationParamsSchema>;
+export type HydrometerLogMutationQueryParams = z.infer<typeof hydrometerLogMutationQueryParamsSchema>;
+export type HydrometerLogPathParams = z.infer<typeof hydrometerLogPathParamsSchema>;
+export type HydrometerLogRangeDeleteQueryParams = z.infer<typeof hydrometerLogRangeDeleteQueryParamsSchema>;
+export type HydrometerLogResponse = z.infer<typeof hydrometerLogResponseSchema>;
+export type HydrometerLogsQueryParams = z.infer<typeof hydrometerLogsQueryParamsSchema>;
+export type HydrometerLogsResponse = z.infer<typeof hydrometerLogsResponseSchema>;
+export type HydrometerLogValidationErrorResponse = z.infer<typeof hydrometerLogValidationErrorResponseSchema>;
+export type HydrometerTokenResponse = z.infer<typeof hydrometerTokenResponseSchema>;
+export type IngredientByIdErrorResponse = z.infer<typeof ingredientByIdErrorResponseSchema>;
+export type IngredientByIdPathParams = z.infer<typeof ingredientByIdPathParamsSchema>;
+export type IngredientByIdResponse = z.infer<typeof ingredientByIdResponseSchema>;
+export type IngredientLineAmountsResponse = z.infer<typeof ingredientLineAmountsResponseSchema>;
+export type IngredientLineResponse = z.infer<typeof ingredientLineResponseSchema>;
+export type IngredientQueryParams = z.infer<typeof ingredientQueryParamsSchema>;
+export type IngredientRefResponse = z.infer<typeof ingredientRefResponseSchema>;
+export type IngredientResponse = z.infer<typeof ingredientResponseSchema>;
+export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchErrorResponseSchema>;
+export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
+export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
+export type LinkRecipeToHydrometerBrewRequestBody = z.infer<typeof linkRecipeToHydrometerBrewRequestBodySchema>;
+export type LinkRecipeToHydrometerBrewResponse = z.infer<typeof linkRecipeToHydrometerBrewResponseSchema>;
+export type LoginFailureErrorResponse = z.infer<typeof loginFailureErrorResponseSchema>;
+export type LoginInvalidCredentialsErrorResponse = z.infer<typeof loginInvalidCredentialsErrorResponseSchema>;
+export type LoginMissingCredentialsErrorResponse = z.infer<typeof loginMissingCredentialsErrorResponseSchema>;
+export type LoginRequestBody = z.infer<typeof loginRequestBodySchema>;
+export type LoginSuccessResponse = z.infer<typeof loginSuccessResponseSchema>;
+export type NitrogenRequirement = z.infer<typeof nitrogenRequirementSchema>;
+export type NoteLineResponse = z.infer<typeof noteLineResponseSchema>;
+export type NotesResponse = z.infer<typeof notesResponseSchema>;
+export type NutrientAdditionsDerivedResponse = z.infer<typeof nutrientAdditionsDerivedResponseSchema>;
+export type NutrientAdjustmentsResponse = z.infer<typeof nutrientAdjustmentsResponseSchema>;
+export type NutrientAmountsByKeyNumberResponse = z.infer<typeof nutrientAmountsByKeyNumberResponseSchema>;
+export type NutrientAmountsByKeyResponse = z.infer<typeof nutrientAmountsByKeyResponseSchema>;
+export type NutrientDataResponse = z.infer<typeof nutrientDataResponseSchema>;
+export type NutrientDerivedStateResponse = z.infer<typeof nutrientDerivedStateResponseSchema>;
+export type NutrientInputsResponse = z.infer<typeof nutrientInputsResponseSchema>;
+export type NutrientScheduleType = z.infer<typeof nutrientScheduleTypeSchema>;
+export type NutrientSelectedResponse = z.infer<typeof nutrientSelectedResponseSchema>;
+export type NutrientSettingsResponse = z.infer<typeof nutrientSettingsResponseSchema>;
+export type NutrientVolumeUnit = z.infer<typeof nutrientVolumeUnitSchema>;
+export type PublicBrewDetailResponse = z.infer<typeof publicBrewDetailResponseSchema>;
+export type PublicBrewEntriesByStageResponse = z.infer<typeof publicBrewEntriesByStageResponseSchema>;
+export type PublicBrewEntryResponse = z.infer<typeof publicBrewEntryResponseSchema>;
+export type PublicBrewFetchErrorResponse = z.infer<typeof publicBrewFetchErrorResponseSchema>;
+export type PublicBrewListItemResponse = z.infer<typeof publicBrewListItemResponseSchema>;
+export type PublicBrewLogResponse = z.infer<typeof publicBrewLogResponseSchema>;
+export type PublicBrewNotFoundErrorResponse = z.infer<typeof publicBrewNotFoundErrorResponseSchema>;
+export type PublicBrewOwnerResponse = z.infer<typeof publicBrewOwnerResponseSchema>;
+export type PublicBrewValidationErrorResponse = z.infer<typeof publicBrewValidationErrorResponseSchema>;
+export type PublicRecipeBrewPathParams = z.infer<typeof publicRecipeBrewPathParamsSchema>;
+export type PublicRecipeBrewResponse = z.infer<typeof publicRecipeBrewResponseSchema>;
+export type PublicRecipeBrewsPathParams = z.infer<typeof publicRecipeBrewsPathParamsSchema>;
+export type PublicRecipeBrewsResponse = z.infer<typeof publicRecipeBrewsResponseSchema>;
+export type PublicRecipeListItemResponse = z.infer<typeof publicRecipeListItemResponseSchema>;
+export type PublicRecipeOwnerResponse = z.infer<typeof publicRecipeOwnerResponseSchema>;
+export type PublicRecipesFetchErrorResponse = z.infer<typeof publicRecipesFetchErrorResponseSchema>;
+export type PublicRecipesPageResponse = z.infer<typeof publicRecipesPageResponseSchema>;
+export type PublicRecipesQueryParams = z.infer<typeof publicRecipesQueryParamsSchema>;
+export type RaptPillCloudIngestRequestBody = z.infer<typeof raptPillCloudIngestRequestBodySchema>;
+export type RaptPillRegisterErrorResponse = z.infer<typeof raptPillRegisterErrorResponseSchema>;
+export type RaptPillRegisterRequestBody = z.infer<typeof raptPillRegisterRequestBodySchema>;
+export type RateRecipeFailureErrorResponse = z.infer<typeof rateRecipeFailureErrorResponseSchema>;
+export type RateRecipeRequestBody = z.infer<typeof rateRecipeRequestBodySchema>;
+export type RateRecipeResponse = z.infer<typeof rateRecipeResponseSchema>;
+export type RateRecipeValidationErrorResponse = z.infer<typeof rateRecipeValidationErrorResponseSchema>;
+export type RecipeAmountInputResponse = z.infer<typeof recipeAmountInputResponseSchema>;
+export type RecipeCommentAuthorResponse = z.infer<typeof recipeCommentAuthorResponseSchema>;
+export type RecipeCommentListItemResponse = z.infer<typeof recipeCommentListItemResponseSchema>;
+export type RecipeCommentListPathParams = z.infer<typeof recipeCommentListPathParamsSchema>;
+export type RecipeCommentListQueryParams = z.infer<typeof recipeCommentListQueryParamsSchema>;
+export type RecipeCommentPathParams = z.infer<typeof recipeCommentPathParamsSchema>;
+export type RecipeCommentRepliesPathParams = z.infer<typeof recipeCommentRepliesPathParamsSchema>;
+export type RecipeCommentResponse = z.infer<typeof recipeCommentResponseSchema>;
+export type RecipeCommentsFetchErrorResponse = z.infer<typeof recipeCommentsFetchErrorResponseSchema>;
+export type RecipeCommentsPageResponse = z.infer<typeof recipeCommentsPageResponseSchema>;
+export type RecipeCommentsValidationErrorResponse = z.infer<typeof recipeCommentsValidationErrorResponseSchema>;
+export type RecipeDataV2Response = z.infer<typeof recipeDataV2ResponseSchema>;
+export type RecipeDerivedByIdValidationErrorResponse = z.infer<typeof recipeDerivedByIdValidationErrorResponseSchema>;
+export type RecipeDerivedFailureErrorResponse = z.infer<typeof recipeDerivedFailureErrorResponseSchema>;
+export type RecipeDerivedStateResponse = z.infer<typeof recipeDerivedStateResponseSchema>;
+export type RecipeDerivedStateResponseBody = z.infer<typeof recipeDerivedStateResponseBodySchema>;
+export type RecipeDerivedValidationErrorResponse = z.infer<typeof recipeDerivedValidationErrorResponseSchema>;
+export type RecipeDetailResponse = z.infer<typeof recipeDetailResponseSchema>;
+export type RecipeFetchErrorResponse = z.infer<typeof recipeFetchErrorResponseSchema>;
+export type RecipeForbiddenErrorResponse = z.infer<typeof recipeForbiddenErrorResponseSchema>;
+export type RecipeNotFoundErrorResponse = z.infer<typeof recipeNotFoundErrorResponseSchema>;
+export type RecipeOwnerResponse = z.infer<typeof recipeOwnerResponseSchema>;
+export type RecipePathParams = z.infer<typeof recipePathParamsSchema>;
+export type RecipeRatingAggregateResponse = z.infer<typeof recipeRatingAggregateResponseSchema>;
+export type RecipeRatingResponse = z.infer<typeof recipeRatingResponseSchema>;
+export type RecipeStabilizerResultsResponse = z.infer<typeof recipeStabilizerResultsResponseSchema>;
+export type RecipeUnitDefaultsResponse = z.infer<typeof recipeUnitDefaultsResponseSchema>;
+export type RefreshTokenFailureErrorResponse = z.infer<typeof refreshTokenFailureErrorResponseSchema>;
+export type RefreshTokenInvalidEmailErrorResponse = z.infer<typeof refreshTokenInvalidEmailErrorResponseSchema>;
+export type RefreshTokenRequestBody = z.infer<typeof refreshTokenRequestBodySchema>;
+export type RefreshTokenSuccessResponse = z.infer<typeof refreshTokenSuccessResponseSchema>;
+export type RefreshTokenValidationErrorResponse = z.infer<typeof refreshTokenValidationErrorResponseSchema>;
+export type RegisterFailureErrorResponse = z.infer<typeof registerFailureErrorResponseSchema>;
+export type RegisterRequestBody = z.infer<typeof registerRequestBodySchema>;
+export type RegisterSuccessResponse = z.infer<typeof registerSuccessResponseSchema>;
+export type RegisterValidationErrorResponse = z.infer<typeof registerValidationErrorResponseSchema>;
+export type RenameHydrometerBrewResponse = z.infer<typeof renameHydrometerBrewResponseSchema>;
+export type RequestPasswordResetBody = z.infer<typeof requestPasswordResetBodySchema>;
+export type RequestPasswordResetSuccessResponse = z.infer<typeof requestPasswordResetSuccessResponseSchema>;
+export type RequestPasswordResetValidationErrorResponse = z.infer<typeof requestPasswordResetValidationErrorResponseSchema>;
+export type ResetPasswordInvalidTokenErrorResponse = z.infer<typeof resetPasswordInvalidTokenErrorResponseSchema>;
+export type ResetPasswordRequestBody = z.infer<typeof resetPasswordRequestBodySchema>;
+export type ResetPasswordSuccessResponse = z.infer<typeof resetPasswordSuccessResponseSchema>;
+export type ResetPasswordValidationErrorResponse = z.infer<typeof resetPasswordValidationErrorResponseSchema>;
+export type SelectedNutrientsResponse = z.infer<typeof selectedNutrientsResponseSchema>;
+export type StabilizersResponse = z.infer<typeof stabilizersResponseSchema>;
+export type StartHydrometerBrewRequestBody = z.infer<typeof startHydrometerBrewRequestBodySchema>;
+export type StartHydrometerBrewResponse = z.infer<typeof startHydrometerBrewResponseSchema>;
+export type TemperatureUnitResponse = z.infer<typeof temperatureUnitResponseSchema>;
+export type TiltColor = z.infer<typeof tiltColorSchema>;
+export type TiltIngestQueryParams = z.infer<typeof tiltIngestQueryParamsSchema>;
+export type TiltIngestRequestBody = z.infer<typeof tiltIngestRequestBodySchema>;
+export type UpdateAccountInfoErrorResponse = z.infer<typeof updateAccountInfoErrorResponseSchema>;
+export type UpdateAccountInfoRequestBody = z.infer<typeof updateAccountInfoRequestBodySchema>;
+export type UpdateAccountInfoResponse = z.infer<typeof updateAccountInfoResponseSchema>;
+export type UpdateAdditiveFailureErrorResponse = z.infer<typeof updateAdditiveFailureErrorResponseSchema>;
+export type UpdateAdditiveRequestBody = z.infer<typeof updateAdditiveRequestBodySchema>;
+export type UpdateAdminUserRequestBody = z.infer<typeof updateAdminUserRequestBodySchema>;
+export type UpdateBrewEntryRequestBody = z.infer<typeof updateBrewEntryRequestBodySchema>;
+export type UpdateBrewEntryResponse = z.infer<typeof updateBrewEntryResponseSchema>;
+export type UpdateBrewRequestBody = z.infer<typeof updateBrewRequestBodySchema>;
+export type UpdateBrewResponse = z.infer<typeof updateBrewResponseSchema>;
+export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
+export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
+export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;
+export type UpdateHydrometerDeviceRequestBody = z.infer<typeof updateHydrometerDeviceRequestBodySchema>;
+export type UpdateHydrometerLogRequestBody = z.infer<typeof updateHydrometerLogRequestBodySchema>;
+export type UpdateIngredientFailureErrorResponse = z.infer<typeof updateIngredientFailureErrorResponseSchema>;
+export type UpdateIngredientRequestBody = z.infer<typeof updateIngredientRequestBodySchema>;
+export type UpdateRecipeCommentFailureErrorResponse = z.infer<typeof updateRecipeCommentFailureErrorResponseSchema>;
+export type UpdateRecipeCommentRequestBody = z.infer<typeof updateRecipeCommentRequestBodySchema>;
+export type UpdateRecipeCommentResponse = z.infer<typeof updateRecipeCommentResponseSchema>;
+export type UpdateRecipeCommentValidationErrorResponse = z.infer<typeof updateRecipeCommentValidationErrorResponseSchema>;
+export type UpdateRecipeFailureErrorResponse = z.infer<typeof updateRecipeFailureErrorResponseSchema>;
+export type UpdateRecipeForbiddenErrorResponse = z.infer<typeof updateRecipeForbiddenErrorResponseSchema>;
+export type UpdateRecipeRequestBody = z.infer<typeof updateRecipeRequestBodySchema>;
+export type UpdateRecipeResponse = z.infer<typeof updateRecipeResponseSchema>;
+export type UpdateRecipeValidationErrorResponse = z.infer<typeof updateRecipeValidationErrorResponseSchema>;
+export type UpdateYeastFailureErrorResponse = z.infer<typeof updateYeastFailureErrorResponseSchema>;
+export type UpdateYeastRequestBody = z.infer<typeof updateYeastRequestBodySchema>;
+export type VerifyTokenFailureErrorResponse = z.infer<typeof verifyTokenFailureErrorResponseSchema>;
+export type VerifyTokenNotFoundErrorResponse = z.infer<typeof verifyTokenNotFoundErrorResponseSchema>;
+export type VerifyTokenRequestBody = z.infer<typeof verifyTokenRequestBodySchema>;
+export type VerifyTokenSuccessResponse = z.infer<typeof verifyTokenSuccessResponseSchema>;
+export type VerifyTokenUnauthorizedErrorResponse = z.infer<typeof verifyTokenUnauthorizedErrorResponseSchema>;
+export type VerifyTokenUserResponse = z.infer<typeof verifyTokenUserResponseSchema>;
+export type VerifyTokenValidationErrorResponse = z.infer<typeof verifyTokenValidationErrorResponseSchema>;
+export type VolumeUnit = z.infer<typeof volumeUnitSchema>;
+export type WeightUnit = z.infer<typeof weightUnitSchema>;
+export type YeastBrandResponse = z.infer<typeof yeastBrandResponseSchema>;
+export type YeastByIdErrorResponse = z.infer<typeof yeastByIdErrorResponseSchema>;
+export type YeastByIdPathParams = z.infer<typeof yeastByIdPathParamsSchema>;
+export type YeastByIdResponse = z.infer<typeof yeastByIdResponseSchema>;
+export type YeastLookupResponse = z.infer<typeof yeastLookupResponseSchema>;
+export type YeastNitrogenRequirementResponse = z.infer<typeof yeastNitrogenRequirementResponseSchema>;
+export type YeastNotFoundErrorResponse = z.infer<typeof yeastNotFoundErrorResponseSchema>;
+export type YeastQueryParams = z.infer<typeof yeastQueryParamsSchema>;
+export type YeastResponse = z.infer<typeof yeastResponseSchema>;
+export type YeastsFetchErrorResponse = z.infer<typeof yeastsFetchErrorResponseSchema>;
+export type YeastsResponse = z.infer<typeof yeastsResponseSchema>;

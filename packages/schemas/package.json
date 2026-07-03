@@ -9,7 +9,7 @@
     "./recipe": "./src/recipe.ts"
   },
   "scripts": {
-    "test": "node --import tsx --test test/**/*.test.ts",
+    "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

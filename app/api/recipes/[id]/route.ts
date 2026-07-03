@@ -1,64 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { deleteRecipe, getRecipeInfo, updateRecipe } from "@/lib/db/recipes";
-import type { RecipeDataV2Response } from "@meadtools/api-contract";
-
-export type RecipePathParams = {
-  id: string;
-};
-
-export type RecipeOwnerResponse = {
-  public_username: string | null;
-  active: boolean;
-};
-
-export type RecipeRatingResponse = {
-  rating: number;
-  user_id: number;
-};
-
-export type RecipeDetailResponse = {
-  id: number;
-  user_id: number | null;
-  name: string;
-  recipeData: string;
-  yanFromSource: string | null;
-  yanContribution: string;
-  nutrientData: string;
-  advanced: boolean;
-  nuteInfo: string | null;
-  primaryNotes: string[][];
-  secondaryNotes: string[][];
-  dataV2: RecipeDataV2Response | null;
-  version: number;
-  private: boolean;
-  lastActivityEmailAt: string | null;
-  activityEmailsEnabled: boolean;
-  users: RecipeOwnerResponse | null;
-  ratings: RecipeRatingResponse[];
-  public_username: string | null;
-  averageRating: number | null;
-};
-
-export type GetRecipeResponse = {
-  recipe: RecipeDetailResponse;
-};
-
-export type InvalidRecipeIdErrorResponse = {
-  error: "Invalid recipe ID";
-};
-
-export type RecipeNotFoundErrorResponse = {
-  error: "Recipe not found" | "User not found";
-};
-
-export type RecipeForbiddenErrorResponse = {
-  error: "You are not authorized to view this recipe";
-};
-
-export type RecipeFetchErrorResponse = {
-  error: "An error occurred while fetching the recipe" | "Server misconfiguration";
-};
 
 /**
  * Get recipe by ID

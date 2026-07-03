@@ -15,7 +15,7 @@ export const volumeUnitSchema = z.enum([
   "imp_fl_oz"
 ]);
 
-const ingredientReferenceSchema = z.union([
+export const ingredientReferenceSchema = z.union([
   z.object({
     kind: z.literal("catalog"),
     ingredientId: z.union([z.number(), z.string()])
@@ -25,6 +25,11 @@ const ingredientReferenceSchema = z.union([
   })
 ]);
 
+export const ingredientLineAmountsSchema = z.object({
+  weight: z.object({ value: z.string(), unit: weightUnitSchema }),
+  volume: z.object({ value: z.string(), unit: volumeUnitSchema }),
+  basis: z.enum(["weight", "volume"])
+});
 export const ingredientLineSchema = z.object({
   lineId: z.string(),
   name: z.string(),
@@ -32,52 +37,46 @@ export const ingredientLineSchema = z.object({
   category: z.string(),
   brix: z.string(),
   secondary: z.boolean(),
-  amounts: z.object({
-    weight: z.object({
-      value: z.string(),
-      unit: weightUnitSchema
-    }),
-    volume: z.object({
-      value: z.string(),
-      unit: volumeUnitSchema
-    }),
-    basis: z.enum(["weight", "volume"])
-  })
+  amounts: ingredientLineAmountsSchema
 });
 
+export const additiveAmountDimSchema = z.enum(["weight", "volume", "count", "unknown"]);
 export const additiveLineSchema = z.object({
   lineId: z.string(),
   name: z.string(),
   amount: z.string(),
   unit: z.string(),
   amountTouched: z.boolean(),
-  amountDim: z.enum(["weight", "volume", "count", "unknown"])
+  amountDim: additiveAmountDimSchema
 });
 
 export const noteLineSchema = z.object({
   lineId: z.string(),
   content: z.tuple([z.string(), z.string()])
 });
+export const recipeUnitDefaultsSchema = z.object({
+  weight: weightUnitSchema,
+  volume: volumeUnitSchema
+});
+export const stabilizersSchema = z.object({
+  adding: z.boolean(),
+  takingPh: z.boolean(),
+  phReading: z.string(),
+  type: z.enum(["kmeta", "nameta"])
+});
+export const notesSchema = z.object({
+  primary: z.array(noteLineSchema),
+  secondary: z.array(noteLineSchema)
+});
 
 export const recipeDataV2Schema = z.object({
   version: z.literal(2),
-  unitDefaults: z.object({
-    weight: weightUnitSchema,
-    volume: volumeUnitSchema
-  }),
+  unitDefaults: recipeUnitDefaultsSchema,
   ingredients: z.array(ingredientLineSchema),
   fg: z.string(),
   additives: z.array(additiveLineSchema),
-  stabilizers: z.object({
-    adding: z.boolean(),
-    takingPh: z.boolean(),
-    phReading: z.string(),
-    type: z.enum(["kmeta", "nameta"])
-  }),
-  notes: z.object({
-    primary: z.array(noteLineSchema),
-    secondary: z.array(noteLineSchema)
-  }),
+  stabilizers: stabilizersSchema,
+  notes: notesSchema,
   nutrients: nutrientDataV2Schema.optional(),
   flags: z
     .object({

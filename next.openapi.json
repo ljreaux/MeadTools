@@ -100,10 +100,9 @@
   "apiDir": "./app/api",
   "routerType": "app",
   "schemaDir": [
-    "./app/api",
-    "./packages/api-contract/src"
+    "./packages/api-contract/src/zod"
   ],
-  "schemaType": "typescript",
+  "schemaType": "zod",
   "schemaFiles": [],
   "docsUrl": "api-docs",
   "ui": "scalar",

@@ -1,28 +1,32 @@
 # Shared API contract
 
-`@meadtools/api-contract` owns the stable request and response TypeScript
-contracts used by the MeadTools OpenAPI generator and external TypeScript
-consumers.
+`@meadtools/api-contract` owns the stable runtime request and response schemas
+used by MeadTools, the OpenAPI generator, and external TypeScript consumers.
+Zod schemas are the source of truth. Public TypeScript contracts are inferred
+from them.
 
 ## OpenAPI compatibility
 
-Before extraction, `public/openapi.json` was regenerated with
-`next-openapi-gen` and captured as the compatibility baseline.
+Before the Zod migration, `public/openapi.json` was regenerated with
+`next-openapi-gen` and captured as the endpoint compatibility baseline.
 
-- Raw SHA-256:
-  `052fbee2d31a973c1f85a05d897f36d38ed14e851205d3f6129cbe67116f5c82`
-- Canonical JSON SHA-256:
-  `67cb52730796b39713ef6d29ffb1016b6164741f4740b8e85a832113b5b52a8b`
 - Paths: 52
-- Component schemas: 284
+- Canonical endpoint-path SHA-256:
+  `4610d8687942691b4d6a411907359deca3fb67c00a6f34dd7acc8ad3ee38076c`
+- Reviewed Zod document SHA-256:
+  `49844af6db83344c1ec241652d1251f4c3e361b01cb7caff56e7d9de030a06ce`
 
-The canonical hash test sorts object keys before hashing, so harmless object-key
-ordering does not hide or manufacture a contract change. Array order and all
-values remain significant.
+The parity test preserves the complete pre-migration `paths` object: routes,
+methods, parameters, descriptions, response statuses, and component references.
+Zod now generates the component schemas, including explicit required and
+nullable semantics, so the full document has a separately reviewed baseline.
+The canonical hashes sort object keys; array order and all values remain
+significant.
 
 Run:
 
 ```sh
+npm run contracts:generate
 npm run openapi:generate
 npm run test:api-contract
 ```
@@ -32,24 +36,28 @@ the baseline.
 
 ## Generator inputs
 
-The generator still uses TypeScript schema mode. It scans both:
+The OpenAPI generator uses Zod schema mode. It scans:
 
-- `app/api` for Route Handlers, annotations, and route-local contract types.
-- `packages/api-contract/src` for shared contract types.
+- `app/api` for Route Handlers and their OpenAPI annotations.
+- `packages/api-contract/src/zod` for runtime schemas.
 
-Both directories are required to reproduce the existing document. Pointing the
-generator only at the package omits route-local definitions and changes the
-output.
+`scripts/normalize-zod-openapi.mjs` then preserves the established PascalCase
+component names and restores the generator's reviewed operation-parameter
+metadata from `packages/api-contract/openapi-parameters.json`. This compatibility
+step is necessary because the current Zod mode does not emit those annotated
+path and query parameters.
 
-## Zod relationship
+## Adding or changing a contract
 
-The package exports the shared recipe and nutrient Zod schemas through its
-`schemas` entry point. Runtime validation can therefore share the same package
-boundary as API contracts.
+1. Add or update the named `*Schema` export in
+   `packages/api-contract/src/zod`.
+2. Run `npm run contracts:generate` to regenerate inferred public types and
+   OpenAPI aliases.
+3. Add schema acceptance and rejection tests.
+4. Run `npm run openapi:generate` and review any documentation diff.
+5. Run `npm test` and workspace typechecks.
 
-OpenAPI generation remains in TypeScript mode for compatibility. Switching the
-generator to reinterpret existing definitions as Zod changes generated
-component structure and is not part of this behavior-preserving extraction.
-Zod-backed OpenAPI generation can be adopted incrementally only when each
-generated component is proven equivalent or an intentional contract change is
-approved.
+Do not edit `src/contracts.ts` or `src/zod/openapi-aliases.ts` by hand; both are
+generated. The package's domain subpaths export the runtime schemas directly,
+while `@meadtools/api-contract/contracts` retains the existing TypeScript type
+surface for consumers.
