@@ -1,0 +1,25 @@
+name: Create Production Builds
+
+jobs:
+  quality:
+    name: Typecheck mobile app
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - run: npm run typecheck
+
+  build_android:
+    name: Build Android
+    needs: [quality]
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  build_ios:
+    name: Build iOS
+    needs: [quality]
+    type: build
+    params:
+      platform: ios
+      profile: production

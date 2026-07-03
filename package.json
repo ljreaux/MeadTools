@@ -8,9 +8,14 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev:web",
     "dev:setup": "node scripts/dev-setup.mjs",
     "dev:setup:reset": "docker compose down -v && node scripts/dev-setup.mjs",
-    "dev": "npm run dev --workspace @meadtools/web",
+    "dev:web": "npm run dev --workspace @meadtools/web",
+    "dev:mobile": "npm run start --workspace @meadtools/mobile",
+    "mobile:android": "npm run android --workspace @meadtools/mobile",
+    "mobile:ios": "npm run ios --workspace @meadtools/mobile",
+    "mobile:typecheck": "npm run typecheck --workspace @meadtools/mobile",
     "dev:i18n": "npm run dev:i18n --workspace @meadtools/web",
     "build": "npm run build --workspace @meadtools/web",
     "vercel-build": "npm run vercel-build --workspace @meadtools/web",
