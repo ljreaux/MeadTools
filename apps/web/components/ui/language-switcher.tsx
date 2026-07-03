@@ -10,7 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import i18nConfig from "@/i18nConfig";
+import { i18nConfig } from "@meadtools/i18n";
 function LanguageSwitcher() {
   const { i18n } = useTranslation();
   const currentLocale = i18n.language;

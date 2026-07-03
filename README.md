@@ -142,7 +142,7 @@ MeadTools uses i18nexus for translation management.
 
 ### Default behavior
 
-- Translations are loaded from local JSON files under apps/web/locales/
+- Translations are loaded from generated JSON files under packages/i18n/locales/
 - No API key is required to run the app
 
 ### Optional live translation sync
