@@ -1,0 +1,120 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MeadTools API",
+    "version": "1.0.0",
+    "description": "OpenAPI documentation for MeadTools public, authenticated user, and device integration endpoints."
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Current MeadTools host"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Send the access token in the Authorization header as `Bearer <token>`. External API clients should use MeadTools access tokens returned by the auth endpoints."
+      }
+    }
+  },
+  "defaultResponseSet": "common",
+  "responseSets": {
+    "common": [
+      "400",
+      "500"
+    ],
+    "auth": [
+      "400",
+      "401",
+      "403",
+      "500"
+    ],
+    "public": [
+      "400",
+      "500"
+    ]
+  },
+  "errorConfig": {
+    "template": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "{{ERROR_MESSAGE}}"
+        },
+        "code": {
+          "type": "string",
+          "example": "{{ERROR_CODE}}"
+        }
+      }
+    },
+    "codes": {
+      "400": {
+        "description": "Bad Request",
+        "variables": {
+          "ERROR_MESSAGE": "Invalid request parameters",
+          "ERROR_CODE": "BAD_REQUEST"
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "variables": {
+          "ERROR_MESSAGE": "Authentication required",
+          "ERROR_CODE": "UNAUTHORIZED"
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "variables": {
+          "ERROR_MESSAGE": "Access denied",
+          "ERROR_CODE": "FORBIDDEN"
+        }
+      },
+      "404": {
+        "description": "Not Found",
+        "variables": {
+          "ERROR_MESSAGE": "Resource not found",
+          "ERROR_CODE": "NOT_FOUND"
+        }
+      },
+      "409": {
+        "description": "Conflict",
+        "variables": {
+          "ERROR_MESSAGE": "Resource already exists",
+          "ERROR_CODE": "CONFLICT"
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "variables": {
+          "ERROR_MESSAGE": "An unexpected error occurred",
+          "ERROR_CODE": "INTERNAL_ERROR"
+        }
+      }
+    }
+  },
+  "apiDir": "./app/api",
+  "routerType": "app",
+  "schemaDir": [
+    "../../packages/api-contract/src/zod"
+  ],
+  "schemaType": "zod",
+  "schemaFiles": [],
+  "docsUrl": "api-docs",
+  "ui": "scalar",
+  "outputFile": "openapi.json",
+  "outputDir": "./public",
+  "includeOpenApiRoutes": false,
+  "ignoreRoutes": [
+    "/cron/*",
+    "/auth/oauth-callback",
+    "/auth/start-oauth-flow",
+    "/auth/verify-token",
+    "/auth/{nextauth}"
+  ],
+  "debug": false
+}

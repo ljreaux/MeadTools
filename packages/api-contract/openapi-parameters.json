@@ -1,0 +1,715 @@
+{
+  "GET /additives": [
+    {
+      "in": "query",
+      "name": "name",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "GET /additives/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /additives/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /additives/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes": [
+    {
+      "in": "query",
+      "name": "page",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "limit",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "query",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "GET /users/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /users/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /users/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /brews/{brew_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /brews/{brew_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /brews/{brew_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "POST /brews/{brew_id}/adopt-logs": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "POST /brews/{brew_id}/attach-device": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "POST /brews/{brew_id}/entries": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/{id}/brews": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /brews/{brew_id}/entries/{entry_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    },
+    {
+      "in": "path",
+      "name": "entry_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /brews/{brew_id}/entries/{entry_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    },
+    {
+      "in": "path",
+      "name": "entry_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/{id}/brews/{brew_id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    },
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /hydrometer/logs": [
+    {
+      "in": "query",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "start_date",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "end_date",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "PATCH /hydrometer/brew/{brew_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /hydrometer/brew/{brew_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /hydrometer/device/{device_id}": [
+    {
+      "in": "path",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /hydrometer/device/{device_id}": [
+    {
+      "in": "path",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /hydrometer/logs/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /hydrometer/logs/{id}": [
+    {
+      "in": "query",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /hydrometer/logs/{id}": [
+    {
+      "in": "query",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /hydrometer/logs/range": [
+    {
+      "in": "query",
+      "name": "device_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "start_date",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "end_date",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "POST /hydrometer/tilt": [
+    {
+      "in": "query",
+      "name": "token",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "GET /ingredients": [
+    {
+      "in": "query",
+      "name": "category",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "name",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "GET /ingredients/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /ingredients/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /ingredients/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /comments/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /comments/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /recipes/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /recipes/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/public": [
+    {
+      "in": "query",
+      "name": "page",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "limit",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "q",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "query",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "POST /recipes/{id}/comments": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "POST /recipes/{id}/ratings": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/derived/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/{id}/comments/roots": [
+    {
+      "in": "query",
+      "name": "limit",
+      "schema": {
+        "type": "number"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "cursor",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "order",
+      "schema": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ]
+      },
+      "required": false
+    },
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /recipes/{id}/comments/{commentId}/replies": [
+    {
+      "in": "query",
+      "name": "limit",
+      "schema": {
+        "type": "number"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "cursor",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "order",
+      "schema": {
+        "type": "string",
+        "enum": [
+          "asc",
+          "desc"
+        ]
+      },
+      "required": false
+    },
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    },
+    {
+      "in": "path",
+      "name": "commentId",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /yeasts": [
+    {
+      "in": "query",
+      "name": "brand",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "name",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    },
+    {
+      "in": "query",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": false
+    }
+  ],
+  "GET /yeasts/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "PATCH /yeasts/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "DELETE /yeasts/{id}": [
+    {
+      "in": "path",
+      "name": "id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@meadtools/api-contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/zod/admin.ts",
+    "./auth": "./src/zod/auth.ts",
+    "./brews": "./src/zod/brews.ts",
+    "./hydrometers": "./src/zod/hydrometers.ts",
+    "./foundation": "./src/zod/foundation.ts",
+    "./catalog": "./src/zod/catalog.ts",
+    "./recipes": "./src/zod/recipes.ts",
+    "./routes": "./src/zod/routes.ts",
+    "./contracts": "./src/contracts.ts",
+    "./schemas": "./src/schemas.ts"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@meadtools/schemas": "*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
