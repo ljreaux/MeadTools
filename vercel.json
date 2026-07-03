@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run vercel-build",
+  "ignoreCommand": "node scripts/app-impact.mjs web",
   "outputDirectory": "apps/web/.next",
   "crons": [
     {
