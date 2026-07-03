@@ -10,7 +10,7 @@ import type {
   GravityPayloadOptions
 } from "@/lib/utils/entryPayload";
 import type { RecipeData, IngredientLine, AdditiveLine, Notes, VolumeUnit, WeightUnit } from "@/types/recipeData";
-import { isRecipeData } from "@/types/recipeData";
+import { isCompatibleRecipeDataSnapshot } from "@/types/recipeData";
 import {
   calculateNutrientDerivedState,
   calculateEffectiveNutrientData,
@@ -653,7 +653,7 @@ export function buildBrewRecipeStageData(args: {
   const snapshot = args.recipeSnapshot ?? null;
   const snapshotData = snapshot?.dataV2;
 
-  if (!snapshot || !isRecipeData(snapshotData)) {
+  if (!snapshot || !isCompatibleRecipeDataSnapshot(snapshotData)) {
     return {
       ...EMPTY_STAGE_DATA,
       actual: {
