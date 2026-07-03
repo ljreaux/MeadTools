@@ -47,7 +47,7 @@ import {
   scaleSecondaryIngredientSuggestions,
   type ScaledAdditiveSuggestion,
   type ScaledIngredientSuggestion
-} from "@/lib/utils/brewTrackingScaling";
+} from "@meadtools/brew-domain/scaling";
 import { calcABV } from "@meadtools/core/gravity";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import type {

@@ -2,10 +2,11 @@ import { brew_stage, Prisma } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 import { groupEntriesByStage, type BrewEntryForApp } from "@/lib/db/brews";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 import {
   projectBrewView,
   projectBrewViewListItem
-} from "@/lib/brews/projectBrewView";
+} from "@meadtools/brew-domain/projection";
 import type { BrewViewDetail, BrewViewListItem } from "@/types/brewView";
 
 export type AdminSummary = {
@@ -209,7 +210,7 @@ export async function getAdminBrew(
     user_id: null
   }));
 
-  return projectBrewView({
+  return projectBrewView<BrewRecipeSnapshot, Prisma.JsonValue>({
     ...brew,
     recipe_name: brew.recipes?.name ?? null,
     entry_count: brew._count.entries,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { projectBrewView } from "@/lib/brews/projectBrewView";
+import { projectBrewView } from "../src/projection";
 
 test("projectBrewView excludes authorization, alert, and device fields", () => {
   const projected = projectBrewView({
@@ -60,7 +60,10 @@ test("projectBrewView excludes authorization, alert, and device fields", () => {
   assert.equal("device_id" in projected.logs[0], false);
   assert.equal("brew_id" in projected.logs[0], false);
   assert.equal("id" in projected.logs[0], false);
-  assert.doesNotMatch(serialized, /device-secret|requested_email_alerts|user_id|device_id/);
+  assert.doesNotMatch(
+    serialized,
+    /device-secret|requested_email_alerts|user_id|device_id/
+  );
 });
 
 test("projectBrewView supports a sanitized payload with optional content omitted", () => {
@@ -86,4 +89,29 @@ test("projectBrewView supports a sanitized payload with optional content omitted
   assert.equal(projected.recipe_snapshot, null);
   assert.equal(projected.owner, null);
   assert.equal(projected.public, false);
+});
+
+test("projectBrewView preserves recipe snapshot data without interpreting it", () => {
+  const recipeSnapshot = {
+    id: 12,
+    version: 2,
+    nested: { value: "unchanged" }
+  };
+  const projected = projectBrewView({
+    id: "brew-3",
+    name: "Snapshot batch",
+    start_date: "2026-03-01T00:00:00.000Z",
+    end_date: null,
+    stage: "PRIMARY",
+    batch_number: null,
+    current_volume_liters: 10,
+    gravity_unit_preference: "SG",
+    latest_gravity: null,
+    recipe_id: 12,
+    recipe_name: "Recipe",
+    recipe_snapshot: recipeSnapshot,
+    entry_count: 0
+  });
+
+  assert.equal(projected.recipe_snapshot, recipeSnapshot);
 });
