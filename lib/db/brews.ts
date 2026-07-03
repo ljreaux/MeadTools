@@ -8,10 +8,11 @@ import {
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
+import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 import {
   projectBrewView,
   projectBrewViewListItem
-} from "@/lib/brews/projectBrewView";
+} from "@meadtools/brew-domain/projection";
 import type { BrewViewDetail, BrewViewListItem } from "@/types/brewView";
 
 export type BrewListItem = {
@@ -814,7 +815,7 @@ export async function getPublicBrewForRecipe(
     user_id: null
   }));
 
-  return projectBrewView({
+  return projectBrewView<BrewRecipeSnapshot, Prisma.JsonValue>({
     ...brew,
     recipe_name: brew.recipes?.name ?? null,
     entry_count: brew._count.entries,

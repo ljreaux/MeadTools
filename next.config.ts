@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   pageExtensions: ["md", "mdx", "ts", "tsx"],
   transpilePackages: [
     "@meadtools/api-contract",
+    "@meadtools/brew-domain",
     "@meadtools/core",
     "@meadtools/schemas"
   ]
