@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "49844af6db83344c1ec241652d1251f4c3e361b01cb7caff56e7d9de030a06ce";
+  "1c0c6673a150cb99377bfe86772b604c4911aad4347a808c7688f7090b43a562";
 const preZodPathsCanonicalSha256 =
   "4610d8687942691b4d6a411907359deca3fb67c00a6f34dd7acc8ad3ee38076c";
 
@@ -34,12 +34,20 @@ test("generated OpenAPI document matches the reviewed Zod baseline", async () =>
   );
 });
 
-test("Zod migration preserves the pre-migration endpoint documentation", async () => {
+test("idempotency contract preserves all pre-existing endpoint documentation", async () => {
   const documentUrl = new URL("../../../public/openapi.json", import.meta.url);
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
-    paths: unknown;
+    paths: Record<
+      string,
+      { post?: { responses?: Record<string, unknown> } }
+    >;
   };
-  const canonicalPaths = JSON.stringify(sortJson(document.paths));
+  const pathsWithoutIdempotencyConflict = structuredClone(document.paths);
+  delete pathsWithoutIdempotencyConflict["/brews/{brew_id}/entries"]?.post
+    ?.responses?.["409"];
+  const canonicalPaths = JSON.stringify(
+    sortJson(pathsWithoutIdempotencyConflict)
+  );
   const actualHash = createHash("sha256")
     .update(canonicalPaths)
     .digest("hex");

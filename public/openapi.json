@@ -979,7 +979,8 @@
               "Invalid JSON body",
               "Missing recipe_id",
               "Missing brew_id",
-              "Missing entry_id"
+              "Missing entry_id",
+              "Invalid client_entry_id"
             ]
           }
         },
@@ -1076,6 +1077,10 @@
                 "$ref": "#/components/schemas/BrewStageResponse"
               }
             ]
+          },
+          "client_entry_id": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -1091,6 +1096,20 @@
         },
         "required": [
           "brew"
+        ]
+      },
+      "BrewEntryIdConflictErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Entry ID is already in use"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "BrewEntryCreateErrorResponse": {
@@ -7519,6 +7538,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewEntryIdConflictErrorResponse"
                 }
               }
             }

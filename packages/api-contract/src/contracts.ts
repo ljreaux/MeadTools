@@ -49,6 +49,7 @@ import {
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
   brewEntryDeleteErrorResponseSchema,
+  brewEntryIdConflictErrorResponseSchema,
   brewEntryPathParamsSchema,
   brewEntryResponseSchema,
   brewEntryTypeResponseSchema,
@@ -344,6 +345,7 @@ export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionError
 export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
 export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
 export type BrewEntryDeleteErrorResponse = z.infer<typeof brewEntryDeleteErrorResponseSchema>;
+export type BrewEntryIdConflictErrorResponse = z.infer<typeof brewEntryIdConflictErrorResponseSchema>;
 export type BrewEntryPathParams = z.infer<typeof brewEntryPathParamsSchema>;
 export type BrewEntryResponse = z.infer<typeof brewEntryResponseSchema>;
 export type BrewEntryTypeResponse = z.infer<typeof brewEntryTypeResponseSchema>;
