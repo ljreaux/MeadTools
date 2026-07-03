@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     "@meadtools/api-contract",
     "@meadtools/brew-domain",
     "@meadtools/core",
+    "@meadtools/i18n",
     "@meadtools/schemas"
   ]
 };

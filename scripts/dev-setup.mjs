@@ -142,7 +142,7 @@ async function main() {
   const key = process.env.I18NEXUS_API_KEY || envLocal.I18NEXUS_API_KEY;
   if (key && key.length > 0) {
     console.log("▶ Pulling translations from i18nexus...");
-    run("npx", ["i18nexus", "pull"]);
+    run("npm", ["run", "i18n:pull"]);
   } else {
     console.log("ℹ Skipping i18nexus pull (no I18NEXUS_API_KEY set)");
   }

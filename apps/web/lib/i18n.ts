@@ -1,21 +1,16 @@
 import { createInstance, i18n, TFunction } from "i18next";
 import { initReactI18next } from "react-i18next/initReactI18next";
 import resourcesToBackend from "i18next-resources-to-backend";
-import i18nConfig from "@/i18nConfig";
-
-// Define the structure of translation resources
-type Resources = {
-  [language: string]: {
-    [namespace: string]: {
-      [key: string]: string;
-    };
-  };
-};
+import {
+  i18nConfig,
+  type TranslationResources,
+} from "@meadtools/i18n";
+import { loadTranslationResource } from "@meadtools/i18n/resources";
 
 // Define return type for the initialization function
 interface InitTranslationsReturn {
   i18n: i18n;
-  resources: Resources;
+  resources: TranslationResources;
   t: TFunction;
 }
 
@@ -23,7 +18,7 @@ export default async function initTranslations(
   locale: string,
   namespaces: string[],
   i18nInstance?: i18n,
-  resources?: Resources
+  resources?: TranslationResources
 ): Promise<InitTranslationsReturn> {
   i18nInstance = i18nInstance || createInstance();
 
@@ -33,7 +28,7 @@ export default async function initTranslations(
     i18nInstance.use(
       resourcesToBackend(
         (language: string, namespace: string) =>
-          import(`@/locales/${language}/${namespace}.json`)
+          loadTranslationResource(language, namespace)
       )
     );
   }
@@ -51,7 +46,8 @@ export default async function initTranslations(
 
   return {
     i18n: i18nInstance,
-    resources: i18nInstance.services.resourceStore.data as Resources,
+    resources: i18nInstance.services.resourceStore
+      .data as TranslationResources,
     t: i18nInstance.t,
   };
 }

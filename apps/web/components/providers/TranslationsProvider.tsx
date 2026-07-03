@@ -4,20 +4,13 @@ import { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import initTranslations from "@/lib/i18n";
 import { createInstance } from "i18next";
-
-type Resources = {
-  [language: string]: {
-    [namespace: string]: {
-      [key: string]: string;
-    };
-  };
-};
+import type { TranslationResources } from "@meadtools/i18n";
 
 interface TranslationsProviderProps {
   children: ReactNode;
   locale: string;
   namespaces: string[];
-  resources?: Resources;
+  resources?: TranslationResources;
 }
 
 export default function TranslationsProvider({
