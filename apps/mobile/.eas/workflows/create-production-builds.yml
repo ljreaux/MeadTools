@@ -1,0 +1,38 @@
+name: Create Production Builds
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+
+jobs:
+  quality:
+    name: Typecheck mobile app
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - run: npm run mobile:typecheck
+
+  build_android:
+    name: Build Android
+    needs: [quality]
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  build_ios:
+    name: Build iOS
+    needs: [quality]
+    type: build
+    params:
+      platform: ios
+      profile: production

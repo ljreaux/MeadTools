@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - preview
-      - 310-companion-app-foundation
   push:
     branches:
       - main
       - preview
-      - 310-companion-app-foundation
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -20,8 +18,31 @@ permissions:
   contents: read
 
 jobs:
+  impact:
+    name: Determine affected apps
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.impact.outputs.web }}
+      mobile: ${{ steps.impact.outputs.mobile }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: impact
+        env:
+          APP_IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          APP_IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/app-impact.mjs --github-output
+
   test:
     name: Typecheck, test, and verify OpenAPI
+    needs: impact
+    if: needs.impact.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -58,3 +79,29 @@ jobs:
 
       - name: Verify generated OpenAPI is committed
         run: git diff --exit-code -- apps/web/public/openapi.json
+
+  mobile:
+    name: Typecheck and export mobile
+    needs: impact
+    if: needs.impact.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck mobile app
+        run: npm run mobile:typecheck
+
+      - name: Verify Expo can export the app
+        run: npm exec --workspace @meadtools/mobile -- expo export --platform web

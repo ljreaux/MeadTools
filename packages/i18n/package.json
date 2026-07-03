@@ -1,0 +1,22 @@
+{
+  "name": "@meadtools/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./resources": "./src/resources.ts"
+  },
+  "scripts": {
+    "pull": "i18nexus pull --path locales",
+    "listen": "i18nexus listen --path locales",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.14",
+    "i18nexus-cli": "^3.5.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
