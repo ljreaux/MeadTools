@@ -9,11 +9,12 @@ batch easier to monitor and update, especially when connectivity is poor.
 ## Current foundation
 
 - Expo SDK 57 and React Native 0.86
-- Expo Router with a single intentionally minimal route
+- Expo Router with separate authenticated and unauthenticated route groups
 - npm workspace integration
 - EAS development, preview, and production build profiles
 - EAS production workflow gated by mobile typechecking
 - Access to the shared MeadTools domain, schema, contract, and API packages
+- Environment-aware API client and TanStack Query providers
 
 The foundation does not yet claim to provide authentication, synchronization,
 offline persistence, or production-ready branding.
@@ -82,15 +83,8 @@ reliable.
 
 ## Localization direction
 
-i18nexus remains the translation source of truth. A later
-`@meadtools/i18n` package should share:
-
-- language and namespace metadata
-- stable translation key types
-- formatting conventions and interpolation contracts
-- app-neutral messages that genuinely have the same meaning everywhere
-
-It should not force Next.js and React Native to share a runtime loader or copy
-web translation JSON into the mobile source tree. Web can keep its i18next
-adapter while mobile adds a React Native adapter and mobile-only strings. All
-source-language additions must still be made through i18nexus.
+i18nexus remains the translation source of truth. `@meadtools/i18n` shares
+translation resources and metadata while web and mobile keep platform-specific
+runtime adapters. App-neutral keys should be reused when their meaning matches;
+new source-language strings must be created through i18nexus rather than by
+editing the generated JSON files.

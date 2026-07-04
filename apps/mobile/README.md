@@ -18,6 +18,12 @@ Start the Expo development server:
 npm run dev:mobile
 ```
 
+The app uses `https://meadtools.com` by default. To point a local or preview
+build at another API, copy `apps/mobile/.env.example` to
+`apps/mobile/.env.local` and set `EXPO_PUBLIC_MEADTOOLS_API_URL` to an absolute
+HTTP or HTTPS URL. EAS environments can provide the same variable without a
+committed environment file.
+
 Open a platform directly:
 
 ```sh
@@ -47,9 +53,11 @@ GitHub settings before branch pushes can start workflows automatically.
 
 ## Project shape
 
-- `src/app` owns Expo Router routes and layouts.
+- `src/app/(auth)` and `src/app/(app)` keep unauthenticated and authenticated
+  routes separate.
+- `src/providers` owns app-wide API and query state.
 - Shared recipe and brew behavior comes from `packages/*`.
-- Network access will go through `@meadtools/api-client`.
+- Network access goes through the app-level `@meadtools/api-client` instance.
 - Prisma, database code, Next.js modules, and web UI must not be imported.
 - Generated native `ios` and `android` folders remain ignored while the app
   uses Expo Continuous Native Generation.
