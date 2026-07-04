@@ -1,31 +1,42 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HomeScreen() {
+export default function WelcomeScreen() {
   const { t } = useTranslation();
+
   return (
-    <SafeAreaView style={styles.screen}>
+    <ScrollView
+      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      style={styles.screen}
+    >
       <View style={styles.glow} />
-      <View style={styles.content}>
+      <View style={styles.brandContainer}>
         <Image
-          accessibilityIgnoresInvertColors
+          accessibilityLabel="MeadTools"
           source={require("@/assets/images/meadtools-logo.png")}
           style={styles.mark}
         />
-        <Text accessibilityRole="header" style={styles.brand}>
+        <Text accessibilityRole="header" selectable style={styles.brand}>
           {t("greeting")}
         </Text>
       </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    overflow: "hidden",
     backgroundColor: "#171717"
+  },
+  content: {
+    flexGrow: 1,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24
   },
   glow: {
     position: "absolute",
@@ -33,21 +44,15 @@ const styles = StyleSheet.create({
     height: 360,
     borderRadius: 180,
     backgroundColor: "#F5A623",
-    opacity: 0.12,
-    top: "50%",
-    left: "50%",
-    transform: [{ translateX: -180 }, { translateY: -210 }]
+    opacity: 0.12
   },
-  content: {
-    flex: 1,
+  brandContainer: {
     alignItems: "center",
-    justifyContent: "center",
     gap: 18
   },
   mark: {
     width: 196,
-    height: 168,
-    resizeMode: "contain"
+    height: 168
   },
   brand: {
     color: "#FAFAFA",

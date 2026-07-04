@@ -103,5 +103,8 @@ jobs:
       - name: Typecheck mobile app
         run: npm run mobile:typecheck
 
+      - name: Test mobile runtime configuration
+        run: npm test --workspace @meadtools/mobile
+
       - name: Verify Expo can export an Android bundle
         run: npm exec --workspace @meadtools/mobile -- expo export --platform android
