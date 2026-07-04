@@ -14,8 +14,10 @@ The package owns:
 - typed values for JavaScript/native consumers;
 - generated CSS custom properties for DOM consumers.
 
-The TypeScript token object is canonical. The committed CSS file is generated,
-and parity tests prevent the two formats from drifting.
+The existing production web HSL channels are canonical. The committed CSS file
+is generated from the typed token object, web maps its Tailwind/shadcn variables
+to those exact channels, and parity tests prevent the formats from drifting.
+Mobile derives native color strings from the same channels.
 
 ## DOM component sharing
 

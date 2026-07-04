@@ -15,10 +15,9 @@ DOM consumers can import generated CSS custom properties:
 @import "@meadtools/design-tokens/css";
 ```
 
-Semantic variables such as `--mt-color-background` and `--mt-color-text` use
-the light theme by default and switch when a
-`.dark` ancestor is active. Fully qualified light and dark values are also
-available.
+The `--mt-web-light-*` and `--mt-web-dark-*` variables preserve the exact HSL
+channels used by the existing Tailwind/shadcn theme. Typed semantic colors are
+derived from those same channels for React Native and JavaScript consumers.
 
 Run `npm run generate --workspace @meadtools/design-tokens` after changing the
 typed token source. Tests fail if the committed CSS output drifts.
