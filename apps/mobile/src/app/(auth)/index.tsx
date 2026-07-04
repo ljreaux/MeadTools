@@ -13,8 +13,16 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { MeadToolsApiError } from "@meadtools/api-client";
+import {
+  colorThemes,
+  radii,
+  spacing,
+  typography
+} from "@meadtools/design-tokens";
 
 import { useSession } from "@/providers/app-providers";
+
+const colors = colorThemes.dark;
 
 export default function SignInScreen() {
   const { t } = useTranslation();
@@ -70,7 +78,7 @@ export default function SignInScreen() {
           inputMode="email"
           onChangeText={setEmail}
           placeholder={t("accountPage.email")}
-          placeholderTextColor="#A3A3A3"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           textContentType="emailAddress"
           value={email}
@@ -82,7 +90,7 @@ export default function SignInScreen() {
           onChangeText={setPassword}
           onSubmitEditing={handleSignIn}
           placeholder={t("accountPage.password")}
-          placeholderTextColor="#A3A3A3"
+          placeholderTextColor={colors.textMuted}
           secureTextEntry
           style={styles.input}
           textContentType="password"
@@ -104,7 +112,7 @@ export default function SignInScreen() {
           ]}
         >
           {signInMutation.isPending ? (
-            <ActivityIndicator color="#171717" />
+            <ActivityIndicator color={colors.onAccent} />
           ) : (
             <Text style={styles.buttonText}>{t("accountPage.login")}</Text>
           )}
@@ -117,27 +125,27 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#171717"
+    backgroundColor: colors.background
   },
   content: {
     flexGrow: 1,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    padding: 24
+    padding: spacing.xl
   },
   glow: {
     position: "absolute",
     width: 360,
     height: 360,
     borderRadius: 180,
-    backgroundColor: "#F5A623",
+    backgroundColor: colors.accent,
     opacity: 0.1
   },
   form: {
     width: "100%",
     maxWidth: 420,
-    gap: 16
+    gap: spacing.lg
   },
   mark: {
     width: 140,
@@ -145,31 +153,31 @@ const styles = StyleSheet.create({
     alignSelf: "center"
   },
   heading: {
-    color: "#FAFAFA",
-    fontSize: 28,
-    fontWeight: "700",
+    color: colors.text,
+    fontSize: typography.size.title,
+    fontWeight: typography.weight.bold,
     textAlign: "center"
   },
   input: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: "#525252",
-    borderRadius: 12,
-    backgroundColor: "#262626",
-    color: "#FAFAFA",
-    fontSize: 16,
-    paddingHorizontal: 16
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    fontSize: typography.size.body,
+    paddingHorizontal: spacing.lg
   },
   error: {
-    color: "#FCA5A5",
-    fontSize: 14
+    color: colors.error,
+    fontSize: typography.size.caption
   },
   button: {
     minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "#F5A623",
+    borderRadius: radii.lg,
+    backgroundColor: colors.accent,
     paddingHorizontal: 20
   },
   buttonDisabled: {
@@ -179,8 +187,8 @@ const styles = StyleSheet.create({
     opacity: 0.8
   },
   buttonText: {
-    color: "#171717",
-    fontSize: 17,
-    fontWeight: "700"
+    color: colors.onAccent,
+    fontSize: typography.size.action,
+    fontWeight: typography.weight.bold
   }
 });

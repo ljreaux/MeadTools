@@ -1,7 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import {
+  colorThemes,
+  radii,
+  spacing,
+  typography
+} from "@meadtools/design-tokens";
+
 import { useSession } from "@/providers/app-providers";
+
+const colors = colorThemes.dark;
 
 export default function BrewsScreen() {
   const { t } = useTranslation();
@@ -28,22 +37,22 @@ export default function BrewsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    gap: 24,
-    padding: 24
+    gap: spacing.xl,
+    padding: spacing.xl
   },
   heading: {
-    fontSize: 28,
-    fontWeight: "700"
+    fontSize: typography.size.title,
+    fontWeight: typography.weight.bold
   },
   button: {
     alignSelf: "flex-start",
-    borderRadius: 10,
-    backgroundColor: "#F5A623",
+    borderRadius: radii.md,
+    backgroundColor: colors.accent,
     paddingHorizontal: 18,
-    paddingVertical: 12
+    paddingVertical: spacing.md
   },
   buttonText: {
-    color: "#171717",
-    fontWeight: "700"
+    color: colors.onAccent,
+    fontWeight: typography.weight.bold
   }
 });

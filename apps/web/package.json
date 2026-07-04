@@ -30,6 +30,7 @@
     "@meadtools/api-contract": "*",
     "@meadtools/brew-domain": "*",
     "@meadtools/core": "*",
+    "@meadtools/design-tokens": "*",
     "@meadtools/i18n": "*",
     "@meadtools/schemas": "*",
     "@next-auth/prisma-adapter": "^1.0.7",

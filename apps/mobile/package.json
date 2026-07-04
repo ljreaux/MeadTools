@@ -8,6 +8,7 @@
     "@meadtools/api-contract": "*",
     "@meadtools/brew-domain": "*",
     "@meadtools/core": "*",
+    "@meadtools/design-tokens": "*",
     "@meadtools/schemas": "*",
     "@tanstack/react-query": "^5.90.7",
     "expo": "~57.0.2",
