@@ -24,6 +24,17 @@ build at another API, copy `apps/mobile/.env.example` to
 HTTP or HTTPS URL. EAS environments can provide the same variable without a
 committed environment file.
 
+Google sign-in additionally uses platform OAuth client IDs:
+
+- `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+- `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` for an Expo web build
+
+The API must receive the corresponding server-side `GOOGLE_IOS_CLIENT_ID` and
+`GOOGLE_ANDROID_CLIENT_ID` values so it can verify native Google ID-token
+audiences. Client IDs are public identifiers; Google client secrets remain
+server-only and must never use an `EXPO_PUBLIC_` variable.
+
 Open a platform directly:
 
 ```sh

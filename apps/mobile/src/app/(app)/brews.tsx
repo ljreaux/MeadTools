@@ -9,10 +9,12 @@ import {
 } from "@meadtools/design-tokens";
 
 import { useSession } from "@/providers/app-providers";
-
-const colors = colorThemes.dark;
+import { useThemeColors } from "@/hooks/useThemeColors";
 
 export default function BrewsScreen() {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+
   const { t } = useTranslation();
   const { signOut } = useSession();
 
@@ -35,24 +37,26 @@ export default function BrewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    gap: spacing.xl,
-    padding: spacing.xl
-  },
-  heading: {
-    fontSize: typography.size.title,
-    fontWeight: typography.weight.bold
-  },
-  button: {
-    alignSelf: "flex-start",
-    borderRadius: radii.md,
-    backgroundColor: colors.accent,
-    paddingHorizontal: 18,
-    paddingVertical: spacing.md
-  },
-  buttonText: {
-    color: colors.onAccent,
-    fontWeight: typography.weight.bold
-  }
-});
+function createStyles(colors: typeof colorThemes.light) {
+  return StyleSheet.create({
+    content: {
+      gap: spacing.xl,
+      padding: spacing.xl
+    },
+    heading: {
+      fontSize: typography.size.title,
+      fontWeight: typography.weight.bold
+    },
+    button: {
+      alignSelf: "flex-start",
+      borderRadius: radii.md,
+      backgroundColor: colors.accent,
+      paddingHorizontal: 18,
+      paddingVertical: spacing.md
+    },
+    buttonText: {
+      color: colors.onAccent,
+      fontWeight: typography.weight.bold
+    }
+  });
+}

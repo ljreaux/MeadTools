@@ -29,6 +29,7 @@ type SessionContextValue = {
   session: MobileSession | null;
   status: "authenticated" | "loading" | "unauthenticated";
   signIn(input: { email: string; password: string }): Promise<void>;
+  signInWithGoogle(idToken: string): Promise<void>;
   signOut(): Promise<void>;
 };
 
@@ -143,12 +144,30 @@ function SessionProvider({
     updateSession(null);
   }, [queryClient, updateSession]);
 
+  const signInWithGoogle = useCallback(
+    async (idToken: string) => {
+      const response = await apiClient.signInWithGoogle(idToken);
+      const nextSession: MobileSession = {
+        accessToken: response.accessToken,
+        email: response.user.email,
+        id: response.user.id,
+        refreshToken: response.refreshToken,
+        role: response.user.role
+      };
+
+      await saveSession(nextSession);
+      updateSession(nextSession);
+    },
+    [apiClient, updateSession]
+  );
+
   return (
     <SessionContext
       value={{
         session,
         status,
         signIn,
+        signInWithGoogle,
         signOut
       }}
     >

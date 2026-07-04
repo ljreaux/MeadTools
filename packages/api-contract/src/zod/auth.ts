@@ -87,7 +87,12 @@ export const verifyTokenRequestBodySchema =
 export const verifyTokenUserResponseSchema =
   z.object({ id: z.number(), email: z.string(), role: z.string() });
 export const verifyTokenSuccessResponseSchema =
-  z.object({ token: z.string(), user: verifyTokenUserResponseSchema });
+  z.object({
+    token: z.string(),
+    accessToken: z.string(),
+    refreshToken: z.string(),
+    user: verifyTokenUserResponseSchema
+  });
 export const verifyTokenValidationErrorResponseSchema =
   z.object({
     error: z.enum([

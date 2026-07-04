@@ -777,6 +777,108 @@
           "error"
         ]
       },
+      "VerifyTokenRequestBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google"
+            ]
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "provider"
+        ]
+      },
+      "VerifyTokenSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/VerifyTokenUserResponse"
+          }
+        },
+        "required": [
+          "token",
+          "accessToken",
+          "refreshToken",
+          "user"
+        ]
+      },
+      "VerifyTokenValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid provider",
+              "Email required when using access token"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "VerifyTokenUnauthorizedErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid token",
+              "Invalid ID token"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "VerifyTokenNotFoundErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "User not found"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "VerifyTokenFailureErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Authentication failed"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "BjcpIngredientsResponse": {
         "type": "array",
         "items": {
@@ -5233,6 +5335,25 @@
           "PINK"
         ]
       },
+      "VerifyTokenUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role"
+        ]
+      },
       "VolumeUnit": {
         "$ref": "#/components/schemas/sharedVolumeUnitSchema"
       },
@@ -6732,6 +6853,78 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ResetPasswordInvalidTokenErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify-token": {
+      "post": {
+        "operationId": "post-auth-verify-token",
+        "summary": "Verify OAuth token",
+        "description": "Verifies a Google ID token or access token and returns a MeadTools access token for an existing user.",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTokenRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTokenSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTokenValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTokenUnauthorizedErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTokenNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyTokenFailureErrorResponse"
                 }
               }
             }

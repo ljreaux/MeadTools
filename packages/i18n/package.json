@@ -8,8 +8,8 @@
     "./resources": "./src/resources.ts"
   },
   "scripts": {
-    "pull": "i18nexus pull --path locales",
-    "listen": "i18nexus listen --path locales",
+    "pull": "npm --prefix ../.. run i18n:pull",
+    "listen": "npm --prefix ../.. run i18n:listen",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

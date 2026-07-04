@@ -54,6 +54,48 @@ test("logs in and validates refresh responses through the shared contract", asyn
   );
 });
 
+test("exchanges a Google ID token for a refreshable MeadTools session", async () => {
+  let request: { url: string; init: ApiRequestInit } | undefined;
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      request = { url, init };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          token: "access-token",
+          accessToken: "access-token",
+          refreshToken: "refresh-token",
+          user: {
+            id: 42,
+            email: "brewer@example.com",
+            role: "user"
+          }
+        })
+      };
+    }
+  });
+
+  const session = await client.signInWithGoogle("google-id-token");
+
+  assert.equal(session.refreshToken, "refresh-token");
+  assert.deepEqual(request, {
+    url: "https://meadtools.test/api/auth/verify-token",
+    init: {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        token: "google-id-token",
+        provider: "google"
+      })
+    }
+  });
+});
+
 const recipe: RecipeDataV2Input = {
   version: 2,
   unitDefaults: { weight: "lb", volume: "gal" },

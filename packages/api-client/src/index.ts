@@ -10,6 +10,8 @@ import {
   recipeDerivedStateResponseBodySchema,
   refreshTokenRequestBodySchema,
   refreshTokenSuccessResponseSchema,
+  verifyTokenRequestBodySchema,
+  verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
   type BrewListItemResponse,
   type BrewResponse,
@@ -19,7 +21,8 @@ import {
   type RecipeDataV2Input,
   type RecipeDerivedStateResponseBody,
   type RefreshTokenRequestBody,
-  type RefreshTokenSuccessResponse
+  type RefreshTokenSuccessResponse,
+  type VerifyTokenSuccessResponse
 } from "@meadtools/api-contract";
 
 export type ApiRequestInit = {
@@ -144,6 +147,36 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       if (!parsed.success) {
         throw new MeadToolsContractError(
           "Login response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
+    },
+
+    async signInWithGoogle(
+      idToken: string
+    ): Promise<VerifyTokenSuccessResponse> {
+      const input = {
+        token: idToken,
+        provider: "google" as const
+      };
+
+      if (!verifyTokenRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Google sign-in request does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request("/api/auth/verify-token", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      const parsed = verifyTokenSuccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Google sign-in response does not match the MeadTools API contract",
           body
         );
       }
