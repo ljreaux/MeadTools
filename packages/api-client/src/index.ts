@@ -4,14 +4,22 @@ import {
   brewsResponseSchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
+  loginRequestBodySchema,
+  loginSuccessResponseSchema,
   recipeDataV2Schema,
   recipeDerivedStateResponseBodySchema,
+  refreshTokenRequestBodySchema,
+  refreshTokenSuccessResponseSchema,
   type AccountRecipeResponse,
   type BrewListItemResponse,
   type BrewResponse,
   type CreateBrewEntryRequestBody,
+  type LoginRequestBody,
+  type LoginSuccessResponse,
   type RecipeDataV2Input,
-  type RecipeDerivedStateResponseBody
+  type RecipeDerivedStateResponseBody,
+  type RefreshTokenRequestBody,
+  type RefreshTokenSuccessResponse
 } from "@meadtools/api-contract";
 
 export type ApiRequestInit = {
@@ -120,6 +128,54 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
   }
 
   return {
+    async login(input: LoginRequestBody): Promise<LoginSuccessResponse> {
+      if (!loginRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Login request does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      const parsed = loginSuccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Login response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
+    },
+
+    async refreshAccessToken(
+      input: RefreshTokenRequestBody
+    ): Promise<RefreshTokenSuccessResponse> {
+      if (!refreshTokenRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Refresh request does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request("/api/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      const parsed = refreshTokenSuccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Refresh response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
+    },
+
     async calculateRecipeDerived(
       recipeData: RecipeDataV2Input
     ): Promise<RecipeDerivedStateResponseBody> {

@@ -16,9 +16,12 @@ const nativeFetch: FetchTransport = async (url, init) => {
   };
 };
 
-export function createMobileApiClient() {
+export function createMobileApiClient(
+  getAccessToken?: () => string | null | undefined
+) {
   return createMeadToolsApiClient({
     baseUrl: apiBaseUrl,
-    fetch: nativeFetch
+    fetch: nativeFetch,
+    getAccessToken
   });
 }

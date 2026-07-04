@@ -4,7 +4,29 @@ import { StatusBar } from "expo-status-bar";
 import { I18nextProvider } from "react-i18next";
 
 import i18n, { initI18n } from "@/i18n";
-import { AppProviders } from "@/providers/app-providers";
+import { AppProviders, useSession } from "@/providers/app-providers";
+
+function RootNavigator() {
+  const { status } = useSession();
+
+  if (status === "loading") {
+    return null;
+  }
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={status === "unauthenticated"}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={status === "authenticated"}>
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+      </Stack>
+      <StatusBar style="light" />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
@@ -22,11 +44,7 @@ export default function RootLayout() {
   return (
     <I18nextProvider i18n={i18n}>
       <AppProviders>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-        <StatusBar style="light" />
+        <RootNavigator />
       </AppProviders>
     </I18nextProvider>
   );

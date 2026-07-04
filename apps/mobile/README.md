@@ -56,6 +56,8 @@ GitHub settings before branch pushes can start workflows automatically.
 - `src/app/(auth)` and `src/app/(app)` keep unauthenticated and authenticated
   routes separate.
 - `src/providers` owns app-wide API and query state.
+- Native sessions are persisted with Expo SecureStore; access tokens are
+  supplied to the shared API client at request time.
 - Shared recipe and brew behavior comes from `packages/*`.
 - Network access goes through the app-level `@meadtools/api-client` instance.
 - Prisma, database code, Next.js modules, and web UI must not be imported.
