@@ -1,10 +1,10 @@
-name: Create Production Builds
+name: Create Preview Builds
 
 on:
   workflow_dispatch: {}
   push:
     branches:
-      - main
+      - preview
     paths:
       - apps/mobile/**
       - packages/**
@@ -22,17 +22,17 @@ jobs:
       - run: npm run typecheck
 
   build_android:
-    name: Build Android
+    name: Build Android preview
     needs: [quality]
     type: build
     params:
       platform: android
-      profile: production
+      profile: preview
 
   build_ios:
-    name: Build iOS
+    name: Build iOS preview
     needs: [quality]
     type: build
     params:
       platform: ios
-      profile: production
+      profile: preview

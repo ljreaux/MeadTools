@@ -7,6 +7,10 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
   "scripts": {
     "dev": "npm run dev:web",
     "dev:setup": "node scripts/dev-setup.mjs",
@@ -41,5 +45,9 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web"
+  },
+  "devDependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }
