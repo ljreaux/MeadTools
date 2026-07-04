@@ -8,7 +8,7 @@
     "scheme": "meadtools",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.meadtools.mobile",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -33,7 +33,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#171717"
+          "image": "./assets/images/meadtools-logo.png",
+          "backgroundColor": "#171717",
+          "resizeMode": "contain"
         }
       ],
       "expo-localization"
