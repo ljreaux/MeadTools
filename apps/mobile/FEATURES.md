@@ -15,6 +15,7 @@ batch easier to monitor and update, especially when connectivity is poor.
 - EAS production workflow gated by mobile typechecking
 - Access to the shared MeadTools domain, schema, contract, and API packages
 - Environment-aware API client and TanStack Query providers
+- Native password sign-in, protected routes, and SecureStore session restore
 
 The foundation does not yet claim to provide authentication, synchronization,
 offline persistence, or production-ready branding.

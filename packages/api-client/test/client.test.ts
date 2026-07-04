@@ -9,6 +9,51 @@ import {
   type ApiRequestInit
 } from "../src/index";
 
+test("logs in and validates refresh responses through the shared contract", async () => {
+  const requests: Array<{ url: string; init: ApiRequestInit }> = [];
+  const responses = [
+    {
+      message: "Successfully logged in!",
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      role: "user",
+      email: "brewer@example.com",
+      id: 42
+    },
+    { accessToken: "refreshed-access-token" }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test/",
+    fetch: async (url, init) => {
+      requests.push({ url, init });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => responses.shift()
+      };
+    }
+  });
+
+  const session = await client.login({
+    email: "brewer@example.com",
+    password: "secret"
+  });
+  const refreshed = await client.refreshAccessToken({
+    email: session.email,
+    refreshToken: session.refreshToken
+  });
+
+  assert.equal(session.id, 42);
+  assert.equal(refreshed.accessToken, "refreshed-access-token");
+  assert.deepEqual(
+    requests.map(({ url, init }) => [url, init.method]),
+    [
+      ["https://meadtools.test/api/auth/login", "POST"],
+      ["https://meadtools.test/api/auth/refresh", "POST"]
+    ]
+  );
+});
+
 const recipe: RecipeDataV2Input = {
   version: 2,
   unitDefaults: { weight: "lb", volume: "gal" },

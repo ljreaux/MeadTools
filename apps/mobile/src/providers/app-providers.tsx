@@ -4,15 +4,37 @@ import {
   createContext,
   type PropsWithChildren,
   type ReactNode,
+  use,
+  useCallback,
+  useEffect,
+  useRef,
   useState
 } from "react";
-import { use } from "react";
 
-import type { MeadToolsApiClient } from "@meadtools/api-client";
+import {
+  MeadToolsApiError,
+  type MeadToolsApiClient
+} from "@meadtools/api-client";
 
 import { createMobileApiClient } from "@/api/client";
+import {
+  clearSession as clearStoredSession,
+  loadSession,
+  type MobileSession,
+  saveSession
+} from "@/auth/session-storage";
+import { isAccessTokenExpired } from "@/auth/token";
+
+type SessionContextValue = {
+  session: MobileSession | null;
+  status: "authenticated" | "loading" | "unauthenticated";
+  signIn(input: { email: string; password: string }): Promise<void>;
+  signOut(): Promise<void>;
+};
 
 const ApiClientContext = createContext<MeadToolsApiClient | null>(null);
+const SessionContext = createContext<SessionContextValue | null>(null);
+
 // The web workspace retains React 18 type packages while Expo uses React 19.
 // Keep that type-only monorepo boundary isolated at the shared provider.
 const MobileQueryClientProvider = QueryClientProvider as unknown as ComponentType<{
@@ -20,8 +42,122 @@ const MobileQueryClientProvider = QueryClientProvider as unknown as ComponentTyp
   client: QueryClient;
 }>;
 
+function SessionProvider({
+  children,
+  queryClient
+}: PropsWithChildren<{ queryClient: QueryClient }>) {
+  const sessionRef = useRef<MobileSession | null>(null);
+  const [session, setSession] = useState<MobileSession | null>(null);
+  const [status, setStatus] =
+    useState<SessionContextValue["status"]>("loading");
+  const [apiClient] = useState(() =>
+    createMobileApiClient(() => sessionRef.current?.accessToken)
+  );
+
+  const updateSession = useCallback((nextSession: MobileSession | null) => {
+    sessionRef.current = nextSession;
+    setSession(nextSession);
+    setStatus(nextSession ? "authenticated" : "unauthenticated");
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function restoreSession() {
+      let storedSession: MobileSession | null;
+
+      try {
+        storedSession = await loadSession();
+      } catch {
+        if (active) {
+          updateSession(null);
+        }
+        return;
+      }
+
+      if (!active) {
+        return;
+      }
+
+      if (!storedSession) {
+        updateSession(null);
+        return;
+      }
+
+      if (!isAccessTokenExpired(storedSession.accessToken)) {
+        updateSession(storedSession);
+        return;
+      }
+
+      try {
+        const refreshed = await apiClient.refreshAccessToken({
+          email: storedSession.email,
+          refreshToken: storedSession.refreshToken
+        });
+        const nextSession = {
+          ...storedSession,
+          accessToken: refreshed.accessToken
+        };
+
+        await saveSession(nextSession);
+        if (active) {
+          updateSession(nextSession);
+        }
+      } catch (error) {
+        if (error instanceof MeadToolsApiError) {
+          await clearStoredSession();
+        }
+        if (active) {
+          updateSession(null);
+        }
+      }
+    }
+
+    void restoreSession();
+
+    return () => {
+      active = false;
+    };
+  }, [apiClient, updateSession]);
+
+  const signIn = useCallback(
+    async (input: { email: string; password: string }) => {
+      const response = await apiClient.login(input);
+      const nextSession: MobileSession = {
+        accessToken: response.accessToken,
+        email: response.email,
+        id: response.id,
+        refreshToken: response.refreshToken,
+        role: response.role
+      };
+
+      await saveSession(nextSession);
+      updateSession(nextSession);
+    },
+    [apiClient, updateSession]
+  );
+
+  const signOut = useCallback(async () => {
+    await clearStoredSession();
+    queryClient.clear();
+    updateSession(null);
+  }, [queryClient, updateSession]);
+
+  return (
+    <SessionContext
+      value={{
+        session,
+        status,
+        signIn,
+        signOut
+      }}
+    >
+      <ApiClientContext value={apiClient}>{children}</ApiClientContext>
+    </SessionContext>
+  );
+}
+
 export function AppProviders({ children }: PropsWithChildren) {
-  const [apiClient] = useState(createMobileApiClient);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -38,11 +174,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   );
 
   return (
-    <ApiClientContext value={apiClient}>
-      <MobileQueryClientProvider client={queryClient}>
-        {children}
-      </MobileQueryClientProvider>
-    </ApiClientContext>
+    <MobileQueryClientProvider client={queryClient}>
+      <SessionProvider queryClient={queryClient}>{children}</SessionProvider>
+    </MobileQueryClientProvider>
   );
 }
 
@@ -54,4 +188,14 @@ export function useApiClient() {
   }
 
   return apiClient;
+}
+
+export function useSession() {
+  const session = use(SessionContext);
+
+  if (!session) {
+    throw new Error("useSession must be used within AppProviders");
+  }
+
+  return session;
 }
