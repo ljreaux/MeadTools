@@ -27,6 +27,7 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 
 export default function SignInScreen() {
   const { colors } = useThemeColors();
+
   const styles = createStyles(colors);
 
   const { t } = useTranslation();
