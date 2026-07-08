@@ -110,8 +110,22 @@ export async function POST(req: NextRequest) {
       activityEmailsEnabled?: boolean;
     } = body;
 
+    console.group("[api/recipes POST] incoming body");
+    console.log("name", name);
+    console.log("has legacy recipeData", Boolean(recipeData));
+    console.log("has dataV2", Boolean(dataV2));
+    console.log("privateRecipe", privateRecipe);
+    console.log("activityEmailsEnabled", activityEmailsEnabled);
+    console.groupEnd();
+
     // ✅ during migration: allow either old or new payload
     if (!name || (!recipeData && !dataV2)) {
+      console.error("[api/recipes POST] Missing required recipe payload", {
+        name,
+        hasRecipeData: Boolean(recipeData),
+        hasDataV2: Boolean(dataV2)
+      });
+
       return NextResponse.json(
         { error: "Name and recipe data are required." },
         { status: 400 }
@@ -120,6 +134,30 @@ export async function POST(req: NextRequest) {
 
     // Optional: enforce valid v2 shape if present
     if (dataV2 && !isRecipeData(dataV2)) {
+      const invalidDataV2 = dataV2 as any;
+
+      console.error("[api/recipes POST] Invalid dataV2 payload", {
+        name,
+        privateRecipe,
+        activityEmailsEnabled,
+
+        version: invalidDataV2?.version,
+        unitDefaults: invalidDataV2?.unitDefaults,
+
+        fg: invalidDataV2?.fg,
+        fgType: typeof invalidDataV2?.fg,
+
+        stabilizers: invalidDataV2?.stabilizers,
+
+        notes: invalidDataV2?.notes,
+
+        ingredients: invalidDataV2?.ingredients,
+
+        additives: invalidDataV2?.additives,
+
+        nutrients: invalidDataV2?.nutrients
+      });
+
       return NextResponse.json(
         { error: "Invalid dataV2 payload." },
         { status: 400 }

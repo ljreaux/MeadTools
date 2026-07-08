@@ -187,6 +187,7 @@ export function buildRecipePayload(
     activityEmailsEnabled: emailNotifications // 👈 opt-in flag
   };
 }
+
 // Public endpoint (no auth header)
 async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
   const res = await fetch(`/api/recipes/${id}`);
@@ -282,19 +283,98 @@ export function useUpdateRecipeMutation() {
 
 // POST /api/recipes
 export function useCreateRecipeMutation() {
-  const fetchWithAuth = useFetchWithAuth();
+  const token = useAuthToken();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [...qk.recipesList, "create"],
     mutationFn: async (body: CreateRecipePayload) => {
-      return await fetchWithAuth<RecipeResponse>("/api/recipes", {
+      const serializedBody = JSON.stringify(body);
+
+      console.group("[useCreateRecipeMutation] request");
+      console.log("body", body);
+      console.log("serializedBody", serializedBody);
+      console.log("dataV2", body.dataV2);
+      console.log("dataV2.stabilizers", body.dataV2?.stabilizers);
+      console.log("dataV2.unitDefaults", body.dataV2?.unitDefaults);
+      console.log("dataV2.fg", body.dataV2?.fg, typeof body.dataV2?.fg);
+
+      console.table(
+        body.dataV2?.ingredients?.map((line) => ({
+          name: line.name,
+          category: line.category,
+          secondary: line.secondary,
+          brix: line.brix,
+          brixType: typeof line.brix,
+          basis: line.amounts?.basis,
+          weightValue: line.amounts?.weight?.value,
+          weightValueType: typeof line.amounts?.weight?.value,
+          weightUnit: line.amounts?.weight?.unit,
+          volumeValue: line.amounts?.volume?.value,
+          volumeValueType: typeof line.amounts?.volume?.value,
+          volumeUnit: line.amounts?.volume?.unit,
+          refKind: line.ref?.kind
+        })) ?? []
+      );
+
+      console.table(
+        body.dataV2?.additives?.map((line) => ({
+          name: line.name,
+          amount: line.amount,
+          amountType: typeof line.amount,
+          unit: line.unit,
+          amountDim: line.amountDim,
+          amountTouched: line.amountTouched,
+          lineId: line.lineId
+        })) ?? []
+      );
+
+      console.groupEnd();
+
+      const res = await fetch("/api/recipes", {
         method: "POST",
-        body: JSON.stringify(body),
+        body: serializedBody,
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
+
+      const responseText = await res.text();
+
+      console.group("[useCreateRecipeMutation] response");
+      console.log("status", res.status);
+      console.log("statusText", res.statusText);
+      console.log("ok", res.ok);
+      console.log("responseText", responseText);
+      console.groupEnd();
+
+      let json: RecipeResponse | { error?: string; debug?: unknown };
+
+      try {
+        json = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        json = {
+          error: responseText || `HTTP ${res.status}`
+        };
+      }
+
+      if (!res.ok) {
+        const errorMessage =
+          "error" in json && json.error
+            ? json.error
+            : responseText || `HTTP ${res.status}`;
+
+        const err: any = new Error(errorMessage);
+        err.status = res.status;
+        err.responseText = responseText;
+        err.responseJson = json;
+        err.requestBody = body;
+
+        throw err;
+      }
+
+      return json as RecipeResponse;
     },
     onSuccess: () => {
       // refresh any lists that show recipes
