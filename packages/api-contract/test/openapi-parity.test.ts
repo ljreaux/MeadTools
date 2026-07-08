@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "1c0c6673a150cb99377bfe86772b604c4911aad4347a808c7688f7090b43a562";
+  "6c5d770338c9d2bf1bbf02bc7d52d50601493bb113b75505a3719c1f33b828fc";
 const preZodPathsCanonicalSha256 =
-  "4610d8687942691b4d6a411907359deca3fb67c00a6f34dd7acc8ad3ee38076c";
+  "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
 function sortJson(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortJson);

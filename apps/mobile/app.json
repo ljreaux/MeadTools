@@ -5,7 +5,10 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "meadtools",
+    "scheme": [
+      "meadtools",
+      "com.meadtools.mobile"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
