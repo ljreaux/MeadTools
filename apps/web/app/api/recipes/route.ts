@@ -3,7 +3,6 @@ import { createRecipe } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { getAdminRecipesPage } from "@/lib/db/recipes";
 import { isRecipeData, RecipeData } from "@/types/recipeData";
-
 /**
  * List recipes as admin
  * @description Admin-only. Returns a paginated list of all recipes, including private recipes.
@@ -110,8 +109,22 @@ export async function POST(req: NextRequest) {
       activityEmailsEnabled?: boolean;
     } = body;
 
+    console.group("[api/recipes POST] incoming body");
+    console.log("name", name);
+    console.log("has legacy recipeData", Boolean(recipeData));
+    console.log("has dataV2", Boolean(dataV2));
+    console.log("privateRecipe", privateRecipe);
+    console.log("activityEmailsEnabled", activityEmailsEnabled);
+    console.groupEnd();
+
     // ✅ during migration: allow either old or new payload
     if (!name || (!recipeData && !dataV2)) {
+      console.error("[api/recipes POST] Missing required recipe payload", {
+        name,
+        hasRecipeData: Boolean(recipeData),
+        hasDataV2: Boolean(dataV2)
+      });
+
       return NextResponse.json(
         { error: "Name and recipe data are required." },
         { status: 400 }

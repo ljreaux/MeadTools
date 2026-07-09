@@ -40,7 +40,12 @@ export const ingredientLineSchema = z.object({
   amounts: ingredientLineAmountsSchema
 });
 
-export const additiveAmountDimSchema = z.enum(["weight", "volume", "count", "unknown"]);
+export const additiveAmountDimSchema = z.enum([
+  "weight",
+  "volume",
+  "count",
+  "unknown"
+]);
 export const additiveLineSchema = z.object({
   lineId: z.string(),
   name: z.string(),
@@ -95,4 +100,12 @@ export type VolumeUnit = z.infer<typeof volumeUnitSchema>;
 
 export function isRecipeDataV2(value: unknown): value is RecipeDataV2 {
   return recipeDataV2Schema.safeParse(value).success;
+}
+
+export function getRecipeDataV2ValidationIssues(value: unknown) {
+  const result = recipeDataV2Schema.safeParse(value);
+
+  if (result.success) return null;
+
+  return result.error.issues;
 }

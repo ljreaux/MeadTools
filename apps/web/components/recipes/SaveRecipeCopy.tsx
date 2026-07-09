@@ -1,4 +1,5 @@
 "use client";
+
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -92,6 +93,12 @@ function SaveRecipeCopy() {
       private: checked,
       activityEmailsEnabled: notify
     };
+
+    console.group("[SaveRecipeCopy] submit body");
+    console.log("body", body);
+    console.log("JSON body", JSON.stringify(body, null, 2));
+    console.log("dataV2 === body.dataV2", dataV2 === body.dataV2);
+    console.groupEnd();
 
     try {
       await createRecipeMutation.mutateAsync(body as any);
