@@ -26,7 +26,9 @@ export const nutrientScheduleSchema = z.enum([
 ]);
 export const nutrientKeySchema = z.enum(["fermO", "fermK", "dap", "other"]);
 
-const numericInputSchema = z.string();
+// 🥒
+
+const numericInputSchema = z.coerce.string();
 export const nutrientRecordSchema = z.object({
   fermO: numericInputSchema,
   fermK: numericInputSchema,
@@ -42,34 +44,34 @@ export const selectedNutrientsSchema = z.object({
 });
 
 export const nutrientInputsSchema = z.object({
-    volume: numericInputSchema,
-    volumeUnits: nutrientVolumeUnitSchema,
-    sg: numericInputSchema,
-    offsetPpm: numericInputSchema,
-    numberOfAdditions: numericInputSchema,
-    goFermType: goFermTypeSchema,
-    yeastAmountG: numericInputSchema,
-    yeastAmountTouched: z.boolean()
+  volume: numericInputSchema,
+  volumeUnits: nutrientVolumeUnitSchema,
+  sg: numericInputSchema,
+  offsetPpm: numericInputSchema,
+  numberOfAdditions: numericInputSchema,
+  goFermType: goFermTypeSchema,
+  yeastAmountG: numericInputSchema,
+  yeastAmountTouched: z.boolean()
 });
 export const nutrientSelectedSchema = z.object({
-    yeastBrand: z.string(),
-    yeastStrain: z.string(),
-    yeastId: z.number().int().optional(),
-    nitrogenRequirement: nitrogenRequirementSchema,
-    schedule: nutrientScheduleSchema,
-    selectedNutrients: selectedNutrientsSchema
+  yeastBrand: z.string(),
+  yeastStrain: z.string(),
+  yeastId: z.number().int().optional(),
+  nitrogenRequirement: nitrogenRequirementSchema,
+  schedule: nutrientScheduleSchema,
+  selectedNutrients: selectedNutrientsSchema
 });
 export const nutrientSettingsSchema = z.object({
-    yanContribution: nutrientRecordSchema,
-    maxGpl: nutrientRecordSchema,
-    maxGplTouched: z.boolean(),
-    other: z.object({
-      name: z.string()
-    })
+  yanContribution: nutrientRecordSchema,
+  maxGpl: nutrientRecordSchema,
+  maxGplTouched: z.boolean(),
+  other: z.object({
+    name: z.string()
+  })
 });
 export const nutrientAdjustmentsSchema = z.object({
-    adjustAllowed: z.boolean(),
-    providedYanPpm: nutrientRecordSchema
+  adjustAllowed: z.boolean(),
+  providedYanPpm: nutrientRecordSchema
 });
 export const nutrientDataV2Schema = z.object({
   version: z.literal(2),

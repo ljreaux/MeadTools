@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRecipe } from "@/lib/db/recipes";
 import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
 import { getAdminRecipesPage } from "@/lib/db/recipes";
-import {
-  isRecipeData,
-  RecipeData,
-  getRecipeDataValidationIssues
-} from "@/types/recipeData";
+import { isRecipeData, RecipeData } from "@/types/recipeData";
 /**
  * List recipes as admin
  * @description Admin-only. Returns a paginated list of all recipes, including private recipes.
@@ -137,30 +133,6 @@ export async function POST(req: NextRequest) {
 
     // Optional: enforce valid v2 shape if present
     if (dataV2 && !isRecipeData(dataV2)) {
-      const invalidDataV2 = dataV2 as any;
-      const issues = getRecipeDataValidationIssues(dataV2);
-
-      console.error("[api/recipes POST] Invalid dataV2 payload", {
-        issues: issues?.map((issue) => ({
-          path: issue.path.join("."),
-          message: issue.message,
-          expected: "expected" in issue ? issue.expected : undefined,
-          received: "received" in issue ? issue.received : undefined,
-          code: issue.code
-        })),
-
-        name,
-        version: invalidDataV2?.version,
-        unitDefaults: invalidDataV2?.unitDefaults,
-        fg: invalidDataV2?.fg,
-        fgType: typeof invalidDataV2?.fg,
-        stabilizers: invalidDataV2?.stabilizers,
-        notes: invalidDataV2?.notes,
-        ingredients: invalidDataV2?.ingredients,
-        additives: invalidDataV2?.additives,
-        nutrients: invalidDataV2?.nutrients
-      });
-
       return NextResponse.json(
         { error: "Invalid dataV2 payload." },
         { status: 400 }

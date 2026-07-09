@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Input } from "../ui/input";
@@ -74,47 +74,6 @@ function SaveRecipeCopy() {
       checked
     ]
   );
-
-  useEffect(() => {
-    console.group("[SaveRecipeCopy] dataV2 from useRecipe");
-    console.log("dataV2", dataV2);
-    console.log("unitDefaults", dataV2.unitDefaults);
-    console.log("fg", dataV2.fg, typeof dataV2.fg);
-    console.log("stabilizers", dataV2.stabilizers);
-    console.log("nutrients", dataV2.nutrients);
-
-    console.table(
-      dataV2.ingredients.map((line) => ({
-        name: line.name,
-        category: line.category,
-        secondary: line.secondary,
-        brix: line.brix,
-        brixType: typeof line.brix,
-        basis: line.amounts?.basis,
-        weightValue: line.amounts?.weight?.value,
-        weightValueType: typeof line.amounts?.weight?.value,
-        weightUnit: line.amounts?.weight?.unit,
-        volumeValue: line.amounts?.volume?.value,
-        volumeValueType: typeof line.amounts?.volume?.value,
-        volumeUnit: line.amounts?.volume?.unit,
-        refKind: line.ref?.kind
-      }))
-    );
-
-    console.table(
-      dataV2.additives.map((line) => ({
-        name: line.name,
-        amount: line.amount,
-        amountType: typeof line.amount,
-        unit: line.unit,
-        amountDim: line.amountDim,
-        amountTouched: line.amountTouched,
-        lineId: line.lineId
-      }))
-    );
-
-    console.groupEnd();
-  }, [dataV2]);
 
   const createRecipe = async () => {
     const trimmedName = recipeName.trim();
