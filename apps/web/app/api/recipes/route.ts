@@ -141,7 +141,14 @@ export async function POST(req: NextRequest) {
       const issues = getRecipeDataValidationIssues(dataV2);
 
       console.error("[api/recipes POST] Invalid dataV2 payload", {
-        issues,
+        issues: issues?.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+          expected: "expected" in issue ? issue.expected : undefined,
+          received: "received" in issue ? issue.received : undefined,
+          code: issue.code
+        })),
+
         name,
         version: invalidDataV2?.version,
         unitDefaults: invalidDataV2?.unitDefaults,
