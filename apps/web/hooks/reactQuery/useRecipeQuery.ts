@@ -187,6 +187,7 @@ export function buildRecipePayload(
     activityEmailsEnabled: emailNotifications // 👈 opt-in flag
   };
 }
+
 // Public endpoint (no auth header)
 async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
   const res = await fetch(`/api/recipes/${id}`);
@@ -297,7 +298,6 @@ export function useCreateRecipeMutation() {
       });
     },
     onSuccess: () => {
-      // refresh any lists that show recipes
       queryClient.invalidateQueries({ queryKey: qk.recipesList });
     }
   });

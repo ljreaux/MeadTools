@@ -5,7 +5,8 @@ import {
   loginSuccessResponseSchema,
   refreshTokenFailureErrorResponseSchema,
   registerRequestBodySchema,
-  verifyTokenRequestBodySchema
+  verifyTokenRequestBodySchema,
+  verifyTokenSuccessResponseSchema
 } from "../src/zod/auth";
 
 test("auth schemas preserve existing successful payloads", () => {
@@ -25,6 +26,19 @@ test("auth schemas preserve existing successful payloads", () => {
       email: "user@example.com",
       password: "password",
       public_username: "meadmaker"
+    }).success,
+    true
+  );
+  assert.equal(
+    verifyTokenSuccessResponseSchema.safeParse({
+      token: "access",
+      accessToken: "access",
+      refreshToken: "refresh",
+      user: {
+        id: 1,
+        email: "user@example.com",
+        role: "user"
+      }
     }).success,
     true
   );

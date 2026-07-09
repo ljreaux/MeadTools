@@ -1,0 +1,21 @@
+{
+  "name": "@meadtools/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./css": "./tokens.css",
+    "./css-runtime": "./src/css.ts"
+  },
+  "scripts": {
+    "generate": "node --import tsx scripts/generate-css.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

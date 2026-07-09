@@ -2,9 +2,6 @@ name: Quality
 
 on:
   pull_request:
-    branches:
-      - main
-      - preview
   push:
     branches:
       - main
@@ -103,5 +100,13 @@ jobs:
       - name: Typecheck mobile app
         run: npm run mobile:typecheck
 
-      - name: Verify Expo can export the app
-        run: npm exec --workspace @meadtools/mobile -- expo export --platform web
+      - name: Test mobile runtime configuration
+        run: npm test --workspace @meadtools/mobile
+
+      - name: Verify Expo can export an Android bundle
+        env:
+          # Expo evaluates every config plugin during export. This syntactically
+          # valid CI-only ID lets the iOS URL-scheme plugin load without
+          # embedding a deployable OAuth client in GitHub Actions.
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: 000000000000-ci.apps.googleusercontent.com
+        run: npm exec --workspace @meadtools/mobile -- expo export --platform android

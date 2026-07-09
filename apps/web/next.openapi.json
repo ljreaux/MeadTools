@@ -113,7 +113,6 @@
     "/cron/*",
     "/auth/oauth-callback",
     "/auth/start-oauth-flow",
-    "/auth/verify-token",
     "/auth/{nextauth}"
   ],
   "debug": false

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { getUserByEmail } from "@/lib/db/users";
+import { refreshTokenBelongsToUser } from "@/lib/auth/refresh-token";
 
 const { REFRESH_TOKEN_SECRET = "", ACCESS_TOKEN_SECRET = "" } = process.env;
 
@@ -34,7 +35,11 @@ export async function POST(req: NextRequest) {
 
     // If token verification fails, return 500 instead of 401
     try {
-      jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+      const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+      if (!refreshTokenBelongsToUser(payload, user.id)) {
+        throw new Error("Refresh token does not belong to this user");
+      }
     } catch (error) {
       console.error("Error verifying token:", error);
       return NextResponse.json(

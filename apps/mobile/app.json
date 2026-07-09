@@ -1,16 +1,24 @@
 {
   "expo": {
     "name": "MeadTools",
-    "slug": "meadtools-mobile",
+    "slug": "mobile",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "meadtools",
+    "scheme": [
+      "meadtools",
+      "com.meadtools.mobile"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.meadtools.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.meadtools.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,7 +36,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#171717"
+          "image": "./assets/images/meadtools-logo.png",
+          "backgroundColor": "#171717",
+          "resizeMode": "contain"
         }
       ],
       "expo-localization"

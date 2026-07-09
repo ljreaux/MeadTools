@@ -227,6 +227,7 @@
       }
     },
     "googleLogin": {
+      "action": "Mit Google fortfahren",
       "error": "Die Anmeldung bei Google ist fehlgeschlagen. Bitte versuche es erneut oder wende Dich an den Support.",
       "success": "Google-Anmeldung erfolgreich! Willkommen zurück."
     },

@@ -227,6 +227,7 @@
       }
     },
     "googleLogin": {
+      "action": "Continue with Google",
       "error": "Failed to log in with Google. Please try again or contact support.",
       "success": "Google login successful! Welcome back."
     },

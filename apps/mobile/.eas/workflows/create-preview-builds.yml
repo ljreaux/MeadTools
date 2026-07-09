@@ -1,0 +1,38 @@
+name: Create Preview Builds
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - preview
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+
+jobs:
+  quality:
+    name: Typecheck mobile app
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - run: npm run typecheck
+
+  build_android:
+    name: Build Android preview
+    needs: [quality]
+    type: build
+    params:
+      platform: android
+      profile: preview
+
+  build_ios:
+    name: Build iOS preview
+    needs: [quality]
+    type: build
+    params:
+      platform: ios
+      profile: preview

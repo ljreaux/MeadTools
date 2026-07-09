@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: eas/checkout
       - uses: eas/install_node_modules
-      - run: npm run mobile:typecheck
+      - run: npm run typecheck
 
   build_android:
     name: Build Android

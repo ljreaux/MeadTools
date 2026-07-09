@@ -1,7 +1,9 @@
 import { nanoid } from "nanoid";
 import { initialNutrientData, NutrientData } from "./nutrientData";
-import { isRecipeDataV2 } from "@meadtools/schemas/recipe";
-
+import {
+  isRecipeDataV2,
+  getRecipeDataV2ValidationIssues
+} from "@meadtools/schemas/recipe";
 export const genLineId = () => nanoid(10);
 
 /* ----------------------------- Units ----------------------------- */
@@ -269,6 +271,9 @@ export const initialRecipeData = (
 
 export const isRecipeData = (x: unknown): x is RecipeData => {
   return isRecipeDataV2(x);
+};
+export const getRecipeDataValidationIssues = (x: unknown) => {
+  return getRecipeDataV2ValidationIssues(x);
 };
 
 /**
