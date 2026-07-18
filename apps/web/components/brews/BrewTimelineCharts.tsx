@@ -43,6 +43,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import { calcABV } from "@meadtools/core/gravity";
+import { L_TO_VOLUME } from "@meadtools/core/recipe";
+import type { VolumeUnit } from "@/types/recipeData";
 import type { BrewViewEntry, BrewViewLog } from "@/types/brewView";
 
 type WirelessLog = {
@@ -224,11 +226,13 @@ export function buildWirelessHydrometerChartData(
 export function BrewTimelineCharts({
   brewId,
   entries,
-  linkedDevices
+  linkedDevices,
+  volumeUnit = "L"
 }: {
   brewId: string;
   entries: BrewChartEntry[];
   linkedDevices: AccountBrewLinkedDevice[];
+  volumeUnit?: VolumeUnit;
 }) {
   const { data: logs = [], isLoading: logsLoading } = useBrewLogs(brewId);
 
@@ -245,6 +249,7 @@ export function BrewTimelineCharts({
         entries={entries}
         logs={logs}
         logsLoading={logsLoading}
+        volumeUnit={volumeUnit}
       />
     </div>
   );
@@ -253,16 +258,25 @@ export function BrewTimelineCharts({
 export function BrewTimelineChartsView({
   entries,
   logs,
-  logsLoading = false
+  logsLoading = false,
+  volumeUnit = "L"
 }: {
   entries: BrewChartEntry[];
   logs: WirelessLog[];
   logsLoading?: boolean;
+  volumeUnit?: VolumeUnit;
 }) {
   const { t } = useTranslation();
   const manualChartData = useMemo(
-    () => buildManualBrewChartData(entries),
-    [entries]
+    () =>
+      buildManualBrewChartData(entries).map((point) => ({
+        ...point,
+        volume:
+          typeof point.volume === "number"
+            ? point.volume * L_TO_VOLUME[volumeUnit]
+            : point.volume
+      })),
+    [entries, volumeUnit]
   );
   const wirelessChartData = useMemo(
     () => buildWirelessHydrometerChartData(logs),
@@ -290,6 +304,7 @@ export function BrewTimelineChartsView({
             chartData={wirelessChartData}
             tempUnits={wirelessTempUnits}
             loading={logsLoading}
+            volumeUnit={volumeUnit}
             name={t(
               "brews.charts.wirelessTitle",
               "Wireless hydrometer readings"
@@ -313,6 +328,7 @@ export function BrewTimelineChartsView({
             chartData={manualChartData}
             tempUnits={manualTempUnits}
             name={t("brews.charts.manualTitle", "Manual timeline readings")}
+            volumeUnit={volumeUnit}
           />
         </ChartSection>
       ) : (

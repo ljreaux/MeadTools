@@ -424,7 +424,11 @@ export function BrewViewer({
         </TabsContent>
 
         <TabsContent value="charts" className="mt-0">
-          <BrewTimelineChartsView entries={brew.entries} logs={brew.logs} />
+          <BrewTimelineChartsView
+            entries={brew.entries}
+            logs={brew.logs}
+            volumeUnit={recipeUnit}
+          />
         </TabsContent>
       </Tabs>
     </div>

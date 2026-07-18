@@ -1448,7 +1448,12 @@ export default function BrewPageClient() {
         </TabsContent>
 
         <TabsContent value="charts" className="mt-0">
-          <BrewTimelineCharts brewId={brew.id} entries={brew.entries ?? []} linkedDevices={brew.linked_devices ?? []} />
+          <BrewTimelineCharts
+            brewId={brew.id}
+            entries={brew.entries ?? []}
+            linkedDevices={brew.linked_devices ?? []}
+            volumeUnit={recipeVolumeUnit}
+          />
         </TabsContent>
       </Tabs>
       <EditBrewEntryDialog

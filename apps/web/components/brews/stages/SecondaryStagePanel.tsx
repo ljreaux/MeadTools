@@ -49,6 +49,13 @@ import {
   type ScaledIngredientSuggestion
 } from "@meadtools/brew-domain/scaling";
 import { calcABV } from "@meadtools/core/gravity";
+import {
+  getEntryTimestamp,
+  getLatestTimestamp,
+  getMeasuredSecondaryVolumeState,
+  hasVolumeRecordOnOrAfter,
+  needsSupplementalStabilizers
+} from "@/lib/brews/stabilizerVolume";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import type {
   IngredientLine,
@@ -141,8 +148,7 @@ function fmtVolumeWithZero(
 function getEntryTime(
   entry: StagePanelProps["ctx"]["brew"]["entries"][number]
 ) {
-  const value = (entry as any).datetime ?? entry.createdAt;
-  return typeof value === "string" ? new Date(value).getTime() : 0;
+  return getEntryTimestamp(entry) ?? 0;
 }
 
 function latestLoggedPh(ctx: StagePanelProps["ctx"]) {
@@ -338,9 +344,35 @@ function getStabilizerPlan(
   if (abv == null) return null;
 
   const secondaryVolume = getSecondaryVolumeBreakdown(ctx);
-  const adjustedTotalVolumeL = baseVolumeL + secondaryVolume.totalVolumeL;
+  const initialStabilizer = getLoggedStabilizerAdditions(ctx).find(
+    (addition) => addition.meta?.supplemental !== true
+  );
+  const initialBaseVolumeL =
+    typeof initialStabilizer?.meta?.baseVolumeLiters === "number" &&
+    Number.isFinite(initialStabilizer.meta.baseVolumeLiters)
+      ? initialStabilizer.meta.baseVolumeLiters
+      : baseVolumeL;
+  const initialBaseAbv =
+    typeof initialStabilizer?.meta?.baseAbv === "number" &&
+    Number.isFinite(initialStabilizer.meta.baseAbv)
+      ? initialStabilizer.meta.baseAbv
+      : abv;
+  const secondaryIngredientIds = ctx.recipe.secondaryIngredients
+    .filter((line) => (line.name ?? "").trim())
+    .map((line) => String(line.lineId));
+  const measuredSecondaryVolume = getMeasuredSecondaryVolumeState({
+    entries: ctx.brew.entries,
+    secondaryIngredientIds,
+    allSecondaryIngredientsLogged:
+      secondaryVolume.source === "logged" && secondaryIngredientIds.length > 0
+  });
+  const adjustedTotalVolumeL = measuredSecondaryVolume.hasMeasuredVolume
+    ? baseVolumeL
+    : baseVolumeL + secondaryVolume.totalVolumeL;
   const dilutedAbv =
-    adjustedTotalVolumeL > 0 ? (abv * baseVolumeL) / adjustedTotalVolumeL : abv;
+    adjustedTotalVolumeL > 0
+      ? (initialBaseAbv * initialBaseVolumeL) / adjustedTotalVolumeL
+      : initialBaseAbv;
 
   const latestPh = latestLoggedPh(ctx);
   const recipePh = ctx.recipe.stabilizerPlan?.phReading?.trim();
@@ -361,7 +393,7 @@ function getStabilizerPlan(
     secondaryVolumePartiallyPlanned: secondaryVolume.partiallyPlanned,
     abv: dilutedAbv,
     abvSource: hasLoggedOgFg && loggedAbv != null ? "logged_og_fg" : "recipe",
-    baseAbv: abv,
+    baseAbv: initialBaseAbv,
     dilutedAbv,
     defaultPh,
     phSource:
@@ -387,6 +419,23 @@ function getLatestLoggedStabilizer(
   return latestLoggedItem(additions);
 }
 
+function needsVolumeReadingAfterStabilizers(
+  ctx: StagePanelProps["ctx"],
+  additions: ReturnType<typeof getLoggedStabilizerAdditions>
+) {
+  const initialStabilizerAdditions = additions.filter(
+    (addition) => addition.meta?.supplemental !== true
+  );
+
+  if (initialStabilizerAdditions.length === 0) return false;
+
+  const latestStabilizerTime = getLatestTimestamp(initialStabilizerAdditions);
+
+  if (latestStabilizerTime == null) return true;
+
+  return !hasVolumeRecordOnOrAfter(ctx.brew.entries, latestStabilizerTime);
+}
+
 function getSupplementalStabilizerPlan(
   ctx: StagePanelProps["ctx"],
   plan: StabilizerPlan | null
@@ -407,24 +456,16 @@ function getSupplementalStabilizerPlan(
     Number.isFinite(latest.meta.adjustedTotalVolumeLiters)
       ? latest.meta.adjustedTotalVolumeLiters
       : null;
-  const currentVolumeL =
-    typeof ctx.brew.current_volume_liters === "number" &&
-    Number.isFinite(ctx.brew.current_volume_liters) &&
-    ctx.brew.current_volume_liters > 0
-      ? ctx.brew.current_volume_liters
-      : null;
-  const secondaryDilutionIncreased =
-    latestSecondaryVolumeL != null &&
-    plan.secondaryVolumeL >
-      latestSecondaryVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
-  const measuredVolumeOverEstimate =
-    latestAdjustedTotalVolumeL != null &&
-    currentVolumeL != null &&
-    currentVolumeL >
-      latestAdjustedTotalVolumeL + SUPPLEMENTAL_VOLUME_THRESHOLD_L;
-
-  if (latestSecondaryVolumeL != null || latestAdjustedTotalVolumeL != null) {
-    if (!secondaryDilutionIncreased && !measuredVolumeOverEstimate) return null;
+  if (
+    !needsSupplementalStabilizers({
+      currentSecondaryVolumeL: plan.secondaryVolumeL,
+      currentAdjustedVolumeL: plan.adjustedTotalVolumeL,
+      latestSecondaryVolumeL,
+      latestAdjustedVolumeL: latestAdjustedTotalVolumeL,
+      thresholdL: SUPPLEMENTAL_VOLUME_THRESHOLD_L
+    })
+  ) {
+    return null;
   }
 
   const stabilizerType =
@@ -438,36 +479,13 @@ function getSupplementalStabilizerPlan(
     typeof latest?.meta?.ph === "number" && Number.isFinite(latest.meta.ph)
       ? String(latest.meta.ph)
       : plan.defaultPh;
-  const latestBaseVolumeL =
-    typeof latest?.meta?.baseVolumeLiters === "number" &&
-    Number.isFinite(latest.meta.baseVolumeLiters)
-      ? latest.meta.baseVolumeLiters
-      : null;
-  const latestBaseAbv =
-    typeof latest?.meta?.baseAbv === "number" &&
-    Number.isFinite(latest.meta.baseAbv)
-      ? latest.meta.baseAbv
-      : null;
-  const requiredVolumeL =
-    measuredVolumeOverEstimate &&
-    !secondaryDilutionIncreased &&
-    currentVolumeL != null
-      ? currentVolumeL
-      : plan.volumeL;
-  const requiredAbv =
-    measuredVolumeOverEstimate &&
-    !secondaryDilutionIncreased &&
-    currentVolumeL != null &&
-    latestBaseVolumeL != null &&
-    latestBaseAbv != null
-      ? (latestBaseAbv * latestBaseVolumeL) / currentVolumeL
-      : plan.abv;
+  const requiredVolumeL = plan.volumeL;
   const required = calculateRecipeStabilizerResults({
     addingStabilizers: true,
     phReading: ph,
     stabilizerType,
     totalVolumeL: requiredVolumeL,
-    abv: requiredAbv
+    abv: plan.abv
   });
 
   const logged = additions.reduce(
@@ -617,6 +635,9 @@ export function SecondaryStagePanel({
   const usesRecipeStabilizers = Boolean(ctx.recipe.stabilizerPlan?.enabled);
   const loggedStabilizerAdditions = getLoggedStabilizerAdditions(ctx);
   const hasLoggedStabilizers = loggedStabilizerAdditions.length > 0;
+  const needsVolumeReading =
+    hasLoggedStabilizers &&
+    needsVolumeReadingAfterStabilizers(ctx, loggedStabilizerAdditions);
   const supplementalStabilizerPlan =
     usesRecipeStabilizers && hasLoggedStabilizers
       ? getSupplementalStabilizerPlan(ctx, stabilizerPlan)
@@ -1007,6 +1028,45 @@ export function SecondaryStagePanel({
           </div>
         </div>
       </div>
+
+      {needsVolumeReading && stabilizerPlan ? (
+        <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3 py-3 text-sm">
+          <div className="font-medium text-yellow-700 dark:text-yellow-300">
+            {t(
+              "brews.secondary.recordVolumeAfterStabilizersTitle",
+              "Record the updated volume"
+            )}
+          </div>
+          <div className="mt-1 text-muted-foreground">
+            {t(
+              "brews.secondary.recordVolumeAfterStabilizersHelp",
+              "You logged stabilizers. Record the actual volume now—secondary additions can increase batch volume and may require additional stabilizers."
+            )}
+          </div>
+          <div className="mt-3 max-w-sm">
+            <InfoRow
+              label={t(
+                "brews.secondary.estimatedVolumeAfterStabilizers",
+                "Estimated volume after secondary additions"
+              )}
+              value={fmtVolume(
+                stabilizerPlan.adjustedTotalVolumeL,
+                stabilizerPlan.volumeUnit
+              )}
+            />
+          </div>
+          <div className="mt-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canEdit}
+              onClick={() => helpers.openRecordVolume?.()}
+            >
+              {t("brews.actions.logVolume", "Record volume")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {supplementalStabilizerPlan ? (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-3 text-sm">
