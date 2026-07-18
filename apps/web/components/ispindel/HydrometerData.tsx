@@ -37,6 +37,8 @@ import { useTranslation } from "react-i18next";
 import { toBrix } from "@meadtools/core/gravity";
 import { toCelsius, toFahrenheit } from "@meadtools/core/temperature";
 import { formatBrixDisplay, formatSgDisplay } from "@/lib/utils/gravityFormatting";
+import { normalizeNumberString } from "@/lib/utils/validateInput";
+import type { VolumeUnit } from "@/types/recipeData";
 
 import {
   Dialog,
@@ -65,12 +67,14 @@ export function HydrometerData({
   chartData,
   name,
   tempUnits,
-  loading
+  loading,
+  volumeUnit = "L"
 }: {
   chartData: HydrometerChartData[];
   name?: string;
   tempUnits: TempUnits;
   loading?: boolean;
+  volumeUnit?: VolumeUnit;
 }) {
   const { i18n, t } = useTranslation();
   const lang = i18n.resolvedLanguage || "en-US";
@@ -111,11 +115,11 @@ export function HydrometerData({
           color: "hsl(var(--chart-3))"
         },
         volume: {
-          label: t("brews.charts.volumeLabel", "Volume (L)"),
+          label: `${t("volume", "Volume")} (${volumeUnit})`,
           color: "hsl(var(--chart-4))"
         }
       } satisfies ChartConfig),
-    [t, gravityUnits]
+    [t, gravityUnits, volumeUnit]
   );
 
   const initialChecked = useMemo(() => {
@@ -266,6 +270,11 @@ export function HydrometerData({
     [gravityUnits, lang, t]
   );
 
+  const formatVolume = useCallback(
+    (value: number) => normalizeNumberString(value, 3, lang),
+    [lang]
+  );
+
   const tooltipFormatter = useCallback(
     (value: any, name: any, item: any) => {
       const key = String(item?.dataKey ?? name ?? "");
@@ -276,6 +285,8 @@ export function HydrometerData({
           gravityUnits === "Brix"
             ? formatBrixDisplay(value, t("BRIX"), lang)
             : formatSgDisplay(value, lang);
+      } else if (key === "volume" && typeof value === "number") {
+        displayValue = formatVolume(value);
       }
 
       return (
@@ -294,7 +305,7 @@ export function HydrometerData({
         </>
       );
     },
-    [chartConfig, gravityUnits, lang, t]
+    [chartConfig, formatVolume, gravityUnits, lang, t]
   );
 
   // ---------- handlers ----------
@@ -474,7 +485,7 @@ export function HydrometerData({
               tick={false}
               axisLine={false}
               tickLine={false}
-              unit=" L"
+              unit={` ${volumeUnit}`}
             />
           ) : null}
 
@@ -553,7 +564,7 @@ export function HydrometerData({
               dot={getLineDot("volume")}
               activeDot={sparseDot}
               yAxisId={"volume"}
-              unit=" L"
+              unit={` ${volumeUnit}`}
               connectNulls
             />
           ) : null}
@@ -754,9 +765,9 @@ export function HydrometerData({
                   dataKey={"volume"}
                   yAxisId={"volume"}
                   tickCount={8}
-                  tickFormatter={(val) => Number(val).toFixed(1)}
+                  tickFormatter={formatVolume}
                   padding={yPadding}
-                  unit=" L"
+                  unit={` ${volumeUnit}`}
                   hide={!checkObj.volume}
                 />
               ) : null}
@@ -824,11 +835,11 @@ export function HydrometerData({
                   type="monotone"
                   stroke="var(--color-volume)"
                   strokeWidth={2}
-                  dot={getLineDot("volume")}
-                  activeDot={sparseDot}
-                  yAxisId={"volume"}
-                  unit=" L"
-                  hide={!checkObj.volume}
+              dot={getLineDot("volume")}
+              activeDot={sparseDot}
+              yAxisId={"volume"}
+              unit={` ${volumeUnit}`}
+              hide={!checkObj.volume}
                   connectNulls
                 />
               ) : null}

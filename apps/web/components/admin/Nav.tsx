@@ -4,6 +4,7 @@ import {
   Beer,
   FlaskConical,
   LayoutDashboard,
+  Wrench,
   Menu,
   NotebookText,
   TestTube2,
@@ -27,7 +28,8 @@ const navLinks = [
   { key: "users", fallback: "Users", to: `${baseRoute}/users`, icon: Users },
   { key: "yeasts", fallback: "Yeasts", to: `${baseRoute}/yeasts`, icon: FlaskConical },
   { key: "ingredients", fallback: "Ingredients", to: `${baseRoute}/ingredients`, icon: Wheat },
-  { key: "additives", fallback: "Additives", to: `${baseRoute}/additives`, icon: TestTube2 }
+  { key: "additives", fallback: "Additives", to: `${baseRoute}/additives`, icon: TestTube2 },
+  { key: "maintenance", fallback: "Maintenance", to: `${baseRoute}/maintenance`, icon: Wrench }
 ];
 
 export default function AdminNav() {
