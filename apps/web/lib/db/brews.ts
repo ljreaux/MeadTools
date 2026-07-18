@@ -1055,7 +1055,6 @@ async function syncEstimatedAbvEntry(
     });
     const originalGravityEntry = stageData.actual.originalGravity;
     const finalGravityEntry = stageData.actual.finalGravity;
-    const volumeData = event.data as any;
     const fallbackAbv =
       typeof originalGravityEntry?.gravity === "number" &&
       Number.isFinite(originalGravityEntry.gravity) &&
@@ -1063,26 +1062,11 @@ async function syncEstimatedAbvEntry(
       Number.isFinite(finalGravityEntry.gravity)
         ? calcABV(originalGravityEntry.gravity, finalGravityEntry.gravity)
         : null;
-    const volumeAdjustedAbv =
-      event.type === brew_entry_type.VOLUME &&
-      typeof volumeData?.startingLiters === "number" &&
-      Number.isFinite(volumeData.startingLiters) &&
-      volumeData.startingLiters > 0 &&
-      typeof volumeData?.liters === "number" &&
-      Number.isFinite(volumeData.liters) &&
-      volumeData.liters > 0 &&
-      typeof fallbackAbv === "number" &&
-      Number.isFinite(fallbackAbv)
-        ? (fallbackAbv * volumeData.startingLiters) / volumeData.liters
-        : null;
     const abv =
-      typeof volumeAdjustedAbv === "number" &&
-      Number.isFinite(volumeAdjustedAbv)
-        ? volumeAdjustedAbv
-        : typeof stageData.actual.currentAbv === "number" &&
-            Number.isFinite(stageData.actual.currentAbv)
-          ? stageData.actual.currentAbv
-          : fallbackAbv;
+      typeof stageData.actual.currentAbv === "number" &&
+      Number.isFinite(stageData.actual.currentAbv)
+        ? stageData.actual.currentAbv
+        : fallbackAbv;
 
     if (
       !originalGravityEntry ||
@@ -1124,6 +1108,18 @@ async function syncEstimatedAbvEntry(
       }
     });
   }
+}
+
+export async function rebuildEstimatedAbvEntriesForBrew(brewId: string) {
+  const brew = await prisma.brews.findUnique({
+    where: { id: brewId },
+    select: { id: true, user_id: true }
+  });
+  if (!brew || brew.user_id == null) throw new Error("Brew not found");
+
+  await prisma.$transaction((tx) =>
+    syncEstimatedAbvEntry(tx, brew.id, brew.user_id!)
+  );
 }
 
 function shouldSyncEstimatedAbvForEntry(entry: {

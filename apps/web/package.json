@@ -12,6 +12,7 @@
     "start": "next start",
     "start:i18n": "npm --prefix ../.. run i18n:pull && next start",
     "test": "node --import tsx --test lib/brews/*.test.ts lib/utils/*.test.ts",
+    "brew:rebuild-abv": "tsx scripts/rebuildEstimatedAbv.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "openapi:generate": "next-openapi-gen generate && node ../../scripts/normalize-zod-openapi.mjs",
     "lint": "next lint",

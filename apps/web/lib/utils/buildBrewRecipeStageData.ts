@@ -29,6 +29,7 @@ import {
 } from "@meadtools/core/recipe";
 import { calcABV, toSG } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
+import { getMeasuredSecondaryVolumeState } from "@/lib/brews/stabilizerVolume";
 
 type RecipeDerivedApiResponse = CoreRecipeDerivedApiResponse<RecipeData>;
 
@@ -753,6 +754,18 @@ export function buildBrewRecipeStageData(args: {
     secondaryIngredients,
     additionsByRecipeIngredientId
   });
+  const secondaryIngredientIds = secondaryIngredients
+    .filter((line) => (line.name ?? "").trim())
+    .map((line) => String(line.lineId));
+  const measuredSecondaryVolume = getMeasuredSecondaryVolumeState({
+    entries,
+    secondaryIngredientIds,
+    allSecondaryIngredientsLogged:
+      secondaryIngredientIds.length > 0 &&
+      secondaryIngredientIds.every((lineId) =>
+        Boolean(latestAddition(additionsByRecipeIngredientId[lineId]))
+      )
+  });
   const recipeFg = parseNumber(derivedResponse.recipeData.fg ?? "");
   const baseOg =
     typeof originalGravity?.gravity === "number" && Number.isFinite(originalGravity.gravity)
@@ -771,7 +784,10 @@ export function buildBrewRecipeStageData(args: {
       : null;
   const currentAbv =
     actualCurrentVolume && typeof baseAbv === "number" && Number.isFinite(baseAbv)
-      ? (baseAbv * actualCurrentVolume) / (actualCurrentVolume + secondaryVolumeL)
+      ? measuredSecondaryVolume.hasMeasuredVolume &&
+          measuredSecondaryVolume.baseVolumeL != null
+        ? (baseAbv * measuredSecondaryVolume.baseVolumeL) / actualCurrentVolume
+        : (baseAbv * actualCurrentVolume) / (actualCurrentVolume + secondaryVolumeL)
       : null;
 
   return {
