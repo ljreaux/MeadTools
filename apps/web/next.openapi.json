@@ -113,7 +113,8 @@
     "/cron/*",
     "/auth/oauth-callback",
     "/auth/start-oauth-flow",
-    "/auth/{nextauth}"
+    "/auth/{nextauth}",
+    "/admin/maintenance/rebuild-estimated-abv"
   ],
   "debug": false
 }
