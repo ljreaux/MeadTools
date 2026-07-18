@@ -6571,6 +6571,25 @@
         }
       }
     },
+    "/admin/maintenance/rebuild-estimated-abv": {
+      "post": {
+        "operationId": "post-admin-maintenance-rebuild-estimated-abv",
+        "summary": "",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/admin/users/{id}/password-reset": {
       "post": {
         "operationId": "post-admin-users-{id}-password-reset",
