@@ -193,7 +193,7 @@ export function migrateLegacyRecipeToV2(recipe: RecipeApiResponse): RecipeData {
         selected: nutrientsSelected
       }),
       maxGplTouched: false,
-      other: { name: "" }
+      other: { name: "", usesOrganicMultiplier: false }
     },
     adjustments: {
       adjustAllowed: false,

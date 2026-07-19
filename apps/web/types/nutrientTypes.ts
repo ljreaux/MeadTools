@@ -33,6 +33,14 @@ export type Yeast = {
   high_temp: string;
 };
 
+export type NutrientPreset = {
+  id: string;
+  name: string;
+  yan_ppm_per_gpl: number;
+  max_gpl: number | null;
+  organic_multiplier: boolean;
+};
+
 export type FullNutrientData = {
   inputs: {
     volume: string;

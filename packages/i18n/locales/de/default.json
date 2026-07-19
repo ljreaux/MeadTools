@@ -153,10 +153,31 @@
     "ingredients": {
       "add": "Zutat hinzufügen"
     },
+    "maintenance": {
+      "description": "Sichere administrative Wartungsaufgaben in kleinen Batches ausführen.",
+      "estimatedAbv": {
+        "brewId": "Brauvorgangs-ID",
+        "brewIdHelp": "Füge die Brauvorgangs-ID ein, um nur diesen Brauvorgang neu zu berechnen.",
+        "complete": "Geschätzte ABV-Einträge neu berechnet.",
+        "confirmDescription": "Dadurch werden abgeleitete Einträge für den geschätzten ABV von {{count}} Brauvorgängen ersetzt. Erfasste Volumen, Zugaben und Messwerte bleiben unverändert.",
+        "confirmTitle": "Geschätzte ABV-Einträge neu berechnen?",
+        "description": "Erstellt abgeleitete Zeitachseneinträge für den geschätzten ABV anhand des aktuellen Brauverlaufs neu. Erfasste Braudaten werden nicht verändert.",
+        "failed": "Geschätzte ABV-Einträge konnten nicht neu berechnet werden.",
+        "preview": "Vorschau",
+        "progress": "{{processed}} von {{total}} Brauvorgängen neu berechnet.",
+        "ready": "Bereit, die Schätzwerte für {{count}} Brauvorgänge neu zu berechnen.",
+        "rebuild": "Schätzwerte neu berechnen",
+        "scopeAll": "Alle Brauvorgänge",
+        "scopeBrew": "Ein Brauvorgang",
+        "title": "Geschätzten ABV neu berechnen"
+      },
+      "title": "Wartung"
+    },
     "nav": {
       "additives": "Zusatzstoffe",
       "brews": "Ansätze",
       "ingredients": "Zutaten",
+      "maintenance": "Wartung",
       "overview": "Übersicht",
       "recipes": "Rezepte",
       "users": "Benutzer",
@@ -642,6 +663,7 @@
       "confirmPackageTitle": "In die Verpackung überführen?",
       "currentVolume": "Aktuelles Volumen",
       "dilutedAbv": "Verdünnte ABV",
+      "estimatedVolumeAfterStabilizers": "Geschätztes Volumen nach Zugaben in der Sekundärgärung",
       "focusReady": "Bereit für die Umstellung auf die Massenreifung",
       "focusTracking": "Sekundäre Zusätze und Volumen aktuell halten",
       "ingredients": "Sekundärzutaten",
@@ -664,6 +686,8 @@
       "recipeAdditives": "Rezeptzusätze",
       "recipeNotes": "Sekundäre Rezeptnotizen",
       "recipeNoteTitle": "Sekundäre Rezeptnotiz hinzufügen",
+      "recordVolumeAfterStabilizersHelp": "Du hast Stabilisatoren protokolliert. Erfasse jetzt das tatsächliche Volumen – Zugaben in der Sekundärgärung können das Chargenvolumen erhöhen und weitere Stabilisatoren erfordern.",
+      "recordVolumeAfterStabilizersTitle": "Aktualisiertes Volumen erfassen",
       "scaleAdditives": "Skalierungszusätze",
       "scaleSecondaryIngredients": "Skalierung sekundärer Zutaten",
       "secondaryBeforeStabilizersHelp": "Dieses Rezept verwendet Stabilisatoren. Sekundäre Zutaten werden normalerweise nach den Stabilisatoren protokolliert, damit die Dosierung auf aktuellem Volumen und ABV basiert.",
@@ -1360,6 +1384,9 @@
   "other": {
     "detailsHeading": "Weitere Nährwertangaben",
     "label": "Other",
+    "nutrientPresetHelp": "Wähle einen Nährstoff aus der Liste, um seine Werte auszufüllen, oder gib die Angaben für deinen eigenen Nährstoff ein.",
+    "organicMultiplier": "Multiplikator für organischen Stickstoff verwenden",
+    "organicMultiplierHelp": "Wähle dies nur für Nährstoffe, die vollständig aus organischem Stickstoff bestehen.",
     "settingsAdjustValue": "Umschalter für die YAN-Einstellung",
     "settingsProvidedYan": "Bereitgestellt von YAN",
     "settingsTitle": "Nährstoffeinstellungen anpassen",

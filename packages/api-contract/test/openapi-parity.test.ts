@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "6c5d770338c9d2bf1bbf02bc7d52d50601493bb113b75505a3719c1f33b828fc";
+  "b5da53654bc24a9c2b5016f18f5fcbba85864e1b6f2590fe72cbabcc10a6d7af";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -37,7 +37,7 @@ test("generated OpenAPI document matches the reviewed Zod baseline", async () =>
   );
 });
 
-test("idempotency contract preserves all pre-existing endpoint documentation", async () => {
+test("approved API additions preserve all pre-existing endpoint documentation", async () => {
   const documentUrl = new URL(
     "../../../apps/web/public/openapi.json",
     import.meta.url
@@ -48,11 +48,12 @@ test("idempotency contract preserves all pre-existing endpoint documentation", a
       { post?: { responses?: Record<string, unknown> } }
     >;
   };
-  const pathsWithoutIdempotencyConflict = structuredClone(document.paths);
-  delete pathsWithoutIdempotencyConflict["/brews/{brew_id}/entries"]?.post
+  const pathsWithoutApprovedAdditions = structuredClone(document.paths);
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries"]?.post
     ?.responses?.["409"];
+  delete pathsWithoutApprovedAdditions["/nutrient-presets"];
   const canonicalPaths = JSON.stringify(
-    sortJson(pathsWithoutIdempotencyConflict)
+    sortJson(pathsWithoutApprovedAdditions)
   );
   const actualHash = createHash("sha256")
     .update(canonicalPaths)
