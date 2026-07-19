@@ -42,9 +42,31 @@ certificate automatically; Weblate itself stays bound to `127.0.0.1:8088` for
 SSH-tunnel troubleshooting.
 
 Production components use `git@github.com:ljreaux/MeadTools.git` on the
-translation-provider branch. Weblate's own Ed25519 public key is installed as
+`preview` branch. Weblate's own Ed25519 public key is installed as
 a write-enabled GitHub deploy key; do not copy a personal SSH key into the
 container.
+
+## Backups
+
+`backup.sh` creates a consistent PostgreSQL dump and backs it up together with
+the persistent Weblate and Caddy volumes. It uses a locally cached, encrypted
+restic repository which is mirrored to the offsite backup host over a dedicated
+SSH account. Caches are intentionally excluded because Weblate rebuilds them.
+
+The protected host-only `backup.env` file supplies the backup destination. It
+must never be committed. Install the supplied systemd unit and timer after a
+successful manual backup:
+
+```bash
+sudo install -m 0755 backup.sh /srv/meadtools-weblate/backup.sh
+sudo install -m 0644 systemd/meadtools-weblate-backup.service /etc/systemd/system/
+sudo install -m 0644 systemd/meadtools-weblate-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now meadtools-weblate-backup.timer
+```
+
+The timer runs daily around 03:15 local time and retains 14 daily, 8 weekly,
+and 12 monthly restic snapshots. Test restoration before relying on backups.
 
 ## Pilot import
 
