@@ -29,7 +29,7 @@
     "start": "npm run start --workspace @meadtools/web",
     "start:i18n": "npm run start:i18n --workspace @meadtools/web",
     "test": "npm run test:workflows && npm run test:core && npm run test:schemas && npm run test:api-contract && npm run test:api-client && npm run test:brew-domain && npm run test:design-tokens && npm run test:i18n && npm test --workspace @meadtools/web",
-    "test:workflows": "node --test scripts/app-impact.test.mjs",
+    "test:workflows": "node --test scripts/app-impact.test.mjs scripts/approve-weblate-batch.test.mjs scripts/queue-weblate-review.test.mjs",
     "typecheck": "npm run prisma:generate --workspace @meadtools/web && npm run typecheck --workspaces --if-present",
     "openapi:generate": "npm run openapi:generate --workspace @meadtools/web",
     "contracts:generate": "node scripts/generate-api-contract-types.mjs",
