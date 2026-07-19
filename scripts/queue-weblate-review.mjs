@@ -9,8 +9,14 @@ const componentByFile = new Map([
   ["packages/i18n/locales/de/YeastTable.json", "yeast-table"],
 ]);
 
-export function getWeblateGermanComponents(message, changedFiles) {
-  if (!/^chore\(l10n\): update German translation$/m.test(message)) {
+// This is the commit contract the post-cutover translation bot will use. The
+// marker keeps a normal German-only correction from being mistaken for an AI
+// batch, while the file check prevents a mixed feature commit from qualifying.
+export function getAiGermanComponents(message, changedFiles) {
+  if (
+    !/^chore\(l10n\): add German AI translations$/m.test(message) ||
+    !/^Translation-Batch: ai-generated$/m.test(message)
+  ) {
     return [];
   }
 
@@ -21,18 +27,32 @@ export function getWeblateGermanComponents(message, changedFiles) {
     return [];
   }
 
-  const components = changedFiles.map((file) => componentByFile.get(file));
-  const declaredComponents = [...message.matchAll(
-    /^Translation: MeadTools pilot\/([^\s]+)$/gm,
-  )].map(([, component]) => component);
-
-  return components.every((component) => declaredComponents.includes(component))
-    ? [...new Set(components)]
-    : [];
+  return [...new Set(changedFiles.map((file) => componentByFile.get(file)))];
 }
 
 function git(...args) {
   return execFileSync("git", args, { encoding: "utf8" }).trim();
+}
+
+function gitLines(...args) {
+  const output = git(...args);
+  return output ? output.split("\n").filter(Boolean) : [];
+}
+
+export function getAiTranslationBatches(base, head) {
+  const mergeBase = git("merge-base", base, head);
+  const commits = gitLines("rev-list", "--reverse", `${mergeBase}..${head}`);
+
+  return commits.flatMap((commit) => {
+    const parent = git("rev-parse", `${commit}^`);
+    const changedFiles = gitLines("diff", "--name-only", parent, commit);
+    const components = getAiGermanComponents(
+      git("log", "-1", "--format=%B", commit),
+      changedFiles,
+    );
+
+    return components.length > 0 ? [{ commit, components }] : [];
+  });
 }
 
 function githubUrl(path) {
@@ -57,6 +77,20 @@ async function github(path, token, options = {}) {
   }
 
   return response.status === 204 ? null : response.json();
+}
+
+async function getIssueComments(owner, repository, issueNumber, token) {
+  const comments = [];
+  for (let page = 1; ; page += 1) {
+    const response = await github(
+      `/repos/${owner}/${repository}/issues/${issueNumber}/comments?per_page=100&page=${page}`,
+      token,
+    );
+    comments.push(...response);
+    if (response.length < 100) {
+      return comments;
+    }
+  }
 }
 
 async function ensureLabel(owner, repository, token) {
@@ -98,19 +132,21 @@ async function getOrCreateQueueIssue(owner, repository, token) {
       body: [
         "This queue tracks AI-generated German translations that remain unapproved.",
         "",
-        "Review the batch links below. Make corrections in a German-only PR to `preview`, or approve a correct suggestion in Weblate.",
-        "",
-        "Do not use the latest `preview` commit as the review target; use the pinned commit link for each batch.",
+        "Each batch below is pinned to its feature PR and exact bot commit. Review in Git or Weblate; do not use the latest `preview` commit as the review target.",
       ].join("\n"),
     }),
   });
 
   try {
-    await github(`/repos/${owner}/${repository}/issues/${issue.number}/assignees`, token, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignees: [reviewer] }),
-    });
+    await github(
+      `/repos/${owner}/${repository}/issues/${issue.number}/assignees`,
+      token,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignees: [reviewer] }),
+      },
+    );
   } catch (error) {
     console.warn(
       `Created the review queue but could not assign ${reviewer}: ${error.message}`,
@@ -125,68 +161,81 @@ async function main() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
   const repositoryName = process.env.GITHUB_REPOSITORY;
   if (!token || !eventPath || !repositoryName) {
-    throw new Error("GITHUB_TOKEN, GITHUB_EVENT_PATH, and GITHUB_REPOSITORY are required.");
+    throw new Error(
+      "GITHUB_TOKEN, GITHUB_EVENT_PATH, and GITHUB_REPOSITORY are required.",
+    );
   }
 
   const event = JSON.parse(readFileSync(eventPath, "utf8"));
-  if (event.ref !== "refs/heads/preview" || !event.head_commit) {
-    console.log("Push is not a preview commit.");
+  const pullRequest = event.pull_request;
+  if (
+    !pullRequest?.merged ||
+    pullRequest.base?.ref !== "preview" ||
+    pullRequest.head?.repo?.full_name !== repositoryName
+  ) {
+    console.log("Pull request is not an eligible merged feature PR.");
     return;
   }
 
-  const changedFiles = git("diff", "--name-only", event.before, event.after)
-    .split("\n")
-    .filter(Boolean);
-  const components = getWeblateGermanComponents(
-    event.head_commit.message,
-    changedFiles,
+  const batches = getAiTranslationBatches(
+    pullRequest.base.sha,
+    pullRequest.head.sha,
   );
-  if (components.length === 0) {
-    console.log("Push is not an isolated Weblate German translation commit.");
+  if (batches.length === 0) {
+    console.log("Feature PR has no isolated German AI translation batch.");
     return;
   }
 
   const [owner, repository] = repositoryName.split("/");
   await ensureLabel(owner, repository, token);
   const issue = await getOrCreateQueueIssue(owner, repository, token);
-  const marker = `<!-- weblate-review:${event.after} -->`;
-  const comments = await github(
-    `/repos/${owner}/${repository}/issues/${issue.number}/comments?per_page=100`,
+  const comments = await getIssueComments(
+    owner,
+    repository,
+    issue.number,
     token,
   );
-  if (comments.some((comment) => comment.body.includes(marker))) {
-    console.log(`Review queue already contains ${event.after}.`);
-    return;
+
+  for (const { commit, components } of batches) {
+    const marker = `<!-- translation-review:pr-${pullRequest.number}:commit-${commit} -->`;
+    if (comments.some((comment) => comment.body.includes(marker))) {
+      console.log(`Review queue already contains ${commit}.`);
+      continue;
+    }
+
+    const componentLinks = components
+      .map((component) => {
+        const query = new URLSearchParams({ q: "state:<approved" });
+        return `- [${component} review queue](https://translations.meadtools.com/projects/meadtools-pilot/${component}/de/?${query})`;
+      })
+      .join("\n");
+    const commitUrl = `https://github.com/${repositoryName}/commit/${commit}`;
+    const body = [
+      marker,
+      "## New German AI translation batch",
+      "",
+      `- Feature PR: [#${pullRequest.number}](${pullRequest.html_url})`,
+      `- Bot commit: [${commit.slice(0, 7)}](${commitUrl})`,
+      `- Components: ${components.join(", ")}`,
+      "- Status: generated and **unapproved**",
+      "",
+      componentLinks,
+      "",
+      `For corrections, open a German-only PR to \`preview\`; a merged trusted PR marks its changed units approved in Weblate. For an unchanged accepted suggestion, comment \`/approve-translations ${commit}\` on this issue.`,
+    ].join("\n");
+    await github(
+      `/repos/${owner}/${repository}/issues/${issue.number}/comments`,
+      token,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      },
+    );
+    console.log(
+      `Added AI translation batch ${commit} to issue #${issue.number}.`,
+    );
   }
-
-  const componentLinks = components
-    .map((component) => {
-      const query = new URLSearchParams({ q: "state:<approved" });
-      return `- [${component} review queue](https://translations.meadtools.com/projects/meadtools-pilot/${component}/de/?${query})`;
-    })
-    .join("\n");
-  const commitUrl = `https://github.com/${repositoryName}/commit/${event.after}`;
-  const body = [
-    marker,
-    "## New German AI translation batch",
-    "",
-    `- Commit: [${event.after.slice(0, 7)}](${commitUrl})`,
-    `- Components: ${components.join(", ")}`,
-    "- Status: generated and **unapproved**",
-    "",
-    componentLinks,
-    "",
-    `To review in Git, branch from [this commit](${commitUrl}), edit only the German locale files, and open a PR to \`preview\`. A merged PR from @${reviewer} marks the changed units approved in Weblate.`,
-    "",
-    "For an unchanged suggestion, approve it in Weblate. The planned trusted `/approve-translations` issue command will provide a GitHub-only alternative.",
-  ].join("\n");
-  await github(`/repos/${owner}/${repository}/issues/${issue.number}/comments`, token, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ body }),
-  });
-
-  console.log(`Added Weblate translation batch ${event.after} to issue #${issue.number}.`);
 }
 
 if (import.meta.url === new URL(process.argv[1], "file:").href) {
