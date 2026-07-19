@@ -7,7 +7,7 @@ import {
   traditionalRecipeFixture
 } from "@/lib/utils/__fixtures__/recipeDerivedFixtures";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
-import type { RecipeData } from "@/types/recipeData";
+import { isRecipeData, type RecipeData } from "@/types/recipeData";
 
 test("renders an existing V2 snapshot that predates newly required nested fields", () => {
   const existingSnapshotData = structuredClone(traditionalRecipeFixture) as RecipeData;
@@ -37,6 +37,34 @@ test("renders an existing V2 snapshot that predates newly required nested fields
   assert.equal(stageData.planned.ingredients[1]?.name, "Wildflower Honey");
   assert.ok(stageData.derived);
   assert.ok(stageData.derived.gravity.ogPrimary > 1);
+});
+
+test("accepts copied recipes and brew snapshots without the organic multiplier", () => {
+  const existingSnapshotData = structuredClone(traditionalRecipeFixture) as RecipeData;
+  const otherNutrient = existingSnapshotData.nutrients!.settings.other as {
+    name: string;
+    usesOrganicMultiplier?: boolean;
+  };
+  delete otherNutrient.usesOrganicMultiplier;
+
+  // Recipe creation validates this same shape when a user saves a copy.
+  assert.equal(isRecipeData(existingSnapshotData), true);
+
+  const stageData = buildBrewRecipeStageData({
+    recipeSnapshot: {
+      id: 3,
+      name: "Existing recipe copy",
+      version: 2,
+      dataV2: existingSnapshotData,
+      snapshottedAt: "2026-01-01T00:00:00.000Z"
+    },
+    currentVolumeLiters: null,
+    latestGravity: null,
+    entries: []
+  });
+
+  assert.ok(stageData.planned.nutrientPlan);
+  assert.ok(Number.isFinite(stageData.planned.nutrientPlan.derived.targetYanPpm));
 });
 
 test("uses a recorded post-secondary volume as the measured total for ABV", () => {

@@ -10,11 +10,11 @@ from them.
 Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 `next-openapi-gen` and captured as the endpoint compatibility baseline.
 
-- Paths: 52
+- Paths: 54
 - Canonical endpoint-path SHA-256:
-  `4610d8687942691b4d6a411907359deca3fb67c00a6f34dd7acc8ad3ee38076c`
+  `b04650619e96df83b3f5eba864c44cd4599039be01125b2b0b4966aaa068880a`
 - Reviewed Zod document SHA-256:
-  `1c0c6673a150cb99377bfe86772b604c4911aad4347a808c7688f7090b43a562`
+  `b5da53654bc24a9c2b5016f18f5fcbba85864e1b6f2590fe72cbabcc10a6d7af`
 
 The parity test preserves the complete pre-migration `paths` object: routes,
 methods, parameters, descriptions, response statuses, and component references.
@@ -25,9 +25,10 @@ significant.
 
 The native API readiness update intentionally adds `client_entry_id` to
 `CreateBrewEntryRequestBody` and HTTP 409 documentation to the create-entry
-operation. The endpoint parity test removes only that new response before
-comparing against the pre-migration paths hash, proving all earlier endpoint
-documentation remains unchanged.
+operation. The nutrient-preset update intentionally adds the
+`/nutrient-presets` endpoint. The endpoint parity test removes these approved
+additions before comparing against the pre-migration paths hash, proving all
+earlier endpoint documentation remains unchanged.
 
 Run:
 

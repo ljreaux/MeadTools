@@ -188,6 +188,14 @@ model additives {
   unit       additive_unit
 }
 
+model nutrient_presets {
+  id                 String  @id @default(uuid()) @db.Uuid
+  name               String  @unique
+  yan_ppm_per_gpl    Float
+  max_gpl            Float?
+  organic_multiplier Boolean @default(false)
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String

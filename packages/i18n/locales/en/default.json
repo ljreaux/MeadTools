@@ -153,10 +153,31 @@
     "ingredients": {
       "add": "Add ingredient"
     },
+    "maintenance": {
+      "description": "Run safe administrative maintenance tasks in small batches.",
+      "estimatedAbv": {
+        "brewId": "Brew ID",
+        "brewIdHelp": "Paste the brew ID to rebuild only that brew.",
+        "complete": "Estimated ABV entries rebuilt.",
+        "confirmDescription": "This will replace derived estimated-ABV entries for {{count}} brews. Logged volumes, additions, and measurements will remain unchanged.",
+        "confirmTitle": "Rebuild estimated ABV entries?",
+        "description": "Recreates derived estimated-ABV timeline entries from each brew's current history. It does not modify logged brew data.",
+        "failed": "Could not rebuild estimated ABV entries.",
+        "preview": "Preview",
+        "progress": "Rebuilt {{processed}} of {{total}} brews.",
+        "ready": "Ready to rebuild {{count}} brew estimate entries.",
+        "rebuild": "Rebuild estimates",
+        "scopeAll": "All brews",
+        "scopeBrew": "One brew",
+        "title": "Rebuild estimated ABV"
+      },
+      "title": "Maintenance"
+    },
     "nav": {
       "additives": "Additives",
       "brews": "Brews",
       "ingredients": "Ingredients",
+      "maintenance": "Maintenance",
       "overview": "Overview",
       "recipes": "Recipes",
       "users": "Users",
@@ -642,6 +663,7 @@
       "confirmPackageTitle": "Move to packaging?",
       "currentVolume": "Current volume",
       "dilutedAbv": "Diluted ABV",
+      "estimatedVolumeAfterStabilizers": "Estimated volume after secondary additions",
       "focusReady": "Ready to move into bulk aging",
       "focusTracking": "Keep secondary additions and volume current",
       "ingredients": "Secondary ingredients",
@@ -664,6 +686,8 @@
       "recipeAdditives": "Recipe additives",
       "recipeNotes": "Recipe secondary notes",
       "recipeNoteTitle": "Add recipe secondary note",
+      "recordVolumeAfterStabilizersHelp": "You logged stabilizers. Record the actual volume now—secondary additions can increase batch volume and may require additional stabilizers.",
+      "recordVolumeAfterStabilizersTitle": "Record the updated volume",
       "scaleAdditives": "Scale additives",
       "scaleSecondaryIngredients": "Scale secondary ingredients",
       "secondaryBeforeStabilizersHelp": "This recipe uses stabilizers. Secondary ingredients are usually logged after stabilizers so the dosage is based on the current volume and ABV.",
@@ -1360,6 +1384,9 @@
   "other": {
     "detailsHeading": "Other Nutrient Details",
     "label": "Other",
+    "nutrientPresetHelp": "Select a nutrient from the list to fill in its values, or enter your own nutrient details.",
+    "organicMultiplier": "Use organic nitrogen multiplier",
+    "organicMultiplierHelp": "Only select this for nutrients made entirely from organic nitrogen.",
     "settingsAdjustValue": "Toggle adjusting provided YAN",
     "settingsProvidedYan": "Provided YAN",
     "settingsTitle": "Adjust Nutrient Settings",
