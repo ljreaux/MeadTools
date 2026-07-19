@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { appendFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -23,6 +24,11 @@ const SHARED_PATHS = [
 const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
 
 const LOCKFILE = "package-lock.json";
+
+// This deliberate, checked-in switch pauses all application builds while the
+// translation-provider migration is being verified. Remove the marker once
+// the migration is complete.
+const MIGRATION_BUILD_PAUSE_MARKER = "ops/translation-migration.skip-builds";
 
 const TARGET_CONFIGURATION = {
   web: ["vercel.json"],
@@ -56,7 +62,11 @@ export function isTargetAffected(target, changedPaths) {
   );
 }
 
-export function classifyAppImpact(changedPaths) {
+export function classifyAppImpact(changedPaths, { buildsPaused = false } = {}) {
+  if (buildsPaused) {
+    return Object.fromEntries(TARGETS.map((target) => [target, false]));
+  }
+
   const impact = Object.fromEntries(
     TARGETS.map((target) => [
       target,
@@ -119,7 +129,9 @@ async function run() {
 
   try {
     changedPaths = readChangedPaths(base, head);
-    impact = classifyAppImpact(changedPaths);
+    impact = classifyAppImpact(changedPaths, {
+      buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
+    });
   } catch (error) {
     console.warn(
       `Could not determine app impact for ${base}..${head}; running all checks as a safe fallback.`,
@@ -134,6 +146,11 @@ async function run() {
     changedPaths.length > 0 ? changedPaths.join("\n") : "(unknown or none)",
   );
   console.log(`App impact: ${JSON.stringify(impact)}`);
+  if (existsSync(MIGRATION_BUILD_PAUSE_MARKER)) {
+    console.log(
+      `Application builds are paused by ${MIGRATION_BUILD_PAUSE_MARKER}.`,
+    );
+  }
 
   if (githubOutput) {
     if (!process.env.GITHUB_OUTPUT) {

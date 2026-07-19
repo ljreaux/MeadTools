@@ -59,6 +59,17 @@ test("translation updates deploy when combined with an app change", () => {
   );
 });
 
+test("the migration build pause overrides every affected app", () => {
+  assert.deepEqual(
+    classifyAppImpact(["apps/web/app/page.tsx"], { buildsPaused: true }),
+    {
+      web: false,
+      mobile: false,
+      desktop: false,
+    },
+  );
+});
+
 test("an app manifest and lockfile change affect only that app", () => {
   assert.deepEqual(
     classifyAppImpact([
