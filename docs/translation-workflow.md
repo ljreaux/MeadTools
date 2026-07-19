@@ -16,12 +16,12 @@
 
 ## Roles
 
-| Role | Purpose |
-| --- | --- |
-| Project owner | Manages Weblate, glossary rules, service configuration, and cutover. |
-| `rizzek` | German translator and trusted GitHub/Weblate reviewer. |
+| Role                          | Purpose                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| Project owner                 | Manages Weblate, glossary rules, service configuration, and cutover.    |
+| `rizzek`                      | German translator and trusted GitHub/Weblate reviewer.                  |
 | `github-translation-approver` | Weblate service account used only by GitHub Actions; not a human login. |
-| Translation bot | Creates unapproved German suggestions. |
+| Translation bot               | Creates unapproved German suggestions.                                  |
 
 Use real name/email accounts for the owner and translator. Keep public
 registration closed except for a short, supervised account-creation window;
@@ -33,11 +33,10 @@ The initial German reviewer account is `rizzek`. The account has the **Users**
 and **Reviewers** roles and is registered to the translator's approved email
 address.
 
-To set or replace its password, open
-`https://translations.meadtools.com/accounts/reset/`, enter that email address,
-and use the reset email to choose a password. Do not share a temporary password
-in chat, GitHub, or a repository file. Public registration should remain
-closed; an owner provisions any additional accounts.
+After outbound SMTP is configured and tested, the translator can set or replace
+their password at `https://translations.meadtools.com/accounts/reset/`. Do not
+share a temporary password in chat, GitHub, or a repository file. Public
+registration should remain closed; an owner provisions any additional accounts.
 
 ## Current source of truth
 
@@ -59,8 +58,10 @@ formally retired and their implementation has been reviewed. The glossary can
 evolve over time; a bot must never auto-approve its own output.
 
 1. A feature PR adds, changes, or removes English strings.
-2. The translation bot detects the English locale change and updates the
-   German JSON in **that same PR**.
+2. The translation bot detects the English locale change and adds a separate,
+   isolated German-only commit to **that same PR**. Its commit must be titled
+   `chore(l10n): add German AI translations` and include the trailer
+   `Translation-Batch: ai-generated`.
 3. Bot-created German values are marked unapproved in Weblate after the PR is
    merged to `preview`.
 4. The feature can merge to `preview` even when German review is pending.
@@ -69,11 +70,11 @@ evolve over time; a bot must never auto-approve its own output.
 
 ### English source changes
 
-| English change | German handling |
-| --- | --- |
-| New string | Generate a German suggestion; leave it unapproved. |
+| English change           | German handling                                                                |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| New string               | Generate a German suggestion; leave it unapproved.                             |
 | Meaningful source update | Clear German approval, regenerate using the glossary, and leave it unapproved. |
-| Source deletion | Remove the matching German key in the bot update. |
+| Source deletion          | Remove the matching German key in the bot update.                              |
 
 Approval is reset for a changed English source even when the German value
 looks unchanged. This prevents a previously reviewed translation from being
@@ -81,8 +82,9 @@ silently treated as valid for new meaning.
 
 ## German review flow
 
-After a bot translation batch reaches `preview`, automation should create or
-update one GitHub issue assigned to `rizzek`. The issue must link to:
+After a feature PR containing a bot translation commit merges to `preview`,
+automation creates or updates one GitHub issue assigned to `rizzek`. The issue
+must link to:
 
 - the originating feature PR;
 - the exact bot translation commit;
@@ -99,8 +101,9 @@ leaves it unassigned.
 
 ### Preferred Git-first review
 
-1. The translator checks out the commit linked from the review issue.
-2. They edit only the German locale files that need changes.
+1. The translator inspects the bot commit linked from the review issue.
+2. They branch from current `preview` and edit only the German locale files
+   that need changes.
 3. They open a German-only PR targeting `preview`.
 4. When that PR is merged, trusted-review automation verifies the changed
    values still match Weblate and marks those units approved.
@@ -115,21 +118,21 @@ a normal content-only Git commit. On the matching queue issue, `rizzek` can
 post:
 
 ```text
-/approve-translations <full Weblate commit SHA>
+/approve-translations <full bot commit SHA>
 ```
 
-The workflow confirms that the referenced commit is an isolated Weblate German
-translation commit already contained in `preview`, verifies every value still
-matches Weblate, then marks only that batch approved. It posts a confirmation
-comment when finished.
+The workflow accepts the command only on the matching queue issue, confirms
+that the referenced commit is the isolated AI batch from the linked feature PR
+that merged to `preview`, verifies every value still matches Weblate, then
+marks only that batch approved. It posts a confirmation comment when finished.
 
 ### Weblate fallback
 
 The translator can always use Weblate's saved German review queue to inspect
-source text, AI output, and context. Editing and clicking **Approve** there
-records the reviewer in Weblate and lets Weblate batch the resulting Git
-commit. This is the simplest option for a small correction or an unchanged
-suggestion.
+source text, AI output, context, and approval state. During this workflow,
+Weblate is review-only: Git is the only system allowed to change locale JSON.
+Use a German-only PR for corrections or the trusted issue command for an
+unchanged accepted AI suggestion.
 
 ## Glossary and style baseline
 
@@ -151,8 +154,13 @@ and the glossary's preferred terminology.
 `scripts/app-impact.mjs` classifies files under
 `packages/i18n/locales/` as generated translation output. A commit that changes
 only those files skips web and mobile Quality jobs and Vercel app deployment.
-If a translation change is combined with an app, package, or shared-script
-change, normal checks and deployment run.
+EAS preview builds have a separate workflow and pause check.
+
+While this rollout is being tested,
+`ops/translation-migration.skip-builds` deliberately pauses web, mobile,
+desktop, Vercel, and EAS builds. Remove that marker only in the final
+cutover-completion PR. Once removed, a change that combines translation output
+with an app, package, or shared-script change runs normal checks and deployment.
 
 ## Before go-live
 
@@ -161,6 +169,7 @@ change, normal checks and deployment run.
       after login verification.
 - [ ] Confirm `rizzek` has GitHub repository access for issue assignment and
       trusted PR review.
+- [ ] Configure and test Weblate SMTP before relying on password-reset email.
 - [ ] Make the explicit source-of-truth cutover from i18nexus to the
       repository/Weblate workflow.
 - [ ] Add the OpenAI key to GitHub Actions only when the same-PR bot is ready.

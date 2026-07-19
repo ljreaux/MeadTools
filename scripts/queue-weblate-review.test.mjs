@@ -1,31 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getWeblateGermanComponents } from "./queue-weblate-review.mjs";
+import { getAiGermanComponents } from "./queue-weblate-review.mjs";
 
-const message = `chore(l10n): update German translation
+const message = `chore(l10n): add German AI translations
 
-Translation: MeadTools pilot/default
-Language: German`;
+Translation-Batch: ai-generated`;
 
-test("recognizes isolated Weblate German locale commits", () => {
+test("recognizes isolated German AI locale commits", () => {
   assert.deepEqual(
-    getWeblateGermanComponents(message, [
-      "packages/i18n/locales/de/default.json",
-    ]),
+    getAiGermanComponents(message, ["packages/i18n/locales/de/default.json"]),
     ["default"],
   );
 });
 
-test("ignores non-Weblate and mixed commits", () => {
+test("requires the AI batch marker and rejects mixed commits", () => {
   assert.deepEqual(
-    getWeblateGermanComponents("fix: improve German copy", [
+    getAiGermanComponents("fix: improve German copy", [
       "packages/i18n/locales/de/default.json",
     ]),
     [],
   );
   assert.deepEqual(
-    getWeblateGermanComponents(message, [
+    getAiGermanComponents("chore(l10n): add German AI translations", [
+      "packages/i18n/locales/de/default.json",
+    ]),
+    [],
+  );
+  assert.deepEqual(
+    getAiGermanComponents(message, [
       "packages/i18n/locales/de/default.json",
       "apps/web/app/page.tsx",
     ]),

@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-import { getWeblateGermanComponents } from "./queue-weblate-review.mjs";
+import { getAiGermanComponents } from "./queue-weblate-review.mjs";
 
 const WEBLATE_URL = process.env.WEBLATE_URL?.replace(/\/$/, "");
 const WEBLATE_TOKEN = process.env.WEBLATE_APPROVAL_TOKEN;
@@ -12,7 +12,9 @@ const componentByFile = new Map([
 ]);
 
 export function getApprovalCommit(body) {
-  const match = body.trim().match(/^\/approve-translations\s+([0-9a-f]{7,40})$/i);
+  const match = body
+    .trim()
+    .match(/^\/approve-translations\s+([0-9a-f]{7,40})$/i);
   return match?.[1] ?? null;
 }
 
@@ -22,7 +24,9 @@ function git(...args) {
 
 function flatten(value, prefix = "", entries = new Map()) {
   if (Array.isArray(value)) {
-    value.forEach((item, index) => flatten(item, `${prefix}[${index}]`, entries));
+    value.forEach((item, index) =>
+      flatten(item, `${prefix}[${index}]`, entries),
+    );
     return entries;
   }
 
@@ -52,11 +56,87 @@ function targetMatches(candidate, target) {
   return currentTarget === target;
 }
 
+async function github(path, token) {
+  const response = await fetch(`https://api.github.com${path}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `GitHub API GET ${path} failed: ${response.status} ${await response.text()}`,
+    );
+  }
+  return response.json();
+}
+
+async function getIssueComments(repository, issueNumber, token) {
+  const comments = [];
+  for (let page = 1; ; page += 1) {
+    const response = await github(
+      `/repos/${repository}/issues/${issueNumber}/comments?per_page=100&page=${page}`,
+      token,
+    );
+    comments.push(...response);
+    if (response.length < 100) {
+      return comments;
+    }
+  }
+}
+
+async function getReviewBatch(event, requestedCommit) {
+  const token = process.env.GITHUB_TOKEN;
+  const repository = process.env.GITHUB_REPOSITORY;
+  if (!token || !repository) {
+    throw new Error(
+      "GITHUB_TOKEN and GITHUB_REPOSITORY are required for batch approval.",
+    );
+  }
+
+  const comments = await getIssueComments(
+    repository,
+    event.issue.number,
+    token,
+  );
+  const marker = comments
+    .map((comment) => comment.body)
+    .find(
+      (body) =>
+        body.includes(`<!-- translation-review:pr-`) &&
+        body.includes(`:commit-${requestedCommit}`),
+    );
+  const match = marker?.match(
+    /<!-- translation-review:pr-(\d+):commit-([0-9a-f]{40}) -->/i,
+  );
+  if (!match) {
+    throw new Error(
+      "The requested commit is not a batch pinned to this review issue.",
+    );
+  }
+
+  const [, pullRequestNumber, commit] = match;
+  const pullRequest = await github(
+    `/repos/${repository}/pulls/${pullRequestNumber}`,
+    token,
+  );
+  if (!pullRequest.merged_at || pullRequest.base?.ref !== "preview") {
+    throw new Error(
+      `Feature PR #${pullRequestNumber} is not merged into preview.`,
+    );
+  }
+
+  return { commit, pullRequestNumber };
+}
+
 async function commentOnIssue(event, body) {
   const token = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPOSITORY;
   if (!token || !repository) {
-    throw new Error("GITHUB_TOKEN and GITHUB_REPOSITORY are required to acknowledge approval.");
+    throw new Error(
+      "GITHUB_TOKEN and GITHUB_REPOSITORY are required to acknowledge approval.",
+    );
   }
 
   const response = await fetch(
@@ -73,7 +153,9 @@ async function commentOnIssue(event, body) {
     },
   );
   if (!response.ok) {
-    throw new Error(`Unable to acknowledge approval: ${response.status} ${await response.text()}`);
+    throw new Error(
+      `Unable to acknowledge approval: ${response.status} ${await response.text()}`,
+    );
   }
 }
 
@@ -93,24 +175,31 @@ async function main() {
     return;
   }
 
-  git("fetch", "origin", "preview");
-  const commit = git("rev-parse", `${requestedCommit}^{commit}`);
+  const { commit: pinnedCommit, pullRequestNumber } = await getReviewBatch(
+    event,
+    requestedCommit,
+  );
+  const pullRequestRef = `refs/remotes/origin/translation-review-pr-${pullRequestNumber}`;
+  git("fetch", "origin", `pull/${pullRequestNumber}/head:${pullRequestRef}`);
+  const commit = git("rev-parse", `${pinnedCommit}^{commit}`);
   try {
-    git("merge-base", "--is-ancestor", commit, "origin/preview");
+    git("merge-base", "--is-ancestor", commit, pullRequestRef);
   } catch {
-    throw new Error(`${commit} is not contained in preview.`);
+    throw new Error(`${commit} is not contained in the queued feature PR.`);
   }
 
   const parent = git("rev-parse", `${commit}^`);
   const changedFiles = git("diff", "--name-only", parent, commit)
     .split("\n")
     .filter(Boolean);
-  const components = getWeblateGermanComponents(
+  const components = getAiGermanComponents(
     git("log", "-1", "--format=%B", commit),
     changedFiles,
   );
   if (components.length === 0) {
-    throw new Error(`${commit} is not an isolated Weblate German translation commit.`);
+    throw new Error(
+      `${commit} is not an isolated German AI translation commit.`,
+    );
   }
 
   const changedUnits = [];
@@ -119,7 +208,11 @@ async function main() {
     const currentEntries = flatten(readJson(commit, file));
     for (const [context, target] of currentEntries) {
       if (previousEntries.get(context) !== target) {
-        changedUnits.push({ component: componentByFile.get(file), context, target });
+        changedUnits.push({
+          component: componentByFile.get(file),
+          context,
+          target,
+        });
       }
     }
   }
@@ -136,13 +229,18 @@ async function main() {
       q: `component:${component} language:de context:${context}`,
       page_size: "10",
     });
-    const lookup = await fetch(`${WEBLATE_URL}/api/units/?${query}`, { headers });
+    const lookup = await fetch(`${WEBLATE_URL}/api/units/?${query}`, {
+      headers,
+    });
     if (!lookup.ok) {
-      throw new Error(`Unable to find Weblate unit for ${component}:${context}.`);
+      throw new Error(
+        `Unable to find Weblate unit for ${component}:${context}.`,
+      );
     }
     const { results } = await lookup.json();
     const unit = results.find(
-      (candidate) => candidate.context === context && targetMatches(candidate, target),
+      (candidate) =>
+        candidate.context === context && targetMatches(candidate, target),
     );
     if (!unit) {
       throw new Error(

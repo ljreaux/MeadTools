@@ -1,4 +1,4 @@
-name: Approve trusted Weblate translation batch
+name: Approve trusted German AI translation batch
 
 on:
   issue_comment:
@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Approve the exact Weblate batch
+      - name: Approve the exact German AI batch in Weblate
         env:
           GITHUB_EVENT_PATH: ${{ github.event_path }}
           GITHUB_TOKEN: ${{ github.token }}

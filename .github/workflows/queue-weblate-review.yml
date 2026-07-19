@@ -1,25 +1,31 @@
-name: Queue Weblate German translation review
+name: Queue German AI translation review
 
 on:
-  push:
+  pull_request:
     branches: [preview]
+    types: [closed]
 
 permissions:
   contents: read
   issues: write
+  pull-requests: read
 
 jobs:
   queue-review:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Check out the pushed revision
+      - name: Check out the merged feature branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
-      - name: Add isolated Weblate German commits to the review queue
+      - name: Add AI German batches to the review queue
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/queue-weblate-review.mjs
