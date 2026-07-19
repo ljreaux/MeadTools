@@ -17,6 +17,11 @@ const SHARED_PATHS = [
   "tsconfig.base.json",
 ];
 
+// Weblate writes these generated runtime files in a follow-up commit. The
+// preceding source/app commit has already produced the useful preview, so a
+// translation-only update should not create another identical deployment.
+const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
+
 const LOCKFILE = "package-lock.json";
 
 const TARGET_CONFIGURATION = {
@@ -44,8 +49,10 @@ export function isTargetAffected(target, changedPaths) {
     ...TARGET_CONFIGURATION[target],
   ];
 
-  return changedPaths.some((changedPath) =>
-    relevantPaths.some((candidate) => matchesPath(changedPath, candidate)),
+  return changedPaths.some(
+    (changedPath) =>
+      !changedPath.startsWith(GENERATED_TRANSLATION_PATH) &&
+      relevantPaths.some((candidate) => matchesPath(changedPath, candidate)),
   );
 }
 

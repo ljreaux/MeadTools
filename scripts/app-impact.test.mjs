@@ -31,6 +31,34 @@ test("shared packages and root dependencies affect every app", () => {
   }
 });
 
+test("generated translation-only changes do not rebuild apps", () => {
+  assert.deepEqual(
+    classifyAppImpact([
+      "packages/i18n/locales/de/default.json",
+      "packages/i18n/locales/de/YeastTable.json",
+    ]),
+    {
+      web: false,
+      mobile: false,
+      desktop: false,
+    },
+  );
+});
+
+test("translation updates deploy when combined with an app change", () => {
+  assert.deepEqual(
+    classifyAppImpact([
+      "apps/web/app/page.tsx",
+      "packages/i18n/locales/de/default.json",
+    ]),
+    {
+      web: true,
+      mobile: false,
+      desktop: false,
+    },
+  );
+});
+
 test("an app manifest and lockfile change affect only that app", () => {
   assert.deepEqual(
     classifyAppImpact([

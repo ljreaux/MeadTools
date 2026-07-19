@@ -1,0 +1,61 @@
+# Permanent host deployment. Weblate itself remains bound to the host loopback
+# interface; Caddy is the sole public HTTPS entry point.
+name: meadtools-weblate
+
+services:
+  cache:
+    image: valkey/valkey:9.1.0
+    command: [valkey-server, --save, "60", "1", --loglevel, warning]
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - redis-data:/data
+
+  database:
+    image: postgres:18-alpine
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  weblate:
+    # Pin the exact image validated by the local pilot. Update this digest only
+    # as part of an intentional Weblate upgrade.
+    image: weblate/weblate@sha256:2e6b11ba52c90824901ba2728540836295882f6cfa9df49ef22b69ce4b55a5bf
+    depends_on:
+      - cache
+      - database
+    env_file:
+      - .env.local
+    ports:
+      - "127.0.0.1:8088:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - weblate-data:/app/data
+      - weblate-cache:/app/cache
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    depends_on:
+      - weblate
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  redis-data:
+  weblate-cache:
+  weblate-data:

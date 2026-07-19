@@ -1,0 +1,14 @@
+# Caddy obtains and renews the TLS certificate after DNS for this hostname
+# points to the home network and TCP ports 80 and 443 are forwarded here.
+translations.meadtools.com {
+	encode zstd gzip
+
+	reverse_proxy weblate:8080
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+}
