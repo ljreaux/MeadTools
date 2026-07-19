@@ -41,7 +41,7 @@ const nutrient = {
       other: "0"
     },
     maxGplTouched: false,
-    other: { name: "" }
+    other: { name: "", usesOrganicMultiplier: false }
   },
   adjustments: {
     adjustAllowed: false,
@@ -117,6 +117,25 @@ test("nutrient v2 schema validates nested schedules and inputs", () => {
     }).success,
     false
   );
+});
+
+test("nutrient v2 schema defaults the organic multiplier for saved recipes", () => {
+  const legacyNutrient = {
+    ...nutrient,
+    settings: {
+      ...nutrient.settings,
+      other: { name: nutrient.settings.other.name }
+    }
+  };
+
+  const parsed = nutrientDataV2Schema.parse(legacyNutrient);
+  assert.equal(parsed.settings.other.usesOrganicMultiplier, false);
+
+  const parsedRecipe = recipeDataV2Schema.parse({
+    ...recipe,
+    nutrients: legacyNutrient
+  });
+  assert.equal(parsedRecipe.nutrients?.settings.other.usesOrganicMultiplier, false);
 });
 
 test("recipe schema rejects version, unit, and nested shape mismatches", () => {

@@ -1,6 +1,7 @@
 import INGREDIENTS from "./seed-data/ingredients_rows.json";
 import YEASTS from "./seed-data/yeasts_rows.json";
 import ADDITIVES from "./seed-data/additives.json";
+import NUTRIENT_PRESETS from "./seed-data/nutrient_presets.json";
 import RECIPES from "./seed-data/recipes_rows.json";
 import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
@@ -72,6 +73,9 @@ async function main() {
   // @ts-expect-error additives in correct type format, json pulled directly from DB
   await prisma.additives.createMany({ data: ADDITIVES });
   console.log("Additives seeded.");
+
+  await prisma.nutrient_presets.createMany({ data: NUTRIENT_PRESETS });
+  console.log("Nutrient presets seeded.");
 
   const hydrometerSeedUser =
     users.find((user) => user.role === "user") ?? users[0];
@@ -383,6 +387,7 @@ async function clearDb() {
   await prisma.ingredients.deleteMany();
   await prisma.yeasts.deleteMany();
   await prisma.additives.deleteMany();
+  await prisma.nutrient_presets.deleteMany();
 
   await prisma.users.deleteMany();
 

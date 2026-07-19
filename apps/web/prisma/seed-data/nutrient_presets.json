@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Wyeast Wine Nutrient Blend",
+    "yan_ppm_per_gpl": 129,
+    "organic_multiplier": false
+  },
+  {
+    "name": "Boiled Bread Yeast (BBY)",
+    "yan_ppm_per_gpl": 13.333333333333334,
+    "max_gpl": 7.5,
+    "organic_multiplier": true
+  },
+  {
+    "name": "Mangrove Jack's Mead Yeast Nutrient",
+    "yan_ppm_per_gpl": 40,
+    "organic_multiplier": true
+  },
+  {
+    "name": "Mangrove Jack's Wine Yeast Nutrient",
+    "yan_ppm_per_gpl": 140,
+    "organic_multiplier": false
+  },
+  {
+    "name": "Vinoferm Nutrivit",
+    "yan_ppm_per_gpl": 144,
+    "max_gpl": 0.3,
+    "organic_multiplier": false
+  }
+]

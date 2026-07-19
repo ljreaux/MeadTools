@@ -14,6 +14,8 @@ import {
   scheduleFromSelected
 } from "@/types/nutrientData";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
+import { useNutrientPresetsQuery } from "@/hooks/reactQuery/useNutrientPresetsQuery";
+import type { NutrientPreset } from "@/types/nutrientTypes";
 import { toBrix } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
 import {
@@ -35,6 +37,7 @@ type NutrientUI = {
     }[]; // replace with your Yeast type
     loadingYeasts: boolean;
     brands: string[];
+    nutrientPresetList: NutrientPreset[];
   };
 
   // actions: add later
@@ -51,6 +54,8 @@ type NutrientUI = {
     ) => void;
     toggleNutrient: (key: NutrientKey) => void;
     setOtherNutrientName: (name: string) => void;
+    selectOtherNutrientPreset: (preset: NutrientPreset) => void;
+    setOtherUsesOrganicMultiplier: (value: boolean) => void;
     setOtherYanContribution: (v: string) => void; // settings.yanContribution.other
     setMaxGpl: (key: NutrientKey, v: string) => void; // settings.maxGpl[key]
     setYanContribution: (key: NutrientKey, v: string) => void; // settings.yanContribution[key]
@@ -86,8 +91,11 @@ type ControlledProps = Extract<Props, { mode: "controlled" }>;
 const isControlledProps = (p: Props): p is ControlledProps =>
   p.mode === "controlled";
 
+const defaultOtherNutrientMaxGpl = "3";
+
 export function NutrientProvider(props: Props) {
   const { data: yeastList = [], isPending: loadingYeasts } = useYeastsQuery();
+  const { data: nutrientPresetList = [] } = useNutrientPresetsQuery();
   const brands = useMemo(
     () => Array.from(new Set(yeastList.map((y) => y.brand))).sort(),
     [yeastList]
@@ -265,6 +273,45 @@ export function NutrientProvider(props: Props) {
         }));
       },
 
+      selectOtherNutrientPreset: (preset) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            yanContribution: {
+              ...prev.settings.yanContribution,
+              other: String(preset.yan_ppm_per_gpl)
+            },
+            maxGpl: {
+              ...prev.settings.maxGpl,
+              other:
+                preset.max_gpl == null
+                  ? defaultOtherNutrientMaxGpl
+                  : String(preset.max_gpl)
+            },
+            maxGplTouched: true,
+            other: {
+              ...prev.settings.other,
+              name: preset.name,
+              usesOrganicMultiplier: preset.organic_multiplier
+            }
+          }
+        }));
+      },
+
+      setOtherUsesOrganicMultiplier: (value) => {
+        commit((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            other: {
+              ...prev.settings.other,
+              usesOrganicMultiplier: value
+            }
+          }
+        }));
+      },
+
       setOtherYanContribution: (v) => {
         commit((prev) => ({
           ...prev,
@@ -375,7 +422,9 @@ export function NutrientProvider(props: Props) {
         parseNumber(data.settings.yanContribution.fermO) * organicMultiplier,
       fermK: parseNumber(data.settings.yanContribution.fermK),
       dap: parseNumber(data.settings.yanContribution.dap),
-      other: parseNumber(data.settings.yanContribution.other)
+      other:
+        parseNumber(data.settings.yanContribution.other) *
+        (data.settings.other.usesOrganicMultiplier ? organicMultiplier : 1)
     };
 
     const enabled = data.selected.selectedNutrients;
@@ -432,6 +481,7 @@ export function NutrientProvider(props: Props) {
     data.selected.schedule,
     data.selected.selectedNutrients,
     data.settings.yanContribution,
+    data.settings.other.usesOrganicMultiplier,
     data.adjustments.providedYanPpm,
     data.settings.maxGpl.fermO,
     data.settings.maxGpl.fermK,
@@ -517,7 +567,7 @@ export function NutrientProvider(props: Props) {
     () => ({
       data,
       derived,
-      catalog: { yeastList, loadingYeasts, brands },
+      catalog: { yeastList, loadingYeasts, brands, nutrientPresetList },
       actions,
       meta: { isDirty, markSaved, hydrate, reset }
     }),
@@ -531,7 +581,8 @@ export function NutrientProvider(props: Props) {
       reset,
       yeastList,
       loadingYeasts,
-      brands
+      brands,
+      nutrientPresetList
     ]
   );
 

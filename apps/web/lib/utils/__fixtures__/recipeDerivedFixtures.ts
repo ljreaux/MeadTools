@@ -105,7 +105,7 @@ export const traditionalRecipeFixture: RecipeData = {
         other: "0"
       },
       maxGplTouched: false,
-      other: { name: "" }
+      other: { name: "", usesOrganicMultiplier: false }
     },
     adjustments: {
       adjustAllowed: false,
@@ -216,7 +216,7 @@ export const backsweetenedMetricRecipeFixture: RecipeData = {
         other: "0"
       },
       maxGplTouched: false,
-      other: { name: "" }
+      other: { name: "", usesOrganicMultiplier: false }
     },
     adjustments: {
       adjustAllowed: true,

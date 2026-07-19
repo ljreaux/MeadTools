@@ -45,7 +45,7 @@ export type NutrientData = {
     yanContribution: Record<NutrientKey, string>;
     maxGpl: Record<NutrientKey, string>;
     maxGplTouched: boolean;
-    other: { name: string };
+    other: { name: string; usesOrganicMultiplier: boolean };
   };
   adjustments: {
     adjustAllowed: boolean;
@@ -138,7 +138,7 @@ export function initialNutrientData(
         other: "0"
       },
       maxGplTouched: false,
-      other: { name: "" }
+      other: { name: "", usesOrganicMultiplier: false }
     },
     adjustments: {
       adjustAllowed: false,
@@ -234,7 +234,9 @@ function calculateAutoProvidedYanPpm(data: NutrientData) {
     fermO: parseNumber(data.settings.yanContribution.fermO) * organicMultiplier,
     fermK: parseNumber(data.settings.yanContribution.fermK),
     dap: parseNumber(data.settings.yanContribution.dap),
-    other: parseNumber(data.settings.yanContribution.other)
+    other:
+      parseNumber(data.settings.yanContribution.other) *
+      (data.settings.other.usesOrganicMultiplier ? organicMultiplier : 1)
   };
   const provided: Record<NutrientKey, string> = {
     fermO: "0",
@@ -322,7 +324,10 @@ export function calculateNutrientDerivedState(
     nutrientKeys.map((key) => {
       const baseContribution = parseNumber(data.settings.yanContribution[key]);
       const contribution =
-        key === "fermO" ? baseContribution * organicMultiplier : baseContribution;
+        key === "fermO" ||
+        (key === "other" && data.settings.other.usesOrganicMultiplier)
+          ? baseContribution * organicMultiplier
+          : baseContribution;
       const ppm = Math.max(0, providedYanPpm[key] || 0);
       return [key, (contribution === 0 ? 0 : ppm / contribution) * volume * litersPerUnit];
     })

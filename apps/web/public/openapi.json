@@ -2241,6 +2241,8 @@
       "CreateIngredientFailureErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
       },
+      "NutrientPresetListResponse": {},
+      "NutrientPresetFetchErrorResponse": {},
       "PublicRecipeBrewResponse": {
         "type": "object",
         "properties": {
@@ -9793,6 +9795,39 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteIngredientFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nutrient-presets": {
+      "get": {
+        "operationId": "get-nutrient-presets",
+        "summary": "List nutrient presets for the Other Nutrient autofill input.",
+        "description": "Returns curated nutrient presets ordered by product name. Selecting a preset populates the existing Other nutrient inputs.",
+        "tags": [
+          "Nutrients"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutrientPresetListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutrientPresetFetchErrorResponse"
                 }
               }
             }

@@ -66,7 +66,8 @@ export const nutrientSettingsSchema = z.object({
   maxGpl: nutrientRecordSchema,
   maxGplTouched: z.boolean(),
   other: z.object({
-    name: z.string()
+    name: z.string(),
+    usesOrganicMultiplier: z.boolean().optional().default(false)
   })
 });
 export const nutrientAdjustmentsSchema = z.object({

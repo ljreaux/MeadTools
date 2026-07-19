@@ -36,10 +36,11 @@ import {
 
 import { useNutrients } from "@/components/providers/NutrientProvider";
 import type { NutrientKey } from "@/types/nutrientData";
+import SearchableInput from "../ui/SearchableInput";
 
 export default function NutrientSelector() {
   const { t } = useTranslation();
-  const { data, actions } = useNutrients();
+  const { data, actions, catalog } = useNutrients();
 
   const warnNumberOfAdditions =
     Number(data.inputs.sg) > 1.08 && data.inputs.numberOfAdditions === "1";
@@ -93,19 +94,18 @@ export default function NutrientSelector() {
 
             {/* Name */}
             <label className="grid gap-1 col-span-2">
-              <span className="text-sm font-medium">
+              <span className="flex items-center sm:gap-1 text-sm font-medium">
                 {t("sortLabels.name")}
+                <Tooltip body={t("other.nutrientPresetHelp")} />
               </span>
 
-              <InputGroup className="h-12">
-                <InputGroupInput
-                  value={data.settings.other.name}
-                  onChange={(e) => actions.setOtherNutrientName(e.target.value)}
-                  inputMode="text"
-                  onFocus={(e) => e.target.select()}
-                  className="text-lg"
-                />
-              </InputGroup>
+              <SearchableInput
+                items={catalog.nutrientPresetList}
+                query={data.settings.other.name}
+                setQuery={actions.setOtherNutrientName}
+                keyName="name"
+                onSelect={actions.selectOtherNutrientPreset}
+              />
             </label>
 
             {/* YAN Contribution */}
@@ -158,6 +158,17 @@ export default function NutrientSelector() {
                   {t("units.gpl")}
                 </InputGroupAddon>
               </InputGroup>
+            </label>
+
+            <label className="flex items-center gap-2 col-span-2">
+              <Switch
+                checked={data.settings.other.usesOrganicMultiplier}
+                onCheckedChange={actions.setOtherUsesOrganicMultiplier}
+              />
+              <span className="flex items-center gap-1 text-sm font-medium">
+                {t("other.organicMultiplier")}
+                <Tooltip body={t("other.organicMultiplierHelp")} />
+              </span>
             </label>
           </div>
         )}

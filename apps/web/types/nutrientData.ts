@@ -40,7 +40,7 @@ export type NutrientSettings = {
   yanContribution: Record<NutrientKey, NumericInputString>;
   maxGpl: Record<NutrientKey, NumericInputString>;
   maxGplTouched: boolean;
-  other: { name: string };
+  other: { name: string; usesOrganicMultiplier: boolean };
 };
 
 export type NutrientInputs = {
@@ -147,7 +147,7 @@ export const initialNutrientData = (
         other: "0"
       },
       maxGplTouched: false,
-      other: { name: "" }
+      other: { name: "", usesOrganicMultiplier: false }
     },
 
     adjustments: {
