@@ -132,7 +132,7 @@ build by itself.
 - [ ] Confirm the original preview push is deferred and the Weblate commit
       releases exactly one web/mobile preview build.
 - [ ] Test one trusted German-only PR and one direct Weblate approval.
-- [ ] Confirm the latest approved i18nexus migration values still match Git.
+- [ ] Confirm the latest approved migration baseline still matches Git.
 
 ## Recovery
 

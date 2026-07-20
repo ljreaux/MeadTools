@@ -1,7 +1,0 @@
-Translation-provider migration in progress.
-
-This checked-in marker makes scripts/app-impact.mjs report that no application
-build is needed. GitHub Actions and Vercel therefore skip web, mobile, and
-desktop builds while we validate the migration workflow.
-
-Remove this file in the cutover completion PR to restore normal builds.

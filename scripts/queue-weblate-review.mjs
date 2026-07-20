@@ -65,24 +65,50 @@ function githubUrl(path) {
   return `https://api.github.com${path}`;
 }
 
-async function github(path, token, options = {}) {
-  const response = await fetch(githubUrl(path), {
-    ...options,
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(options.headers ?? {}),
-    },
-  });
+const retryableGithubStatuses = new Set([429, 500, 502, 503, 504]);
+const githubRequestAttempts = 4;
 
-  if (!response.ok) {
-    throw new Error(
-      `GitHub API ${options.method ?? "GET"} ${path} failed: ${response.status} ${await response.text()}`,
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function github(path, token, options = {}) {
+  for (let attempt = 1; attempt <= githubRequestAttempts; attempt += 1) {
+    const response = await fetch(githubUrl(path), {
+      ...options,
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(options.headers ?? {}),
+      },
+    });
+
+    if (response.ok) {
+      return response.status === 204 ? null : response.json();
+    }
+
+    const body = await response.text();
+    if (
+      !retryableGithubStatuses.has(response.status) ||
+      attempt === githubRequestAttempts
+    ) {
+      throw new Error(
+        `GitHub API ${options.method ?? "GET"} ${path} failed: ${response.status} ${body}`,
+      );
+    }
+
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const delay = Number.isFinite(retryAfter)
+      ? retryAfter * 1000
+      : 500 * 2 ** (attempt - 1);
+    console.warn(
+      `GitHub API ${options.method ?? "GET"} ${path} returned ${response.status}; retrying in ${delay}ms (${attempt}/${githubRequestAttempts}).`,
     );
+    await wait(delay);
   }
 
-  return response.status === 204 ? null : response.json();
+  throw new Error("GitHub request retry loop exited unexpectedly.");
 }
 
 async function getIssueComments(owner, repository, issueNumber, token) {
