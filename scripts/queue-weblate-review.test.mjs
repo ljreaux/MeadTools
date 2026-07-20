@@ -1,34 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getAiGermanComponents } from "./queue-weblate-review.mjs";
+import { getWeblateGermanComponents } from "./queue-weblate-review.mjs";
 
-const message = `chore(l10n): add German AI translations
+const message = `chore(l10n): update German translation
 
-Translation-Batch: ai-generated`;
+Translation-Batch: weblate-auto`;
 
-test("recognizes isolated German AI locale commits", () => {
+test("recognizes isolated German Weblate locale commits", () => {
   assert.deepEqual(
-    getAiGermanComponents(message, ["packages/i18n/locales/de/default.json"]),
+    getWeblateGermanComponents(message, ["packages/i18n/locales/de/default.json"]),
     ["default"],
   );
 });
 
-test("requires the AI batch marker and rejects mixed commits", () => {
+test("requires the Weblate batch marker and rejects mixed commits", () => {
   assert.deepEqual(
-    getAiGermanComponents("fix: improve German copy", [
+    getWeblateGermanComponents("fix: improve German copy", [
       "packages/i18n/locales/de/default.json",
     ]),
     [],
   );
   assert.deepEqual(
-    getAiGermanComponents("chore(l10n): add German AI translations", [
+    getWeblateGermanComponents("chore(l10n): update German translation", [
       "packages/i18n/locales/de/default.json",
     ]),
     [],
   );
   assert.deepEqual(
-    getAiGermanComponents(message, [
+    getWeblateGermanComponents(message, [
       "packages/i18n/locales/de/default.json",
       "apps/web/app/page.tsx",
     ]),

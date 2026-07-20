@@ -1,4 +1,4 @@
-import { existsSync, copyFileSync, readFileSync } from "node:fs";
+import { existsSync, copyFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 
@@ -21,29 +21,6 @@ function tryRun(cmd, args, opts = {}) {
     ...opts
   });
   return res.status === 0;
-}
-
-function loadEnvLocal() {
-  // keep it simple: just read I18NEXUS_API_KEY / ALLOW_DB_RESET if present
-  // devs can still run setup without dotenv; we won't hard-fail here.
-  const envPath = path.resolve(process.cwd(), ".env.local");
-  if (!existsSync(envPath)) return {};
-
-  const text = readFileSync(envPath, "utf8");
-  const out = {};
-  for (const line of text.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const idx = trimmed.indexOf("=");
-    if (idx === -1) continue;
-    const key = trimmed.slice(0, idx).trim();
-    const val = trimmed
-      .slice(idx + 1)
-      .trim()
-      .replace(/^"|"$/g, "");
-    out[key] = val;
-  }
-  return out;
 }
 
 function ensureEnvLocal() {
@@ -123,7 +100,6 @@ async function waitForDb() {
 async function main() {
   ensureEnvLocal();
   ensureWebEnvLocal();
-  const envLocal = loadEnvLocal();
 
   console.log("▶ Starting docker db...");
   run("docker", ["compose", "up", "-d"]);
@@ -137,15 +113,6 @@ async function main() {
   // Force opt-in for destructive ops (your seed guard expects this)
   const env = { ...process.env, ALLOW_DB_RESET: "true" };
   run("npm", ["run", "db:seed", "--workspace", "@meadtools/web"], { env });
-
-  // i18nexus optional
-  const key = process.env.I18NEXUS_API_KEY || envLocal.I18NEXUS_API_KEY;
-  if (key && key.length > 0) {
-    console.log("▶ Pulling translations from i18nexus...");
-    run("npm", ["run", "i18n:pull"]);
-  } else {
-    console.log("ℹ Skipping i18nexus pull (no I18NEXUS_API_KEY set)");
-  }
 
   console.log("\n✅ Dev setup complete.");
   console.log("Next:");

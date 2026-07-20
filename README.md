@@ -15,8 +15,6 @@ MeadTools is an all-in-one mead, wine, and cider recipe-building calculator. It 
   - [Database](#database)
     - [Resetting the Database](#resetting-the-database)
   - [i18n / Translations](#i18n--translations)
-    - [Default behavior](#default-behavior)
-    - [Optional live translation sync](#optional-live-translation-sync)
   - [Tech Stack](#tech-stack)
   - [Contributing](#contributing)
     - [Contribution Guidelines](#contribution-guidelines)
@@ -88,7 +86,6 @@ This command will:
 - Wait for the database to become healthy
 - Push the Prisma schema
 - Seed the database with test data
-- Optionally pull translations from i18nexus (if a key is present)
 
 ### 4. Start the dev server
 
@@ -138,34 +135,12 @@ The command is protected by an environment guard and will not run against produc
 
 ## i18n / Translations
 
-MeadTools uses i18nexus for translation management.
-
-### Default behavior
-
-- Translations are loaded from generated JSON files under packages/i18n/locales/
-- No API key is required to run the app
-
-### Optional live translation sync
-
-If you have access to i18nexus:
-
-1. Add your key to .env.local
-
-```bash
-I18NEXUS_API_KEY=your_key_here
-```
-
-1. Run:
-
-```bash
-npm run dev:i18n
-```
-
-This will:
-
-- Pull translations
-- Listen for updates
-- Update local locale files automatically
+Translation JSON files under `packages/i18n/locales/` are versioned in Git.
+Feature work changes English source strings. After an English change reaches
+`preview`, self-hosted Weblate generates German suggestions using the project
+glossary and informal-tone rules, then commits them back to `preview` as
+needing review. See [the translation workflow](docs/translation-workflow.md)
+before changing translation files or reviewing German copy.
 
 ---
 
@@ -181,7 +156,7 @@ This will:
 - **ShadCN UI / Radix UI**
 - **Tailwind CSS**
 - **i18next + react-i18next**
-- **i18nexus** (optional for translation sync)
+- **Weblate** (self-hosted translation review and suggestions)
 - **MDX** (for lightweight content pages like release notes)
 
 ---
