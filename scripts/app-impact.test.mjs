@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   classifyAppImpact,
+  hasWeblateTranslationBatch,
   isTargetAffected,
   isWeblateTranslationBatch,
 } from "./app-impact.mjs";
@@ -99,6 +100,24 @@ test("recognizes native Weblate batches after an English source update", () => {
       [],
     ),
     false,
+  );
+});
+
+test("recognizes a Weblate batch anywhere in a multi-commit push", () => {
+  assert.equal(
+    hasWeblateTranslationBatch([
+      {
+        message: "chore(l10n): update German translation\n\nTranslation-Batch: weblate-auto",
+        changedPaths: ["packages/i18n/locales/de/default.json"],
+        sourceChangedPaths: [],
+      },
+      {
+        message: "chore(l10n): update Lithuanian translation",
+        changedPaths: ["packages/i18n/locales/lt/default.json"],
+        sourceChangedPaths: [],
+      },
+    ]),
+    true,
   );
 });
 

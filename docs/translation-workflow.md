@@ -126,7 +126,8 @@ affected unapproved strings when useful.
 This avoids duplicate builds and prevents the deployed artifact from missing
 the generated German files. A German-only review correction after the initial
 batch remains a normal translation-only update and does not release a new app
-build by itself.
+build by itself. If Weblate flushes other language commits in the same push,
+the gate scans the full push range for the German release batch.
 
 ## Cutover validation
 
