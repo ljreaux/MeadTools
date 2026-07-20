@@ -40,7 +40,9 @@ The Automatic Translation add-on is configured per component as follows:
 - mode: **Needs editing** (`fuzzy`), never auto-approved;
 - filter: German strings below the translated state;
 - threshold: 90; and
-- commit trailer: `Translation-Batch: weblate-auto`.
+- a German-only native Weblate follow-up directly after an English source
+  update is recognized as the release batch (the legacy
+  `Translation-Batch: weblate-auto` trailer remains supported).
 
 The OpenAI key stays in Weblate's untracked server configuration. It is not a
 GitHub Actions secret. The provider uses the project glossary, informal German
@@ -118,8 +120,8 @@ affected unapproved strings when useful.
 
 - normal feature changes without English locale edits build normally;
 - a `preview` merge that changes English locale files waits for Weblate; and
-- only the marked `Translation-Batch: weblate-auto` follow-up releases the web
-  deployment and EAS preview builds.
+- only the recognized Weblate German follow-up releases the web deployment and
+  EAS preview builds.
 
 This avoids duplicate builds and prevents the deployed artifact from missing
 the generated German files. A German-only review correction after the initial

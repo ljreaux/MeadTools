@@ -15,7 +15,7 @@ test("recognizes isolated German Weblate locale commits", () => {
   );
 });
 
-test("requires the Weblate batch marker and rejects mixed commits", () => {
+test("recognizes native Weblate commits after English source changes and rejects mixed commits", () => {
   assert.deepEqual(
     getWeblateGermanComponents("fix: improve German copy", [
       "packages/i18n/locales/de/default.json",
@@ -23,10 +23,12 @@ test("requires the Weblate batch marker and rejects mixed commits", () => {
     [],
   );
   assert.deepEqual(
-    getWeblateGermanComponents("chore(l10n): update German translation", [
-      "packages/i18n/locales/de/default.json",
-    ]),
-    [],
+    getWeblateGermanComponents(
+      "chore(l10n): update German translation",
+      ["packages/i18n/locales/de/default.json"],
+      ["packages/i18n/locales/en/default.json"],
+    ),
+    ["default"],
   );
   assert.deepEqual(
     getWeblateGermanComponents(message, [
