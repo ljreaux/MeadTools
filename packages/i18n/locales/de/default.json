@@ -390,7 +390,7 @@
         "title": "MeadTools Desktop ist veraltet",
         "versionNote": "Letzte veröffentlichte Version: 1.0.3",
         "videoTitle": "MeadTools-Übersicht",
-        "pillAlt": "RAPT pill chart"
+        "pillAlt": "RAPT-Pillendiagramm"
     },
     "donate": {
         "dialog": {
@@ -1048,7 +1048,7 @@
         "desiredDetailsForm": "Erstelle einen initialen Most mit deiner gewünschten Anfangsdichte oder dem gewünschten Alkoholgehalt und Volumen. Dadurch werden alle aktuellen Zutaten durch eine Honigzeile und eine Wasserzeile ersetzt.",
         "estOG": "Die ursprüngliche Formel befindet sich leider auf einer inzwischen nicht mehr erreichbaren Website. Ich habe den ursprünglichen Blogartikel auf dieser Website archiviert  ",
         "goFermWater": "Wassermenge für Rehydrierung.",
-        "numberOfAdditions": "Gestaffelte Nährstoffgaben helfen, Temperatursprünge während der Gärung zu verhindern, die die Hefe stressen können. Vier Nährstoffgaben sind wahrscheinlich das üblichste Schema, aber ich persönlich verwende in den meisten Fällen drei Gaben oder nur eine einzige Gabe. Wenn deine Dichte über 1.080 liegt, solltest du wahrscheinlich mehr als eine Gabe anwenden.",
+        "numberOfAdditions": "Gestaffelte Nährstoffgaben helfen, Temperaturspitzen während der Gärung zu verhindern, die die Hefe belasten können. Vier Gaben sind wahrscheinlich das gebräuchlichste Schema, aber ich verwende persönlich in den meisten Fällen drei Gaben oder eine einzige Gabe. Wenn deine Dichte über 1.080 liegt, solltest du wahrscheinlich mehr als eine Gabe vornehmen.",
         "yeastAmountAuto": "Zurück zur automatischen Menge",
         "backsweetenedFg": "Dieser Wert wird automatisch anhand der als \"secondary\" markierten Zutaten berechnet. Wenn du den Wert anpasst und auf Absenden klickst, werden die Mengen dieser als \"secondary\" markierten Zutaten verändert, um deine Zieldichte zu erreichen."
     },
@@ -1439,7 +1439,7 @@
             "stabilizerPhNote": "pH-Wert während der Erfassung der Stabilisatoren aufgezeichnet.",
             "sulfiteForm": "Sulfit-Form",
             "supplementalStabilizersHelp": "Die protokollierten Sekundärzugaben haben die Verdünnung erhöht, nachdem Stabilisatoren erfasst wurden. Überprüfe die ergänzenden Mengen, bevor du sie hinzufügst.",
-            "supplementalStabilizersTitle": "Möglicherweise sind zusätzliche Stabilisatoren erforderlich.",
+            "supplementalStabilizersTitle": "Zusätzliche Stabilisatoren könnten nötig sein",
             "takingPh": "pH-Wert messen?",
             "focusReady": "Bereit für die Bulk-Reifung",
             "focusTracking": "Sekundärzugaben und Volumen aktuell halten",
@@ -1747,7 +1747,7 @@
     "on": "Ein",
     "ongoing": "laufend",
     "open": "Offen",
-    "optional": "Optional",
+    "optional": "Freiwillig",
     "passwordMismatch": "Passwörter stimmen nicht überein.",
     "passwordSuccessMessage": "Passwort aktualisiert. Bitte melde dich an.",
     "placeholder": {
@@ -1808,7 +1808,7 @@
     "g": "g",
     "errorLabel": "Fehler",
     "gal": "gal",
-    "estateTannin": "Estate Tannin",
+    "estateTannin": "Estate-Tannin",
     "Go-Ferm": "Go-Ferm",
     "ingredientTooltip": "Wenn du eine Zutat aus der Liste auswählst, wird der Brix-Wert für dich ausgefüllt. Wenn du eine benutzerdefinierte Zutat verwenden willst, wähle eine aus der Liste und ändere dann den Namen. Z. B.: Blueberry Blossom Honey — wähle \"Honey\", ändere dann den Namen. ",
     "missingToken": "Fehlender oder ungültiger Reset-Token.",
@@ -1829,5 +1829,6 @@
     "auto": "Automatisch",
     "back": "Zurück",
     "batchNumber": "Ansatz",
-    "beet": "Rote Bete"
+    "beet": "Rote Bete",
+    "unathorized": "Nicht autorisiert"
 }
