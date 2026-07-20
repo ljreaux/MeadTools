@@ -18,10 +18,12 @@ const SHARED_PATHS = [
   "tsconfig.base.json",
 ];
 
-// Weblate writes these generated runtime files in a follow-up commit. The
-// preceding source/app commit has already produced the useful preview, so a
-// translation-only update should not create another identical deployment.
+// Most translation-only commits do not need a new application build. A marked
+// Weblate automatic-translation commit is the exception: it releases the
+// single deferred preview build after an English source change.
 const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
+const ENGLISH_TRANSLATION_PATH = "packages/i18n/locales/en/";
+const WEBLATE_BATCH_MARKER = "Translation-Batch: weblate-auto";
 
 const LOCKFILE = "package-lock.json";
 
@@ -62,8 +64,31 @@ export function isTargetAffected(target, changedPaths) {
   );
 }
 
-export function classifyAppImpact(changedPaths, { buildsPaused = false } = {}) {
+export function classifyAppImpact(
+  changedPaths,
+  {
+    buildsPaused = false,
+    deferForWeblate = false,
+    isWeblateTranslationBatch = false,
+  } = {},
+) {
   if (buildsPaused) {
+    return Object.fromEntries(TARGETS.map((target) => [target, false]));
+  }
+
+  if (isWeblateTranslationBatch) {
+    // This is the one deployment/build released after a preview merge that
+    // changed English. It includes both the source feature and Weblate's
+    // generated German update.
+    return Object.fromEntries(TARGETS.map((target) => [target, true]));
+  }
+
+  if (
+    deferForWeblate &&
+    changedPaths.some((changedPath) =>
+      changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    )
+  ) {
     return Object.fromEntries(TARGETS.map((target) => [target, false]));
   }
 
@@ -119,6 +144,24 @@ function resolveRevisionRange() {
   return { base, head };
 }
 
+function readCommitMessage(head) {
+  const result = spawnSync("git", ["log", "-1", "--format=%B", head], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || "Unable to read commit message.");
+  }
+  return result.stdout;
+}
+
+function isPreviewBranch() {
+  return (
+    process.env.APP_IMPACT_DEFER_FOR_WEBLATE === "true" ||
+    process.env.GITHUB_REF === "refs/heads/preview" ||
+    process.env.VERCEL_GIT_COMMIT_REF === "preview"
+  );
+}
+
 async function run() {
   const githubOutput = process.argv.includes("--github-output");
   const target = process.argv.find((argument) => TARGETS.includes(argument));
@@ -131,6 +174,10 @@ async function run() {
     changedPaths = readChangedPaths(base, head);
     impact = classifyAppImpact(changedPaths, {
       buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
+      deferForWeblate: isPreviewBranch(),
+      isWeblateTranslationBatch: readCommitMessage(head).includes(
+        WEBLATE_BATCH_MARKER,
+      ),
     });
   } catch (error) {
     console.warn(

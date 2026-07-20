@@ -22,6 +22,14 @@ Open `http://localhost:8088` and sign in with the admin email and password in
 the untracked `ops/weblate/.env.local` file. The initial administrator username
 is `admin`.
 
+## Outbound email
+
+For password resets and service notifications, set the `WEBLATE_EMAIL_*`
+values in the untracked deployment `.env` file. The MeadTools production
+configuration uses Microsoft 365 SMTP on port 587 with explicit TLS. Keep the
+mailbox password or app password out of Git, then restart the `weblate`
+service and send a password-reset email to verify delivery.
+
 ## Permanent deployment
 
 The permanent host uses the same ignored `.env.local` file shape as the pilot,

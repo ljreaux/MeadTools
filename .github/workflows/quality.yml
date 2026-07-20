@@ -34,6 +34,7 @@ jobs:
         env:
           APP_IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           APP_IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          APP_IMPACT_DEFER_FOR_WEBLATE: ${{ github.ref == 'refs/heads/preview' }}
         run: node scripts/app-impact.mjs --github-output
 
   test:

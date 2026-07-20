@@ -59,6 +59,26 @@ test("translation updates deploy when combined with an app change", () => {
   );
 });
 
+test("a preview source change waits for Weblate when English changes", () => {
+  assert.deepEqual(
+    classifyAppImpact(
+      ["apps/web/app/page.tsx", "packages/i18n/locales/en/default.json"],
+      { deferForWeblate: true },
+    ),
+    { web: false, mobile: false, desktop: false },
+  );
+});
+
+test("the marked Weblate follow-up releases one complete build", () => {
+  assert.deepEqual(
+    classifyAppImpact(["packages/i18n/locales/de/default.json"], {
+      deferForWeblate: true,
+      isWeblateTranslationBatch: true,
+    }),
+    { web: true, mobile: true, desktop: true },
+  );
+});
+
 test("the migration build pause overrides every affected app", () => {
   assert.deepEqual(
     classifyAppImpact(["apps/web/app/page.tsx"], { buildsPaused: true }),
