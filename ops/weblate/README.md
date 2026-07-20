@@ -33,9 +33,10 @@ service and send a password-reset email to verify delivery.
 ## Permanent deployment
 
 The permanent host uses the same ignored `.env.local` file shape as the pilot,
-but it must contain production-specific passwords, `WEBLATE_SITE_DOMAIN`, and
-the optional `OPENAI_API_KEY`. Keep that file mode `0600`; it is intentionally
-ignored by Git.
+but it must contain production-specific passwords and `WEBLATE_SITE_DOMAIN`.
+Configure the OpenAI automatic-translation provider in Weblate's project
+settings rather than in this file. Keep the file mode `0600`; it is
+intentionally ignored by Git.
 
 On the Ubuntu host, store the deployment under `/srv/meadtools-weblate` and
 use the production configuration as its `compose.yml`:
