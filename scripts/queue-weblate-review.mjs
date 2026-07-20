@@ -5,24 +5,32 @@ const reviewLabel = "translation-review";
 const reviewIssueTitle = "German translation review queue";
 const reviewer = "rizzek";
 const fallbackReviewer = "ljreaux";
+const englishTranslationPath = "packages/i18n/locales/en/";
 const componentByFile = new Map([
   ["packages/i18n/locales/de/default.json", "default"],
   ["packages/i18n/locales/de/YeastTable.json", "yeast-table"],
 ]);
 
-// Weblate writes this trailer into automatic-translation commits. The file
-// check prevents an unrelated commit from being added to the review queue.
-export function getWeblateGermanComponents(message, changedFiles) {
-  if (!/^Translation-Batch: weblate-auto$/m.test(message)) {
-    return [];
-  }
-
+// The migration-era marker remains supported, but native Weblate commits use
+// the component's normal commit template. A German-only commit immediately
+// following an English source update is the reliable native-Weblate signal.
+export function getWeblateGermanComponents(
+  message,
+  changedFiles,
+  sourceChangedFiles = [],
+) {
   if (
     changedFiles.length === 0 ||
     changedFiles.some((file) => !componentByFile.has(file))
   ) {
     return [];
   }
+
+  const hasMarker = /^Translation-Batch: weblate-auto$/m.test(message);
+  const followsEnglishSource = sourceChangedFiles.some((file) =>
+    file.startsWith(englishTranslationPath),
+  );
+  if (!hasMarker && !followsEnglishSource) return [];
 
   return [...new Set(changedFiles.map((file) => componentByFile.get(file)))];
 }
@@ -39,9 +47,11 @@ function gitLines(...args) {
 export function getWeblateTranslationBatch(commit = "HEAD") {
   const parent = git("rev-parse", `${commit}^`);
   const changedFiles = gitLines("diff", "--name-only", parent, commit);
+  const sourceChangedFiles = gitLines("diff", "--name-only", `${parent}^`, parent);
   const components = getWeblateGermanComponents(
     git("log", "-1", "--format=%B", commit),
     changedFiles,
+    sourceChangedFiles,
   );
 
   return components.length > 0 ? { commit, parent, components } : null;

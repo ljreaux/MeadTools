@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyAppImpact, isTargetAffected } from "./app-impact.mjs";
+import {
+  classifyAppImpact,
+  isTargetAffected,
+  isWeblateTranslationBatch,
+} from "./app-impact.mjs";
 
 test("app-local changes affect only their app", () => {
   assert.deepEqual(classifyAppImpact(["apps/mobile/app/index.tsx"]), {
@@ -69,13 +73,32 @@ test("a preview source change waits for Weblate when English changes", () => {
   );
 });
 
-test("the marked Weblate follow-up releases one complete build", () => {
+test("a Weblate follow-up releases one complete build", () => {
   assert.deepEqual(
     classifyAppImpact(["packages/i18n/locales/de/default.json"], {
       deferForWeblate: true,
       isWeblateTranslationBatch: true,
     }),
     { web: true, mobile: true, desktop: true },
+  );
+});
+
+test("recognizes native Weblate batches after an English source update", () => {
+  assert.equal(
+    isWeblateTranslationBatch(
+      "chore(l10n): update German translation",
+      ["packages/i18n/locales/de/default.json"],
+      ["packages/i18n/locales/en/default.json"],
+    ),
+    true,
+  );
+  assert.equal(
+    isWeblateTranslationBatch(
+      "fix: adjust German copy",
+      ["packages/i18n/locales/de/default.json"],
+      [],
+    ),
+    false,
   );
 });
 

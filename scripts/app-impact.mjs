@@ -18,9 +18,9 @@ const SHARED_PATHS = [
   "tsconfig.base.json",
 ];
 
-// Most translation-only commits do not need a new application build. A marked
-// Weblate automatic-translation commit is the exception: it releases the
-// single deferred preview build after an English source change.
+// Most translation-only commits do not need a new application build. A
+// German-only Weblate follow-up immediately after an English source change is
+// the exception: it releases the single deferred preview build.
 const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
 const ENGLISH_TRANSLATION_PATH = "packages/i18n/locales/en/";
 const WEBLATE_BATCH_MARKER = "Translation-Batch: weblate-auto";
@@ -114,6 +114,31 @@ export function classifyAppImpact(
   return impact;
 }
 
+export function isWeblateTranslationBatch(
+  message,
+  changedPaths,
+  sourceChangedPaths = [],
+) {
+  const isGermanOnly =
+    changedPaths.length > 0 &&
+    changedPaths.every(
+      (changedPath) =>
+        changedPath.startsWith(GENERATED_TRANSLATION_PATH) &&
+        !changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    );
+  if (!isGermanOnly) return false;
+
+  // Keep recognizing the migration-era marker, but native Weblate commits use
+  // the normal component template. Their position directly after an English
+  // source update is the reliable signal.
+  return (
+    message.includes(WEBLATE_BATCH_MARKER) ||
+    sourceChangedPaths.some((changedPath) =>
+      changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    )
+  );
+}
+
 function readChangedPaths(base, head) {
   const result = spawnSync(
     "git",
@@ -172,11 +197,15 @@ async function run() {
 
   try {
     changedPaths = readChangedPaths(base, head);
+    const commitChangedPaths = readChangedPaths(`${head}^`, head);
+    const sourceChangedPaths = readChangedPaths(`${head}^^`, `${head}^`);
     impact = classifyAppImpact(changedPaths, {
       buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
       deferForWeblate: isPreviewBranch(),
-      isWeblateTranslationBatch: readCommitMessage(head).includes(
-        WEBLATE_BATCH_MARKER,
+      isWeblateTranslationBatch: isWeblateTranslationBatch(
+        readCommitMessage(head),
+        commitChangedPaths,
+        sourceChangedPaths,
       ),
     });
   } catch (error) {
