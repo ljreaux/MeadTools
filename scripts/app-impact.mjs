@@ -139,6 +139,12 @@ export function isWeblateTranslationBatch(
   );
 }
 
+export function hasWeblateTranslationBatch(batches) {
+  return batches.some(({ message, changedPaths, sourceChangedPaths }) =>
+    isWeblateTranslationBatch(message, changedPaths, sourceChangedPaths),
+  );
+}
+
 function readChangedPaths(base, head) {
   const result = spawnSync(
     "git",
@@ -179,6 +185,28 @@ function readCommitMessage(head) {
   return result.stdout;
 }
 
+function readRevisionCommits(base, head) {
+  const result = spawnSync("git", ["rev-list", "--reverse", `${base}..${head}`], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || "Unable to read revision commits.");
+  }
+  return result.stdout.split("\n").map((commit) => commit.trim()).filter(Boolean);
+}
+
+function hasWeblateTranslationBatchInRange(base, head) {
+  const batches = readRevisionCommits(base, head).map((commit) => {
+    const parent = `${commit}^`;
+    return {
+      message: readCommitMessage(commit),
+      changedPaths: readChangedPaths(parent, commit),
+      sourceChangedPaths: readChangedPaths(`${commit}^^`, parent),
+    };
+  });
+  return hasWeblateTranslationBatch(batches);
+}
+
 function isPreviewBranch() {
   return (
     process.env.APP_IMPACT_DEFER_FOR_WEBLATE === "true" ||
@@ -197,16 +225,10 @@ async function run() {
 
   try {
     changedPaths = readChangedPaths(base, head);
-    const commitChangedPaths = readChangedPaths(`${head}^`, head);
-    const sourceChangedPaths = readChangedPaths(`${head}^^`, `${head}^`);
     impact = classifyAppImpact(changedPaths, {
       buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
       deferForWeblate: isPreviewBranch(),
-      isWeblateTranslationBatch: isWeblateTranslationBatch(
-        readCommitMessage(head),
-        commitChangedPaths,
-        sourceChangedPaths,
-      ),
+      isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
     });
   } catch (error) {
     console.warn(
