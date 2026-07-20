@@ -83,18 +83,11 @@
   },
   "accountPage": {
     "buttonMessage": {
-      "forgotPassword": "Passwort vergessen?",
       "login": "Hast du schon ein Benutzerkonto? Hier anmelden!",
       "register": "Noch kein Benutzerkonto? Jetzt registrieren!"
     },
     "deleteRecipe": "Rezept Löschen",
     "email": "E-Mail",
-    "error": "Fehler beim Laden der Kontoinformationen.",
-    "googleAvatar": {
-      "description": "Wenn diese Option aktiviert ist, wird Ihr Google-Profilbild, sofern verfügbar, in den Rezeptkommentaren angezeigt.",
-      "label": "Google-Avatar anzeigen",
-      "title": "Google-Avatar"
-    },
     "language": {
       "title": "Bevorzugte Sprache"
     },
@@ -104,8 +97,6 @@
     "or": "ODER",
     "password": "Passwort",
     "register": "Registrieren",
-    "reset": "Link zum Zurücksetzen senden",
-    "resetPassword": "Passwort zurücksetzen",
     "theme": {
       "dark": "Dunkel",
       "light": "Hell",
@@ -115,14 +106,12 @@
     "title": "Benutzerkonto",
     "units": {
       "metric": "Metrisch",
-      "placeholder": "Wählen Sie einen Standard für Einheiten aus",
       "title": "Bevorzugte Einheiten",
       "us": "US"
     },
     "viewRecipe": "Rezept Ansehen"
   },
   "accountSettings": "Kontoeinstellungen",
-  "add": "Hinzufügen",
   "adding": "Fügst du Stabilisatoren hinzu?",
   "additionalLinks": {
     "about": "Über MeadTools",
@@ -130,86 +119,15 @@
     "desktop": "MeadTools Desktop",
     "juice": "Saftrechner",
     "label": "Weiterführende Links",
-    "recipeBuilderDocs": "Rezeptgenerator-Dokumentation",
     "taplist": "MeadTools Taplist",
-    "tutorial": "Tutorial",
-    "wiki": "Mead Wiki"
+    "tutorial": "Tutorial"
   },
   "additives": {
-    "addNew": "Neuen Zusatz hinzufügen",
-    "empty": "Füge weitere Zutaten hinzu, um dein Rezept weiter zu verfeinern."
+    "addNew": "Neuen Zusatz hinzufügen"
   },
   "additivesHeading": "Zusätze und weitere Zutaten",
   "adjunctAmount": "Zusatzmenge in Probe (g):",
   "adjunctConcentration": "Zusatzkonzentration (PPM):",
-  "admin": {
-    "additives": {
-      "add": "Zusatzstoff hinzufügen"
-    },
-    "brews": {
-      "description": "Alle Ansätze im Tracker ansehen, ohne die Daten der Besitzer zu ändern.",
-      "searchPlaceholder": "Ansätze, Rezepte oder Besitzer suchen"
-    },
-    "ingredients": {
-      "add": "Zutat hinzufügen"
-    },
-    "maintenance": {
-      "description": "Sichere administrative Wartungsaufgaben in kleinen Batches ausführen.",
-      "estimatedAbv": {
-        "brewId": "Brauvorgangs-ID",
-        "brewIdHelp": "Füge die Brauvorgangs-ID ein, um nur diesen Brauvorgang neu zu berechnen.",
-        "complete": "Geschätzte ABV-Einträge neu berechnet.",
-        "confirmDescription": "Dadurch werden abgeleitete Einträge für den geschätzten ABV von {{count}} Brauvorgängen ersetzt. Erfasste Volumen, Zugaben und Messwerte bleiben unverändert.",
-        "confirmTitle": "Geschätzte ABV-Einträge neu berechnen?",
-        "description": "Erstellt abgeleitete Zeitachseneinträge für den geschätzten ABV anhand des aktuellen Brauverlaufs neu. Erfasste Braudaten werden nicht verändert.",
-        "failed": "Geschätzte ABV-Einträge konnten nicht neu berechnet werden.",
-        "preview": "Vorschau",
-        "progress": "{{processed}} von {{total}} Brauvorgängen neu berechnet.",
-        "ready": "Bereit, die Schätzwerte für {{count}} Brauvorgänge neu zu berechnen.",
-        "rebuild": "Schätzwerte neu berechnen",
-        "scopeAll": "Alle Brauvorgänge",
-        "scopeBrew": "Ein Brauvorgang",
-        "title": "Geschätzten ABV neu berechnen"
-      },
-      "title": "Wartung"
-    },
-    "nav": {
-      "additives": "Zusatzstoffe",
-      "brews": "Ansätze",
-      "ingredients": "Zutaten",
-      "maintenance": "Wartung",
-      "overview": "Übersicht",
-      "recipes": "Rezepte",
-      "users": "Benutzer",
-      "yeasts": "Hefen"
-    },
-    "overview": {
-      "activeBrews": "{{count}} aktiv",
-      "description": "Website-Aktivitäten prüfen und einen Administrationsbereich öffnen.",
-      "privateRecipes": "{{count}} privat",
-      "title": "Übersicht"
-    },
-    "owner": "Besitzer",
-    "readOnly": "Schreibgeschützt",
-    "recipes": {
-      "back": "Zurück zu den Rezepten",
-      "description": "Öffentliche und private Rezepte in einer schreibgeschützten Verwaltungsansicht öffnen.",
-      "searchPlaceholder": "Name oder Besitzer suchen"
-    },
-    "title": "Administratorbereich",
-    "users": {
-      "confirmResetDescription": "Einen Link zum Zurücksetzen des Passworts an {{email}} senden? Der Link läuft nach 15 Minuten ab.",
-      "confirmResetTitle": "Link zum Zurücksetzen senden?",
-      "resetError": "Der Link zum Zurücksetzen des Passworts konnte nicht gesendet werden.",
-      "resetSentDescription": "Ein Link zum Zurücksetzen des Passworts wurde an {{email}} gesendet.",
-      "resetSentTitle": "Link zum Zurücksetzen gesendet",
-      "sendingReset": "Wird gesendet...",
-      "sendReset": "Link zum Zurücksetzen senden"
-    },
-    "yeasts": {
-      "add": "Hefe hinzufügen"
-    }
-  },
   "advancedNutrition": {
     "label": "Erweiterte Einstellungen",
     "yanContribution": "YAN-Anteil bearbeiten",
@@ -219,36 +137,12 @@
     "loginError": "Du hast nicht die nötigen Berechtigungen, um dieses Rezept anzuzeigen. Bitte melde Dich an oder kontaktiere den Ersteller des Rezepts um sicherzugehen, dass das Rezept öffentlich zugänglich ist.",
     "notCurrentUser": "Dies ist das Rezept eines anderen Benutzers. Du musst eine Kopie davon machen, um Änderungen vorzunehmen."
   },
-  "amount": "Betrag",
-  "amounts": "Mengen",
   "AND": "und",
   "appleJuice": "Apfelsaft",
   "apples": "Apfel",
   "apricot": "Aprikose",
   "auth": {
-    "avatar": {
-      "error": {
-        "description": "Wir konnten Ihre Avatar-Einstellungen nicht aktualisieren.",
-        "title": "Avatar-Aktualisierung fehlgeschlagen"
-      },
-      "success": {
-        "description": "Ihre Avatar-Anzeigeeinstellungen wurden gespeichert.",
-        "title": "Avatar-Einstellungen aktualisiert"
-      }
-    },
-    "delete": {
-      "error": {
-        "description": "Rezept konnte nicht gelöscht werden.",
-        "noToken": "Sie müssen angemeldet sein, um ein Rezept zu löschen.",
-        "title": "Löschen fehlgeschlagen"
-      },
-      "success": {
-        "description": "Das Rezept wurde erfolgreich gelöscht.",
-        "title": "Rezept gelöscht"
-      }
-    },
     "googleLogin": {
-      "action": "Mit Google fortfahren",
       "error": "Die Anmeldung bei Google ist fehlgeschlagen. Bitte versuche es erneut oder wende Dich an den Support.",
       "success": "Google-Anmeldung erfolgreich! Willkommen zurück."
     },
@@ -257,524 +151,35 @@
       "success": "Die Anmeldung war erfolgreich! Die Weiterleitung zu Deinem Konto erfolgt."
     },
     "logout": {
-      "success": "Du wurdest erfolgreich abgemeldet. Bis zum nächsten Mal!",
-      "successDescription": "Bis zum nächsten Mal!",
-      "successTitle": "Erfolgreich abgemeldet."
+      "success": "Du wurdest erfolgreich abgemeldet. Bis zum nächsten Mal!"
     },
     "registration": {
       "error": "Registrierung fehlgeschlagen. Bitte überprüfe Deine Angaben oder wende Dich an den Support.",
       "success": "Die Registrierung war erfolgreich! Du kannst Dich jetzt anmelden."
-    },
-    "username": {
-      "error": {
-        "description": "Beim Aktualisieren Ihres Benutzernamens ist ein Fehler aufgetreten.",
-        "title": "Aktualisierung fehlgeschlagen"
-      },
-      "success": {
-        "description": "Ihr öffentlicher Benutzername wurde erfolgreich aktualisiert.",
-        "title": "Benutzername aktualisiert!"
-      }
     }
   },
-  "auto": "Auto",
-  "back": "Zurück",
   "backToList": "Zurück zur öffentlichen Rezeptliste",
   "banana": "Banane",
   "batchDetails": "Chargendetails",
-  "batchNumber": "Charge",
   "batchSize": "Ansatzmenge:",
-  "beet": "Rüben",
   "belgianCandiSyrup": "Belgischer Candis-Sirup",
   "benchTrialsHeading": "Bench Trials",
   "benchTrials": {
     "howToUse": {
-      "addendum": "Hinweis: Die Auswahl einer geeigneten Stammlösungskonzentration und eines geeigneten Versuchsbereichs erfordert oft mehrere Versuche. Nachdem John 0,2 ml als bevorzugte Probe identifiziert hat, könnte er weitere Versuche zwischen 0,2 ml und 0,3 ml durchführen, um die endgültige Einstellung zu optimieren.",
-      "exampleBody": "John testet Weinsäure in einem 5-Gallonen-Ansatz mit 100-ml-Proben und einer 10%igen Lösung. Er testet Zugaben von 0,1 ml, 0,15 ml, 0,2 ml und 0,3 ml und bevorzugt die 0,2-ml-Probe (200 ppm). Dies entspricht einer Zugabe von 3,785 g zur Gesamtmenge.",
-      "exampleTitle": "Beispiel",
       "steps": [
-        "Entnehmen Sie vier Proben aus Ihrer Met-Charge, standardmäßig sind es 50 ml.",
-        "Geben Sie in der Spalte ganz links in der Tabelle die Menge der Stammlösung ein, die jeder Probe hinzugefügt werden soll (in ml), oder verwenden Sie die vorgegebenen Standardwerte.",
-        "Probieren Sie die Proben und wählen Sie diejenige, die Ihnen am besten gefällt.",
-        "Verwenden Sie die Spalte „Skalierte Zusatzstoffe“, um diese Dosis auf Ihre gesamte Charge (in Gramm) hochzurechnen."
-      ],
-      "videoDescription": "Hier finden Sie eine Schritt-für-Schritt-Anleitung, die erklärt, wie Bench Trials funktionieren und warum sie nützlich sind.",
-      "videoLinkText": "Auf YouTube ansehen",
-      "videoTitle": "Möchten Sie tiefer in die Materie eintauchen?"
-    },
-    "howToUseTitle": "Anleitung zur Verwendung"
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
   },
   "bentonite": "Bentonit",
   "blackberry": "Brombeere",
   "blendedVal": "Mischwert:",
   "blendingHeading": "Mischwert-Rechner",
   "blueberry": "Blaubeere",
-  "bottlingCalculator": {
-    "custom": {
-      "add": "Füge eine individuelle Flasche hinzu.",
-      "remove": "Entfernen",
-      "sizePlaceholder": "Flaschengröße",
-      "units": {
-        "flOz": "fl oz",
-        "gallon": "Gallonen",
-        "liter": "L",
-        "ml": "ml",
-        "placeholder": "L"
-      }
-    },
-    "results": {
-      "overBy": "Drüben bei",
-      "totalVolumeBottled": "Gesamtvolumen abgefüllt",
-      "unbottledVolume": "Ungezügelte Menge"
-    },
-    "status": {
-      "error": {
-        "body": "Die Gesamtanzahl Ihrer Flaschen übersteigt die Chargengröße.",
-        "overByPrefix": "Drüben bei:",
-        "title": "Überfüllt"
-      },
-      "ok": {
-        "body": "Die abgefüllte Menge entspricht der Charge.",
-        "title": "Alle erfasst"
-      },
-      "warn": {
-        "body": "Es ist noch Volumen vorhanden, das keinen Flaschen zugeordnet ist.",
-        "remainingPrefix": "Übrig:",
-        "title": "verbleibendes Volumen an nicht abgefülltem Material"
-      },
-      "withinPrefix": "Innerhalb"
-    },
-    "table": {
-      "addBottles": "Flaschen hinzufügen",
-      "bottle": "Flasche",
-      "percentOfBatch": "% der Charge",
-      "qty": "Menge",
-      "remainingBottles": "Flaschen, um das Ziel zu erreichen",
-      "removeCustomBottleAria": "Benutzerdefinierte Flasche entfernen",
-      "total": "Gesamt"
-    },
-    "title": "Abfüllrechner",
-    "totalVolumeLabel": "Gesamtvolumen",
-    "units": {
-      "flOzShort": "fl oz",
-      "galShort": "gal",
-      "lShort": "L"
-    },
-    "volumeUnits": {
-      "gallons": "Gallonen",
-      "liters": "Liter",
-      "placeholder": "Gallonen"
-    }
-  },
   "boysenberry": "Boysenbeere",
-  "brew": {
-    "addEntry": "Eintrag hinzufügen",
-    "addGravity": "Gravitationsmessung hinzufügen",
-    "gravity": "Dichte",
-    "ph": "pH",
-    "temperature": "Temperatur"
-  },
-  "brews": {
-    "actions": {
-      "addEntry": "Eintrag hinzufügen",
-      "label": "Aktionen",
-      "logFg": "FG protokollieren",
-      "logGoFerm": "Go-Ferm protokollieren",
-      "logGravity": "Gravitation protokollieren",
-      "logOg": "OG protokollieren",
-      "logReading": "Protokoll lesen",
-      "logSecondaryVolume": "Sekundärvolumen aufzeichnen",
-      "logVolume": "Volumen aufzeichnen",
-      "logYeast": "Hefe protokollieren",
-      "startPrimary": "Primäre Fermentation starten"
-    },
-    "actionsLabel": "Aktionen",
-    "actualFg": "Tatsächliche FG",
-    "actualOg": "Tatsächliche OG",
-    "backToList": "Zurück zu den Brauvorgängen",
-    "beforeYouProceed": "Bevor Sie fortfahren",
-    "bulkAge": {
-      "addIssue": "Problem hinzufügen",
-      "addNote": "Notiz hinzufügen",
-      "addTasting": "Verkostung hinzufügen",
-      "currentVolume": "Aktuelles Volumen",
-      "finalGravity": "Endgültige Gravitation",
-      "focus": "Alterungsnotizen verfolgen und verpacken, wenn bereit",
-      "latestGravity": "Neueste Dichte",
-      "logAddition": "Zusatz protokollieren",
-      "logAdditive": "Additiv protokollieren",
-      "logIngredient": "Zutat protokollieren",
-      "markComplete": "Abgeschlossen markieren",
-      "moveToPackaged": "In verpackt verschieben",
-      "noOutstandingItems": "Keine ausstehenden verlinkten Rezeptbestandteile.",
-      "outstandingItems": "Ausstehende Elemente",
-      "outstandingRecipeItems": "Ausstehende Rezeptbestandteile",
-      "workflowHint": "Notizen sind das Hauptprotokoll hier; verwenden Sie Messungen und ausstehende Punkte nur, wenn sie helfen."
-    },
-    "charts": {
-      "activeLinkedDevices": "Aktives Gerät: {{devices}}",
-      "checkingWirelessBrew": "Überprüfe den Status des drahtlosen Hydrometers...",
-      "historicalWirelessLogs": "Drahtlose Protokolle sind mit diesem Brauvorgang verbunden von: {{devices}}.",
-      "hydrometerLinkTitle": "Drahtloses Hydrometer",
-      "linkDevice": "Hydrometer verlinken",
-      "linkedHydrometerNoLogsToast": "Verlinktes Hydrometer. Neue Messwerte erscheinen hier, sobald sie aufgezeichnet werden.",
-      "linkedHydrometerToast": "Verlinktes Hydrometer und übernommene {{count}} Protokolleinträge.",
-      "manualTitle": "Manuelle Zeitstrahlmessungen",
-      "noActiveLinkedDevice": "Kein aktives drahtloses Hydrometergerät ist an diesem Sud angeschlossen.",
-      "noAvailableDevices": "Keine verfügbaren Hydrometergeräte",
-      "noManualReadings": "Es wurden noch keine manuellen Schwerkraft-, Temperatur- oder pH-Messungen protokolliert.",
-      "noWirelessReadings": "Es sind keine drahtlosen Hydrometerablesungen mit diesem Brauvorgang verbunden.",
-      "openHydrometerBrew": "Hydrometer-Brauen öffnen",
-      "selectDevice": "Wählen Sie ein Hydrometergerät aus",
-      "unlinkedHydrometerToast": "Hydrometer getrennt. Vorhandene drahtlose Protokolle bleiben mit diesem Brauvorgang verbunden.",
-      "unlinkHydrometer": "Hydrometer trennen",
-      "unlinkingHydrometer": "Trennen...",
-      "wirelessTitle": "Drahtlose Hydrometerablesungen"
-    },
-    "complete": {
-      "abv": "Alkoholgehalt (ABV)",
-      "addEntryHint": "Fügen Sie eine letzte Ablesung, Verkostung, Problem oder Notiz hinzu.",
-      "completed": "Abgeschlossen",
-      "finalGravity": "Endgültige Gravitation",
-      "noFinalNotes": "Noch keine Verkostungen oder Notizen aufgezeichnet.",
-      "noPackaging": "Keine Verpackungsdetails aufgezeichnet.",
-      "originalGravity": "Ursprüngliche Dichte",
-      "packagedVolume": "Verpacktes Volumen",
-      "packagingRecap": "Verpackungszusammenfassung",
-      "recentNotes": "Aktuelle Notizen",
-      "recentTastings": "Aktuelle Verkostungen"
-    },
-    "delete": {
-      "confirm": "Sud löschen",
-      "deleting": "Wird gelöscht...",
-      "description": "Dadurch werden {{name}} und die Timeline-Einträge dauerhaft gelöscht. Verknüpfte Hydrometer-Geräte werden getrennt, und drahtlose Messprotokolle für diesen Sud werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-      "error": "Beim Löschen dieses Suds ist etwas schiefgelaufen.",
-      "success": "Sud gelöscht.",
-      "title": "Diesen Sud löschen?"
-    },
-    "deleteEntryDescription": "Dies entfernt den Eintrag aus der Sud-Zeitleiste. Diese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteEntryTitle": "Diesen Eintrag löschen?",
-    "endDate": "Enddatum",
-    "entries": "Einträge",
-    "entryTypes": {
-      "ADDITION": "Zusatz"
-    },
-    "error": {
-      "loadDetail": "Beim Laden dieses Brauvorgangs ist ein Fehler aufgetreten.",
-      "loadList": "Beim Laden der Biere ist ein Fehler aufgetreten."
-    },
-    "filters": {
-      "allStages": "Alle Phasen",
-      "clear": "Filter zurücksetzen",
-      "endFrom": "Beendet nach",
-      "endTo": "Beendet vor",
-      "label": "Filter",
-      "recipe": {
-        "all": "Alle Rezepte",
-        "label": "Rezept",
-        "none": "Kein verknüpftes Rezept"
-      },
-      "startFrom": "Gestartet nach",
-      "startTo": "Gestartet vor"
-    },
-    "gravity": {
-      "applyRefractometerCorrection": "Refraktometerkorrektur anwenden",
-      "convertedSgPreview": "Umgewandelte SG: {{sg}}",
-      "corrected": "korrigiert",
-      "correctedSgPreview": "Korrigierte SG: {{sg}}",
-      "correctionFactor": "Korrekturfaktor",
-      "correctionOg": "Korrektur OG: {{og}}",
-      "enteredBrix": "{{brix}}",
-      "unitPreference": "Schwerkrafteinheit-Präferenz"
-    },
-    "history": {
-      "filters": {
-        "additions": "Zusätze",
-        "all": "Alle",
-        "label": "Filter",
-        "notes": "Notizen",
-        "packaging": "Verpackung",
-        "readings": "Messwerte",
-        "stageChanges": "Stufenänderungen",
-        "volume": "Volumen"
-      },
-      "metrics": {
-        "additions": "Zusätze",
-        "readings": "Messwerte",
-        "volume": "Volumen & Verpackung"
-      },
-      "noFilteredEntries": "Keine Einträge entsprechen den ausgewählten Filtern.",
-      "noMetricEntries": "Keine passenden Metrikeinträge.",
-      "notes": "Notizen",
-      "sort": {
-        "label": "Sortieren",
-        "newest": "Neueste zuerst",
-        "oldest": "Älteste zuerst"
-      },
-      "title": "Verlauf",
-      "views": {
-        "charts": "Diagramme",
-        "metrics": "Metriken",
-        "stages": "Stufen"
-      }
-    },
-    "label": "Biere",
-    "moveBack": "Zu diesem Schritt zurückkehren",
-    "moveToSecondary": "In Sekundär verschieben",
-    "moveToStage": "Zu diesem Schritt wechseln",
-    "new": "Neuer Brauvorgang",
-    "newBrew": {
-      "confirmHelp": "Erstelle einen Brauvorgang aus {{recipeName}}.",
-      "confirmTitle": "Brauvorgang starten",
-      "help": "Wähle ein Rezept aus, um einen Brauvorgang zu starten. Du kannst den Brauvorgang vor dem Erstellen benennen.",
-      "namePlaceholder": "z. B. Januar-Charge"
-    },
-    "none": "Noch keine Brauvorgänge.",
-    "noWarnings": "Keine aktiven Warnungen.",
-    "packaged": {
-      "completion": "Abschluss",
-      "focus": "Verpackungsdetails aufzeichnen und das Brauen abschließen",
-      "latestPackaging": "Neueste Verpackung",
-      "needsPackaging": "Benötigt Verpackung",
-      "noPackageRows": "Keine Paketzeilen aufgezeichnet.",
-      "packageCount": "Paketanzahl",
-      "packagedVolume": "Verpacktes Volumen",
-      "packages": "Pakete",
-      "packaging": "Verpackung",
-      "ready": "Bereit",
-      "savePackaging": "Verpackung speichern",
-      "volumeEntryNote": "Verpacktes Volumen",
-      "workflowHint": "Speichern Sie die Paketgrößen, -anzahlen und das Volumen, bevor Sie das Brauen als abgeschlossen markieren."
-    },
-    "planned": {
-      "additions": "Zusätze",
-      "additives": "Zusätze",
-      "altAmount": "Alt",
-      "createRecipe": "Rezept erstellen",
-      "goFermWater": "Go-Ferm Wasser",
-      "grabList": "Was für die Hauptgärung benötigt wird",
-      "linkRecipeAction": "Rezept verknüpfen",
-      "linkRecipeRequiredHelp": "Die Brauverfolgung benötigt ein verlinktes Rezept, bevor die Hauptgärung beginnen kann.",
-      "linkRecipeTitle": "Ein Rezept verknüpfen",
-      "noGrabItems": "Keine Hauptzutaten im verlinkten Rezept gefunden.",
-      "noManualGrabItems": "Es sind keine geplanten Zutaten verfügbar, bis ein Rezept verknüpft ist.",
-      "nutrients": "Nährstoffe",
-      "phNotTracked": "Nicht verfolgt",
-      "secondaryIngredients": "Sekundärzutaten",
-      "yeast": "Hefe",
-      "yeastAmount": "Menge"
-    },
-    "prereq": {
-      "finalGravity": "Endschwerkraft protokollieren",
-      "finalGravityHint": "Protokolliere ein gemessenes FG, bevor du aus der Hauptgärung wechselst.",
-      "linkRecipe": "Ein Rezept verlinken",
-      "linkRecipeHardHint": "Die Brauverfolgung benötigt ein verknüpftes Rezept, bevor die Hauptgärung beginnen kann.",
-      "originalGravity": "Ursprüngliche Schwerkraft protokollieren",
-      "originalGravityHint": "Protokolliere ein gemessenes OG oder akzeptiere das Rezept-OG, bevor du aus der Hauptgärung wechselst.",
-      "packagedVolume": "Verpacktes Volumen aufzeichnen",
-      "packagedVolumeHint": "Protokolliere das verpackte Volumen, damit die endgültige Brauzusammenfassung einen nutzbaren Ertrag hat.",
-      "packagingRecorded": "Verpackungsdetails aufzeichnen",
-      "packagingRecordedHint": "Speichern Sie die Details zu Flasche, Fass oder gemischter Verpackung, bevor Sie das Brauen abschließen.",
-      "volume": "Sekundärvolumen aufzeichnen",
-      "volumeHint": "Aufzeichnen des Gesamtvolumens nach dem Transfer in die Sekundärfermentation, damit Stabilisatoren und spätere Zusätze die richtige Batchgröße verwenden können.",
-      "yeast": "Hefe protokollieren",
-      "yeastHint": "Protokollieren Sie mindestens eine Hefezugabe, bevor Sie aus der Hauptgärung wechseln."
-    },
-    "prereqsNotMet": "Einige Elemente sind noch nicht vollständig.",
-    "primary": {
-      "actualizedRecipeOg": "Protokollierte Zutaten",
-      "additives": "Geplante Zusätze",
-      "addNote": "Notiz hinzufügen",
-      "currentVolume": "Aktuelles Volumen",
-      "enterSecondaryVolume": "Volumen nach dem Transfer",
-      "estimatedFg": "Geschätzte FG",
-      "fermentableSg": "Fermentierbares SG",
-      "fg": "Endvergütung",
-      "focusFg": "Nehmen Sie die Endschwerkraft, wenn die Fermentation abgeschlossen ist",
-      "focusNutrients": "Nährstoffzusätze im Auge behalten",
-      "focusPitch": "Hefe hinzufügen und Startdetails aufzeichnen",
-      "focusReady": "Bereit für den Übergang zur Sekundärfermentation",
-      "focusTransfer": "Übertragen auf sekundär und das neue Volumen aufzeichnen",
-      "goFerm": "Go-Ferm",
-      "goFermNotUsed": "Go-Ferm nicht verwendet.",
-      "ingredients": "Primäre Zutaten",
-      "log": "Protokoll",
-      "logAddition": "Zusatz protokollieren",
-      "logAdditive": "Zusatzprotokoll",
-      "logDifferentYeast": "Andere Hefe protokollieren",
-      "logged": "Protokolliert",
-      "loggedFg": "Protokollierte FG",
-      "loggedOg": "Protokolliertes OG",
-      "logGoFerm": "Log Go-Ferm",
-      "logIngredient": "Zutat protokollieren",
-      "logMissing": "Protokoll fehlt",
-      "logMissingIngredients": "Fehlende Zutaten protokollieren",
-      "logNextNutrient": "Log nächsten Nährstoff",
-      "logNutrients": "Nährstoffe protokollieren",
-      "logOgDesc": "Die ursprüngliche Schwerkraft legt auch die Berechnungsgrundlage für Nährstoffe in der Primärfermentation fest.",
-      "markGoFermNotUsed": "Nicht verwendet markieren",
-      "measuredOg": "Gemessenes OG",
-      "noAdditives": "Keine geplanten Zusätze im verlinkten Rezept gefunden.",
-      "noNutrients": "Keine geplanten Nährstoffzusätze gefunden.",
-      "noPrimaryIngredients": "Keine Hauptzutaten im verlinkten Rezept gefunden.",
-      "noRecipeNotes": "Keine primären Notizen im verlinkten Rezept gefunden.",
-      "nutrientAddition": "Nährstoffzusatz {{index}}",
-      "nutrients": "Nährstoffe",
-      "nutrientsNeedGoFermDecision": "Loggen Sie Go-Ferm oder markieren Sie es als nicht verwendet vor den Nährstoffzusätzen.",
-      "nutrientsNeedOg": "Zuerst OG protokollieren.",
-      "nutrientsNeedYeast": "Hefe vor der Zugabe von Nährstoffen protokollieren.",
-      "nutrientsRecipeBuilderNotice": "Dieser Zeitplan verwendet protokolliertes OG, verlinkte primäre Zusätze, Hefe und Go-Ferm. Ändern Sie vorerst die Einstellungen des Zeitplans im Rezept-Builder.",
-      "nutrientsRemainingAfterPlan": "Geplante Nährstoffzusätze sind abgeschlossen, aber es bleibt eine Menge Nährstoffe. Fügen Sie einen zusätzlichen Nährstoffzusatz hinzu, um den Zeitplan abzuschließen.",
-      "nutrientsUsingPlannedIngredients": "Einige verknüpfte Hauptzutaten wurden noch nicht protokolliert, daher werden ihre geplanten Mengen für die Nährstoffneuberechnung verwendet.",
-      "og": "Ursprüngliche Schwerkraft",
-      "ogDiffersFromSuggestion": "Die protokollierte OG weicht von der vorgeschlagenen OG ab, die für die Planung verwendet wurde.",
-      "ogOverrideWarning": "Diese OG weicht von dem vorgeschlagenen Wert ab. Bestätigen Sie die geschätzte FG, damit die Nährstoffe aus der beabsichtigten vergärbaren Schwerkraft berechnet werden.",
-      "previousVolume": "Vorheriges Volumen",
-      "recipeNotes": "Primäre Notizen des Rezepts",
-      "recipeNoteTitle": "Rezept-Hauptnotiz hinzufügen",
-      "recipeOg": "Rezept OG",
-      "recordSecondaryVolume": "Sekundäres Volumen aufzeichnen",
-      "recordSecondaryVolumeDesc": "Geben Sie das Gesamtvolumen nach der Übertragung auf die Sekundärfermentation ein. Dies wird das Batchvolumen, das für Stabilisatoren und spätere Zusätze verwendet wird.",
-      "required": "Erforderlich",
-      "saveSecondaryVolume": "Volumen speichern",
-      "secondaryVolumePlaceholder": "Volumen nach der Übertragung eingeben",
-      "suggestedOg": "Vorgeschlagene OG",
-      "suggestedOgAvailable": "Vorgeschlagene OG verfügbar",
-      "volumeChange": "Volumenänderung",
-      "workflowHint": "Verwenden Sie die Abschnitte unten für geplante Elemente; halten Sie Notizen und Messwerte jederzeit verfügbar.",
-      "yeast": "Hefe"
-    },
-    "recipe": "Rezept",
-    "recipeTargetVolume": "Zielvolumen",
-    "recipeTotalSecondaryVolume": "Gesamtvolumen der Sekundärfermentation",
-    "requiredBeforeMoving": "Erforderlich vor dem Bewegen",
-    "secondary": {
-      "actualAmounts": "Tatsächliche Mengen",
-      "actualStabilizerWarning": "Warnung: Die tatsächlichen Mengen an Stabilisatoren weichen von der berechneten Empfehlung ab. Überprüfen Sie dies vor dem Speichern.",
-      "additionalNeeded": "Zusätzlich",
-      "additions": "Sekundäre Ergänzungen",
-      "adjustedVolumeForStabilizers": "Angepasstes Volumen",
-      "baseAbv": "Basis ABV",
-      "baseVolumeForStabilizers": "Basisvolumen",
-      "bottlePackage": "Flasche / Paket",
-      "calculatedStabilizers": "Berechnete Zusätze",
-      "confirmBulkAgeHelp": "Dies verschiebt das Bier aus der Sekundärfermentation in die Lagerungsphase.",
-      "confirmBulkAgeTitle": "In die Massenreifung verschieben?",
-      "confirmPackageHelp": "Dies überspringt die Massenreifung und bewegt das Gebräu direkt in die Verpackungsphase.",
-      "confirmPackageTitle": "In die Verpackung überführen?",
-      "currentVolume": "Aktuelles Volumen",
-      "dilutedAbv": "Verdünnte ABV",
-      "estimatedVolumeAfterStabilizers": "Geschätztes Volumen nach Zugaben in der Sekundärgärung",
-      "focusReady": "Bereit für die Umstellung auf die Massenreifung",
-      "focusTracking": "Sekundäre Zusätze und Volumen aktuell halten",
-      "ingredients": "Sekundärzutaten",
-      "latestGravity": "Neueste Dichte",
-      "logAddition": "Zugabe protokollieren",
-      "logAdditive": "Zusatz protokollieren",
-      "logIngredient": "Sekundäre Zutat protokollieren",
-      "logMissing": "Fehlendes protokollieren",
-      "logMissingAdditions": "Fehlende Zugaben protokollieren",
-      "logMissingAdditives": "Fehlende Zusätze protokollieren",
-      "logStabilizers": "Stabilisatoren protokollieren",
-      "logSupplementalStabilizers": "Zusätzliche Stabilisatoren protokollieren",
-      "moveToBulkAge": "In die Reifelagerung verschieben",
-      "needsReview": "Prüfung erforderlich",
-      "noRecipeAdditives": "Keine Rezeptzusätze gefunden.",
-      "noRecipeNotes": "Keine Sekundärnotizen im verknüpften Rezept gefunden.",
-      "noSecondaryIngredients": "Keine sekundären Zutaten im verknüpften Rezept gefunden.",
-      "plannedSecondaryVolumeUsed": "Ein Teil des Sekundärvolumens basiert noch auf geplanten Rezeptmengen. Das Protokollieren der tatsächlichen Sekundärzugaben verfeinert die Stabilisatorberechnung.",
-      "ready": "Bereit",
-      "recipeAdditives": "Rezeptzusätze",
-      "recipeNotes": "Sekundäre Rezeptnotizen",
-      "recipeNoteTitle": "Sekundäre Rezeptnotiz hinzufügen",
-      "recordVolumeAfterStabilizersHelp": "Du hast Stabilisatoren protokolliert. Erfasse jetzt das tatsächliche Volumen – Zugaben in der Sekundärgärung können das Chargenvolumen erhöhen und weitere Stabilisatoren erfordern.",
-      "recordVolumeAfterStabilizersTitle": "Aktualisiertes Volumen erfassen",
-      "scaleAdditives": "Skalierungszusätze",
-      "scaleSecondaryIngredients": "Skalierung sekundärer Zutaten",
-      "secondaryBeforeStabilizersHelp": "Dieses Rezept verwendet Stabilisatoren. Sekundäre Zutaten werden normalerweise nach den Stabilisatoren protokolliert, damit die Dosierung auf aktuellem Volumen und ABV basiert.",
-      "secondaryBeforeStabilizersTitle": "Zugaben vor Stabilisatoren protokollieren?",
-      "secondaryVolumeForStabilizers": "Sekundärvolumen",
-      "stabilizerAdditionNote": "Stabilisatorzugabe für die Sekundärphase berechnet.",
-      "stabilizerPhNote": "pH-Messung beim Protokollieren der Stabilisatoren erfasst.",
-      "sulfiteForm": "Sulfitform",
-      "supplementalStabilizerNote": "Zusätzliche Stabilisatorzugabe nach Änderung der sekundären Verdünnung.",
-      "supplementalStabilizersHelp": "Die protokollierten Sekundärzugaben haben die Verdünnung nach dem Protokollieren der Stabilisatoren erhöht. Prüfe die zusätzlichen Mengen vor der Zugabe.",
-      "supplementalStabilizersTitle": "Zusätzliche Stabilisatoren können nötig sein",
-      "takingPh": "pH-Messung erfassen?",
-      "workflowHint": "Protokolliere Zugaben, sobald sie passieren, und halte das Volumen vor der Reifelagerung aktuell."
-    },
-    "share": {
-      "action": "Ansatz teilen",
-      "copied": "Link zum öffentlichen Ansatz kopiert.",
-      "title": "Geteilter Ansatz: {{name}}"
-    },
-    "sort": {
-      "endDate": "Nach Enddatum sortieren",
-      "startDate": "Nach Startdatum sortieren"
-    },
-    "stage": "Bühne",
-    "stageChange": "Phasenwechsel",
-    "stageDesc": {
-      "bulkAge": "Verfolge Reifungsnotizen, gelegentliche Messwerte und die Verpackungsbereitschaft.",
-      "complete": "Prüfe Endwerte, Verpackung und Verkostungsnotizen.",
-      "packaged": "Erfasse Flaschen-, Fass- oder Verpackungsdetails vor dem Abschluss.",
-      "planned": "Bereite alles vor, bevor du startest."
-    },
-    "stagePanel": {
-      "title": "Brau-Tracker"
-    },
-    "stagePathHint": "Klicke auf eine Phase, um Aktionen zu sehen.",
-    "startDate": "Startdatum",
-    "stayHere": "Du bist hier",
-    "title": "Brew Tracker",
-    "visibility": {
-      "label": "Sichtbarkeit",
-      "private": "Privat",
-      "privateDescription": "Nur du und Admins können diesen Ansatz ansehen.",
-      "public": "Öffentlich",
-      "publicDescription": "Öffentliche Ansätze können über öffentliche Rezeptseiten angesehen werden.",
-      "recipeMustBePublic": "Veröffentliche zuerst das Rezept, bevor du diesen Ansatz teilst."
-    },
-    "volume": {
-      "currentVolume": "Aktuelles Volumen",
-      "enterVolume": "Volumen",
-      "noVolume": "Noch kein Volumen erfasst.",
-      "placeholder": "Volumen eingeben",
-      "recordCurrent": "Aktuelles Volumen erfassen",
-      "recordCurrentDesc": "Erfasse das aktuelle Chargenvolumen für diesen Ansatz."
-    },
-    "warn": {
-      "additivesMissing": "Einige verknüpfte Rezeptzusätze wurden noch nicht protokolliert.",
-      "bulkAgeOutstandingItems": "Einige verknüpfte Rezeptzutaten oder Zusätze wurden noch nicht protokolliert.",
-      "currentVolumeMissing": "Das aktuelle Volumen wurde noch nicht erfasst.",
-      "finalGravityEstimateMismatch": "Die Enddichte liegt nicht nahe an der geschätzten FG des Rezepts.",
-      "finalGravityEstimateMismatchWithValues": "Die Enddichte liegt nicht nahe an der geschätzten FG des Rezepts.",
-      "finalGravityMissing": "Die Enddichte wurde noch nicht protokolliert.",
-      "nutrientsMissing": "Einige geplante Nährstoffzugaben wurden noch nicht protokolliert.",
-      "originalGravityMissing": "Die Stammwürze wurde noch nicht protokolliert.",
-      "packagedVolumeMissing": "Das verpackte Volumen wurde noch nicht erfasst.",
-      "packagingMissing": "Verpackungsdetails wurden noch nicht erfasst.",
-      "primaryIngredientsMissing": "Noch nicht alle primären Zutaten wurden diesem Ansatz hinzugefügt.",
-      "secondaryFollowupReadingsMissing": "Sekundärzugaben können Dichte und Volumen verändern. Miss die Dichte und erfasse das aktuelle Volumen, bevor du fortfährst.",
-      "secondaryIngredientsMissing": "Einige geplante Sekundärzugaben wurden noch nicht protokolliert.",
-      "yeastMissing": "Die Hefe wurde noch nicht protokolliert."
-    },
-    "warnings": "Warnungen"
-  },
-  "brewStage": {
-    "BACKSWEETENED": "Nachgesüßt",
-    "BULK_AGE": "Massenreifung",
-    "COMPLETE": "Vollständig",
-    "PACKAGED": "Verpackt",
-    "PLANNED": "Geplant",
-    "PRIMARY": "Primär",
-    "SECONDARY": "Sekundär",
-    "STABILIZED": "Stabilisiert"
-  },
-  "brewTrackerDialog": {
-    "actionButton": "Brew Tracker anzeigen",
-    "description": "Verfolge deinen Brauprozess vom Rezept bis zum fertigen Produkt. Erstelle ein Rezept und melde dich anschließend in deinem Konto an, um den neuen Brauprozess-Tracker zu nutzen.",
-    "title": "Brew Tracker"
-  },
   "brewVolume": "Gib das Volumen Deines Gebräus ein:",
   "BRIX": "Brix",
   "brixHeading": "Brix",
@@ -791,7 +196,6 @@
       "abv": "Alkoholgehalt",
       "benchTrials": "Bench Trials",
       "blending": "Mischkreuz",
-      "bottling": "Abfüllrechner",
       "brix": "Brix",
       "estOG": "Geschätzte OG",
       "label": "Weitere Umrechner",
@@ -807,14 +211,9 @@
   "calTemp": "Kalibrierungstemperatur:",
   "campden": "Campden-Tabletten",
   "cancel": "Abbrechen",
-  "cannotView": "Sie sind nicht berechtigt, dieses Rezept einzusehen.",
   "cantaloupe": "Cantaloupe-Melone",
   "carrot": "Karrotte",
   "CEL": "°C",
-  "changesBanner": {
-    "description": "Sie haben Änderungen an diesem Rezept vorgenommen. Vergessen Sie nicht, es zu speichern.",
-    "title": "Nicht gespeicherte Änderungen"
-  },
   "changesForm": {
     "login": "Änderungen am Rezept speichern?",
     "saveAs": "Als neues Rezept speichern",
@@ -825,8 +224,6 @@
   "cherryTart": "Sauerkirsche",
   "chitosan": "Chitosan",
   "citricAcid": "Zitronensäure",
-  "clear": "Löschen",
-  "clearSearch": "Suche löschen",
   "cloudUrl": "Cloud-URL",
   "co2Vol": "Gib Dein CO2-Volumen ein:",
   "confirm": {
@@ -839,19 +236,15 @@
   "correctionFactor": "Korrekturfaktor:",
   "cranberry": "Cranberry",
   "cranberryJuice": "Cranberrysaft",
-  "creating": "Wird erstellt...",
   "cucumber": "Gurke",
   "currantBlack": "Johannisbeere, Schwarz",
   "currantRed": "Johannisbeere, Rot",
-  "current": "Aktuell",
   "curTemp": "Momentane Temperatur:",
   "customIngredient": "Eigene Zutat",
   "darkCornSyrup": "Dunkler Maissirup",
   "date": "Datum",
   "datesDried": "Dattel, getrocknet",
   "defaultPath": "Standardpfad festlegen",
-  "delete": "Löschen",
-  "deleted": "Gelöscht.",
   "deleteLogsDescription": "Dadurch werden alle Protokolle für dieses Gebräu oder Gerät von {{start_date}} bis {{end_date}} dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. ",
   "demararaSugar": "Demarara-Zucker",
   "desiredOG": "Gib das gewünschte spezifisches Gewicht zu Gärstart ein.",
@@ -938,13 +331,11 @@
     "nextSteps": "Wie geht es weiter?",
     "nextStepsBody": "Wir konzentrieren unsere Bemühungen auf die Web-App, damit wir Funktionen schneller bereitstellen und alles synchron halten können.",
     "openWeb": "MeadTools Web öffnen",
-    "pillAlt": "RAPT-Pillendiagramm",
     "showLegacy": "Alte Downloads anzeigen (nicht unterstützt)",
     "title": "MeadTools Desktop ist veraltet",
     "versionNote": "Letzte veröffentlichte Version: 1.0.3",
     "videoTitle": "MeadTools-Übersicht"
   },
-  "disableEdit": "Bearbeitung deaktivieren",
   "donate": {
     "dialog": {
       "cancel": "Nicht mehr anzeigen",
@@ -958,24 +349,12 @@
   "downloadDesktop": "Lade MeadTools Desktop herunter",
   "downloadPNG": "PNG herunterladen",
   "driedFruit": "Trockenfrüchte",
-  "dryMaltExtract": "Trockenmalzextrakt",
   "DU": "Delle-Einheiten",
   "edit": "Bearbeiten",
   "elderberry": "Holunderbeere",
   "email": "E-Mail:",
-  "emailAlerts": {
-    "disabled": "Sie erhalten keine E-Mail-Benachrichtigungen mehr für diese Brauerei.",
-    "enabled": "Sie erhalten E-Mail-Benachrichtigungen für diese Zubereitung.",
-    "title": "E-Mail-Benachrichtigungen"
-  },
-  "emptyNotes": "Drücken Sie die Schaltfläche unten, um eine Notiz hinzuzufügen.",
-  "end": "Ende",
   "enterTemp": "Gib die Temperatur ein:",
-  "entries": "Einträge",
-  "entry": "Eintrag",
   "error": "Etwas ist schief gelaufen",
-  "errorLabel": "Fehler",
-  "estateTannin": "Guts-Tannin",
   "estimatedOG": "Geschätztes OG:",
   "FAR": "°F",
   "fermentis": {
@@ -995,14 +374,11 @@
   "ftBlancSoft": "FT Blanc Soft",
   "ftRouge": "FT Rouge",
   "ftRougeBerry": "FT Rouge Berry",
-  "g": "g",
   "G": "g",
-  "gal": "gal",
   "GAL": "Gallonen",
   "gallonScaledAdjunct": "Skalierter Zusatz g/Gallone:",
   "GALS": "US-Gallonen",
   "gfDetails": "Go-Ferm-Details",
-  "Go-Ferm": "Go-Ferm",
   "goFermType": "Go-Ferm-Typ",
   "gooseberry": "Stachelbeere",
   "grapefruit": "Grapefruit",
@@ -1014,36 +390,25 @@
   "gravityLabel": "Spezifisches Gewicht:",
   "greeting": "Hallo",
   "guava": "Guave",
-  "hide": "Ausblenden",
   "honey": "Honig",
   "honeydewMelon": "Honigmelone",
   "hydrometerFG": "Hydrometer-FG:",
   "id": "ID",
   "ingredient": "Zutat",
-  "ingredientTooltip": "Wenn Sie eine Zutat aus der Liste auswählen, wird der Brix-Wert automatisch eingetragen. Wenn Sie eine benutzerdefinierte Zutat verwenden möchten, wählen Sie eine aus der Liste aus und ändern Sie den Namen. Beispiel: Blaubeerblütenhonig: Wählen Sie Honig aus und ändern Sie den Namen. ",
   "initialDetails": {
-    "abvOutOfRange": "Gib einen ABV zwischen 0 und {{maxDisp}} % ein.",
     "title": "Erste Details"
   },
-  "invalidCoefficients": "Bitte füllen Sie alle Koeffizienten mit gültigen Zahlenwerten aus.",
   "iSpindelDashboard": {
     "addBrewName": "Gebräunamen hinzufügen",
     "angle": "Winkel",
     "batteryLevel": "Batteriestand",
-    "brewError": "Dieses Gebräu konnte nicht geladen werden.",
-    "brewLogsHint": "Protokolle für diesen Brauvorgang.",
-    "brewNamePlaceholder": "Geben Sie den Brauereinamen ein",
     "brews": {
-      "currentRecipe": "Dieses Rezept ist bereits mit diesem Gebräu verknüpft.",
-      "currentRecipeShort": "Verlinkt",
       "dateRange": "Datumsbereich",
-      "details": "Braudetails",
       "endDate": "Enddatum",
       "endTime": "Endzeit:",
       "label": "Gebräue",
       "latestGrav": "Aktuellste Dichte",
       "link": "Rezept verlinken",
-      "linkError": "Brauprozess und Rezepte konnten nicht geladen werden.",
       "open": "Rezept öffnen",
       "recipeLink": "Rezept-Link",
       "showLogs": "Protokolle anzeigen",
@@ -1059,33 +424,21 @@
       "desc": "Die Diagrammdaten für MeadTools Desktop herunterladen."
     },
     "confirm": "Löschen bestätigen",
-    "copyError": "Fehler beim Kopieren in die Zwischenablage.",
     "copyToken": "  Text erfolgreich in die Zwischenablage kopiert.",
-    "copyUrl": "URL in die Zwischenablage kopieren",
     "deleteBrew": "Gebräu löschen",
     "deleteBrewAlert": "Möchtest du dieses Gebräu wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden. Alle mit diesem Gebräu verbundenen Protokolle werden ebenfalls gelöscht.",
     "deleteDevice": "Gerät löschen",
     "deleteDeviceAlert": "Möchtest du dieses Gerät wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden. Alle Protokolle zu diesem Gerät, die nicht mit einem Gebräu verknüpft sind, werden ebenfalls gelöscht.",
     "deleteLog": " Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird dieses Protokoll dauerhaft gelöscht.",
-    "deleting": "Löschen…",
     "deviceDetails": "Gerätedetails anzeigen",
-    "devices": {
-      "noResults": "Keine passenden Geräte gefunden.",
-      "searchPlaceholder": "Geräte suchen"
-    },
     "endBrew": "{{brew_name}} beenden",
-    "endBrewLoading": "Ende…",
     "enter": "Bitte den Dateinamen eingeben",
     "genToken": "Token generieren",
     "home": {
       "features": "Mit MeadTools kannst Du Ansätze verfolgen, mit einem Ansatz verknüpfte Protokolle anzeigen/bearbeiten/löschen, interaktive Diagramme Deiner Protokolle anzeigen und Deinen Ansatz mit einem MeadTools-Rezept verknüpfen.",
-      "subtitle": "Derzeit werden iSpindel-, Tilt- und RAPT Pill-Geräte unterstützt. Weitere Informationen zur Einrichtung dieser Geräte findest Du auf <a>der Einrichtungsseite</a> .",
-      "welcome": "Willkommen beim drahtlosen Hydrometer-Dashboard von MeadTools"
+      "subtitle": "Derzeit werden iSpindel-, Tilt- und RAPT Pill-Geräte unterstützt. Weitere Informationen zur Einrichtung dieser Geräte findest Du auf <a>der Einrichtungsseite</a> ."
     },
-    "label": "Kabelloses Hydrometer-Dashboard",
     "logDeleteRange": "Protokollbereich löschen",
-    "logsError": "Die Protokolle für diesen Brauvorgang konnten nicht geladen werden.",
-    "manage": "Drahtlose Hydrometer verwalten",
     "nameOrId": "Name/ID",
     "nav": {
       "brews": "Gebräue",
@@ -1094,17 +447,8 @@
       "setup": "Aufsetzen"
     },
     "noBrews": "Noch keine Gebräue.",
-    "openChart": "Diagramm öffnen",
     "pagination": "Anzahl pro Seite.",
-    "placeholder": {
-      "generateToken": "Bitte generieren Sie ein Token."
-    },
     "receiveEmailAlerts": "E-Mail-Benachrichtigungen",
-    "recentLogs": "Aktuelle Protokolle",
-    "recipes": {
-      "searchPlaceholder": "Rezepte suchen"
-    },
-    "searchBrews": "Brauereien suchen",
     "setup": {
       "info": "     Das obige Token wird zusammen mit dem iSpindel-Namen verwendet, um deine Geräte zu identifizieren und sie mit deinem Konto zu verknüpfen. Bitte stelle sicher, dass du für jedes deiner Geräte einen anderen iSpindel-Namen hast, um Überschneidungen bei der Datenprotokollierung zu vermeiden. Wenn du dein Token neu generierst, musst du es auf ALL deinen Geräten aktualisieren, damit deine Protokolle gespeichert werden.",
       "serviceType": "Diensttyp: HTTPS-Post",
@@ -1114,18 +458,8 @@
       "title": "iSpindel einrichten"
     },
     "signalStrength": "Signalstärke",
-    "startBrew": "Gebräu starten",
-    "startBrewLoading": "Es beginnt…",
-    "tabs": {
-      "iSpindel": "iSpindel",
-      "label": "Einrichtung {{tabLabel}}",
-      "pill": "RAPT-Pille",
-      "tilt": "Neigung"
-    },
-    "unknownBrew": "dein Gebräu",
-    "updateCoefficients": "Koeffizienten aktualisieren (nur iSpindel)"
+    "startBrew": "Gebräu starten"
   },
-  "issue": "Problem",
   "jackfruit": "Jackfrucht",
   "jalapeno": "Jalapeno",
   "juice": "Saft",
@@ -1232,30 +566,13 @@
       "w15": "W15"
     }
   },
-  "lastUpdated": "Zuletzt aktualisiert",
   "LBS": "Pfund",
-  "legacyRecipeMessage": "Ältere Rezepte werden nicht mehr unterstützt. Bitte nutzen Sie die Kontaktseite, um dieses Problem zu lösen.",
   "lemonJuice": "Zitronensaft",
   "lightCornSyrup": "Heller Maissirup",
   "limeJuice": "Limettensaft",
-  "linking": "Verknüpfung…",
   "LIT": "Liter",
   "literScaledAdjunct": "Skalierter Zusatz g/Liter:",
   "localRecipes": "Lokale Rezepte",
-  "log": {
-    "deleted": "Protokoll erfolgreich gelöscht",
-    "updated": "Aktualisierung erfolgreich"
-  },
-  "login": {
-    "error": {
-      "title": "Fehler bei der Anmeldung"
-    },
-    "success": {
-      "description": "Willkommen zurück, {{userEmail}}!",
-      "title": "Anmeldung erfolgreich!"
-    }
-  },
-  "logout": "Abmelden",
   "lychee": "Litschi",
   "malicAcid": "Äpfelsäure",
   "mango": "Mango",
@@ -1279,7 +596,6 @@
   "measuredSG": "Gemessene SG:",
   "message": "Nachricht:",
   "MG": "mg",
-  "missingToken": "Fehlendes oder ungültiges Reset-Token.",
   "ML": "ml",
   "mobileChartMessage": "Bitte verwende zum Anzeigen dieses Diagramms das Querformat oder ein größeres Gerät.",
   "molasses": "Melasse",
@@ -1289,25 +605,17 @@
     "label": "Stickstoffbedarf",
     "low": "Niedrig",
     "medium": "Mittel",
-    "veryHigh": "Sehr Hoch",
-    "veryLow": "Sehr niedrig"
+    "veryHigh": "Sehr Hoch"
   },
   "name": "Name:",
-  "nameRequired": "Der Rezeptname ist erforderlich.",
   "naMeta": "Natriummetabisulfit",
   "nectarine": "Nektarine",
   "newFeatures": "Neue Features",
-  "newNote": "Neue Notiz",
   "no": "Nein",
   "noDevices": "Noch keine Geräte.",
-  "noEntries": "Noch keine Einträge.",
   "noLogs": "  Für diesen Datumsbereich gibt es keine Protokolle",
-  "none": "Keine",
-  "noRecipe": "Kein Rezept verknüpft.",
   "noRecipesFound": "Keine Rezepte gefunden.",
-  "noResults": "Keine Ergebnisse gefunden.",
   "noSorb": "Kein Sorbat nötig!",
-  "note": "Notiz",
   "notes": {
     "details": "Datum, Dichte, etc.",
     "note": "Notiz",
@@ -1320,9 +628,6 @@
   "numberOfAdditions": "Anzahl an Nährstoffgaben",
   "numOfPages": "Seite {{start_page}} von {{end_page}}",
   "nuteAmounts": "Nährstoffmengen",
-  "nuteLabels": {
-    "targetYAN": "Ziel-YAN"
-  },
   "nuteResults": {
     "gfTypes": {
       "gf": "Go-Ferm",
@@ -1332,7 +637,6 @@
     },
     "gfWater": "Wasser für Go-Ferm",
     "label": "Nährstoffrechner-Ergebnisse",
-    "perAddition": "pro Hinzufügung",
     "sb": "1/3 Zuckergrenze",
     "sideLabels": {
       "maxGpl": "Max g/L",
@@ -1341,8 +645,7 @@
       "remainingYan": "Verbleibendes YAN",
       "totalGrams": "Gesamt Gramm",
       "totalYan": "Gesamt YAN"
-    },
-    "total": "gesamt"
+    }
   },
   "nuteSchedules": {
     "dap": "Nur DAP",
@@ -1364,33 +667,19 @@
     "fermO": "Fermaid O",
     "goFerm": "Go Ferm"
   },
-  "nutrientWarning": "Keine Ergänzung erforderlich: Basierend auf Ihren Einstellungen wird dieser Nährstoff mit 0 g berechnet, da der YAN-Bedarf bereits durch andere Nährstoffe oder Ihren Ausgleich gedeckt ist. Sollte dies nicht beabsichtigt sein, sollten Sie einen dieser Werte aktualisieren.",
   "oakChips": "Eichenchips",
   "oakCubes": "Eichenwürfel",
   "oakSpirals": "Eichenspiralen",
-  "off": "Aus",
   "offset": "PPM-Versatz",
   "OG": "OG",
   "ogHeading": "Geschätztes OG ohne Messwert",
   "ogLabel": "OG eingeben:",
-  "on": "Ein",
-  "ongoing": "laufend",
   "onion": "Zwiebel",
-  "open": "Öffnen",
-  "optional": "Optional",
   "optiRed": "Opti-Red",
   "optiWhite": "Opti-White",
   "orangeJuice": "Orangensaft",
   "other": {
-    "detailsHeading": "Weitere Nährwertangaben",
     "label": "Other",
-    "nutrientPresetHelp": "Wähle einen Nährstoff aus der Liste, um seine Werte auszufüllen, oder gib die Angaben für deinen eigenen Nährstoff ein.",
-    "organicMultiplier": "Multiplikator für organischen Stickstoff verwenden",
-    "organicMultiplierHelp": "Wähle dies nur für Nährstoffe, die vollständig aus organischem Stickstoff bestehen.",
-    "settingsAdjustValue": "Umschalter für die YAN-Einstellung",
-    "settingsProvidedYan": "Bereitgestellt von YAN",
-    "settingsTitle": "Nährstoffeinstellungen anpassen",
-    "yanContribution": "YAN-Beitrag",
     "yeasts": {
       "genericBeerYeast": "Generic Beer Yeast",
       "kveikYeast": "Kveik Yeast",
@@ -1403,15 +692,11 @@
   "pagination": {
     "next": "Nächste",
     "pageInfo": "Seite {{page}} von {{totalPages}}",
-    "pageSizeOptions": "{{n}} Artikel",
-    "perPage": "Pro Seite:",
     "previous": "Vorherige",
     "showing": "Zeige {{start}} – {{end}} von {{total}}"
   },
   "papaya": "Papaya",
   "passionFruit": "Maracuja",
-  "passwordMismatch": "Die Passwörter stimmen nicht überein.",
-  "passwordSuccessMessage": "Passwort aktualisiert. Bitte melden Sie sich an.",
   "PDF": {
     "addAmount": "Menge",
     "additives": "Zusätze",
@@ -1451,37 +736,12 @@
   "persimmon": "Kaki",
   "pH": "Misst du den pH-Wert?",
   "pineapple": "Ananas",
-  "placeholder": {
-    "abv": "ABV eingeben",
-    "og": "Enter OG",
-    "volume": "Lautstärke eingeben"
-  },
   "plum": "Pflaume",
   "pomegranate": "Granatapfel",
   "potassiumCarbonate": "Kaliumkarbonat",
   "poweredBy": "Powered by",
   "PPM": "PPM",
   "pricklyPear": "Kaktusfeige",
-  "primaryTargets": {
-    "abvFgBasis": "Der ABV wird anhand des geschätzten Endgewichts des Rezepts von {{fg}} berechnet.",
-    "abvImpossible": "Diese Verhältnisse enthalten eine nicht vergärbare Zutat (SG ≤ 1). ABV-Ziele über 0 % sind nicht erreichbar.",
-    "abvRange": "Erreichbarer ABV-Bereich mit diesen Verhältnissen: 0–{{maxDisp}} %",
-    "abvTooHigh": "Der Ziel-ABV liegt über dem maximal erreichbaren ABV für diese Verhältnisse (max. {{maxDisp}} %).",
-    "abvUnknown": "Der maximal erreichbare ABV kann anhand der aktuellen Verhältnisse nicht berechnet werden.",
-    "dialogDesc": "Die Verhältnisse sollten sich zu 100 % summieren. Dadurch werden die Hauptbestandteile so skaliert, dass sie Ihren Zielvorgaben entsprechen.",
-    "dialogTitle": "Primäre Ziele",
-    "locked": "Verwendung von aktuellen Kennzahlen",
-    "normalize": "Normalisieren",
-    "ogImpossible": "Diese Verhältnisse beinhalten einen nicht vergärbaren Anteil (SG ≤ 1). OG-Zielwerte über 1,000 sind nicht erreichbar.",
-    "ogRange": "Erreichbarer OG-Bereich mit diesen Verhältnissen: 1,000– {{maxDisp}}",
-    "ogTooHigh": "Der Ziel-OG liegt über dem maximal erreichbaren OG für diese Verhältnisse (max {{maxDisp}} ).",
-    "ogUnknown": "Der maximal erreichbare OG-Wert kann aus den aktuellen Verhältnissen nicht berechnet werden.",
-    "open": "Primäre Ziele festlegen",
-    "ratios": "Primäre Verhältnisse",
-    "sum": "Summe",
-    "tooltip": "Legen Sie ein Ziel-Stammwürze-/Volumenverhältnis fest und passen Sie die Verhältnisse der Hauptbestandteile an.",
-    "unlocked": "Bearbeitungsverhältnisse"
-  },
   "primingSugarHeading": "Priming-Zucker-Rechner",
   "primingTable": {
     "perBatchHeading": "Menge pro Charge",
@@ -1492,15 +752,6 @@
   },
   "private": "Privates Rezept?",
   "prunes": "Trockenpflaumen",
-  "publicBrews": {
-    "backToRecipe": "Zurück zum Rezept",
-    "description": "Brauer haben diese Chargen aus diesem Rezept geteilt.",
-    "empty": "Für dieses Rezept wurden noch keine öffentlichen Ansätze geteilt.",
-    "title": "Öffentliche Ansätze",
-    "unavailableDescription": "Dieser Ansatz ist privat, wurde entfernt oder der Link ist nicht mehr gültig.",
-    "unavailableTitle": "Ansatz nicht verfügbar",
-    "viewBrew": "Ansatz ansehen"
-  },
   "publicRecipes": {
     "fail": " Rezepte konnten nicht geladen werden. Bitte versuche es später noch einmal.",
     "title": "Öffentliche Rezepte"
@@ -1514,39 +765,13 @@
   "QUARTS": "Quart",
   "raisins": "Rosinen",
   "rapt": {
-    "cloud": {
-      "description": "MeadTools bietet Unterstützung für die RAPT Pill über die RAPT Cloud Custom Web Hooks.",
-      "importantNote": "WICHTIGER HINWEIS: Sie MÜSSEN Ihrem Gerät einen eindeutigen Gerätenamen zuweisen. Dadurch können Sie diesen Webhook für alle Ihre RAPT Pill-Geräte wiederverwenden.",
-      "payloadTitle": "Nutzlast",
-      "portalLinkText": "RAPT-Portal",
-      "steps": {
-        "step1": "Gehen Sie im RAPT-Portal unter „Mein Konto“ zu „Web Hooks“.",
-        "step2": "Klicken Sie oben auf die Schaltfläche „Neuen Webhook erstellen“.",
-        "step3": "Name und Beschreibung sind optionale (aber empfohlene) Werte. Kopieren Sie die unten stehende Cloud-URL und wählen Sie als Methode „Post“.",
-        "step4": "Stellen Sie Ihre Temperatureinheiten ein, vergewissern Sie sich, dass Ihr Token generiert wurde, und kopieren Sie die unten stehende Nutzlast in die Registerkarte „Nutzlast“.",
-        "step5": "Fügen Sie Ihr Gerät im Tab „Geräte“ hinzu."
-      }
-    },
     "credits": "Diese App wurde in Zusammenarbeit mit TooL entwickelt und wäre ohne seine Arbeit zur Dekodierung des Bluetooth-Signals der RAPT Pill nicht möglich gewesen. Das Repository findest Du <a>hier</a> .",
     "description": "MeadTools unterstützt RAPT Pill derzeit über Bluetooth mit der MeadTools Pill Desktop-App. RAPT Cloud-Unterstützung ist für die nahe Zukunft geplant.",
     "heading": "RAPT Pill einrichten",
     "macos_note": "Wenn Du macOS verwendest, kannst Du <a>dieser Anleitung</a> folgen, um nicht signierte Apps zuzulassen.",
-    "tabs": {
-      "bt": "Bluetooth",
-      "cloud": "RAPT Cloud"
-    },
-    "tempUnitsLabel": "Temperatureinheiten",
     "warning": "Die MeadTools Pill App steht unten zum Download bereit. Sie ist nicht signiert, daher wird Dein System Dich beim ersten Öffnen warnen."
   },
   "raspberry": "Himbeere",
-  "ratings": {
-    "leave": "Hinterlassen Sie eine Bewertung",
-    "logIn": "Melden Sie sich an, um eine Bewertung abzugeben."
-  },
-  "rating": {
-    "success": "Vielen Dank für Ihre {{draftRating}} Tassenbewertung."
-  },
-  "recipe": "Rezept",
   "recipeBuilder": {
     "addNew": "Neue Zutat hinzufügen",
     "homeHeading": "Rezepterstellung",
@@ -1560,7 +785,6 @@
     "percent": "%",
     "reset": "Rezept zurücksetzen",
     "resetConfirmation": "Bist du sicher, dass du das Rezept zurücksetzen möchtest? Dies kann nicht rückgängig gemacht werden.",
-    "resetDone": "Rezept wurde zurückgesetzt.",
     "resultsLabels": {
       "abv": "Alkoholgehalt:",
       "backFG": "Nachgesüßte FG",
@@ -1578,19 +802,6 @@
     "subtitle": "Rezeptname eingeben",
     "title": "Rezept Speichern"
   },
-  "recipeNotFound": "Das gewünschte Rezept existiert nicht.",
-  "recipeNotFoundTitle": "Rezept nicht gefunden",
-  "recipes": {
-    "connectedBrews": {
-      "count": "Verknüpfte Brauvorgänge: {{count}}",
-      "description": "Brauvorgänge, die aus diesem Rezept erstellt wurden, erscheinen hier.",
-      "empty": "Mit diesem Rezept sind noch keine Brauvorgänge verknüpft.",
-      "openBrew": "Brauvorgang öffnen",
-      "title": "Verbundene Brauvorgänge"
-    }
-  },
-  "recipeSuccess": "Rezept erfolgreich erstellt.",
-  "recipeUpdate": "Rezept erfolgreich aktualisiert.",
   "redStar": {
     "label": "Red Star",
     "yeasts": {
@@ -1606,43 +817,26 @@
   "redWineTannin": "Rotwein-Tannin",
   "refractometerFG": "Refraktometer-FG:",
   "refractometerHeading": "Refraktometerkorrektur-Rechner",
-  "remove": "Entfernen",
   "reset": "Zurücksetzen",
   "resetAll": "Alles zurücksetzen",
-  "resetPassword": {
-    "description": "Prüfen Sie, ob Sie in Ihrer E-Mail einen Link zum Zurücksetzen des Geräts finden."
-  },
   "results": "Ergebnisse",
   "rhubarb": "Rhabarber",
   "sampleChartLabel": "Unten siehst Du ein Beispieldiagramm mit iSpindel-Daten von Silentrob.",
   "sampleSize": "Probenmenge (ml):",
-  "save": "Speichern",
   "SAVE": "Speichern",
   "saveCopy": "Eine Kopie dieses Rezepts speichern",
-  "saved": "Gespeichert.",
-  "savedRecipes": "Gespeicherte Rezepte",
   "saveLocally": "Lokal speichern",
-  "saving": "Speichern…",
   "scale": {
     "current": "Aktuelles Gesamtvolumen",
-    "currentPrimary": "Aktuelles Primärvolumen",
-    "currentVolume": "Aktuelles Volumen",
-    "modePrimary": "Primärvolumen skalieren",
-    "modeTotal": "Gesamtvolumen skalieren",
     "target": "Zielvolumen",
-    "targetPrimary": "Zielvolumen",
-    "targetVolume": "Zielvolumen",
     "title": "Rezept skalieren"
   },
   "scaledBatch": "Skalierter Zusatz (gesamter Ansatz):",
-  "search": "Suchen",
-  "searchLabel": "Suchen: ",
   "searchPlaceholder": "Gib zur Suche einen Rezeptnamen oder Benutzernamen ein.",
   "selectNutes": "Nährstoffe auswählen",
   "send": "Abschicken",
   "servingSize": "Portionsgröße",
   "SG": "SG",
-  "show": "Anzeigen",
   "showBrix": "Brix anzeigen?",
   "sideNav": {
     "abv": "Alkoholgehalt",
@@ -1655,38 +849,23 @@
     "tempCorrection": "Hydrometer-Temperaturkorrektur"
   },
   "solutionVolume": "Volumen Stammlösung (ml):",
-  "sorbate": "Sorbat",
   "sorbateHeading": "Sorbat",
   "sorghumSyrup": "Sorghum-Sirup",
-  "sortLabel": "Sortieren",
-  "sortLabels": {
-    "default": "Standard",
-    "id": "AUSWEIS",
-    "name": "Name"
-  },
   "sparkolloid": "Sparkolloid",
   "stabilizersHeading": "Stabilisatoren",
-  "stabilizers": {
-    "label": "Stabilisatoren"
-  },
-  "stage": "Phase",
-  "start": "Starten",
   "stockSolutionConcentration": "Konzentration (%):",
   "strawberry": "Erdbeere",
   "SUBMIT": "Abschicken",
   "success": "Deine Nachricht wurde übermittelt!",
-  "successLabel": "Erfolg",
   "sugar": "Zucker",
   "sugPerServe": "Zucker pro Portion",
   "sulfiteHeading": "Sulfit",
   "tableSugar": "Haushaltszucker",
-  "tablets": "Tabletten",
   "tangerine": "Mandarine",
   "tanninComplex": "Tannin Complex",
   "tanninRicheExtra": "Tannin Riche Extra",
   "targetYan": "Ziel-YAN",
   "tartaricAcid": "Weinsäure",
-  "tasting": "Verkostung",
   "TBSP": "Esslöffel",
   "tempCorrectionHeading": "Temperaturkorrektur-Rechner",
   "temperature": "Temperatur",
@@ -1694,9 +873,7 @@
   "tempUnits": "Temperatureinheiten",
   "tilt": {
     "instructions": {
-      "note": "Fügen Sie den Link in das Feld „Benutzerdefinierte Cloud-URL“ für die Protokollierung durch Drittanbieter in der Tilt 2-App ein. Die App muss aktiv und in der Nähe des Fermenters sein, damit die Protokollierung kontinuierlich funktioniert.",
-      "recommendation": "Wenn dieses Setup für Dich nicht funktioniert, ziehe die Verwendung eines <a>TiltPi</a> in Betracht.",
-      "text": "Der obige Token dient zur Identifizierung Ihres Tilt-Geräts mit Ihrem Konto. Der Gerätename wird auf die Farbe Ihres Tilt-Hydrometers eingestellt. Die Verwendung zweier Hydrometer mit derselben Farbe funktioniert daher nicht. Um Ihr Hydrometer einzurichten, generieren Sie Ihren Token und kopieren Sie anschließend die Cloud-URL in die Tilt 2 App oder TiltPi. Bei Verwendung von Tilt 2 müssen Sie möglicherweise „Benutzerdefinierte Cloud-URL verwenden“ in den Einstellungen aktivieren. MeadTools beginnt automatisch mit der Protokollierung basierend auf dem von Ihnen festgelegten Biernamen. Wenn Sie Ihren Token zurücksetzen, kopieren Sie unbedingt Ihre neue Cloud-URL in Tilt 2/TiltPi."
+      "recommendation": "Wenn dieses Setup für Dich nicht funktioniert, ziehe die Verwendung eines <a>TiltPi</a> in Betracht."
     }
   },
   "tipText": {
@@ -1704,7 +881,6 @@
     "abvWarning": "Die Erzeugung eines Alkoholgehalts von über 20% ist allein durch Gärung ohne stufenweise Nachzuckerung höchst unwahrscheinlich.",
     "additives": "Zutaten, die keine vergärbaren Zucker beinhalten, werden am besten hier aufgeführt. Du kannst eine der vorgeschlagenen Zusätze nehmen oder deinen eigenen nutzen.",
     "adjustYanValue": "Dieses Feld sollte nur von Benutzern bearbeitet werden, die eine genaue Kontrolle über ihre YAN-Verhältnisse wünschen. Nur für erfahrene Met-Macher!",
-    "backsweetenedFg": "Dieser Wert wird automatisch anhand der als „sekundär“ gekennzeichneten Zutaten berechnet. Durch Anpassen des Werts und Klicken auf „Absenden“ werden die Mengen dieser sekundären Zutaten so verändert, dass die gewünschte Stammwürze erreicht wird.",
     "benchTrials": {
       "body": "'Bench Trials' sind ein kompliziertes Thema, mit dem man sich vorher gründlich beschäftigen sollte. Hierzu finden sich hier einige nützliche Quellen: ",
       "linkTexts": [
@@ -1716,19 +892,14 @@
     "brix": "Brix misst die Menge an gelösten Feststoffen in einer Flüssigkeit. 1g Haushaltszucker in 100ml Wasser sind 1 Brix, es sind also ungefähr der prozentuale Zuckeranteil. Du kannst die Einheit Brix mit einem Refraktometer messen, sie durch die Nährstoffgehaltsangaben berechnen oder mit dem entsprechenden Rechner den SG-Wert zu Brix umrechnen, um sie dann hier als Zuckeranteil zu verwenden.",
     "campden": "Hinweis: Campden-Tabletten werden größtenteils nur noch in den USA als Alternative zu Kaliumdisulfitpulver verwendet. Campden-Tabletten variieren etwas in der Menge an freiem SO2, die sie enthalten. MeadTools geht bei der Berechnung davon aus, dass eine Campden-Tablette 75PPM freies SO2 enthält.",
     "delleUnits": "Delle-Einheiten sind eine Maßeinheit für mikrobielle Stabilität. Je höher die Zahl, desto wahrscheinlicher ist der Met/Wein stabil, ohne weitere Zusätze oder Stabilisierungsmethoden zu benötigen. Delle-Einheiten werden Anhand von Restzucker und Alkoholgehalt berechnet. 73 Delle-Einheiten werden von den meisten als stabil angesehen, aber der Wert variiert. Alkoholtoleranz wird bei der Dell-Stabilität NICHT berücksichtigt. Mehr dazu: ",
-    "desiredDetailsForm": "Dieses Formular dient zur Ermittlung der ersten Maische mit der gewünschten Stammwürze und dem gewünschten Volumen. Wenn Sie dieses Formular verwenden, nachdem Sie die anderen Zutaten eingegeben haben, werden alle Zutaten außer einer Honigzeile und einer Wasserzeile gelöscht. ",
     "emailAlerts": "Dadurch werden Warnmeldungen an die E-Mail-Adresse gesendet, die Du gespeichert hast, wenn sich dieses Gebräu der 1/3-Zuckergrenze nähert und wenn es sich 1.000 nähert",
     "estimatedFg": "Wenn du nicht vor hast, die Gärung vorzeitig zu beenden, ist es vermutlich am besten, dieses Feld bei 0.996 zu belassen. Diese Schätzung wird für die meisten Rezepte genau genug sein.",
-    "estOG": "Die ursprüngliche Formel befindet sich leider auf einer Website, die nicht mehr funktioniert. Ich habe den ursprünglichen Blog-Artikel auf dieser Website aufbewahrt.  ",
     "goFerm": "Die GoFerm-Sorte verändert die Menge an Wasser, die für die Rehydration benötigt wird und beeinträchtigt die Effektivität von Fermaid O.",
-    "goFermWater": "Wassermenge zur Rehydrierung.",
     "linkText": "hier.",
     "maxGpl": "Diese Werte errechnet sich basierend auf dem Nährstoffplan, den du dir aussuchst. Sie sind veränderbar, aber das ist nicht empfohlen, wenn du nicht genau weisst, was du tust.",
     "nitrogenRequirements": "Hängt vom verwendeten Hefestamm ab. Wenn deine Hefe nicht in dieser Liste ist und du ihren Stickstoffbedarf nicht kennst, nimm am besten \"Andere: Andere Hefe mit mittlerem Stickstoffbedarf\". Dieser Wert kann verändert werden, wenn du eine Hefe benutzen willst, die einen besonderen Bedarf hat.",
-    "numberOfAdditions": "Gestaffelte Nährstoffzugaben sind hilfreich, um Temperaturspitzen während der Gärung zu vermeiden, die die Hefe stressen können. Vier Nährstoffzugaben sind wahrscheinlich das gängigste Vorgehen, ich persönlich verwende jedoch in den meisten Fällen drei oder nur eine Zugabe. Liegt Ihre Stammwürze über 1,080, sollten Sie wahrscheinlich mehr als eine Zugabe vornehmen.",
     "nutrientSg": "Dies ist die Differenz an SG (\"Specific Gravity\" = spezifische Dichte), die die FG (\"Final Gravity\" = finale Dichte) berücksichtigt. Wenn zum Beispiel deine OG (\"Original Gravity\" = ursprüngliche Dichte) als 1.100 angegebene ist und deine FG als 1.010, wird dieses Feld 1.090 anzeigen. Dieses Feld kann verändert werden.",
     "offsetPpm": "Manche Ansätze beinhalten bereits einige YAN (\"Yeast Assimilable Nitrogen\" = Von der Hefe verwendbarer Stickstoff). Dieser Rechner geht automatisch von 25ppm pro Pfund Frucht je Gallone aus.Dieser Wert kann verändert werden.",
-    "ogSeriousWarning": "Dieses Gebräu wird wahrscheinlich bei über 1.000 fertig gären, selbst bei schrittweiser Fütterung und richtiger Ernährung. Wenn Ihr OG über 1.170 liegt, kann es sein, dass die Gärung nicht richtig beginnt.",
     "ogWarning": "Bei dieser Dichte solltest Du eine stufenweise Nachzuckerung mit Honig in Erwägung ziehen.",
     "oneThird": "Der 1/3 SB (\"Sugar Break\") ist, wenn ein Drittel des Zuckers im Ansatz vergoren wurden. Diese Grenze wird häufig benutzt, um die letzte Nährstoffgabe einzuplanen.",
     "preferredSchedule": "Dieser Rechner ermöglichst es dir, eine Kombination von Fermaid O, Fermaid K und DAP anzugeben. Es steht dir frei, für welche Nährstoffsorten und -kombinationen du dich entscheidest, aber bestimmte Zusammensetzungen sind für bestimmte Situationen besser geeignet. Mehr zu Nährstoffen und Plänen findest du ",
@@ -1738,18 +909,13 @@
     "totalVolume": "Dieses Gesamtvolumen ist eine Schätzung nur unter Berücksichtigung der vergärbaren Zutaten im Ansatz während der Primärgärung. Dein tatsächliches Volumen WIRD höher sein, wenn du einen hohen Anteil an ganzen Früchte verwendest.",
     "volumeLines": "Die ersten beiden Reihen enthalten nur flüssige Zutaten. Alle Zutatenangaben können entweder nach Volumen oder Gewicht gemacht werden.",
     "yan": "YAN (\"Yeast Assimilable Nitrogen\" = Von der Hefe verwendbarer Stickstoff) ist die Menge an Stickstoff, die deine Hefe für eine gesunde Gärung benötigt. Die benötigten Werte hängen von der verwendeten Hefe und der OG (\"Original Gravity\" = ursprüngliche Dichte) ab.",
-    "yeastAmount": "Die Hefemenge in diesem Rechner basiert auf der Dichtemessung und dem Gesamtvolumen. Der Wert ist veränderbar und ich schlage vor, dass du in den meisten Fällen auf die nächsthöhere Päckchengröße aufrundest.",
-    "yeastAmountAuto": "Automatischer Betrag wiederherstellen"
+    "yeastAmount": "Die Hefemenge in diesem Rechner basiert auf der Dichtemessung und dem Gesamtvolumen. Der Wert ist veränderbar und ich schlage vor, dass du in den meisten Fällen auf die nächsthöhere Päckchengröße aufrundest."
   },
   "tiptext": {
-    "notify": "Wenn Sie dieses Kästchen ankreuzen, erhalten Sie täglich eine E-Mail-Benachrichtigung an die hinterlegte E-Mail-Adresse, sobald neue Kommentare oder Bewertungen eingehen. ",
     "refractometerWarning": "Dieser Wert sollte nur angepasst werden, wenn Du den Korrekturfaktor für Dein spezifisches Refraktometer berechnet hast. Dies ist meistens überflüssig. Weitere Informationen findest du"
   },
-  "title": "Titel",
   "tomato": "Tomate",
   "tomatoJuice": "Tomatensaft",
-  "toNextBatchVolume": "Füllen Sie die Charge bis zur nächsten {{volumeUnit}}",
-  "toNextTotalVolume": "Füllen Sie die Summe auf die nächste {{volumeUnit}} auf.",
   "toNextVolume": "Bis zum nächsten {{volumeUnit}} auffüllen",
   "totalVol": "Gesamtvolumen:",
   "TSP": "Teelöffel",
@@ -1809,29 +975,7 @@
     "finalStep": "Klicke <backLink> hier</backLink>, um zum Rezept-Generator zurückzukehren und loszulegen! Du kannst das Tutorial jederzeit wiederholen unter <tutorialLink> meadtools.com/tutorial</tutorialLink>.",
     "redoTutorial": "Du kannst das Tutorial jederzeit wiederholen unter"
   },
-  "type": "Typ",
-  "unathorized": "Nicht autorisiert",
-  "unit": "Einheit",
   "UNITS": "Einheiten",
-  "units": {
-    "C": "°C",
-    "F": "°F",
-    "gpl": "g/L",
-    "imp_fl_oz": "imp fl oz",
-    "imp_gal": "imp gal",
-    "imp_pt": "imp pt",
-    "imp_qt": "imp qt",
-    "kg": "kg",
-    "L": "l",
-    "mg": "mg",
-    "mL": "ml",
-    "pt": "pt",
-    "qt": "qt",
-    "units": "Einheiten"
-  },
-  "unnamedDevice": "Unbenanntes Gerät",
-  "unnamedIngredient": "Unbenannt",
-  "untitledRecipe": "Rezept ohne Titel",
   "updateLocalChanges": "Lokale Änderungen aktualisieren",
   "val1": "Erster Wert:",
   "val2": "Zweiter Wert:",
@@ -1840,16 +984,13 @@
   "vol1": "Erstes Volumen:",
   "vol2": "Zweites Volumen:",
   "volInvalid": "Bitte gib eine gültige CO2-Menge ein",
-  "volume": "Volumen",
   "volumeUnits": "Volumeneinheiten:",
   "water": "Wasser",
   "watermelon": "Wassermelone",
-  "weight": "Gewicht",
   "yeastAmount": "Hefemenge",
   "yeastBrand": "Hefehersteller",
   "yeastDetails": "Hefedetails",
   "yeasts": "Hefetabelle",
-  "yeastSearch": "Wenn Sie eine Hefe aus der Liste auswählen, werden die Informationen automatisch ausgefüllt. Wenn Sie eine Hefe auswählen, die nicht der von Ihnen ausgewählten Marke entspricht, wird die Marke automatisch aktualisiert. Sie können auch benutzerdefinierte Hefen eingeben, müssen dann aber die anderen Werte selbst anpassen.",
   "yeastStrain": "Hefesorte",
   "yes": "Ja"
 }
