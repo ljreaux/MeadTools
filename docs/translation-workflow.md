@@ -1,8 +1,7 @@
 # Translation workflow
 
-> **Status: cutover in progress.** Weblate is the translation service and Git
-> is the source of truth. The temporary build-pause marker remains in place
-> until this flow passes a real feature cycle.
+> **Status: Weblate is the translation service and Git is the source of
+> truth.** Normal builds are enabled.
 
 ## Goals
 
@@ -32,8 +31,7 @@ through `https://translations.meadtools.com/accounts/reset/`.
 Both production components (`default` and `yeast-table`) use the `preview`
 branch and Weblate's write-enabled deploy key. GitHub has a `push` webhook to
 Weblate, so an update to `preview` is fetched promptly. **Push on commit** is
-temporarily disabled while the old local-only unconfirmed batch is cleared; it
-is re-enabled immediately before the controlled end-to-end test.
+enabled.
 
 The Automatic Translation add-on is configured per component as follows:
 
@@ -85,10 +83,22 @@ access; until then it is assigned to `ljreaux`.
 `rizzek` is trusted automatically. The `translations-approved` label is the
 maintainer override for another reviewer.
 
-### Weblate review or approval
+### No-op approval from the review issue
 
-For an unchanged suggestion, review and approve it directly in Weblate. For a
-small correction, editing in Weblate is also allowed; Weblate makes the
+For a batch that needs no changes, `rizzek` or `ljreaux` comments the command
+shown on the queue issue, for example:
+
+```
+/approve-weblate bd1cdb2
+```
+
+GitHub verifies that the commit is a German-only Weblate automatic-translation
+batch listed on that exact issue, verifies its values still match Weblate, and
+marks only those units approved. It then comments with the result. This does
+not create a Git commit or deployment. Reviewing and approving an individual
+unit directly in Weblate remains available as well.
+
+For a small correction, editing in Weblate is also allowed; Weblate makes the
 follow-up commit to `preview`. The GitHub issue is a queue, not a second source
 of truth.
 
@@ -106,11 +116,6 @@ affected unapproved strings when useful.
 
 ## CI and deployment behavior
 
-The temporary `ops/translation-migration.skip-builds` marker currently pauses
-web, mobile, desktop, Vercel, and EAS work while this is tested.
-
-After the marker is removed:
-
 - normal feature changes without English locale edits build normally;
 - a `preview` merge that changes English locale files waits for Weblate; and
 - only the marked `Translation-Batch: weblate-auto` follow-up releases the web
@@ -121,7 +126,7 @@ the generated German files. A German-only review correction after the initial
 batch remains a normal translation-only update and does not release a new app
 build by itself.
 
-## Before removing the migration pause
+## Cutover validation
 
 - [ ] Confirm `rizzek` can sign in to Weblate and has accepted GitHub access.
 - [ ] Verify an OpenAI suggestion uses the glossary and informal German.
@@ -131,7 +136,7 @@ build by itself.
 - [ ] Confirm one review issue points to that commit and source PR.
 - [ ] Confirm the original preview push is deferred and the Weblate commit
       releases exactly one web/mobile preview build.
-- [ ] Test one trusted German-only PR and one direct Weblate approval.
+- [ ] Test one trusted German-only PR and one no-op issue approval.
 - [ ] Confirm the latest approved migration baseline still matches Git.
 
 ## Recovery

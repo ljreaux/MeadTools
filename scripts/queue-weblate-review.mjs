@@ -72,7 +72,7 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function github(path, token, options = {}) {
+export async function github(path, token, options = {}) {
   for (let attempt = 1; attempt <= githubRequestAttempts; attempt += 1) {
     const response = await fetch(githubUrl(path), {
       ...options,
@@ -111,7 +111,7 @@ async function github(path, token, options = {}) {
   throw new Error("GitHub request retry loop exited unexpectedly.");
 }
 
-async function getIssueComments(owner, repository, issueNumber, token) {
+export async function getIssueComments(owner, repository, issueNumber, token) {
   const comments = [];
   for (let page = 1; ; page += 1) {
     const response = await github(
@@ -266,7 +266,7 @@ async function main() {
       "",
       componentLinks,
       "",
-      "For corrections, open a German-only PR to `preview`; a merged trusted PR marks its changed units approved in Weblate. For an unchanged suggestion, approve it directly in Weblate.",
+      `For an unchanged batch, comment \`/approve-weblate ${batch.commit.slice(0, 7)}\` on this issue; it approves exactly that batch in Weblate without a Git commit. For corrections, open a German-only PR to \`preview\`; a merged trusted PR marks its changed units approved in Weblate.`,
     ].join("\n");
     await github(
       `/repos/${owner}/${repository}/issues/${issue.number}/comments`,
