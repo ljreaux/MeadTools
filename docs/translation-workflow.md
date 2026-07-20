@@ -38,7 +38,7 @@ The Automatic Translation add-on is configured per component as follows:
 - engine: OpenAI, configured only in Weblate;
 - source: English component source;
 - mode: **Needs editing** (`fuzzy`), never auto-approved;
-- filter: German strings below the translated state;
+- filter: unfinished German strings that are not already marked as automatic;
 - threshold: 90; and
 - a German-only native Weblate follow-up directly after an English source
   update is recognized as the release batch (the legacy
@@ -47,6 +47,11 @@ The Automatic Translation add-on is configured per component as follows:
 The OpenAI key stays in Weblate's untracked server configuration. It is not a
 GitHub Actions secret. The provider uses the project glossary, informal German
 style, and German-specific instructions.
+
+Weblate clears its automatic-translation flag when a source string changes, so
+the filter selects that changed unit again without reprocessing the existing
+automatic-review queue. The temporary `migration-backlog` label excludes the
+20 legacy empty German units that need separate human cleanup.
 
 ## Feature flow
 
