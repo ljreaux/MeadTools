@@ -62,6 +62,15 @@ export type ChatTurnResult = {
   usage: ChatTurnUsage;
 };
 
+const outOfScopeAnswer =
+  "I can help with MeadTools, mead recipes, and mead-brewing process questions. What would you like to make or troubleshoot?";
+
+const meadScopePattern =
+  /\b(?:mead|melomel|cyser|pyment|metheglin|bochet|braggot|fruit\s+wine|honey|must|ferment(?:ation|ing|ed)?|yeast|nutrient|fermaid|go[\s-]?ferm|dap|yan|hydrometer|refractometer|gravity|og|fg|abv|brix|p\s*\.?\s*h|back[\s-]?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation)|sulf(?:ite|ur)|sorbate|k[\s-]?meta|campden|racking|rack(?:ed|ing)?|carboy|airlock|pitch(?:ing|ed)?|brew(?:ing|ed)?|vanilla\s+bean)\b/i;
+
+const meadContinuationPattern =
+  /^(?:yes|no|okay|ok|sure|please|continue|go\s+ahead|do\s+it|keep|change|use|same|that|this|it|then|and\s+then|(?:can\s+you\s+)?(?:turn|make)\s+(?:that|this)\s+into\s+(?:a\s+)?(?:mead\s+)?recipe\s+draft)(?:\b|[.!?,])/i;
+
 export async function runChatTurn(options: {
   client: ChatModelClient;
   userId: number;
@@ -73,16 +82,26 @@ export async function runChatTurn(options: {
   onEvent?: (event: ChatTurnEvent) => void;
 }): Promise<ChatTurnResult> {
   const startedAt = performance.now();
-  const impossibleRequest = explainImpossibleRecipeRequest(
-    options.request.messages.at(-1)?.content ?? ""
-  );
+  if (!isMeadScopedRequest(options.request)) {
+    return {
+      answer: outOfScopeAnswer,
+      toolResults: [],
+      recipeDraftInput: options.request.recipeDraftInput,
+      usage: {
+        ...emptyUsage(),
+        provider: "fireworks",
+        model: "deterministic-scope-check",
+        toolCalls: 0,
+        latencyMs: Math.round(performance.now() - startedAt)
+      }
+    };
+  }
   const sweetnessStrategyRequest = explainSweetnessStrategy(
     options.request.messages.at(-1)?.content ?? ""
   );
-  const deterministicIntakeAnswer = impossibleRequest ?? sweetnessStrategyRequest;
-  if (deterministicIntakeAnswer) {
+  if (sweetnessStrategyRequest) {
     return {
-      answer: deterministicIntakeAnswer,
+      answer: sweetnessStrategyRequest,
       toolResults: [],
       recipeDraftInput: options.request.recipeDraftInput,
       usage: {
@@ -197,6 +216,7 @@ export async function runChatTurn(options: {
         activeRecipeData: options.request.activeRecipeData,
         recipeDraftInput,
         latestUserMessage: options.request.messages.at(-1)?.content ?? "",
+        shouldAssumeHoney: shouldAssumeHoneyForRequest(options.request),
         ingredientLookup: options.ingredientLookup,
         yeastLookup: options.yeastLookup,
         canExecute: toolCalls < options.maxToolCalls,
@@ -282,25 +302,18 @@ export async function runChatTurn(options: {
   }
 }
 
-/** Explain an explicit volume/fermentable conflict before asking a model to draft it. */
-function explainImpossibleRecipeRequest(message: string): string | undefined {
-  const batch = batchVolumeFromMessage(message);
-  const cider = message.match(/\b(\d+(?:\.\d+)?)\s*(?:gal|gallons?)\s+of\s+(?:fresh\s+)?apple\s+cider\b/i);
-  const honey = message.match(/\b(\d+(?:\.\d+)?)\s*(?:lb|lbs|pounds?)\s+of\s+[^.]*\bhoney\b/i);
-  const targetAbv = message.match(/\b(?:around|about|target)?\s*(\d+(?:\.\d+)?)\s*%\s*ABV\b/i);
-  if (!batch || !cider || !honey || !targetAbv || batch.unit !== "gal") return undefined;
+/**
+ * Scope is enforced before the provider sees a turn; an instruction alone
+ * cannot prevent a general-purpose model from answering an unrelated prompt.
+ */
+function isMeadScopedRequest(request: ChatRequest): boolean {
+  const latestMessage = request.messages.at(-1)?.content ?? "";
+  if (meadScopePattern.test(latestMessage)) return true;
+  if (!meadContinuationPattern.test(latestMessage)) return false;
 
-  const ciderGallons = Number(cider[1]);
-  const honeyPounds = Number(honey[1]);
-  const requestedAbv = Number(targetAbv[1]);
-  if (!Number.isFinite(ciderGallons) || !Number.isFinite(honeyPounds) || !Number.isFinite(requestedAbv)) return undefined;
-  if (ciderGallons < batch.value || honeyPounds <= 0 || requestedAbv > 12) return undefined;
-
-  return [
-    "Those constraints cannot produce the requested cyser as written.",
-    `The ${ciderGallons} gal of cider already fills the requested ${batch.value} gal finished batch, and ${honeyPounds} lb of honey adds both volume and a substantial amount of fermentable sugar. With the cider's sugar included, that combination will be well above ${requestedAbv}% ABV rather than near it.`,
-    "Choose one direction and I can draft it: reduce the honey and let MeadTools target the ABV, increase the finished batch volume, or keep the cider and honey amounts and accept the higher ABV. A cider label or measured sugar reading will let MeadTools calculate the exact result."
-  ].join("\n\n");
+  return request.messages.slice(0, -1).some(
+    (message) => message.role === "user" && meadScopePattern.test(message.content)
+  );
 }
 
 /** A finished sweetness preference must be made actionable before drafting. */
@@ -419,6 +432,7 @@ async function executeToolCall(options: {
   activeRecipeData: RecipeDataV2 | undefined;
   recipeDraftInput: BuildRecipeDraftInput | undefined;
   latestUserMessage: string;
+  shouldAssumeHoney: boolean;
   ingredientLookup: IngredientLookup | undefined;
   yeastLookup: YeastLookup | undefined;
   canExecute: boolean;
@@ -450,14 +464,24 @@ async function executeToolCall(options: {
   let mergedRecipeDraftInput: BuildRecipeDraftInput | undefined;
   if (toolName === "build_recipe_draft") {
     const parsed = buildRecipeDraftInputSchema.safeParse(
-      mergeRecipeDraftInput(options.recipeDraftInput, input, options.latestUserMessage)
+      mergeRecipeDraftInput(
+        options.recipeDraftInput,
+        input,
+        options.latestUserMessage,
+        options.shouldAssumeHoney
+      )
     );
     if (parsed.success) {
       input = parsed.data;
       mergedRecipeDraftInput = parsed.data;
     } else {
       const recovered = buildRecipeDraftInputSchema.safeParse(
-        mergeRecipeDraftInput(options.recipeDraftInput, {}, options.latestUserMessage)
+        mergeRecipeDraftInput(
+          options.recipeDraftInput,
+          {},
+          options.latestUserMessage,
+          options.shouldAssumeHoney
+        )
       );
       if (recovered.success) {
         input = recovered.data;
@@ -540,35 +564,45 @@ function isSuccessfulCatalogResult(execution: unknown): boolean {
 function mergeRecipeDraftInput(
   previous: BuildRecipeDraftInput | undefined,
   next: unknown,
-  latestUserMessage: string
+  latestUserMessage: string,
+  shouldAssumeHoney: boolean
 ): unknown {
   if (!isRecord(next)) return next;
   if (!previous) {
     return discardUnstatedRecipeValues(
-      applyExplicitRecipeIntakeHints(next, latestUserMessage),
+      applyExplicitRecipeIntakeHints(next, latestUserMessage, shouldAssumeHoney),
       latestUserMessage
     );
   }
   const nextIngredients = Array.isArray(next.ingredients) ? next.ingredients : [];
   const nextAdditives = Array.isArray(next.additives) ? next.additives : undefined;
-  return discardUnstatedRecipeValues(applyExplicitRecipeIntakeHints({
-    ...previous,
-    ...next,
-    batchVolume: mergeRecord(previous.batchVolume, next.batchVolume),
-    nutrients: mergeRecord(previous.nutrients, next.nutrients),
-    stabilizers: mergeRecord(previous.stabilizers, next.stabilizers),
-    ingredients: mergeRecipeIngredients(previous.ingredients, nextIngredients),
-    ...(nextAdditives === undefined ? {} : { additives: nextAdditives })
-  }, latestUserMessage), latestUserMessage, previous);
+  return discardUnstatedRecipeValues(
+    applyExplicitRecipeIntakeHints(
+      {
+        ...previous,
+        ...next,
+        batchVolume: mergeRecord(previous.batchVolume, next.batchVolume),
+        nutrients: mergeRecord(previous.nutrients, next.nutrients),
+        stabilizers: mergeRecord(previous.stabilizers, next.stabilizers),
+        ingredients: mergeRecipeIngredients(previous.ingredients, nextIngredients),
+        ...(nextAdditives === undefined ? {} : { additives: nextAdditives })
+      },
+      latestUserMessage,
+      shouldAssumeHoney
+    ),
+    latestUserMessage,
+    previous
+  );
 }
 
 /** Preserve unambiguous user choices if a provider omits them from its call. */
 function applyExplicitRecipeIntakeHints(
   input: Record<string, unknown>,
-  latestUserMessage: string
+  latestUserMessage: string,
+  shouldAssumeHoney: boolean
 ): Record<string, unknown> {
   const result: Record<string, unknown> = { ...input };
-  addImpliedHoneyForMead(result, latestUserMessage);
+  addImpliedHoneyForMead(result, latestUserMessage, shouldAssumeHoney);
   moveVanillaToAdditives(result);
   const volume = batchVolumeFromMessage(latestUserMessage);
   if (volume !== undefined) {
@@ -728,11 +762,14 @@ function writtenNumber(value: string | undefined): number | undefined {
 }
 
 /** Mead defaults to honey unless the user explicitly asks for a fruit wine or cider. */
-function addImpliedHoneyForMead(input: Record<string, unknown>, message: string): void {
+function addImpliedHoneyForMead(
+  input: Record<string, unknown>,
+  message: string,
+  shouldAssumeHoney: boolean
+): void {
   if (
-    /\bhoney\b/i.test(message) ||
     /\b(?:fruit\s+wine|cider)\b/i.test(message) ||
-    !/\b(?:mead|melomel|cyser|pyment|metheglin)\b/i.test(message)
+    !shouldAssumeHoney
   ) {
     return;
   }
@@ -756,6 +793,18 @@ function addImpliedHoneyForMead(input: Record<string, unknown>, message: string)
     },
     ...ingredients
   ];
+}
+
+function shouldAssumeHoneyForRequest(request: ChatRequest): boolean {
+  const userMessages = request.messages
+    .filter((message) => message.role === "user")
+    .map((message) => message.content)
+    .join("\n");
+  return (
+    /\b(?:mead|traditional\s+mead|melomel|cyser|pyment|metheglin|bochet|braggot)\b/i.test(
+      userMessages
+    ) && !/\bfruit\s+wine\b/i.test(userMessages)
+  );
 }
 
 function applyHeavyBlackberryAssumption(
@@ -813,6 +862,15 @@ function discardUnstatedRecipeValues(
   if (!previous?.batchVolume && batchVolumeFromMessage(latestUserMessage) === undefined) {
     delete result.batchVolume;
   }
+  if (
+    previous?.fermentationFinalGravity !== undefined &&
+    fermentationFinalGravityFromMessage(latestUserMessage) === undefined
+  ) {
+    // A post-stabilization or backsweetening gravity is not the gravity used
+    // to calculate fermentation ABV. Keep the established fermentation target
+    // unless the user explicitly replaces that target.
+    result.fermentationFinalGravity = previous.fermentationFinalGravity;
+  }
   const hasConfirmedHoneyAmount = previous?.ingredients.some(
     (ingredient) =>
       ingredient.name.trim().toLowerCase() === "honey" &&
@@ -837,6 +895,36 @@ function discardUnstatedRecipeValues(
           }
       : ingredient
     );
+  }
+  const priorHoneyWasAdjustable = previous?.ingredients.some(
+    (ingredient) =>
+      ingredient.name.trim().toLowerCase() === "honey" &&
+      !ingredient.secondary &&
+      ingredient.role === "adjustable_fermentable"
+  );
+  if (
+    typeof result.targetOriginalGravity === "number" &&
+    priorHoneyWasAdjustable &&
+    !honeyAmountFromMessage(latestUserMessage) &&
+    Array.isArray(result.ingredients)
+  ) {
+    const hasPrimaryHoney = result.ingredients.some(
+      (ingredient) =>
+        isRecord(ingredient) &&
+        typeof ingredient.name === "string" &&
+        ingredient.name.trim().toLowerCase() === "honey" &&
+        ingredient.secondary !== true
+    );
+    result.ingredients = hasPrimaryHoney
+      ? result.ingredients.map((ingredient) =>
+          isRecord(ingredient) &&
+          typeof ingredient.name === "string" &&
+          ingredient.name.trim().toLowerCase() === "honey" &&
+          ingredient.secondary !== true
+            ? { ...ingredient, amount: undefined, role: "adjustable_fermentable" }
+            : ingredient
+        )
+      : [...result.ingredients, { name: "Honey", role: "adjustable_fermentable" }];
   }
   if (
     typeof result.targetOriginalGravity === "number" &&
@@ -916,11 +1004,13 @@ function batchVolumeFromMessage(
 }
 
 function fermentationFinalGravityFromMessage(message: string): number | undefined {
+  if (/\b(?:finish|end|ferment)\s+dry\b/i.test(message)) return 0.999;
+  if (/\bback[\s-]?sweeten(?:ing|ed)?\b/i.test(message)) return 0.999;
   const finalGravity = message.match(
-    /\b(?:fermentation\s+)?(?:final\s+)?(?:fg|gravity)\s*(?:of|is|=)?\s*(0\.\d{3,4})\b/i
+    /\b(?:fermentation\s+)?(?:final\s+)?(?:fg|gravity)\s*(?:of|is|=|to)?\s*(0\.\d{3,4})\b/i
   );
   if (finalGravity) return Number(finalGravity[1]);
-  return /\b(?:finish|end|ferment)\s+dry\b/i.test(message) ? 0.999 : undefined;
+  return undefined;
 }
 
 function duplicateIngredientsAcrossStages(ingredients: unknown): unknown {

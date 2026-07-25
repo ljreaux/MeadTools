@@ -51,11 +51,15 @@ import {
   Copy,
   CopyCheck,
   Download,
+  ExternalLink,
   LoaderCircle,
+  Maximize2,
+  Minimize2,
   Save,
   Send,
   X
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FormEvent, KeyboardEvent, useMemo, useRef, useState } from "react";
@@ -92,12 +96,16 @@ type ToolActivity = {
 
 type RecipeChatProps = {
   compact?: boolean;
+  fullscreen?: boolean;
   onClose?: () => void;
+  onToggleFullscreen?: () => void;
 };
 
 export default function RecipeChatTest({
   compact = false,
-  onClose
+  fullscreen = false,
+  onClose,
+  onToggleFullscreen
 }: RecipeChatProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -180,6 +188,7 @@ export default function RecipeChatTest({
     () => [...messages].reverse().find((message) => message.usage)?.usage,
     [messages]
   );
+  const popupLayout = compact || fullscreen;
 
   async function submitMessage() {
     const content = input.trim();
@@ -303,12 +312,14 @@ export default function RecipeChatTest({
   return (
     <main
       className={
-        compact
+        fullscreen
+          ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 sm:p-6 sm:pt-24"
+          : compact
           ? "flex h-[min(40rem,calc(100vh-6rem))] w-full flex-col rounded-xl bg-card p-3"
-          : "w-11/12 max-w-5xl rounded-xl bg-background p-6 sm:p-10"
+          : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 sm:p-10"
       }
     >
-      {compact ? (
+      {popupLayout ? (
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
           <h2 className="text-base font-semibold">{t("chatbotPopup.title")}</h2>
           <div className="flex items-center gap-1">
@@ -322,6 +333,37 @@ export default function RecipeChatTest({
               variant="ghost"
             >
               <Save />
+            </Button>
+            {compact ? (
+              <Button
+                aria-label={t("chatbotPopup.openFullPage")}
+                asChild
+                size="icon-xs"
+                title={t("chatbotPopup.openFullPage")}
+                variant="ghost"
+              >
+                <Link href="/account/chat" scroll>
+                  <ExternalLink />
+                </Link>
+              </Button>
+            ) : null}
+            <Button
+              aria-label={
+                fullscreen
+                  ? t("chatbotPopup.collapse")
+                  : t("chatbotPopup.expand")
+              }
+              onClick={onToggleFullscreen}
+              size="icon-xs"
+              title={
+                fullscreen
+                  ? t("chatbotPopup.collapse")
+                  : t("chatbotPopup.expand")
+              }
+              type="button"
+              variant="ghost"
+            >
+              {fullscreen ? <Minimize2 /> : <Maximize2 />}
             </Button>
             <Button
               aria-label={t("chatbotPopup.close")}
@@ -366,12 +408,12 @@ export default function RecipeChatTest({
         </>
       )}
 
-      <Card className={compact ? "flex min-h-0 flex-1 overflow-hidden" : "mt-6 overflow-hidden"}>
-        <CardContent className={compact ? "flex min-h-0 flex-1 flex-col p-3" : "p-4 sm:p-6"}>
+      <Card className={popupLayout ? "flex min-h-0 flex-1 overflow-hidden" : "mt-6 overflow-hidden"}>
+        <CardContent className={popupLayout ? "flex min-h-0 flex-1 flex-col p-3" : "p-4 sm:p-6"}>
           <MessageScrollerProvider autoScroll scrollPreviousItemPeek={48}>
             <MessageScroller
               className={
-                compact
+                popupLayout
                   ? "min-h-0 flex-1 rounded-lg border bg-secondary p-2"
                   : "h-[55vh] min-h-[18rem] rounded-lg border bg-secondary p-2"
               }
@@ -447,7 +489,7 @@ export default function RecipeChatTest({
             </MessageScroller>
           </MessageScrollerProvider>
 
-          <form className={compact ? "mt-3 space-y-3" : "mt-5 space-y-3"} onSubmit={onSubmit}>
+          <form className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"} onSubmit={onSubmit}>
             <Textarea
               aria-label={t("chatbotTest.inputLabel")}
               disabled={isSubmitting}
@@ -457,7 +499,7 @@ export default function RecipeChatTest({
               value={input}
             />
             <div className="flex items-center justify-between gap-3">
-              {!compact ? (
+              {!popupLayout ? (
                 <p className="text-xs text-muted-foreground">
                   {t("chatbotTest.localOnly")}
                 </p>
@@ -479,7 +521,7 @@ export default function RecipeChatTest({
         </CardContent>
       </Card>
 
-      {!compact ? (
+      {!popupLayout ? (
         <Card className="mt-4">
           <CardHeader className="flex-row items-center justify-between gap-3 pb-2">
             <CardTitle className="text-base">{t("chatbotTest.metering")}</CardTitle>
