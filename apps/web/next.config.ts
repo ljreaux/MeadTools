@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
     "@meadtools/brew-domain",
     "@meadtools/core",
     "@meadtools/i18n",
-    "@meadtools/schemas"
+    "@meadtools/schemas",
+    "@meadtools/recipe-workflows",
+    "@meadtools/recipe-agent",
+    "@meadtools/wiki-knowledge"
   ]
 };
 

@@ -16,7 +16,7 @@ export const temperatureUnitResponseSchema =
   z.enum(["F", "C", "K"]);
 export const gravityUnitResponseSchema =
   z.enum(["SG", "BRIX"]);
-const jsonObjectSchema = z.record(z.unknown());
+const jsonObjectSchema = z.record(z.string(), z.unknown());
 
 export const brewPathParamsSchema =
   z.object({ brew_id: z.string() });

@@ -1,4 +1,5 @@
 @import "@meadtools/design-tokens/css";
+@import "streamdown/styles.css";
 
 @tailwind base;
 @tailwind components;
@@ -62,6 +63,29 @@
     --chart-3: var(--mt-web-dark-chart-3);
     --chart-4: var(--mt-web-dark-chart-4);
     --chart-5: var(--mt-web-dark-chart-5);
+  }
+}
+
+/* Adapted from shadcn's shimmer utility for this Tailwind v3 application. */
+@keyframes mt-shimmer {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .shimmer {
+    animation: mt-shimmer 2s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
   }
 }
 

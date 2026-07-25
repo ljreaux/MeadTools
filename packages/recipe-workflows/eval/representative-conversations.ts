@@ -1,11 +1,9 @@
-import type { TraditionalMeadInput } from "../src/create-traditional";
-
 export type RecipeConversationEvaluation = {
   id: string;
   readiness: "foundation" | "hosted_poc";
   workflow: "create" | "refine" | "explain";
   messages: Array<{ role: "user" | "assistant"; content: string }>;
-  toolInput?: TraditionalMeadInput;
+  toolInput?: unknown;
   expectedStatus: "needs_input" | "recipe";
   criteria: string[];
 };
@@ -80,7 +78,7 @@ export const representativeRecipeConversations: RecipeConversationEvaluation[] =
     messages: [
       { role: "user", content: "Make that draft a little stronger." }
     ],
-    expectedStatus: "recipe",
+    expectedStatus: "needs_input",
     criteria: [
       "Clarifies the target when 'a little' is ambiguous.",
       "Recalculates through the deterministic refine operation.",

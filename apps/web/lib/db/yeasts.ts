@@ -45,6 +45,41 @@ export async function getYeastByName(name: string) {
   }
 }
 
+/** Small, bounded fuzzy lookup for the server-side recipe assistant. */
+export async function searchYeastsForChat(query: string) {
+  try {
+    const normalized = query.trim();
+    const terms = normalized
+      .split(/\s+/)
+      .filter((term) => term.length >= 2)
+      .slice(0, 5);
+    const yeasts = await prisma.yeasts.findMany({
+      where: {
+        OR: [normalized, ...terms]
+          .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index)
+          .flatMap((value) => [
+            { name: { contains: value, mode: "insensitive" as const } },
+            { brand: { contains: value, mode: "insensitive" as const } }
+          ])
+      },
+      take: 20
+    });
+
+    const lowerQuery = normalized.toLowerCase();
+    return yeasts
+      .sort((left, right) => {
+        const leftExact = left.name.toLowerCase().includes(lowerQuery) ? 1 : 0;
+        const rightExact = right.name.toLowerCase().includes(lowerQuery) ? 1 : 0;
+        if (leftExact !== rightExact) return rightExact - leftExact;
+        return `${left.brand} ${left.name}`.localeCompare(`${right.brand} ${right.name}`);
+      })
+      .slice(0, 10);
+  } catch (error) {
+    console.error("Error searching yeasts for chat:", error);
+    throw new Error("Could not search yeasts");
+  }
+}
+
 // Get yeast by ID
 export async function getYeastById(id: number) {
   try {

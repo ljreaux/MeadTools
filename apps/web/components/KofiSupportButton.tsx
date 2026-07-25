@@ -1,9 +1,18 @@
 "use client";
 
+import RecipeChatTest from "@/components/chat/RecipeChatTest";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { MessageCircle } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const KofiButton = () => {
   const { t } = useTranslation();
+  const { isLoggedIn, loading } = useAuth();
+
+  if (loading) return null;
+  if (isLoggedIn) return <RecipeChatLauncher />;
+
   return (
     <a
       href="https://ko-fi.com/meadtools"
@@ -24,5 +33,30 @@ const KofiButton = () => {
     </a>
   );
 };
+
+function RecipeChatLauncher() {
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        aria-expanded={isOpen}
+        aria-label={t("chatbotPopup.open")}
+        className="fixed bottom-4 left-2 z-[1000] hidden size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring sm:flex"
+        onClick={() => setIsOpen((open) => !open)}
+        title={t("chatbotPopup.open")}
+        type="button"
+      >
+        <MessageCircle className="size-5" />
+      </button>
+      {isOpen ? (
+        <div className="fixed bottom-16 left-2 z-[1000] hidden w-[calc(100vw-1rem)] max-w-md sm:block">
+          <RecipeChatTest compact onClose={() => setIsOpen(false)} />
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 export default KofiButton;

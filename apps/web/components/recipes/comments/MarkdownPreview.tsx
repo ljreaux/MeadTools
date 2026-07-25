@@ -111,7 +111,7 @@ function renderSpoilerNodes(children: React.ReactNode): React.ReactNode {
   }
 
   // --- Case 3: a React element - recurse into its children (except <code>)
-  if (React.isValidElement(children) && children.props?.children) {
+  if (React.isValidElement<{ children?: React.ReactNode }>(children) && children.props.children) {
     // Narrow the element so TS knows it has a `children` prop
     type WithChildren = { children?: React.ReactNode };
 
