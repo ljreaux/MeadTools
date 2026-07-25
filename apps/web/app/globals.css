@@ -89,6 +89,12 @@
   }
 }
 
+/* Streamdown portals table fullscreen at z-50, but the site navbar sits at
+ * z-[51]. Keep the complete table viewer above the application shell. */
+[data-streamdown="table-fullscreen"] {
+  z-index: 2001;
+}
+
 @layer base {
   * {
     @apply border-border;

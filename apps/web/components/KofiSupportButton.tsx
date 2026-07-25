@@ -37,22 +37,44 @@ const KofiButton = () => {
 function RecipeChatLauncher() {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  function toggleAssistant() {
+    if (isOpen) setIsExpanded(false);
+    setIsOpen((open) => !open);
+  }
+
+  function closeAssistant() {
+    setIsExpanded(false);
+    setIsOpen(false);
+  }
 
   return (
     <>
       <button
         aria-expanded={isOpen}
         aria-label={t("chatbotPopup.open")}
-        className="fixed bottom-4 left-2 z-[1000] hidden size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring sm:flex"
-        onClick={() => setIsOpen((open) => !open)}
+        className="fixed bottom-4 left-2 z-[1001] hidden size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring sm:flex"
+        onClick={toggleAssistant}
         title={t("chatbotPopup.open")}
         type="button"
       >
         <MessageCircle className="size-5" />
       </button>
       {isOpen ? (
-        <div className="fixed bottom-16 left-2 z-[1000] hidden w-[calc(100vw-1rem)] max-w-md sm:block">
-          <RecipeChatTest compact onClose={() => setIsOpen(false)} />
+        <div
+          className={
+            isExpanded
+              ? "fixed inset-0 z-[1001] hidden sm:block"
+              : "fixed bottom-16 left-2 z-[1001] hidden w-[calc(100vw-1rem)] max-w-md sm:block"
+          }
+        >
+          <RecipeChatTest
+            compact={!isExpanded}
+            fullscreen={isExpanded}
+            onClose={closeAssistant}
+            onToggleFullscreen={() => setIsExpanded((expanded) => !expanded)}
+          />
         </div>
       ) : null}
     </>

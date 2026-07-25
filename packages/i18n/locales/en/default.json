@@ -126,8 +126,11 @@
     "cachedTokens": "Cached input tokens",
     "copiedMessage": "Copied",
     "copyMessage": "Copy message",
+    "copyLink": "Copy link",
+    "closeDialog": "Close",
     "description": "Private local evaluator for the new recipe chatbot. It can look up the MeadTools wiki, create a recipe draft, and save a finished draft to your account.",
     "emptyState": "Ask a process question, or describe the mead recipe you would like to draft.",
+    "externalLinkWarning": "You're about to visit an external website.",
     "errors": {
       "copyFailed": "Could not copy the message.",
       "noToken": "Sign in again before using the chatbot evaluator.",
@@ -142,6 +145,8 @@
     "metering": "Last response metering",
     "model": "Model",
     "noActiveDraft": "No active draft",
+    "openExternalLink": "Open external link?",
+    "openLink": "Open link",
     "outputTokens": "Output tokens",
     "placeholder": "Ask about a MeadTools wiki process, or request a traditional-mead draft…",
     "send": "Send",
@@ -160,8 +165,11 @@
     "untitledDraft": "Untitled recipe"
   },
   "chatbotPopup": {
+    "collapse": "Return to popup size",
     "close": "Close recipe assistant",
+    "expand": "Expand recipe assistant",
     "open": "Open recipe assistant",
+    "openFullPage": "Open full-page evaluator",
     "title": "MeadTools recipe assistant"
   },
   "accountSettings": "Account Settings",

@@ -67,3 +67,43 @@ After a draft is available, send:
 
 Expected: the second turn retains the original batch/yeast/nutrient choices,
 does not re-ask them, and clearly labels the pH assumption.
+
+## 7. Process: stabilize and backsweeten
+
+> My traditional mead has fermented dry. I want to stabilize it and backsweeten
+> it safely. What process should I follow, and what should I measure before I
+> start?
+
+Expected: the bot retrieves the relevant MeadTools wiki process guidance and
+cites its canonical wiki page. It gives process-oriented help rather than
+creating a recipe draft or pretending there is one universal stabilizer amount.
+
+## 8. Process: yeast rehydration
+
+> How should I rehydrate Lalvin 71B with standard Go-Ferm before pitching?
+
+Expected: a concise wiki-grounded procedure with a canonical citation. The bot
+should not invent a recipe, catalog ID, or an unrelated nutrient schedule.
+
+## 9. Process: troubleshooting sulfur aroma
+
+> My fermenting mead smells like rotten eggs. What are the likely causes and
+> what should I do first?
+
+Expected: the bot uses MeadTools wiki troubleshooting material, cites it, and
+clearly distinguishes immediate low-risk checks from decisions that depend on
+the batch details.
+
+## 10. Scope boundary: unrelated questions
+
+Run each in a fresh session:
+
+> What is the capital of France?
+
+> Can you write my resignation letter?
+
+> What is Bitcoin trading at right now?
+
+Expected: the bot politely says it is limited to mead recipe and MeadTools wiki
+questions. It must not browse, use MeadTools recipe tools, or answer the
+unrelated request.

@@ -96,6 +96,45 @@ test("chat requests require the latest message to be from the user", () => {
   );
 });
 
+test("unrelated requests are refused before they reach the model", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      throw new Error("The scope guard should not call the model.");
+    }
+  };
+
+  for (const content of [
+    "What is the capital of France?",
+    "Can you write my resignation letter?",
+    "What is Bitcoin trading at right now?"
+  ]) {
+    const result = await runChatTurn({
+      client,
+      userId: 7,
+      request: chatRequestSchema.parse({
+        messages: [
+          { role: "user", content: "How should I stabilize a traditional mead?" },
+          { role: "assistant", content: "Take two stable hydrometer readings first." },
+          { role: "user", content }
+        ]
+      }),
+      maxOutputTokens: 500,
+      maxToolCalls: 6
+    });
+
+    assert.equal(
+      result.answer,
+      "I can help with MeadTools, mead recipes, and mead-brewing process questions. What would you like to make or troubleshoot?"
+    );
+    assert.equal(result.usage.model, "deterministic-scope-check");
+    assert.equal(result.usage.toolCalls, 0);
+  }
+
+  assert.equal(requests.length, 0);
+});
+
 test("intake questions use the constrained conversational renderer while explanations remain deterministic", () => {
   assert.equal(
     directRecipeToolAnswer("build_recipe_draft", {
@@ -231,7 +270,7 @@ test("a yeast preference forces yeast lookup and keeps catalog details out of th
     client,
     userId: 7,
     request: chatRequestSchema.parse({
-      messages: [{ role: "user", content: "Premier Rouge is fine." }],
+      messages: [{ role: "user", content: "Premier Rouge yeast is fine." }],
       recipeDraftInput: { ingredients: [{ name: "Blackberry", catalogId: 10, category: "fruit", brix: 7.86 }] }
     }),
     maxOutputTokens: 4_000,
@@ -574,7 +613,9 @@ test("explicit recipe choices survive a provider omission and stay stage-specifi
   assert.equal(result.recipeDraftInput?.nutrients?.goFermType, "Go-Ferm");
   assert.equal(result.recipeDraftInput?.stabilizers?.enabled, true);
   assert.deepEqual(
-    result.recipeDraftInput?.ingredients.map((ingredient) => ingredient.secondary === true),
+    result.recipeDraftInput?.ingredients
+      .filter((ingredient) => ingredient.name === "Blackberry")
+      .map((ingredient) => ingredient.secondary === true),
     [false, true]
   );
   assert.doesNotMatch(result.answer, /finished batch volume|nutrient schedule|Go-Ferm type/i);
@@ -909,24 +950,37 @@ test("a whole vanilla bean is retained as an additive instead of being asked aga
   );
 });
 
-test("an incompatible fixed-honey cyser request explains the conflicting constraints", async () => {
+test("a fixed-fermentable cyser request reaches the generic recipe agent", async () => {
+  const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
-    client: { complete: async () => { throw new Error("provider should not be called"); } },
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "generic-cyser-intake",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "I will use MeadTools to evaluate those fixed fermentables before drafting."
+          },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
     userId: 7,
     request: chatRequestSchema.parse({
       messages: [{
         role: "user",
-        content: "Draft a 1 gallon cyser with 1 gallon of fresh apple cider and 3 lb of wildflower honey. I want it around 10% ABV."
+        content: "Draft a 1 gallon cyser with 1 gallon of fresh apple cider and 3 lb of wildflower honey. I want it around 10% ABV, finishing at 1.010. Use Lalvin D47, Fermaid K and Go-Ferm with two additions. I do not plan to backsweeten or stabilize."
       }]
     }),
     maxOutputTokens: 4_000,
     maxToolCalls: 6
   });
 
-  assert.match(result.answer, /cannot produce the requested cyser/i);
-  assert.match(result.answer, /already fills/i);
-  assert.match(result.answer, /well above 10% ABV/i);
-  assert.equal(result.usage.model, "deterministic-intake-check");
+  assert.equal(result.answer, "I will use MeadTools to evaluate those fixed fermentables before drafting.");
+  assert.equal(result.usage.model, "test-model");
+  assert.equal(requests.length, 1);
 });
 
 test("a medium-sweet request requires an explicit sweetness strategy before drafting", async () => {
@@ -1102,6 +1156,93 @@ test("a model cannot invent a fixed honey amount when the user chose an OG targe
   assert.equal(honey?.amount, undefined);
   assert.equal(honey?.role, "adjustable_fermentable");
   assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+});
+
+test("a traditional backsweetening intake keeps dry fermentation gravity and implied honey", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        return {
+          id: "traditional-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "traditional-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                // Simulates the bad completion from the evaluator: it treats
+                // the post-backsweetening FG as the fermentation FG and drops
+                // the implied primary honey.
+                arguments: JSON.stringify({
+                  fermentationFinalGravity: 1.015,
+                  ingredients: []
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      return {
+        id: "traditional-render",
+        model: "test-model",
+        message: { role: "assistant", content: "Your unsaved traditional mead draft is ready." },
+        usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+      };
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content: "Create a 1 gallon sweet traditional mead at about 14% ABV with TOSNA and Lalvin 71B."
+        },
+        {
+          role: "assistant",
+          content: "I can make that as a dry-fermented, stabilized, backsweetened draft."
+        },
+        {
+          role: "user",
+          content: "Yes, stabilize and backsweeten to 1.015. Use three nutrient additions, standard Go-Ferm, and the default pH."
+        }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.12,
+        ingredients: [],
+        nutrients: {
+          enabled: true,
+          yeastBrand: "Lalvin",
+          yeastStrain: "71B",
+          nitrogenRequirement: "Low",
+          schedule: "tosna",
+          numberOfAdditions: 3,
+          goFermType: "Go-Ferm"
+        },
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), ["build_recipe_draft"]);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Honey"),
+    { name: "Honey", role: "adjustable_fermentable" }
+  );
+  assert.equal(result.answer, "Your unsaved traditional mead draft is ready.");
+  assert.equal(requests.length, 2);
 });
 
 test("a gravity-targeted fruit mead restores honey when a model omits its base fermentable", async () => {
@@ -1360,7 +1501,9 @@ test("a truncated model completion is never returned as the chat answer", async 
   const result = await runChatTurn({
     client,
     userId: 7,
-    request: chatRequestSchema.parse({ messages: [{ role: "user", content: "Help me." }] }),
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Help me with a mead recipe." }]
+    }),
     maxOutputTokens: 500,
     maxToolCalls: 6
   });
@@ -1490,7 +1633,9 @@ test("completed recipe prose never exposes internal recipe labels", async () => 
   const result = await runChatTurn({
     client,
     userId: 7,
-    request: chatRequestSchema.parse({ messages: [{ role: "user", content: "Show my draft." }] }),
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Show my mead draft." }]
+    }),
     maxOutputTokens: 4_000,
     maxToolCalls: 6
   });
