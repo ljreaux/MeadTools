@@ -21,7 +21,7 @@ const FormSchema = z
         to: z.date()
       },
       {
-        required_error: "Please select a date range"
+        error: "Please select a date range"
       }
     )
   })

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { brewStageResponseSchema, temperatureUnitResponseSchema } from "./brews";
 
-const jsonObjectSchema = z.record(z.unknown());
+const jsonObjectSchema = z.record(z.string(), z.unknown());
 const errorEnum = <T extends string>(values: [T, ...T[]]) =>
   z.object({ error: z.enum(values) });
 

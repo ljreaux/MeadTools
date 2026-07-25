@@ -10,9 +10,25 @@ export const workflowQuestionSchema = z.object({
   options: z.array(z.string()).optional()
 });
 
+export const recipeExplanationSchema = z.object({
+  topic: z.enum(["abv", "gravity", "volume", "nutrients", "stabilizers"]),
+  summary: z.string(),
+  facts: z.array(
+    z.object({
+      label: z.string(),
+      value: z.number()
+    })
+  )
+});
+
 const workflowResultBaseSchema = z.object({
   contractVersion: z.literal(1),
-  operation: z.literal("create_traditional")
+  operation: z.enum([
+    "build_recipe_draft",
+    "create_traditional",
+    "refine_traditional",
+    "explain_recipe"
+  ])
 });
 
 export const needsInputResultSchema = workflowResultBaseSchema.extend({
@@ -25,7 +41,8 @@ export const recipeResultSchema = workflowResultBaseSchema.extend({
   recipeData: recipeDataV2Schema,
   derived: recipeDerivedStateResponseSchema,
   assumptions: z.array(z.string()),
-  warnings: z.array(z.string())
+  warnings: z.array(z.string()),
+  explanation: recipeExplanationSchema.optional()
 });
 
 export const workflowErrorResultSchema = workflowResultBaseSchema.extend({
@@ -48,6 +65,7 @@ export const chatbotRecipeWorkflowResultSchema = z.discriminatedUnion(
 );
 
 export type WorkflowQuestion = z.infer<typeof workflowQuestionSchema>;
+export type RecipeExplanation = z.infer<typeof recipeExplanationSchema>;
 export type ChatbotRecipeWorkflowResult = z.infer<
   typeof chatbotRecipeWorkflowResultSchema
 >;

@@ -55,6 +55,33 @@ export async function getIngredientByName(name: string) {
     throw new Error("Could not fetch ingredient by name");
   }
 }
+
+/** Small, bounded catalog lookup for server-side recipe assistants. */
+export async function searchIngredientsForChat(query: string) {
+  try {
+    const normalized = query.trim();
+    const pluralStem = normalized.endsWith("y")
+      ? normalized.slice(0, -1)
+      : normalized;
+    return await prisma.ingredients.findMany({
+      where: {
+        OR: [normalized, pluralStem]
+          .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index)
+          .map((value) => ({
+            name: {
+              contains: value,
+              mode: "insensitive" as const
+            }
+          }))
+      },
+      orderBy: { name: "asc" },
+      take: 10
+    });
+  } catch (error) {
+    console.error("Error searching ingredients for chat:", error);
+    throw new Error("Could not search ingredients");
+  }
+}
 export async function createIngredient(data: {
   name: string;
   sugar_content: number;
