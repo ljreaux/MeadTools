@@ -34,16 +34,19 @@ jobs:
           echo "merge_commit_sha=${merge_commit_sha}" >> "$GITHUB_OUTPUT"
           echo "payload_path=${RUNNER_TEMP}/pull-request.json" >> "$GITHUB_OUTPUT"
 
-      - name: Check out the merged commit
+      - name: Check out approval workflow
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && steps.pull-request.outputs.merge_commit_sha || github.event.pull_request.merge_commit_sha }}
-          fetch-depth: 2
+          # Manual recovery must run the current repaired script, while the
+          # target merge commit is passed separately below.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
 
       - name: Approve trusted German translation changes in Weblate
         env:
           GITHUB_EVENT_PATH: ${{ github.event_path }}
           WEBLATE_APPROVAL_PR_PATH: ${{ steps.pull-request.outputs.payload_path }}
+          WEBLATE_APPROVAL_MERGE_COMMIT: ${{ steps.pull-request.outputs.merge_commit_sha }}
           WEBLATE_URL: https://translations.meadtools.com
           WEBLATE_APPROVAL_TOKEN: ${{ secrets.WEBLATE_APPROVAL_TOKEN }}
         run: node scripts/approve-weblate-pr.mjs

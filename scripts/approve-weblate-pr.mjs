@@ -62,8 +62,8 @@ function readJson(revision, file) {
   }
 }
 
-const after = git("rev-parse", "HEAD");
-const before = git("rev-parse", "HEAD^");
+const after = process.env.WEBLATE_APPROVAL_MERGE_COMMIT || git("rev-parse", "HEAD");
+const before = git("rev-parse", `${after}^`);
 const changedFiles = git("diff", "--name-only", before, after)
   .split("\n")
   .filter(Boolean);
