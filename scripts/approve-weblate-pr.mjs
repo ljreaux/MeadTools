@@ -1,10 +1,14 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
+import { approveWeblateUnit } from "./weblate-approval.mjs";
+
 const WEBLATE_URL = process.env.WEBLATE_URL?.replace(/\/$/, "");
 const WEBLATE_TOKEN = process.env.WEBLATE_APPROVAL_TOKEN;
-const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
-const pullRequest = event.pull_request;
+const pullRequestPath =
+  process.env.WEBLATE_APPROVAL_PR_PATH || process.env.GITHUB_EVENT_PATH;
+const event = JSON.parse(readFileSync(pullRequestPath, "utf8"));
+const pullRequest = event.pull_request || event;
 const approvalLabel = "translations-approved";
 const trustedAuthor = "rizzek";
 const componentByFile = new Map([
@@ -117,14 +121,7 @@ for (const { component, context, target } of changedUnits) {
     );
   }
 
-  const approval = await fetch(`${WEBLATE_URL}/api/units/${unit.id}/`, {
-    method: "PATCH",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ state: 30 }),
-  });
-  if (!approval.ok) {
-    throw new Error(`Unable to approve Weblate unit ${unit.id}.`);
-  }
+  await approveWeblateUnit({ weblateUrl: WEBLATE_URL, headers, unit });
 }
 
 console.log(`Approved ${changedUnits.length} German Weblate unit(s).`);

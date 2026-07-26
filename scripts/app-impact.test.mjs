@@ -36,21 +36,21 @@ test("shared packages and root dependencies affect every app", () => {
   }
 });
 
-test("generated translation-only changes do not rebuild apps", () => {
+test("German translation corrections rebuild every app", () => {
   assert.deepEqual(
     classifyAppImpact([
       "packages/i18n/locales/de/default.json",
       "packages/i18n/locales/de/YeastTable.json",
     ]),
     {
-      web: false,
-      mobile: false,
-      desktop: false,
+      web: true,
+      mobile: true,
+      desktop: true,
     },
   );
 });
 
-test("translation updates deploy when combined with an app change", () => {
+test("German translation corrections rebuild every app even with an app-local change", () => {
   assert.deepEqual(
     classifyAppImpact([
       "apps/web/app/page.tsx",
@@ -58,8 +58,8 @@ test("translation updates deploy when combined with an app change", () => {
     ]),
     {
       web: true,
-      mobile: false,
-      desktop: false,
+      mobile: true,
+      desktop: true,
     },
   );
 });
