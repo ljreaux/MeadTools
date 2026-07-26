@@ -1,5 +1,15 @@
 import prisma from "../prisma"; // Import Prisma client
 import { Prisma } from "@prisma/client";
+import { loadTranslationResource } from "@meadtools/i18n/resources";
+import {
+  canonicalIngredientSearchTerms,
+  ingredientSearchTerms
+} from "../utils/ingredient-search";
+
+const catalogTranslationResources = Promise.all([
+  loadTranslationResource("en", "default"),
+  loadTranslationResource("de", "default")
+]);
 
 // Fetch all ingredients
 export async function getAllIngredients() {
@@ -59,20 +69,19 @@ export async function getIngredientByName(name: string) {
 /** Small, bounded catalog lookup for server-side recipe assistants. */
 export async function searchIngredientsForChat(query: string) {
   try {
-    const normalized = query.trim();
-    const pluralStem = normalized.endsWith("y")
-      ? normalized.slice(0, -1)
-      : normalized;
+    const [englishResource, germanResource] = await catalogTranslationResources;
+    const terms = [
+      ...ingredientSearchTerms(query),
+      ...canonicalIngredientSearchTerms(query, englishResource, [germanResource])
+    ].filter((value, index, values) => values.indexOf(value) === index);
     return await prisma.ingredients.findMany({
       where: {
-        OR: [normalized, pluralStem]
-          .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index)
-          .map((value) => ({
-            name: {
-              contains: value,
-              mode: "insensitive" as const
-            }
-          }))
+        OR: terms.map((value) => ({
+          name: {
+            contains: value,
+            mode: "insensitive" as const
+          }
+        }))
       },
       orderBy: { name: "asc" },
       take: 10
@@ -82,6 +91,7 @@ export async function searchIngredientsForChat(query: string) {
     throw new Error("Could not search ingredients");
   }
 }
+
 export async function createIngredient(data: {
   name: string;
   sugar_content: number;

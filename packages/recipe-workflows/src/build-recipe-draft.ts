@@ -183,7 +183,7 @@ function normalizeDraftInput(input: BuildRecipeDraftInput): BuildRecipeDraftInpu
   }
   const unquantifiedPrimaryHoney = input.ingredients.filter(
     (ingredient) =>
-      ingredient.name.trim().toLowerCase() === "honey" &&
+      isHoneyIngredientName(ingredient.name) &&
       !ingredient.secondary &&
       !ingredient.amount
   );
@@ -212,7 +212,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
   }
 
   const honeyNeedsTarget = input.targetOriginalGravity === undefined && input.ingredients.some(
-    (ingredient) => ingredient.name.trim().toLowerCase() === "honey" && !ingredient.amount
+    (ingredient) => isHoneyIngredientName(ingredient.name) && !ingredient.amount
   );
   if (honeyNeedsTarget) {
     questions.push({ id: "gravity_target", field: "targetOriginalGravity", prompt: "What ABV or target original gravity should this recipe aim for?", answerType: "number" });
@@ -222,7 +222,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
     if (ingredientBrix(ingredient) === undefined) {
       questions.push({ id: `ingredient_${index}_brix`, field: `ingredients.${index}.brix`, prompt: `What Brix value should MeadTools use for ${ingredient.name}?`, answerType: "number" });
     }
-    if (honeyNeedsTarget && ingredient.name.trim().toLowerCase() === "honey") continue;
+    if (honeyNeedsTarget && isHoneyIngredientName(ingredient.name)) continue;
     if (input.targetOriginalGravity !== undefined && ingredient.role === "adjustable_fermentable") continue;
     if (!ingredient.amount) {
       const stage = ingredient.secondary ? " in secondary" : " in primary";
@@ -304,7 +304,13 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       throw new Error("The fixed fermentables already exceed the requested ABV target. Reduce a fixed sugar source, increase the target ABV, or use a larger finished batch volume.");
     }
     if (waterVolumeL < 0) {
-      throw new Error("The fixed ingredient volumes exceed the requested finished batch volume. Reduce a fixed ingredient or target a larger batch.");
+      const fixedPrimaryNames = fixedPrimary
+        .filter((ingredient) => ingredient.volumeL > 0)
+        .map((ingredient) => ingredient.name)
+        .join(", ");
+      throw new Error(
+        `The fixed primary ingredient${fixedPrimaryNames.includes(",") ? "s" : ""} (${fixedPrimaryNames || "provided liquid"}) already use${fixedPrimaryNames.includes(",") ? "" : "s"} the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left for ${adjustable.name} and water to reach the gravity target. Reduce a fixed liquid ingredient or choose a larger batch; lowering the ABV target alone cannot resolve this volume conflict.`
+      );
     }
     ingredientLines.push(
       ingredientLine({ ...adjustable, volumeL: adjustableVolumeL, lineId: "adjustable-fermentable", volumeUnit, weightUnit }),
@@ -349,15 +355,19 @@ function ingredientBrix(ingredient: BuildRecipeDraftInput["ingredients"][number]
   if (ingredient.brix !== undefined) return ingredient.brix;
   const normalized = ingredient.name.trim().toLowerCase();
   if (normalized === "water") return 0;
-  if (normalized === "honey") return HONEY_BRIX;
+  if (isHoneyIngredientName(normalized)) return HONEY_BRIX;
   return undefined;
 }
 
 function inferCategory(name: string): string {
   const normalized = name.trim().toLowerCase();
   if (normalized === "water") return "water";
-  if (normalized === "honey") return "sugar";
+  if (isHoneyIngredientName(normalized)) return "sugar";
   return "other";
+}
+
+function isHoneyIngredientName(name: string): boolean {
+  return /\bhoney\b/i.test(name);
 }
 
 function ingredientLine(input: SuppliedIngredient & { lineId: string; volumeUnit: VolumeUnit; weightUnit: WeightUnit }): RecipeDataV2["ingredients"][number] {
