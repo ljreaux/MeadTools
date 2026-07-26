@@ -18,11 +18,12 @@ const SHARED_PATHS = [
   "tsconfig.base.json",
 ];
 
-// Most translation-only commits do not need a new application build. A
-// German-only Weblate follow-up immediately after an English source change is
-// the exception: it releases the single deferred preview build.
+// Most translation-only commits do not need a new application build. German is
+// bundled by every shipped app, though, so both Weblate follow-ups and human
+// German review corrections must release an updated artifact.
 const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
 const ENGLISH_TRANSLATION_PATH = "packages/i18n/locales/en/";
+const GERMAN_TRANSLATION_PATH = "packages/i18n/locales/de/";
 const WEBLATE_BATCH_MARKER = "Translation-Batch: weblate-auto";
 
 const LOCKFILE = "package-lock.json";
@@ -90,6 +91,14 @@ export function classifyAppImpact(
     )
   ) {
     return Object.fromEntries(TARGETS.map((target) => [target, false]));
+  }
+
+  if (
+    changedPaths.some((changedPath) =>
+      changedPath.startsWith(GERMAN_TRANSLATION_PATH),
+    )
+  ) {
+    return Object.fromEntries(TARGETS.map((target) => [target, true]));
   }
 
   const impact = Object.fromEntries(

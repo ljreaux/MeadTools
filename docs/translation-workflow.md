@@ -81,6 +81,8 @@ access; until then it is assigned to `ljreaux`.
 3. Open a German-only PR targeting `preview`.
 4. When a trusted German-only PR merges, GitHub verifies the changed values are
    current in Weblate and marks only those units approved.
+5. The German correction releases a fresh preview build so the reviewed copy is
+   available for verification.
 
 `rizzek` is trusted automatically. The `translations-approved` label is the
 maintainer override for another reviewer.
@@ -120,14 +122,14 @@ affected unapproved strings when useful.
 
 - normal feature changes without English locale edits build normally;
 - a `preview` merge that changes English locale files waits for Weblate; and
-- only the recognized Weblate German follow-up releases the web deployment and
-  EAS preview builds.
+- the recognized Weblate German follow-up releases the web deployment and EAS
+  preview builds; and
+- a German-only human correction also releases a fresh web deployment and EAS
+  preview builds.
 
 This avoids duplicate builds and prevents the deployed artifact from missing
-the generated German files. A German-only review correction after the initial
-batch remains a normal translation-only update and does not release a new app
-build by itself. If Weblate flushes other language commits in the same push,
-the gate scans the full push range for the German release batch.
+the generated German files. If Weblate flushes other language commits in the
+same push, the gate scans the full push range for the German release batch.
 
 ## Cutover validation
 

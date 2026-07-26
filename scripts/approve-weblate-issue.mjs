@@ -6,6 +6,7 @@ import {
   getWeblateTranslationBatch,
   github,
 } from "./queue-weblate-review.mjs";
+import { approveWeblateUnit } from "./weblate-approval.mjs";
 
 const WEBLATE_URL = process.env.WEBLATE_URL?.replace(/\/$/, "");
 const WEBLATE_TOKEN = process.env.WEBLATE_APPROVAL_TOKEN;
@@ -108,14 +109,7 @@ async function approveUnits(changedUnits) {
       );
     }
 
-    const approval = await fetch(`${WEBLATE_URL}/api/units/${unit.id}/`, {
-      method: "PATCH",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ state: 30 }),
-    });
-    if (!approval.ok) {
-      throw new Error(`Unable to approve Weblate unit ${unit.id}.`);
-    }
+    await approveWeblateUnit({ weblateUrl: WEBLATE_URL, headers, unit });
   }
 }
 
