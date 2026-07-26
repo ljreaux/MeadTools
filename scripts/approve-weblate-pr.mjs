@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 
 import {
   approveWeblateUnit,
+  findExpectedWeblateUnit,
   getPullRequestPayload,
+  loadWeblateComponentUnits,
 } from "./weblate-approval.mjs";
 
 const WEBLATE_URL = process.env.WEBLATE_URL?.replace(/\/$/, "");
@@ -103,20 +105,23 @@ const headers = {
   Accept: "application/json",
   Authorization: `Token ${WEBLATE_TOKEN}`,
 };
+const unitsByComponent = new Map();
 
 for (const { component, context, target } of changedUnits) {
-  const query = new URLSearchParams({
-    q: `component:${component} language:de context:${context}`,
-    page_size: "10",
-  });
-  const response = await fetch(`${WEBLATE_URL}/api/units/?${query}`, { headers });
-  if (!response.ok) {
-    throw new Error(`Unable to find Weblate unit for ${component}:${context}.`);
+  if (!unitsByComponent.has(component)) {
+    unitsByComponent.set(
+      component,
+      await loadWeblateComponentUnits({
+        weblateUrl: WEBLATE_URL,
+        headers,
+        component,
+      }),
+    );
   }
 
-  const { results } = await response.json();
-  const unit = results.find(
-    (candidate) => candidate.context === context && candidate.target?.[0] === target,
+  const unit = findExpectedWeblateUnit(
+    unitsByComponent.get(component),
+    { context, target },
   );
   if (!unit) {
     throw new Error(

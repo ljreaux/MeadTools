@@ -102,10 +102,7 @@ export function classifyAppImpact(
   }
 
   const impact = Object.fromEntries(
-    TARGETS.map((target) => [
-      target,
-      isTargetAffected(target, changedPaths),
-    ]),
+    TARGETS.map((target) => [target, isTargetAffected(target, changedPaths)]),
   );
 
   if (changedPaths.includes(LOCKFILE)) {
@@ -154,6 +151,38 @@ export function hasWeblateTranslationBatch(batches) {
   );
 }
 
+export function hasSkipWebCheckLabel(labels) {
+  return labels.some(({ name }) => name === "skip-web-check");
+}
+
+export async function shouldSkipVercelWebPreview(
+  {
+    pullRequestId = process.env.VERCEL_GIT_PULL_REQUEST_ID,
+    repositoryOwner = process.env.VERCEL_GIT_REPO_OWNER,
+    repositorySlug = process.env.VERCEL_GIT_REPO_SLUG,
+  } = {},
+  request = fetch,
+) {
+  if (!pullRequestId || !repositoryOwner || !repositorySlug) return false;
+
+  try {
+    const response = await request(
+      `https://api.github.com/repos/${repositoryOwner}/${repositorySlug}/issues/${pullRequestId}`,
+      {
+        headers: { Accept: "application/vnd.github+json" },
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+    if (!response.ok) return false;
+
+    const issue = await response.json();
+    return hasSkipWebCheckLabel(issue.labels || []);
+  } catch {
+    // If GitHub is unavailable, keep the safe default and build the preview.
+    return false;
+  }
+}
+
 function readChangedPaths(base, head) {
   const result = spawnSync(
     "git",
@@ -195,13 +224,20 @@ function readCommitMessage(head) {
 }
 
 function readRevisionCommits(base, head) {
-  const result = spawnSync("git", ["rev-list", "--reverse", `${base}..${head}`], {
-    encoding: "utf8",
-  });
+  const result = spawnSync(
+    "git",
+    ["rev-list", "--reverse", `${base}..${head}`],
+    {
+      encoding: "utf8",
+    },
+  );
   if (result.status !== 0) {
     throw new Error(result.stderr.trim() || "Unable to read revision commits.");
   }
-  return result.stdout.split("\n").map((commit) => commit.trim()).filter(Boolean);
+  return result.stdout
+    .split("\n")
+    .map((commit) => commit.trim())
+    .filter(Boolean);
 }
 
 function hasWeblateTranslationBatchInRange(base, head) {
@@ -239,6 +275,11 @@ async function run() {
       deferForWeblate: isPreviewBranch(),
       isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
     });
+
+    if (target === "web" && (await shouldSkipVercelWebPreview())) {
+      impact.web = false;
+      console.log("Vercel preview skipped by the skip-web-check PR label.");
+    }
   } catch (error) {
     console.warn(
       `Could not determine app impact for ${base}..${head}; running all checks as a safe fallback.`,

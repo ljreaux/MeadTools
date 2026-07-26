@@ -4,8 +4,10 @@ import test from "node:test";
 import {
   classifyAppImpact,
   hasWeblateTranslationBatch,
+  hasSkipWebCheckLabel,
   isTargetAffected,
   isWeblateTranslationBatch,
+  shouldSkipVercelWebPreview,
 } from "./app-impact.mjs";
 
 test("app-local changes affect only their app", () => {
@@ -107,7 +109,8 @@ test("recognizes a Weblate batch anywhere in a multi-commit push", () => {
   assert.equal(
     hasWeblateTranslationBatch([
       {
-        message: "chore(l10n): update German translation\n\nTranslation-Batch: weblate-auto",
+        message:
+          "chore(l10n): update German translation\n\nTranslation-Batch: weblate-auto",
         changedPaths: ["packages/i18n/locales/de/default.json"],
         sourceChangedPaths: [],
       },
@@ -118,6 +121,38 @@ test("recognizes a Weblate batch anywhere in a multi-commit push", () => {
       },
     ]),
     true,
+  );
+});
+
+test("skip-web-check skips only the matching Vercel pull request preview", async () => {
+  assert.equal(hasSkipWebCheckLabel([{ name: "skip-web-check" }]), true);
+  assert.equal(hasSkipWebCheckLabel([{ name: "skip-mobile-check" }]), false);
+
+  assert.equal(
+    await shouldSkipVercelWebPreview(
+      {
+        pullRequestId: "383",
+        repositoryOwner: "ljreaux",
+        repositorySlug: "MeadTools",
+      },
+      async () => ({
+        ok: true,
+        json: async () => ({ labels: [{ name: "skip-web-check" }] }),
+      }),
+    ),
+    true,
+  );
+
+  assert.equal(
+    await shouldSkipVercelWebPreview(
+      {
+        pullRequestId: "383",
+        repositoryOwner: "ljreaux",
+        repositorySlug: "MeadTools",
+      },
+      async () => ({ ok: false }),
+    ),
+    false,
   );
 });
 
@@ -134,10 +169,7 @@ test("the migration build pause overrides every affected app", () => {
 
 test("an app manifest and lockfile change affect only that app", () => {
   assert.deepEqual(
-    classifyAppImpact([
-      "apps/mobile/package.json",
-      "package-lock.json",
-    ]),
+    classifyAppImpact(["apps/mobile/package.json", "package-lock.json"]),
     {
       web: false,
       mobile: true,
