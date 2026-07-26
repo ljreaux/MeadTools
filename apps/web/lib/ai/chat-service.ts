@@ -71,6 +71,8 @@ const meadScopePattern =
 const meadContinuationPattern =
   /^(?:yes|no|okay|ok|sure|please|continue|go\s+ahead|do\s+it|keep|change|use|same|that|this|it|then|and\s+then|(?:can\s+you\s+)?(?:turn|make)\s+(?:that|this)\s+into\s+(?:a\s+)?(?:mead\s+)?recipe\s+draft)(?:\b|[.!?,])/i;
 
+const meadCatalogContinuationPattern = /\b(?:ingredient|catalog)\b/i;
+
 export async function runChatTurn(options: {
   client: ChatModelClient;
   userId: number;
@@ -309,11 +311,16 @@ export async function runChatTurn(options: {
 function isMeadScopedRequest(request: ChatRequest): boolean {
   const latestMessage = request.messages.at(-1)?.content ?? "";
   if (meadScopePattern.test(latestMessage)) return true;
-  if (!meadContinuationPattern.test(latestMessage)) return false;
-
-  return request.messages.slice(0, -1).some(
+  const hasMeadConversation = request.messages.slice(0, -1).some(
     (message) => message.role === "user" && meadScopePattern.test(message.content)
   );
+  if (!hasMeadConversation) return false;
+
+  // A short catalog correction such as “Apple Juice is in the catalog; use
+  // that” is a normal continuation of a recipe turn, even though it may not
+  // repeat the word “mead.” Keep this narrow so ordinary unrelated questions
+  // remain blocked before reaching the provider.
+  return meadContinuationPattern.test(latestMessage) || meadCatalogContinuationPattern.test(latestMessage);
 }
 
 /** A finished sweetness preference must be made actionable before drafting. */
@@ -584,7 +591,7 @@ function mergeRecipeDraftInput(
         batchVolume: mergeRecord(previous.batchVolume, next.batchVolume),
         nutrients: mergeRecord(previous.nutrients, next.nutrients),
         stabilizers: mergeRecord(previous.stabilizers, next.stabilizers),
-        ingredients: mergeRecipeIngredients(previous.ingredients, nextIngredients),
+        ingredients: mergeRecipeIngredients(previous.ingredients, nextIngredients, latestUserMessage),
         ...(nextAdditives === undefined ? {} : { additives: nextAdditives })
       },
       latestUserMessage,
@@ -625,7 +632,7 @@ function applyExplicitRecipeIntakeHints(
     result.nutrients = nutrients;
   }
 
-  if (/\b(?:no|without)\s+back\s*-?sweeten(?:ing|ed)?\b/i.test(latestUserMessage)) {
+  if (declinesStabilizers(latestUserMessage)) {
     result.stabilizers = {
       ...(isRecord(result.stabilizers) ? result.stabilizers : {}),
       enabled: false
@@ -975,7 +982,13 @@ function userSelectedHoneyAsAdjustable(message: string): boolean {
   const normalized = message.trim().toLowerCase();
   return (
     /^(?:the\s+)?honey[.!]?$/.test(normalized) ||
-    /\b(?:adjust|use|make)\b[^.]{0,30}\bhoney\b/i.test(message)
+    /\b(?:adjust|reduce|use|make)\b[^.]{0,30}\bhoney\b/i.test(message)
+  );
+}
+
+function declinesStabilizers(message: string): boolean {
+  return /\b(?:no|without|do\s+not|don't|will\s+not|won't)\b[^.]{0,50}\b(?:back\s*-?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation|ers?)|sulfites?|metabisulfites?|k\s*-?meta|campden)\b/i.test(
+    message
   );
 }
 
@@ -1047,7 +1060,8 @@ function mergeRecord(previous: unknown, next: unknown): unknown {
 
 function mergeRecipeIngredients(
   previous: BuildRecipeDraftInput["ingredients"],
-  next: unknown[]
+  next: unknown[],
+  latestUserMessage: string
 ): unknown[] {
   const merged = [...previous];
   for (const ingredient of next) {
@@ -1065,10 +1079,38 @@ function mergeRecipeIngredients(
     if (index === -1) {
       merged.push(ingredient as BuildRecipeDraftInput["ingredients"][number]);
     } else {
-      merged[index] = { ...merged[index], ...ingredient };
+      const priorIngredient = merged[index];
+      merged[index] = {
+        ...priorIngredient,
+        ...ingredient,
+        ...(shouldPreserveIngredientAmount(priorIngredient, ingredient, latestUserMessage)
+          ? { amount: priorIngredient.amount }
+          : {})
+      };
     }
   }
   return merged;
+}
+
+/** Do not let a model silently change a user-supplied ingredient amount. */
+function shouldPreserveIngredientAmount(
+  previous: BuildRecipeDraftInput["ingredients"][number],
+  next: Record<string, unknown>,
+  latestUserMessage: string
+): boolean {
+  if (!previous.amount || next.amount === undefined) return false;
+  const ingredientName = escapeRegExp(previous.name.trim());
+  return (
+    !hasExplicitIngredientAmount(latestUserMessage, ingredientName) &&
+    !userRequestsIngredientAmountChange(latestUserMessage, ingredientName)
+  );
+}
+
+function userRequestsIngredientAmountChange(message: string, ingredientPattern: string): boolean {
+  return new RegExp(
+    `(?:\\b(?:adjust|reduce|increase|change|replace|remove)\\b[^.]{0,50}\\b${ingredientPattern}\\b|\\b${ingredientPattern}\\b[^.]{0,50}\\b(?:adjust|reduce|increase|change|replace|remove)\\b)`,
+    "i"
+  ).test(message);
 }
 
 function mergeCalculatedGravityTarget(

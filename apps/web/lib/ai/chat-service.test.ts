@@ -135,6 +135,36 @@ test("unrelated requests are refused before they reach the model", async () => {
   assert.equal(requests.length, 0);
 });
 
+test("a catalog correction stays in scope during a mead conversation", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "catalog-correction",
+          model: "test-model",
+          message: { role: "assistant", content: "I will use the catalog match for the cyser draft." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Draft a cyser with apple cider and honey." },
+        { role: "assistant", content: "I need to resolve the cider before drafting." },
+        { role: "user", content: "I think you have Apple Juice in the catalog; you can use that." }
+      ]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.answer, "I will use the catalog match for the cyser draft.");
+  assert.equal(requests.length, 1);
+});
+
 test("intake questions use the constrained conversational renderer while explanations remain deterministic", () => {
   assert.equal(
     directRecipeToolAnswer("build_recipe_draft", {
@@ -981,6 +1011,81 @@ test("a fixed-fermentable cyser request reaches the generic recipe agent", async
   assert.equal(result.answer, "I will use MeadTools to evaluate those fixed fermentables before drafting.");
   assert.equal(result.usage.model, "test-model");
   assert.equal(requests.length, 1);
+});
+
+test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool call", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "cyser-correction",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "cyser-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  ingredients: [
+                    {
+                      name: "Apple Juice",
+                      catalogId: 12,
+                      category: "juice",
+                      brix: 11,
+                      amount: { kind: "volume", value: 0.75, unit: "gal" }
+                    },
+                    { name: "Honey", role: "adjustable_fermentable" }
+                  ],
+                  stabilizers: { enabled: true, type: "kmeta" }
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Draft a 1 gallon cyser with 1 gallon of apple juice and 3 lb of honey at 10% ABV." },
+        { role: "assistant", content: "The fixed ingredients need adjustment to meet that target." },
+        { role: "user", content: "I do not plan on using sulfite at all and I am not measuring pH. We can reduce the honey to meet the targets." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.075,
+        fermentationFinalGravity: 1.01,
+        ingredients: [
+          {
+            name: "Apple Juice",
+            catalogId: 12,
+            category: "juice",
+            brix: 11,
+            amount: { kind: "volume", value: 1, unit: "gal" }
+          },
+          { name: "Honey", amount: { kind: "weight", value: 3, unit: "lb" } }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: true, type: "kmeta" }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.recipeDraftInput?.stabilizers?.enabled, false);
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Apple Juice")?.amount,
+    { kind: "volume", value: 1, unit: "gal" }
+  );
+  const honey = result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Honey");
+  assert.equal(honey?.role, "adjustable_fermentable");
+  assert.equal(honey?.amount, undefined);
+  assert.match(result.answer, /fixed ingredient volumes exceed/i);
 });
 
 test("a medium-sweet request requires an explicit sweetness strategy before drafting", async () => {
