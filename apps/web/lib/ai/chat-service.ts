@@ -66,7 +66,7 @@ const outOfScopeAnswer =
   "I can help with MeadTools, mead recipes, and mead-brewing process questions. What would you like to make or troubleshoot?";
 
 const meadScopePattern =
-  /\b(?:mead|melomel|cyser|pyment|metheglin|bochet|braggot|fruit\s+wine|honey|must|ferment(?:ation|ing|ed)?|yeast|nutrient|fermaid|go[\s-]?ferm|dap|yan|hydrometer|refractometer|gravity|og|fg|abv|brix|p\s*\.?\s*h|back[\s-]?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation)|sulf(?:ite|ur)|sorbate|k[\s-]?meta|campden|racking|rack(?:ed|ing)?|carboy|airlock|pitch(?:ing|ed)?|brew(?:ing|ed)?|vanilla\s+bean)\b/i;
+  /\b(?:mead|melomel|cyser|pyment|metheglin|bochet|braggot|fruit\s+wine|honey|must|ferment(?:ation|ing|ed)?|yeast|nutrient|fermaid|go[\s-]?ferm|dap|yan|hydrometer|refractometer|gravity|og|fg|abv|brix|p\s*\.?\s*h|back[\s-]?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation)|sulf(?:ite|ur)|sorbate|k[\s-]?meta|campden|racking|rack(?:ed|ing)?|carboy|airlock|pitch(?:ing|ed)?|brew(?:ing|ed)?|vanilla\s+bean|priming\s+sugar|carbonat(?:e|ion)|bottl(?:e|ing)|bench\s+trial|blend(?:ing)?|met|metwein|rezept|honig|hefe|nährstoff|naehrstoff|gär(?:en|ung|t)?|most|stabilisier(?:en|ung|t)?|sulfit|sorbat|abfüll(?:en|ung)|karbonisier(?:en|ung))\b/i;
 
 const meadContinuationPattern =
   /^(?:yes|no|okay|ok|sure|please|continue|go\s+ahead|do\s+it|keep|change|use|same|that|this|it|then|and\s+then|(?:can\s+you\s+)?(?:turn|make)\s+(?:that|this)\s+into\s+(?:a\s+)?(?:mead\s+)?recipe\s+draft)(?:\b|[.!?,])/i;
@@ -98,6 +98,21 @@ export async function runChatTurn(options: {
       }
     };
   }
+  const calculatorRoute = calculatorRouteForRequest(options.request);
+  if (calculatorRoute) {
+    return {
+      answer: `For an exact result, use the [${calculatorRoute.label}](${calculatorRoute.href}). It uses your MeadTools inputs instead of a generic wiki formula.`,
+      toolResults: [],
+      recipeDraftInput: options.request.recipeDraftInput,
+      usage: {
+        ...emptyUsage(),
+        provider: "fireworks",
+        model: "deterministic-calculator-routing",
+        toolCalls: 0,
+        latencyMs: Math.round(performance.now() - startedAt)
+      }
+    };
+  }
   const sweetnessStrategyRequest = explainSweetnessStrategy(
     options.request.messages.at(-1)?.content ?? ""
   );
@@ -123,6 +138,8 @@ export async function runChatTurn(options: {
   let truncatedResponseRetries = 0;
   let renderRecipeIntake = false;
   let recipeDraftInput = options.request.recipeDraftInput;
+  const intakeContext = recipeIntakeContext(options.request);
+  const requiresWikiSource = requiresWikiSourceForRequest(options.request);
   const forceGravityTargetTool = shouldForceGravityTargetTool(options.request);
   const forceYeastSearchTool = shouldForceYeastSearchTool(options.request);
   const forceIngredientSearchTool = shouldForceIngredientSearchTool(options.request);
@@ -131,6 +148,7 @@ export async function runChatTurn(options: {
     | "build_recipe_draft"
     | "search_ingredients"
     | "search_yeasts"
+    | "fetch_wiki_page"
     | undefined;
   let namedIngredientResolved = false;
   let namedYeastResolved = false;
@@ -173,6 +191,20 @@ export async function runChatTurn(options: {
 
     const calls = completion.message.tool_calls ?? [];
     if (calls.length === 0) {
+      if (requiresWikiSource && !wikiSourceUrl(toolResults)) {
+        return {
+          answer: "I could not retrieve the MeadTools wiki page needed to answer that process question. Please try again.",
+          toolResults,
+          recipeDraftInput,
+          usage: {
+            ...usage,
+            provider: "fireworks",
+            model,
+            toolCalls,
+            latencyMs: Math.round(performance.now() - startedAt)
+          }
+        };
+      }
       if (completionWasTruncated(completion, options.maxOutputTokens)) {
         if (truncatedResponseRetries < 1) {
           truncatedResponseRetries += 1;
@@ -194,11 +226,15 @@ export async function runChatTurn(options: {
           recipeDraftInput
         });
       }
-      return {
-        answer: sanitizeUserFacingRecipeAnswer(
+      let answer = sanitizeUserFacingRecipeAnswer(
           completion.message.content?.trim() ||
             "I could not produce a response for that request."
-        ),
+        );
+      if (hasCompletedRecipeDraft(toolResults)) {
+        answer = removeCompletedRecipeFollowUp(answer);
+      }
+      return {
+        answer: appendRelevantCalculatorLink(answer, options.request, toolResults),
         toolResults,
         recipeDraftInput,
         usage: {
@@ -218,6 +254,7 @@ export async function runChatTurn(options: {
         activeRecipeData: options.request.activeRecipeData,
         recipeDraftInput,
         latestUserMessage: options.request.messages.at(-1)?.content ?? "",
+        historicalIntake: intakeContext,
         shouldAssumeHoney: shouldAssumeHoneyForRequest(options.request),
         ingredientLookup: options.ingredientLookup,
         yeastLookup: options.yeastLookup,
@@ -236,7 +273,7 @@ export async function runChatTurn(options: {
         recipeDraftInput = mergeExactYeastLookup(
           recipeDraftInput,
           result,
-          options.request.messages.at(-1)?.content ?? ""
+          intakeContext
         );
       }
       if (
@@ -256,6 +293,14 @@ export async function runChatTurn(options: {
         mustResolveNamedYeast: forceYeastSearchTool && !namedYeastResolved,
         mustResolveNamedIngredient: forceIngredientSearchTool && !namedIngredientResolved
       });
+      if (
+        requiredFollowupTool === undefined &&
+        requiresWikiSource &&
+        call.function.name === "search_wiki" &&
+        !wikiSourceUrl(toolResults)
+      ) {
+        requiredFollowupTool = "fetch_wiki_page";
+      }
 
       const directAnswer = directRecipeToolAnswer(call.function.name, result);
       if (
@@ -355,10 +400,22 @@ function shouldForceYeastSearchTool(request: ChatRequest): boolean {
   }
   const nutrients = request.recipeDraftInput?.nutrients;
   if (nutrients?.yeastId || (nutrients?.yeastBrand && nutrients?.yeastStrain)) return false;
-  const latestMessage = request.messages.at(-1)?.content ?? "";
   return /\b(?:yeast|lalvin|red\s*star|premier|ec[-\s]?1118|d[-\s]?47|k1[-\s]?v1116|71b)\b/i.test(
-    latestMessage
+    recipeIntakeContext(request)
   );
+}
+
+/**
+ * Intake extraction needs the full user conversation, not only a brief
+ * correction such as “use Apple Juice.” Newest messages come first so a
+ * later replacement (for example, a larger batch volume) takes precedence.
+ */
+function recipeIntakeContext(request: ChatRequest): string {
+  return request.messages
+    .filter((message) => message.role === "user")
+    .map((message) => message.content)
+    .reverse()
+    .join("\n");
 }
 
 function shouldForceRecipeDraftTool(request: ChatRequest): boolean {
@@ -375,9 +432,17 @@ function isRecipeDesignRequest(request: ChatRequest): boolean {
   return request.messages.some(
     (message) =>
       message.role === "user" &&
-      /\b(?:make|build|create|draft|design)\b[\s\S]{0,120}\b(?:mead|melomel|cyser|pyment|metheglin|recipe)\b/i.test(
+      /\b(?:make|build|create|draft|design|erstelle|baue|entwirf|plane)\b[\s\S]{0,120}\b(?:mead|melomel|cyser|pyment|metheglin|recipe|met|rezept)\b/i.test(
         message.content
       )
+  );
+}
+
+function requiresWikiSourceForRequest(request: ChatRequest): boolean {
+  if (isRecipeDesignRequest(request)) return false;
+  const latestMessage = request.messages.at(-1)?.content ?? "";
+  return /\b(?:how\s+(?:should|do|can)|what\s+process|troubleshoot(?:ing)?|stabili[sz]|rehydrat(?:e|ing)|rotten\s+eggs?|sulfur\s+aroma|sulphur\s+aroma)\b/i.test(
+    latestMessage
   );
 }
 
@@ -434,11 +499,121 @@ function initialMessages(request: ChatRequest): FireworksMessage[] {
   ];
 }
 
+/** Calculator links keep numeric process work in MeadTools rather than prose. */
+export function calculatorLinkForProcessMessage(
+  message: string
+): { label: string; href: string } | undefined {
+  if (/\b(?:stabili[sz]|back\s*-?sweeten|sorbate|campden|k\s*-?meta)\b/i.test(message)) {
+    return { label: "Stabilizer calculator", href: "/stabilizers" };
+  }
+  if (/\b(?:nutrient|fermaid|go[\s-]?ferm|dap|yan)\b/i.test(message)) {
+    return { label: "Nutrient calculator", href: "/nute-calc" };
+  }
+  if (/\b(?:refractometer\s+correction|fermented\s+brix|refractometer\b[\s\S]{0,80}\bafter\s+fermentation)\b/i.test(message)) {
+    return { label: "Refractometer correction calculator", href: "/extra-calcs/refractometer-correction" };
+  }
+  if (/\b(?:temperature\s+correction|correct(?:ing)?\s+(?:my\s+)?hydrometer)\b/i.test(message)) {
+    return { label: "Temperature correction calculator", href: "/extra-calcs/temperature-correction" };
+  }
+  if (/\b(?:refractometer|brix)\b/i.test(message)) {
+    return { label: "Brix calculator", href: "/extra-calcs/brix" };
+  }
+  if (/\b(?:bench\s+trial|acid(?:ity)?\s+adjustment)\b/i.test(message)) {
+    return { label: "Bench trials calculator", href: "/extra-calcs/bench-trials" };
+  }
+  if (/\b(?:blend(?:ing)?|blend\s+two)\b/i.test(message)) {
+    return { label: "Blending calculator", href: "/extra-calcs/blending" };
+  }
+  if (/\b(?:priming\s+sugar|carbonate|carbonation)\b/i.test(message)) {
+    return { label: "Priming sugar calculator", href: "/extra-calcs/priming-sugar" };
+  }
+  if (/\b(?:bottl(?:e|ing)|how many bottles)\b/i.test(message)) {
+    return { label: "Bottling calculator", href: "/extra-calcs/bottling" };
+  }
+  if (/\b(?:sulfite|sulphite|free\s+so2)\b/i.test(message)) {
+    return { label: "Sulfite calculator", href: "/extra-calcs/sulfite" };
+  }
+  if (/\b(?:estimated\s+og|original\s+gravity)\b/i.test(message)) {
+    return { label: "Estimated OG calculator", href: "/extra-calcs/estimated-og" };
+  }
+  if (/\b(?:abv|alcohol\s+by\s+volume)\b/i.test(message)) {
+    return { label: "ABV calculator", href: "/extra-calcs/abv" };
+  }
+  return undefined;
+}
+
+function calculatorRouteForRequest(
+  request: ChatRequest
+): ReturnType<typeof calculatorLinkForProcessMessage> {
+  if (isRecipeDesignRequest(request)) return undefined;
+  const latestMessage = request.messages.at(-1)?.content ?? "";
+  if (!/\b(?:calculate|exact|how\s+much|what\s+amount|dose|dosage|correction|estimate)\b/i.test(latestMessage)) {
+    return undefined;
+  }
+  return calculatorLinkForProcessMessage(latestMessage);
+}
+
+function appendRelevantCalculatorLink(
+  answer: string,
+  request: ChatRequest,
+  toolResults: ChatTurnResult["toolResults"]
+): string {
+  const sourceUrl = wikiSourceUrl(toolResults);
+  if (!sourceUrl) {
+    return answer;
+  }
+  const calculator = isRecipeDesignRequest(request)
+    ? undefined
+    : calculatorLinkForProcessMessage(request.messages.at(-1)?.content ?? "");
+  if (!calculator) return appendWikiSource(answer, sourceUrl);
+
+  const withoutDraftOffer = answer.replace(
+    /\s*(?:would you like|if you'd like)\b[\s\S]*$/i,
+    ""
+  );
+  const withCalculator = withoutDraftOffer.includes(calculator.href)
+    ? withoutDraftOffer
+    : `${withoutDraftOffer}\n\nFor exact amounts, use the [${calculator.label}](${calculator.href}).`;
+
+  return appendWikiSource(withCalculator, sourceUrl);
+}
+
+function appendWikiSource(answer: string, sourceUrl: string | undefined): string {
+  if (!sourceUrl || answer.includes(sourceUrl)) return answer;
+  return `${answer}\n\nSource: [MeadTools wiki](${sourceUrl}).`;
+}
+
+function fetchedWikiSourceUrl(toolResults: ChatTurnResult["toolResults"]): string | undefined {
+  for (const tool of [...toolResults].reverse()) {
+    if (tool.toolName !== "fetch_wiki_page" || !isRecord(tool.result)) continue;
+    if (tool.result.status !== "ok" || !isRecord(tool.result.result)) continue;
+    const url = tool.result.result.url;
+    if (typeof url === "string" && url.startsWith("https://wiki.meadtools.com/")) {
+      return url;
+    }
+  }
+  return undefined;
+}
+
+function wikiSourceUrl(toolResults: ChatTurnResult["toolResults"]): string | undefined {
+  const fetchedUrl = fetchedWikiSourceUrl(toolResults);
+  if (fetchedUrl) return fetchedUrl;
+  for (const tool of [...toolResults].reverse()) {
+    if (tool.toolName !== "search_wiki" || !isRecord(tool.result)) continue;
+    if (tool.result.status !== "ok" || !Array.isArray(tool.result.result)) continue;
+    const firstResult = tool.result.result[0];
+    if (!isRecord(firstResult) || typeof firstResult.url !== "string") continue;
+    if (firstResult.url.startsWith("https://wiki.meadtools.com/")) return firstResult.url;
+  }
+  return undefined;
+}
+
 async function executeToolCall(options: {
   call: FireworksToolCall;
   activeRecipeData: RecipeDataV2 | undefined;
   recipeDraftInput: BuildRecipeDraftInput | undefined;
   latestUserMessage: string;
+  historicalIntake: string;
   shouldAssumeHoney: boolean;
   ingredientLookup: IngredientLookup | undefined;
   yeastLookup: YeastLookup | undefined;
@@ -475,7 +650,8 @@ async function executeToolCall(options: {
         options.recipeDraftInput,
         input,
         options.latestUserMessage,
-        options.shouldAssumeHoney
+        options.shouldAssumeHoney,
+        options.historicalIntake
       )
     );
     if (parsed.success) {
@@ -487,7 +663,8 @@ async function executeToolCall(options: {
           options.recipeDraftInput,
           {},
           options.latestUserMessage,
-          options.shouldAssumeHoney
+          options.shouldAssumeHoney,
+          options.historicalIntake
         )
       );
       if (recovered.success) {
@@ -520,7 +697,7 @@ function requiredRecipeFollowupTool(options: {
   recipeDraftAvailable: boolean;
   mustResolveNamedYeast: boolean;
   mustResolveNamedIngredient: boolean;
-}): "build_recipe_draft" | "search_ingredients" | "search_yeasts" | undefined {
+}): "build_recipe_draft" | "search_ingredients" | "search_yeasts" | "fetch_wiki_page" | undefined {
   if (!isSuccessfulToolResult(options.execution)) return undefined;
   if (options.toolName === "search_ingredients") {
     if (!Array.isArray(options.execution.result) || options.execution.result.length === 0) {
@@ -572,18 +749,24 @@ function mergeRecipeDraftInput(
   previous: BuildRecipeDraftInput | undefined,
   next: unknown,
   latestUserMessage: string,
-  shouldAssumeHoney: boolean
+  shouldAssumeHoney: boolean,
+  historicalIntake: string
 ): unknown {
   if (!isRecord(next)) return next;
   if (!previous) {
+    const seededFromConversation = applyExplicitRecipeIntakeHints(
+      next,
+      historicalIntake,
+      shouldAssumeHoney
+    );
     return discardUnstatedRecipeValues(
-      applyExplicitRecipeIntakeHints(next, latestUserMessage, shouldAssumeHoney),
+      applyExplicitRecipeIntakeHints(seededFromConversation, latestUserMessage, shouldAssumeHoney),
       latestUserMessage
     );
   }
   const nextIngredients = Array.isArray(next.ingredients) ? next.ingredients : [];
   const nextAdditives = Array.isArray(next.additives) ? next.additives : undefined;
-  return discardUnstatedRecipeValues(
+  const merged = discardUnstatedRecipeValues(
     applyExplicitRecipeIntakeHints(
       {
         ...previous,
@@ -600,6 +783,30 @@ function mergeRecipeDraftInput(
     latestUserMessage,
     previous
   );
+  return restoreMissingHistoricalRecipeIntake(merged, historicalIntake);
+}
+
+/**
+ * A short catalog correction can follow a detailed recipe request. Preserve
+ * only missing intake fields from that request; applying every old instruction
+ * as if it were new would undo a correction such as “reduce the honey.”
+ */
+function restoreMissingHistoricalRecipeIntake(
+  input: Record<string, unknown>,
+  historicalIntake: string
+): Record<string, unknown> {
+  const result = { ...input };
+  if (!isRecord(result.batchVolume)) {
+    const batchVolume = batchVolumeFromMessage(historicalIntake);
+    if (batchVolume) result.batchVolume = batchVolume;
+  }
+  if (typeof result.fermentationFinalGravity !== "number") {
+    const fermentationFinalGravity = fermentationFinalGravityFromMessage(historicalIntake);
+    if (fermentationFinalGravity !== undefined) {
+      result.fermentationFinalGravity = fermentationFinalGravity;
+    }
+  }
+  return result;
 }
 
 /** Preserve unambiguous user choices if a provider omits them from its call. */
@@ -651,7 +858,7 @@ function applyExplicitRecipeIntakeHints(
     result.ingredients = result.ingredients.map((ingredient) =>
       isRecord(ingredient) &&
       typeof ingredient.name === "string" &&
-      ingredient.name.trim().toLowerCase() === "honey" &&
+      isHoneyIngredientName(ingredient.name) &&
       ingredient.secondary !== true
         ? {
             ...ingredient,
@@ -684,19 +891,6 @@ function applyExplicitRecipeIntakeHints(
     result.ingredients = duplicateIngredientsAcrossStages(result.ingredients);
   }
   applyWholeVanillaBeanAmount(result, latestUserMessage);
-  const heavyBlackberryRequested = /\bheavy\s+blackberr(?:y|ies)\b/i.test(latestUserMessage);
-  const heavyFruitRequested = /\bheavy\s+fruit\b/i.test(latestUserMessage);
-  const containsBlackberry = Array.isArray(result.ingredients) && result.ingredients.some(
-    (ingredient) =>
-      isRecord(ingredient) &&
-      typeof ingredient.name === "string" &&
-      /^blackberr(?:y|ies)$/i.test(ingredient.name.trim())
-  );
-  if (heavyBlackberryRequested || (heavyFruitRequested && containsBlackberry)) {
-    applyHeavyBlackberryAssumption(result, {
-      replaceUnstatedAmounts: !hasExplicitIngredientAmount(latestUserMessage, "blackberr(?:y|ies)")
-    });
-  }
   return result;
 }
 
@@ -786,7 +980,7 @@ function addImpliedHoneyForMead(
     (ingredient) =>
       isRecord(ingredient) &&
       typeof ingredient.name === "string" &&
-      (ingredient.name.trim().toLowerCase() === "honey" ||
+      (isHoneyIngredientName(ingredient.name) ||
         (ingredient.secondary !== true && ingredient.role === "adjustable_fermentable"))
   );
   if (hasHoneyOrAdjustablePrimary) return;
@@ -808,48 +1002,10 @@ function shouldAssumeHoneyForRequest(request: ChatRequest): boolean {
     .map((message) => message.content)
     .join("\n");
   return (
-    /\b(?:mead|traditional\s+mead|melomel|cyser|pyment|metheglin|bochet|braggot)\b/i.test(
+    /\b(?:mead|traditional\s+mead|melomel|cyser|pyment|metheglin|bochet|braggot|met|metwein)\b/i.test(
       userMessages
-    ) && !/\bfruit\s+wine\b/i.test(userMessages)
+    ) && !/\b(?:fruit\s+wine|obstwein)\b/i.test(userMessages)
   );
-}
-
-function applyHeavyBlackberryAssumption(
-  input: Record<string, unknown>,
-  options: { replaceUnstatedAmounts: boolean }
-): void {
-  if (!isRecord(input.batchVolume) || !Array.isArray(input.ingredients)) return;
-  const volume = input.batchVolume.value;
-  const unit = input.batchVolume.unit;
-  if (typeof volume !== "number" || (unit !== "gal" && unit !== "L")) return;
-
-  const amountPerStage = unit === "gal" ? volume : volume * 0.119826;
-  let updated = false;
-  input.ingredients = input.ingredients.map((ingredient) => {
-    if (
-      !isRecord(ingredient) ||
-      typeof ingredient.name !== "string" ||
-      !/^blackberr(?:y|ies)$/i.test(ingredient.name.trim()) ||
-      (!options.replaceUnstatedAmounts && ingredient.amount !== undefined)
-    ) {
-      return ingredient;
-    }
-    updated = true;
-    return {
-      ...ingredient,
-      amount: {
-        kind: "weight",
-        value: Number(amountPerStage.toFixed(3)),
-        unit: unit === "gal" ? "lb" : "kg"
-      }
-    };
-  });
-  if (updated) {
-    addDraftAssumption(
-      input,
-      "Assumed a heavy blackberry profile at 2 lb per gallon total, split evenly between primary and secondary."
-    );
-  }
 }
 
 function addDraftAssumption(input: Record<string, unknown>, assumption: string): void {
@@ -880,7 +1036,7 @@ function discardUnstatedRecipeValues(
   }
   const hasConfirmedHoneyAmount = previous?.ingredients.some(
     (ingredient) =>
-      ingredient.name.trim().toLowerCase() === "honey" &&
+      isHoneyIngredientName(ingredient.name) &&
       !ingredient.secondary &&
       ingredient.amount !== undefined
   );
@@ -893,7 +1049,7 @@ function discardUnstatedRecipeValues(
     result.ingredients = result.ingredients.map((ingredient) =>
       isRecord(ingredient) &&
       typeof ingredient.name === "string" &&
-      ingredient.name.trim().toLowerCase() === "honey" &&
+      isHoneyIngredientName(ingredient.name) &&
       ingredient.secondary !== true
         ? {
             ...ingredient,
@@ -905,7 +1061,7 @@ function discardUnstatedRecipeValues(
   }
   const priorHoneyWasAdjustable = previous?.ingredients.some(
     (ingredient) =>
-      ingredient.name.trim().toLowerCase() === "honey" &&
+      isHoneyIngredientName(ingredient.name) &&
       !ingredient.secondary &&
       ingredient.role === "adjustable_fermentable"
   );
@@ -919,14 +1075,14 @@ function discardUnstatedRecipeValues(
       (ingredient) =>
         isRecord(ingredient) &&
         typeof ingredient.name === "string" &&
-        ingredient.name.trim().toLowerCase() === "honey" &&
+        isHoneyIngredientName(ingredient.name) &&
         ingredient.secondary !== true
     );
     result.ingredients = hasPrimaryHoney
       ? result.ingredients.map((ingredient) =>
           isRecord(ingredient) &&
           typeof ingredient.name === "string" &&
-          ingredient.name.trim().toLowerCase() === "honey" &&
+          isHoneyIngredientName(ingredient.name) &&
           ingredient.secondary !== true
             ? { ...ingredient, amount: undefined, role: "adjustable_fermentable" }
             : ingredient
@@ -940,7 +1096,8 @@ function discardUnstatedRecipeValues(
       (ingredient) =>
         isRecord(ingredient) &&
         typeof ingredient.name === "string" &&
-        !/^(?:honey|water)$/i.test(ingredient.name.trim())
+        !isHoneyIngredientName(ingredient.name) &&
+        !/^water$/i.test(ingredient.name.trim())
     ) &&
     !result.ingredients.some(
       (ingredient) =>
@@ -954,7 +1111,7 @@ function discardUnstatedRecipeValues(
         isRecord(ingredient) &&
         typeof ingredient.name === "string" &&
         !ingredient.secondary &&
-        ingredient.name.trim().toLowerCase() === "honey"
+        isHoneyIngredientName(ingredient.name)
     )
   ) {
     result.ingredients = [
@@ -962,11 +1119,50 @@ function discardUnstatedRecipeValues(
       { name: "Honey", role: "adjustable_fermentable" }
     ];
   }
+  if (!hasExplicitIngredientQuantity(latestUserMessage) && Array.isArray(result.ingredients)) {
+    result.ingredients = result.ingredients.map((ingredient) => {
+      if (
+        !isRecord(ingredient) ||
+        typeof ingredient.name !== "string" ||
+        ingredient.amount === undefined ||
+        isHoneyIngredientName(ingredient.name) ||
+        /^water$/i.test(ingredient.name.trim()) ||
+        priorIngredientHasAmount(previous, ingredient)
+      ) {
+        return ingredient;
+      }
+      return { ...ingredient, amount: undefined };
+    });
+  }
   return result;
+}
+
+function priorIngredientHasAmount(
+  previous: BuildRecipeDraftInput | undefined,
+  ingredient: Record<string, unknown>
+): boolean {
+  const ingredientName = ingredient.name;
+  if (typeof ingredientName !== "string") return false;
+  return previous?.ingredients.some(
+    (candidate) =>
+      candidate.name.trim().toLowerCase() === ingredientName.toLowerCase() &&
+      (candidate.secondary === true) === (ingredient.secondary === true) &&
+      candidate.amount !== undefined
+  ) ?? false;
 }
 
 function honeyAmountFromMessage(message: string): boolean {
   return hasExplicitIngredientAmount(message, "honey");
+}
+
+function hasExplicitIngredientQuantity(message: string): boolean {
+  return /\b(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|ein(?:e[rsnm]?)?|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn)\s*(?:lb|lbs|pounds?|kg|kilograms?|g|grams?|oz|ounces?|gallons?|gals?|liters?|litres?|l|pfund|kilogramm|gramm|unzen|gallonen?|liter)\b/i.test(
+    message
+  );
+}
+
+function isHoneyIngredientName(name: string): boolean {
+  return /\bhoney\b/i.test(name);
 }
 
 function hasExplicitIngredientAmount(message: string, ingredientPattern: string): boolean {
@@ -996,7 +1192,7 @@ function batchVolumeFromMessage(
   message: string
 ): { value: number; unit: "gal" | "L" } | undefined {
   const match = message.match(
-    /\b(?:around\s+|about\s+|approximately\s+)?(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s*(gallons?|gals?|liters?|litres?|l)\b/i
+    /\b(?:around\s+|about\s+|approximately\s+|etwa\s+|ungefähr\s+)?(\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|ein(?:e[rsnm]?)?|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn)\s*(gallons?|gals?|gallonen?|liters?|litres?|litern?|l)\b/i
   );
   if (!match) return undefined;
   const numberWords: Record<string, number> = {
@@ -1009,16 +1205,30 @@ function batchVolumeFromMessage(
     seven: 7,
     eight: 8,
     nine: 9,
-    ten: 10
+    ten: 10,
+    ein: 1,
+    eine: 1,
+    einer: 1,
+    einem: 1,
+    einen: 1,
+    zwei: 2,
+    drei: 3,
+    vier: 4,
+    fünf: 5,
+    sechs: 6,
+    sieben: 7,
+    acht: 8,
+    neun: 9,
+    zehn: 10
   };
   const value = Number(match[1]) || numberWords[match[1]?.toLowerCase() ?? ""];
   if (!Number.isFinite(value) || value <= 0) return undefined;
-  return { value, unit: /^l/i.test(match[2] ?? "") ? "L" : "gal" };
+  return { value, unit: /^(?:l|liter)/i.test(match[2] ?? "") ? "L" : "gal" };
 }
 
 function fermentationFinalGravityFromMessage(message: string): number | undefined {
-  if (/\b(?:finish|end|ferment)\s+dry\b/i.test(message)) return 0.999;
-  if (/\bback[\s-]?sweeten(?:ing|ed)?\b/i.test(message)) return 0.999;
+  if (/\b(?:finish|end|ferment)\s+dry\b|\btrocken\b/i.test(message)) return 0.999;
+  if (/\bback[\s-]?sweeten(?:ing|ed)?\b|\bnachsüß(?:en|ung)?\b/i.test(message)) return 0.999;
   const finalGravity = message.match(
     /\b(?:fermentation\s+)?(?:final\s+)?(?:fg|gravity)\s*(?:of|is|=|to)?\s*(0\.\d{3,4})\b/i
   );
@@ -1033,7 +1243,7 @@ function duplicateIngredientsAcrossStages(ingredients: unknown): unknown {
   );
   for (const ingredient of ingredients) {
     if (!isRecord(ingredient) || typeof ingredient.name !== "string") continue;
-    if (/^(?:honey|water)$/i.test(ingredient.name)) continue;
+    if (isHoneyIngredientName(ingredient.name) || /^water$/i.test(ingredient.name)) continue;
     const sameName = (candidate: unknown) =>
       isRecord(candidate) && candidate.name === ingredient.name;
     const hasPrimary = ingredients.some(
@@ -1216,7 +1426,7 @@ function postToolInstruction(
     return "The previous tool result is the complete authoritative recipe context for this turn. Render only its returned recipe facts, assumptions, warnings, questions, and explanation. Keep a completed draft concise: use a clear title and short sections, stay under 500 words, and do not use emoji. Render recipeData.ingredients only in an Ingredients section. Render recipeData.additives only in a separate Additives section; never place an additive such as vanilla in Ingredients. A completed draft already includes its nutrient plan: do not ask a follow-up question or request yeast amounts after rendering it. When honey was implied for a mead draft, treat the plain Honey entry as the chosen adjustable fermentable; do not ask for a honey variety. Do not add a notes section, brewing advice, ingredient characterization, fermentation prediction, stabilization recommendation, save confirmation, causal mechanism, or inferred explanation beyond the exact returned explanation summary and facts. To add any process guidance, first search and fetch a relevant wiki page, then cite its canonical URL.";
   }
   if (toolName === "fetch_wiki_page") {
-    return "Use the retrieved page as evidence for any process guidance or clearly labeled recipe-draft assumption. Cite its canonical URL next to each grounded claim. If this is a recipe-design request, continue with the required catalog lookup and recipe-draft tools instead of replying from the page alone.";
+    return "Use the retrieved page as evidence for any process guidance or clearly labeled recipe-draft assumption. Keep a process answer under 250 words and give at most three high-impact next steps. Every factual claim must be supported directly by the retrieved page and cite its canonical URL as a Markdown link; do not use informal labels such as '(the wiki)' or '(Stabilization wiki)'. Do not add formulas, estimated doses, worked calculations, or extra brewing advice. If the user needs a numeric result, direct them to the relevant MeadTools calculator instead. If this is a recipe-design request, continue with the required catalog lookup and recipe-draft tools instead of replying from the page alone.";
   }
   if (toolName === "search_ingredients") {
     if (isRecord(execution) && execution.status === "ok" && Array.isArray(execution.result) && execution.result.length === 0) {
@@ -1277,7 +1487,12 @@ export function directRecipeToolAnswer(
     if (toolName === "build_recipe_draft" && workflow.data.questions.some((question) => question.id.endsWith("_brix"))) {
       return undefined;
     }
-    return undefined;
+    // A small, specific follow-up still benefits from a conversational reply.
+    // When intake is broad, render the workflow itself so the model cannot
+    // turn five or six missing fields into a checklist dump.
+    return workflow.data.questions.length >= 5
+      ? renderRecipeIntakeQuestions(workflow.data.questions)
+      : undefined;
   }
   if (workflow.data.status === "error") return workflow.data.message;
   if (toolName !== "explain_recipe" || !workflow.data.explanation) return undefined;
@@ -1298,10 +1513,55 @@ export function directRecipeToolAnswer(
     .join("\n\n");
 }
 
+function renderRecipeIntakeQuestions(
+  questions: Array<{ id: string; prompt: string }>
+): string {
+  const groups = [
+    {
+      title: "Batch and targets",
+      matches: (id: string) => /^(?:batch_volume|gravity_target|fermentation_final_gravity)$/.test(id)
+    },
+    {
+      title: "Ingredients",
+      matches: (id: string) => /^(?:recipe_ingredients|ingredient_|additive_|adjustable_fermentable)/.test(id)
+    },
+    {
+      title: "Yeast, nutrients, and stabilization",
+      matches: (id: string) => /^(?:nutrient_plan|stabilizer_)/.test(id)
+    }
+  ];
+
+  const renderedGroups = groups.flatMap((group) => {
+    const prompts = questions
+      .filter((question) => group.matches(question.id))
+      .map((question) => question.prompt);
+    return prompts.length > 0 ? [`- **${group.title}:** ${prompts.join(" ")}`] : [];
+  });
+  const unmatched = questions
+    .filter((question) => !groups.some((group) => group.matches(question.id)))
+    .slice(0, Math.max(0, 3 - renderedGroups.length))
+    .map((question) => `- ${question.prompt}`);
+
+  return [
+    "To finish this draft, I need these high-impact choices:",
+    [...renderedGroups, ...unmatched].slice(0, 3).join("\n")
+  ].join("\n\n");
+}
+
 function isRecipeNeedsInput(execution: unknown): boolean {
   if (!isRecord(execution) || execution.status !== "ok") return false;
   const workflow = chatbotRecipeWorkflowResultSchema.safeParse(execution.result);
   return workflow.success && workflow.data.status === "needs_input";
+}
+
+function hasCompletedRecipeDraft(toolResults: ChatTurnResult["toolResults"]): boolean {
+  return toolResults.some((toolResult) => {
+    if (toolResult.toolName !== "build_recipe_draft" || !isRecord(toolResult.result)) {
+      return false;
+    }
+    const workflow = chatbotRecipeWorkflowResultSchema.safeParse(toolResult.result.result);
+    return workflow.success && workflow.data.status === "recipe";
+  });
 }
 
 function buildNeedsCatalogLookup(execution: unknown): boolean {
@@ -1346,12 +1606,21 @@ function sanitizeUserFacingRecipeAnswer(answer: string): string {
     .replace(/\s*\(adjustable(?:\s+fermentable)?\)/gi, "")
     .replace(/\s*\([^)]*\bBrix\b[^)]*\)/gi, "")
     .replace(/\s*\(justK\)/gi, "")
-    .replace(/\s*\(kmeta\)/gi, "")
+    .replace(/\s*\(k-?meta\)/gi, "")
     // A completed draft is authoritative; a model must not append an invented
     // intake question after it. Questions issued by the workflow are rendered
     // in their own turn before a draft exists.
     .replace(/\n{2,}(?:\*{0,2}next steps:?\*{0,2})[\s\S]*$/i, "")
     .replace(/^\s*Do not ask them about catalog IDs or internal fields\.\s*$/gim, "")
     .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+export function removeCompletedRecipeFollowUp(answer: string): string {
+  return answer
+    .replace(
+      /\s+(?:let me know|would you like|if you'd like)\b[\s\S]*$/i,
+      ""
+    )
     .trim();
 }

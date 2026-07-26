@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const FIREWORKS_INFERENCE_URL =
   "https://api.fireworks.ai/inference/v1/chat/completions";
+const FIREWORKS_REQUEST_TIMEOUT_MS = 60_000;
 
 const toolCallSchema = z.object({
   id: z.string().min(1),
@@ -99,55 +100,73 @@ export class FireworksChatClient implements ChatModelClient {
   async complete(
     request: FireworksCompletionRequest
   ): Promise<FireworksCompletion> {
-    const response = await (this.options.fetcher ?? fetch)(
-      FIREWORKS_INFERENCE_URL,
-      {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${this.options.apiKey}`,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          model: this.options.model,
-          messages: request.messages,
-          tools: request.tools,
-          tool_choice: request.toolChoice ?? "auto",
-          parallel_tool_calls: false,
-          temperature: 0.2,
-          max_tokens: request.maxOutputTokens,
-          user: String(request.userId)
-        }),
-        signal: AbortSignal.timeout(45_000)
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await (this.options.fetcher ?? fetch)(
+          FIREWORKS_INFERENCE_URL,
+          {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${this.options.apiKey}`,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              model: this.options.model,
+              messages: request.messages,
+              tools: request.tools,
+              tool_choice: request.toolChoice ?? "auto",
+              parallel_tool_calls: false,
+              temperature: 0.2,
+              max_tokens: request.maxOutputTokens,
+              user: String(request.userId)
+            }),
+            signal: AbortSignal.timeout(FIREWORKS_REQUEST_TIMEOUT_MS)
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Fireworks inference failed with HTTP ${response.status}.`);
+        }
+
+        const parsed = completionSchema.safeParse(await response.json());
+        if (!parsed.success) {
+          throw new Error("Fireworks returned an unexpected chat completion shape.");
+        }
+
+        const choice = parsed.data.choices[0];
+        return {
+          id: parsed.data.id,
+          model: parsed.data.model,
+          message: {
+            role: "assistant",
+            content: choice.message.content ?? null,
+            tool_calls: choice.message.tool_calls
+          },
+          usage: {
+            inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
+            outputTokens: parsed.data.usage?.completion_tokens ?? 0,
+            totalTokens: parsed.data.usage?.total_tokens ?? 0,
+            cachedInputTokens:
+              parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0
+          },
+          finishReason: choice.finish_reason
+        };
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0 && isRetryableFireworksError(error)) continue;
+        throw error;
       }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Fireworks inference failed with HTTP ${response.status}.`);
     }
-
-    const parsed = completionSchema.safeParse(await response.json());
-    if (!parsed.success) {
-      throw new Error("Fireworks returned an unexpected chat completion shape.");
-    }
-
-    const choice = parsed.data.choices[0];
-    return {
-      id: parsed.data.id,
-      model: parsed.data.model,
-      message: {
-        role: "assistant",
-        content: choice.message.content ?? null,
-        tool_calls: choice.message.tool_calls
-      },
-      usage: {
-        inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
-        outputTokens: parsed.data.usage?.completion_tokens ?? 0,
-        totalTokens: parsed.data.usage?.total_tokens ?? 0,
-        cachedInputTokens:
-          parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0
-      },
-      finishReason: choice.finish_reason
-    };
+    throw lastError;
   }
 
+}
+
+function isRetryableFireworksError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    /timeout|aborted/i.test(error.message) ||
+    /Fireworks inference failed with HTTP (408|429|5\d\d)\./.test(error.message)
+  );
 }

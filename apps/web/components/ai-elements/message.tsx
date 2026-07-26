@@ -7,12 +7,12 @@ import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import { Check, Copy, ExternalLink, X } from "lucide-react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
-import { memo, useEffect, useState, type HTMLAttributes } from "react";
+import { memo, useEffect, useState, type ComponentProps, type HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Streamdown,
-  type LinkSafetyModalProps,
   type StreamdownProps
 } from "streamdown";
 
@@ -58,21 +58,17 @@ export function MessageContent({
 }
 
 const streamdownPlugins = { cjk, code, math, mermaid };
-const chatLinkSafety = {
-  enabled: true,
-  renderModal: (props: LinkSafetyModalProps) => <ChatLinkSafetyModal {...props} />
-};
 
 export type MessageResponseProps = StreamdownProps;
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
+  ({ className, components, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
         "w-full min-w-0 max-w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
-      linkSafety={chatLinkSafety}
+      components={{ ...components, a: ChatMarkdownLink }}
       plugins={streamdownPlugins}
       {...props}
     />
@@ -83,12 +79,63 @@ export const MessageResponse = memo(
 
 MessageResponse.displayName = "MessageResponse";
 
+function ChatMarkdownLink({
+  children,
+  className,
+  href,
+  node: _node,
+  ...props
+}: ComponentProps<"a"> & { node?: unknown }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const linkClassName = cn(
+    "wrap-anywhere font-medium text-primary underline",
+    className
+  );
+
+  if (!href) return <span className={linkClassName}>{children}</span>;
+
+  if (isInternalMeadToolsPath(href)) {
+    return (
+      <Link className={linkClassName} href={href} {...props}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      <button
+        className={cn("appearance-none text-left", linkClassName)}
+        onClick={() => setIsOpen(true)}
+        type="button"
+      >
+        {children}
+      </button>
+      <ChatLinkSafetyModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        onConfirm={() => window.open(href, "_blank", "noreferrer")}
+        url={href}
+      />
+    </>
+  );
+}
+
+function isInternalMeadToolsPath(href: string): boolean {
+  return href.startsWith("/") && !href.startsWith("//");
+}
+
 function ChatLinkSafetyModal({
   isOpen,
   onClose,
   onConfirm,
   url
-}: LinkSafetyModalProps) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  url: string;
+}) {
   const [copied, setCopied] = useState(false);
   const { t } = useTranslation();
 

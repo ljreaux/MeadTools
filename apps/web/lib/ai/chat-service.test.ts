@@ -8,7 +8,9 @@ import {
 import type { ChatModelClient, FireworksCompletionRequest } from "./fireworks";
 import {
   chatRequestSchema,
+  calculatorLinkForProcessMessage,
   directRecipeToolAnswer,
+  removeCompletedRecipeFollowUp,
   runChatTurn
 } from "./chat-service";
 
@@ -21,6 +23,101 @@ const nutrientPlan = {
   numberOfAdditions: 4,
   goFermType: "Go-Ferm"
 };
+
+test("process calculator routing prefers the dedicated MeadTools calculators", () => {
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("How much potassium metabisulfite and sorbate do I need?"),
+    { label: "Stabilizer calculator", href: "/stabilizers" }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("How should I calculate a Fermaid K schedule?"),
+    { label: "Nutrient calculator", href: "/nute-calc" }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("How do I correct a refractometer reading after fermentation?"),
+    {
+      label: "Refractometer correction calculator",
+      href: "/extra-calcs/refractometer-correction"
+    }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("How much priming sugar do I need for carbonation?"),
+    { label: "Priming sugar calculator", href: "/extra-calcs/priming-sugar" }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("How much sulfite should I add?"),
+    { label: "Sulfite calculator", href: "/extra-calcs/sulfite" }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("What is causing a sulfur aroma?"),
+    undefined
+  );
+});
+
+test("exact calculator requests link to MeadTools without invoking the model", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        throw new Error("The model should not be called for a calculator route.");
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Can you calculate the exact sulfite amount for me?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "deterministic-calculator-routing");
+  assert.match(result.answer, /\[Sulfite calculator\]\(\/extra-calcs\/sulfite\)/);
+});
+
+test("calculator-only brewing vocabulary stays inside the chatbot scope", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        throw new Error("The model should not be called for a calculator route.");
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "How much priming sugar do I need for carbonation?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "deterministic-calculator-routing");
+  assert.match(result.answer, /\[Priming sugar calculator\]\(\/extra-calcs\/priming-sugar\)/);
+});
+
+test("completed drafts do not end with a conversational follow-up", () => {
+  assert.equal(
+    removeCompletedRecipeFollowUp(
+      "## Blackberry Mead\n\nIngredients\n\n- Honey\n\nLet me know if you'd like to change the amounts."
+    ),
+    "## Blackberry Mead\n\nIngredients\n\n- Honey"
+  );
+  assert.equal(
+    removeCompletedRecipeFollowUp(
+      "## Blueberry Mead\n\nThis is an unsaved draft. If you'd like to save it or adjust any details, let me know."
+    ),
+    "## Blueberry Mead\n\nThis is an unsaved draft."
+  );
+});
+
+test("recipe intake groups the workflow questions into at most three prompts", () => {
+  const answer = directRecipeToolAnswer("build_recipe_draft", {
+    status: "ok",
+    result: buildRecipeDraft({})
+  });
+
+  assert.match(answer ?? "", /\*\*Batch and targets:\*\*/);
+  assert.match(answer ?? "", /\*\*Ingredients:\*\*/);
+  assert.match(answer ?? "", /\*\*Yeast, nutrients, and stabilization:\*\*/);
+  assert.ok((answer?.match(/^-/gm) ?? []).length <= 3);
+});
 
 test("chat turn executes a wiki search and meters every provider call", async () => {
   const requests: FireworksCompletionRequest[] = [];
@@ -68,7 +165,8 @@ test("chat turn executes a wiki search and meters every provider call", async ()
     }
   });
 
-  assert.equal(result.answer, "Use the Nutrient Schedules wiki page.");
+  assert.match(result.answer, /^Use the Nutrient Schedules wiki page\./);
+  assert.match(result.answer, /https:\/\/wiki\.meadtools\.com\/en\/process\/nutrient_schedules/);
   assert.equal(result.toolResults[0]?.toolName, "search_wiki");
   assert.deepEqual(events, ["tool_call:search_wiki", "tool_result:search_wiki"]);
   assert.deepEqual(result.usage, {
@@ -135,6 +233,32 @@ test("unrelated requests are refused before they reach the model", async () => {
   assert.equal(requests.length, 0);
 });
 
+test("German mead questions stay inside the chatbot scope", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "german-mead-question",
+          model: "test-model",
+          message: { role: "assistant", content: "Ich helfe dir beim Stabilisieren deines Mets." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Wie stabilisiere ich mein Met?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.answer, "Ich helfe dir beim Stabilisieren deines Mets.");
+  assert.equal(requests.length, 1);
+});
+
 test("a catalog correction stays in scope during a mead conversation", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
@@ -163,6 +287,98 @@ test("a catalog correction stays in scope during a mead conversation", async () 
 
   assert.equal(result.answer, "I will use the catalog match for the cyser draft.");
   assert.equal(requests.length, 1);
+});
+
+test("a catalog correction still forces lookup of a yeast named earlier in intake", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "yeast-after-catalog-correction",
+          model: "test-model",
+          message: { role: "assistant", content: "I will resolve the named yeast before drafting." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Draft a 1 gallon cyser with Apple Juice, Lalvin D47, and Fermaid K." },
+        { role: "assistant", content: "I need to resolve the ingredient first." },
+        { role: "user", content: "Apple Juice is in the catalog; use that." }
+      ],
+      recipeDraftInput: { targetOriginalGravity: 1.075, fermentationFinalGravity: 1.01 }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "search_yeasts" }
+  });
+});
+
+test("a catalog correction keeps the earlier finished-volume intake", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        if (request.messages.some((message) => message.role === "tool")) {
+          return {
+            id: "catalog-correction-render",
+            model: "test-model",
+            message: { role: "assistant", content: "I retained the finished batch volume." },
+            usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "catalog-correction-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "build-after-correction",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  ingredients: [
+                    {
+                      name: "Apple Juice",
+                      category: "juice",
+                      brix: 11,
+                      amount: { kind: "volume", value: 0.75, unit: "gal" }
+                    },
+                    { name: "Wildflower Honey", role: "adjustable_fermentable" }
+                  ],
+                  nutrients: nutrientPlan,
+                  stabilizers: { enabled: false }
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Draft a 1 gallon cyser with apple cider, 10% ABV, and Fermaid K." },
+        { role: "assistant", content: "I need to resolve the cider first." },
+        { role: "user", content: "Apple Juice is in the catalog; use that." }
+      ],
+      recipeDraftInput: { targetOriginalGravity: 1.075, fermentationFinalGravity: 1.01 }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.batchVolume, { value: 1, unit: "gal" });
 });
 
 test("intake questions use the constrained conversational renderer while explanations remain deterministic", () => {
@@ -262,7 +478,8 @@ test("a request to build with a named ingredient forces catalog lookup first", a
     type: "function",
     function: { name: "search_ingredients" }
   });
-  assert.match(result.answer, /batch size/i);
+  assert.match(result.answer, /batch (size|volume)/i);
+  assert.match(result.answer, /batch and targets/i);
   assert.doesNotMatch(result.answer, /traditional/i);
 });
 
@@ -648,11 +865,12 @@ test("explicit recipe choices survive a provider omission and stay stage-specifi
       .map((ingredient) => ingredient.secondary === true),
     [false, true]
   );
-  assert.doesNotMatch(result.answer, /finished batch volume|nutrient schedule|Go-Ferm type/i);
-  assert.equal(result.answer, "What yeast would you like to use?");
+  assert.match(result.answer, /yeast, nutrients, and stabilization/i);
+  assert.match(result.answer, /yeast brand and strain/i);
+  assert.doesNotMatch(result.answer, /catalog id|justK/i);
 });
 
-test("an approximate ABV, exact yeast, heavy fruit, and no pH reading all advance intake", async () => {
+test("an approximate ABV, exact yeast, qualitative blueberry preference, and no pH reading all advance intake", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const calls = [
     {
@@ -692,11 +910,11 @@ test("an approximate ABV, exact yeast, heavy fruit, and no pH reading all advanc
     userId: 7,
     request: chatRequestSchema.parse({
       messages: [
-        { role: "user", content: "Create a blackberry mead recipe." },
+        { role: "user", content: "Create a blueberry mead recipe." },
         { role: "assistant", content: "What should we use for the remaining recipe choices?" },
         {
           role: "user",
-          content: "About 16%, use heavy blackberry with 71B, and I will not take a pH reading."
+          content: "About 16%, use heavy blueberry with 71B, and I will not take a pH reading."
         }
       ],
       recipeDraftInput: {
@@ -705,14 +923,14 @@ test("an approximate ABV, exact yeast, heavy fruit, and no pH reading all advanc
         ingredients: [
           { name: "Honey" },
           {
-            name: "Blackberry",
-            catalogId: 10,
+            name: "Blueberry",
+            catalogId: 11,
             category: "fruit",
             brix: 7.86
           },
           {
-            name: "Blackberry",
-            catalogId: 10,
+            name: "Blueberry",
+            catalogId: 11,
             category: "fruit",
             brix: 7.86,
             secondary: true
@@ -725,9 +943,6 @@ test("an approximate ABV, exact yeast, heavy fruit, and no pH reading all advanc
           goFermType: "Go-Ferm"
         },
         stabilizers: { enabled: true, type: "kmeta" },
-        assumptions: [
-          "Assumed a heavy blackberry profile at 2 lb per gallon total, split evenly between primary and secondary."
-        ]
       }
     }),
     maxOutputTokens: 4_000,
@@ -754,17 +969,13 @@ test("an approximate ABV, exact yeast, heavy fruit, and no pH reading all advanc
   assert.equal(result.recipeDraftInput?.stabilizers?.phReading, 3.5);
   assert.deepEqual(
     result.recipeDraftInput?.ingredients
-      .filter((ingredient) => ingredient.name === "Blackberry")
+      .filter((ingredient) => ingredient.name === "Blueberry")
       .map((ingredient) => ingredient.amount),
-    [
-      { kind: "weight", value: 5, unit: "lb" },
-      { kind: "weight", value: 5, unit: "lb" }
-    ]
+    [undefined, undefined]
   );
-  assert.ok(
-    result.recipeDraftInput?.assumptions.includes(
-      "Assumed a heavy blackberry profile at 2 lb per gallon total, split evenly between primary and secondary."
-    )
+  assert.equal(
+    result.recipeDraftInput?.assumptions?.some((assumption) => /heavy.*(?:blackberry|blueberry)/i.test(assumption)) ?? false,
+    false
   );
   assert.ok(
     result.recipeDraftInput?.assumptions.includes(
@@ -845,7 +1056,7 @@ test("a named fruit is looked up before yeast selection and draft construction",
   ]);
 });
 
-test("a heavy-blackberry assumption replaces a model-invented fruit amount", async () => {
+test("a qualitative fruit preference does not produce a model-invented fruit amount", async () => {
   const client: ChatModelClient = {
     async complete(request) {
       if (request.messages.some((message) => message.role === "tool")) {
@@ -885,10 +1096,14 @@ test("a heavy-blackberry assumption replaces a model-invented fruit amount", asy
     client,
     userId: 7,
     request: chatRequestSchema.parse({
-      messages: [{
-        role: "user",
-        content: "Create a 5 gallon blackberry mead at 16% ABV with heavy fruit split evenly."
-      }],
+      messages: [
+        {
+          role: "user",
+          content: "Create a 5 gallon blackberry mead at 16% ABV with heavy fruit split evenly."
+        },
+        { role: "assistant", content: "I have the recipe details so far." },
+        { role: "user", content: "Please create the draft using those details." }
+      ],
       recipeDraftInput: {
         batchVolume: { value: 5, unit: "gal" },
         targetOriginalGravity: 1.126,
@@ -920,7 +1135,7 @@ test("a heavy-blackberry assumption replaces a model-invented fruit amount", asy
     result.recipeDraftInput?.ingredients
       .filter((ingredient) => ingredient.name === "Blackberry")
       .map((ingredient) => ingredient.amount?.value),
-    [5, 5]
+    [undefined, undefined]
   );
   assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
 });
@@ -1037,7 +1252,7 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
                       brix: 11,
                       amount: { kind: "volume", value: 0.75, unit: "gal" }
                     },
-                    { name: "Honey", role: "adjustable_fermentable" }
+                    { name: "Wildflower Honey", role: "adjustable_fermentable" }
                   ],
                   stabilizers: { enabled: true, type: "kmeta" }
                 })
@@ -1051,7 +1266,7 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
     userId: 7,
     request: chatRequestSchema.parse({
       messages: [
-        { role: "user", content: "Draft a 1 gallon cyser with 1 gallon of apple juice and 3 lb of honey at 10% ABV." },
+        { role: "user", content: "Draft a 1 gallon cyser with 1 gallon of apple juice and 3 lb of wildflower honey at 10% ABV." },
         { role: "assistant", content: "The fixed ingredients need adjustment to meet that target." },
         { role: "user", content: "I do not plan on using sulfite at all and I am not measuring pH. We can reduce the honey to meet the targets." }
       ],
@@ -1067,7 +1282,7 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
             brix: 11,
             amount: { kind: "volume", value: 1, unit: "gal" }
           },
-          { name: "Honey", amount: { kind: "weight", value: 3, unit: "lb" } }
+          { name: "Wildflower Honey", amount: { kind: "weight", value: 3, unit: "lb" } }
         ],
         nutrients: nutrientPlan,
         stabilizers: { enabled: true, type: "kmeta" }
@@ -1082,10 +1297,11 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
     result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Apple Juice")?.amount,
     { kind: "volume", value: 1, unit: "gal" }
   );
-  const honey = result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Honey");
+  const honey = result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Wildflower Honey");
   assert.equal(honey?.role, "adjustable_fermentable");
   assert.equal(honey?.amount, undefined);
-  assert.match(result.answer, /fixed ingredient volumes exceed/i);
+  assert.match(result.answer, /fixed primary ingredient.*Apple Juice/i);
+  assert.match(result.answer, /larger batch/i);
 });
 
 test("a medium-sweet request requires an explicit sweetness strategy before drafting", async () => {
@@ -1185,7 +1401,7 @@ test("invalid model tool arguments cannot discard established recipe intake", as
     result.recipeDraftInput?.ingredients
       .filter((ingredient) => ingredient.name === "Blackberry")
       .map((ingredient) => ingredient.amount?.value),
-    [5, 5]
+    [undefined, undefined]
   );
   assert.equal(result.toolResults[0]?.toolName, "build_recipe_draft");
   assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
@@ -1519,7 +1735,7 @@ test("a mead request receives implied honey before a gravity target is known", a
   );
 });
 
-test("a repeated intake question makes the model re-extract the latest user reply", async () => {
+test("broad recipe intake avoids a repeated model-rendering turn", async () => {
   const intake = buildRecipeDraft({});
   assert.equal(intake.status, "needs_input");
   if (intake.status !== "needs_input") return;
@@ -1570,13 +1786,9 @@ test("a repeated intake question makes the model re-extract the latest user repl
     maxToolCalls: 6
   });
 
-  assert.equal(result.answer, "I need only the remaining gravity target.");
-  assert.equal(requests.length, 2);
-  assert.ok(
-    requests[1]?.messages.some(
-      (message) => message.role === "system" && /authoritative intake state/i.test(message.content)
-    )
-  );
+  assert.match(result.answer, /batch and targets/i);
+  assert.match(result.answer, /yeast, nutrients, and stabilization/i);
+  assert.equal(requests.length, 1);
 });
 
 test("a truncated model completion is never returned as the chat answer", async () => {

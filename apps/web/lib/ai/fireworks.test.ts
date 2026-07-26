@@ -50,3 +50,29 @@ test("Fireworks client sends a server-side OpenAI-compatible completion request"
   });
   assert.equal(completion.finishReason, "stop");
 });
+
+test("Fireworks client retries one transient timeout", async () => {
+  let attempts = 0;
+  const client = new FireworksChatClient({
+    apiKey: "test-key",
+    model: "accounts/fireworks/models/test-model",
+    fetcher: async () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("The operation was aborted due to timeout");
+      return Response.json({
+        id: "response-2",
+        model: "accounts/fireworks/models/test-model",
+        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "Recovered" } }]
+      });
+    }
+  });
+
+  const completion = await client.complete({
+    messages: [{ role: "user", content: "Hello" }],
+    maxOutputTokens: 300,
+    userId: 42
+  });
+
+  assert.equal(attempts, 2);
+  assert.equal(completion.message.content, "Recovered");
+});

@@ -59,6 +59,55 @@ test("general recipe drafting solves honey and water around explicit fruit input
   );
 });
 
+test("a named honey varietal can be the adjustable fermentable", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1.25, unit: "gal" },
+    targetOriginalGravity: 1.075,
+    fermentationFinalGravity: 1.01,
+    ingredients: [
+      {
+        name: "Apple Juice",
+        category: "juice",
+        brix: 11,
+        amount: { kind: "volume", value: 1, unit: "gal" }
+      },
+      { name: "Wildflower Honey", role: "adjustable_fermentable" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Wildflower Honey"));
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
+test("a full-volume juice base explains why a gravity-targeted cyser cannot fit", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.086,
+    fermentationFinalGravity: 1.01,
+    ingredients: [
+      {
+        name: "Apple Juice",
+        category: "juice",
+        brix: 10.3,
+        amount: { kind: "volume", value: 1, unit: "gal" }
+      },
+      { name: "Wildflower Honey", role: "adjustable_fermentable" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /Apple Juice.*requested 1 gal/i);
+  assert.match(result.message, /no room left for Wildflower Honey and water/i);
+  assert.match(result.message, /larger batch/i);
+});
+
 test("a target ABV gravity includes fixed secondary fruit in the final blend", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 5, unit: "gal" },
