@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { appendFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -17,7 +18,20 @@ const SHARED_PATHS = [
   "tsconfig.base.json",
 ];
 
+// Most translation-only commits do not need a new application build. German is
+// bundled by every shipped app, though, so both Weblate follow-ups and human
+// German review corrections must release an updated artifact.
+const GENERATED_TRANSLATION_PATH = "packages/i18n/locales/";
+const ENGLISH_TRANSLATION_PATH = "packages/i18n/locales/en/";
+const GERMAN_TRANSLATION_PATH = "packages/i18n/locales/de/";
+const WEBLATE_BATCH_MARKER = "Translation-Batch: weblate-auto";
+
 const LOCKFILE = "package-lock.json";
+
+// This deliberate, checked-in switch pauses all application builds while the
+// translation-provider migration is being verified. Remove the marker once
+// the migration is complete.
+const MIGRATION_BUILD_PAUSE_MARKER = "ops/translation-migration.skip-builds";
 
 const TARGET_CONFIGURATION = {
   web: ["vercel.json"],
@@ -44,17 +58,51 @@ export function isTargetAffected(target, changedPaths) {
     ...TARGET_CONFIGURATION[target],
   ];
 
-  return changedPaths.some((changedPath) =>
-    relevantPaths.some((candidate) => matchesPath(changedPath, candidate)),
+  return changedPaths.some(
+    (changedPath) =>
+      !changedPath.startsWith(GENERATED_TRANSLATION_PATH) &&
+      relevantPaths.some((candidate) => matchesPath(changedPath, candidate)),
   );
 }
 
-export function classifyAppImpact(changedPaths) {
+export function classifyAppImpact(
+  changedPaths,
+  {
+    buildsPaused = false,
+    deferForWeblate = false,
+    isWeblateTranslationBatch = false,
+  } = {},
+) {
+  if (buildsPaused) {
+    return Object.fromEntries(TARGETS.map((target) => [target, false]));
+  }
+
+  if (isWeblateTranslationBatch) {
+    // This is the one deployment/build released after a preview merge that
+    // changed English. It includes both the source feature and Weblate's
+    // generated German update.
+    return Object.fromEntries(TARGETS.map((target) => [target, true]));
+  }
+
+  if (
+    deferForWeblate &&
+    changedPaths.some((changedPath) =>
+      changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    )
+  ) {
+    return Object.fromEntries(TARGETS.map((target) => [target, false]));
+  }
+
+  if (
+    changedPaths.some((changedPath) =>
+      changedPath.startsWith(GERMAN_TRANSLATION_PATH),
+    )
+  ) {
+    return Object.fromEntries(TARGETS.map((target) => [target, true]));
+  }
+
   const impact = Object.fromEntries(
-    TARGETS.map((target) => [
-      target,
-      isTargetAffected(target, changedPaths),
-    ]),
+    TARGETS.map((target) => [target, isTargetAffected(target, changedPaths)]),
   );
 
   if (changedPaths.includes(LOCKFILE)) {
@@ -70,6 +118,69 @@ export function classifyAppImpact(changedPaths) {
   }
 
   return impact;
+}
+
+export function isWeblateTranslationBatch(
+  message,
+  changedPaths,
+  sourceChangedPaths = [],
+) {
+  const isGermanOnly =
+    changedPaths.length > 0 &&
+    changedPaths.every(
+      (changedPath) =>
+        changedPath.startsWith(GENERATED_TRANSLATION_PATH) &&
+        !changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    );
+  if (!isGermanOnly) return false;
+
+  // Keep recognizing the migration-era marker, but native Weblate commits use
+  // the normal component template. Their position directly after an English
+  // source update is the reliable signal.
+  return (
+    message.includes(WEBLATE_BATCH_MARKER) ||
+    sourceChangedPaths.some((changedPath) =>
+      changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
+    )
+  );
+}
+
+export function hasWeblateTranslationBatch(batches) {
+  return batches.some(({ message, changedPaths, sourceChangedPaths }) =>
+    isWeblateTranslationBatch(message, changedPaths, sourceChangedPaths),
+  );
+}
+
+export function hasSkipWebCheckLabel(labels) {
+  return labels.some(({ name }) => name === "skip-web-check");
+}
+
+export async function shouldSkipVercelWebPreview(
+  {
+    pullRequestId = process.env.VERCEL_GIT_PULL_REQUEST_ID,
+    repositoryOwner = process.env.VERCEL_GIT_REPO_OWNER,
+    repositorySlug = process.env.VERCEL_GIT_REPO_SLUG,
+  } = {},
+  request = fetch,
+) {
+  if (!pullRequestId || !repositoryOwner || !repositorySlug) return false;
+
+  try {
+    const response = await request(
+      `https://api.github.com/repos/${repositoryOwner}/${repositorySlug}/issues/${pullRequestId}`,
+      {
+        headers: { Accept: "application/vnd.github+json" },
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+    if (!response.ok) return false;
+
+    const issue = await response.json();
+    return hasSkipWebCheckLabel(issue.labels || []);
+  } catch {
+    // If GitHub is unavailable, keep the safe default and build the preview.
+    return false;
+  }
 }
 
 function readChangedPaths(base, head) {
@@ -102,6 +213,53 @@ function resolveRevisionRange() {
   return { base, head };
 }
 
+function readCommitMessage(head) {
+  const result = spawnSync("git", ["log", "-1", "--format=%B", head], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || "Unable to read commit message.");
+  }
+  return result.stdout;
+}
+
+function readRevisionCommits(base, head) {
+  const result = spawnSync(
+    "git",
+    ["rev-list", "--reverse", `${base}..${head}`],
+    {
+      encoding: "utf8",
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(result.stderr.trim() || "Unable to read revision commits.");
+  }
+  return result.stdout
+    .split("\n")
+    .map((commit) => commit.trim())
+    .filter(Boolean);
+}
+
+function hasWeblateTranslationBatchInRange(base, head) {
+  const batches = readRevisionCommits(base, head).map((commit) => {
+    const parent = `${commit}^`;
+    return {
+      message: readCommitMessage(commit),
+      changedPaths: readChangedPaths(parent, commit),
+      sourceChangedPaths: readChangedPaths(`${commit}^^`, parent),
+    };
+  });
+  return hasWeblateTranslationBatch(batches);
+}
+
+function isPreviewBranch() {
+  return (
+    process.env.APP_IMPACT_DEFER_FOR_WEBLATE === "true" ||
+    process.env.GITHUB_REF === "refs/heads/preview" ||
+    process.env.VERCEL_GIT_COMMIT_REF === "preview"
+  );
+}
+
 async function run() {
   const githubOutput = process.argv.includes("--github-output");
   const target = process.argv.find((argument) => TARGETS.includes(argument));
@@ -112,7 +270,16 @@ async function run() {
 
   try {
     changedPaths = readChangedPaths(base, head);
-    impact = classifyAppImpact(changedPaths);
+    impact = classifyAppImpact(changedPaths, {
+      buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
+      deferForWeblate: isPreviewBranch(),
+      isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
+    });
+
+    if (target === "web" && (await shouldSkipVercelWebPreview())) {
+      impact.web = false;
+      console.log("Vercel preview skipped by the skip-web-check PR label.");
+    }
   } catch (error) {
     console.warn(
       `Could not determine app impact for ${base}..${head}; running all checks as a safe fallback.`,
@@ -127,6 +294,11 @@ async function run() {
     changedPaths.length > 0 ? changedPaths.join("\n") : "(unknown or none)",
   );
   console.log(`App impact: ${JSON.stringify(impact)}`);
+  if (existsSync(MIGRATION_BUILD_PAUSE_MARKER)) {
+    console.log(
+      `Application builds are paused by ${MIGRATION_BUILD_PAUSE_MARKER}.`,
+    );
+  }
 
   if (githubOutput) {
     if (!process.env.GITHUB_OUTPUT) {

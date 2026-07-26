@@ -1,18 +1,12 @@
 # @meadtools/i18n
 
-Shared locale metadata and generated translation resources for MeadTools apps.
+Shared locale metadata and translation resources for MeadTools apps.
 
 ## Source of truth
 
-i18nexus is the source of truth. Files under `locales/` are generated output and
-must not be edited directly.
-
-Use the workspace commands from the repository root:
-
-```bash
-npm run i18n:pull
-npm run i18n:listen
-```
+Git is the source of truth. English source strings and reviewed German
+translations live under `locales/`. Weblate adds unapproved German suggestions
+to `preview`; human corrections are German-only PRs.
 
 The package deliberately contains no React, Next.js, or Expo initialization.
 Each app owns its framework-specific i18next setup while consuming the same

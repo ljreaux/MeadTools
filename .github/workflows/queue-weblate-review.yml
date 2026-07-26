@@ -1,0 +1,27 @@
+name: Queue German Weblate translation review
+
+on:
+  push:
+    branches: [preview]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  queue-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out the pushed preview commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Add Weblate German batch to the review queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/queue-weblate-review.mjs

@@ -1,0 +1,35 @@
+name: Approve unchanged Weblate translations
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  approve-weblate-batch:
+    if: >-
+      github.event.issue.pull_request == null &&
+      contains(github.event.comment.body, '/approve-weblate')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: weblate-issue-approval-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Check out preview history
+        uses: actions/checkout@v4
+        with:
+          ref: preview
+          fetch-depth: 0
+
+      - name: Approve the exact Weblate batch named in the issue
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_TOKEN: ${{ github.token }}
+          WEBLATE_URL: https://translations.meadtools.com
+          WEBLATE_APPROVAL_TOKEN: ${{ secrets.WEBLATE_APPROVAL_TOKEN }}
+        run: node scripts/approve-weblate-issue.mjs

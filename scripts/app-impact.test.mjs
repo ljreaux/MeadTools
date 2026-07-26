@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyAppImpact, isTargetAffected } from "./app-impact.mjs";
+import {
+  classifyAppImpact,
+  hasWeblateTranslationBatch,
+  hasSkipWebCheckLabel,
+  isTargetAffected,
+  isWeblateTranslationBatch,
+  shouldSkipVercelWebPreview,
+} from "./app-impact.mjs";
 
 test("app-local changes affect only their app", () => {
   assert.deepEqual(classifyAppImpact(["apps/mobile/app/index.tsx"]), {
@@ -31,12 +38,138 @@ test("shared packages and root dependencies affect every app", () => {
   }
 });
 
-test("an app manifest and lockfile change affect only that app", () => {
+test("German translation corrections rebuild every app", () => {
   assert.deepEqual(
     classifyAppImpact([
-      "apps/mobile/package.json",
-      "package-lock.json",
+      "packages/i18n/locales/de/default.json",
+      "packages/i18n/locales/de/YeastTable.json",
     ]),
+    {
+      web: true,
+      mobile: true,
+      desktop: true,
+    },
+  );
+});
+
+test("German translation corrections rebuild every app even with an app-local change", () => {
+  assert.deepEqual(
+    classifyAppImpact([
+      "apps/web/app/page.tsx",
+      "packages/i18n/locales/de/default.json",
+    ]),
+    {
+      web: true,
+      mobile: true,
+      desktop: true,
+    },
+  );
+});
+
+test("a preview source change waits for Weblate when English changes", () => {
+  assert.deepEqual(
+    classifyAppImpact(
+      ["apps/web/app/page.tsx", "packages/i18n/locales/en/default.json"],
+      { deferForWeblate: true },
+    ),
+    { web: false, mobile: false, desktop: false },
+  );
+});
+
+test("a Weblate follow-up releases one complete build", () => {
+  assert.deepEqual(
+    classifyAppImpact(["packages/i18n/locales/de/default.json"], {
+      deferForWeblate: true,
+      isWeblateTranslationBatch: true,
+    }),
+    { web: true, mobile: true, desktop: true },
+  );
+});
+
+test("recognizes native Weblate batches after an English source update", () => {
+  assert.equal(
+    isWeblateTranslationBatch(
+      "chore(l10n): update German translation",
+      ["packages/i18n/locales/de/default.json"],
+      ["packages/i18n/locales/en/default.json"],
+    ),
+    true,
+  );
+  assert.equal(
+    isWeblateTranslationBatch(
+      "fix: adjust German copy",
+      ["packages/i18n/locales/de/default.json"],
+      [],
+    ),
+    false,
+  );
+});
+
+test("recognizes a Weblate batch anywhere in a multi-commit push", () => {
+  assert.equal(
+    hasWeblateTranslationBatch([
+      {
+        message:
+          "chore(l10n): update German translation\n\nTranslation-Batch: weblate-auto",
+        changedPaths: ["packages/i18n/locales/de/default.json"],
+        sourceChangedPaths: [],
+      },
+      {
+        message: "chore(l10n): update Lithuanian translation",
+        changedPaths: ["packages/i18n/locales/lt/default.json"],
+        sourceChangedPaths: [],
+      },
+    ]),
+    true,
+  );
+});
+
+test("skip-web-check skips only the matching Vercel pull request preview", async () => {
+  assert.equal(hasSkipWebCheckLabel([{ name: "skip-web-check" }]), true);
+  assert.equal(hasSkipWebCheckLabel([{ name: "skip-mobile-check" }]), false);
+
+  assert.equal(
+    await shouldSkipVercelWebPreview(
+      {
+        pullRequestId: "383",
+        repositoryOwner: "ljreaux",
+        repositorySlug: "MeadTools",
+      },
+      async () => ({
+        ok: true,
+        json: async () => ({ labels: [{ name: "skip-web-check" }] }),
+      }),
+    ),
+    true,
+  );
+
+  assert.equal(
+    await shouldSkipVercelWebPreview(
+      {
+        pullRequestId: "383",
+        repositoryOwner: "ljreaux",
+        repositorySlug: "MeadTools",
+      },
+      async () => ({ ok: false }),
+    ),
+    false,
+  );
+});
+
+test("the migration build pause overrides every affected app", () => {
+  assert.deepEqual(
+    classifyAppImpact(["apps/web/app/page.tsx"], { buildsPaused: true }),
+    {
+      web: false,
+      mobile: false,
+      desktop: false,
+    },
+  );
+});
+
+test("an app manifest and lockfile change affect only that app", () => {
+  assert.deepEqual(
+    classifyAppImpact(["apps/mobile/package.json", "package-lock.json"]),
     {
       web: false,
       mobile: true,

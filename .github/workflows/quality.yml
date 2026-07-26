@@ -2,6 +2,7 @@ name: Quality
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
@@ -34,12 +35,15 @@ jobs:
         env:
           APP_IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           APP_IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          APP_IMPACT_DEFER_FOR_WEBLATE: ${{ github.ref == 'refs/heads/preview' }}
         run: node scripts/app-impact.mjs --github-output
 
   test:
     name: Typecheck, test, and verify OpenAPI
     needs: impact
-    if: needs.impact.outputs.web == 'true'
+    # Add the skip-web-check label to bypass this one job for a PR. Pushes to
+    # preview/main intentionally ignore PR-only overrides.
+    if: needs.impact.outputs.web == 'true' && !contains(github.event.pull_request.labels.*.name, 'skip-web-check')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -80,7 +84,9 @@ jobs:
   mobile:
     name: Typecheck and export mobile
     needs: impact
-    if: needs.impact.outputs.mobile == 'true'
+    # Add the skip-mobile-check label to bypass this one job for a PR. Pushes
+    # to preview/main intentionally ignore PR-only overrides.
+    if: needs.impact.outputs.mobile == 'true' && !contains(github.event.pull_request.labels.*.name, 'skip-mobile-check')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

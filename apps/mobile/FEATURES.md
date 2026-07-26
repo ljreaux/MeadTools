@@ -84,8 +84,9 @@ reliable.
 
 ## Localization direction
 
-i18nexus remains the translation source of truth. `@meadtools/i18n` shares
-translation resources and metadata while web and mobile keep platform-specific
-runtime adapters. App-neutral keys should be reused when their meaning matches;
-new source-language strings must be created through i18nexus rather than by
-editing the generated JSON files.
+Git is the translation source of truth. `@meadtools/i18n` shares translation
+resources and metadata while web and mobile keep platform-specific runtime
+adapters. App-neutral keys should be reused when their meaning matches;
+feature work changes English locale JSON, and Weblate generates German
+suggestions after the change reaches `preview`. See
+`docs/translation-workflow.md` for review and deployment behavior.

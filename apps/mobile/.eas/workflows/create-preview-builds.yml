@@ -8,14 +8,33 @@ on:
     paths:
       - apps/mobile/**
       - packages/**
-      - scripts/**
       - package.json
       - package-lock.json
       - tsconfig.base.json
 
 jobs:
+  migration_build_pause:
+    name: Check preview build gate
+    outputs:
+      builds_enabled: ${{ steps.pause_check.outputs.builds_enabled }}
+    steps:
+      - uses: eas/checkout
+      - id: pause_check
+        run: |
+          if [ -f ../../ops/translation-migration.skip-builds ]; then
+            set-output builds_enabled "false"
+          elif git log -1 --format=%B | grep -qx 'Translation-Batch: weblate-auto'; then
+            set-output builds_enabled "true"
+          elif git diff --name-only HEAD^ HEAD 2>/dev/null | grep -q '^packages/i18n/locales/en/'; then
+            set-output builds_enabled "false"
+          else
+            set-output builds_enabled "true"
+          fi
+
   quality:
     name: Typecheck mobile app
+    needs: [migration_build_pause]
+    if: ${{ needs.migration_build_pause.outputs.builds_enabled == 'true' }}
     steps:
       - uses: eas/checkout
       - uses: eas/install_node_modules
@@ -23,7 +42,8 @@ jobs:
 
   build_android:
     name: Build Android preview
-    needs: [quality]
+    needs: [migration_build_pause, quality]
+    if: ${{ needs.migration_build_pause.outputs.builds_enabled == 'true' }}
     type: build
     params:
       platform: android
@@ -31,7 +51,8 @@ jobs:
 
   build_ios:
     name: Build iOS preview
-    needs: [quality]
+    needs: [migration_build_pause, quality]
+    if: ${{ needs.migration_build_pause.outputs.builds_enabled == 'true' }}
     type: build
     params:
       platform: ios

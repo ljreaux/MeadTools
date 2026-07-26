@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the MeadTools Weblate backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

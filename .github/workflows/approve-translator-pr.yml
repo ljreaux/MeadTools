@@ -1,0 +1,52 @@
+name: Approve trusted German translation PRs
+
+on:
+  pull_request:
+    branches: [preview]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: Merged trusted German translation PR to approve in Weblate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  approve-weblate-units:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Load manually requested pull request
+        id: pull-request
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}" --jq '{pull_request: .}' > "${RUNNER_TEMP}/pull-request.json"
+          merge_commit_sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}" --jq .merge_commit_sha)"
+          echo "merge_commit_sha=${merge_commit_sha}" >> "$GITHUB_OUTPUT"
+          echo "payload_path=${RUNNER_TEMP}/pull-request.json" >> "$GITHUB_OUTPUT"
+
+      - name: Check out approval workflow
+        uses: actions/checkout@v4
+        with:
+          # Manual recovery must run the current repaired script, while the
+          # target merge commit is passed separately below.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - name: Approve trusted German translation changes in Weblate
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          WEBLATE_APPROVAL_PR_PATH: ${{ steps.pull-request.outputs.payload_path }}
+          WEBLATE_APPROVAL_MERGE_COMMIT: ${{ steps.pull-request.outputs.merge_commit_sha }}
+          WEBLATE_URL: https://translations.meadtools.com
+          WEBLATE_APPROVAL_TOKEN: ${{ secrets.WEBLATE_APPROVAL_TOKEN }}
+        run: node scripts/approve-weblate-pr.mjs
