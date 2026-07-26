@@ -1,14 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
-import { approveWeblateUnit } from "./weblate-approval.mjs";
+import {
+  approveWeblateUnit,
+  getPullRequestPayload,
+} from "./weblate-approval.mjs";
 
 const WEBLATE_URL = process.env.WEBLATE_URL?.replace(/\/$/, "");
 const WEBLATE_TOKEN = process.env.WEBLATE_APPROVAL_TOKEN;
 const pullRequestPath =
   process.env.WEBLATE_APPROVAL_PR_PATH || process.env.GITHUB_EVENT_PATH;
 const event = JSON.parse(readFileSync(pullRequestPath, "utf8"));
-const pullRequest = event.pull_request || event;
+const pullRequest = getPullRequestPayload(event);
 const approvalLabel = "translations-approved";
 const trustedAuthor = "rizzek";
 const componentByFile = new Map([

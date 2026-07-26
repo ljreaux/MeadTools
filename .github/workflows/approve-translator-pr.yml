@@ -29,7 +29,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
         run: |
-          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}" > "${RUNNER_TEMP}/pull-request.json"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}" --jq '{pull_request: .}' > "${RUNNER_TEMP}/pull-request.json"
           merge_commit_sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PULL_REQUEST_NUMBER}" --jq .merge_commit_sha)"
           echo "merge_commit_sha=${merge_commit_sha}" >> "$GITHUB_OUTPUT"
           echo "payload_path=${RUNNER_TEMP}/pull-request.json" >> "$GITHUB_OUTPUT"

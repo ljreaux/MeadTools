@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildUnitApprovalPayload } from "./weblate-approval.mjs";
+import {
+  buildUnitApprovalPayload,
+  getPullRequestPayload,
+} from "./weblate-approval.mjs";
 
 test("approving a Weblate unit preserves its target value", () => {
   assert.deepEqual(
@@ -15,4 +18,10 @@ test("approving a Weblate unit requires a target value", () => {
     () => buildUnitApprovalPayload({ id: 1460, target: [] }),
     /has no translation target/,
   );
+});
+
+test("manual recovery uses the same pull request payload shape as an event", () => {
+  const pullRequest = { labels: [], user: { login: "rizzek" } };
+  assert.equal(getPullRequestPayload({ pull_request: pullRequest }), pullRequest);
+  assert.equal(getPullRequestPayload(pullRequest), pullRequest);
 });

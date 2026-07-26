@@ -9,6 +9,14 @@ export function buildUnitApprovalPayload(unit) {
   };
 }
 
+export function getPullRequestPayload(event) {
+  const pullRequest = event?.pull_request || event;
+  if (!pullRequest?.labels || !pullRequest?.user?.login) {
+    throw new Error("Expected a GitHub pull request payload.");
+  }
+  return pullRequest;
+}
+
 export async function approveWeblateUnit({ weblateUrl, headers, unit }) {
   const response = await fetch(`${weblateUrl}/api/units/${unit.id}/`, {
     method: "PATCH",
