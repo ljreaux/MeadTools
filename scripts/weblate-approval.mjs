@@ -17,6 +17,30 @@ export function getPullRequestPayload(event) {
   return pullRequest;
 }
 
+export function findExpectedWeblateUnit(units, { context, target }) {
+  return units.find(
+    (candidate) => candidate.context === context && candidate.target?.[0] === target,
+  );
+}
+
+export async function loadWeblateComponentUnits({
+  weblateUrl,
+  headers,
+  component,
+}) {
+  const query = new URLSearchParams({
+    q: `component:${component} language:de`,
+    page_size: "10000",
+  });
+  const response = await fetch(`${weblateUrl}/api/units/?${query}`, { headers });
+  if (!response.ok) {
+    throw new Error(`Unable to load Weblate units for component ${component}.`);
+  }
+
+  const { results } = await response.json();
+  return results;
+}
+
 export async function approveWeblateUnit({ weblateUrl, headers, unit }) {
   const response = await fetch(`${weblateUrl}/api/units/${unit.id}/`, {
     method: "PATCH",
