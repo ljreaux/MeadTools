@@ -11,6 +11,7 @@ import {
   gravityTargetCalculationResultSchema,
   type BuildRecipeDraftInput
 } from "@meadtools/recipe-workflows";
+import { calcABV } from "@meadtools/core/gravity";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 import { z } from "zod";
 import type {
@@ -73,6 +74,8 @@ const meadContinuationPattern =
 
 const meadCatalogContinuationPattern = /\b(?:ingredient|catalog)\b/i;
 
+const explicitOffTopicPattern = /\b(?:bitcoin|cryptocurrency|crypto(?:currency)?\s+trading|stock(?:s|\s+market)?|resume|résumé|resignation\s+letter|capital\s+of|weather|movie|poem|homework|code\s+(?:a|an|the)|programming)\b/i;
+
 export async function runChatTurn(options: {
   client: ChatModelClient;
   userId: number;
@@ -93,6 +96,21 @@ export async function runChatTurn(options: {
         ...emptyUsage(),
         provider: "fireworks",
         model: "deterministic-scope-check",
+        toolCalls: 0,
+        latencyMs: Math.round(performance.now() - startedAt)
+      }
+    };
+  }
+  const quickAbv = quickAbvCalculationForRequest(options.request);
+  if (quickAbv !== undefined) {
+    return {
+      answer: `MeadTools estimates **${formatCalculationValue(quickAbv)}% ABV** from the supplied OG and FG. For the full calculation, use the [ABV calculator](/extra-calcs/abv).`,
+      toolResults: [],
+      recipeDraftInput: options.request.recipeDraftInput,
+      usage: {
+        ...emptyUsage(),
+        provider: "fireworks",
+        model: "deterministic-abv-calculation",
         toolCalls: 0,
         latencyMs: Math.round(performance.now() - startedAt)
       }
@@ -152,6 +170,7 @@ export async function runChatTurn(options: {
     | undefined;
   let namedIngredientResolved = false;
   let namedYeastResolved = false;
+  let namedYeastLookupAttempted = false;
 
   while (true) {
     const toolChoice =
@@ -270,11 +289,19 @@ export async function runChatTurn(options: {
         recipeDraftInput = mergeCalculatedGravityTarget(recipeDraftInput, result);
       }
       if (call.function.name === "search_yeasts") {
+        namedYeastLookupAttempted = true;
         recipeDraftInput = mergeExactYeastLookup(
           recipeDraftInput,
           result,
           intakeContext
         );
+        if (!isSuccessfulCatalogResult(result)) {
+          recipeDraftInput = mergeUserSuppliedYeastRequirement(
+            recipeDraftInput,
+            call.function.arguments,
+            intakeContext
+          );
+        }
       }
       if (
         call.function.name === "search_ingredients" &&
@@ -290,7 +317,7 @@ export async function runChatTurn(options: {
         toolName: call.function.name,
         execution: result,
         recipeDraftAvailable: recipeDraftInput !== undefined,
-        mustResolveNamedYeast: forceYeastSearchTool && !namedYeastResolved,
+        mustResolveNamedYeast: forceYeastSearchTool && !namedYeastResolved && !namedYeastLookupAttempted,
         mustResolveNamedIngredient: forceIngredientSearchTool && !namedIngredientResolved
       });
       if (
@@ -361,11 +388,14 @@ function isMeadScopedRequest(request: ChatRequest): boolean {
   );
   if (!hasMeadConversation) return false;
 
-  // A short catalog correction such as “Apple Juice is in the catalog; use
-  // that” is a normal continuation of a recipe turn, even though it may not
-  // repeat the word “mead.” Keep this narrow so ordinary unrelated questions
-  // remain blocked before reaching the provider.
-  return meadContinuationPattern.test(latestMessage) || meadCatalogContinuationPattern.test(latestMessage);
+  // Recipe and process conversations routinely continue with a number, unit,
+  // confirmation, or correction. Reject only clearly unrelated pivots here;
+  // the hosted policy remains responsible for ambiguous requests.
+  if (explicitOffTopicPattern.test(latestMessage)) return false;
+  return Boolean(request.recipeDraftInput || request.activeRecipeData) ||
+    meadContinuationPattern.test(latestMessage) ||
+    meadCatalogContinuationPattern.test(latestMessage) ||
+    latestMessage.trim().length > 0;
 }
 
 /** A finished sweetness preference must be made actionable before drafting. */
@@ -400,7 +430,7 @@ function shouldForceYeastSearchTool(request: ChatRequest): boolean {
   }
   const nutrients = request.recipeDraftInput?.nutrients;
   if (nutrients?.yeastId || (nutrients?.yeastBrand && nutrients?.yeastStrain)) return false;
-  return /\b(?:yeast|lalvin|red\s*star|premier|ec[-\s]?1118|d[-\s]?47|k1[-\s]?v1116|71b)\b/i.test(
+  return /\b(?:yeast|lalvin|red\s*star|premier|fermentis|safale|mangrove|ec[-\s]?1118|d[-\s]?47|k1[-\s]?v1116|71b|us[-\s]?0?5|m\d{2}|dv\d+|belle\s+saison)\b/i.test(
     recipeIntakeContext(request)
   );
 }
@@ -547,10 +577,20 @@ function calculatorRouteForRequest(
 ): ReturnType<typeof calculatorLinkForProcessMessage> {
   if (isRecipeDesignRequest(request)) return undefined;
   const latestMessage = request.messages.at(-1)?.content ?? "";
-  if (!/\b(?:calculate|exact|how\s+much|what\s+amount|dose|dosage|correction|estimate)\b/i.test(latestMessage)) {
+  if (!/\b(?:calculate|exact|how\s+much|how\s+many|what\s+amount|dose|dosage|correction|estimate)\b/i.test(latestMessage)) {
     return undefined;
   }
   return calculatorLinkForProcessMessage(latestMessage);
+}
+
+function quickAbvCalculationForRequest(request: ChatRequest): number | undefined {
+  if (isRecipeDesignRequest(request)) return undefined;
+  const latestMessage = request.messages.at(-1)?.content ?? "";
+  if (!/\b(?:abv|alcohol\s+by\s+volume)\b/i.test(latestMessage)) return undefined;
+  const ogMatch = latestMessage.match(/\b(?:og|original\s+gravity)\s*(?:is|=|of)?\s*(1\.\d{3})\b/i);
+  const fgMatch = latestMessage.match(/\b(?:fg|final\s+gravity)\s*(?:is|=|of)?\s*(0\.\d{3}|1\.\d{3})\b/i);
+  if (!ogMatch || !fgMatch) return undefined;
+  return calcABV(Number(ogMatch[1]), Number(fgMatch[1]));
 }
 
 function appendRelevantCalculatorLink(
@@ -707,7 +747,7 @@ function requiredRecipeFollowupTool(options: {
   }
   if (options.toolName === "search_yeasts") {
     if (!Array.isArray(options.execution.result) || options.execution.result.length === 0) {
-      return undefined;
+      return options.recipeDraftAvailable ? "build_recipe_draft" : undefined;
     }
     return options.mustResolveNamedIngredient ? "search_ingredients" : "build_recipe_draft";
   }
@@ -775,7 +815,9 @@ function mergeRecipeDraftInput(
         nutrients: mergeRecord(previous.nutrients, next.nutrients),
         stabilizers: mergeRecord(previous.stabilizers, next.stabilizers),
         ingredients: mergeRecipeIngredients(previous.ingredients, nextIngredients, latestUserMessage),
-        ...(nextAdditives === undefined ? {} : { additives: nextAdditives })
+        ...(nextAdditives === undefined
+          ? {}
+          : { additives: mergeRecipeAdditives(previous.additives, nextAdditives) })
       },
       latestUserMessage,
       shouldAssumeHoney
@@ -817,7 +859,7 @@ function applyExplicitRecipeIntakeHints(
 ): Record<string, unknown> {
   const result: Record<string, unknown> = { ...input };
   addImpliedHoneyForMead(result, latestUserMessage, shouldAssumeHoney);
-  moveVanillaToAdditives(result);
+  moveKnownAdditives(result);
   const volume = batchVolumeFromMessage(latestUserMessage);
   if (volume !== undefined) {
     result.batchVolume = {
@@ -825,9 +867,31 @@ function applyExplicitRecipeIntakeHints(
       unit: volume.unit
     };
   }
+  if (/\b(?:no\s+(?:added\s+)?water|without\s+water|waterless)\b/i.test(latestUserMessage)) {
+    result.allowWaterFill = false;
+  }
 
   const finalGravity = fermentationFinalGravityFromMessage(latestUserMessage);
   if (finalGravity !== undefined) result.fermentationFinalGravity = finalGravity;
+
+  const backsweeteningTarget = backsweeteningTargetFromMessage(latestUserMessage);
+  if (backsweeteningTarget !== undefined) {
+    result.backsweetening = {
+      ...(isRecord(result.backsweetening) ? result.backsweetening : {}),
+      targetFinalGravity: backsweeteningTarget
+    };
+  }
+
+  if (/\b(?:fill(?:s|ing)?\s+(?:the\s+)?(?:remaining\s+)?(?:batch\s+)?(?:volume|amount)|fill\s+(?:the\s+)?rest)\b/i.test(latestUserMessage) && Array.isArray(result.ingredients)) {
+    result.ingredients = result.ingredients.map((ingredient) =>
+      isRecord(ingredient) &&
+      ingredient.secondary !== true &&
+      typeof ingredient.name === "string" &&
+      /\b(?:juice|cider|tea)\b/i.test(ingredient.name)
+        ? { ...ingredient, amount: undefined, role: "fill_liquid" }
+        : ingredient
+    );
+  }
 
   const nutrientWords = /\bfermaid\s*k\b/i.test(latestUserMessage) || /\bgo[\s-]?ferm\b/i.test(latestUserMessage);
   if (nutrientWords) {
@@ -844,11 +908,17 @@ function applyExplicitRecipeIntakeHints(
       ...(isRecord(result.stabilizers) ? result.stabilizers : {}),
       enabled: false
     };
-  } else if (/\bback\s*-?sweeten(?:ing|ed)?\b/i.test(latestUserMessage)) {
+  } else if (/\b(?:back\s*-?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation))\b/i.test(latestUserMessage)) {
     result.stabilizers = {
       ...(isRecord(result.stabilizers) ? result.stabilizers : {}),
-      enabled: true
+      enabled: true,
+      type: "kmeta",
+      phReading: 3.5
     };
+    addDraftAssumption(
+      result,
+      "The stabilizer calculation uses potassium metabisulfite and an assumed pH of 3.5 unless you provide different values."
+    );
   }
   if (
     typeof result.targetOriginalGravity === "number" &&
@@ -894,12 +964,12 @@ function applyExplicitRecipeIntakeHints(
   return result;
 }
 
-function moveVanillaToAdditives(input: Record<string, unknown>): void {
+function moveKnownAdditives(input: Record<string, unknown>): void {
   if (!Array.isArray(input.ingredients)) return;
   const additives = Array.isArray(input.additives) ? [...input.additives] : [];
   let moved = false;
   input.ingredients = input.ingredients.filter((ingredient) => {
-    if (!isRecord(ingredient) || typeof ingredient.name !== "string" || !/\bvanilla\b/i.test(ingredient.name)) {
+    if (!isRecord(ingredient) || typeof ingredient.name !== "string" || !isKnownAdditive(ingredient.name)) {
       return true;
     }
     const amount = isRecord(ingredient.amount) && typeof ingredient.amount.value === "number"
@@ -908,19 +978,26 @@ function moveVanillaToAdditives(input: Record<string, unknown>): void {
     const unit = isRecord(ingredient.amount) && typeof ingredient.amount.unit === "string"
       ? ingredient.amount.unit
       : undefined;
+    if (additives.some((additive) => isRecord(additive) && additive.name === ingredient.name)) {
+      return false;
+    }
     additives.push({
       name: ingredient.name,
       ...(amount === undefined ? {} : { amount }),
       ...(unit === undefined ? {} : { unit }),
       ...(ingredient.secondary === true ? { secondary: true } : {})
     });
-    if (ingredient.secondary === true) {
+    if (ingredient.secondary === true && /\bvanilla\b/i.test(ingredient.name)) {
       addDraftAssumption(input, "Vanilla is planned for secondary.");
     }
     moved = true;
     return false;
   });
   if (moved) input.additives = additives;
+}
+
+function isKnownAdditive(name: string): boolean {
+  return /\b(?:vanilla|tannin|enzyme|bentonite|oak|cinnamon|clove|allspice|anise|tea|hibiscus|opti|ft\s*-?\s*rouge)\b/i.test(name);
 }
 
 function applyWholeVanillaBeanAmount(
@@ -1236,6 +1313,13 @@ function fermentationFinalGravityFromMessage(message: string): number | undefine
   return undefined;
 }
 
+function backsweeteningTargetFromMessage(message: string): number | undefined {
+  const match = message.match(
+    /\bback[\s-]?sweeten(?:ing|ed)?\b[^.]{0,80}?\b(?:to|target(?:ing)?|at)\s*(1\.\d{3,4})\b/i
+  );
+  return match ? Number(match[1]) : undefined;
+}
+
 function duplicateIngredientsAcrossStages(ingredients: unknown): unknown {
   if (!Array.isArray(ingredients)) return ingredients;
   const result = ingredients.map((ingredient) =>
@@ -1298,6 +1382,36 @@ function mergeRecipeIngredients(
           : {})
       };
     }
+  }
+  return merged;
+}
+
+function mergeRecipeAdditives(
+  previous: BuildRecipeDraftInput["additives"],
+  next: unknown[]
+): unknown[] {
+  const merged = [...previous];
+  for (const additive of next) {
+    if (!isRecord(additive) || typeof additive.name !== "string") {
+      continue;
+    }
+    const additiveName = additive.name;
+    const index = merged.findIndex(
+      (candidate) =>
+        candidate.name.trim().toLowerCase() === additiveName.trim().toLowerCase() &&
+        Boolean(candidate.secondary) === Boolean(additive.secondary)
+    );
+    if (index === -1) {
+      merged.push(additive as BuildRecipeDraftInput["additives"][number]);
+      continue;
+    }
+    const prior = merged[index];
+    merged[index] = {
+      ...prior,
+      ...additive,
+      ...(additive.amount === undefined && prior.amount !== undefined ? { amount: prior.amount } : {}),
+      ...(additive.unit === undefined && prior.unit !== undefined ? { unit: prior.unit } : {})
+    };
   }
   return merged;
 }
@@ -1378,6 +1492,36 @@ function mergeExactYeastLookup(
   });
 }
 
+function mergeUserSuppliedYeastRequirement(
+  previous: BuildRecipeDraftInput | undefined,
+  argumentsJson: string,
+  intakeContext: string
+): BuildRecipeDraftInput | undefined {
+  const requirement = intakeContext.match(/\b(very\s+low|low|medium|high|very\s+high)\s+(?:nitrogen\s+)?requirements?\b/i)?.[1];
+  if (!requirement) return previous;
+  let query: string | undefined;
+  try {
+    const parsed = JSON.parse(argumentsJson);
+    query = isRecord(parsed) && typeof parsed.query === "string" ? parsed.query.trim() : undefined;
+  } catch {
+    return previous;
+  }
+  if (!query) return previous;
+  const nitrogenRequirement = requirement
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase()) as Exclude<NonNullable<BuildRecipeDraftInput["nutrients"]>["nitrogenRequirement"], undefined>;
+  return {
+    ...(previous ?? { ingredients: [], additives: [], assumptions: [] }),
+    nutrients: {
+      ...(previous?.nutrients ?? { enabled: true }),
+      enabled: true,
+      yeastBrand: previous?.nutrients?.yeastBrand ?? "User supplied",
+      yeastStrain: previous?.nutrients?.yeastStrain ?? query,
+      nitrogenRequirement
+    }
+  };
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -1411,10 +1555,10 @@ function postToolInstruction(
     return "Your last tool result would repeat questions that were already shown before the user's latest reply. Do not repeat them. Read the latest user message, extract every answer it contains into build_recipe_draft arguments, and call the tool again. If an answer is genuinely still missing, ask only that narrower remaining question.";
   }
   if (toolName === "calculate_gravity_target" && continueRecipeDraft) {
-    return "The gravity target is authoritative recipe context, not the final answer. Continue the recipe draft now using its target original gravity. Search the ingredient catalog only if a named ingredient is still unresolved. Do not end the response after reporting the gravity calculation.";
+    return "The gravity target is authoritative recipe context, not the final answer. Continue the recipe draft now using its target original gravity. Retrieve the ingredient catalog only if a named ingredient is still unresolved. Do not end the response after reporting the gravity calculation.";
   }
   if (toolName === "build_recipe_draft" && buildNeedsCatalogLookup(execution)) {
-    return "The draft is missing Brix for a named ingredient. Call search_ingredients for that ingredient now. If the catalog returns a match, call build_recipe_draft again using the returned catalogId, category, and Brix. Do not ask the user for Brix while the catalog can resolve it.";
+    return "The draft is missing Brix for a named ingredient. Call search_ingredients now. It returns the complete ingredient catalog: select the best semantic match yourself, then call build_recipe_draft again using that entry's catalogId, category, and Brix. Do not ask the user for Brix while the catalog can resolve it.";
   }
   if (
     toolName === "build_recipe_draft" ||
@@ -1426,17 +1570,17 @@ function postToolInstruction(
     return "The previous tool result is the complete authoritative recipe context for this turn. Render only its returned recipe facts, assumptions, warnings, questions, and explanation. Keep a completed draft concise: use a clear title and short sections, stay under 500 words, and do not use emoji. Render recipeData.ingredients only in an Ingredients section. Render recipeData.additives only in a separate Additives section; never place an additive such as vanilla in Ingredients. A completed draft already includes its nutrient plan: do not ask a follow-up question or request yeast amounts after rendering it. When honey was implied for a mead draft, treat the plain Honey entry as the chosen adjustable fermentable; do not ask for a honey variety. Do not add a notes section, brewing advice, ingredient characterization, fermentation prediction, stabilization recommendation, save confirmation, causal mechanism, or inferred explanation beyond the exact returned explanation summary and facts. To add any process guidance, first search and fetch a relevant wiki page, then cite its canonical URL.";
   }
   if (toolName === "fetch_wiki_page") {
-    return "Use the retrieved page as evidence for any process guidance or clearly labeled recipe-draft assumption. Keep a process answer under 250 words and give at most three high-impact next steps. Every factual claim must be supported directly by the retrieved page and cite its canonical URL as a Markdown link; do not use informal labels such as '(the wiki)' or '(Stabilization wiki)'. Do not add formulas, estimated doses, worked calculations, or extra brewing advice. If the user needs a numeric result, direct them to the relevant MeadTools calculator instead. If this is a recipe-design request, continue with the required catalog lookup and recipe-draft tools instead of replying from the page alone.";
+    return "Use the retrieved page as evidence for MeadTools wiki guidance or a clearly labeled recipe-draft assumption. Keep a process answer under 250 words and give at most three high-impact next steps. Clearly label and cite each wiki-grounded claim with its canonical URL as a Markdown link; do not use informal labels such as '(the wiki)' or '(Stabilization wiki)'. A brief, clearly labelled general-brewing context is allowed, but do not present it as wiki evidence. Do not add formulas, estimated doses, or worked calculations. If the user needs a numeric result, direct them to the relevant MeadTools calculator instead. If this is a recipe-design request, continue with the required catalog lookup and recipe-draft tools instead of replying from the page alone.";
   }
   if (toolName === "search_ingredients") {
     if (isRecord(execution) && execution.status === "ok" && Array.isArray(execution.result) && execution.result.length === 0) {
       return "The ingredient catalog has no match. Tell the user that MeadTools could not identify that ingredient and ask them to clarify the ingredient or provide a label/analysis. Do not invent a Brix value.";
     }
-    return "Do not report search details to the user. Immediately call build_recipe_draft using the matched ingredient's catalogId, category, and Brix. Add the ingredient at its intended stage, then let the workflow ask only for genuinely missing inputs. Do not ask the user for Brix or repeat catalog IDs.";
+    return "This is the complete ingredient catalog, not a preselected match. Do not report catalog details to the user. Select the best semantic match for the user's ingredient yourself; if several are genuinely plausible, ask the user to choose using plain ingredient names. Otherwise immediately call build_recipe_draft using the selected entry's catalogId, category, and Brix. Add the ingredient at its intended stage, then let the workflow ask only for genuinely missing inputs. Do not ask the user for Brix or repeat catalog IDs.";
   }
   if (toolName === "search_yeasts") {
     if (isRecord(execution) && execution.status === "ok" && Array.isArray(execution.result) && execution.result.length === 0) {
-      return "No matching MeadTools yeast was found. Ask the user for a more specific brand or strain, or offer to choose a catalog yeast. Do not ask them for nitrogen requirement or describe the search implementation.";
+      return "No matching MeadTools yeast was found. Do not repeat the yeast search in this turn. If the user explicitly allowed a fallback yeast choice, use that choice only; otherwise ask for a more specific brand or strain, or offer to choose a catalog yeast. Do not ask them for nitrogen requirement or describe the search implementation.";
     }
     return "Do not report catalog IDs, internal fields, or tool details. Use the selected yeast's exact ID, brand, strain, and nitrogen requirement in build_recipe_draft, then ask only for remaining nutrient inputs.";
   }
@@ -1490,11 +1634,14 @@ export function directRecipeToolAnswer(
     // A small, specific follow-up still benefits from a conversational reply.
     // When intake is broad, render the workflow itself so the model cannot
     // turn five or six missing fields into a checklist dump.
-    return workflow.data.questions.length >= 5
+    return workflow.data.questions.length >= 4
       ? renderRecipeIntakeQuestions(workflow.data.questions)
       : undefined;
   }
   if (workflow.data.status === "error") return workflow.data.message;
+  if (toolName === "build_recipe_draft") {
+    return renderCompletedRecipeDraft(workflow.data);
+  }
   if (toolName !== "explain_recipe" || !workflow.data.explanation) return undefined;
 
   const facts = workflow.data.explanation.facts
@@ -1511,6 +1658,60 @@ export function directRecipeToolAnswer(
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+function renderCompletedRecipeDraft(
+  workflow: Extract<z.infer<typeof chatbotRecipeWorkflowResultSchema>, { status: "recipe" }>
+): string {
+  const ingredientLines = workflow.recipeData.ingredients.map((ingredient) => {
+    const basis = ingredient.amounts.basis;
+    const amount = basis === "weight" ? ingredient.amounts.weight : ingredient.amounts.volume;
+    return `| ${ingredient.name} | ${amount.value} ${amount.unit} | ${ingredient.secondary ? "Secondary" : "Primary"} |`;
+  });
+  const additiveLines = workflow.recipeData.additives.map(
+    (additive) => `| ${additive.name} | ${additive.amount} ${additive.unit} |`
+  );
+  const nutrients = workflow.recipeData.nutrients;
+  const nutrientSummary = nutrients
+    ? `**Yeast:** ${nutrients.selected.yeastBrand} ${nutrients.selected.yeastStrain}\n\n**Nutrients:** ${userFacingNutrientSchedule(nutrients.selected.schedule)}, ${nutrients.inputs.numberOfAdditions} additions${nutrients.inputs.goFermType === "none" ? ", no Go-Ferm" : `, ${nutrients.inputs.goFermType}`}`
+    : "";
+  const stabilizers = workflow.recipeData.stabilizers.adding
+    ? [
+        "### Stabilizers",
+        `- ${workflow.recipeData.stabilizers.type === "kmeta" ? "Potassium metabisulfite" : "Sodium metabisulfite"}: ${formatCalculationValue(workflow.derived.stabilizers.sulfite)} g`,
+        `- Potassium sorbate: ${formatCalculationValue(workflow.derived.stabilizers.sorbate)} g`,
+        `- pH: ${workflow.recipeData.stabilizers.phReading}`
+      ].join("\n")
+    : "";
+  const assumptions = workflow.assumptions.map((item) => `- ${item}`).join("\n");
+  const warnings = workflow.warnings.map((item) => `- ${item}`).join("\n");
+
+  return [
+    "## Unsaved MeadTools recipe draft",
+    `**Fermentation FG:** ${workflow.recipeData.fg}  \n**Backsweetened FG:** ${formatCalculationValue(workflow.derived.gravity.backsweetenedFg)}  \n**Estimated ABV:** ${formatCalculationValue(workflow.derived.alcohol.abv)}%`,
+    "### Ingredients\n| Ingredient | Amount | Stage |\n| --- | ---: | --- |\n" + ingredientLines.join("\n"),
+    additiveLines.length > 0
+      ? "### Additives\n| Additive | Amount |\n| --- | ---: |\n" + additiveLines.join("\n")
+      : "",
+    nutrientSummary,
+    stabilizers,
+    assumptions ? `### Assumptions\n${assumptions}` : "",
+    warnings ? `### Warnings\n${warnings}` : ""
+  ].filter(Boolean).join("\n\n");
+}
+
+function userFacingNutrientSchedule(schedule: string): string {
+  const labels: Record<string, string> = {
+    tbe: "Tailored Brix-Eating schedule",
+    tosna: "TOSNA",
+    justK: "Fermaid K",
+    dap: "DAP",
+    oAndk: "Fermaid O and Fermaid K",
+    oAndDap: "Fermaid O and DAP",
+    kAndDap: "Fermaid K and DAP",
+    other: "Custom nutrient schedule"
+  };
+  return labels[schedule] ?? "Nutrient schedule";
 }
 
 function renderRecipeIntakeQuestions(

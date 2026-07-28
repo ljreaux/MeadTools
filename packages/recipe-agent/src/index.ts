@@ -99,10 +99,9 @@ const wikiFetchInputSchema = z.object({
   url: z.string().trim().min(1).max(2_000)
 });
 
-const ingredientSearchInputSchema = z.object({
-  query: z.string().trim().min(2).max(160),
-  limit: z.number().int().min(1).max(10).optional()
-});
+// Accept legacy query fields but intentionally ignore them: the model now
+// receives the complete compact catalog and performs the semantic selection.
+const ingredientCatalogInputSchema = z.object({}).passthrough();
 
 const yeastSearchInputSchema = z.object({
   query: z.string().trim().min(2).max(160),
@@ -116,7 +115,12 @@ export type CatalogIngredient = {
   brix: number;
 };
 
-export type IngredientLookup = (query: string, limit: number) => Promise<CatalogIngredient[]>;
+/**
+ * The ingredient catalog is intentionally small (under 200 entries). A recipe
+ * agent receives the complete compact list, selects the best semantic match,
+ * and then uses that entry's authoritative fields in the draft workflow.
+ */
+export type IngredientLookup = () => Promise<CatalogIngredient[]>;
 export type CatalogYeast = {
   id: number;
   brand: string;
@@ -137,8 +141,8 @@ export type CatalogAgentToolExecution =
 export const ingredientSearchAgentTool = {
   name: "search_ingredients" as const,
   description:
-    "Search the MeadTools ingredient catalog for an ingredient's canonical name, category, catalog ID, and Brix. Use it before drafting with an ingredient other than water or honey; use returned values exactly.",
-  inputSchema: ingredientSearchInputSchema
+    "Return the complete compact MeadTools ingredient catalog (under 200 entries) with canonical name, category, catalog ID, and Brix. Use it once before drafting with named ingredients other than water or honey. Choose the best semantic match yourself from the returned list, including plural, regional, or descriptive wording, and use its returned values exactly.",
+  inputSchema: ingredientCatalogInputSchema
 };
 
 export const yeastSearchAgentTool = {
@@ -254,6 +258,25 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
         style: { type: "string", maxLength: 80 },
         targetOriginalGravity: { type: "number", minimum: 1.001, maximum: 1.2 },
         fermentationFinalGravity: { type: "number", minimum: 0.97, maximum: 1.2 },
+        backsweetening: {
+          type: "object",
+          properties: {
+            targetFinalGravity: { type: "number", minimum: 0.97, maximum: 1.2 },
+            sweetener: {
+              type: "object",
+              properties: {
+                name: { type: "string", minLength: 1, maxLength: 160 },
+                catalogId: { type: "integer", minimum: 1 },
+                category: { type: "string", minLength: 1, maxLength: 80 },
+                brix: { type: "number", minimum: 0, maximum: 100 }
+              },
+              required: ["name"],
+              additionalProperties: false
+            }
+          },
+          required: ["targetFinalGravity"],
+          additionalProperties: false
+        },
         ingredients: {
           type: "array",
           maxItems: 30,
@@ -265,7 +288,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
               category: { type: "string", minLength: 1, maxLength: 80 },
               brix: { type: "number", minimum: 0, maximum: 100 },
               secondary: { type: "boolean" },
-              role: { type: "string", enum: ["fixed", "adjustable_fermentable"] },
+              role: { type: "string", enum: ["fixed", "adjustable_fermentable", "fill_liquid"] },
               amount: {
                 type: "object",
                 properties: {
@@ -362,11 +385,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
     description: descriptionFor("search_ingredients"),
     parameters: {
       type: "object",
-      properties: {
-        query: { type: "string", minLength: 2, maxLength: 160 },
-        limit: { type: "integer", minimum: 1, maximum: 10 }
-      },
-      required: ["query"],
+      properties: {},
       additionalProperties: false
     }
   },
@@ -430,7 +449,7 @@ export async function executeHostedAgentTool(
     return executeGravityTargetAgentTool(input);
   }
   if (toolName === ingredientSearchAgentTool.name) {
-    const parsed = ingredientSearchInputSchema.safeParse(input);
+    const parsed = ingredientCatalogInputSchema.safeParse(input);
     if (!parsed.success) return invalidInput(parsed.error.issues);
     if (!options.ingredientLookup) {
       return { status: "error", message: "Ingredient lookup is not configured for this chat." };
@@ -438,7 +457,7 @@ export async function executeHostedAgentTool(
     try {
       return {
         status: "ok",
-        result: await options.ingredientLookup(parsed.data.query, parsed.data.limit ?? 5)
+        result: await options.ingredientLookup()
       };
     } catch (error) {
       return { status: "error", message: error instanceof Error ? error.message : "Ingredient lookup failed." };

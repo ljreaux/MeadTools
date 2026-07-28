@@ -4,7 +4,7 @@ import { chatRequestSchema, runChatTurn } from "@/lib/ai/chat-service";
 import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { FireworksChatClient } from "@/lib/ai/fireworks";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
-import { searchIngredientsForChat } from "@/lib/db/ingredients";
+import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
 import { verifyUser } from "@/lib/userAccessFunctions";
 
@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
         request: chatRequest,
         maxOutputTokens: config.maxOutputTokens,
         maxToolCalls: config.maxToolCalls,
-        ingredientLookup: async (query, limit) => {
-          const ingredients = await searchIngredientsForChat(query);
-          return ingredients.slice(0, limit).flatMap((ingredient) => {
+        ingredientLookup: async () => {
+          const ingredients = await getIngredientCatalogForChat();
+          return ingredients.flatMap((ingredient) => {
             const brix = Number(ingredient.sugar_content);
             if (!Number.isFinite(brix) || brix < 0 || brix > 100) return [];
             return [{

@@ -83,6 +83,83 @@ test("a named honey varietal can be the adjustable fermentable", () => {
   assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
 });
 
+test("a selected fill liquid replaces water without needing a stated amount", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1.25, unit: "gal" },
+    targetOriginalGravity: 1.075,
+    fermentationFinalGravity: 1.01,
+    ingredients: [
+      { name: "Apple Juice", category: "juice", brix: 11, role: "fill_liquid" },
+      { name: "Wildflower Honey", role: "adjustable_fermentable" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Apple Juice"));
+  assert.ok(!result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
+test("enabled stabilization defaults to potassium metabisulfite and pH 3.5", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    fermentationFinalGravity: 1.01,
+    ingredients: [{ name: "Honey", amount: { kind: "weight", value: 3, unit: "lb" } }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: true }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.equal(result.recipeData.stabilizers.type, "kmeta");
+  assert.equal(result.recipeData.stabilizers.phReading, "3.5");
+  assert.ok(result.assumptions.some((assumption) => assumption.includes("assumed pH of 3.5")));
+});
+
+test("backsweetening adds a calculated secondary sweetener to the saved recipe payload", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    backsweetening: { targetFinalGravity: 1.015 },
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  const backsweeteningHoney = result.recipeData.ingredients.find(
+    (ingredient) => ingredient.lineId === "backsweetening-sweetener"
+  );
+  assert.equal(backsweeteningHoney?.secondary, true);
+  assert.ok(Number(backsweeteningHoney?.amounts.weight.value) > 0);
+  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.00001);
+  assert.equal(result.recipeData.stabilizers.adding, true);
+});
+
+test("a user-supplied unlisted yeast can provide its own nutrient requirement", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Honey", amount: { kind: "weight", value: 3, unit: "lb" } }],
+    nutrients: {
+      ...nutrientPlan,
+      yeastBrand: "Lallemand",
+      yeastStrain: "Belle Saison",
+      nitrogenRequirement: "Medium"
+    },
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.equal(result.recipeData.nutrients?.selected.yeastId, undefined);
+  assert.equal(result.recipeData.nutrients?.selected.yeastStrain, "Belle Saison");
+  assert.equal(result.recipeData.nutrients?.selected.nitrogenRequirement, "Medium");
+});
+
 test("a full-volume juice base explains why a gravity-targeted cyser cannot fit", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },

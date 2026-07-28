@@ -69,7 +69,7 @@ const draftIngredientSchema = z.object({
   brix: z.number().min(0).max(100).optional(),
   amount: ingredientAmountSchema.optional(),
   secondary: z.boolean().optional(),
-  role: z.enum(["fixed", "adjustable_fermentable"]).optional()
+  role: z.enum(["fixed", "adjustable_fermentable", "fill_liquid"]).optional()
 });
 
 const additiveSchema = z.object({
@@ -79,6 +79,16 @@ const additiveSchema = z.object({
   secondary: z.boolean().optional()
 });
 
+const backsweeteningSchema = z.object({
+  targetFinalGravity: z.number().min(0.97).max(1.2),
+  sweetener: z.object({
+    name: z.string().trim().min(1).max(160),
+    catalogId: z.number().int().positive().optional(),
+    category: z.string().trim().min(1).max(80).optional(),
+    brix: z.number().min(0).max(100).optional()
+  }).optional()
+});
+
 /**
  * One intake contract for any MeadTools recipe. All calculated values are
  * delegated to the shared calculation engine after this workflow creates and
@@ -86,7 +96,8 @@ const additiveSchema = z.object({
  *
  * For a gravity-targeted recipe, mark exactly one primary fermentable as
  * `adjustable_fermentable` and omit its amount. The workflow solves that one
- * ingredient plus water; all other ingredient amounts remain explicit.
+ * ingredient against the remaining volume. A `fill_liquid` (such as apple
+ * juice) may replace water when the brewer explicitly wants it to fill.
  */
 export const buildRecipeDraftInputSchema = z
   .object({
@@ -97,7 +108,9 @@ export const buildRecipeDraftInputSchema = z
     fermentationFinalGravity: z.number().min(0.97).max(1.2).optional(),
     ingredients: z.array(draftIngredientSchema).max(30).default([]),
     additives: z.array(additiveSchema).max(20).default([]),
+    backsweetening: backsweeteningSchema.optional(),
     assumptions: z.array(z.string().trim().min(1).max(240)).max(10).default([]),
+    allowWaterFill: z.boolean().optional(),
     nutrients: nutrientPreferencesSchema.optional(),
     stabilizers: stabilizerPreferencesSchema.optional()
   })
@@ -150,8 +163,11 @@ export function buildRecipeDraft(rawInput: unknown): ChatbotRecipeWorkflowResult
         "Calculated values use the shared MeadTools schema and calculation engine.",
         ...input.assumptions,
         ...(input.targetOriginalGravity !== undefined
-          ? ["The adjustable fermentable and water were solved against the requested ABV gravity target; all other ingredient amounts were kept explicit."]
-          : ["All ingredient amounts were supplied explicitly; MeadTools calculated the resulting gravity and volume."])
+          ? ["The adjustable fermentable and the selected fill liquid were solved against the requested ABV gravity target; all other ingredient amounts were kept explicit."]
+          : ["All ingredient amounts were supplied explicitly; MeadTools calculated the resulting gravity and volume."]),
+        ...(input.backsweetening
+          ? [`${input.backsweetening.sweetener?.name ?? "Honey"} was calculated as a secondary addition to reach a backsweetened final gravity of ${formatNumber(input.backsweetening.targetFinalGravity)}.`]
+          : [])
       ],
       warnings
     });
@@ -177,21 +193,50 @@ type CompleteBuildRecipeDraftInput = Omit<
 };
 
 function normalizeDraftInput(input: BuildRecipeDraftInput): BuildRecipeDraftInput {
-  if (input.targetOriginalGravity === undefined) return input;
-  if (input.ingredients.some((ingredient) => ingredient.role === "adjustable_fermentable")) {
-    return input;
+  const stabilizationRequested = input.stabilizers?.enabled === true || input.backsweetening !== undefined;
+  const withStabilizerDefaults = stabilizationRequested
+    ? {
+        ...input,
+        stabilizers: {
+          ...input.stabilizers,
+          enabled: true,
+          type: input.stabilizers?.type ?? "kmeta",
+          phReading: input.stabilizers?.phReading ?? 3.5
+        },
+        assumptions: input.stabilizers?.type && input.stabilizers.phReading !== undefined
+          ? input.assumptions
+          : [...input.assumptions, "The stabilizer calculation uses potassium metabisulfite and an assumed pH of 3.5 unless you provide different values."]
+      }
+    : input;
+  // An adjustable fermentable only makes sense with a gravity target. Models
+  // sometimes retain that role after a conversational turn even though the
+  // user gave a concrete amount; treat it as fixed rather than saving a zero
+  // quantity ingredient.
+  const withValidRoles = withStabilizerDefaults.targetOriginalGravity === undefined
+    ? {
+        ...withStabilizerDefaults,
+        ingredients: withStabilizerDefaults.ingredients.map((ingredient) =>
+          ingredient.role === "adjustable_fermentable"
+            ? { ...ingredient, role: "fixed" as const }
+            : ingredient
+        )
+      }
+    : withStabilizerDefaults;
+  if (withValidRoles.targetOriginalGravity === undefined) return withValidRoles;
+  if (withValidRoles.ingredients.some((ingredient) => ingredient.role === "adjustable_fermentable")) {
+    return withValidRoles;
   }
-  const unquantifiedPrimaryHoney = input.ingredients.filter(
+  const unquantifiedPrimaryHoney = withValidRoles.ingredients.filter(
     (ingredient) =>
       isHoneyIngredientName(ingredient.name) &&
       !ingredient.secondary &&
       !ingredient.amount
   );
-  if (unquantifiedPrimaryHoney.length !== 1) return input;
+  if (unquantifiedPrimaryHoney.length !== 1) return withValidRoles;
 
   return {
-    ...input,
-    ingredients: input.ingredients.map((ingredient) =>
+    ...withValidRoles,
+    ingredients: withValidRoles.ingredients.map((ingredient) =>
       ingredient === unquantifiedPrimaryHoney[0]
         ? { ...ingredient, role: "adjustable_fermentable" as const }
         : ingredient
@@ -206,6 +251,13 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
   }
   if (input.fermentationFinalGravity === undefined) {
     questions.push({ id: "fermentation_final_gravity", field: "fermentationFinalGravity", prompt: "What fermentation final gravity should MeadTools calculate toward?", answerType: "number" });
+  }
+  if (
+    input.backsweetening &&
+    input.fermentationFinalGravity !== undefined &&
+    input.backsweetening.targetFinalGravity <= input.fermentationFinalGravity
+  ) {
+    questions.push({ id: "backsweetening_target", field: "backsweetening.targetFinalGravity", prompt: "The backsweetening target must be higher than the fermentation final gravity. What finished sweetness target should MeadTools use?", answerType: "number" });
   }
   if (input.ingredients.length === 0) {
     questions.push({ id: "recipe_ingredients", field: "ingredients", prompt: "Which fermentables and ingredient additions should the draft include, and which ones belong in primary versus secondary?", answerType: "object" });
@@ -223,6 +275,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
       questions.push({ id: `ingredient_${index}_brix`, field: `ingredients.${index}.brix`, prompt: `What Brix value should MeadTools use for ${ingredient.name}?`, answerType: "number" });
     }
     if (honeyNeedsTarget && isHoneyIngredientName(ingredient.name)) continue;
+    if (ingredient.role === "fill_liquid") continue;
     if (input.targetOriginalGravity !== undefined && ingredient.role === "adjustable_fermentable") continue;
     if (!ingredient.amount) {
       const stage = ingredient.secondary ? " in secondary" : " in primary";
@@ -242,7 +295,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
       (ingredient) => !ingredient.secondary && ingredient.role === "adjustable_fermentable"
     );
     if (adjustable.length !== 1) {
-      questions.push({ id: "adjustable_fermentable", field: "ingredients", prompt: "To solve a target OG, which single primary fermentable should MeadTools adjust while filling the remaining volume with water?", answerType: "object" });
+      questions.push({ id: "adjustable_fermentable", field: "ingredients", prompt: "To solve a target OG, which single primary fermentable should MeadTools adjust while filling the remaining volume with water or your selected fill liquid?", answerType: "object" });
     }
   }
 
@@ -277,7 +330,8 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
   const adjustable = input.targetOriginalGravity === undefined
     ? undefined
     : supplied.find((ingredient) => !ingredient.secondary && ingredient.role === "adjustable_fermentable");
-  const fixed = supplied.filter((ingredient) => ingredient !== adjustable);
+  const fillLiquid = supplied.find((ingredient) => !ingredient.secondary && ingredient.role === "fill_liquid");
+  const fixed = supplied.filter((ingredient) => ingredient !== adjustable && ingredient !== fillLiquid);
   const ingredientLines = fixed.map((ingredient, index) => ingredientLine({ ...ingredient, lineId: `ingredient-${index + 1}`, volumeUnit, weightUnit }));
 
   if (adjustable) {
@@ -286,7 +340,7 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     const fixedPrimary = fixed.filter((ingredient) => !ingredient.secondary);
     const fixedPrimaryVolumeL = fixedPrimary.reduce((total, ingredient) => total + ingredient.volumeL, 0);
     const fixedPrimaryGravityVolume = fixedPrimary.reduce((total, ingredient) => total + ingredient.sg * ingredient.volumeL, 0);
-    const waterSg = toSG(0);
+    const fillSg = fillLiquid?.sg ?? toSG(0);
     // The ABV target is calculated from the fermenting primary must. Secondary
     // fruit dilutes that alcohol after fermentation, so solve a stronger primary
     // OG when a fixed secondary volume is present.
@@ -297,28 +351,42 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     const adjustableVolumeL = (
       targetPrimaryGravityVolume -
       fixedPrimaryGravityVolume -
-      waterSg * (desiredPrimaryVolumeL - fixedPrimaryVolumeL)
-    ) / (adjustable.sg - waterSg);
-    const waterVolumeL = desiredPrimaryVolumeL - fixedPrimaryVolumeL - adjustableVolumeL;
+      fillSg * (desiredPrimaryVolumeL - fixedPrimaryVolumeL)
+    ) / (adjustable.sg - fillSg);
+    const fillVolumeL = desiredPrimaryVolumeL - fixedPrimaryVolumeL - adjustableVolumeL;
     if (!Number.isFinite(adjustableVolumeL) || adjustableVolumeL <= 0) {
       throw new Error("The fixed fermentables already exceed the requested ABV target. Reduce a fixed sugar source, increase the target ABV, or use a larger finished batch volume.");
     }
-    if (waterVolumeL < 0) {
+    if (fillVolumeL < 0) {
       const fixedPrimaryNames = fixedPrimary
         .filter((ingredient) => ingredient.volumeL > 0)
         .map((ingredient) => ingredient.name)
         .join(", ");
       throw new Error(
-        `The fixed primary ingredient${fixedPrimaryNames.includes(",") ? "s" : ""} (${fixedPrimaryNames || "provided liquid"}) already use${fixedPrimaryNames.includes(",") ? "" : "s"} the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left for ${adjustable.name} and water to reach the gravity target. Reduce a fixed liquid ingredient or choose a larger batch; lowering the ABV target alone cannot resolve this volume conflict.`
+        `The fixed primary ingredient${fixedPrimaryNames.includes(",") ? "s" : ""} (${fixedPrimaryNames || "provided liquid"}) already use${fixedPrimaryNames.includes(",") ? "" : "s"} the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. Reduce a fixed liquid ingredient or choose a larger batch; lowering the ABV target alone cannot resolve this volume conflict.`
       );
     }
     ingredientLines.push(
       ingredientLine({ ...adjustable, volumeL: adjustableVolumeL, lineId: "adjustable-fermentable", volumeUnit, weightUnit }),
-      ingredientLine({ name: "Water", category: "water", brix: 0, sg: waterSg, volumeL: waterVolumeL, secondary: false, role: "fixed", lineId: "water-balance", volumeUnit, weightUnit })
+      ingredientLine(fillLiquid
+        ? { ...fillLiquid, volumeL: fillVolumeL, lineId: "fill-liquid", volumeUnit, weightUnit }
+        : { name: "Water", category: "water", brix: 0, sg: fillSg, volumeL: fillVolumeL, secondary: false, role: "fixed", lineId: "water-balance", volumeUnit, weightUnit })
     );
+  } else {
+    const desiredPrimaryVolumeL = input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit]
+      - fixed.filter((ingredient) => ingredient.secondary).reduce((total, ingredient) => total + ingredient.volumeL, 0);
+    const fixedPrimaryVolumeL = fixed
+      .filter((ingredient) => !ingredient.secondary)
+      .reduce((total, ingredient) => total + ingredient.volumeL, 0);
+    const fillVolumeL = desiredPrimaryVolumeL - fixedPrimaryVolumeL;
+    if (fillLiquid && fillVolumeL > 0) {
+      ingredientLines.push(ingredientLine({ ...fillLiquid, volumeL: fillVolumeL, lineId: "fill-liquid", volumeUnit, weightUnit }));
+    } else if (!fillLiquid && input.allowWaterFill !== false && fillVolumeL > 0) {
+      ingredientLines.push(ingredientLine({ name: "Water", category: "water", brix: 0, sg: toSG(0), volumeL: fillVolumeL, secondary: false, role: "fixed", lineId: "water-balance", volumeUnit, weightUnit }));
+    }
   }
 
-  const recipe: RecipeDataV2 = {
+  let recipe: RecipeDataV2 = {
     version: 2,
     unitDefaults: { weight: weightUnit, volume: volumeUnit },
     ingredients: ingredientLines,
@@ -331,10 +399,63 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     flags: { private: true }
   };
   recipe.nutrients = nutrientData(input);
+  if (input.backsweetening) {
+    recipe = addCalculatedBacksweetening(recipe, input.backsweetening);
+  }
   return recipe;
 }
 
-type SuppliedIngredient = { name: string; catalogId?: number; category: string; brix: number; sg: number; volumeL: number; secondary: boolean; role: "fixed" | "adjustable_fermentable" };
+function addCalculatedBacksweetening(
+  recipe: RecipeDataV2,
+  backsweetening: NonNullable<BuildRecipeDraftInput["backsweetening"]>
+): RecipeDataV2 {
+  const current = calculateRecipeDerivedApiResponse(recipe).derived;
+  const target = backsweetening.targetFinalGravity;
+  const fermentationFg = Number(recipe.fg);
+  if (!Number.isFinite(fermentationFg) || target <= fermentationFg) {
+    throw new Error("The backsweetening target must be higher than the fermentation final gravity.");
+  }
+
+  const primaryVolumeL = current.volume.primaryL;
+  const secondaryVolumeL = current.volume.secondaryL;
+  const existingSecondaryGravity = current.gravity.backsweetenedFg * (primaryVolumeL + secondaryVolumeL)
+    - fermentationFg * primaryVolumeL;
+  const sweetener = backsweetening.sweetener ?? { name: "Honey", category: "sugar", brix: HONEY_BRIX };
+  const sweetenerBrix = sweetener.brix ?? (isHoneyIngredientName(sweetener.name) ? HONEY_BRIX : undefined);
+  if (sweetenerBrix === undefined) {
+    throw new Error(`A Brix value is required to calculate backsweetening with ${sweetener.name}.`);
+  }
+  const sweetenerSg = toSG(sweetenerBrix);
+  const requiredVolumeL = (
+    fermentationFg * primaryVolumeL + existingSecondaryGravity - target * (primaryVolumeL + secondaryVolumeL)
+  ) / (target - sweetenerSg);
+  if (!Number.isFinite(requiredVolumeL) || requiredVolumeL <= 0) {
+    throw new Error("The existing secondary additions already meet or exceed the requested backsweetening target. Choose a higher target or reduce a fixed secondary sugar source.");
+  }
+
+  const unitDefaults = recipe.unitDefaults;
+  return {
+    ...recipe,
+    ingredients: [
+      ...recipe.ingredients,
+      ingredientLine({
+        name: `${sweetener.name} (backsweetening)`,
+        catalogId: sweetener.catalogId,
+        category: sweetener.category ?? inferCategory(sweetener.name),
+        brix: sweetenerBrix,
+        sg: sweetenerSg,
+        volumeL: requiredVolumeL,
+        secondary: true,
+        role: "fixed",
+        lineId: "backsweetening-sweetener",
+        volumeUnit: unitDefaults.volume,
+        weightUnit: unitDefaults.weight
+      })
+    ]
+  };
+}
+
+type SuppliedIngredient = { name: string; catalogId?: number; category: string; brix: number; sg: number; volumeL: number; secondary: boolean; role: "fixed" | "adjustable_fermentable" | "fill_liquid" };
 
 function toSuppliedIngredient(ingredient: BuildRecipeDraftInput["ingredients"][number]): SuppliedIngredient {
   const brix = ingredientBrix(ingredient);

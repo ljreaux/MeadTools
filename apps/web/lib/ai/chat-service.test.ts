@@ -107,6 +107,26 @@ test("completed drafts do not end with a conversational follow-up", () => {
   );
 });
 
+test("completed recipe answers render the same backsweetening ingredient returned for saving", () => {
+  const workflow = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    backsweetening: { targetFinalGravity: 1.015 },
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan
+  });
+  const answer = directRecipeToolAnswer("build_recipe_draft", {
+    status: "ok",
+    result: workflow
+  });
+
+  assert.equal(workflow.status, "recipe");
+  assert.match(answer ?? "", /Honey \(backsweetening\)/);
+  assert.match(answer ?? "", /\*\*Backsweetened FG:\*\* 1\.015/);
+  assert.doesNotMatch(answer ?? "", /Let me know if/);
+});
+
 test("recipe intake groups the workflow questions into at most three prompts", () => {
   const answer = directRecipeToolAnswer("build_recipe_draft", {
     status: "ok",
@@ -545,7 +565,7 @@ test("a yeast preference forces yeast lookup and keeps catalog details out of th
   );
 });
 
-test("recipe drafting resolves a catalog ingredient before requesting its Brix", async () => {
+test("recipe drafting selects a catalog ingredient before requesting its Brix", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const calls = [
     {
@@ -562,7 +582,7 @@ test("recipe drafting resolves a catalog ingredient before requesting its Brix",
         stabilizers: { enabled: false }
       })
     },
-    { name: "search_ingredients", arguments: '{"query":"blackberries"}' },
+    { name: "search_ingredients", arguments: "{}" },
     {
       name: "build_recipe_draft",
       arguments: JSON.stringify({
@@ -617,19 +637,19 @@ test("recipe drafting resolves a catalog ingredient before requesting its Brix",
     }),
     maxOutputTokens: 4_000,
     maxToolCalls: 6,
-    ingredientLookup: async (query) => {
-      assert.equal(query, "blackberries");
-      return [{ id: 42, name: "Blackberries", category: "fruit", brix: 10 }];
-    }
+    ingredientLookup: async () => [
+      { id: 42, name: "Blackberries", category: "fruit", brix: 10 },
+      { id: 43, name: "Blueberries", category: "fruit", brix: 12 }
+    ]
   });
 
-  assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.match(result.answer, /Blackberries/);
   assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
     "build_recipe_draft",
     "search_ingredients",
     "build_recipe_draft"
   ]);
-  assert.equal(requests[1]?.messages.at(-1)?.role, "system");
   assert.deepEqual(requests[2]?.toolChoice, {
     type: "function",
     function: { name: "build_recipe_draft" }
@@ -796,7 +816,7 @@ test("partial recipe intake persists across turns instead of repeating answered 
     maxOutputTokens: 4_000,
     maxToolCalls: 6
   });
-  assert.equal(second.answer, "Your unsaved draft is ready.");
+  assert.match(second.answer, /^## Unsaved MeadTools recipe draft/);
   assert.equal(second.recipeDraftInput?.batchVolume?.value, 5);
   assert.equal(second.recipeDraftInput?.fermentationFinalGravity, 0.996);
 });
@@ -1476,7 +1496,7 @@ test("a model cannot invent a fixed honey amount when the user chose an OG targe
   );
   assert.equal(honey?.amount, undefined);
   assert.equal(honey?.role, "adjustable_fermentable");
-  assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
 });
 
 test("a traditional backsweetening intake keeps dry fermentation gravity and implied honey", async () => {
@@ -1562,8 +1582,9 @@ test("a traditional backsweetening intake keeps dry fermentation gravity and imp
     result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Honey"),
     { name: "Honey", role: "adjustable_fermentable" }
   );
-  assert.equal(result.answer, "Your unsaved traditional mead draft is ready.");
-  assert.equal(requests.length, 2);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.match(result.answer, /Honey \(backsweetening\)/);
+  assert.equal(requests.length, 1);
 });
 
 test("a gravity-targeted fruit mead restores honey when a model omits its base fermentable", async () => {

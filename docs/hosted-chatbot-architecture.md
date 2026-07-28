@@ -126,6 +126,85 @@ automated wiki-index publishing, and a final model/default-provider decision.
 Continue evaluating conversation quality and recipe output before taking those
 on. Local evaluator transcripts remain private and ignored by Git.
 
+## Active refinement plan — July 28, 2026
+
+The next pass is about recipe correctness and reliable saved payloads, not a
+new product release. The following decisions and work items supersede the
+earlier generic “refine the evaluator” step.
+
+### Settled product rules
+
+- A requested **target ABV always means the finished batch ABV**. It includes
+  dilution from calculated secondary additions such as backsweetening honey.
+  A draft must not silently interpret the target as a pre-backsweetening
+  fermentation ABV.
+- A request to backsweeten to a final gravity is sufficient for MeadTools to
+  calculate the secondary sweetener. The bot must not ask the user to choose
+  the amount unless the user deliberately supplies a fixed amount instead.
+- An explicit numerical fermentation FG takes precedence over qualitative
+  wording such as “finish dry.”
+- “No Go-Ferm” is a real recipe setting and must be rendered and saved as
+  `none`; display text and the saved v2 recipe payload may never disagree.
+- The normal brewing convention is that a stated batch size is the target
+  finished batch volume unless the user says otherwise.
+
+### Priority 1 — recipe workflow and intake regressions
+
+1. Move the inverse backsweetening calculation into a shared `@meadtools/core`
+   helper. Reuse it from the browser recipe builder and hosted workflow rather
+   than maintaining parallel math. Extend the helper/workflow solve so a
+   target finished ABV, finished volume, fermentation FG, and backsweetened FG
+   resolve together, including the volume of the calculated secondary
+   sweetener.
+2. Preserve `backsweetening.targetFinalGravity` through every agent turn and
+   call the deterministic workflow immediately when that target is known. Add
+   regression coverage for “enough honey to reach 1.015” so it cannot turn
+   into an amount question or a repeated confirmation.
+3. Correct intake precedence: explicit gravity beats “dry”; explicit negative
+   choices such as “no Go-Ferm” beat model defaults; a named yeast followed by
+   “look it up” must call yeast lookup before asking for nitrogen information.
+4. Treat a supplied yeast plus its declared nitrogen requirement as valid even
+   without a catalog match, while retaining the catalog lookup path for known
+   strains. Keep catalog and implementation details out of user-facing text.
+5. Make “best judgment” accept normal defaults rather than reopening already
+   supplied choices: batch size means finished volume, honey is the adjustable
+   fermentable for a traditional/cyser when implied, and the established
+   K-meta/pH 3.5 default applies when stabilization is needed.
+6. Add contract and end-to-end save tests proving that the displayed draft and
+   saved `dataV2` have the same ingredients, additions, nutrient settings,
+   stabilizers, fermentation FG, backsweetened FG, and finished ABV basis.
+
+### Priority 2 — answer boundaries and calculator/process experience
+
+1. Finish calculator routing: direct users to the appropriate MeadTools
+   calculator for ABV, sulfite, carbonation, hydrometer/refractometer, bench
+   trial, and additive-dose questions rather than duplicating calculator math
+   in model prose. Where a calculator can safely return a quick deterministic
+   result, show that result and link the calculator.
+2. Keep process answers concise and source-labeled: MeadTools wiki claims must
+   cite the retrieved canonical page; brief general brewing context is allowed
+   only when clearly distinguished from the wiki guidance.
+3. Continue narrowing the deterministic scope gate to obvious off-topic
+   requests. The system policy remains the main scope boundary, and each
+   change must be evaluated against mead-adjacent phrasing, unrelated pivots,
+   and normal brewing questions so valid questions do not get rejected.
+4. Preserve the existing rule that additives belong in the recipe Additives
+   section. Later, add structured answer controls (selects, target fields, and
+   similar UI components) for high-confidence questions; this is deliberately
+   deferred until the conversational data model is stable.
+
+### Verification gate before the next milestone
+
+Run the focused backsweetening, dry-FG, no-Go-Ferm, named-yeast lookup, cyser
+fill-liquid, rich-additive, process/wiki, calculator-routing, and adversarial
+scope scenarios. Export each notable session and save successful recipes. For
+each saved recipe, compare the visible draft to the persisted `dataV2` payload.
+The repeated adjustable-fermentable/backsweetening confirmation regression is
+an explicit blocking check: once the user has identified honey as the
+adjustable fermentable or given a backsweetening target, the bot must proceed
+or ask a genuinely new high-impact question, never ask the same confirmation
+again.
+
 ## Local real-model test setup
 
 The local endpoint is intentionally fail-closed. Add the following only to the
