@@ -78,27 +78,24 @@ test("wiki search exposes a small catalog result set without fetching pages", as
   assert.equal(execution.result[0]?.title, "Nutrient Schedules");
 });
 
-test("ingredient search exposes catalog identity and Brix through an injected lookup", async () => {
+test("ingredient catalog exposes every authoritative ingredient through an injected lookup", async () => {
   const execution = await executeHostedAgentTool(
     "search_ingredients",
-    { query: "blackberry" },
+    {},
     {
-      ingredientLookup: async (query, limit) => {
-        assert.equal(query, "blackberry");
-        assert.equal(limit, 5);
-        return [{ id: 42, name: "Blackberries", category: "fruit", brix: 10 }];
-      }
+      ingredientLookup: async () => [
+        { id: 42, name: "Blackberries", category: "fruit", brix: 10 },
+        { id: 43, name: "Blueberries", category: "fruit", brix: 12 }
+      ]
     }
   );
 
   assert.equal(execution.status, "ok");
   if (execution.status !== "ok" || !Array.isArray(execution.result)) return;
-  assert.deepEqual(execution.result[0], {
-    id: 42,
-    name: "Blackberries",
-    category: "fruit",
-    brix: 10
-  });
+  assert.deepEqual(execution.result, [
+    { id: 42, name: "Blackberries", category: "fruit", brix: 10 },
+    { id: 43, name: "Blueberries", category: "fruit", brix: 12 }
+  ]);
 });
 
 test("yeast search exposes authoritative nutrient inputs through an injected lookup", async () => {
@@ -195,10 +192,15 @@ test("provider tool definitions stay aligned with the executable tool surface", 
   );
 });
 
-test("hosted policy forbids uncited process advice outside retrieved wiki content", () => {
+test("hosted policy distinguishes wiki guidance from brief general context", () => {
   assert.ok(
     hostedAgentPolicy.instructions.some((instruction) =>
-      instruction.includes("do not provide brewing instructions")
+      instruction.includes("clearly labelled general-brewing context")
+    )
+  );
+  assert.ok(
+    hostedAgentPolicy.instructions.some((instruction) =>
+      instruction.includes("cite the canonical URL")
     )
   );
 });
