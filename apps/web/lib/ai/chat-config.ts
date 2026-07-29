@@ -3,12 +3,31 @@ export const DEFAULT_FIREWORKS_MODEL =
 /** Generous only for private, allow-listed evaluation sessions. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_MAX_TOOL_CALLS = 6;
+/** A turn may use tools, but cannot run an unbounded provider loop. */
+export const DEFAULT_MAX_PROVIDER_CALLS = 7;
+/** Bounds combined model output across tool calls and the final response. */
+export const DEFAULT_MAX_TOTAL_OUTPUT_TOKENS = 8_000;
+/** Limits the serialized provider context for every completion request. */
+export const DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS = 60_000;
+/** Stops a turn once cumulative provider-reported token usage becomes excessive. */
+export const DEFAULT_MAX_TOTAL_PROVIDER_TOKENS = 60_000;
+export const DEFAULT_MAX_REQUESTS_PER_HOUR = 30;
+export const DEFAULT_MAX_REQUESTS_PER_DAY = 100;
+export const DEFAULT_MAX_TOKENS_PER_DAY = 200_000;
 
 export type LocalChatbotConfig = {
   apiKey: string;
   model: string;
   maxOutputTokens: number;
   maxToolCalls: number;
+  maxProviderCalls: number;
+  maxTotalOutputTokens: number;
+  maxProviderInputCharacters: number;
+  maxTotalProviderTokens: number;
+  maxRequestsPerHour: number;
+  maxRequestsPerDay: number;
+  maxTokensPerDay: number;
+  usageEnvironment: string;
   allowedUserIds: ReadonlySet<number>;
 };
 
@@ -41,6 +60,51 @@ export function getLocalChatbotConfig(
       1,
       DEFAULT_MAX_TOOL_CALLS
     ),
+    maxProviderCalls: parseBoundedInteger(
+      environment.CHATBOT_MAX_PROVIDER_CALLS,
+      DEFAULT_MAX_PROVIDER_CALLS,
+      1,
+      8
+    ),
+    maxTotalOutputTokens: parseBoundedInteger(
+      environment.CHATBOT_MAX_TOTAL_OUTPUT_TOKENS,
+      DEFAULT_MAX_TOTAL_OUTPUT_TOKENS,
+      256,
+      12_000
+    ),
+    maxProviderInputCharacters: parseBoundedInteger(
+      environment.CHATBOT_MAX_PROVIDER_INPUT_CHARACTERS,
+      DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS,
+      8_000,
+      80_000
+    ),
+    maxTotalProviderTokens: parseBoundedInteger(
+      environment.CHATBOT_MAX_TOTAL_PROVIDER_TOKENS,
+      DEFAULT_MAX_TOTAL_PROVIDER_TOKENS,
+      8_000,
+      100_000
+    ),
+    maxRequestsPerHour: parseBoundedInteger(
+      environment.CHATBOT_MAX_REQUESTS_PER_HOUR,
+      DEFAULT_MAX_REQUESTS_PER_HOUR,
+      1,
+      100
+    ),
+    maxRequestsPerDay: parseBoundedInteger(
+      environment.CHATBOT_MAX_REQUESTS_PER_DAY,
+      DEFAULT_MAX_REQUESTS_PER_DAY,
+      1,
+      500
+    ),
+    maxTokensPerDay: parseBoundedInteger(
+      environment.CHATBOT_MAX_TOKENS_PER_DAY,
+      DEFAULT_MAX_TOKENS_PER_DAY,
+      10_000,
+      1_000_000
+    ),
+    usageEnvironment: parseUsageEnvironment(
+      environment.CHATBOT_USAGE_ENVIRONMENT ?? environment.VERCEL_ENV ?? "local"
+    ),
     allowedUserIds
   };
 }
@@ -63,4 +127,9 @@ function parseBoundedInteger(
   const parsed = Number(value);
   if (!Number.isInteger(parsed)) return fallback;
   return Math.max(minimum, Math.min(maximum, parsed));
+}
+
+function parseUsageEnvironment(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  return /^[a-z0-9_-]{1,32}$/.test(normalized) ? normalized : "local";
 }

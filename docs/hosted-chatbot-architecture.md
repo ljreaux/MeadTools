@@ -88,9 +88,11 @@ a routing catalog; the selected retrieved page is the source for a process claim
   resistance. These are ready for a selected provider runner.
 - Completed: a Fireworks-compatible Node adapter and private local-test SSE
   route at `/api/chat/recipe`. It is disabled by default, requires existing
-  bearer authentication plus an explicit user-ID allow-list, caps output and
-  tool calls, and emits provider/model/token/latency/tool telemetry without
-  persisting conversations or charging credits.
+  bearer authentication plus an explicit user-ID allow-list, has strict
+  per-turn provider-call/output/context caps, and applies durable per-user
+  hourly/daily request and daily token limits before a provider call. It emits
+  non-sensitive provider/model/token/latency telemetry without persisting
+  conversation content or charging credits.
 - Completed: a private, authenticated evaluator at `/account/chat`. It renders
   model Markdown, tool activity, citations, and per-turn metering; it retains
   the active draft in browser memory so follow-up refine/explain requests can
@@ -219,6 +221,14 @@ FIREWORKS_API_KEY=...
 # CHATBOT_FIREWORKS_MODEL=accounts/fireworks/models/deepseek-v4-flash
 # CHATBOT_MAX_OUTPUT_TOKENS=4000
 # CHATBOT_MAX_TOOL_CALLS=6
+# CHATBOT_MAX_PROVIDER_CALLS=7
+# CHATBOT_MAX_TOTAL_OUTPUT_TOKENS=8000
+# CHATBOT_MAX_PROVIDER_INPUT_CHARACTERS=60000
+# CHATBOT_MAX_TOTAL_PROVIDER_TOKENS=60000
+# CHATBOT_MAX_REQUESTS_PER_HOUR=30
+# CHATBOT_MAX_REQUESTS_PER_DAY=100
+# CHATBOT_MAX_TOKENS_PER_DAY=200000
+# CHATBOT_USAGE_ENVIRONMENT=local
 ```
 
 Start the app with `npm run dev:web`, sign in normally, then open
@@ -231,7 +241,9 @@ not persist chat messages or telemetry, charge credits, or accept payments.
 
 The evaluator can export the current browser-session transcript as a Markdown
 file. The export includes displayed messages, tool names, and per-response
-metering, but it is still local-only and does not create persisted chat data.
+metering. Chat text remains browser-local; the server stores only guarded
+request metadata (request ID, user ID, environment, model, provider request
+IDs, status, and token/call totals) for limit enforcement and incident review.
 Place exports worth reviewing in `docs/chatbot-evals/exports/` with the date,
 scenario, and model in the filename.
 

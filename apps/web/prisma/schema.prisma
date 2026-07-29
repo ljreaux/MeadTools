@@ -160,6 +160,47 @@ model users {
   ratings      recipe_ratings[]
 }
 
+/// Retains aggregate limits and non-sensitive provider usage for chatbot cost control.
+model chatbot_usage_windows {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             Int
+  window              String   @db.VarChar(8)
+  window_start        DateTime @db.Timestamptz(6)
+  request_count       Int      @default(0)
+  provider_calls      Int      @default(0)
+  input_tokens        Int      @default(0)
+  cached_input_tokens Int      @default(0)
+  output_tokens       Int      @default(0)
+  total_tokens        Int      @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@unique([user_id, window, window_start])
+  @@index([window, window_start])
+}
+
+/// Stores request metadata and provider usage only; it intentionally never stores chat content.
+model chatbot_usage_events {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id           String    @unique @db.Uuid
+  user_id              Int
+  environment          String    @db.VarChar(32)
+  model                String    @db.VarChar(255)
+  status               String    @db.VarChar(16)
+  provider_calls       Int       @default(0)
+  input_tokens         Int       @default(0)
+  cached_input_tokens  Int       @default(0)
+  output_tokens        Int       @default(0)
+  total_tokens         Int       @default(0)
+  provider_request_ids String[]  @default([])
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at         DateTime? @db.Timestamptz(6)
+
+  @@index([user_id, created_at])
+  @@index([environment, created_at])
+  @@index([status, created_at])
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String?   @unique
