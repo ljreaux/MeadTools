@@ -17,6 +17,7 @@ import { z } from "zod";
 import type {
   ChatModelClient,
   FireworksCompletion,
+  FireworksFunctionTool,
   FireworksMessage,
   FireworksToolCall,
   FireworksUsage
@@ -63,6 +64,13 @@ export type ChatTurnResult = {
   usage: ChatTurnUsage;
 };
 
+export class ChatSafetyLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ChatSafetyLimitError";
+  }
+}
+
 const outOfScopeAnswer =
   "I can help with MeadTools, mead recipes, and mead-brewing process questions. What would you like to make or troubleshoot?";
 
@@ -82,6 +90,10 @@ export async function runChatTurn(options: {
   request: ChatRequest;
   maxOutputTokens: number;
   maxToolCalls: number;
+  maxProviderCalls?: number;
+  maxTotalOutputTokens?: number;
+  maxProviderInputCharacters?: number;
+  maxTotalProviderTokens?: number;
   ingredientLookup?: IngredientLookup;
   yeastLookup?: YeastLookup;
   onEvent?: (event: ChatTurnEvent) => void;
@@ -171,8 +183,36 @@ export async function runChatTurn(options: {
   let namedIngredientResolved = false;
   let namedYeastResolved = false;
   let namedYeastLookupAttempted = false;
+  const maxProviderCalls = options.maxProviderCalls ?? options.maxToolCalls + 1;
+  // Preserve one concise retry for direct callers that have not supplied the
+  // route-level combined output budget. The hosted route always supplies it.
+  const maxTotalOutputTokens = options.maxTotalOutputTokens ?? options.maxOutputTokens * 2;
+  const maxProviderInputCharacters = options.maxProviderInputCharacters ?? 60_000;
+  const maxTotalProviderTokens = options.maxTotalProviderTokens ?? 60_000;
 
   while (true) {
+    if (usage.totalTokens >= maxTotalProviderTokens) {
+      return resultForSafetyLimit({
+        usage,
+        model,
+        toolCalls,
+        startedAt,
+        toolResults,
+        recipeDraftInput,
+        message: "I reached the safe provider-token limit for this turn. Please send a short follow-up so I can continue from the details already gathered."
+      });
+    }
+    if (usage.requestIds.length >= maxProviderCalls) {
+      return resultForSafetyLimit({
+        usage,
+        model,
+        toolCalls,
+        startedAt,
+        toolResults,
+        recipeDraftInput,
+        message: "I reached the safe provider-call limit for this turn. Please send a short follow-up with the remaining recipe detail or a narrower process question."
+      });
+    }
     const toolChoice =
       toolCalls >= options.maxToolCalls || renderRecipeIntake
         ? "none"
@@ -187,22 +227,41 @@ export async function runChatTurn(options: {
                   : toolCalls === 0 && forceRecipeDraftTool
                     ? { type: "function" as const, function: { name: "build_recipe_draft" } }
                     : "auto";
+    const requestedMaxOutputTokens =
+      renderRecipeIntake
+        ? Math.min(options.maxOutputTokens, 1_000)
+        : toolChoice === "auto" || toolChoice === "none"
+        ? options.maxOutputTokens
+        : Math.min(options.maxOutputTokens, 1_200);
+    const remainingOutputTokens = maxTotalOutputTokens - usage.outputTokens;
+    if (remainingOutputTokens < 128) {
+      return resultForSafetyLimit({
+        usage,
+        model,
+        toolCalls,
+        startedAt,
+        toolResults,
+        recipeDraftInput,
+        message: "I reached the safe output limit for this turn. Please send a short follow-up so I can continue from the recipe details already gathered."
+      });
+    }
+    const tools =
+      toolCalls < options.maxToolCalls && !renderRecipeIntake
+        ? hostedAgentToolDefinitions.map((tool) => ({
+            type: "function" as const,
+            function: tool
+          }))
+        : undefined;
+    if (serializedProviderInputLength(messages, tools) > maxProviderInputCharacters) {
+      throw new ChatSafetyLimitError(
+        "This chat turn grew beyond the safe provider-context limit. Please start a new chat or send a shorter follow-up."
+      );
+    }
     const completion = await options.client.complete({
       messages,
-      tools:
-        toolCalls < options.maxToolCalls && !renderRecipeIntake
-          ? hostedAgentToolDefinitions.map((tool) => ({
-              type: "function" as const,
-              function: tool
-            }))
-          : undefined,
+      tools,
       toolChoice,
-      maxOutputTokens:
-        renderRecipeIntake
-          ? Math.min(options.maxOutputTokens, 1_000)
-          : toolChoice === "auto" || toolChoice === "none"
-          ? options.maxOutputTokens
-          : Math.min(options.maxOutputTokens, 1_200),
+      maxOutputTokens: Math.min(requestedMaxOutputTokens, remainingOutputTokens),
       userId: options.userId
     });
     model = completion.model;
@@ -508,6 +567,36 @@ function resultForTruncatedResponse(options: {
       latencyMs: Math.round(performance.now() - options.startedAt)
     }
   };
+}
+
+function resultForSafetyLimit(options: {
+  usage: ReturnType<typeof emptyUsage>;
+  model: string;
+  toolCalls: number;
+  startedAt: number;
+  toolResults: ChatTurnResult["toolResults"];
+  recipeDraftInput?: BuildRecipeDraftInput;
+  message: string;
+}): ChatTurnResult {
+  return {
+    answer: options.message,
+    toolResults: options.toolResults,
+    recipeDraftInput: options.recipeDraftInput,
+    usage: {
+      ...options.usage,
+      provider: "fireworks",
+      model: options.model,
+      toolCalls: options.toolCalls,
+      latencyMs: Math.round(performance.now() - options.startedAt)
+    }
+  };
+}
+
+function serializedProviderInputLength(
+  messages: FireworksMessage[],
+  tools: FireworksFunctionTool[] | undefined
+): number {
+  return JSON.stringify({ messages, tools }).length;
 }
 
 function initialMessages(request: ChatRequest): FireworksMessage[] {

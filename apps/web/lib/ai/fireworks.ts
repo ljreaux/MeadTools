@@ -93,6 +93,7 @@ export class FireworksChatClient implements ChatModelClient {
     private readonly options: {
       apiKey: string;
       model: string;
+      annotations?: { project: string; environment: string };
       fetcher?: typeof fetch;
     }
   ) {}
@@ -109,7 +110,12 @@ export class FireworksChatClient implements ChatModelClient {
             method: "POST",
             headers: {
               authorization: `Bearer ${this.options.apiKey}`,
-              "content-type": "application/json"
+              "content-type": "application/json",
+              ...(this.options.annotations
+                ? {
+                    "fireworks-annotations": `team=meadtools,project=${this.options.annotations.project},environment=${this.options.annotations.environment}`
+                  }
+                : {})
             },
             body: JSON.stringify({
               model: this.options.model,

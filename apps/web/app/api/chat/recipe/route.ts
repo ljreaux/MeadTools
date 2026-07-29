@@ -6,6 +6,11 @@ import { FireworksChatClient } from "@/lib/ai/fireworks";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
+import {
+  ChatbotUsageLimitError,
+  completeChatbotUsage,
+  reserveChatbotUsage
+} from "@/lib/db/chatbot-usage";
 import { verifyUser } from "@/lib/userAccessFunctions";
 
 export const runtime = "nodejs";
@@ -65,9 +70,41 @@ export async function POST(request: NextRequest) {
   }
 
   const requestId = crypto.randomUUID();
+  const requestStartedAt = new Date();
+  try {
+    await reserveChatbotUsage({
+      requestId,
+      userId: authenticatedUser,
+      environment: config.usageEnvironment,
+      model: config.model,
+      limits: {
+        maxRequestsPerHour: config.maxRequestsPerHour,
+        maxRequestsPerDay: config.maxRequestsPerDay,
+        maxTokensPerDay: config.maxTokensPerDay
+      },
+      now: requestStartedAt
+    });
+  } catch (error) {
+    if (error instanceof ChatbotUsageLimitError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 429, headers: { "retry-after": "3600" } }
+      );
+    }
+    console.error("Unable to reserve chatbot usage safely.", {
+      requestId,
+      userId: authenticatedUser,
+      environment: config.usageEnvironment
+    });
+    return NextResponse.json(
+      { error: "The chatbot usage guard is unavailable. Please try again later." },
+      { status: 503 }
+    );
+  }
   const client = new FireworksChatClient({
     apiKey: config.apiKey,
-    model: config.model
+    model: config.model,
+    annotations: { project: "chatbot", environment: config.usageEnvironment }
   });
 
   const stream = streamRecipeChatTurn({
@@ -75,57 +112,86 @@ export async function POST(request: NextRequest) {
     runId,
     threadId,
     run: async (onEvent) => {
-      const result = await runChatTurn({
-        client,
-        userId: authenticatedUser,
-        request: chatRequest,
-        maxOutputTokens: config.maxOutputTokens,
-        maxToolCalls: config.maxToolCalls,
-        ingredientLookup: async () => {
-          const ingredients = await getIngredientCatalogForChat();
-          return ingredients.flatMap((ingredient) => {
-            const brix = Number(ingredient.sugar_content);
-            if (!Number.isFinite(brix) || brix < 0 || brix > 100) return [];
-            return [{
-              id: ingredient.id,
-              name: ingredient.name,
-              category: ingredient.category,
-              brix
-            }];
-          });
-        },
-        yeastLookup: async (query, limit) => {
-          const yeasts = await searchYeastsForChat(query);
-          return yeasts.slice(0, limit).flatMap((yeast) => {
-            const nitrogenRequirement = yeast.nitrogen_requirement;
-            if (
-              nitrogenRequirement !== "Very Low" &&
-              nitrogenRequirement !== "Low" &&
-              nitrogenRequirement !== "Medium" &&
-              nitrogenRequirement !== "High" &&
-              nitrogenRequirement !== "Very High"
-            ) {
-              return [];
-            }
-            return [{
-              id: yeast.id,
-              brand: yeast.brand,
-              name: yeast.name,
-              nitrogenRequirement,
-              tolerance: numberOrUndefined(yeast.tolerance),
-              lowTemperature: numberOrUndefined(yeast.low_temp),
-              highTemperature: numberOrUndefined(yeast.high_temp)
-            }];
-          });
-        },
-        onEvent
-      });
-      console.info("Hosted chatbot local test completed", {
-        requestId,
-        userId: authenticatedUser,
-        usage: result.usage
-      });
-      return result;
+      try {
+        const result = await runChatTurn({
+          client,
+          userId: authenticatedUser,
+          request: chatRequest,
+          maxOutputTokens: config.maxOutputTokens,
+          maxToolCalls: config.maxToolCalls,
+          maxProviderCalls: config.maxProviderCalls,
+          maxTotalOutputTokens: config.maxTotalOutputTokens,
+          maxProviderInputCharacters: config.maxProviderInputCharacters,
+          maxTotalProviderTokens: config.maxTotalProviderTokens,
+          ingredientLookup: async () => {
+            const ingredients = await getIngredientCatalogForChat();
+            return ingredients.flatMap((ingredient) => {
+              const brix = Number(ingredient.sugar_content);
+              if (!Number.isFinite(brix) || brix < 0 || brix > 100) return [];
+              return [{
+                id: ingredient.id,
+                name: ingredient.name,
+                category: ingredient.category,
+                brix
+              }];
+            });
+          },
+          yeastLookup: async (query, limit) => {
+            const yeasts = await searchYeastsForChat(query);
+            return yeasts.slice(0, limit).flatMap((yeast) => {
+              const nitrogenRequirement = yeast.nitrogen_requirement;
+              if (
+                nitrogenRequirement !== "Very Low" &&
+                nitrogenRequirement !== "Low" &&
+                nitrogenRequirement !== "Medium" &&
+                nitrogenRequirement !== "High" &&
+                nitrogenRequirement !== "Very High"
+              ) {
+                return [];
+              }
+              return [{
+                id: yeast.id,
+                brand: yeast.brand,
+                name: yeast.name,
+                nitrogenRequirement,
+                tolerance: numberOrUndefined(yeast.tolerance),
+                lowTemperature: numberOrUndefined(yeast.low_temp),
+                highTemperature: numberOrUndefined(yeast.high_temp)
+              }];
+            });
+          },
+          onEvent
+        });
+        await recordCompletedUsage({
+          requestId,
+          userId: authenticatedUser,
+          usage: result.usage,
+          requestStartedAt
+        });
+        console.info(
+          "Hosted chatbot usage",
+          JSON.stringify({
+            requestId,
+            userId: authenticatedUser,
+            environment: config.usageEnvironment,
+            model: result.usage.model,
+            providerCalls: result.usage.requestIds.length,
+            inputTokens: result.usage.inputTokens,
+            cachedInputTokens: result.usage.cachedInputTokens,
+            outputTokens: result.usage.outputTokens,
+            totalTokens: result.usage.totalTokens
+          })
+        );
+        return result;
+      } catch (error) {
+        await recordFailedUsage({
+          requestId,
+          userId: authenticatedUser,
+          model: config.model,
+          requestStartedAt
+        });
+        throw error;
+      }
     }
   });
 
@@ -136,6 +202,60 @@ export async function POST(request: NextRequest) {
       "x-accel-buffering": "no"
     }
   });
+}
+
+async function recordCompletedUsage(options: {
+  requestId: string;
+  userId: number;
+  usage: Awaited<ReturnType<typeof runChatTurn>>["usage"];
+  requestStartedAt: Date;
+}) {
+  try {
+    await completeChatbotUsage({
+      requestId: options.requestId,
+      userId: options.userId,
+      usage: options.usage,
+      status: "completed",
+      windowAt: options.requestStartedAt
+    });
+  } catch {
+    console.error("Failed to persist completed chatbot usage.", {
+      requestId: options.requestId,
+      userId: options.userId
+    });
+  }
+}
+
+async function recordFailedUsage(options: {
+  requestId: string;
+  userId: number;
+  model: string;
+  requestStartedAt: Date;
+}) {
+  try {
+    await completeChatbotUsage({
+      requestId: options.requestId,
+      userId: options.userId,
+      usage: {
+        provider: "fireworks",
+        model: options.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        cachedInputTokens: 0,
+        requestIds: [],
+        toolCalls: 0,
+        latencyMs: 0
+      },
+      status: "failed",
+      windowAt: options.requestStartedAt
+    });
+  } catch {
+    console.error("Failed to persist unsuccessful chatbot usage.", {
+      requestId: options.requestId,
+      userId: options.userId
+    });
+  }
 }
 
 function numberOrUndefined(

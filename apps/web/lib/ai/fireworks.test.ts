@@ -7,6 +7,7 @@ test("Fireworks client sends a server-side OpenAI-compatible completion request"
   const client = new FireworksChatClient({
     apiKey: "test-key",
     model: "accounts/fireworks/models/test-model",
+    annotations: { project: "chatbot", environment: "preview" },
     fetcher: async (input, init) => {
       request = new Request(input, init);
       return Response.json({
@@ -33,6 +34,10 @@ test("Fireworks client sends a server-side OpenAI-compatible completion request"
 
   assert.equal(request?.url, "https://api.fireworks.ai/inference/v1/chat/completions");
   assert.equal(request?.headers.get("authorization"), "Bearer test-key");
+  assert.equal(
+    request?.headers.get("fireworks-annotations"),
+    "team=meadtools,project=chatbot,environment=preview"
+  );
   assert.deepEqual(await request?.json(), {
     model: "accounts/fireworks/models/test-model",
     messages: [{ role: "user", content: "Hello" }],

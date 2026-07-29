@@ -205,6 +205,68 @@ test("chat turn executes a wiki search and meters every provider call", async ()
   assert.equal(requests[1]?.messages.at(-1)?.role, "system");
 });
 
+test("chat turn stops before an unbounded provider loop", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        return {
+          id: `request-${calls}`,
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [
+              {
+                id: `tool-${calls}`,
+                type: "function",
+                function: { name: "search_wiki", arguments: '{"query":"nutrients"}' }
+              }
+            ]
+          },
+          usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "How should I handle a nutrient schedule?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+    maxProviderCalls: 2,
+    maxTotalOutputTokens: 500
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(result.usage.requestIds.length, 2);
+  assert.match(result.answer, /safe provider-call limit/);
+});
+
+test("chat turn rejects an oversized provider context before calling the model", async () => {
+  let called = false;
+  await assert.rejects(
+    runChatTurn({
+      client: {
+        async complete() {
+          called = true;
+          throw new Error("The provider should not be called.");
+        }
+      },
+      userId: 7,
+      request: chatRequestSchema.parse({
+        messages: [{ role: "user", content: "How should I stabilize a traditional mead?" }]
+      }),
+      maxOutputTokens: 500,
+      maxToolCalls: 6,
+      maxProviderInputCharacters: 20
+    }),
+    /safe provider-context limit/
+  );
+  assert.equal(called, false);
+});
+
 test("chat requests require the latest message to be from the user", () => {
   assert.equal(
     chatRequestSchema.safeParse({

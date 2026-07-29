@@ -3291,7 +3291,9 @@
       },
       "jsonObjectSchema": {
         "type": "object",
-        "additionalProperties": {}
+        "additionalProperties": {
+          "type": "string"
+        }
       },
       "brewListItemObjectSchema": {
         "type": "object",
@@ -8062,6 +8064,25 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/chat/recipe": {
+      "post": {
+        "operationId": "post-chat-recipe",
+        "summary": "Private local-test recipe chatbot endpoint. It is deliberately disabled by",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
           }
         }
       }
