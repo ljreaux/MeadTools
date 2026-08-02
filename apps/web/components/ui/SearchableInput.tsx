@@ -26,6 +26,7 @@ type SearchableInputProps<T> = {
   renderItem?: (item: T) => React.ReactNode;
 
   getLabel?: (item: T) => string;
+  placeholder?: string;
 
   getValue?: (item: T) => string; // ✅ NEW (canonical id/value)
   sortItems?: (items: T[]) => T[];
@@ -39,6 +40,7 @@ function SearchableInput<T extends Record<string, any>>({
   onSelect,
   renderItem,
   getLabel,
+  placeholder,
   getValue,
   sortItems
 }: SearchableInputProps<T>) {
@@ -167,6 +169,7 @@ function SearchableInput<T extends Record<string, any>>({
           aria-expanded={dropdownOpen}
           aria-controls={dropdownOpen ? listboxId : undefined}
           className="h-full text-lg relative"
+          placeholder={placeholder}
         />
 
         <InputGroupAddon align="inline-end">

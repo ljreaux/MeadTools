@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
-import { chatRequestSchema, runChatTurn } from "@/lib/ai/chat-service";
+import {
+  chatRequestSchema,
+  runChatTurn,
+  type ChatRequest
+} from "@/lib/ai/chat-service";
 import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { FireworksChatClient } from "@/lib/ai/fireworks";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
+import {
+  chatContextSelectionSchema,
+  getSelectedChatContext
+} from "@/lib/ai/chat-account-context";
 import {
   ChatbotUsageLimitError,
   completeChatbotUsage,
@@ -49,7 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Chat request is too large." }, { status: 413 });
   }
 
-  let chatRequest: ReturnType<typeof chatRequestSchema.parse>;
+  let chatRequest: ChatRequest;
   let threadId: string;
   let runId: string;
   try {
@@ -63,6 +71,22 @@ export async function POST(request: NextRequest) {
         ? { recipeDraftInput: params.forwardedProps.recipeDraftInput }
         : {})
     });
+    if (params.forwardedProps.selectedAccountContext !== undefined) {
+      const selection = chatContextSelectionSchema.parse(
+        params.forwardedProps.selectedAccountContext
+      );
+      const selectedAccountContext = await getSelectedChatContext(
+        authenticatedUser,
+        selection
+      );
+      if (!selectedAccountContext) {
+        return NextResponse.json(
+          { error: "The selected recipe or brew is not available." },
+          { status: 400 }
+        );
+      }
+      chatRequest.selectedAccountContext = selectedAccountContext;
+    }
     threadId = params.threadId;
     runId = params.runId;
   } catch {

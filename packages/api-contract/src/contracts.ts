@@ -64,6 +64,9 @@ import {
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
   brewsResponseSchema,
+  chatContextErrorResponseSchema,
+  chatContextOptionResponseSchema,
+  chatContextOptionsResponseSchema,
   contactRequestBodySchema,
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
@@ -360,6 +363,9 @@ export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
 export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
 export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;
 export type BrewValidationErrorResponse = z.infer<typeof brewValidationErrorResponseSchema>;
+export type ChatContextErrorResponse = z.infer<typeof chatContextErrorResponseSchema>;
+export type ChatContextOptionResponse = z.infer<typeof chatContextOptionResponseSchema>;
+export type ChatContextOptionsResponse = z.infer<typeof chatContextOptionsResponseSchema>;
 export type ContactRequestBody = z.infer<typeof contactRequestBodySchema>;
 export type ContactSendErrorResponse = z.infer<typeof contactSendErrorResponseSchema>;
 export type ContactSuccessResponse = z.infer<typeof contactSuccessResponseSchema>;
