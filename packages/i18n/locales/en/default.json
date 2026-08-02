@@ -124,6 +124,13 @@
   "chatbotTest": {
     "activeDraft": "Active unsaved draft available",
     "cachedTokens": "Cached input tokens",
+    "contextBrew": "Brew: {{name}}",
+    "contextLabel": "Recipe or brew context",
+    "contextLoading": "Loading your recipes and brews…",
+    "contextNone": "No recipe or brew attached",
+    "contextPlaceholder": "Search your recipes and brews",
+    "contextReadOnly": "Attached context is read-only.",
+    "contextRecipe": "Recipe: {{name}}",
     "copiedMessage": "Copied",
     "copyMessage": "Copy message",
     "copyLink": "Copy link",
@@ -133,6 +140,7 @@
     "externalLinkWarning": "You're about to visit an external website.",
     "errors": {
       "copyFailed": "Could not copy the message.",
+      "contextFailed": "Could not load your recipes and brews.",
       "noToken": "Sign in again before using the chatbot evaluator.",
       "requestFailed": "The chatbot request failed.",
       "saveFailed": "Could not save the recipe draft."

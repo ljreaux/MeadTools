@@ -28,6 +28,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport
 } from "@/components/ui/message-scroller";
+import SearchableInput from "@/components/ui/SearchableInput";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
@@ -62,7 +63,14 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FormEvent, KeyboardEvent, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { useTranslation } from "react-i18next";
 
 type ChatMessage = ChatSessionMessage & {
@@ -94,6 +102,18 @@ type ToolActivity = {
   status: "running" | "ok" | "error";
 };
 
+type ChatContextOption =
+  | { kind: "recipe"; id: number; name: string }
+  | {
+      kind: "brew";
+      id: string;
+      name: string;
+      stage: string;
+      recipeName: string | null;
+    };
+
+type ChatContextSelection = Pick<ChatContextOption, "kind" | "id">;
+
 type RecipeChatProps = {
   compact?: boolean;
   fullscreen?: boolean;
@@ -117,6 +137,12 @@ export default function RecipeChatTest({
   const [toolActivity, setToolActivity] = useState<ToolActivity[]>([]);
   const [activeRecipeData, setActiveRecipeData] = useState<RecipeDataV2>();
   const [recipeDraftInput, setRecipeDraftInput] = useState<BuildRecipeDraftInput>();
+  const [contextOptions, setContextOptions] = useState<ChatContextOption[]>([]);
+  const [selectedAccountContext, setSelectedAccountContext] =
+    useState<ChatContextSelection>();
+  const [contextQuery, setContextQuery] = useState("");
+  const [isLoadingContextOptions, setIsLoadingContextOptions] = useState(false);
+  const [contextOptionsError, setContextOptionsError] = useState<string>();
   const [model, setModel] = useState<string>();
   const [error, setError] = useState<string>();
   const [turnResults, setTurnResults] = useState<Record<string, ChatTurnResult>>({});
@@ -128,11 +154,42 @@ export default function RecipeChatTest({
   const tokenRef = useRef<string | null>(null);
   const activeRecipeDataRef = useRef<RecipeDataV2 | undefined>(undefined);
   const recipeDraftInputRef = useRef<BuildRecipeDraftInput | undefined>(undefined);
+  const selectedAccountContextRef = useRef<ChatContextSelection | undefined>(undefined);
   const createRecipeMutation = useCreateRecipeMutation();
 
   tokenRef.current = token;
   activeRecipeDataRef.current = activeRecipeData;
   recipeDraftInputRef.current = recipeDraftInput;
+  selectedAccountContextRef.current = selectedAccountContext;
+
+  useEffect(() => {
+    if (!canUseChat) return;
+    let cancelled = false;
+    setIsLoadingContextOptions(true);
+    setContextOptionsError(undefined);
+    void fetch("/api/chat/context", {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    })
+      .then(async (response) => {
+        const payload = (await response.json().catch(() => null)) as {
+          contexts?: ChatContextOption[];
+          error?: string;
+        } | null;
+        if (!response.ok || !payload?.contexts) {
+          throw new Error(payload?.error || "Unable to load chat context.");
+        }
+        if (!cancelled) setContextOptions(payload.contexts);
+      })
+      .catch(() => {
+        if (!cancelled) setContextOptionsError(t("chatbotTest.errors.contextFailed"));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingContextOptions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canUseChat, t, token]);
 
   const connection = useMemo(
     () =>
@@ -146,6 +203,9 @@ export default function RecipeChatTest({
             : {}),
           ...(recipeDraftInputRef.current
             ? { recipeDraftInput: recipeDraftInputRef.current }
+            : {}),
+          ...(selectedAccountContextRef.current
+            ? { selectedAccountContext: selectedAccountContextRef.current }
             : {})
         }
       })),
@@ -224,6 +284,23 @@ export default function RecipeChatTest({
   function cancelRequest() {
     stop();
     setToolActivity([]);
+  }
+
+  function selectAccountContext(value: string) {
+    const option = contextOptions.find((candidate) => contextOptionValue(candidate) === value);
+    if (!option) return;
+    setSelectedAccountContext({ kind: option.kind, id: option.id });
+    setContextQuery(contextOptionValue(option));
+  }
+
+  function setContextSearchQuery(value: string) {
+    setContextQuery(value);
+    if (
+      !selectedAccountContext ||
+      value !== contextSelectionValue(selectedAccountContext)
+    ) {
+      setSelectedAccountContext(undefined);
+    }
   }
 
   function openSaveDraft() {
@@ -490,6 +567,28 @@ export default function RecipeChatTest({
           </MessageScrollerProvider>
 
           <form className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"} onSubmit={onSubmit}>
+            <div className="grid gap-1.5 sm:grid-cols-[minmax(0,20rem)_1fr] sm:items-center">
+              <label>
+                <span className="sr-only">{t("chatbotTest.contextLabel")}</span>
+                <SearchableInput
+                  getLabel={contextOptionLabel}
+                  getValue={contextOptionValue}
+                  items={contextOptions}
+                  keyName="name"
+                  onSelect={(option) => selectAccountContext(contextOptionValue(option))}
+                  placeholder={
+                    isLoadingContextOptions
+                      ? t("chatbotTest.contextLoading")
+                      : t("chatbotTest.contextPlaceholder")
+                  }
+                  query={contextQuery}
+                  setQuery={setContextSearchQuery}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {contextOptionsError || t("chatbotTest.contextReadOnly")}
+              </p>
+            </div>
             <Textarea
               aria-label={t("chatbotTest.inputLabel")}
               disabled={isSubmitting}
@@ -598,6 +697,18 @@ export default function RecipeChatTest({
       </Dialog>
     </main>
   );
+}
+
+function contextOptionValue(context: ChatContextOption): string {
+  return `${context.kind}:${context.id}`;
+}
+
+function contextOptionLabel(context: ChatContextOption): string {
+  return `${context.kind === "brew" ? "Brew" : "Recipe"}: ${context.name}`;
+}
+
+function contextSelectionValue(context: ChatContextSelection): string {
+  return `${context.kind}:${context.id}`;
 }
 
 function Meter({ label, value }: { label: string; value: string }) {

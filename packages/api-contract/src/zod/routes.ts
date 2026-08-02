@@ -16,6 +16,27 @@ export const contactSendErrorResponseSchema = z.object({
   message: z.literal("Failed to send email")
 });
 
+const chatContextRecipeOptionResponseSchema = z.object({
+  kind: z.literal("recipe"),
+  id: z.number().int().positive(),
+  name: z.string()
+});
+const chatContextBrewOptionResponseSchema = z.object({
+  kind: z.literal("brew"),
+  id: z.string().uuid(),
+  name: z.string(),
+  stage: z.string(),
+  recipeName: z.string().nullable()
+});
+export const chatContextOptionResponseSchema = z.discriminatedUnion("kind", [
+  chatContextRecipeOptionResponseSchema,
+  chatContextBrewOptionResponseSchema
+]);
+export const chatContextOptionsResponseSchema = z.object({
+  contexts: z.array(chatContextOptionResponseSchema)
+});
+export const chatContextErrorResponseSchema = z.object({ error: z.string() });
+
 export const bjcpIngredientResponseSchema = z.object({
   id: z.string(),
   created_at: z.string(),

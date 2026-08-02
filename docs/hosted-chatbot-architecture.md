@@ -123,10 +123,61 @@ it persists the structured v2 recipe payload through the existing recipe API,
 not a reconstruction of the chatbot's prose.
 
 Still deliberately out of scope for this checkpoint: persistent chat history,
-user credits or payment, public availability, production observability,
-automated wiki-index publishing, and a final model/default-provider decision.
-Continue evaluating conversation quality and recipe output before taking those
-on. Local evaluator transcripts remain private and ignored by Git.
+user credits or payment, public availability, production observability, and
+automated wiki-index publishing. The local evaluator uses DeepSeek V4 Flash as
+its selected development default; any premium-model choice remains a future
+user-facing option rather than a silent fallback. Continue evaluating
+conversation quality and recipe output before taking public access on. Local
+evaluator transcripts remain private and ignored by Git.
+
+## Refined product feature list — August 2026
+
+The chatbot is a MeadTools assistant, not a separate recipe store or a
+general-purpose agent. Its product surface is deliberately split into explicit
+capabilities so users understand what account data is in play and every
+mutation remains reviewable.
+
+| Capability | Status | Product boundary |
+| --- | --- | --- |
+| Draft a new recipe | Private evaluator | Gather intent, use MeadTools catalog/calculations, present a validated draft, and save only through the existing explicit save flow. |
+| Explain/refine the current draft | Private evaluator | Work from browser-held validated draft state; never treat model prose as the recipe source of truth. |
+| Mead process and troubleshooting help | Private evaluator | Retrieve and cite the authoritative MeadTools wiki page; direct numeric work to MeadTools calculators. |
+| Continue a saved recipe | Private evaluator | User explicitly selects one owned recipe. The assistant receives a bounded, server-loaded recipe context and may explain or prepare a refinement, but cannot overwrite the recipe directly. |
+| Assist with an active brew | Private evaluator | User explicitly selects one owned brew. The assistant receives a bounded snapshot of the brew, stage, and recent timeline context to answer questions such as “what is next?” or “does this gravity trend look normal?” |
+| Prepare a brew action | Later | The assistant can propose a typed addition, measurement, note, or stage action. The UI shows the exact payload and requires user confirmation before the existing brew API writes it. |
+| Hydrometer-aware assistance | Later | Add an opt-in read-only summary of linked-device state and recent readings; never let model output control devices or alerts. |
+| Persistent conversations and user credits | Later | Store conversations only with a retention policy; use a MeadTools credit ledger and explicit model tier selection before public access. |
+
+### User recipe and brew context boundary
+
+The first account-context slice is **read-only and explicit**:
+
+1. The chat UI offers a picker for the signed-in user’s saved recipes and
+   active brews. Nothing is attached automatically, and the user can remove
+   the attachment before sending a message.
+2. The server loads the selected record directly through ownership-scoped
+   database functions; the model never receives a database credential, a
+   general account-search capability, or a public/private bypass.
+3. Recipe context is a validated v2 recipe.
+   Brew context is a bounded view of the recipe snapshot, current stage,
+   relevant measurements, and recent timeline entries. User-authored notes are
+   untrusted reference data, not instructions for the assistant.
+4. A context tool may explain, compare, or prepare a proposed change, but it
+   must not mutate recipes, brews, timeline entries, devices, notifications, or
+   user settings. Every later write uses an existing ownership-checked API and
+   a visible user confirmation.
+5. Context is supplied only for the active request/session. Persistent
+   conversation history, broader account recall, and cross-brew recommendations
+   are separate future decisions with their own retention and consent rules.
+
+The first tool surface should therefore be limited to:
+
+- a picker endpoint, returning only owned recipe and brew identifiers and
+  summaries;
+- `get_selected_account_context`, returning bounded, ownership-checked context
+  for the user-selected identifier; and
+- deterministic explain/prepare operations that consume that context without
+  writing to the account.
 
 ## Active refinement plan — July 28, 2026
 
@@ -254,17 +305,21 @@ returns server-sent events: `ready`, `tool_call`, `tool_result`, then either
 
 ## Remaining delivery sequence
 
-1. Run the provider-independent evaluation set against the local evaluator for
-   tool choice, follow-up behavior, wiki grounding, citations, and untrusted URL
-   resistance; compare at least two candidate models before choosing the default.
-2. Refine the evaluator from observed turns, then add structured recipe cards,
-   warnings, citations, and an explicit apply-to-`RecipeProvider` action.
-3. Add conversation/message persistence tied to existing users, with
-   idempotency, usage limits, retention, and observability.
-4. Define paid access separately from the model provider: an append-only
+1. Complete the Priority 1 recipe correctness work and rerun the focused
+   evaluator suite. The repeated backsweetening confirmation regression is a
+   release-blocking behavior check.
+2. Run evaluations for selected-recipe refinement and active-brew guidance,
+   including authorization failures and concise follow-up prompts.
+3. Refine the evaluator from observed turns, including structured recipe cards,
+   warnings, citations, and context-aware actions. Keep changes that write a
+   recipe or brew behind a visible confirmation.
+4. Add conversation/message persistence tied to existing users, with
+   idempotency, usage limits, retention, and observability. Add a scheduled
+   purge for the operational usage tables before public rollout.
+5. Define paid access separately from the model provider: an append-only
    MeadTools credit ledger with grants, reservations, settlements, reversals,
    and Stripe payment-webhook reconciliation. Before public access, reserve a
    user's maximum allowed turn cost and settle against actual token usage.
    Provider account caps remain a global backstop only.
-5. Reduce the separate MCP server to an optional adapter that imports or calls
+6. Reduce the separate MCP server to an optional adapter that imports or calls
    the shared operations, then add parity tests between MCP and hosted tools.

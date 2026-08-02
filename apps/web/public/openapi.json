@@ -1617,6 +1617,31 @@
           "error"
         ]
       },
+      "ChatContextOptionsResponse": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatContextOptionResponse"
+            }
+          }
+        },
+        "required": [
+          "contexts"
+        ]
+      },
+      "ChatContextErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "UpdateRecipeCommentRequestBody": {
         "type": "object",
         "properties": {
@@ -3779,6 +3804,62 @@
           "dataV2"
         ]
       },
+      "chatContextRecipeOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recipe"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name"
+        ]
+      },
+      "chatContextBrewOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "brew"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "recipeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "stage",
+          "recipeName"
+        ]
+      },
       "nutrientAmountsByKeyNumberSchema": {
         "type": "object",
         "properties": {
@@ -4537,6 +4618,20 @@
           "BACKSWEETENED",
           "PACKAGED",
           "COMPLETE"
+        ]
+      },
+      "ChatContextOptionResponse": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/chatContextRecipeOptionResponseSchema"
+          },
+          {
+            "$ref": "#/components/schemas/chatContextBrewOptionResponseSchema"
+          }
         ]
       },
       "EndHydrometerBrewResponse": {
@@ -8061,6 +8156,74 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicBrewFetchErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/context": {
+      "get": {
+        "operationId": "get-chat-context",
+        "summary": "Return picker-safe summaries of records owned by the authenticated local",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextOptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
                 }
               }
             }

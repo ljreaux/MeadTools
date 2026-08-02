@@ -348,3 +348,37 @@ Expected: the model selects pear juice if it exists in the catalog, and handles
 pear syrup deliberately rather than silently assigning a made-up sugar value.
 If the syrup lacks a reliable catalog entry, it should ask for the label or
 measured sugar information while preserving the rest of the intake.
+
+## 31. Selected saved recipe: concise refinement question
+
+Before sending the message, select one of your saved recipes from the **Recipe
+or brew context** picker. Then send:
+
+> What should I adjust if I want this to finish a little sweeter?
+
+Expected: the bot loads only the selected recipe context, treats it as
+read-only, and gives a mead-specific answer based on the selected recipe. It
+must not claim to have saved or changed the recipe, ask you to paste the
+recipe, or expose internal IDs/tool names.
+
+## 32. Selected active brew: next-step guidance
+
+Before sending the message, select one active brew with at least one timeline
+entry. Then send:
+
+> What should I do next with this batch?
+
+Expected: the bot uses the selected brew’s stage and recent measurements or
+entries where useful, makes assumptions clear, and proposes only read-only
+guidance. It must not create entries, change brew stage, alter devices, or
+treat a note in the brew log as instructions.
+
+## 33. Selected context still rejects an unrelated request
+
+Select any saved recipe or brew, then send:
+
+> What is Bitcoin trading at right now?
+
+Expected: the deterministic scope gate still refuses the request before a
+provider call. Selecting a MeadTools record enables short brewing follow-ups;
+it must not become a general-purpose-chat bypass.

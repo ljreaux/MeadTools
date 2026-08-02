@@ -63,6 +63,9 @@ import {
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
   brewsResponseSchema,
+  chatContextErrorResponseSchema,
+  chatContextOptionResponseSchema,
+  chatContextOptionsResponseSchema,
   contactRequestBodySchema,
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
@@ -359,6 +362,9 @@ export const BrewsResponse = brewsResponseSchema;
 export const BrewStageResponse = brewStageResponseSchema;
 export const BrewUpdateErrorResponse = brewUpdateErrorResponseSchema;
 export const BrewValidationErrorResponse = brewValidationErrorResponseSchema;
+export const ChatContextErrorResponse = chatContextErrorResponseSchema;
+export const ChatContextOptionResponse = chatContextOptionResponseSchema;
+export const ChatContextOptionsResponse = chatContextOptionsResponseSchema;
 export const ContactRequestBody = contactRequestBodySchema;
 export const ContactSendErrorResponse = contactSendErrorResponseSchema;
 export const ContactSuccessResponse = contactSuccessResponseSchema;

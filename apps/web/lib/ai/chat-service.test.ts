@@ -205,6 +205,115 @@ test("chat turn executes a wiki search and meters every provider call", async ()
   assert.equal(requests[1]?.messages.at(-1)?.role, "system");
 });
 
+test("a selected account record is loaded through a forced read-only tool", async () => {
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.1,
+    fermentationFinalGravity: 0.996,
+    ingredients: [{ name: "Wildflower Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+  assert.equal(draft.status, "recipe");
+  if (draft.status !== "recipe") return;
+
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "selected-context-tool",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "context-tool-1",
+                type: "function",
+                function: { name: "get_selected_account_context", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "selected-context-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "Your selected recipe is a one-gallon traditional." },
+          usage: { inputTokens: 12, outputTokens: 8, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: {
+      ...chatRequestSchema.parse({
+        messages: [{ role: "user", content: "What should I adjust in this recipe?" }]
+      }),
+      selectedAccountContext: {
+        kind: "recipe",
+        label: "Recipe: Summer Traditional",
+        recipe: { id: 42, name: "Summer Traditional", dataV2: draft.recipeData }
+      }
+    },
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "get_selected_account_context" }
+  });
+  assert.equal(result.toolResults[0]?.toolName, "get_selected_account_context");
+  assert.deepEqual(
+    (result.toolResults[0]?.result as { result?: { kind?: string } })?.result,
+    { kind: "recipe", label: "Recipe: Summer Traditional", recipe: { id: 42, name: "Summer Traditional", dataV2: draft.recipeData } }
+  );
+  assert.equal(requests[1]?.messages.at(-2)?.role, "tool");
+  assert.match(result.answer, /selected recipe/);
+});
+
+test("a selected account record does not bypass the off-topic scope gate", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        throw new Error("The scope guard should not call the model.");
+      }
+    },
+    userId: 7,
+    request: {
+      ...chatRequestSchema.parse({
+        messages: [{ role: "user", content: "What is Bitcoin trading at right now?" }]
+      }),
+      selectedAccountContext: {
+        kind: "brew",
+        label: "Brew: Summer Traditional",
+        brew: {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Summer Traditional",
+          stage: "PRIMARY",
+          startDate: "2026-08-01T00:00:00.000Z",
+          endDate: null,
+          currentVolumeLiters: null,
+          latestGravity: null,
+          recipeName: null,
+          recipeSnapshot: null,
+          recentEntries: []
+        }
+      }
+    },
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(
+    result.answer,
+    "I can help with MeadTools, mead recipes, and mead-brewing process questions. What would you like to make or troubleshoot?"
+  );
+  assert.equal(result.usage.model, "deterministic-scope-check");
+});
+
 test("chat turn stops before an unbounded provider loop", async () => {
   let calls = 0;
   const result = await runChatTurn({
