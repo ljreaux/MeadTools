@@ -2298,6 +2298,79 @@ test("an explicit ABV target forces the MeadTools gravity target tool", async ()
   );
 });
 
+test("a rounded model echo cannot replace the authoritative gravity target", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        return {
+          id: "precise-gravity-target",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "precise-gravity-tool",
+              type: "function",
+              function: {
+                name: "calculate_gravity_target",
+                arguments: '{"targetAbv":14,"fermentationFinalGravity":0.999}'
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      return {
+        id: "rounded-gravity-echo",
+        model: "test-model",
+        message: {
+          role: "assistant",
+          content: null,
+          tool_calls: [{
+            id: "rounded-gravity-tool",
+            type: "function",
+            function: {
+              name: "build_recipe_draft",
+              // Models frequently repeat the displayed three-decimal OG here.
+              arguments: '{"targetOriginalGravity":1.104}'
+            }
+          }]
+        },
+        usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+      };
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create this sweet traditional mead at 14% ABV." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        fermentationFinalGravity: 0.999,
+        backsweetening: { targetFinalGravity: 1.015 },
+        ingredients: [{ name: "Wildflower Honey", role: "adjustable_fermentable" }],
+        nutrients: { ...nutrientPlan, numberOfAdditions: 3 }
+      }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 4
+  });
+
+  assert.deepEqual(requests.map((request) => request.toolChoice), [
+    { type: "function", function: { name: "calculate_gravity_target" } },
+    { type: "function", function: { name: "build_recipe_draft" } }
+  ]);
+  assert.ok(result.recipeDraftInput);
+  assert.ok(Math.abs((result.recipeDraftInput?.targetOriginalGravity ?? 0) - 1.1044328386135414) < 1e-12);
+  const workflow = result.toolResults[1]?.result as { result?: { status?: string; derived?: { alcohol?: { abv?: number } } } };
+  assert.equal(workflow.result?.status, "recipe");
+  assert.ok(Math.abs((workflow.result?.derived?.alcohol?.abv ?? 0) - 14) < 0.01);
+});
+
 test("a dry-finish preference is passed into an initial gravity calculation", async () => {
   const client: ChatModelClient = {
     async complete(request) {

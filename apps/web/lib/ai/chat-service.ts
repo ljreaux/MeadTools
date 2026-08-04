@@ -957,11 +957,19 @@ function mergeRecipeDraftInput(
   }
   const nextIngredients = Array.isArray(next.ingredients) ? next.ingredients : [];
   const nextAdditives = Array.isArray(next.additives) ? next.additives : undefined;
+  const explicitTargetOriginalGravity = targetOriginalGravityFromMessage(latestUserMessage);
   const merged = discardUnstatedRecipeValues(
     applyExplicitRecipeIntakeHints(
       {
         ...previous,
         ...next,
+        // The gravity calculator returns a precise target. Models commonly
+        // echo its user-facing, rounded display value in the next recipe tool
+        // call; retaining the calculation avoids drifting from the requested
+        // finished ABV after that handoff.
+        targetOriginalGravity: explicitTargetOriginalGravity === undefined
+          ? previous.targetOriginalGravity ?? next.targetOriginalGravity
+          : next.targetOriginalGravity ?? explicitTargetOriginalGravity,
         batchVolume: mergeRecord(previous.batchVolume, next.batchVolume),
         nutrients: mergeRecord(previous.nutrients, next.nutrients),
         stabilizers: mergeRecord(previous.stabilizers, next.stabilizers),
@@ -977,6 +985,17 @@ function mergeRecipeDraftInput(
     previous
   );
   return restoreMissingHistoricalRecipeIntake(merged, historicalIntake);
+}
+
+function targetOriginalGravityFromMessage(message: string): number | undefined {
+  const match = message.match(
+    /\b(?:target\s+)?(?:og|original\s+gravity)\s*(?:of|to|is|=|:)?\s*(1\.\d{3,})\b/i
+  );
+  if (!match?.[1]) return undefined;
+  const gravity = Number(match[1]);
+  return Number.isFinite(gravity) && gravity >= 1.001 && gravity <= 1.2
+    ? gravity
+    : undefined;
 }
 
 /**
