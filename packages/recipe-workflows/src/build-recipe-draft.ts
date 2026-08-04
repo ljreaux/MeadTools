@@ -335,8 +335,26 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
   const ingredientLines = fixed.map((ingredient, index) => ingredientLine({ ...ingredient, lineId: `ingredient-${index + 1}`, volumeUnit, weightUnit }));
 
   if (adjustable) {
-    const desiredPrimaryVolumeL = input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit]
-      - fixed.filter((ingredient) => ingredient.secondary).reduce((total, ingredient) => total + ingredient.volumeL, 0);
+    const requestedFinishedVolumeL = input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
+    const fixedSecondary = fixed.filter((ingredient) => ingredient.secondary);
+    const fixedSecondaryVolumeL = fixedSecondary.reduce((total, ingredient) => total + ingredient.volumeL, 0);
+    const fixedSecondaryGravityVolume = fixedSecondary.reduce(
+      (total, ingredient) => total + ingredient.sg * ingredient.volumeL,
+      0
+    );
+    // Backsweetening is a calculated secondary addition. Reserve its volume
+    // before solving the primary must so the requested batch volume and ABV
+    // both describe the finished, backsweetened recipe.
+    const desiredPrimaryVolumeL = input.backsweetening
+      ? solvePrimaryVolumeWithBacksweetening({
+          requestedFinishedVolumeL,
+          fixedSecondaryVolumeL,
+          fixedSecondaryGravityVolume,
+          fermentationFinalGravity: input.fermentationFinalGravity,
+          targetFinalGravity: input.backsweetening.targetFinalGravity,
+          sweetenerSg: backsweeteningSweetenerSg(input.backsweetening)
+        })
+      : requestedFinishedVolumeL - fixedSecondaryVolumeL;
     const fixedPrimary = fixed.filter((ingredient) => !ingredient.secondary);
     const fixedPrimaryVolumeL = fixedPrimary.reduce((total, ingredient) => total + ingredient.volumeL, 0);
     const fixedPrimaryGravityVolume = fixedPrimary.reduce((total, ingredient) => total + ingredient.sg * ingredient.volumeL, 0);
@@ -345,7 +363,7 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     // fruit dilutes that alcohol after fermentation, so solve a stronger primary
     // OG when a fixed secondary volume is present.
     const targetAbv = calcABV(input.targetOriginalGravity!, input.fermentationFinalGravity);
-    const targetPrimaryAbv = targetAbv * (input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit]) / desiredPrimaryVolumeL;
+    const targetPrimaryAbv = targetAbv * requestedFinishedVolumeL / desiredPrimaryVolumeL;
     const targetPrimaryOg = calcOG(targetPrimaryAbv, input.fermentationFinalGravity);
     const targetPrimaryGravityVolume = targetPrimaryOg * desiredPrimaryVolumeL;
     const adjustableVolumeL = (
@@ -421,14 +439,16 @@ function addCalculatedBacksweetening(
   const existingSecondaryGravity = current.gravity.backsweetenedFg * (primaryVolumeL + secondaryVolumeL)
     - fermentationFg * primaryVolumeL;
   const sweetener = backsweetening.sweetener ?? { name: "Honey", category: "sugar", brix: HONEY_BRIX };
-  const sweetenerBrix = sweetener.brix ?? (isHoneyIngredientName(sweetener.name) ? HONEY_BRIX : undefined);
-  if (sweetenerBrix === undefined) {
-    throw new Error(`A Brix value is required to calculate backsweetening with ${sweetener.name}.`);
-  }
+  const sweetenerBrix = backsweeteningSweetenerBrix(backsweetening);
   const sweetenerSg = toSG(sweetenerBrix);
-  const requiredVolumeL = (
-    fermentationFg * primaryVolumeL + existingSecondaryGravity - target * (primaryVolumeL + secondaryVolumeL)
-  ) / (target - sweetenerSg);
+  const requiredVolumeL = calculateBacksweeteningVolumeL({
+    primaryVolumeL,
+    secondaryVolumeL,
+    secondaryGravityVolume: existingSecondaryGravity,
+    fermentationFinalGravity: fermentationFg,
+    targetFinalGravity: target,
+    sweetenerSg
+  });
   if (!Number.isFinite(requiredVolumeL) || requiredVolumeL <= 0) {
     throw new Error("The existing secondary additions already meet or exceed the requested backsweetening target. Choose a higher target or reduce a fixed secondary sugar source.");
   }
@@ -453,6 +473,62 @@ function addCalculatedBacksweetening(
       })
     ]
   };
+}
+
+function backsweeteningSweetenerBrix(
+  backsweetening: NonNullable<BuildRecipeDraftInput["backsweetening"]>
+): number {
+  const sweetener = backsweetening.sweetener ?? { name: "Honey", category: "sugar", brix: HONEY_BRIX };
+  const brix = sweetener.brix ?? (isHoneyIngredientName(sweetener.name) ? HONEY_BRIX : undefined);
+  if (brix === undefined) {
+    throw new Error(`A Brix value is required to calculate backsweetening with ${sweetener.name}.`);
+  }
+  return brix;
+}
+
+function backsweeteningSweetenerSg(
+  backsweetening: NonNullable<BuildRecipeDraftInput["backsweetening"]>
+): number {
+  return toSG(backsweeteningSweetenerBrix(backsweetening));
+}
+
+function calculateBacksweeteningVolumeL(input: {
+  primaryVolumeL: number;
+  secondaryVolumeL: number;
+  secondaryGravityVolume: number;
+  fermentationFinalGravity: number;
+  targetFinalGravity: number;
+  sweetenerSg: number;
+}): number {
+  return (
+    input.fermentationFinalGravity * input.primaryVolumeL +
+    input.secondaryGravityVolume -
+    input.targetFinalGravity * (input.primaryVolumeL + input.secondaryVolumeL)
+  ) / (input.targetFinalGravity - input.sweetenerSg);
+}
+
+function solvePrimaryVolumeWithBacksweetening(input: {
+  requestedFinishedVolumeL: number;
+  fixedSecondaryVolumeL: number;
+  fixedSecondaryGravityVolume: number;
+  fermentationFinalGravity: number;
+  targetFinalGravity: number;
+  sweetenerSg: number;
+}): number {
+  const sweetenerVolumePerPrimaryVolume =
+    (input.fermentationFinalGravity - input.targetFinalGravity) /
+    (input.targetFinalGravity - input.sweetenerSg);
+  const fixedSweetenerVolume =
+    (input.fixedSecondaryGravityVolume - input.targetFinalGravity * input.fixedSecondaryVolumeL) /
+    (input.targetFinalGravity - input.sweetenerSg);
+  const primaryVolumeL =
+    (input.requestedFinishedVolumeL - input.fixedSecondaryVolumeL - fixedSweetenerVolume) /
+    (1 + sweetenerVolumePerPrimaryVolume);
+
+  if (!Number.isFinite(primaryVolumeL) || primaryVolumeL <= 0) {
+    throw new Error("The finished batch volume is too small to accommodate the requested backsweetening target and fixed secondary ingredients.");
+  }
+  return primaryVolumeL;
 }
 
 type SuppliedIngredient = { name: string; catalogId?: number; category: string; brix: number; sg: number; volumeL: number; secondary: boolean; role: "fixed" | "adjustable_fermentable" | "fill_liquid" };

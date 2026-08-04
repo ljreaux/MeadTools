@@ -13,6 +13,7 @@ import {
   removeCompletedRecipeFollowUp,
   runChatTurn
 } from "./chat-service";
+import type { WikiFetcher } from "@meadtools/wiki-knowledge";
 
 const nutrientPlan = {
   enabled: true as const,
@@ -23,6 +24,14 @@ const nutrientPlan = {
   numberOfAdditions: 4,
   goFermType: "Go-Ferm"
 };
+
+const wikiFetcher: WikiFetcher = async (url) => ({
+  ok: true,
+  status: 200,
+  url,
+  headers: { get: (name) => (name === "content-type" ? "text/html" : null) },
+  text: async () => "<main>Reviewed MeadTools wiki guidance.</main>"
+});
 
 test("process calculator routing prefers the dedicated MeadTools calculators", () => {
   assert.deepEqual(
@@ -162,11 +171,32 @@ test("chat turn executes a wiki search and meters every provider call", async ()
           usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110, cachedInputTokens: 20 }
         };
       }
+      if (requests.length === 2) {
+        return {
+          id: "request-2",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [
+              {
+                id: "tool-2",
+                type: "function",
+                function: {
+                  name: "fetch_wiki_page",
+                  arguments: '{"url":"https://wiki.meadtools.com/en/process/nutrient_schedules"}'
+                }
+              }
+            ]
+          },
+          usage: { inputTokens: 200, outputTokens: 20, totalTokens: 220, cachedInputTokens: 50 }
+        };
+      }
       return {
-        id: "request-2",
+        id: "request-3",
         model: "test-model",
         message: { role: "assistant", content: "🍯 Use the Nutrient Schedules wiki page. ⚠️" },
-        usage: { inputTokens: 200, outputTokens: 20, totalTokens: 220, cachedInputTokens: 50 }
+        usage: { inputTokens: 300, outputTokens: 30, totalTokens: 330, cachedInputTokens: 80 }
       };
     }
   };
@@ -180,6 +210,7 @@ test("chat turn executes a wiki search and meters every provider call", async ()
     }),
     maxOutputTokens: 500,
     maxToolCalls: 6,
+    wikiFetcher,
     onEvent: (event) => {
       events.push(`${event.type}:${event.toolName}`);
     }
@@ -187,22 +218,29 @@ test("chat turn executes a wiki search and meters every provider call", async ()
 
   assert.match(result.answer, /^Use the Nutrient Schedules wiki page\./);
   assert.match(result.answer, /https:\/\/wiki\.meadtools\.com\/en\/process\/nutrient_schedules/);
-  assert.equal(result.toolResults[0]?.toolName, "search_wiki");
-  assert.deepEqual(events, ["tool_call:search_wiki", "tool_result:search_wiki"]);
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), ["search_wiki", "fetch_wiki_page"]);
+  assert.deepEqual(events, [
+    "tool_call:search_wiki",
+    "tool_result:search_wiki",
+    "tool_call:fetch_wiki_page",
+    "tool_result:fetch_wiki_page"
+  ]);
   assert.deepEqual(result.usage, {
     provider: "fireworks",
     model: "test-model",
-    inputTokens: 300,
-    outputTokens: 30,
-    totalTokens: 330,
-    cachedInputTokens: 70,
-    requestIds: ["request-1", "request-2"],
-    toolCalls: 1,
+    inputTokens: 600,
+    outputTokens: 60,
+    totalTokens: 660,
+    cachedInputTokens: 150,
+    requestIds: ["request-1", "request-2", "request-3"],
+    toolCalls: 2,
     latencyMs: result.usage.latencyMs
   });
   assert.ok(result.usage.latencyMs >= 0);
   assert.equal(requests[1]?.messages.at(-2)?.role, "tool");
   assert.equal(requests[1]?.messages.at(-1)?.role, "system");
+  assert.equal(requests[2]?.messages.at(-2)?.role, "tool");
+  assert.equal(requests[2]?.messages.at(-1)?.role, "system");
 });
 
 test("a selected account record is loaded through a forced read-only tool", async () => {
@@ -272,6 +310,191 @@ test("a selected account record is loaded through a forced read-only tool", asyn
   );
   assert.equal(requests[1]?.messages.at(-2)?.role, "tool");
   assert.match(result.answer, /selected recipe/);
+});
+
+test("a selected recipe sweetness follow-up retrieves a MeadTools source", async () => {
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.1,
+    fermentationFinalGravity: 0.996,
+    ingredients: [{ name: "Wildflower Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+  assert.equal(draft.status, "recipe");
+  if (draft.status !== "recipe") return;
+
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "selected-context-tool",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "context-tool-1",
+                type: "function",
+                function: { name: "get_selected_account_context", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 2) {
+          return {
+            id: "sweetness-wiki-search",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "wiki-search-1",
+                type: "function",
+                function: { name: "search_wiki", arguments: '{"query":"backsweetening"}' }
+              }]
+            },
+            usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 3) {
+          return {
+            id: "sweetness-wiki-fetch",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "wiki-fetch-1",
+                type: "function",
+                function: {
+                  name: "fetch_wiki_page",
+                  arguments: '{"url":"https://wiki.meadtools.com/en/faq/stabilization_and_backsweetening"}'
+                }
+              }]
+            },
+            usage: { inputTokens: 14, outputTokens: 4, totalTokens: 18, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "selected-context-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "This recipe finishes dry, so stabilize it before backsweetening." },
+          usage: { inputTokens: 14, outputTokens: 8, totalTokens: 22, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: {
+      ...chatRequestSchema.parse({
+        messages: [{ role: "user", content: "What should I adjust if I want this to finish a little sweeter?" }]
+      }),
+      selectedAccountContext: {
+        kind: "recipe",
+        label: "Recipe: Summer Traditional",
+        recipe: { id: 42, name: "Summer Traditional", dataV2: draft.recipeData }
+      }
+    },
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+    wikiFetcher
+  });
+
+  assert.deepEqual(requests.map((request) => request.toolChoice), [
+    { type: "function", function: { name: "get_selected_account_context" } },
+    { type: "function", function: { name: "search_wiki" } },
+    { type: "function", function: { name: "fetch_wiki_page" } },
+    "auto"
+  ]);
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
+    "get_selected_account_context",
+    "search_wiki",
+    "fetch_wiki_page"
+  ]);
+  assert.match(result.answer, /Source: \[MeadTools wiki\]\(https:\/\/wiki\.meadtools\.com\//);
+});
+
+test("a selected brew next-step follow-up retrieves a MeadTools source", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        const toolName = requests.length === 1
+          ? "get_selected_account_context"
+          : requests.length === 2
+            ? "search_wiki"
+            : requests.length === 3
+              ? "fetch_wiki_page"
+              : undefined;
+        if (toolName) {
+          return {
+            id: `next-step-${requests.length}`,
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: `next-step-tool-${requests.length}`,
+                type: "function",
+                function: {
+                  name: toolName,
+                  arguments: toolName === "search_wiki"
+                    ? '{"query":"fermentation"}'
+                    : toolName === "fetch_wiki_page"
+                      ? '{"url":"https://wiki.meadtools.com/en/process/fermentation"}'
+                      : "{}"
+                }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "next-step-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "Continue monitoring gravity and fermentation temperature." },
+          usage: { inputTokens: 12, outputTokens: 8, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: {
+      ...chatRequestSchema.parse({
+        messages: [{ role: "user", content: "What should I do next with this batch?" }]
+      }),
+      selectedAccountContext: {
+        kind: "brew",
+        label: "Brew: Summer Traditional",
+        brew: {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Summer Traditional",
+          stage: "PRIMARY",
+          startDate: "2026-08-01T00:00:00.000Z",
+          endDate: null,
+          currentVolumeLiters: null,
+          latestGravity: null,
+          recipeName: null,
+          recipeSnapshot: null,
+          recentEntries: []
+        }
+      }
+    },
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+    wikiFetcher
+  });
+
+  assert.deepEqual(requests.slice(0, 3).map((request) => request.toolChoice), [
+    { type: "function", function: { name: "get_selected_account_context" } },
+    { type: "function", function: { name: "search_wiki" } },
+    { type: "function", function: { name: "fetch_wiki_page" } }
+  ]);
+  assert.match(result.answer, /Source: \[MeadTools wiki\]\(https:\/\/wiki\.meadtools\.com\//);
 });
 
 test("a selected account record does not bypass the off-topic scope gate", async () => {

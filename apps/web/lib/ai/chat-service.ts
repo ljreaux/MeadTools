@@ -13,6 +13,7 @@ import {
 } from "@meadtools/recipe-workflows";
 import { calcABV } from "@meadtools/core/gravity";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
+import type { WikiFetcher } from "@meadtools/wiki-knowledge";
 import { z } from "zod";
 import type { SelectedChatContext } from "./chat-account-context";
 import type {
@@ -114,6 +115,7 @@ export async function runChatTurn(options: {
   maxTotalProviderTokens?: number;
   ingredientLookup?: IngredientLookup;
   yeastLookup?: YeastLookup;
+  wikiFetcher?: WikiFetcher;
   onEvent?: (event: ChatTurnEvent) => void;
 }): Promise<ChatTurnResult> {
   const startedAt = performance.now();
@@ -197,6 +199,7 @@ export async function runChatTurn(options: {
     | "build_recipe_draft"
     | "search_ingredients"
     | "search_yeasts"
+    | "search_wiki"
     | "fetch_wiki_page"
     | "get_selected_account_context"
     | undefined;
@@ -241,13 +244,15 @@ export async function runChatTurn(options: {
           : toolCalls === 0 && forceSelectedAccountContextTool
             ? { type: "function" as const, function: { name: "get_selected_account_context" } }
           : toolCalls === 0 && forceGravityTargetTool
-              ? { type: "function" as const, function: { name: "calculate_gravity_target" } }
-              : toolCalls === 0 && forceYeastSearchTool
-                ? { type: "function" as const, function: { name: "search_yeasts" } }
-                : toolCalls === 0 && forceIngredientSearchTool
-                  ? { type: "function" as const, function: { name: "search_ingredients" } }
-                  : toolCalls === 0 && forceRecipeDraftTool
-                    ? { type: "function" as const, function: { name: "build_recipe_draft" } }
+            ? { type: "function" as const, function: { name: "calculate_gravity_target" } }
+            : toolCalls === 0 && forceYeastSearchTool
+              ? { type: "function" as const, function: { name: "search_yeasts" } }
+              : toolCalls === 0 && forceIngredientSearchTool
+                ? { type: "function" as const, function: { name: "search_ingredients" } }
+                : toolCalls === 0 && forceRecipeDraftTool
+                  ? { type: "function" as const, function: { name: "build_recipe_draft" } }
+                  : requiresWikiSource && !wikiSourceUrl(toolResults)
+                    ? { type: "function" as const, function: { name: "search_wiki" } }
                     : "auto";
     const requestedMaxOutputTokens =
       renderRecipeIntake
@@ -296,7 +301,7 @@ export async function runChatTurn(options: {
 
     const calls = completion.message.tool_calls ?? [];
     if (calls.length === 0) {
-      if (requiresWikiSource && !wikiSourceUrl(toolResults)) {
+      if (requiresWikiSource && !fetchedWikiSourceUrl(toolResults)) {
         return {
           answer: "I could not retrieve the MeadTools wiki page needed to answer that process question. Please try again.",
           toolResults,
@@ -364,6 +369,7 @@ export async function runChatTurn(options: {
         selectedAccountContext: options.request.selectedAccountContext,
         ingredientLookup: options.ingredientLookup,
         yeastLookup: options.yeastLookup,
+        wikiFetcher: options.wikiFetcher,
         canExecute: toolCalls < options.maxToolCalls,
         onEvent: options.onEvent
       });
@@ -411,7 +417,8 @@ export async function runChatTurn(options: {
         requiredFollowupTool === undefined &&
         requiresWikiSource &&
         call.function.name === "search_wiki" &&
-        !wikiSourceUrl(toolResults)
+        wikiSourceUrl(toolResults) !== undefined &&
+        !fetchedWikiSourceUrl(toolResults)
       ) {
         requiredFollowupTool = "fetch_wiki_page";
       }
@@ -567,7 +574,7 @@ function isRecipeDesignRequest(request: ChatRequest): boolean {
 function requiresWikiSourceForRequest(request: ChatRequest): boolean {
   if (isRecipeDesignRequest(request)) return false;
   const latestMessage = request.messages.at(-1)?.content ?? "";
-  return /\b(?:how\s+(?:should|do|can)|what\s+process|troubleshoot(?:ing)?|stabili[sz]|rehydrat(?:e|ing)|rotten\s+eggs?|sulfur\s+aroma|sulphur\s+aroma)\b/i.test(
+  return /\b(?:how\s+(?:should|do|can)|what\s+(?:process|should\s+i\s+do\s+next)|next\s+with\s+(?:this|my)\s+(?:batch|brew|mead)|troubleshoot(?:ing)?|stabili[sz]|back\s*-?sweeten|finish(?:ing)?\s+(?:a\s+little\s+)?sweeter|rehydrat(?:e|ing)|rotten\s+eggs?|sulfur\s+aroma|sulphur\s+aroma)\b/i.test(
     latestMessage
   );
 }
@@ -788,6 +795,7 @@ async function executeToolCall(options: {
   selectedAccountContext: SelectedChatContext | undefined;
   ingredientLookup: IngredientLookup | undefined;
   yeastLookup: YeastLookup | undefined;
+  wikiFetcher: WikiFetcher | undefined;
   canExecute: boolean;
   onEvent?: (event: ChatTurnEvent) => void;
 }): Promise<{ execution: unknown; recipeDraftInput?: BuildRecipeDraftInput }> {
@@ -866,6 +874,7 @@ async function executeToolCall(options: {
   }
 
   const execution = await executeHostedAgentTool(toolName, input, {
+    fetcher: options.wikiFetcher,
     ingredientLookup: options.ingredientLookup,
     yeastLookup: options.yeastLookup
   });

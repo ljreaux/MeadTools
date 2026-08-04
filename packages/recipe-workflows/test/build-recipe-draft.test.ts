@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
+import { calcOG } from "@meadtools/core/gravity";
 import { recipeDataV2Schema } from "@meadtools/schemas";
 import { buildRecipeDraft } from "../src/build-recipe-draft";
 
@@ -137,6 +138,24 @@ test("backsweetening adds a calculated secondary sweetener to the saved recipe p
   assert.ok(Number(backsweeteningHoney?.amounts.weight.value) > 0);
   assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.00001);
   assert.equal(result.recipeData.stabilizers.adding, true);
+});
+
+test("a target ABV applies to the finished backsweetened batch", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: calcOG(14, 0.999),
+    fermentationFinalGravity: 0.999,
+    backsweetening: { targetFinalGravity: 1.015 },
+    ingredients: [{ name: "Wildflower Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(Math.abs(result.derived.alcohol.abv - 14) < 0.01);
+  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.00001);
+  assert.ok(Math.abs(result.derived.volume.total - 1) < 0.00001);
+  assert.ok(!result.warnings.some((warning) => warning.includes("ABV differs")));
 });
 
 test("a user-supplied unlisted yeast can provide its own nutrient requirement", () => {
