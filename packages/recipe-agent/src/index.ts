@@ -148,7 +148,7 @@ export type BrewActionAgentTool = {
 export const prepareBrewActionAgentTool: BrewActionAgentTool = {
   name: prepareBrewActionToolName,
   description:
-    "Prepare a reviewable action for the explicitly selected brew. Use only after get_selected_account_context returned a brew and only when the user asks to log or make a specific brew change. It creates no entry and changes nothing. Provide the exact entry payload for a note, addition, measurement, volume reading, or stage change; do not include a brew ID, client ID, recipe ID, or device action.",
+    "Prepare a reviewable action for the explicitly selected brew. Use only after get_selected_account_context returned a brew and only when the user asks to log or make a specific brew change. It creates no entry and changes nothing. Provide the exact entry payload for a note, addition, measurement, volume reading, or stage change; use the documented uppercase type values. Do not include a brew ID, client ID, recipe ID, or device action.",
   inputSchema: brewActionEntryInputSchema
 };
 
@@ -161,7 +161,7 @@ export function executePrepareBrewActionTool(
   input: unknown,
   target: BrewActionTarget | undefined
 ): BrewActionAgentToolExecution {
-  const parsed = brewActionEntryInputSchema.safeParse(input);
+  const parsed = brewActionEntryInputSchema.safeParse(normalizeBrewActionInput(input));
   if (!parsed.success) return invalidInput(parsed.error.issues);
   if (!target) {
     return {
@@ -173,6 +173,48 @@ export function executePrepareBrewActionTool(
     status: "ok",
     result: createBrewActionProposal(target, parsed.data)
   };
+}
+
+/**
+ * Tool definitions communicate uppercase persisted entry types, but a model
+ * can still return the same enum value in natural lowercase. Normalize only
+ * that enum boundary before validation; all payload fields remain subject to
+ * the strict action schema.
+ */
+function normalizeBrewActionInput(input: unknown): unknown {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Array.isArray(input)
+  ) {
+    return input;
+  }
+  let record = input as Record<string, unknown>;
+  for (const key of ["entry", "action", "payload"]) {
+    const nested = record[key];
+    if (
+      typeof nested === "object" &&
+      nested !== null &&
+      !Array.isArray(nested) &&
+      typeof record.type !== "string"
+    ) {
+      record = nested as Record<string, unknown>;
+      break;
+    }
+  }
+  const type = record.type ?? record.entryType ?? record.entry_type;
+  if (typeof type === "string") {
+    return {
+      ...record,
+      type: type.trim().toUpperCase().replace(/[\s-]+/g, "_")
+    };
+  }
+  // A note has no ambiguous numeric or nested payload shape. This only
+  // repairs a missing model discriminator; Zod still validates the note.
+  if (typeof record.note === "string") {
+    return { ...record, type: "NOTE" };
+  }
+  return record;
 }
 
 export type RecipeAgentToolExecution =
@@ -501,118 +543,27 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
     description: descriptionFor(prepareBrewActionToolName),
     parameters: {
       type: "object",
-      oneOf: [
-        {
-          properties: {
-            type: { type: "string", enum: ["NOTE", "TASTING", "ISSUE"] },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" }
-          },
-          required: ["type", "note"],
-          additionalProperties: false
+      properties: {
+        type: {
+          type: "string",
+          enum: ["NOTE", "TASTING", "ISSUE", "ADDITION", "GRAVITY", "TEMPERATURE", "PH", "VOLUME", "STAGE_CHANGE"],
+          description: "Required uppercase action type."
         },
-        {
-          properties: {
-            type: { const: "ADDITION" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            data: {
-              type: "object",
-              properties: {
-                kind: { type: "string", enum: ["INGREDIENT", "NUTRIENT", "YEAST", "OTHER"] },
-                name: { type: "string", minLength: 1, maxLength: 160 },
-                amount: { type: "number", exclusiveMinimum: 0 },
-                unit: { type: "string", minLength: 1, maxLength: 30 }
-              },
-              required: ["kind", "name"],
-              additionalProperties: false
-            }
-          },
-          required: ["type", "data"],
-          additionalProperties: false
+        title: { type: "string", minLength: 1, maxLength: 160 },
+        note: { type: "string", minLength: 1, maxLength: 2000 },
+        datetime: { type: "string", format: "date-time" },
+        data: {
+          type: "object",
+          description: "Use for additions ({kind, name, amount?, unit?}), pH ({ph}), or volume ({liters, displayValue?, displayUnit?, startingLiters?}).",
+          additionalProperties: true
         },
-        {
-          properties: {
-            type: { const: "GRAVITY" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            gravity: { type: "number", minimum: 0.9, maximum: 1.3 },
-            data: {
-              type: "object",
-              properties: {
-                readingRole: { type: "string", enum: ["OG", "FG", "GENERAL"] },
-                source: { const: "measured" }
-              },
-              additionalProperties: false
-            }
-          },
-          required: ["type", "gravity"],
-          additionalProperties: false
-        },
-        {
-          properties: {
-            type: { const: "TEMPERATURE" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            temperature: { type: "number", minimum: -50, maximum: 150 },
-            temp_units: { type: "string", enum: ["C", "F"] }
-          },
-          required: ["type", "temperature", "temp_units"],
-          additionalProperties: false
-        },
-        {
-          properties: {
-            type: { const: "PH" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            data: {
-              type: "object",
-              properties: { ph: { type: "number", minimum: 0, maximum: 14 } },
-              required: ["ph"],
-              additionalProperties: false
-            }
-          },
-          required: ["type", "data"],
-          additionalProperties: false
-        },
-        {
-          properties: {
-            type: { const: "VOLUME" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            data: {
-              type: "object",
-              properties: {
-                liters: { type: "number", exclusiveMinimum: 0 },
-                displayValue: { type: "number", exclusiveMinimum: 0 },
-                displayUnit: { type: "string", minLength: 1, maxLength: 30 },
-                startingLiters: { type: "number", exclusiveMinimum: 0 }
-              },
-              required: ["liters"],
-              additionalProperties: false
-            }
-          },
-          required: ["type", "data"],
-          additionalProperties: false
-        },
-        {
-          properties: {
-            type: { const: "STAGE_CHANGE" },
-            title: { type: "string", minLength: 1, maxLength: 160 },
-            note: { type: "string", minLength: 1, maxLength: 2000 },
-            datetime: { type: "string", format: "date-time" },
-            stage_to: { type: "string", enum: [...brewActionStages] }
-          },
-          required: ["type", "stage_to"],
-          additionalProperties: false
-        }
-      ]
+        gravity: { type: "number", minimum: 0.9, maximum: 1.3 },
+        temperature: { type: "number", minimum: -50, maximum: 150 },
+        temp_units: { type: "string", enum: ["C", "F"] },
+        stage_to: { type: "string", enum: [...brewActionStages] }
+      },
+      required: ["type"],
+      additionalProperties: false
     }
   },
   {

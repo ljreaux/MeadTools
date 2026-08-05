@@ -82,6 +82,38 @@ test("brew action proposals require a trusted selected brew target", () => {
   assert.equal(execution.result.summary, "Log 1 units Vanilla bean as an addition.");
 });
 
+test("brew action proposals accept case-insensitive model enum values", () => {
+  const execution = executePrepareBrewActionTool(
+    {
+      type: "note",
+      title: "Gravity sample observation",
+      note: "The sample looked clear."
+    },
+    {
+      brewId: "11111111-1111-4111-8111-111111111111",
+      brewLabel: "Brew: Summer Traditional"
+    }
+  );
+
+  assert.equal(execution.status, "ok");
+  if (execution.status !== "ok") return;
+  assert.equal(execution.result.entry.type, "NOTE");
+});
+
+test("brew action proposals recover a note when a provider omits its discriminator", () => {
+  const execution = executePrepareBrewActionTool(
+    { title: "Gravity sample observation", note: "The sample looked clear." },
+    {
+      brewId: "11111111-1111-4111-8111-111111111111",
+      brewLabel: "Brew: Summer Traditional"
+    }
+  );
+
+  assert.equal(execution.status, "ok");
+  if (execution.status !== "ok") return;
+  assert.equal(execution.result.entry.type, "NOTE");
+});
+
 test("unknown provider tool names are rejected before workflow execution", () => {
   const execution = executeRecipeAgentTool("calculate_recipe", {});
   assert.deepEqual(execution, {
