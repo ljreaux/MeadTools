@@ -10,6 +10,7 @@ import {
   chatRequestSchema,
   calculatorLinkForProcessMessage,
   directRecipeToolAnswer,
+  removeUnrequestedCalculatorDoses,
   removeCompletedRecipeFollowUp,
   runChatTurn
 } from "./chat-service";
@@ -36,6 +37,10 @@ const wikiFetcher: WikiFetcher = async (url) => ({
 test("process calculator routing prefers the dedicated MeadTools calculators", () => {
   assert.deepEqual(
     calculatorLinkForProcessMessage("How much potassium metabisulfite and sorbate do I need?"),
+    { label: "Stabilizer calculator", href: "/stabilizers" }
+  );
+  assert.deepEqual(
+    calculatorLinkForProcessMessage("What should I do after I stabilize my mead?"),
     { label: "Stabilizer calculator", href: "/stabilizers" }
   );
   assert.deepEqual(
@@ -80,6 +85,28 @@ test("exact calculator requests link to MeadTools without invoking the model", a
 
   assert.equal(result.usage.model, "deterministic-calculator-routing");
   assert.match(result.answer, /\[Sulfite calculator\]\(\/extra-calcs\/sulfite\)/);
+});
+
+test("stabilization process answers keep the workflow but remove unsolicited doses", () => {
+  const request = chatRequestSchema.parse({
+    messages: [{
+      role: "user",
+      content: "My mead is stable and I want to stabilize it before backsweetening. What should I do next?"
+    }]
+  });
+  const answer = removeUnrequestedCalculatorDoses(
+    [
+      "1. Confirm fermentation is complete with stable hydrometer readings.",
+      "2. Add 2.2 g of potassium metabisulfite (one tablet per gallon).",
+      "3. Add 2.5 g of potassium sorbate alongside it.",
+      "4. Wait 24 hours before backsweetening."
+    ].join("\n\n"),
+    request
+  );
+
+  assert.match(answer, /Confirm fermentation is complete/);
+  assert.match(answer, /Wait 24 hours/);
+  assert.doesNotMatch(answer, /2\.2 g|2\.5 g|tablet per gallon/);
 });
 
 test("calculator-only brewing vocabulary stays inside the chatbot scope", async () => {
@@ -134,6 +161,28 @@ test("completed recipe answers render the same backsweetening ingredient returne
   assert.match(answer ?? "", /Honey \(backsweetening\)/);
   assert.match(answer ?? "", /\*\*Backsweetened FG:\*\* 1\.015/);
   assert.doesNotMatch(answer ?? "", /Let me know if/);
+});
+
+test("completed recipe drafts render practical ingredient and additive amounts", () => {
+  const workflow = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    additives: [{ name: "Pectic Enzyme", amount: 0.4, unit: "tsp" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+  const answer = directRecipeToolAnswer("build_recipe_draft", {
+    status: "ok",
+    result: workflow
+  });
+
+  assert.equal(workflow.status, "recipe");
+  assert.match(answer ?? "", /\| Honey \| [\d.]+ lb \| Primary \|/);
+  assert.match(answer ?? "", /\| Water \| [\d.]+ gal \| Primary \|/);
+  assert.match(answer ?? "", /\| Pectic Enzyme \| 0\.4 tsp \|/);
+  assert.doesNotMatch(answer ?? "", /\| Honey \| 0\.\d{4,} gal \|/);
 });
 
 test("recipe intake groups the workflow questions into at most three prompts", () => {
@@ -1605,8 +1654,177 @@ test("a whole vanilla bean is retained as an additive instead of being asked aga
 
   assert.deepEqual(
     result.recipeDraftInput?.additives.find((additive) => additive.name === "Vanilla bean"),
-    { name: "Vanilla bean", amount: 1, unit: "whole bean", secondary: true }
+    { name: "Vanilla bean", amount: 1, unit: "units", secondary: true }
   );
+});
+
+test("countable additive units are normalized and duplicate model lines collapse", async () => {
+  const client: ChatModelClient = {
+    async complete() {
+      return {
+        id: "duplicate-additive-draft",
+        model: "test-model",
+        message: {
+          role: "assistant",
+          content: null,
+          tool_calls: [{
+            id: "duplicate-additive-build",
+            type: "function",
+            function: {
+              name: "build_recipe_draft",
+              arguments: JSON.stringify({
+                additives: [
+                  { name: "Vanilla", amount: 1, unit: "units", secondary: true },
+                  { name: "Vanilla Bean", amount: 1, unit: "bean" }
+                ]
+              })
+            }
+          }]
+        },
+        usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+      };
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Use one vanilla bean in secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 3, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey" }],
+        nutrients: { enabled: true, yeastBrand: "Lalvin", yeastStrain: "EC-1118", nitrogenRequirement: "Low", schedule: "justK", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Vanilla Bean", amount: 1, unit: "units", secondary: true }
+  ]);
+});
+
+test("a complete named catalog additive is still checked against the additive catalog", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const toolCompletion = (name: string, argumentsObject: Record<string, unknown>) => ({
+    id: `complete-additive-${name}-${requests.length}`,
+    model: "test-model",
+    message: {
+      role: "assistant" as const,
+      content: null,
+      tool_calls: [{
+        id: `complete-additive-call-${requests.length}`,
+        type: "function" as const,
+        function: { name, arguments: JSON.stringify(argumentsObject) }
+      }]
+    },
+    usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+  });
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        assert.deepEqual(request.toolChoice, { type: "function", function: { name: "search_additives" } });
+        return toolCompletion("search_additives", {});
+      }
+      assert.deepEqual(request.toolChoice, { type: "function", function: { name: "build_recipe_draft" } });
+      return toolCompletion("build_recipe_draft", {
+        additives: [{ name: "Bentonite", amount: 1, unit: "g" }]
+      });
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a traditional mead and include Bentonite." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.1,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 5,
+    additiveLookup: async () => [
+      { id: "bentonite", name: "Bentonite", dosagePerGallon: 6, unit: "g" }
+    ]
+  });
+
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
+    "search_additives",
+    "build_recipe_draft"
+  ]);
+  assert.deepEqual(result.recipeDraftInput?.additives, [{ name: "Bentonite", amount: 6, unit: "g" }]);
+});
+
+test("a catalog additive without a supplied unit is resolved before drafting", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const toolCompletion = (name: string, argumentsObject: Record<string, unknown>) => ({
+    id: `additive-${name}`,
+    model: "test-model",
+    message: {
+      role: "assistant" as const,
+      content: null,
+      tool_calls: [{
+        id: `call-${name}-${requests.length}`,
+        type: "function" as const,
+        function: { name, arguments: JSON.stringify(argumentsObject) }
+      }]
+    },
+    usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+  });
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        assert.deepEqual(request.toolChoice, { type: "function", function: { name: "search_additives" } });
+        return toolCompletion("search_additives", {});
+      }
+      assert.deepEqual(request.toolChoice, { type: "function", function: { name: "build_recipe_draft" } });
+      return toolCompletion("build_recipe_draft", {
+        additives: [{ name: "Bentonite" }]
+      });
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a traditional mead and include Bentonite." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.1,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 5,
+    additiveLookup: async () => [
+      { id: "bentonite", name: "Bentonite", dosagePerGallon: 6, unit: "g" }
+    ]
+  });
+
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
+    "search_additives",
+    "build_recipe_draft"
+  ]);
+  assert.equal(result.recipeDraftInput?.additives[0]?.unit, "g");
+  assert.equal(result.recipeDraftInput?.additives[0]?.amount, 6);
+  assert.match(result.answer, /\| Bentonite \| 6 g \|/);
 });
 
 test("a fixed-fermentable cyser request reaches the generic recipe agent", async () => {

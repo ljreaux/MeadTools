@@ -2,6 +2,7 @@ import {
   executeHostedAgentTool,
   hostedAgentPolicy,
   hostedAgentToolDefinitions,
+  type AdditiveLookup,
   type IngredientLookup,
   type YeastLookup
 } from "@meadtools/recipe-agent";
@@ -12,6 +13,7 @@ import {
   type BuildRecipeDraftInput
 } from "@meadtools/recipe-workflows";
 import { calcABV } from "@meadtools/core/gravity";
+import { normalizeAdditiveUnit } from "@meadtools/core/recipe";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 import type { WikiFetcher } from "@meadtools/wiki-knowledge";
 import { z } from "zod";
@@ -114,6 +116,7 @@ export async function runChatTurn(options: {
   maxProviderInputCharacters?: number;
   maxTotalProviderTokens?: number;
   ingredientLookup?: IngredientLookup;
+  additiveLookup?: AdditiveLookup;
   yeastLookup?: YeastLookup;
   wikiFetcher?: WikiFetcher;
   onEvent?: (event: ChatTurnEvent) => void;
@@ -193,11 +196,16 @@ export async function runChatTurn(options: {
   const forceGravityTargetTool = shouldForceGravityTargetTool(options.request);
   const forceYeastSearchTool = shouldForceYeastSearchTool(options.request);
   const forceIngredientSearchTool = shouldForceIngredientSearchTool(options.request);
+  const forceAdditiveSearchTool = await shouldForceAdditiveSearchTool(
+    options.request,
+    options.additiveLookup
+  );
   const forceRecipeDraftTool = shouldForceRecipeDraftTool(options.request);
   const forceSelectedAccountContextTool = Boolean(options.request.selectedAccountContext);
   let requiredFollowupTool:
     | "build_recipe_draft"
     | "search_ingredients"
+    | "search_additives"
     | "search_yeasts"
     | "search_wiki"
     | "fetch_wiki_page"
@@ -206,6 +214,7 @@ export async function runChatTurn(options: {
   let namedIngredientResolved = false;
   let namedYeastResolved = false;
   let namedYeastLookupAttempted = false;
+  let additiveCatalogLookupAttempted = false;
   const maxProviderCalls = options.maxProviderCalls ?? options.maxToolCalls + 1;
   // Preserve one concise retry for direct callers that have not supplied the
   // route-level combined output budget. The hosted route always supplies it.
@@ -248,7 +257,9 @@ export async function runChatTurn(options: {
             : toolCalls === 0 && forceYeastSearchTool
               ? { type: "function" as const, function: { name: "search_yeasts" } }
               : toolCalls === 0 && forceIngredientSearchTool
-                ? { type: "function" as const, function: { name: "search_ingredients" } }
+              ? { type: "function" as const, function: { name: "search_ingredients" } }
+              : toolCalls === 0 && forceAdditiveSearchTool
+                ? { type: "function" as const, function: { name: "search_additives" } }
                 : toolCalls === 0 && forceRecipeDraftTool
                   ? { type: "function" as const, function: { name: "build_recipe_draft" } }
                   : requiresWikiSource && !wikiSourceUrl(toolResults)
@@ -343,6 +354,7 @@ export async function runChatTurn(options: {
       if (hasCompletedRecipeDraft(toolResults)) {
         answer = removeCompletedRecipeFollowUp(answer);
       }
+      answer = removeUnrequestedCalculatorDoses(answer, options.request);
       return {
         answer: appendRelevantCalculatorLink(answer, options.request, toolResults),
         toolResults,
@@ -368,6 +380,7 @@ export async function runChatTurn(options: {
         shouldAssumeHoney: shouldAssumeHoneyForRequest(options.request),
         selectedAccountContext: options.request.selectedAccountContext,
         ingredientLookup: options.ingredientLookup,
+        additiveLookup: options.additiveLookup,
         yeastLookup: options.yeastLookup,
         wikiFetcher: options.wikiFetcher,
         canExecute: toolCalls < options.maxToolCalls,
@@ -396,6 +409,9 @@ export async function runChatTurn(options: {
           );
         }
       }
+      if (call.function.name === "search_additives") {
+        additiveCatalogLookupAttempted = true;
+      }
       if (
         call.function.name === "search_ingredients" &&
         isSuccessfulCatalogResult(result)
@@ -411,7 +427,10 @@ export async function runChatTurn(options: {
         execution: result,
         recipeDraftAvailable: recipeDraftInput !== undefined,
         mustResolveNamedYeast: forceYeastSearchTool && !namedYeastResolved && !namedYeastLookupAttempted,
-        mustResolveNamedIngredient: forceIngredientSearchTool && !namedIngredientResolved
+        mustResolveNamedIngredient: forceIngredientSearchTool && !namedIngredientResolved,
+        mustResolveNamedAdditive: options.additiveLookup !== undefined &&
+          !additiveCatalogLookupAttempted &&
+          (forceAdditiveSearchTool || Boolean(recipeDraftInput?.additives.length))
       });
       if (
         requiredFollowupTool === undefined &&
@@ -427,7 +446,8 @@ export async function runChatTurn(options: {
       if (
         call.function.name === "build_recipe_draft" &&
         isRecipeNeedsInput(result) &&
-        !buildNeedsCatalogLookup(result)
+        !buildNeedsCatalogLookup(result) &&
+        !buildNeedsAdditiveCatalogLookup(result)
       ) {
         renderRecipeIntake = true;
       }
@@ -437,7 +457,12 @@ export async function runChatTurn(options: {
         isCompletedGravityCalculation(result);
       const repeatedQuestionAnswer =
         directAnswer !== undefined && isRepeatedQuestionAnswer(options.request, directAnswer);
-      if (directAnswer && !continueRecipeDraft && !repeatedQuestionAnswer) {
+      if (
+        directAnswer &&
+        requiredFollowupTool === undefined &&
+        !continueRecipeDraft &&
+        !repeatedQuestionAnswer
+      ) {
         return {
           answer: sanitizeUserFacingRecipeAnswer(directAnswer),
           toolResults,
@@ -561,6 +586,32 @@ function shouldForceIngredientSearchTool(request: ChatRequest): boolean {
   return isRecipeDesignRequest(request);
 }
 
+/**
+ * The additive catalog is compact and route-cached. If the conversation names
+ * one of its entries, give it to the model before the initial draft so the
+ * standard dose and canonical unit can be used in that draft directly.
+ */
+async function shouldForceAdditiveSearchTool(
+  request: ChatRequest,
+  additiveLookup: AdditiveLookup | undefined
+): Promise<boolean> {
+  if (!additiveLookup || request.activeRecipeData || !isRecipeDesignRequest(request)) {
+    return false;
+  }
+  try {
+    const additiveText = recipeIntakeContext(request);
+    const additives = await additiveLookup();
+    return additives.some((additive) => {
+      const name = escapeRegExp(additive.name.trim()).replace(/\s+/g, "\\s+");
+      return new RegExp(`\\b${name}\\b`, "i").test(additiveText);
+    });
+  } catch {
+    // A failed preflight must not block the normal tool path, which will
+    // surface a user-facing catalog error if the model actually needs it.
+    return false;
+  }
+}
+
 function isRecipeDesignRequest(request: ChatRequest): boolean {
   return request.messages.some(
     (message) =>
@@ -670,7 +721,7 @@ function initialMessages(request: ChatRequest): FireworksMessage[] {
 export function calculatorLinkForProcessMessage(
   message: string
 ): { label: string; href: string } | undefined {
-  if (/\b(?:stabili[sz]|back\s*-?sweeten|sorbate|campden|k\s*-?meta)\b/i.test(message)) {
+  if (/\b(?:stabili[sz]\w*|back\s*-?sweeten|sorbate|campden|k\s*-?meta)\b/i.test(message)) {
     return { label: "Stabilizer calculator", href: "/stabilizers" };
   }
   if (/\b(?:nutrient|fermaid|go[\s-]?ferm|dap|yan)\b/i.test(message)) {
@@ -755,6 +806,32 @@ function appendRelevantCalculatorLink(
   return appendWikiSource(withCalculator, sourceUrl);
 }
 
+/**
+ * A process question can need the stabilizer workflow without asking the bot
+ * to calculate a chemical dose. Keep those answers useful, but do not let a
+ * model turn the response into an unsourced packaging-dose calculation; the
+ * calculator is the authoritative place for that numeric work.
+ */
+export function removeUnrequestedCalculatorDoses(answer: string, request: ChatRequest): string {
+  if (isRecipeDesignRequest(request) || calculatorRouteForRequest(request)) return answer;
+  const calculator = calculatorLinkForProcessMessage(request.messages.at(-1)?.content ?? "");
+  if (calculator?.href !== "/stabilizers") return answer;
+
+  return answer
+    .split("\n")
+    .filter((line) => !isStabilizerDoseLine(line))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function isStabilizerDoseLine(line: string): boolean {
+  if (!/\b(?:potassium|sodium)\s+metabisulfite|\b(?:potassium\s+)?sorbate\b|\bcampden\b|\bk\s*-?\s*meta\b/i.test(line)) {
+    return false;
+  }
+  return /\b\d+(?:\.\d+)?\s*(?:mg|g|grams?|tablets?|tsp|teaspoons?)\b|\b(?:per|each)\s+(?:gallon|gal|lit(?:er|re))\b/i.test(line);
+}
+
 function appendWikiSource(answer: string, sourceUrl: string | undefined): string {
   if (!sourceUrl || answer.includes(sourceUrl)) return answer;
   return `${answer}\n\nSource: [MeadTools wiki](${sourceUrl}).`;
@@ -794,6 +871,7 @@ async function executeToolCall(options: {
   shouldAssumeHoney: boolean;
   selectedAccountContext: SelectedChatContext | undefined;
   ingredientLookup: IngredientLookup | undefined;
+  additiveLookup: AdditiveLookup | undefined;
   yeastLookup: YeastLookup | undefined;
   wikiFetcher: WikiFetcher | undefined;
   canExecute: boolean;
@@ -873,13 +951,66 @@ async function executeToolCall(options: {
     }
   }
 
+  if (toolName === "build_recipe_draft" && isRecord(input) && options.additiveLookup) {
+    input = await applyCatalogAdditiveDefaults(input, options.additiveLookup);
+    const resolved = buildRecipeDraftInputSchema.safeParse(input);
+    if (resolved.success) {
+      input = resolved.data;
+      mergedRecipeDraftInput = resolved.data;
+    }
+  }
+
   const execution = await executeHostedAgentTool(toolName, input, {
     fetcher: options.wikiFetcher,
     ingredientLookup: options.ingredientLookup,
+    additiveLookup: options.additiveLookup,
     yeastLookup: options.yeastLookup
   });
   options.onEvent?.({ type: "tool_result", toolName, status: execution.status });
   return { execution, recipeDraftInput: mergedRecipeDraftInput };
+}
+
+async function applyCatalogAdditiveDefaults(
+  input: Record<string, unknown>,
+  additiveLookup: AdditiveLookup
+): Promise<Record<string, unknown>> {
+  if (!Array.isArray(input.additives)) return input;
+  try {
+    const catalog = await additiveLookup();
+    const batchVolumeValue =
+      isRecord(input.batchVolume) && typeof input.batchVolume.value === "number"
+        ? input.batchVolume.value
+        : undefined;
+    const batchVolumeUnit =
+      isRecord(input.batchVolume) && typeof input.batchVolume.unit === "string"
+        ? input.batchVolume.unit
+        : undefined;
+    const gallons = batchVolumeValue === undefined
+      ? undefined
+      : batchVolumeUnit === "gal"
+        ? batchVolumeValue
+        : batchVolumeUnit === "L"
+          ? batchVolumeValue / 3.785411784
+          : undefined;
+    return {
+      ...input,
+      additives: input.additives.map((additive) => {
+        if (!isRecord(additive) || typeof additive.name !== "string") return additive;
+        const additiveName = additive.name;
+        const catalogEntry = catalog.find((entry) => areEquivalentAdditives(entry.name, additiveName));
+        const unit = catalogEntry ? normalizeAdditiveUnit(catalogEntry.unit) : undefined;
+        if (!catalogEntry || !unit) return additive;
+        return {
+          ...additive,
+          name: catalogEntry.name,
+          unit,
+          ...(gallons === undefined ? {} : { amount: catalogEntry.dosagePerGallon * gallons })
+        };
+      })
+    };
+  } catch {
+    return input;
+  }
 }
 
 function requiredRecipeFollowupTool(options: {
@@ -888,19 +1019,28 @@ function requiredRecipeFollowupTool(options: {
   recipeDraftAvailable: boolean;
   mustResolveNamedYeast: boolean;
   mustResolveNamedIngredient: boolean;
-}): "build_recipe_draft" | "search_ingredients" | "search_yeasts" | "fetch_wiki_page" | undefined {
+  mustResolveNamedAdditive: boolean;
+}): "build_recipe_draft" | "search_ingredients" | "search_additives" | "search_yeasts" | "fetch_wiki_page" | undefined {
   if (!isSuccessfulToolResult(options.execution)) return undefined;
   if (options.toolName === "search_ingredients") {
     if (!Array.isArray(options.execution.result) || options.execution.result.length === 0) {
       return undefined;
     }
-    return options.mustResolveNamedYeast ? "search_yeasts" : "build_recipe_draft";
+    if (options.mustResolveNamedYeast) return "search_yeasts";
+    return options.mustResolveNamedAdditive ? "search_additives" : "build_recipe_draft";
+  }
+  if (options.toolName === "search_additives") {
+    if (!Array.isArray(options.execution.result) || options.execution.result.length === 0) {
+      return undefined;
+    }
+    return options.recipeDraftAvailable ? "build_recipe_draft" : undefined;
   }
   if (options.toolName === "search_yeasts") {
     if (!Array.isArray(options.execution.result) || options.execution.result.length === 0) {
       return options.recipeDraftAvailable ? "build_recipe_draft" : undefined;
     }
-    return options.mustResolveNamedIngredient ? "search_ingredients" : "build_recipe_draft";
+    if (options.mustResolveNamedIngredient) return "search_ingredients";
+    return options.mustResolveNamedAdditive ? "search_additives" : "build_recipe_draft";
   }
   if (
     options.toolName === "calculate_gravity_target" &&
@@ -908,10 +1048,17 @@ function requiredRecipeFollowupTool(options: {
     isCompletedGravityCalculation(options.execution)
   ) {
     if (options.mustResolveNamedIngredient) return "search_ingredients";
-    return options.mustResolveNamedYeast ? "search_yeasts" : "build_recipe_draft";
+    if (options.mustResolveNamedYeast) return "search_yeasts";
+    return options.mustResolveNamedAdditive ? "search_additives" : "build_recipe_draft";
   }
   if (options.toolName === "build_recipe_draft" && buildNeedsCatalogLookup(options.execution)) {
     return "search_ingredients";
+  }
+  if (
+    options.toolName === "build_recipe_draft" &&
+    (buildNeedsAdditiveCatalogLookup(options.execution) || options.mustResolveNamedAdditive)
+  ) {
+    return "search_additives";
   }
   return undefined;
 }
@@ -1030,6 +1177,7 @@ function applyExplicitRecipeIntakeHints(
   const result: Record<string, unknown> = { ...input };
   addImpliedHoneyForMead(result, latestUserMessage, shouldAssumeHoney);
   moveKnownAdditives(result);
+  normalizeRecipeAdditives(result);
   const volume = batchVolumeFromMessage(latestUserMessage);
   if (volume !== undefined) {
     result.batchVolume = {
@@ -1130,7 +1278,8 @@ function applyExplicitRecipeIntakeHints(
   if (/\b(?:in\s+)?(?:both\s+)?primary\s+(?:and|&)\s+secondary\b/i.test(latestUserMessage)) {
     result.ingredients = duplicateIngredientsAcrossStages(result.ingredients);
   }
-  applyWholeVanillaBeanAmount(result, latestUserMessage);
+  applyExplicitCountableAdditiveAmounts(result, latestUserMessage);
+  normalizeRecipeAdditives(result);
   return result;
 }
 
@@ -1142,24 +1291,27 @@ function moveKnownAdditives(input: Record<string, unknown>): void {
     if (!isRecord(ingredient) || typeof ingredient.name !== "string" || !isKnownAdditive(ingredient.name)) {
       return true;
     }
+    const ingredientName = ingredient.name;
     const amount = isRecord(ingredient.amount) && typeof ingredient.amount.value === "number"
       ? ingredient.amount.value
       : undefined;
     const unit = isRecord(ingredient.amount) && typeof ingredient.amount.unit === "string"
       ? ingredient.amount.unit
       : undefined;
-    if (additives.some((additive) => isRecord(additive) && additive.name === ingredient.name)) {
+    if (additives.some(
+      (additive) =>
+        isRecord(additive) &&
+        typeof additive.name === "string" &&
+        areEquivalentAdditives(additive.name, ingredientName)
+    )) {
       return false;
     }
     additives.push({
-      name: ingredient.name,
+      name: ingredientName,
       ...(amount === undefined ? {} : { amount }),
       ...(unit === undefined ? {} : { unit }),
       ...(ingredient.secondary === true ? { secondary: true } : {})
     });
-    if (ingredient.secondary === true && /\bvanilla\b/i.test(ingredient.name)) {
-      addDraftAssumption(input, "Vanilla is planned for secondary.");
-    }
     moved = true;
     return false;
   });
@@ -1170,31 +1322,100 @@ function isKnownAdditive(name: string): boolean {
   return /\b(?:vanilla|tannin|enzyme|bentonite|oak|cinnamon|clove|allspice|anise|tea|hibiscus|opti|ft\s*-?\s*rouge)\b/i.test(name);
 }
 
-function applyWholeVanillaBeanAmount(
+/**
+ * Preserve a user-stated count for any countable additive the model omitted
+ * from its tool payload. The unit is deliberately the builder's generic
+ * `units` value; names carry the brewer-facing detail (bean, stick, etc.).
+ */
+function applyExplicitCountableAdditiveAmounts(
   input: Record<string, unknown>,
   message: string
 ): void {
   if (!Array.isArray(input.additives)) return;
-  const match = message.match(/\b(one|two|three|four|five|\d+(?:\.\d+)?)\s+whole\s+vanilla\s+beans?\b/i);
-  if (!match) return;
-  const count = writtenNumber(match[1]);
-  if (count === undefined) return;
-
   input.additives = input.additives.map((additive) => {
     if (
       !isRecord(additive) ||
       typeof additive.name !== "string" ||
-      !/\bvanilla\b/i.test(additive.name) ||
       additive.amount !== undefined
     ) {
       return additive;
     }
+    const name = escapeRegExp(additive.name.trim()).replace(/\s+/g, "\\s+");
+    const match = message.match(
+      new RegExp(`\\b(one|two|three|four|five|\\d+(?:\\.\\d+)?)\\s+(?:whole\\s+)?${name}s?\\b`, "i")
+    );
+    const count = writtenNumber(match?.[1]);
+    if (count === undefined) return additive;
     return {
       ...additive,
       amount: count,
-      unit: count === 1 ? "whole bean" : "whole beans"
+      unit: "units"
     };
   });
+}
+
+function normalizeRecipeAdditives(input: Record<string, unknown>): void {
+  if (!Array.isArray(input.additives)) return;
+  const deduplicated: Record<string, unknown>[] = [];
+  for (const additive of input.additives) {
+    if (!isRecord(additive) || typeof additive.name !== "string") continue;
+    const normalizedUnit = typeof additive.unit === "string"
+      ? normalizeAdditiveUnit(additive.unit)
+      : undefined;
+    const normalized: Record<string, unknown> = {
+      ...additive,
+      ...(normalizedUnit === undefined ? { unit: undefined } : { unit: normalizedUnit })
+    };
+    const duplicateIndex = deduplicated.findIndex(
+      (candidate) =>
+        typeof candidate.name === "string" &&
+        typeof normalized.name === "string" &&
+        areEquivalentAdditives(candidate.name, normalized.name)
+    );
+    if (duplicateIndex === -1) {
+      deduplicated.push(normalized);
+      continue;
+    }
+    const existing = deduplicated[duplicateIndex]!;
+    const preferredName = preferredAdditiveName(existing.name, normalized.name);
+    deduplicated[duplicateIndex] = {
+      ...normalized,
+      ...existing,
+      name: preferredName,
+      amount: existing.amount ?? normalized.amount,
+      unit: existing.unit ?? normalized.unit
+    };
+  }
+  input.additives = deduplicated;
+}
+
+function areEquivalentAdditives(left: string, right: string): boolean {
+  const leftTokens = additiveNameTokens(left);
+  const rightTokens = additiveNameTokens(right);
+  if (leftTokens.join(" ") === rightTokens.join(" ")) return true;
+  const shorter = leftTokens.length <= rightTokens.length ? leftTokens : rightTokens;
+  const longer = leftTokens.length <= rightTokens.length ? rightTokens : leftTokens;
+  const countDescriptors = new Set([
+    "bean", "stick", "cube", "spiral", "pod", "packet", "tablet", "capsule"
+  ]);
+  return shorter.every((token) => longer.includes(token)) &&
+    longer.filter((token) => !shorter.includes(token)).every((token) => countDescriptors.has(token));
+}
+
+function additiveNameTokens(name: string): string[] {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => token.endsWith("s") && token.length > 3 ? token.slice(0, -1) : token);
+}
+
+function preferredAdditiveName(left: unknown, right: unknown): string {
+  const leftName = typeof left === "string" ? left : "";
+  const rightName = typeof right === "string" ? right : "";
+  return rightName.length > leftName.length ? rightName : leftName;
 }
 
 function writtenNumber(value: string | undefined): number | undefined {
@@ -1568,8 +1789,7 @@ function mergeRecipeAdditives(
     const additiveName = additive.name;
     const index = merged.findIndex(
       (candidate) =>
-        candidate.name.trim().toLowerCase() === additiveName.trim().toLowerCase() &&
-        Boolean(candidate.secondary) === Boolean(additive.secondary)
+        areEquivalentAdditives(candidate.name, additiveName)
     );
     if (index === -1) {
       merged.push(additive as BuildRecipeDraftInput["additives"][number]);
@@ -1579,6 +1799,7 @@ function mergeRecipeAdditives(
     merged[index] = {
       ...prior,
       ...additive,
+      name: preferredAdditiveName(prior.name, additiveName),
       ...(additive.amount === undefined && prior.amount !== undefined ? { amount: prior.amount } : {}),
       ...(additive.unit === undefined && prior.unit !== undefined ? { unit: prior.unit } : {})
     };
@@ -1730,6 +1951,9 @@ function postToolInstruction(
   if (toolName === "build_recipe_draft" && buildNeedsCatalogLookup(execution)) {
     return "The draft is missing Brix for a named ingredient. Call search_ingredients now. It returns the complete ingredient catalog: select the best semantic match yourself, then call build_recipe_draft again using that entry's catalogId, category, and Brix. Do not ask the user for Brix while the catalog can resolve it.";
   }
+  if (toolName === "build_recipe_draft" && buildNeedsAdditiveCatalogLookup(execution)) {
+    return "The draft is missing an amount or unit for a named additive. Call search_additives now. It returns the authoritative standard dosage per US gallon and canonical unit; select the best match, scale the amount to the known batch volume, then call build_recipe_draft again. Do not ask the user for an additive unit or invent a dose while the catalog can resolve it.";
+  }
   if (
     toolName === "build_recipe_draft" ||
     toolName === "explain_recipe"
@@ -1747,6 +1971,12 @@ function postToolInstruction(
       return "The ingredient catalog has no match. Tell the user that MeadTools could not identify that ingredient and ask them to clarify the ingredient or provide a label/analysis. Do not invent a Brix value.";
     }
     return "This is the complete ingredient catalog, not a preselected match. Do not report catalog details to the user. Select the best semantic match for the user's ingredient yourself; if several are genuinely plausible, ask the user to choose using plain ingredient names. Otherwise immediately call build_recipe_draft using the selected entry's catalogId, category, and Brix. Add the ingredient at its intended stage, then let the workflow ask only for genuinely missing inputs. Do not ask the user for Brix or repeat catalog IDs.";
+  }
+  if (toolName === "search_additives") {
+    if (isRecord(execution) && execution.status === "ok" && Array.isArray(execution.result) && execution.result.length === 0) {
+      return "The additive catalog has no match. Ask the user for the product label or the intended amount and unit; do not invent either.";
+    }
+    return "This is the complete additive catalog, not a preselected match. Do not report catalog IDs or tool details. Select the best semantic match, keep its canonical unit, multiply its standard dosage per US gallon by the known batch volume, and immediately call build_recipe_draft with the resulting amount. Do not invent an additive unit or dose.";
   }
   if (toolName === "search_yeasts") {
     if (isRecord(execution) && execution.status === "ok" && Array.isArray(execution.result) && execution.result.length === 0) {
@@ -1834,12 +2064,10 @@ function renderCompletedRecipeDraft(
   workflow: Extract<z.infer<typeof chatbotRecipeWorkflowResultSchema>, { status: "recipe" }>
 ): string {
   const ingredientLines = workflow.recipeData.ingredients.map((ingredient) => {
-    const basis = ingredient.amounts.basis;
-    const amount = basis === "weight" ? ingredient.amounts.weight : ingredient.amounts.volume;
-    return `| ${ingredient.name} | ${amount.value} ${amount.unit} | ${ingredient.secondary ? "Secondary" : "Primary"} |`;
+    return `| ${ingredient.name} | ${formatDraftIngredientAmount(ingredient)} | ${ingredient.secondary ? "Secondary" : "Primary"} |`;
   });
   const additiveLines = workflow.recipeData.additives.map(
-    (additive) => `| ${additive.name} | ${additive.amount} ${additive.unit} |`
+    (additive) => `| ${additive.name} | ${formatDraftAdditiveAmount(additive.amount, additive.unit)} |`
   );
   const nutrients = workflow.recipeData.nutrients;
   const nutrientSummary = nutrients
@@ -1868,6 +2096,54 @@ function renderCompletedRecipeDraft(
     assumptions ? `### Assumptions\n${assumptions}` : "",
     warnings ? `### Warnings\n${warnings}` : ""
   ].filter(Boolean).join("\n\n");
+}
+
+/**
+ * The calculation payload keeps both volume and weight at six-decimal
+ * precision. A brewer-facing draft should use the practical basis: liquid
+ * water by volume, fermentables and fruit by weight.
+ */
+function formatDraftIngredientAmount(ingredient: RecipeDataV2["ingredients"][number]): string {
+  const isWater = ingredient.category.toLowerCase() === "water" || /^water$/i.test(ingredient.name);
+  const amount = isWater ? ingredient.amounts.volume : ingredient.amounts.weight;
+  const value = Number(amount.value);
+  if (!Number.isFinite(value)) return `${amount.value} ${formatDraftUnit(amount.unit)}`;
+
+  if (!isWater && amount.unit === "lb" && value < 1) {
+    return `${formatDraftQuantity(value * 16, 1)} oz`;
+  }
+  if (!isWater && amount.unit === "kg" && value < 1) {
+    return `${formatDraftQuantity(value * 1_000, 0)} g`;
+  }
+  return `${formatDraftQuantity(value)} ${formatDraftUnit(amount.unit)}`;
+}
+
+function formatDraftAdditiveAmount(amount: string, unit: string): string {
+  const value = Number(amount);
+  return `${Number.isFinite(value) ? formatDraftQuantity(value) : amount} ${formatDraftUnit(unit)}`;
+}
+
+function formatDraftQuantity(value: number, maximumFractionDigits?: number): string {
+  const fractionDigits = maximumFractionDigits ?? (Math.abs(value) < 0.1 ? 3 : 2);
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: 0
+  }).format(value);
+}
+
+function formatDraftUnit(unit: string): string {
+  const labels: Record<string, string> = {
+    fl_oz: "fl oz",
+    imp_gal: "Imp gal",
+    imp_qt: "Imp qt",
+    imp_pt: "Imp pt",
+    imp_fl_oz: "Imp fl oz",
+    lbs: "lb",
+    liters: "L",
+    ml: "mL",
+    units: "each"
+  };
+  return labels[unit] ?? unit;
 }
 
 function userFacingNutrientSchedule(schedule: string): string {
@@ -1940,6 +2216,14 @@ function buildNeedsCatalogLookup(execution: unknown): boolean {
   const workflow = chatbotRecipeWorkflowResultSchema.safeParse(execution.result);
   return workflow.success && workflow.data.status === "needs_input" && workflow.data.questions.some(
     (question) => question.id.endsWith("_brix")
+  );
+}
+
+function buildNeedsAdditiveCatalogLookup(execution: unknown): boolean {
+  if (!isRecord(execution) || execution.status !== "ok") return false;
+  const workflow = chatbotRecipeWorkflowResultSchema.safeParse(execution.result);
+  return workflow.success && workflow.data.status === "needs_input" && workflow.data.questions.some(
+    (question) => /^additive_\d+_amount$/.test(question.id)
   );
 }
 

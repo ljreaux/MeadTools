@@ -37,7 +37,7 @@ const weightUnits = [
 const volumeUnits = [
   { value: "ml", label: "ML" },
   { value: "liters", label: "LIT" },
-  { value: "fl oz", label: "FLOZ" },
+  { value: "fl_oz", label: "FLOZ" },
   { value: "quarts", label: "QUARTS" },
   { value: "gal", label: "GALS" },
   { value: "tsp", label: "TSP" },

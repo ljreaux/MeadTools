@@ -158,20 +158,105 @@ export function calculateHoneyAndWaterL(
   };
 }
 
-export type AdditiveUnit =
-  | "g"
-  | "ml"
-  | "tsp"
-  | "oz"
-  | "units"
-  | "mg"
-  | "kg"
-  | "lbs"
-  | "liters"
-  | "fl_oz"
-  | "quarts"
-  | "gal"
-  | "tbsp";
+export const ADDITIVE_UNITS = [
+  "g",
+  "ml",
+  "tsp",
+  "oz",
+  "units",
+  "mg",
+  "kg",
+  "lbs",
+  "liters",
+  "fl_oz",
+  "quarts",
+  "gal",
+  "tbsp"
+] as const;
+
+export type AdditiveUnit = (typeof ADDITIVE_UNITS)[number];
+
+/**
+ * Maps common brewer-facing spellings to the exact unit values supported by
+ * the recipe builder. Countable descriptions intentionally resolve to the
+ * builder's generic `units` value rather than creating a product-specific
+ * unit such as "bean" or "stick".
+ */
+export function normalizeAdditiveUnit(value: string | undefined): AdditiveUnit | undefined {
+  if (!value) return undefined;
+  const unit = value
+    .trim()
+    .toLowerCase()
+    .replace(/[._-]+/g, " ")
+    .replace(/^whole\s+/, "")
+    .replace(/\s+/g, " ");
+
+  const aliases: Record<string, AdditiveUnit> = {
+    g: "g",
+    gram: "g",
+    grams: "g",
+    mg: "mg",
+    milligram: "mg",
+    milligrams: "mg",
+    kg: "kg",
+    kilogram: "kg",
+    kilograms: "kg",
+    oz: "oz",
+    ounce: "oz",
+    ounces: "oz",
+    lb: "lbs",
+    lbs: "lbs",
+    pound: "lbs",
+    pounds: "lbs",
+    ml: "ml",
+    milliliter: "ml",
+    milliliters: "ml",
+    l: "liters",
+    liter: "liters",
+    liters: "liters",
+    litre: "liters",
+    litres: "liters",
+    "fl oz": "fl_oz",
+    floz: "fl_oz",
+    "fluid ounce": "fl_oz",
+    "fluid ounces": "fl_oz",
+    qt: "quarts",
+    qts: "quarts",
+    quart: "quarts",
+    quarts: "quarts",
+    gal: "gal",
+    gallon: "gal",
+    gallons: "gal",
+    tsp: "tsp",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    tbsp: "tbsp",
+    tablespoon: "tbsp",
+    tablespoons: "tbsp",
+    unit: "units",
+    units: "units",
+    each: "units",
+    count: "units",
+    bean: "units",
+    beans: "units",
+    stick: "units",
+    sticks: "units",
+    cube: "units",
+    cubes: "units",
+    spiral: "units",
+    spirals: "units",
+    pod: "units",
+    pods: "units",
+    packet: "units",
+    packets: "units",
+    tablet: "units",
+    tablets: "units",
+    capsule: "units",
+    capsules: "units"
+  };
+
+  return aliases[unit];
+}
 
 export type UnitDim = "weight" | "volume" | "count" | "unknown";
 

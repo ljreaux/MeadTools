@@ -9,6 +9,7 @@ import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { FireworksChatClient } from "@/lib/ai/fireworks";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
+import { getAdditiveCatalogForChat } from "@/lib/db/additives";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
 import {
   chatContextSelectionSchema,
@@ -157,6 +158,18 @@ export async function POST(request: NextRequest) {
                 name: ingredient.name,
                 category: ingredient.category,
                 brix
+              }];
+            });
+          },
+          additiveLookup: async () => {
+            const additives = await getAdditiveCatalogForChat();
+            return additives.flatMap((additive) => {
+              if (!Number.isFinite(additive.dosage) || additive.dosage <= 0) return [];
+              return [{
+                id: additive.id,
+                name: additive.name,
+                dosagePerGallon: additive.dosage,
+                unit: additive.unit
               }];
             });
           },

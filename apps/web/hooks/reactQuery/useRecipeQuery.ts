@@ -299,6 +299,7 @@ export function useCreateRecipeMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.recipesList });
+      queryClient.invalidateQueries({ queryKey: qk.accountInfo });
     }
   });
 }
