@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@meadtools/brew-domain": "*",
     "@meadtools/recipe-workflows": "*",
     "@meadtools/wiki-knowledge": "*",
     "zod": "^4.0.0"

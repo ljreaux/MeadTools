@@ -14,6 +14,12 @@ import {
   type WikiPageContent,
   type WikiSearchResult
 } from "@meadtools/wiki-knowledge";
+import {
+  brewActionStages,
+  createBrewActionProposal,
+  type BrewActionProposal,
+  type BrewActionTarget
+} from "@meadtools/brew-domain/action-proposal";
 import { z } from "zod";
 
 export { hostedAgentPolicy } from "./policy";
@@ -54,6 +60,7 @@ export const recipeAgentTools: readonly RecipeAgentTool[] = [
 ];
 
 const gravityTargetToolName = "calculate_gravity_target" as const;
+const prepareBrewActionToolName = "prepare_brew_action" as const;
 
 export type GravityTargetAgentTool = {
   name: typeof gravityTargetToolName;
@@ -74,6 +81,98 @@ export const gravityTargetAgentTool: GravityTargetAgentTool = {
 
 export function executeGravityTargetAgentTool(input: unknown) {
   return { status: "ok" as const, result: gravityTargetAgentTool.execute(input) };
+}
+
+const actionEntryBaseSchema = z.object({
+  datetime: z.string().datetime().optional(),
+  title: z.string().trim().min(1).max(160).optional(),
+  note: z.string().trim().min(1).max(2_000).optional()
+});
+
+const brewActionEntryInputSchema = z.discriminatedUnion("type", [
+  actionEntryBaseSchema.extend({
+    type: z.enum(["NOTE", "TASTING", "ISSUE"]),
+    note: z.string().trim().min(1).max(2_000)
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("ADDITION"),
+    data: z.object({
+      kind: z.enum(["INGREDIENT", "NUTRIENT", "YEAST", "OTHER"]),
+      name: z.string().trim().min(1).max(160),
+      amount: z.number().positive().optional(),
+      unit: z.string().trim().min(1).max(30).optional()
+    })
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("GRAVITY"),
+    gravity: z.number().min(0.9).max(1.3),
+    data: z.object({
+      readingRole: z.enum(["OG", "FG", "GENERAL"]).optional(),
+      source: z.literal("measured").optional()
+    }).optional()
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("TEMPERATURE"),
+    temperature: z.number().min(-50).max(150),
+    temp_units: z.enum(["C", "F"])
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("PH"),
+    data: z.object({ ph: z.number().min(0).max(14) })
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("VOLUME"),
+    data: z.object({
+      liters: z.number().positive(),
+      displayValue: z.number().positive().optional(),
+      displayUnit: z.string().trim().min(1).max(30).optional(),
+      startingLiters: z.number().positive().optional()
+    })
+  }),
+  actionEntryBaseSchema.extend({
+    type: z.literal("STAGE_CHANGE"),
+    stage_to: z.enum(brewActionStages)
+  })
+]);
+
+export type BrewActionAgentTool = {
+  name: typeof prepareBrewActionToolName;
+  description: string;
+  inputSchema: typeof brewActionEntryInputSchema;
+};
+
+/**
+ * This tool validates only an action draft. A trusted adapter binds it to the
+ * selected brew context; the model cannot choose a different account record.
+ */
+export const prepareBrewActionAgentTool: BrewActionAgentTool = {
+  name: prepareBrewActionToolName,
+  description:
+    "Prepare a reviewable action for the explicitly selected brew. Use only after get_selected_account_context returned a brew and only when the user asks to log or make a specific brew change. It creates no entry and changes nothing. Provide the exact entry payload for a note, addition, measurement, volume reading, or stage change; do not include a brew ID, client ID, recipe ID, or device action.",
+  inputSchema: brewActionEntryInputSchema
+};
+
+export type BrewActionAgentToolExecution =
+  | { status: "ok"; result: BrewActionProposal }
+  | { status: "invalid_input"; issues: string[] }
+  | { status: "error"; message: string };
+
+export function executePrepareBrewActionTool(
+  input: unknown,
+  target: BrewActionTarget | undefined
+): BrewActionAgentToolExecution {
+  const parsed = brewActionEntryInputSchema.safeParse(input);
+  if (!parsed.success) return invalidInput(parsed.error.issues);
+  if (!target) {
+    return {
+      status: "error",
+      message: "Select a brew and retrieve its context before preparing an action."
+    };
+  }
+  return {
+    status: "ok",
+    result: createBrewActionProposal(target, parsed.data)
+  };
 }
 
 export type RecipeAgentToolExecution =
@@ -234,10 +333,11 @@ export function createWikiAgentTools(
  */
 export const wikiAgentTools = createWikiAgentTools();
 
-export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof additiveSearchAgentTool | typeof yeastSearchAgentTool;
+export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | BrewActionAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof additiveSearchAgentTool | typeof yeastSearchAgentTool;
 export const hostedAgentTools: readonly HostedAgentTool[] = [
   ...recipeAgentTools,
   gravityTargetAgentTool,
+  prepareBrewActionAgentTool,
   ingredientSearchAgentTool,
   additiveSearchAgentTool,
   yeastSearchAgentTool,
@@ -245,7 +345,7 @@ export const hostedAgentTools: readonly HostedAgentTool[] = [
 ];
 
 export type HostedAgentToolDefinition = {
-  name: RecipeAgentToolName | WikiAgentToolName | CatalogAgentToolName | typeof gravityTargetToolName;
+  name: RecipeAgentToolName | WikiAgentToolName | CatalogAgentToolName | typeof gravityTargetToolName | typeof prepareBrewActionToolName;
   description: string;
   parameters: Record<string, unknown>;
 };
@@ -397,6 +497,125 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
     }
   },
   {
+    name: prepareBrewActionToolName,
+    description: descriptionFor(prepareBrewActionToolName),
+    parameters: {
+      type: "object",
+      oneOf: [
+        {
+          properties: {
+            type: { type: "string", enum: ["NOTE", "TASTING", "ISSUE"] },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" }
+          },
+          required: ["type", "note"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "ADDITION" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            data: {
+              type: "object",
+              properties: {
+                kind: { type: "string", enum: ["INGREDIENT", "NUTRIENT", "YEAST", "OTHER"] },
+                name: { type: "string", minLength: 1, maxLength: 160 },
+                amount: { type: "number", exclusiveMinimum: 0 },
+                unit: { type: "string", minLength: 1, maxLength: 30 }
+              },
+              required: ["kind", "name"],
+              additionalProperties: false
+            }
+          },
+          required: ["type", "data"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "GRAVITY" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            gravity: { type: "number", minimum: 0.9, maximum: 1.3 },
+            data: {
+              type: "object",
+              properties: {
+                readingRole: { type: "string", enum: ["OG", "FG", "GENERAL"] },
+                source: { const: "measured" }
+              },
+              additionalProperties: false
+            }
+          },
+          required: ["type", "gravity"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "TEMPERATURE" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            temperature: { type: "number", minimum: -50, maximum: 150 },
+            temp_units: { type: "string", enum: ["C", "F"] }
+          },
+          required: ["type", "temperature", "temp_units"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "PH" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            data: {
+              type: "object",
+              properties: { ph: { type: "number", minimum: 0, maximum: 14 } },
+              required: ["ph"],
+              additionalProperties: false
+            }
+          },
+          required: ["type", "data"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "VOLUME" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            data: {
+              type: "object",
+              properties: {
+                liters: { type: "number", exclusiveMinimum: 0 },
+                displayValue: { type: "number", exclusiveMinimum: 0 },
+                displayUnit: { type: "string", minLength: 1, maxLength: 30 },
+                startingLiters: { type: "number", exclusiveMinimum: 0 }
+              },
+              required: ["liters"],
+              additionalProperties: false
+            }
+          },
+          required: ["type", "data"],
+          additionalProperties: false
+        },
+        {
+          properties: {
+            type: { const: "STAGE_CHANGE" },
+            title: { type: "string", minLength: 1, maxLength: 160 },
+            note: { type: "string", minLength: 1, maxLength: 2000 },
+            datetime: { type: "string", format: "date-time" },
+            stage_to: { type: "string", enum: [...brewActionStages] }
+          },
+          required: ["type", "stage_to"],
+          additionalProperties: false
+        }
+      ]
+    }
+  },
+  {
     name: "search_ingredients",
     description: descriptionFor("search_ingredients"),
     parameters: {
@@ -455,6 +674,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
 export type HostedAgentToolExecution =
   | RecipeAgentToolExecution
   | ReturnType<typeof executeGravityTargetAgentTool>
+  | BrewActionAgentToolExecution
   | CatalogAgentToolExecution
   | WikiAgentToolExecution;
 
@@ -466,6 +686,7 @@ export async function executeHostedAgentTool(
     ingredientLookup?: IngredientLookup;
     additiveLookup?: AdditiveLookup;
     yeastLookup?: YeastLookup;
+    brewActionTarget?: BrewActionTarget;
   } = {}
 ): Promise<HostedAgentToolExecution> {
   if (recipeAgentTools.some((tool) => tool.name === toolName)) {
@@ -473,6 +694,9 @@ export async function executeHostedAgentTool(
   }
   if (toolName === gravityTargetToolName) {
     return executeGravityTargetAgentTool(input);
+  }
+  if (toolName === prepareBrewActionToolName) {
+    return executePrepareBrewActionTool(input, options.brewActionTarget);
   }
   if (toolName === ingredientSearchAgentTool.name) {
     const parsed = ingredientCatalogInputSchema.safeParse(input);
@@ -527,7 +751,7 @@ export async function executeHostedAgentTool(
 
 function invalidInput(
   issues: Array<{ path: Array<PropertyKey>; message: string }>
-): WikiAgentToolExecution {
+): { status: "invalid_input"; issues: string[] } {
   return {
     status: "invalid_input",
     issues: issues.map((issue) =>
@@ -539,7 +763,7 @@ function invalidInput(
 }
 
 function descriptionFor(
-  toolName: RecipeAgentToolName | WikiAgentToolName | CatalogAgentToolName | typeof gravityTargetToolName
+  toolName: RecipeAgentToolName | WikiAgentToolName | CatalogAgentToolName | typeof gravityTargetToolName | typeof prepareBrewActionToolName
 ): string {
   const tool = hostedAgentTools.find((candidate) => candidate.name === toolName);
   if (!tool) throw new Error(`Missing hosted agent tool definition for ${toolName}.`);
