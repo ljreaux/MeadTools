@@ -121,6 +121,14 @@ export type CatalogIngredient = {
  * and then uses that entry's authoritative fields in the draft workflow.
  */
 export type IngredientLookup = () => Promise<CatalogIngredient[]>;
+export type CatalogAdditive = {
+  id: string;
+  name: string;
+  /** The catalog's standard amount per US gallon. */
+  dosagePerGallon: number;
+  unit: string;
+};
+export type AdditiveLookup = () => Promise<CatalogAdditive[]>;
 export type CatalogYeast = {
   id: number;
   brand: string;
@@ -132,9 +140,9 @@ export type CatalogYeast = {
 };
 
 export type YeastLookup = (query: string, limit: number) => Promise<CatalogYeast[]>;
-export type CatalogAgentToolName = "search_ingredients" | "search_yeasts";
+export type CatalogAgentToolName = "search_ingredients" | "search_additives" | "search_yeasts";
 export type CatalogAgentToolExecution =
-  | { status: "ok"; result: CatalogIngredient[] | CatalogYeast[] }
+  | { status: "ok"; result: CatalogIngredient[] | CatalogAdditive[] | CatalogYeast[] }
   | { status: "invalid_input"; issues: string[] }
   | { status: "error"; message: string };
 
@@ -150,6 +158,13 @@ export const yeastSearchAgentTool = {
   description:
     "Search the MeadTools yeast catalog by brand or strain. Returns the exact catalog yeast identity plus authoritative nitrogen requirement, alcohol tolerance, and temperature range. Use it before asking a user to supply a catalog yeast's nutrient requirement.",
   inputSchema: yeastSearchInputSchema
+};
+
+export const additiveSearchAgentTool = {
+  name: "search_additives" as const,
+  description:
+    "Return the complete MeadTools additive catalog with each additive's canonical unit and standard dosage per US gallon. Use it before drafting with a named catalog additive when the user did not supply both an amount and unit. Select the best semantic match, preserve its canonical unit, and multiply its dosage per gallon by the requested batch volume. Do not invent an additive unit or dose.",
+  inputSchema: ingredientCatalogInputSchema
 };
 
 export type WikiAgentToolName = "search_wiki" | "fetch_wiki_page";
@@ -219,11 +234,12 @@ export function createWikiAgentTools(
  */
 export const wikiAgentTools = createWikiAgentTools();
 
-export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof yeastSearchAgentTool;
+export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof additiveSearchAgentTool | typeof yeastSearchAgentTool;
 export const hostedAgentTools: readonly HostedAgentTool[] = [
   ...recipeAgentTools,
   gravityTargetAgentTool,
   ingredientSearchAgentTool,
+  additiveSearchAgentTool,
   yeastSearchAgentTool,
   ...wikiAgentTools
 ];
@@ -390,6 +406,15 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
     }
   },
   {
+    name: "search_additives",
+    description: descriptionFor("search_additives"),
+    parameters: {
+      type: "object",
+      properties: {},
+      additionalProperties: false
+    }
+  },
+  {
     name: "search_yeasts",
     description: descriptionFor("search_yeasts"),
     parameters: {
@@ -439,6 +464,7 @@ export async function executeHostedAgentTool(
   options: {
     fetcher?: WikiFetcher;
     ingredientLookup?: IngredientLookup;
+    additiveLookup?: AdditiveLookup;
     yeastLookup?: YeastLookup;
   } = {}
 ): Promise<HostedAgentToolExecution> {
@@ -476,6 +502,18 @@ export async function executeHostedAgentTool(
       };
     } catch (error) {
       return { status: "error", message: error instanceof Error ? error.message : "Yeast lookup failed." };
+    }
+  }
+  if (toolName === additiveSearchAgentTool.name) {
+    const parsed = ingredientCatalogInputSchema.safeParse(input);
+    if (!parsed.success) return invalidInput(parsed.error.issues);
+    if (!options.additiveLookup) {
+      return { status: "error", message: "Additive lookup is not configured for this chat." };
+    }
+    try {
+      return { status: "ok", result: await options.additiveLookup() };
+    } catch (error) {
+      return { status: "error", message: error instanceof Error ? error.message : "Additive lookup failed." };
     }
   }
 

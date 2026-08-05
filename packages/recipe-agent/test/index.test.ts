@@ -98,6 +98,27 @@ test("ingredient catalog exposes every authoritative ingredient through an injec
   ]);
 });
 
+test("additive catalog exposes canonical per-gallon dosage units through an injected lookup", async () => {
+  const execution = await executeHostedAgentTool(
+    "search_additives",
+    {},
+    {
+      additiveLookup: async () => [
+        { id: "pectic-enzyme", name: "Pectic Enzyme", dosagePerGallon: 0.4, unit: "tsp" },
+        { id: "bentonite", name: "Bentonite", dosagePerGallon: 6, unit: "g" }
+      ]
+    }
+  );
+
+  assert.equal(execution.status, "ok");
+  if (execution.status !== "ok" || !Array.isArray(execution.result)) return;
+  assert.deepEqual(execution.result, [
+    { id: "pectic-enzyme", name: "Pectic Enzyme", dosagePerGallon: 0.4, unit: "tsp" },
+    { id: "bentonite", name: "Bentonite", dosagePerGallon: 6, unit: "g" }
+  ]);
+  assert.ok(hostedAgentToolDefinitions.some((tool) => tool.name === "search_additives"));
+});
+
 test("yeast search exposes authoritative nutrient inputs through an injected lookup", async () => {
   const execution = await executeHostedAgentTool(
     "search_yeasts",

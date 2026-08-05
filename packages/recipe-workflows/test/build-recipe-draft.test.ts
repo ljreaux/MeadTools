@@ -103,6 +103,32 @@ test("a selected fill liquid replaces water without needing a stated amount", ()
   assert.ok(!result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
 });
 
+test("an explicit fill-liquid amount remains fixed and water balances the batch", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 10, unit: "L" },
+    targetOriginalGravity: 1.075,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      {
+        name: "Apple Juice",
+        category: "juice",
+        brix: 11,
+        amount: { kind: "volume", value: 8, unit: "L" },
+        role: "fill_liquid"
+      },
+      { name: "Wildflower Honey", role: "adjustable_fermentable" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  const cider = result.recipeData.ingredients.find((ingredient) => ingredient.name === "Apple Juice");
+  assert.equal(cider?.amounts.volume.value, "8");
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
 test("enabled stabilization defaults to potassium metabisulfite and pH 3.5", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },
@@ -243,7 +269,7 @@ test("vanilla is retained as an additive rather than requiring Brix", () => {
     ingredients: [
       { name: "Honey", role: "adjustable_fermentable" },
     ],
-    additives: [{ name: "Vanilla bean", amount: 1, unit: "whole bean", secondary: true }],
+    additives: [{ name: "Vanilla bean", amount: 1, unit: "units", secondary: true }],
     nutrients: nutrientPlan,
     stabilizers: { enabled: false }
   });
@@ -251,6 +277,22 @@ test("vanilla is retained as an additive rather than requiring Brix", () => {
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
   assert.deepEqual(result.recipeData.additives[0]?.name, "Vanilla bean");
+});
+
+test("recipe drafts reject additive units outside the recipe-builder contract", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 3, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    additives: [{ name: "Vanilla bean", amount: 1, unit: "bean" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.equal(result.code, "invalid_input");
 });
 
 test("general recipe drafting preserves a catalog ingredient reference", () => {

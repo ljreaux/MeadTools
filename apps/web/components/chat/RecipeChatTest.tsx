@@ -240,8 +240,12 @@ export default function RecipeChatTest({
   });
 
   const messages = useMemo(
-    () => displayMessagesFromTanStack(tanStackMessages, turnResults),
-    [tanStackMessages, turnResults]
+    () => displayMessagesFromTanStack(
+      tanStackMessages,
+      turnResults,
+      t("additionalLinks.wiki")
+    ),
+    [tanStackMessages, t, turnResults]
   );
 
   const latestUsage = useMemo(
@@ -758,7 +762,8 @@ function ToolActivityMarker({
 
 function displayMessagesFromTanStack(
   messages: TanStackUIMessage[],
-  turnResults: Record<string, ChatTurnResult>
+  turnResults: Record<string, ChatTurnResult>,
+  wikiLabel: string
 ): ChatMessage[] {
   return messages.flatMap((message) => {
     if (message.role !== "user" && message.role !== "assistant") return [];
@@ -771,7 +776,9 @@ function displayMessagesFromTanStack(
     return [{
       id: message.id,
       role: message.role,
-      content,
+      content: message.role === "assistant"
+        ? appendFetchedWikiSource(content, result?.toolResults, wikiLabel)
+        : content,
       ...(result
         ? {
             tools: result.toolResults.map(({ toolName }) => toolName),
@@ -780,6 +787,36 @@ function displayMessagesFromTanStack(
         : {})
     }];
   });
+}
+
+/**
+ * The source is carried in the structured turn result as well as the model
+ * text. Rendering it here makes the citation dependable even if the model
+ * ignores its final Markdown-link instruction.
+ */
+function appendFetchedWikiSource(
+  content: string,
+  toolResults: ChatTurnResult["toolResults"] | undefined,
+  wikiLabel: string
+): string {
+  const sourceUrl = fetchedWikiSourceUrl(toolResults);
+  if (!sourceUrl || content.includes(sourceUrl)) return content;
+  return `${content}\n\n[${wikiLabel}](${sourceUrl})`;
+}
+
+function fetchedWikiSourceUrl(
+  toolResults: ChatTurnResult["toolResults"] | undefined
+): string | undefined {
+  if (!toolResults) return undefined;
+  for (const toolResult of [...toolResults].reverse()) {
+    if (toolResult.toolName !== "fetch_wiki_page" || !isRecord(toolResult.result)) continue;
+    if (toolResult.result.status !== "ok" || !isRecord(toolResult.result.result)) continue;
+    const url = toolResult.result.result.url;
+    if (typeof url === "string" && url.startsWith("https://wiki.meadtools.com/")) {
+      return url;
+    }
+  }
+  return undefined;
 }
 
 function isChatTurnEvent(value: unknown): value is ChatTurnEvent {

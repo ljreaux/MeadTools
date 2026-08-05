@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { invalidateChatAdditiveCatalog } from "@/lib/db/additives";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -73,6 +74,8 @@ export async function PATCH(
       )
     });
 
+    invalidateChatAdditiveCatalog();
+
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error("Error updating additive:", error);
@@ -110,6 +113,8 @@ export async function DELETE(
     const deleted = await prisma.additives.delete({
       where: { id }
     });
+
+    invalidateChatAdditiveCatalog();
 
     return NextResponse.json({
       message: `${deleted.name} has been deleted`

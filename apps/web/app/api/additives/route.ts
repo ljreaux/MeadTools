@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { invalidateChatAdditiveCatalog } from "@/lib/db/additives";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -76,6 +77,8 @@ export async function POST(req: NextRequest) {
         unit: unit === "fl oz" ? "fl_oz" : unit,
       },
     });
+
+    invalidateChatAdditiveCatalog();
 
     return NextResponse.json(additive);
   } catch (error: any) {

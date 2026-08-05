@@ -8,6 +8,7 @@ import {
   convertAdditiveAmount,
   dosageToAmount,
   isEffectivelyEmptyNumericInput,
+  normalizeAdditiveUnit,
   normalizeIngredientLine,
   shouldConvertAdditiveAmount,
   VOLUME_TO_L
@@ -85,6 +86,14 @@ test("additive conversions preserve dimension and formatting rules", () => {
     }),
     true
   );
+});
+
+test("additive unit normalization uses only recipe-builder unit values", () => {
+  assert.equal(normalizeAdditiveUnit("whole bean"), "units");
+  assert.equal(normalizeAdditiveUnit("bean"), "units");
+  assert.equal(normalizeAdditiveUnit("Fluid Ounces"), "fl_oz");
+  assert.equal(normalizeAdditiveUnit("pounds"), "lbs");
+  assert.equal(normalizeAdditiveUnit("unrecognized measure"), undefined);
 });
 
 test("empty numeric input detection accepts localized zero placeholders", () => {

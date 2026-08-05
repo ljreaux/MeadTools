@@ -7,6 +7,7 @@ import {
   HONEY_BRIX,
   KG_TO_WEIGHT,
   L_TO_VOLUME,
+  ADDITIVE_UNITS,
   VOLUME_TO_L,
   WEIGHT_TO_KG
 } from "@meadtools/core/recipe";
@@ -75,7 +76,7 @@ const draftIngredientSchema = z.object({
 const additiveSchema = z.object({
   name: z.string().trim().min(1).max(160),
   amount: z.number().positive().optional(),
-  unit: z.string().trim().min(1).max(30).optional(),
+  unit: z.enum(ADDITIVE_UNITS).optional(),
   secondary: z.boolean().optional()
 });
 
@@ -537,7 +538,13 @@ function toSuppliedIngredient(ingredient: BuildRecipeDraftInput["ingredients"][n
   const brix = ingredientBrix(ingredient);
   if (brix === undefined) throw new Error(`A Brix value is required for ${ingredient.name}.`);
   const sg = toSG(brix);
-  const role = ingredient.role ?? "fixed";
+  // `fill_liquid` means this ingredient is intentionally left adjustable to
+  // fill the remaining batch volume. A stated amount is a user constraint,
+  // however, and must never be expanded or reduced just because a model also
+  // marked the liquid as a fill liquid.
+  const role = ingredient.role === "fill_liquid" && ingredient.amount
+    ? "fixed"
+    : ingredient.role ?? "fixed";
   let volumeL = 0;
   if (role === "fixed") {
     if (!ingredient.amount) throw new Error(`An amount is required for ${ingredient.name}.`);
