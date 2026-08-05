@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createWikiAgentTools,
   executeGravityTargetAgentTool,
+  executePrepareBrewActionTool,
   executeRecipeAgentTool,
   executeHostedAgentTool,
   hostedAgentToolDefinitions,
@@ -57,6 +58,28 @@ test("gravity target tool delegates ABV target math to the shared workflow", () 
   assert.equal(execution.result.status, "calculation");
   if (execution.result.status !== "calculation") return;
   assert.ok(execution.result.targetOriginalGravity > execution.result.baseOriginalGravity);
+});
+
+test("brew action proposals require a trusted selected brew target", () => {
+  const input = {
+    type: "ADDITION",
+    data: { kind: "OTHER", name: "Vanilla bean", amount: 1, unit: "units" }
+  };
+  const withoutTarget = executePrepareBrewActionTool(input, undefined);
+  assert.deepEqual(withoutTarget, {
+    status: "error",
+    message: "Select a brew and retrieve its context before preparing an action."
+  });
+
+  const execution = executePrepareBrewActionTool(input, {
+    brewId: "11111111-1111-4111-8111-111111111111",
+    brewLabel: "Brew: Summer Traditional"
+  });
+  assert.equal(execution.status, "ok");
+  if (execution.status !== "ok") return;
+  assert.equal(execution.result.target.brewId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(execution.result.entry.type, "ADDITION");
+  assert.equal(execution.result.summary, "Log 1 units Vanilla bean as an addition.");
 });
 
 test("unknown provider tool names are rejected before workflow execution", () => {
@@ -211,6 +234,7 @@ test("provider tool definitions stay aligned with the executable tool surface", 
       ?.parameters["additionalProperties"],
     false
   );
+  assert.ok(hostedAgentToolDefinitions.some((tool) => tool.name === "prepare_brew_action"));
 });
 
 test("hosted policy distinguishes wiki guidance from brief general context", () => {

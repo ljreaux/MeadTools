@@ -33,6 +33,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
+import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
 import { isRecipeData } from "@/types/recipeData";
 import {
@@ -42,6 +44,7 @@ import {
 import type { ChatTurnEvent } from "@/lib/ai/chat-service";
 import type { BuildRecipeDraftInput } from "@meadtools/recipe-workflows";
 import type { RecipeDataV2 } from "@meadtools/schemas";
+import type { BrewActionProposal } from "@meadtools/brew-domain/action-proposal";
 import {
   fetchServerSentEvents,
   type UIMessage as TanStackUIMessage,
@@ -150,12 +153,16 @@ export default function RecipeChatTest({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [savedDraftName, setSavedDraftName] = useState("");
   const [saveAsPrivate, setSaveAsPrivate] = useState(true);
+  const [confirmedBrewActions, setConfirmedBrewActions] = useState<Set<string>>(
+    () => new Set()
+  );
   const copyResetTimeoutRef = useRef<number | undefined>(undefined);
   const tokenRef = useRef<string | null>(null);
   const activeRecipeDataRef = useRef<RecipeDataV2 | undefined>(undefined);
   const recipeDraftInputRef = useRef<BuildRecipeDraftInput | undefined>(undefined);
   const selectedAccountContextRef = useRef<ChatContextSelection | undefined>(undefined);
   const createRecipeMutation = useCreateRecipeMutation();
+  const createBrewEntryMutation = useCreateBrewEntry();
 
   tokenRef.current = token;
   activeRecipeDataRef.current = activeRecipeData;
@@ -350,6 +357,23 @@ export default function RecipeChatTest({
     }
   }
 
+  async function confirmBrewAction(actionId: string, proposal: BrewActionProposal) {
+    try {
+      await createBrewEntryMutation.mutateAsync({
+        brewId: proposal.target.brewId,
+        input: brewActionEntryInput(proposal)
+      });
+      setConfirmedBrewActions((current) => new Set(current).add(actionId));
+      toast({ description: t("chatbotTest.brewActionSaved") });
+    } catch {
+      toast({
+        title: t("errorLabel"),
+        description: t("chatbotTest.errors.brewActionFailed"),
+        variant: "destructive"
+      });
+    }
+  }
+
   async function copyMessage(message: ChatMessage) {
     try {
       await navigator.clipboard.writeText(message.content);
@@ -511,8 +535,11 @@ export default function RecipeChatTest({
                       </div>
                     </MessageScrollerItem>
                   ) : (
-                    messages.map((message) => (
-                      <MessageScrollerItem
+                    messages.map((message) => {
+                      const proposal = message.role === "assistant"
+                        ? brewActionProposalFrom(turnResults[message.id]?.toolResults)
+                        : undefined;
+                      return <MessageScrollerItem
                         key={message.id}
                         messageId={message.id}
                         scrollAnchor={message.role === "user"}
@@ -552,10 +579,18 @@ export default function RecipeChatTest({
                                 <span>{t("chatbotTest.toolsUsed")}</span>
                               </MessageFooter>
                             ) : null}
+                            {proposal ? (
+                              <BrewActionProposalCard
+                                confirmed={confirmedBrewActions.has(message.id)}
+                                isConfirming={createBrewEntryMutation.isPending}
+                                onConfirm={() => void confirmBrewAction(message.id, proposal)}
+                                proposal={proposal}
+                              />
+                            ) : null}
                           </ChatMessageContent>
                         </ChatMessageRow>
-                      </MessageScrollerItem>
-                    ))
+                      </MessageScrollerItem>;
+                    })
                   )}
 
                   {isSubmitting ? (
@@ -724,6 +759,55 @@ function Meter({ label, value }: { label: string; value: string }) {
   );
 }
 
+function BrewActionProposalCard({
+  confirmed,
+  isConfirming,
+  onConfirm,
+  proposal
+}: {
+  confirmed: boolean;
+  isConfirming: boolean;
+  onConfirm: () => void;
+  proposal: BrewActionProposal;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Card className="mt-2 w-full max-w-xl border-primary/30 bg-card shadow-none">
+      <CardHeader className="space-y-1 pb-2">
+        <CardTitle className="text-sm">{t("chatbotTest.brewActionReview")}</CardTitle>
+        <p className="text-sm text-muted-foreground">{proposal.summary}</p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="rounded-md bg-muted/50 p-3 text-sm">
+          <p className="font-medium">{t("chatbotTest.brewActionTarget")}</p>
+          <p className="mt-1 text-muted-foreground">{proposal.target.brewLabel}</p>
+        </div>
+        <details className="rounded-md border p-3 text-sm">
+          <summary className="cursor-pointer font-medium">
+            {t("chatbotTest.brewActionDetails")}
+          </summary>
+          <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
+            {JSON.stringify(proposal.entry, null, 2)}
+          </pre>
+        </details>
+        <Button
+          disabled={confirmed || isConfirming}
+          onClick={onConfirm}
+          size="sm"
+          type="button"
+        >
+          {confirmed
+            ? t("chatbotTest.brewActionSaved")
+            : isConfirming
+              ? t("chatbotTest.brewActionSaving")
+              : t("chatbotTest.brewActionConfirm")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ToolActivityMarker({
   tools,
   t
@@ -817,6 +901,37 @@ function fetchedWikiSourceUrl(
     }
   }
   return undefined;
+}
+
+function brewActionProposalFrom(
+  toolResults: ChatTurnResult["toolResults"] | undefined
+): BrewActionProposal | undefined {
+  if (!toolResults) return undefined;
+  for (const toolResult of [...toolResults].reverse()) {
+    if (toolResult.toolName !== "prepare_brew_action" || !isRecord(toolResult.result)) continue;
+    if (toolResult.result.status !== "ok" || !isRecord(toolResult.result.result)) continue;
+    const proposal = toolResult.result.result;
+    if (
+      proposal.version === 1 &&
+      proposal.kind === "create_brew_entry" &&
+      isRecord(proposal.target) &&
+      typeof proposal.target.brewId === "string" &&
+      typeof proposal.target.brewLabel === "string" &&
+      typeof proposal.summary === "string" &&
+      isRecord(proposal.entry) &&
+      typeof proposal.entry.type === "string"
+    ) {
+      return proposal as BrewActionProposal;
+    }
+  }
+  return undefined;
+}
+
+function brewActionEntryInput(proposal: BrewActionProposal): CreateBrewEntryInput {
+  return {
+    ...proposal.entry,
+    client_entry_id: crypto.randomUUID()
+  } as CreateBrewEntryInput;
 }
 
 function isChatTurnEvent(value: unknown): value is ChatTurnEvent {

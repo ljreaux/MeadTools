@@ -361,6 +361,104 @@ test("a selected account record is loaded through a forced read-only tool", asyn
   assert.match(result.answer, /selected recipe/);
 });
 
+test("a selected brew action stays an uncommitted target-bound proposal", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "brew-context-tool",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "brew-context-call",
+                type: "function",
+                function: { name: "get_selected_account_context", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 2) {
+          return {
+            id: "brew-action-tool",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "brew-action-call",
+                type: "function",
+                function: {
+                  name: "prepare_brew_action",
+                  arguments: JSON.stringify({
+                    type: "ADDITION",
+                    data: {
+                      kind: "OTHER",
+                      name: "Vanilla bean",
+                      amount: 1,
+                      unit: "units"
+                    }
+                  })
+                }
+              }]
+            },
+            usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "brew-action-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "I prepared the addition for your review." },
+          usage: { inputTokens: 12, outputTokens: 8, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: {
+      ...chatRequestSchema.parse({
+        messages: [{ role: "user", content: "Log one vanilla bean in this batch." }]
+      }),
+      selectedAccountContext: {
+        kind: "brew",
+        label: "Brew: Summer Traditional",
+        brew: {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Summer Traditional",
+          stage: "PRIMARY",
+          startDate: "2026-08-01T00:00:00.000Z",
+          endDate: null,
+          currentVolumeLiters: null,
+          latestGravity: null,
+          recipeName: null,
+          recipeSnapshot: null,
+          recentEntries: []
+        }
+      }
+    },
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "get_selected_account_context" }
+  });
+  assert.equal(result.toolResults[1]?.toolName, "prepare_brew_action");
+  const actionResult = result.toolResults[1]?.result as {
+    status?: string;
+    result?: { target?: { brewId?: string }; entry?: { type?: string } };
+  };
+  assert.equal(actionResult.status, "ok");
+  assert.equal(actionResult.result?.target?.brewId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(actionResult.result?.entry?.type, "ADDITION");
+  assert.match(result.answer, /prepared the addition/i);
+});
+
 test("a selected recipe sweetness follow-up retrieves a MeadTools source", async () => {
   const draft = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },

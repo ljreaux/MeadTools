@@ -144,7 +144,7 @@ mutation remains reviewable.
 | Mead process and troubleshooting help | Private evaluator | Retrieve and cite the authoritative MeadTools wiki page; direct numeric work to MeadTools calculators. |
 | Continue a saved recipe | Private evaluator | User explicitly selects one owned recipe. The assistant receives a bounded, server-loaded recipe context and may explain or prepare a refinement, but cannot overwrite the recipe directly. |
 | Assist with an active brew | Private evaluator | User explicitly selects one owned brew. The assistant receives a bounded snapshot of the brew, stage, and recent timeline context to answer questions such as “what is next?” or “does this gravity trend look normal?” |
-| Prepare a brew action | Later | The assistant can propose a typed addition, measurement, note, or stage action. The UI shows the exact payload and requires user confirmation before the existing brew API writes it. |
+| Prepare a brew action | Private evaluator | With an explicitly selected brew, the assistant can prepare a typed note, addition, measurement, volume reading, or stage action. The UI shows the selected brew and exact entry payload; only a separate user confirmation calls the existing ownership-checked brew API. |
 | Hydrometer-aware assistance | Later | Add an opt-in read-only summary of linked-device state and recent readings; never let model output control devices or alerts. |
 | Persistent conversations and user credits | Later | Store conversations only with a retention policy; use a MeadTools credit ledger and explicit model tier selection before public access. |
 
@@ -164,8 +164,9 @@ The first account-context slice is **read-only and explicit**:
    untrusted reference data, not instructions for the assistant.
 4. A context tool may explain, compare, or prepare a proposed change, but it
    must not mutate recipes, brews, timeline entries, devices, notifications, or
-   user settings. Every later write uses an existing ownership-checked API and
-   a visible user confirmation.
+   user settings. A typed brew-action proposal is target-bound by the trusted
+   selected context, then the UI sends it through an existing
+   ownership-checked API only after visible user confirmation.
 5. Context is supplied only for the active request/session. Persistent
    conversation history, broader account recall, and cross-brew recommendations
    are separate future decisions with their own retention and consent rules.
