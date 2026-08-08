@@ -63,9 +63,22 @@ import {
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
   brewsResponseSchema,
+  chatCitationResponseSchema,
   chatContextErrorResponseSchema,
+  chatContextKindResponseSchema,
   chatContextOptionResponseSchema,
   chatContextOptionsResponseSchema,
+  chatConversationErrorResponseSchema,
+  chatConversationIdPathParamsSchema,
+  chatConversationListQuerySchema,
+  chatConversationResponseSchema,
+  chatConversationStateResponseSchema,
+  chatConversationThreadResponseSchema,
+  chatConversationsResponseSchema,
+  chatDraftResponseSchema,
+  chatMessageContextResponseSchema,
+  chatMessageResponseSchema,
+  chatThreadQuerySchema,
   contactRequestBodySchema,
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
@@ -79,6 +92,8 @@ import {
   createBrewEntryResponseSchema,
   createBrewRequestBodySchema,
   createBrewResponseSchema,
+  createChatConversationRequestBodySchema,
+  createChatConversationResponseSchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
@@ -101,6 +116,7 @@ import {
   deleteAdminUserSuccessResponseSchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
+  deleteChatConversationResponseSchema,
   deleteHydrometerBrewResponseSchema,
   deleteHydrometerDeviceResponseSchema,
   deleteHydrometerLogsInRangeResponseSchema,
@@ -260,6 +276,8 @@ import {
   updateBrewEntryResponseSchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
+  updateChatConversationRequestBodySchema,
+  updateChatConversationResponseSchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -362,9 +380,22 @@ export const BrewsResponse = brewsResponseSchema;
 export const BrewStageResponse = brewStageResponseSchema;
 export const BrewUpdateErrorResponse = brewUpdateErrorResponseSchema;
 export const BrewValidationErrorResponse = brewValidationErrorResponseSchema;
+export const ChatCitationResponse = chatCitationResponseSchema;
 export const ChatContextErrorResponse = chatContextErrorResponseSchema;
+export const ChatContextKindResponse = chatContextKindResponseSchema;
 export const ChatContextOptionResponse = chatContextOptionResponseSchema;
 export const ChatContextOptionsResponse = chatContextOptionsResponseSchema;
+export const ChatConversationErrorResponse = chatConversationErrorResponseSchema;
+export const ChatConversationIdPathParams = chatConversationIdPathParamsSchema;
+export const ChatConversationListQuery = chatConversationListQuerySchema;
+export const ChatConversationResponse = chatConversationResponseSchema;
+export const ChatConversationsResponse = chatConversationsResponseSchema;
+export const ChatConversationStateResponse = chatConversationStateResponseSchema;
+export const ChatConversationThreadResponse = chatConversationThreadResponseSchema;
+export const ChatDraftResponse = chatDraftResponseSchema;
+export const ChatMessageContextResponse = chatMessageContextResponseSchema;
+export const ChatMessageResponse = chatMessageResponseSchema;
+export const ChatThreadQuery = chatThreadQuerySchema;
 export const ContactRequestBody = contactRequestBodySchema;
 export const ContactSendErrorResponse = contactSendErrorResponseSchema;
 export const ContactSuccessResponse = contactSuccessResponseSchema;
@@ -378,6 +409,8 @@ export const CreateBrewEntryRequestBody = createBrewEntryRequestBodySchema;
 export const CreateBrewEntryResponse = createBrewEntryResponseSchema;
 export const CreateBrewRequestBody = createBrewRequestBodySchema;
 export const CreateBrewResponse = createBrewResponseSchema;
+export const CreateChatConversationRequestBody = createChatConversationRequestBodySchema;
+export const CreateChatConversationResponse = createChatConversationResponseSchema;
 export const CreateIngredientFailureErrorResponse = createIngredientFailureErrorResponseSchema;
 export const CreateIngredientRequestBody = createIngredientRequestBodySchema;
 export const CreateRecipeCommentFailureErrorResponse = createRecipeCommentFailureErrorResponseSchema;
@@ -400,6 +433,7 @@ export const DeleteAdditiveSuccessResponse = deleteAdditiveSuccessResponseSchema
 export const DeleteAdminUserSuccessResponse = deleteAdminUserSuccessResponseSchema;
 export const DeleteBrewEntrySuccessResponse = deleteBrewEntrySuccessResponseSchema;
 export const DeleteBrewSuccessResponse = deleteBrewSuccessResponseSchema;
+export const DeleteChatConversationResponse = deleteChatConversationResponseSchema;
 export const DeleteHydrometerBrewResponse = deleteHydrometerBrewResponseSchema;
 export const DeleteHydrometerDeviceResponse = deleteHydrometerDeviceResponseSchema;
 export const DeleteHydrometerLogsInRangeResponse = deleteHydrometerLogsInRangeResponseSchema;
@@ -559,6 +593,8 @@ export const UpdateBrewEntryRequestBody = updateBrewEntryRequestBodySchema;
 export const UpdateBrewEntryResponse = updateBrewEntryResponseSchema;
 export const UpdateBrewRequestBody = updateBrewRequestBodySchema;
 export const UpdateBrewResponse = updateBrewResponseSchema;
+export const UpdateChatConversationRequestBody = updateChatConversationRequestBodySchema;
+export const UpdateChatConversationResponse = updateChatConversationResponseSchema;
 export const UpdateHydrometerBrewRecipeOrAlertsResponse = updateHydrometerBrewRecipeOrAlertsResponseSchema;
 export const UpdateHydrometerBrewRequestBody = updateHydrometerBrewRequestBodySchema;
 export const UpdateHydrometerBrewResponse = updateHydrometerBrewResponseSchema;

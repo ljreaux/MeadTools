@@ -4,6 +4,7 @@ import {
   sendYesterdayRecipeActivityEmails
 } from "@/lib/db/activityEmailUpdates";
 import { pingPreview } from "@/lib/db/pingPreviewDb";
+import { purgeExpiredChatConversations } from "@/lib/db/chat-conversations";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     pingPreview();
     const result = await sendYesterdayRecipeActivityEmails();
     await deleteStaleActivityUpdates();
+    await purgeExpiredChatConversations();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     console.error("Error in daily recipe activity cron:", error);

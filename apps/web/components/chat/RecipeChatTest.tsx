@@ -1,7 +1,6 @@
 "use client";
 
 import { MessageResponse } from "@/components/ai-elements/message";
-import Header from "@/components/account/header";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,27 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "@/components/ui/input-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   Message as ChatMessageRow,
@@ -42,7 +61,10 @@ import {
   type ChatSessionMessage
 } from "@/lib/ai/chat-export";
 import type { ChatTurnEvent } from "@/lib/ai/chat-service";
-import type { BuildRecipeDraftInput } from "@meadtools/recipe-workflows";
+import {
+  buildRecipeDraftInputSchema,
+  type BuildRecipeDraftInput
+} from "@meadtools/recipe-workflows";
 import type { RecipeDataV2 } from "@meadtools/schemas";
 import type { BrewActionProposal } from "@meadtools/brew-domain/action-proposal";
 import {
@@ -51,6 +73,8 @@ import {
   useChat
 } from "@tanstack/ai-react";
 import {
+  ArrowLeft,
+  Archive,
   CircleAlert,
   Copy,
   CopyCheck,
@@ -59,10 +83,18 @@ import {
   LoaderCircle,
   Maximize2,
   Minimize2,
+  MessageSquareText,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RotateCcw,
   Save,
+  Search,
   Send,
+  Trash2,
   X
 } from "lucide-react";
+import Fuse from "fuse.js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -96,6 +128,7 @@ type ChatTurnResult = {
   answer: string;
   toolResults: Array<{ toolName: string; result: unknown }>;
   recipeDraftInput?: BuildRecipeDraftInput;
+  conversationTitle?: string;
   usage: ChatTurnUsage;
 };
 
@@ -117,6 +150,33 @@ type ChatContextOption =
 
 type ChatContextSelection = Pick<ChatContextOption, "kind" | "id">;
 
+type ChatConversation = {
+  id: string;
+  title: string;
+  state: "active" | "archived";
+  messageCount: number;
+  lastActivityAt: string;
+};
+
+type ChatHistoryStatusFilter = "all" | "active" | "archived";
+
+type PersistedChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  status: "pending" | "complete" | "failed" | "cancelled";
+  content: string;
+};
+
+type ChatThreadResponse = {
+  conversation: ChatConversation;
+  messages: PersistedChatMessage[];
+  nextBeforeSequence: number | null;
+  latestDraft: {
+    recipeDraftInput: unknown;
+    recipeData: unknown;
+  } | null;
+};
+
 type RecipeChatProps = {
   compact?: boolean;
   fullscreen?: boolean;
@@ -137,6 +197,24 @@ export default function RecipeChatTest({
   const { status: authStatus } = useSession();
   const canUseChat = Boolean(token) || authStatus === "authenticated";
   const [input, setInput] = useState("");
+  const [conversationId, setConversationId] = useState<string>();
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [activeConversationSummary, setActiveConversationSummary] =
+    useState<ChatConversation>();
+  const [conversationNextBefore, setConversationNextBefore] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] =
+    useState<ChatHistoryStatusFilter>("all");
+  const [isLoadingThread, setIsLoadingThread] = useState(false);
+  const [isLoadingMoreConversations, setIsLoadingMoreConversations] = useState(false);
+  const [threadNextBeforeSequence, setThreadNextBeforeSequence] = useState<number | null>(null);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [threadAtCapacity, setThreadAtCapacity] = useState(false);
+  const [renamingConversation, setRenamingConversation] = useState<ChatConversation>();
+  const [conversationTitleInput, setConversationTitleInput] = useState("");
+  const [deletingConversation, setDeletingConversation] = useState<ChatConversation>();
+  const [isUpdatingConversation, setIsUpdatingConversation] = useState(false);
   const [toolActivity, setToolActivity] = useState<ToolActivity[]>([]);
   const [activeRecipeData, setActiveRecipeData] = useState<RecipeDataV2>();
   const [recipeDraftInput, setRecipeDraftInput] = useState<BuildRecipeDraftInput>();
@@ -158,6 +236,11 @@ export default function RecipeChatTest({
   );
   const copyResetTimeoutRef = useRef<number | undefined>(undefined);
   const tokenRef = useRef<string | null>(null);
+  const conversationIdRef = useRef<string | undefined>(undefined);
+  const clientMessageIdRef = useRef<string | undefined>(undefined);
+  const threadAtCapacityRef = useRef(false);
+  const capacityToastShownRef = useRef(false);
+  const tanStackMessagesRef = useRef<TanStackUIMessage[]>([]);
   const activeRecipeDataRef = useRef<RecipeDataV2 | undefined>(undefined);
   const recipeDraftInputRef = useRef<BuildRecipeDraftInput | undefined>(undefined);
   const selectedAccountContextRef = useRef<ChatContextSelection | undefined>(undefined);
@@ -165,6 +248,7 @@ export default function RecipeChatTest({
   const createBrewEntryMutation = useCreateBrewEntry();
 
   tokenRef.current = token;
+  conversationIdRef.current = conversationId;
   activeRecipeDataRef.current = activeRecipeData;
   recipeDraftInputRef.current = recipeDraftInput;
   selectedAccountContextRef.current = selectedAccountContext;
@@ -204,7 +288,25 @@ export default function RecipeChatTest({
         ...(tokenRef.current
           ? { headers: { Authorization: `Bearer ${tokenRef.current}` } }
           : {}),
+        fetchClient: async (...args) => {
+          const response = await fetch(...args);
+          if (response.status === 409) {
+            const payload = (await response.clone().json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            threadAtCapacityRef.current = Boolean(
+              payload?.error?.includes("reached its message or content limit")
+            );
+          }
+          return response;
+        },
         body: {
+          ...(conversationIdRef.current
+            ? { conversationId: conversationIdRef.current }
+            : {}),
+          ...(clientMessageIdRef.current
+            ? { clientMessageId: clientMessageIdRef.current }
+            : {}),
           ...(activeRecipeDataRef.current
             ? { activeRecipeData: activeRecipeDataRef.current }
             : {}),
@@ -222,6 +324,7 @@ export default function RecipeChatTest({
   const {
     messages: tanStackMessages,
     sendMessage,
+    setMessages,
     stop,
     isLoading: isSubmitting
   } = useChat({
@@ -239,12 +342,308 @@ export default function RecipeChatTest({
       const draft = recipeDataFrom(result.toolResults);
       if (draft) setActiveRecipeData(draft);
       if (result.recipeDraftInput) setRecipeDraftInput(result.recipeDraftInput);
+      const conversationTitle = result.conversationTitle;
+      if (conversationTitle) {
+        setConversations((current) => current.map((conversation) =>
+          conversation.id === conversationIdRef.current
+            ? { ...conversation, title: conversationTitle }
+            : conversation
+        ));
+        setActiveConversationSummary((current) => {
+          if (!current || current.id !== conversationIdRef.current) return current;
+          return { ...current, title: conversationTitle };
+        });
+      }
       setModel(result.usage.model);
       setTurnResults((current) => ({ ...current, [messageId]: result }));
     },
-    onError: () => setError(t("chatbotTest.errors.requestFailed")),
+    onError: () => {
+      if (threadAtCapacityRef.current) {
+        showThreadCapacity();
+        return;
+      }
+      setError(t("chatbotTest.errors.requestFailed"));
+    },
     onFinish: () => setToolActivity([])
   });
+  tanStackMessagesRef.current = tanStackMessages;
+
+  function showThreadCapacity() {
+    setThreadAtCapacity(true);
+    setError(t("chatbotTest.errors.threadCapacity"));
+    if (capacityToastShownRef.current) return;
+    capacityToastShownRef.current = true;
+    toast({
+      title: t("chatbotTest.chatLimitReached"),
+      description: t("chatbotTest.errors.threadCapacity"),
+      variant: "destructive"
+    });
+  }
+
+  async function loadChatThread(id: string) {
+    setIsLoadingThread(true);
+    setError(undefined);
+    try {
+      const response = await fetch(`/api/chat/conversations/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const payload = (await response.json().catch(() => null)) as ChatThreadResponse | {
+        error?: string;
+      } | null;
+      if (!response.ok || !payload || !("conversation" in payload)) {
+        throw new Error("Unable to load chat thread.");
+      }
+      const recipeData = payload.latestDraft?.recipeData;
+      const draftInput = buildRecipeDraftInputSchema.safeParse(
+        payload.latestDraft?.recipeDraftInput
+      );
+      conversationIdRef.current = payload.conversation.id;
+      setConversationId(payload.conversation.id);
+      setActiveConversationSummary(payload.conversation);
+      setConversations((current) => {
+        const exists = current.some(
+          (conversation) => conversation.id === payload.conversation.id
+        );
+        if (!exists) return [payload.conversation, ...current];
+        return current.map((conversation) =>
+          conversation.id === payload.conversation.id
+            ? payload.conversation
+            : conversation
+        );
+      });
+      setMessages(persistedMessagesToTanStack(payload.messages));
+      setThreadNextBeforeSequence(payload.nextBeforeSequence);
+      setThreadAtCapacity(false);
+      threadAtCapacityRef.current = false;
+      capacityToastShownRef.current = false;
+      setTurnResults({});
+      setModel(undefined);
+      setActiveRecipeData(isRecipeData(recipeData) ? recipeData : undefined);
+      setRecipeDraftInput(draftInput.success ? draftInput.data : undefined);
+    } catch {
+      setError(t("chatbotTest.errors.threadFailed"));
+    } finally {
+      setIsLoadingThread(false);
+    }
+  }
+
+  async function loadRecentConversations(options?: {
+    append?: boolean;
+    before?: string;
+    query?: string;
+    state?: Exclude<ChatHistoryStatusFilter, "all">;
+  }) {
+    const searchParams = new URLSearchParams({ limit: "20" });
+    if (options?.before) searchParams.set("before", options.before);
+    if (options?.query) searchParams.set("query", options.query);
+    if (options?.state) searchParams.set("state", options.state);
+    const response = await fetch(`/api/chat/conversations?${searchParams}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      conversations?: ChatConversation[];
+      nextBefore?: string | null;
+    } | null;
+    if (!response.ok || !payload?.conversations) {
+      throw new Error("Unable to load chat conversations.");
+    }
+    setConversations((current) => {
+      if (!options?.append) return payload.conversations!;
+      const existing = new Set(current.map((conversation) => conversation.id));
+      return [...current, ...payload.conversations!.filter((conversation) => !existing.has(conversation.id))];
+    });
+    setConversationNextBefore(payload.nextBefore ?? null);
+    return payload.conversations;
+  }
+
+  async function loadOlderMessages() {
+    if (!conversationId || !threadNextBeforeSequence || isLoadingOlderMessages) return;
+    setIsLoadingOlderMessages(true);
+    try {
+      const response = await fetch(
+        `/api/chat/conversations/${conversationId}?beforeSequence=${threadNextBeforeSequence}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+      );
+      const payload = (await response.json().catch(() => null)) as ChatThreadResponse | null;
+      if (!response.ok || !payload) throw new Error("Unable to load older chat messages.");
+      setMessages([
+        ...persistedMessagesToTanStack(payload.messages),
+        ...tanStackMessagesRef.current
+      ]);
+      setThreadNextBeforeSequence(payload.nextBeforeSequence);
+    } catch {
+      setError(t("chatbotTest.errors.threadFailed"));
+    } finally {
+      setIsLoadingOlderMessages(false);
+    }
+  }
+
+  async function ensureConversation(): Promise<string> {
+    if (conversationIdRef.current) return conversationIdRef.current;
+    const response = await fetch("/api/chat/conversations", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({})
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      conversation?: ChatConversation;
+    } | null;
+    if (!response.ok || !payload?.conversation) {
+      throw new Error("Unable to create chat conversation.");
+    }
+    conversationIdRef.current = payload.conversation.id;
+    setConversationId(payload.conversation.id);
+    setActiveConversationSummary(payload.conversation);
+    setConversations((current) => [payload.conversation!, ...current]);
+    return payload.conversation.id;
+  }
+
+  function startNewConversation() {
+    if (isSubmitting) return;
+    conversationIdRef.current = undefined;
+    setConversationId(undefined);
+    setActiveConversationSummary(undefined);
+    setMessages([]);
+    setTurnResults({});
+    setActiveRecipeData(undefined);
+    setRecipeDraftInput(undefined);
+    setModel(undefined);
+    setError(undefined);
+    setInput("");
+    setSelectedAccountContext(undefined);
+    setContextQuery("");
+    setHistoryQuery("");
+    setThreadNextBeforeSequence(null);
+    setThreadAtCapacity(false);
+    threadAtCapacityRef.current = false;
+    capacityToastShownRef.current = false;
+  }
+
+  function selectConversation(id: string) {
+    setHistoryOpen(false);
+    void loadChatThread(id);
+  }
+
+  function startNewConversationFromHistory() {
+    setHistoryOpen(false);
+    startNewConversation();
+  }
+
+  async function loadMoreConversations() {
+    if (!conversationNextBefore || isLoadingMoreConversations) return;
+    setIsLoadingMoreConversations(true);
+    try {
+      await loadRecentConversations({
+        append: true,
+        before: conversationNextBefore,
+        ...(historyQuery.trim() ? { query: historyQuery.trim() } : {}),
+        ...(historyStatusFilter === "all" ? {} : { state: historyStatusFilter })
+      });
+    } catch {
+      setError(t("chatbotTest.errors.threadFailed"));
+    } finally {
+      setIsLoadingMoreConversations(false);
+    }
+  }
+
+  async function updateConversation(
+    target: ChatConversation,
+    update: { title?: string; state?: "active" | "archived" }
+  ) {
+    setIsUpdatingConversation(true);
+    try {
+      const response = await fetch(`/api/chat/conversations/${target.id}`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(update)
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        conversation?: ChatConversation;
+      } | null;
+      if (!response.ok || !payload?.conversation) {
+        throw new Error("Unable to update chat conversation.");
+      }
+      setConversations((current) => current.map((conversation) =>
+        conversation.id === target.id ? payload.conversation! : conversation
+      ));
+      if (target.id === conversationId) {
+        setActiveConversationSummary(payload.conversation);
+      }
+      if (target.id === conversationId && payload.conversation.state === "archived") {
+        startNewConversation();
+        setHistoryOpen(false);
+      }
+      setRenamingConversation(undefined);
+    } catch {
+      setError(t("chatbotTest.errors.threadUpdateFailed"));
+    } finally {
+      setIsUpdatingConversation(false);
+    }
+  }
+
+  async function deleteConversation(target: ChatConversation) {
+    setIsUpdatingConversation(true);
+    try {
+      const response = await fetch(`/api/chat/conversations/${target.id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      if (!response.ok) throw new Error("Unable to delete chat conversation.");
+      setConversations((current) => current.filter((conversation) => conversation.id !== target.id));
+      if (target.id === conversationId) {
+        startNewConversation();
+        setHistoryOpen(false);
+      }
+      setDeletingConversation(undefined);
+    } catch {
+      setError(t("chatbotTest.errors.threadDeleteFailed"));
+    } finally {
+      setIsUpdatingConversation(false);
+    }
+  }
+
+  function openRenameConversation(target: ChatConversation) {
+    setConversationTitleInput(target.title);
+    setRenamingConversation(target);
+  }
+
+  useEffect(() => {
+    if (!canUseChat) return;
+    let cancelled = false;
+    void loadRecentConversations()
+      .then((recent) => {
+        if (!cancelled && recent[0]) void loadChatThread(recent[0].id);
+      })
+      .catch(() => {
+        if (!cancelled) setError(t("chatbotTest.errors.threadFailed"));
+      });
+    return () => {
+      cancelled = true;
+    };
+  // `token` may refresh while this evaluator is open; reload only on a real identity change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canUseChat, token]);
+
+  useEffect(() => {
+    if (!canUseChat || !historyOpen) return;
+    const timeout = window.setTimeout(() => {
+      void loadRecentConversations(
+        {
+          ...(historyQuery.trim() ? { query: historyQuery.trim() } : {}),
+          ...(historyStatusFilter === "all" ? {} : { state: historyStatusFilter })
+        }
+      ).catch(() => setError(t("chatbotTest.errors.threadFailed")));
+    }, 200);
+    return () => window.clearTimeout(timeout);
+  // Search is intentionally server-backed so conversations outside the loaded page remain findable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canUseChat, historyOpen, historyQuery, historyStatusFilter, token]);
 
   const messages = useMemo(
     () => displayMessagesFromTanStack(
@@ -260,6 +659,11 @@ export default function RecipeChatTest({
     [messages]
   );
   const popupLayout = compact || fullscreen;
+  const activeConversation = activeConversationSummary?.id === conversationId
+    ? activeConversationSummary
+    : conversations.find((conversation) => conversation.id === conversationId);
+  const activeConversationTitle = activeConversation?.title ?? t("chatbotTest.newChat");
+  const activeConversationArchived = activeConversation?.state === "archived";
 
   async function submitMessage() {
     const content = input.trim();
@@ -272,11 +676,23 @@ export default function RecipeChatTest({
 
     setInput("");
     setError(undefined);
+    setThreadAtCapacity(false);
+    threadAtCapacityRef.current = false;
+    capacityToastShownRef.current = false;
     setToolActivity([]);
     try {
+      await ensureConversation();
+      clientMessageIdRef.current = crypto.randomUUID();
       await sendMessage(content);
+      clientMessageIdRef.current = undefined;
+      void loadRecentConversations().catch(() => undefined);
     } catch {
-      setError(t("chatbotTest.errors.requestFailed"));
+      clientMessageIdRef.current = undefined;
+      if (threadAtCapacityRef.current) {
+        showThreadCapacity();
+      } else {
+        setError(t("chatbotTest.errors.requestFailed"));
+      }
     }
   }
 
@@ -420,14 +836,46 @@ export default function RecipeChatTest({
         fullscreen
           ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 sm:p-6 sm:pt-24"
           : compact
-          ? "flex h-[min(40rem,calc(100vh-6rem))] w-full flex-col rounded-xl bg-card p-3"
+          ? "flex h-[min(40rem,calc(100vh-6rem))] w-full min-w-0 flex-col rounded-xl bg-card p-3"
           : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 sm:p-10"
       }
     >
       {popupLayout ? (
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <h2 className="text-base font-semibold">{t("chatbotPopup.title")}</h2>
+          <h2 className="min-w-0 flex-1 truncate text-base font-semibold" title={activeConversationTitle}>
+            {activeConversationTitle}
+          </h2>
           <div className="flex items-center gap-1">
+            <Button
+              aria-label={
+                historyOpen
+                  ? t("chatbotTest.backToChat")
+                  : t("chatbotTest.chatHistory")
+              }
+              disabled={isSubmitting || isLoadingThread}
+              onClick={() => setHistoryOpen((open) => !open)}
+              size="icon-xs"
+              title={
+                historyOpen
+                  ? t("chatbotTest.backToChat")
+                  : t("chatbotTest.chatHistory")
+              }
+              type="button"
+              variant="ghost"
+            >
+              <MessageSquareText />
+            </Button>
+            <Button
+              aria-label={t("chatbotTest.newChat")}
+              disabled={isSubmitting}
+              onClick={startNewConversation}
+              size="icon-xs"
+              title={t("chatbotTest.newChat")}
+              type="button"
+              variant="ghost"
+            >
+              <Plus />
+            </Button>
             <Button
               aria-label={t("chatbotTest.saveDraft")}
               disabled={!activeRecipeData}
@@ -484,8 +932,7 @@ export default function RecipeChatTest({
         </div>
       ) : (
         <>
-          <Header />
-          <div className="mt-10 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl">{t("chatbotTest.title")}</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
@@ -493,141 +940,216 @@ export default function RecipeChatTest({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
-                {activeRecipeData
-                  ? t("chatbotTest.activeDraft")
-                  : t("chatbotTest.noActiveDraft")}
-              </div>
               <Button
                 disabled={!activeRecipeData}
                 onClick={openSaveDraft}
-                size="sm"
+                size="icon"
+                title={t("chatbotTest.saveDraft")}
                 type="button"
                 variant="outline"
               >
                 <Save />
-                {t("chatbotTest.saveDraft")}
               </Button>
             </div>
           </div>
         </>
       )}
 
-      <Card className={popupLayout ? "flex min-h-0 flex-1 overflow-hidden" : "mt-6 overflow-hidden"}>
-        <CardContent className={popupLayout ? "flex min-h-0 flex-1 flex-col p-3" : "p-4 sm:p-6"}>
-          <MessageScrollerProvider autoScroll scrollPreviousItemPeek={48}>
-            <MessageScroller
-              className={
-                popupLayout
-                  ? "min-h-0 flex-1 rounded-lg border bg-secondary p-2"
-                  : "h-[55vh] min-h-[18rem] rounded-lg border bg-secondary p-2"
-              }
-            >
-              <MessageScrollerViewport>
-                <MessageScrollerContent
-                  aria-busy={isSubmitting}
-                  className="px-1 py-1"
-                >
-                  {messages.length === 0 ? (
-                    <MessageScrollerItem messageId="empty-chat">
-                      <div className="flex min-h-[16rem] items-center justify-center text-center text-sm text-muted-foreground">
-                        {t("chatbotTest.emptyState")}
-                      </div>
-                    </MessageScrollerItem>
-                  ) : (
-                    messages.map((message) => {
-                      const proposal = message.role === "assistant"
-                        ? brewActionProposalFrom(turnResults[message.id]?.toolResults)
-                        : undefined;
-                      return <MessageScrollerItem
-                        key={message.id}
-                        messageId={message.id}
-                        scrollAnchor={message.role === "user"}
-                      >
-                        <ChatMessageRow align={message.role === "user" ? "end" : "start"}>
-                          <ChatMessageContent>
-                            <Bubble
-                              align={message.role === "user" ? "end" : "start"}
-                              className="group/bubble"
-                              variant="outline"
-                            >
-                              <BubbleContent className="pr-10">
-                                <MessageResponse>{message.content}</MessageResponse>
-                              </BubbleContent>
-                              <Button
-                                aria-label={
-                                  copiedMessageId === message.id
-                                    ? t("chatbotTest.copiedMessage")
-                                    : t("chatbotTest.copyMessage")
-                                }
-                                className="absolute right-1 top-1 opacity-0 transition-opacity group-hover/bubble:opacity-100 group-focus-within/bubble:opacity-100 focus-visible:opacity-100"
-                                onClick={() => void copyMessage(message)}
-                                size="icon-xs"
-                                title={
-                                  copiedMessageId === message.id
-                                    ? t("chatbotTest.copiedMessage")
-                                    : t("chatbotTest.copyMessage")
-                                }
-                                type="button"
-                                variant="ghost"
+      <Card className={popupLayout ? "flex min-h-0 min-w-0 max-w-full flex-1 overflow-hidden" : "mt-6 overflow-hidden"}>
+        <CardContent className={popupLayout ? "flex min-h-0 min-w-0 max-w-full flex-1 flex-col p-3" : "p-4 sm:p-6"}>
+          {historyOpen ? (
+            <ChatHistoryPanel
+              activeConversationId={conversationId}
+              activeConversationTitle={activeConversationTitle}
+              conversations={conversations}
+              disabled={isSubmitting || isLoadingThread}
+              hasMore={Boolean(conversationNextBefore)}
+              isLoadingMore={isLoadingMoreConversations}
+              onClose={() => setHistoryOpen(false)}
+              onDelete={(conversation) => setDeletingConversation(conversation)}
+              onLoadMore={() => void loadMoreConversations()}
+              onNew={startNewConversationFromHistory}
+              onRename={openRenameConversation}
+              onSelect={selectConversation}
+              onToggleArchived={(conversation) => void updateConversation(conversation, {
+                state: conversation.state === "active" ? "archived" : "active"
+              })}
+              popupLayout={popupLayout}
+              query={historyQuery}
+              statusFilter={historyStatusFilter}
+              setQuery={setHistoryQuery}
+              setStatusFilter={setHistoryStatusFilter}
+              t={t}
+            />
+          ) : <>
+            {!popupLayout ? (
+              <ChatThreadHeader
+                disabled={isSubmitting || isLoadingThread}
+                onHistory={() => setHistoryOpen((open) => !open)}
+                onNew={startNewConversation}
+                title={activeConversationTitle}
+                t={t}
+              />
+            ) : null}
+            <MessageScrollerProvider autoScroll scrollPreviousItemPeek={48}>
+              <MessageScroller
+                className={
+                  popupLayout
+                    ? "min-h-0 flex-1 rounded-lg border bg-secondary p-2"
+                    : "h-[55vh] min-h-[18rem] rounded-lg border bg-secondary p-2"
+                }
+              >
+                <MessageScrollerViewport>
+                  <MessageScrollerContent
+                    aria-busy={isSubmitting}
+                    className="px-1 py-1"
+                  >
+                    {threadNextBeforeSequence ? (
+                      <MessageScrollerItem messageId="load-older-messages">
+                        <div className="flex justify-center pb-3">
+                          <Button
+                            disabled={isLoadingOlderMessages}
+                            onClick={() => void loadOlderMessages()}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            {isLoadingOlderMessages
+                              ? t("chatbotTest.loadingOlderMessages")
+                              : t("chatbotTest.loadOlderMessages")}
+                          </Button>
+                        </div>
+                      </MessageScrollerItem>
+                    ) : null}
+                    {messages.length === 0 ? (
+                      <MessageScrollerItem messageId="empty-chat">
+                        <div className="flex min-h-[16rem] items-center justify-center text-center text-sm text-muted-foreground">
+                          {t("chatbotTest.emptyState")}
+                        </div>
+                      </MessageScrollerItem>
+                    ) : (
+                      messages.map((message) => {
+                        const proposal = message.role === "assistant"
+                          ? brewActionProposalFrom(turnResults[message.id]?.toolResults)
+                          : undefined;
+                        return <MessageScrollerItem
+                          key={message.id}
+                          messageId={message.id}
+                          scrollAnchor={message.role === "user"}
+                        >
+                          <ChatMessageRow align={message.role === "user" ? "end" : "start"}>
+                            <ChatMessageContent>
+                              <Bubble
+                                align={message.role === "user" ? "end" : "start"}
+                                className="group/bubble"
+                                variant="outline"
                               >
-                                {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
-                              </Button>
-                            </Bubble>
-                            {!compact && message.tools && message.tools.length > 0 ? (
-                              <MessageFooter>
-                                <span>{t("chatbotTest.toolsUsed")}</span>
-                              </MessageFooter>
-                            ) : null}
-                            {proposal ? (
-                              <BrewActionProposalCard
-                                confirmed={confirmedBrewActions.has(message.id)}
-                                isConfirming={createBrewEntryMutation.isPending}
-                                onConfirm={() => void confirmBrewAction(message.id, proposal)}
-                                proposal={proposal}
-                              />
-                            ) : null}
-                          </ChatMessageContent>
-                        </ChatMessageRow>
-                      </MessageScrollerItem>;
-                    })
-                  )}
+                                <BubbleContent className="pr-10">
+                                  <MessageResponse>{message.content}</MessageResponse>
+                                </BubbleContent>
+                                <Button
+                                  aria-label={
+                                    copiedMessageId === message.id
+                                      ? t("chatbotTest.copiedMessage")
+                                      : t("chatbotTest.copyMessage")
+                                  }
+                                  className="absolute right-1 top-1 opacity-0 transition-opacity group-hover/bubble:opacity-100 group-focus-within/bubble:opacity-100 focus-visible:opacity-100"
+                                  onClick={() => void copyMessage(message)}
+                                  size="icon-xs"
+                                  title={
+                                    copiedMessageId === message.id
+                                      ? t("chatbotTest.copiedMessage")
+                                      : t("chatbotTest.copyMessage")
+                                  }
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  {copiedMessageId === message.id ? <CopyCheck /> : <Copy />}
+                                </Button>
+                              </Bubble>
+                              {!compact && message.tools && message.tools.length > 0 ? (
+                                <MessageFooter>
+                                  <span>{t("chatbotTest.toolsUsed")}</span>
+                                </MessageFooter>
+                              ) : null}
+                              {proposal ? (
+                                <BrewActionProposalCard
+                                  confirmed={confirmedBrewActions.has(message.id)}
+                                  isConfirming={createBrewEntryMutation.isPending}
+                                  onConfirm={() => void confirmBrewAction(message.id, proposal)}
+                                  proposal={proposal}
+                                />
+                              ) : null}
+                            </ChatMessageContent>
+                          </ChatMessageRow>
+                        </MessageScrollerItem>;
+                      })
+                    )}
 
-                  {isSubmitting ? (
-                    <MessageScrollerItem messageId="recipe-research-status">
-                      <ToolActivityMarker tools={toolActivity} t={t} />
-                    </MessageScrollerItem>
-                  ) : null}
+                    {isSubmitting ? (
+                      <MessageScrollerItem messageId="recipe-research-status">
+                        <ToolActivityMarker tools={toolActivity} t={t} />
+                      </MessageScrollerItem>
+                    ) : null}
 
-                </MessageScrollerContent>
-              </MessageScrollerViewport>
-              <MessageScrollerButton />
-            </MessageScroller>
-          </MessageScrollerProvider>
+                  </MessageScrollerContent>
+                </MessageScrollerViewport>
+                <MessageScrollerButton />
+              </MessageScroller>
+            </MessageScrollerProvider>
 
-          <form className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"} onSubmit={onSubmit}>
-            <div className="grid gap-1.5 sm:grid-cols-[minmax(0,20rem)_1fr] sm:items-center">
-              <label>
-                <span className="sr-only">{t("chatbotTest.contextLabel")}</span>
-                <SearchableInput
-                  getLabel={contextOptionLabel}
-                  getValue={contextOptionValue}
-                  items={contextOptions}
-                  keyName="name"
-                  onSelect={(option) => selectAccountContext(contextOptionValue(option))}
-                  placeholder={
-                    isLoadingContextOptions
-                      ? t("chatbotTest.contextLoading")
-                      : t("chatbotTest.contextPlaceholder")
-                  }
-                  query={contextQuery}
-                  setQuery={setContextSearchQuery}
-                />
-              </label>
-              <p className="text-xs text-muted-foreground">
-                {contextOptionsError || t("chatbotTest.contextReadOnly")}
-              </p>
-            </div>
+            {activeConversationArchived ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                <p>{t("chatbotTest.archivedChatDescription")}</p>
+                <Button
+                  onClick={() => {
+                    if (activeConversation) {
+                      void updateConversation(activeConversation, { state: "active" });
+                    }
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <RotateCcw />
+                  {t("chatbotTest.restoreChat")}
+                </Button>
+              </div>
+            ) : (
+            <form className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"} onSubmit={onSubmit}>
+            <details className="rounded-md border bg-muted/20 px-3 py-2">
+              <summary className="cursor-pointer text-sm text-muted-foreground">
+                {t("chatbotTest.attachContext")}
+              </summary>
+              <div
+                className={
+                  popupLayout
+                    ? "mt-3 space-y-2"
+                    : "mt-3 grid gap-1.5 sm:grid-cols-[minmax(0,20rem)_1fr] sm:items-center"
+                }
+              >
+                <label>
+                  <span className="sr-only">{t("chatbotTest.contextLabel")}</span>
+                  <SearchableInput
+                    getLabel={contextOptionLabel}
+                    getValue={contextOptionValue}
+                    items={contextOptions}
+                    keyName="name"
+                    onSelect={(option) => selectAccountContext(contextOptionValue(option))}
+                    placeholder={
+                      isLoadingContextOptions
+                        ? t("chatbotTest.contextLoading")
+                        : t("chatbotTest.contextPlaceholder")
+                    }
+                    query={contextQuery}
+                    setQuery={setContextSearchQuery}
+                  />
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {contextOptionsError || t("chatbotTest.contextReadOnly")}
+                </p>
+              </div>
+            </details>
             <Textarea
               aria-label={t("chatbotTest.inputLabel")}
               disabled={isSubmitting}
@@ -654,15 +1176,29 @@ export default function RecipeChatTest({
                 </Button>
               )}
             </div>
-          </form>
-          {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+            </form>
+            )}
+            {threadAtCapacity ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+                <p>{t("chatbotTest.errors.threadCapacity")}</p>
+                <Button onClick={startNewConversation} size="sm" type="button" variant="outline">
+                  <Plus />
+                  {t("chatbotTest.newChat")}
+                </Button>
+              </div>
+            ) : error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+          </>}
         </CardContent>
       </Card>
 
       {!popupLayout ? (
-        <Card className="mt-4">
-          <CardHeader className="flex-row items-center justify-between gap-3 pb-2">
-            <CardTitle className="text-base">{t("chatbotTest.metering")}</CardTitle>
+        <details className="mt-4 rounded-lg border bg-card px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium">
+            {t("chatbotTest.evaluatorDetails")}
+          </summary>
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-3 pb-2">
+              <p className="text-sm font-medium">{t("chatbotTest.metering")}</p>
             <Button
               disabled={messages.length === 0}
               onClick={exportSession}
@@ -673,8 +1209,8 @@ export default function RecipeChatTest({
               <Download />
               {t("chatbotTest.exportSession")}
             </Button>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm sm:grid-cols-3">
+            </div>
+          <div className="grid gap-2 text-sm sm:grid-cols-3">
             <Meter label={t("chatbotTest.model")} value={model ?? "—"} />
             <Meter
               label={t("chatbotTest.tokens")}
@@ -696,8 +1232,9 @@ export default function RecipeChatTest({
               label={t("chatbotTest.cachedTokens")}
               value={latestUsage ? String(latestUsage.cachedInputTokens) : "—"}
             />
-          </CardContent>
-        </Card>
+          </div>
+          </div>
+        </details>
       ) : null}
 
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
@@ -734,6 +1271,77 @@ export default function RecipeChatTest({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={Boolean(renamingConversation)}
+        onOpenChange={(open) => {
+          if (!open && !isUpdatingConversation) setRenamingConversation(undefined);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("chatbotTest.renameChat")}</DialogTitle>
+            <DialogDescription>{t("chatbotTest.renameChatDescription")}</DialogDescription>
+          </DialogHeader>
+          <label className="grid gap-2 text-sm font-medium">
+            {t("chatbotTest.chatTitle")}
+            <Input
+              autoFocus
+              onChange={(event) => setConversationTitleInput(event.currentTarget.value)}
+              value={conversationTitleInput}
+            />
+          </label>
+          <DialogFooter>
+            <Button
+              disabled={!renamingConversation || !conversationTitleInput.trim() || isUpdatingConversation}
+              onClick={() => {
+                if (!renamingConversation) return;
+                void updateConversation(renamingConversation, {
+                  title: conversationTitleInput.trim()
+                });
+              }}
+              type="button"
+            >
+              {isUpdatingConversation ? t("saving") : t("save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deletingConversation)}
+        onOpenChange={(open) => {
+          if (!open && !isUpdatingConversation) setDeletingConversation(undefined);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("chatbotTest.deleteChat")}</DialogTitle>
+            <DialogDescription>{t("chatbotTest.deleteChatDescription")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              disabled={isUpdatingConversation}
+              onClick={() => setDeletingConversation(undefined)}
+              type="button"
+              variant="outline"
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              disabled={!deletingConversation || isUpdatingConversation}
+              onClick={() => {
+                if (deletingConversation) void deleteConversation(deletingConversation);
+              }}
+              type="button"
+              variant="destructive"
+            >
+              <Trash2 />
+              {t("chatbotTest.deleteChat")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
@@ -748,6 +1356,293 @@ function contextOptionLabel(context: ChatContextOption): string {
 
 function contextSelectionValue(context: ChatContextSelection): string {
   return `${context.kind}:${context.id}`;
+}
+
+function persistedMessagesToTanStack(
+  messages: PersistedChatMessage[]
+): TanStackUIMessage[] {
+  return messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    parts: [{ type: "text", content: message.content }]
+  })) as TanStackUIMessage[];
+}
+
+function ChatThreadHeader({
+  disabled,
+  onHistory,
+  onNew,
+  title,
+  t
+}: {
+  disabled: boolean;
+  onHistory: () => void;
+  onNew: () => void;
+  title: string;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  return (
+    <div className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{t("chatbotTest.currentChatLabel")}</p>
+        <p className="truncate text-sm font-medium" title={title}>{title}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Button
+          aria-label={t("chatbotTest.chatHistory")}
+          disabled={disabled}
+          onClick={onHistory}
+          size="icon-xs"
+          title={t("chatbotTest.chatHistory")}
+          type="button"
+          variant="ghost"
+        >
+          <MessageSquareText />
+        </Button>
+        <Button
+          aria-label={t("chatbotTest.newChat")}
+          disabled={disabled}
+          onClick={onNew}
+          size="icon-xs"
+          title={t("chatbotTest.newChat")}
+          type="button"
+          variant="ghost"
+        >
+          <Plus />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ChatHistoryPanel({
+  activeConversationId,
+  activeConversationTitle,
+  conversations,
+  disabled,
+  hasMore,
+  isLoadingMore,
+  onClose,
+  onDelete,
+  onLoadMore,
+  onNew,
+  onRename,
+  onSelect,
+  onToggleArchived,
+  popupLayout,
+  query,
+  statusFilter,
+  setQuery,
+  setStatusFilter,
+  t
+}: {
+  activeConversationId: string | undefined;
+  activeConversationTitle: string;
+  conversations: ChatConversation[];
+  disabled: boolean;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onClose: () => void;
+  onDelete: (conversation: ChatConversation) => void;
+  onLoadMore: () => void;
+  onNew: () => void;
+  onRename: (conversation: ChatConversation) => void;
+  onSelect: (id: string) => void;
+  onToggleArchived: (conversation: ChatConversation) => void;
+  popupLayout: boolean;
+  query: string;
+  statusFilter: ChatHistoryStatusFilter;
+  setQuery: (query: string) => void;
+  setStatusFilter: (filter: ChatHistoryStatusFilter) => void;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  const matchingConversations = useMemo(() => {
+    const byStatus = conversations.filter(
+      (conversation) => statusFilter === "all" || conversation.state === statusFilter
+    );
+    if (!query.trim()) return byStatus;
+    return new Fuse(byStatus, {
+      keys: ["title"],
+      threshold: 0.4,
+      ignoreLocation: true
+    }).search(query).map((result) => result.item);
+  }, [conversations, query, statusFilter]);
+
+  return (
+    <section className={popupLayout ? "flex min-h-0 min-w-0 max-w-full flex-1 flex-col" : "flex h-[55vh] min-h-[18rem] flex-col"}>
+      <div className="border-b pb-3">
+        <Button className="-ml-2" onClick={onClose} size="sm" type="button" variant="ghost">
+          <ArrowLeft />
+          {t("chatbotTest.backToChat")}
+        </Button>
+        <div className="mt-2 min-w-0">
+          <p className="text-sm font-medium">{t("chatbotTest.chatHistory")}</p>
+          <p className="text-xs text-muted-foreground">{t("chatbotTest.chatHistoryDescription")}</p>
+        </div>
+      </div>
+      <div className="space-y-3 py-3">
+        <Button className="w-full" disabled={disabled} onClick={onNew} type="button">
+          <Plus />
+          {t("chatbotTest.newChat")}
+        </Button>
+        <div
+          className={
+            popupLayout
+              ? "grid min-w-0 max-w-full gap-2"
+              : "grid gap-2 sm:grid-cols-[minmax(0,1fr)_8.5rem]"
+          }
+        >
+          <InputGroup>
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+            <InputGroupInput
+              aria-label={t("chatbotTest.searchChats")}
+              onChange={(event) => setQuery(event.currentTarget.value)}
+              placeholder={t("chatbotTest.searchChats")}
+              value={query}
+            />
+            {query ? (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  aria-label={t("clear")}
+                  onClick={() => setQuery("")}
+                  size="icon-xs"
+                  type="button"
+                  variant="ghost"
+                >
+                  <X />
+                </InputGroupButton>
+              </InputGroupAddon>
+            ) : null}
+          </InputGroup>
+          <Select
+            onValueChange={(value) => setStatusFilter(value as ChatHistoryStatusFilter)}
+            value={statusFilter}
+          >
+            <SelectTrigger aria-label={t("chatbotTest.chatStatus")} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className={popupLayout ? "z-[1002]" : undefined}>
+              <SelectItem value="all">{t("chatbotTest.allChats")}</SelectItem>
+              <SelectItem value="active">{t("chatbotTest.activeChats")}</SelectItem>
+              <SelectItem value="archived">{t("chatbotTest.archivedChats")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="min-h-0 min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto rounded-lg border bg-muted/30 p-2">
+        {matchingConversations.length > 0 ? (
+          <div className="space-y-1">
+            {matchingConversations.map((conversation) => {
+              const archived = conversation.state === "archived";
+              return (
+                <div
+                  className={
+                    "group flex min-w-0 items-center gap-1 rounded-md border p-1 transition-colors " +
+                    (conversation.id === activeConversationId
+                      ? "border-primary/60 bg-card shadow-sm"
+                      : archived
+                        ? "border-border bg-muted/50"
+                        : "border-border bg-card shadow-xs hover:border-primary/40 hover:bg-card")
+                  }
+                  key={conversation.id}
+                >
+                  <Button
+                    className="h-auto min-w-0 max-w-full flex-1 justify-start px-3 py-2 text-left"
+                    disabled={disabled}
+                    onClick={() => onSelect(conversation.id)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <MessageSquareText className="mt-0.5 shrink-0" />
+                    <span className="min-w-0 max-w-full flex-1">
+                      <span className="block truncate">{conversation.title}</span>
+                      <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                        {archived ? `${t("chatbotTest.archivedChat")} · ` : ""}
+                        {formatConversationDate(conversation.lastActivityAt)}
+                      </span>
+                    </span>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        aria-label={t("chatbotTest.chatActions")}
+                        className="mr-1 shrink-0 border bg-card shadow-xs"
+                        disabled={disabled}
+                        size="icon-xs"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <MoreHorizontal />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className={popupLayout ? "z-[1002]" : undefined}
+                    >
+                      <DropdownMenuItem onSelect={() => onRename(conversation)}>
+                        <Pencil />
+                        {t("chatbotTest.renameChat")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onToggleArchived(conversation)}>
+                        {archived ? <RotateCcw /> : <Archive />}
+                        {archived
+                          ? t("chatbotTest.restoreChat")
+                          : t("chatbotTest.archiveChat")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={() => onDelete(conversation)}
+                      >
+                        <Trash2 />
+                        {t("chatbotTest.deleteChat")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              );
+            })}
+            {hasMore ? (
+              <Button
+                className="mt-2 w-full"
+                disabled={disabled || isLoadingMore}
+                onClick={onLoadMore}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                {isLoadingMore
+                  ? t("chatbotTest.loadingMoreChats")
+                  : t("chatbotTest.loadMoreChats")}
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="px-3 py-6 text-sm text-muted-foreground">
+            {query.trim()
+              ? t("chatbotTest.noChatResults")
+              : t("chatbotTest.noChats")}
+          </p>
+        )}
+      </div>
+      {activeConversationId ? (
+        <p className="pt-3 text-xs text-muted-foreground">
+          {t("chatbotTest.currentChat", { title: activeConversationTitle })}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function formatConversationDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric"
+  }).format(date);
 }
 
 function Meter({ label, value }: { label: string; value: string }) {

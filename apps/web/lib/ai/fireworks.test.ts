@@ -81,3 +81,44 @@ test("Fireworks client retries one transient timeout", async () => {
   assert.equal(attempts, 2);
   assert.equal(completion.message.content, "Recovered");
 });
+
+test("Fireworks client disables reasoning for a compact title request", async () => {
+  let request: Request | undefined;
+  const client = new FireworksChatClient({
+    apiKey: "test-key",
+    model: "accounts/fireworks/models/test-model",
+    fetcher: async (input, init) => {
+      request = new Request(input, init);
+      return Response.json({
+        id: "response-3",
+        model: "accounts/fireworks/models/test-model",
+        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "Title" } }]
+      });
+    }
+  });
+
+  await client.complete({
+    messages: [{ role: "user", content: "Draft a strawberry mead" }],
+    maxOutputTokens: 32,
+    reasoningEffort: "none",
+    responseFormat: {
+      type: "json_schema",
+      json_schema: {
+        name: "chat_title",
+        schema: { type: "object" }
+      }
+    },
+    toolChoice: "none",
+    userId: 42
+  });
+
+  const body = await request?.json();
+  assert.equal(body?.reasoning_effort, "none");
+  assert.deepEqual(body?.response_format, {
+    type: "json_schema",
+    json_schema: {
+      name: "chat_title",
+      schema: { type: "object" }
+    }
+  });
+});

@@ -14,7 +14,7 @@ Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 - Canonical endpoint-path SHA-256:
   `b04650619e96df83b3f5eba864c44cd4599039be01125b2b0b4966aaa068880a`
 - Reviewed Zod document SHA-256:
-  `b5da53654bc24a9c2b5016f18f5fcbba85864e1b6f2590fe72cbabcc10a6d7af`
+  `223552406114e768ce7b952ec74322a23048f6ec8e1bad9a329cd96167d8c0d9`
 
 The parity test preserves the complete pre-migration `paths` object: routes,
 methods, parameters, descriptions, response statuses, and component references.
@@ -29,6 +29,10 @@ operation. The nutrient-preset update intentionally adds the
 `/nutrient-presets` endpoint. The endpoint parity test removes these approved
 additions before comparing against the pre-migration paths hash, proving all
 earlier endpoint documentation remains unchanged.
+
+The persistent-chat update intentionally adds `/chat/conversations` and
+`/chat/conversations/{conversationId}`. The same path-parity check removes
+these private authenticated endpoints before comparing earlier API paths.
 
 Run:
 

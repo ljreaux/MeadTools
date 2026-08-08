@@ -12,6 +12,7 @@ import {
   gravityTargetCalculationResultSchema,
   type BuildRecipeDraftInput
 } from "@meadtools/recipe-workflows";
+import { CHAT_PROVIDER_HISTORY_MESSAGES } from "@meadtools/chat-domain";
 import { calcABV } from "@meadtools/core/gravity";
 import { normalizeAdditiveUnit } from "@meadtools/core/recipe";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
@@ -37,7 +38,7 @@ export const chatRequestSchema = z
         })
       )
       .min(1)
-      .max(12),
+      .max(CHAT_PROVIDER_HISTORY_MESSAGES),
     activeRecipeData: recipeDataV2Schema.optional(),
     recipeDraftInput: buildRecipeDraftInputSchema.optional()
   })
@@ -86,6 +87,12 @@ const outOfScopeAnswer =
 
 const meadScopePattern =
   /\b(?:mead|melomel|cyser|pyment|metheglin|bochet|braggot|fruit\s+wine|honey|must|ferment(?:ation|ing|ed)?|yeast|nutrient|fermaid|go[\s-]?ferm|dap|yan|hydrometer|refractometer|gravity|og|fg|abv|brix|p\s*\.?\s*h|back[\s-]?sweeten(?:ing|ed)?|stabili[sz](?:e|ed|ing|ation)|sulf(?:ite|ur)|sorbate|k[\s-]?meta|campden|racking|rack(?:ed|ing)?|carboy|airlock|pitch(?:ing|ed)?|brew(?:ing|ed)?|vanilla\s+bean|priming\s+sugar|carbonat(?:e|ion)|bottl(?:e|ing)|bench\s+trial|blend(?:ing)?|met|metwein|rezept|honig|hefe|nährstoff|naehrstoff|gär(?:en|ung|t)?|most|stabilisier(?:en|ung|t)?|sulfit|sorbat|abfüll(?:en|ung)|karbonisier(?:en|ung))\b/i;
+
+// A "traditional" is established mead shorthand, but the word alone is too
+// broad to treat as domain context. Allow it only when the user is clearly
+// asking to create or brew a recipe.
+const traditionalMeadRecipeIntentPattern =
+  /\b(?:let'?s\s+)?(?:make|build|create|draft|design|brew)\b[\s\S]{0,80}\btraditional\b/i;
 
 const meadContinuationPattern =
   /^(?:yes|no|okay|ok|sure|please|continue|go\s+ahead|do\s+it|keep|change|use|same|that|this|it|then|and\s+then|(?:can\s+you\s+)?(?:turn|make)\s+(?:that|this)\s+into\s+(?:a\s+)?(?:mead\s+)?recipe\s+draft)(?:\b|[.!?,])/i;
@@ -501,7 +508,10 @@ export async function runChatTurn(options: {
  */
 function isMeadScopedRequest(request: ChatRequest): boolean {
   const latestMessage = request.messages.at(-1)?.content ?? "";
-  if (meadScopePattern.test(latestMessage)) return true;
+  if (
+    meadScopePattern.test(latestMessage) ||
+    traditionalMeadRecipeIntentPattern.test(latestMessage)
+  ) return true;
   // Selecting an owned MeadTools recipe or brew makes concise follow-ups such
   // as “what should I adjust?” meaningful even without prior chat history.
   // Explicit unrelated pivots still fail closed before a provider call.

@@ -138,6 +138,7 @@ model recipes {
   comments       comments[]
   ratings        recipe_ratings[]
   daily_activity recipe_daily_activity[]
+  chat_drafts    chat_drafts[]
 }
 
 model users {
@@ -158,6 +159,7 @@ model users {
   recipes      recipes[]
   comments     comments[]
   ratings      recipe_ratings[]
+  chat_conversations chat_conversations[]
 }
 
 /// Retains aggregate limits and non-sensitive provider usage for chatbot cost control.
@@ -196,9 +198,115 @@ model chatbot_usage_events {
   created_at           DateTime  @default(now()) @db.Timestamptz(6)
   completed_at         DateTime? @db.Timestamptz(6)
 
+  chat_generations chat_generations[]
+
   @@index([user_id, created_at])
   @@index([environment, created_at])
   @@index([status, created_at])
+}
+
+/// A signed-in user's private chat thread. Transcript content expires after
+/// inactivity; provider usage has a separate operational retention policy.
+model chat_conversations {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         Int
+  title           String                  @db.VarChar(160)
+  state           chat_conversation_state @default(active)
+  next_sequence   Int                     @default(1)
+  message_count   Int                     @default(0)
+  content_bytes   Int                     @default(0)
+  last_activity_at DateTime                @default(now()) @db.Timestamptz(6)
+  expires_at      DateTime                @db.Timestamptz(6)
+  created_at      DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime                @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user     users                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages chat_messages[]
+  drafts   chat_drafts[]
+
+  @@index([user_id, state, last_activity_at])
+  @@index([expires_at])
+}
+
+/// Stores only the transcript the user can see. Provider prompts, hidden
+/// reasoning, and raw tool payloads deliberately do not belong here.
+model chat_messages {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id   String              @db.Uuid
+  sequence          Int
+  client_message_id String?             @db.VarChar(128)
+  role              chat_message_role
+  status            chat_message_status @default(pending)
+  content           String              @db.Text
+  citations         Json?               @db.JsonB
+  draft_id          String?             @db.Uuid
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  completed_at      DateTime?           @db.Timestamptz(6)
+
+  conversation chat_conversations    @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  draft        chat_drafts?           @relation("ChatDraftMessage", fields: [draft_id], references: [id], onDelete: SetNull)
+  generation   chat_generations?
+  contexts     chat_message_contexts[]
+
+  @@unique([conversation_id, sequence])
+  @@unique([conversation_id, client_message_id])
+  @@index([conversation_id, created_at])
+}
+
+/// Versioned, validated recipe state for a chat thread. This is not a saved
+/// MeadTools recipe and is retained/deleted with the conversation.
+model chat_drafts {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id    String   @db.Uuid
+  revision           Int
+  recipe_draft_input Json?
+  recipe_data        Json?
+  saved_recipe_id    Int?
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  conversation chat_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  saved_recipe recipes?           @relation(fields: [saved_recipe_id], references: [id], onDelete: SetNull)
+  messages     chat_messages[]    @relation("ChatDraftMessage")
+
+  @@unique([conversation_id, revision])
+  @@index([conversation_id, created_at])
+}
+
+/// The generation is addressable without retaining a raw provider request.
+/// Usage lives in chatbot_usage_events and will later be priced by an
+/// effective-dated provider pricing version.
+model chat_generations {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id     String   @unique @db.Uuid
+  usage_event_id String?  @db.Uuid
+  provider       String   @db.VarChar(64)
+  model          String   @db.VarChar(255)
+  status         String   @db.VarChar(16)
+  latency_ms     Int?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  completed_at   DateTime? @db.Timestamptz(6)
+
+  message     chat_messages         @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  usage_event chatbot_usage_events? @relation(fields: [usage_event_id], references: [id], onDelete: SetNull)
+
+  @@index([usage_event_id])
+  @@index([provider, model, created_at])
+}
+
+/// References only the user-selected record identity and display label for a
+/// turn. These references never implicitly reattach account context later.
+model chat_message_contexts {
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id String            @db.Uuid
+  kind       chat_context_kind
+  record_id  String            @db.VarChar(64)
+  label      String            @db.VarChar(240)
+  created_at DateTime          @default(now()) @db.Timestamptz(6)
+
+  message chat_messages @relation(fields: [message_id], references: [id], onDelete: Cascade)
+
+  @@unique([message_id, kind, record_id])
+  @@index([record_id, kind])
 }
 
 model User {
@@ -391,4 +499,26 @@ enum brew_stage {
   BACKSWEETENED
   PACKAGED
   COMPLETE
+}
+
+enum chat_conversation_state {
+  active
+  archived
+}
+
+enum chat_message_role {
+  user
+  assistant
+}
+
+enum chat_message_status {
+  pending
+  complete
+  failed
+  cancelled
+}
+
+enum chat_context_kind {
+  recipe
+  brew
 }

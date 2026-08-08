@@ -6,7 +6,7 @@
 - `packages/api-contract` and `packages/api-client` already expose the `/api/recipes/derived` contract. The web route validates recipe data and calls `calculateRecipeDerivedApiResponse`.
 - The browser recipe builder keeps editable draft state in `RecipeProvider` and calculates through `@meadtools/core`; its target-OG action uses `calculateHoneyAndWaterL`.
 - The web app supports NextAuth sessions plus the existing custom bearer-token path in `verifyUser`. Recipe ownership and saving already use the `users` and recipe infrastructure.
-- No paid-plan, billing, entitlement, or persisted-conversation implementation exists yet. The local evaluator has a Fireworks-compatible provider adapter and a server-sent-events chat route; neither is public product infrastructure.
+- Private persistent conversations are implemented for the evaluator: ownership-scoped threads, messages, draft snapshots, idempotent turns, a bounded provider transcript, and a 90-day retention window renewed by a completed turn. The daily cron purges expired threads. Paid-plan, billing, and entitlement infrastructure remain future work; the evaluator is not public product infrastructure.
 
 ## Selected boundaries
 
@@ -19,9 +19,9 @@ packages/recipe-workflows/              deterministic, transport-free operations
 packages/recipe-agent/                  provider-neutral tool orchestration
 packages/wiki-knowledge/                wiki index search, source metadata, safe page retrieval
 apps/web/lib/ai/                        future model provider and server composition
-apps/web/app/api/chat/recipe/route.ts    future auth, entitlement, streaming boundary
-apps/web/components/chat/                private local evaluator and future structured chat UI
-apps/web/prisma/                         future conversations, messages, usage/entitlements
+apps/web/app/api/chat/recipe/route.ts    private auth, persistence, and streaming boundary
+apps/web/components/chat/                private evaluator, thread history, and structured chat UI
+apps/web/prisma/                         conversations, messages, drafts, usage, and future entitlements
 
 meadtools-mcp (separate repository)      future thin adapter/development harness only
 ```
@@ -122,13 +122,24 @@ user's account. The save path was verified end-to-end against the local app;
 it persists the structured v2 recipe payload through the existing recipe API,
 not a reconstruction of the chatbot's prose.
 
-Still deliberately out of scope for this checkpoint: persistent chat history,
-user credits or payment, public availability, production observability, and
-automated wiki-index publishing. The local evaluator uses DeepSeek V4 Flash as
-its selected development default; any premium-model choice remains a future
-user-facing option rather than a silent fallback. Continue evaluating
+Still deliberately out of scope for this checkpoint: user credits or payment,
+public availability, production observability, and automated wiki-index
+publishing. Persistent chat history is now implemented for the private
+evaluator: users can manage multiple private threads, retain the visible
+transcript for 90 days after the last completed turn, and recover explicitly
+when a thread reaches its bounded capacity. The local evaluator uses DeepSeek
+V4 Flash as its selected development default; any premium-model choice remains
+a future user-facing option rather than a silent fallback. Continue evaluating
 conversation quality and recipe output before taking public access on. Local
 evaluator transcripts remain private and ignored by Git.
+
+For local persistence UI testing, the opt-in fixture command
+`ALLOW_CHAT_TEST_DATA=true npm run db:seed:chat-test-data --workspace=@meadtools/web`
+creates owner-scoped demo threads only in the approved local development/test
+database. It includes enough history for chat-list pagination, a 60-message
+transcript for message pagination, archived conversations, and a full thread
+for capacity recovery. It makes no provider request and refuses production or
+an unapproved database name.
 
 ## Refined product feature list — August 2026
 
@@ -146,7 +157,8 @@ mutation remains reviewable.
 | Assist with an active brew | Private evaluator | User explicitly selects one owned brew. The assistant receives a bounded snapshot of the brew, stage, and recent timeline context to answer questions such as “what is next?” or “does this gravity trend look normal?” |
 | Prepare a brew action | Private evaluator | With an explicitly selected brew, the assistant can prepare a typed note, addition, measurement, volume reading, or stage action. The UI shows the selected brew and exact entry payload; only a separate user confirmation calls the existing ownership-checked brew API. |
 | Hydrometer-aware assistance | Later | Add an opt-in read-only summary of linked-device state and recent readings; never let model output control devices or alerts. |
-| Persistent conversations and user credits | Later | Store conversations only with a retention policy; use a MeadTools credit ledger and explicit model tier selection before public access. |
+| Persistent conversations | Private evaluator | Multiple owner-scoped threads, bounded transcripts, 90-day inactivity retention, daily purge, and explicit recipe/brew context. Billing is deliberately separate. |
+| User credits | Later | Use a MeadTools credit ledger and explicit model tier selection before public access. |
 
 ### User recipe and brew context boundary
 
@@ -167,9 +179,11 @@ The first account-context slice is **read-only and explicit**:
    user settings. A typed brew-action proposal is target-bound by the trusted
    selected context, then the UI sends it through an existing
    ownership-checked API only after visible user confirmation.
-5. Context is supplied only for the active request/session. Persistent
-   conversation history, broader account recall, and cross-brew recommendations
-   are separate future decisions with their own retention and consent rules.
+5. Selected context is supplied only for the active request. The visible
+   conversation transcript is retained in its private thread for up to 90 days
+   after the last completed turn; broader account recall and cross-brew
+   recommendations remain separate future decisions with their own consent
+   rules.
 
 The first tool surface should therefore be limited to:
 
@@ -314,9 +328,10 @@ returns server-sent events: `ready`, `tool_call`, `tool_result`, then either
 3. Refine the evaluator from observed turns, including structured recipe cards,
    warnings, citations, and context-aware actions. Keep changes that write a
    recipe or brew behind a visible confirmation.
-4. Add conversation/message persistence tied to existing users, with
-   idempotency, usage limits, retention, and observability. Add a scheduled
-   purge for the operational usage tables before public rollout.
+4. Maintain the persistent-thread experience: paginated history and
+   transcripts, user-facing rename/archive/delete controls, capacity recovery,
+   and a safe local fixture seed are implemented. Add scheduled purge of
+   operational usage records before public rollout.
 5. Define paid access separately from the model provider: an append-only
    MeadTools credit ledger with grants, reservations, settlements, reversals,
    and Stripe payment-webhook reconciliation. Before public access, reserve a
