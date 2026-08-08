@@ -2034,6 +2034,59 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
   assert.match(result.answer, /larger batch/i);
 });
 
+test("an explicit honey confirmation overrides a stale inferred honey amount", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "confirmed-honey-build",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "confirmed-honey-tool",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Create a one gallon sweet traditional mead at 14% ABV." },
+        { role: "assistant", content: "Which single fermentable should MeadTools adjust?" },
+        { role: "user", content: "Honey will be the single fermentable, then adjust the water." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.12,
+        fermentationFinalGravity: 0.999,
+        // This was suggested by an earlier model response, not supplied by
+        // the brewer. The later confirmation must make it adjustable.
+        ingredients: [{ name: "Wildflower Honey", amount: { kind: "weight", value: 3, unit: "lb" } }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  const honey = result.recipeDraftInput?.ingredients.find(
+    (ingredient) => ingredient.name === "Wildflower Honey"
+  );
+  assert.equal(honey?.role, "adjustable_fermentable");
+  assert.equal(honey?.amount, undefined);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(requests.length, 1);
+});
+
 test("a medium-sweet request requires an explicit sweetness strategy before drafting", async () => {
   const result = await runChatTurn({
     client: { complete: async () => { throw new Error("provider should not be called"); } },
