@@ -1652,10 +1652,11 @@ function hasExplicitIngredientAmount(message: string, ingredientPattern: string)
 }
 
 function userSelectedHoneyAsAdjustable(message: string): boolean {
-  const normalized = message.trim().toLowerCase();
+  const normalized = message.trim().toLowerCase().replace(/\s+/g, " ");
   return (
-    /^(?:the\s+)?honey[.!]?$/.test(normalized) ||
-    /\b(?:adjust|reduce|use|make)\b[^.]{0,30}\bhoney\b/i.test(message)
+    /^(?:yes[,.!]?\s+)?(?:the\s+)?honey(?:\s+(?:yes|please|is\s+fine))?[.!]?$/i.test(normalized) ||
+    /\b(?:adjust|reduce|use|make)\b[^.]{0,30}\bhoney\b/i.test(message) ||
+    /\bhoney\b[^.]{0,50}\b(?:adjust(?:able)?|single\s+(?:primary\s+)?fermentable|primary\s+fermentable|whatever\s+amount|hit\s+(?:the\s+)?target)\b/i.test(message)
   );
 }
 
