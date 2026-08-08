@@ -11,6 +11,7 @@
     "./hydrometers": "./src/zod/hydrometers.ts",
     "./foundation": "./src/zod/foundation.ts",
     "./catalog": "./src/zod/catalog.ts",
+    "./chat": "./src/zod/chat.ts",
     "./recipes": "./src/zod/recipes.ts",
     "./routes": "./src/zod/routes.ts",
     "./contracts": "./src/contracts.ts",

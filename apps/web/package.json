@@ -15,7 +15,8 @@
     "lint": "next lint",
     "check:unused-exports": "knip",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts"
   },
   "type": "module",
   "dependencies": {
@@ -28,6 +29,7 @@
     "@meadtools/api-contract": "*",
     "@meadtools/brew-domain": "*",
     "@meadtools/core": "*",
+    "@meadtools/chat-domain": "*",
     "@meadtools/design-tokens": "*",
     "@meadtools/i18n": "*",
     "@meadtools/recipe-agent": "*",

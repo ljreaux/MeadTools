@@ -64,9 +64,22 @@ import {
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
   brewsResponseSchema,
+  chatCitationResponseSchema,
   chatContextErrorResponseSchema,
+  chatContextKindResponseSchema,
   chatContextOptionResponseSchema,
   chatContextOptionsResponseSchema,
+  chatConversationErrorResponseSchema,
+  chatConversationIdPathParamsSchema,
+  chatConversationListQuerySchema,
+  chatConversationResponseSchema,
+  chatConversationStateResponseSchema,
+  chatConversationThreadResponseSchema,
+  chatConversationsResponseSchema,
+  chatDraftResponseSchema,
+  chatMessageContextResponseSchema,
+  chatMessageResponseSchema,
+  chatThreadQuerySchema,
   contactRequestBodySchema,
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
@@ -80,6 +93,8 @@ import {
   createBrewEntryResponseSchema,
   createBrewRequestBodySchema,
   createBrewResponseSchema,
+  createChatConversationRequestBodySchema,
+  createChatConversationResponseSchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
@@ -102,6 +117,7 @@ import {
   deleteAdminUserSuccessResponseSchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
+  deleteChatConversationResponseSchema,
   deleteHydrometerBrewResponseSchema,
   deleteHydrometerDeviceResponseSchema,
   deleteHydrometerLogsInRangeResponseSchema,
@@ -261,6 +277,8 @@ import {
   updateBrewEntryResponseSchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
+  updateChatConversationRequestBodySchema,
+  updateChatConversationResponseSchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -363,9 +381,22 @@ export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
 export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
 export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;
 export type BrewValidationErrorResponse = z.infer<typeof brewValidationErrorResponseSchema>;
+export type ChatCitationResponse = z.infer<typeof chatCitationResponseSchema>;
 export type ChatContextErrorResponse = z.infer<typeof chatContextErrorResponseSchema>;
+export type ChatContextKindResponse = z.infer<typeof chatContextKindResponseSchema>;
 export type ChatContextOptionResponse = z.infer<typeof chatContextOptionResponseSchema>;
 export type ChatContextOptionsResponse = z.infer<typeof chatContextOptionsResponseSchema>;
+export type ChatConversationErrorResponse = z.infer<typeof chatConversationErrorResponseSchema>;
+export type ChatConversationIdPathParams = z.infer<typeof chatConversationIdPathParamsSchema>;
+export type ChatConversationListQuery = z.infer<typeof chatConversationListQuerySchema>;
+export type ChatConversationResponse = z.infer<typeof chatConversationResponseSchema>;
+export type ChatConversationsResponse = z.infer<typeof chatConversationsResponseSchema>;
+export type ChatConversationStateResponse = z.infer<typeof chatConversationStateResponseSchema>;
+export type ChatConversationThreadResponse = z.infer<typeof chatConversationThreadResponseSchema>;
+export type ChatDraftResponse = z.infer<typeof chatDraftResponseSchema>;
+export type ChatMessageContextResponse = z.infer<typeof chatMessageContextResponseSchema>;
+export type ChatMessageResponse = z.infer<typeof chatMessageResponseSchema>;
+export type ChatThreadQuery = z.infer<typeof chatThreadQuerySchema>;
 export type ContactRequestBody = z.infer<typeof contactRequestBodySchema>;
 export type ContactSendErrorResponse = z.infer<typeof contactSendErrorResponseSchema>;
 export type ContactSuccessResponse = z.infer<typeof contactSuccessResponseSchema>;
@@ -379,6 +410,8 @@ export type CreateBrewEntryRequestBody = z.infer<typeof createBrewEntryRequestBo
 export type CreateBrewEntryResponse = z.infer<typeof createBrewEntryResponseSchema>;
 export type CreateBrewRequestBody = z.infer<typeof createBrewRequestBodySchema>;
 export type CreateBrewResponse = z.infer<typeof createBrewResponseSchema>;
+export type CreateChatConversationRequestBody = z.infer<typeof createChatConversationRequestBodySchema>;
+export type CreateChatConversationResponse = z.infer<typeof createChatConversationResponseSchema>;
 export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
 export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
 export type CreateRecipeCommentFailureErrorResponse = z.infer<typeof createRecipeCommentFailureErrorResponseSchema>;
@@ -401,6 +434,7 @@ export type DeleteAdditiveSuccessResponse = z.infer<typeof deleteAdditiveSuccess
 export type DeleteAdminUserSuccessResponse = z.infer<typeof deleteAdminUserSuccessResponseSchema>;
 export type DeleteBrewEntrySuccessResponse = z.infer<typeof deleteBrewEntrySuccessResponseSchema>;
 export type DeleteBrewSuccessResponse = z.infer<typeof deleteBrewSuccessResponseSchema>;
+export type DeleteChatConversationResponse = z.infer<typeof deleteChatConversationResponseSchema>;
 export type DeleteHydrometerBrewResponse = z.infer<typeof deleteHydrometerBrewResponseSchema>;
 export type DeleteHydrometerDeviceResponse = z.infer<typeof deleteHydrometerDeviceResponseSchema>;
 export type DeleteHydrometerLogsInRangeResponse = z.infer<typeof deleteHydrometerLogsInRangeResponseSchema>;
@@ -560,6 +594,8 @@ export type UpdateBrewEntryRequestBody = z.infer<typeof updateBrewEntryRequestBo
 export type UpdateBrewEntryResponse = z.infer<typeof updateBrewEntryResponseSchema>;
 export type UpdateBrewRequestBody = z.infer<typeof updateBrewRequestBodySchema>;
 export type UpdateBrewResponse = z.infer<typeof updateBrewResponseSchema>;
+export type UpdateChatConversationRequestBody = z.infer<typeof updateChatConversationRequestBodySchema>;
+export type UpdateChatConversationResponse = z.infer<typeof updateChatConversationResponseSchema>;
 export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
 export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
 export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;

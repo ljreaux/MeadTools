@@ -29,7 +29,7 @@ export async function reserveChatbotUsage(options: {
   const hourStart = startOfUtcHour(now);
   const dayStart = startOfUtcDay(now);
 
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const hourlyReserved = await reserveWindow(tx, {
       userId: options.userId,
       window: "hour",
@@ -67,7 +67,7 @@ export async function completeChatbotUsage(options: {
   usage: ChatTurnUsage;
   status: "completed" | "failed";
   windowAt?: Date;
-}): Promise<void> {
+}): Promise<string | undefined> {
   const now = options.windowAt ?? new Date();
   const hourStart = startOfUtcHour(now);
   const dayStart = startOfUtcDay(now);
@@ -77,8 +77,8 @@ export async function completeChatbotUsage(options: {
     ? Prisma.sql`ARRAY[${Prisma.join(options.usage.requestIds)}]::TEXT[]`
     : Prisma.sql`ARRAY[]::TEXT[]`;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw(Prisma.sql`
+  return prisma.$transaction(async (tx) => {
+    const usageRows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       UPDATE "chatbot_usage_events"
       SET
         "status" = ${options.status},
@@ -90,6 +90,7 @@ export async function completeChatbotUsage(options: {
         "provider_request_ids" = ${providerRequestIds},
         "completed_at" = NOW()
       WHERE "request_id" = ${options.requestId}::uuid
+      RETURNING "id"
     `);
 
     for (const window of [
@@ -111,6 +112,8 @@ export async function completeChatbotUsage(options: {
           AND "window_start" = ${window.windowStart}
       `);
     }
+
+    return usageRows[0]?.id;
   });
 }
 

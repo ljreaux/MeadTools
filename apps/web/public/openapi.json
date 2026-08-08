@@ -1642,6 +1642,127 @@
           "error"
         ]
       },
+      "ChatConversationThreadResponse": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ChatConversationResponse"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageResponse"
+            }
+          },
+          "nextBeforeSequence": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true
+          },
+          "latestDraft": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatDraftResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversation",
+          "messages",
+          "nextBeforeSequence",
+          "latestDraft"
+        ]
+      },
+      "ChatConversationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "UpdateChatConversationRequestBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatConversationStateResponse"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateChatConversationResponse": {
+        "$ref": "#/components/schemas/CreateChatConversationResponse"
+      },
+      "DeleteChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
+      "ChatConversationsResponse": {
+        "type": "object",
+        "properties": {
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatConversationResponse"
+            }
+          },
+          "nextBefore": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/isoDateTimeSchema"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversations",
+          "nextBefore"
+        ]
+      },
+      "CreateChatConversationRequestBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "CreateChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ChatConversationResponse"
+          }
+        },
+        "required": [
+          "conversation"
+        ]
+      },
       "UpdateRecipeCommentRequestBody": {
         "type": "object",
         "properties": {
@@ -3989,6 +4110,9 @@
           "high_temp"
         ]
       },
+      "isoDateTimeSchema": {
+        "type": "string"
+      },
       "hydrometerDeviceObjectSchema": {
         "type": "object",
         "properties": {
@@ -4620,6 +4744,22 @@
           "COMPLETE"
         ]
       },
+      "ChatCitationResponse": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "title",
+          "url"
+        ]
+      },
       "ChatContextOptionResponse": {
         "type": "object",
         "discriminator": {
@@ -4632,6 +4772,158 @@
           {
             "$ref": "#/components/schemas/chatContextBrewOptionResponseSchema"
           }
+        ]
+      },
+      "ChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ChatConversationStateResponse"
+          },
+          "messageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "contentBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lastActivityAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "state",
+          "messageCount",
+          "contentBytes",
+          "lastActivityAt",
+          "expiresAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ChatConversationStateResponse": {
+        "type": "string",
+        "enum": [
+          "active",
+          "archived"
+        ]
+      },
+      "ChatDraftResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "recipeDraftInput": {
+            "nullable": true
+          },
+          "recipeData": {
+            "nullable": true
+          },
+          "savedRecipeId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "recipeDraftInput",
+          "recipeData",
+          "savedRecipeId",
+          "createdAt"
+        ]
+      },
+      "ChatMessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "clientMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "complete",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatCitationResponse"
+            }
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "completedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/isoDateTimeSchema"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "clientMessageId",
+          "role",
+          "status",
+          "content",
+          "citations",
+          "createdAt",
+          "completedAt"
         ]
       },
       "EndHydrometerBrewResponse": {
@@ -8231,10 +8523,173 @@
         }
       }
     },
+    "/chat/conversations": {
+      "get": {
+        "operationId": "get-chat-conversations",
+        "summary": "List private, non-expired chatbot conversation summaries for the signed-in user.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-chat-conversations",
+        "summary": "Create an empty, private chatbot conversation for the signed-in user.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatConversationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/chat/recipe": {
       "post": {
         "operationId": "post-chat-recipe",
-        "summary": "Private local-test recipe chatbot endpoint. It is deliberately disabled by",
+        "summary": "Private evaluator endpoint. The signed-in user may only send a message to",
         "description": "",
         "tags": [
           "Chat"
@@ -8246,6 +8701,275 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/chat/conversations/{conversationId}": {
+      "get": {
+        "operationId": "get-chat-conversations-{conversationId}",
+        "summary": "Load one private chatbot thread and a page of its visible transcript.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationThreadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-chat-conversations-{conversationId}",
+        "summary": "Rename, archive, or restore one private chatbot conversation.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatConversationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-chat-conversations-{conversationId}",
+        "summary": "Permanently delete one private chatbot conversation and its retained draft snapshots.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
           }
         }
       }

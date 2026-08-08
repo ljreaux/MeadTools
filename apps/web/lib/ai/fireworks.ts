@@ -61,6 +61,14 @@ export type FireworksToolChoice =
   | "none"
   | { type: "function"; function: { name: string } };
 
+export type FireworksResponseFormat = {
+  type: "json_schema";
+  json_schema: {
+    name: string;
+    schema: Record<string, unknown>;
+  };
+};
+
 export type FireworksUsage = {
   inputTokens: number;
   outputTokens: number;
@@ -80,6 +88,8 @@ export type FireworksCompletionRequest = {
   messages: FireworksMessage[];
   tools?: FireworksFunctionTool[];
   toolChoice?: FireworksToolChoice;
+  reasoningEffort?: "none" | "low" | "medium" | "high" | "max";
+  responseFormat?: FireworksResponseFormat;
   maxOutputTokens: number;
   userId: number;
 };
@@ -122,6 +132,12 @@ export class FireworksChatClient implements ChatModelClient {
               messages: request.messages,
               tools: request.tools,
               tool_choice: request.toolChoice ?? "auto",
+              ...(request.reasoningEffort
+                ? { reasoning_effort: request.reasoningEffort }
+                : {}),
+              ...(request.responseFormat
+                ? { response_format: request.responseFormat }
+                : {}),
               parallel_tool_calls: false,
               temperature: 0.2,
               max_tokens: request.maxOutputTokens,

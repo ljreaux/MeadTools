@@ -3,6 +3,7 @@ export {
   recipeDataV2Schema
 } from "@meadtools/schemas";
 export * from "./catalog";
+export * from "./chat";
 export * from "./auth";
 export * from "./recipes";
 export * from "./brews";

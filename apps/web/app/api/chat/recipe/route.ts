@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
+import { buildRecipeDraftInputSchema } from "@meadtools/recipe-workflows";
+import { recipeDataV2Schema } from "@meadtools/schemas";
+import { z } from "zod";
 import {
   chatRequestSchema,
   runChatTurn,
   type ChatRequest
 } from "@/lib/ai/chat-service";
 import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
+import { generateChatConversationTitle } from "@/lib/ai/chat-conversation-title";
+import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
 import { FireworksChatClient } from "@/lib/ai/fireworks";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
@@ -13,43 +18,49 @@ import { getAdditiveCatalogForChat } from "@/lib/db/additives";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
 import {
   chatContextSelectionSchema,
-  getSelectedChatContext
+  getSelectedChatContext,
+  type SelectedChatContext
 } from "@/lib/ai/chat-account-context";
 import {
   ChatbotUsageLimitError,
   completeChatbotUsage,
   reserveChatbotUsage
 } from "@/lib/db/chatbot-usage";
-import { verifyUser } from "@/lib/userAccessFunctions";
+import {
+  ChatConversationCapacityError,
+  ChatConversationNotFoundError,
+  ChatConversationUnavailableError,
+  appendPendingChatMessage,
+  completeChatTurn,
+  failPendingChatMessage,
+  getChatProviderHistory,
+  getLatestChatDraftForProvider,
+  updateChatConversationState
+} from "@/lib/db/chat-conversations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_CHAT_REQUEST_BYTES = 150_000;
+const chatTurnPersistenceSchema = z.object({
+  conversationId: z.string().uuid(),
+  clientMessageId: z.string().trim().min(1).max(128)
+}).strict();
 
 /**
- * Private local-test recipe chatbot endpoint. It is deliberately disabled by
- * default, requires existing MeadTools authentication, and only permits
- * explicitly allow-listed user IDs. It does not save messages or recipes.
+ * Private evaluator endpoint. The signed-in user may only send a message to
+ * an owned active conversation. The provider receives the bounded persisted
+ * transcript and latest structured draft—not client-supplied history.
  */
 export async function POST(request: NextRequest) {
-  const authenticatedUser = await verifyUser(request);
-  if (authenticatedUser instanceof NextResponse) return authenticatedUser;
-  if (typeof authenticatedUser !== "number") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireLocalChatbotUser(request);
+  if (access instanceof NextResponse) return access;
 
   const config = getLocalChatbotConfig();
   if (!config) {
     return NextResponse.json(
       { error: "Local chatbot testing is not configured." },
       { status: 503 }
-    );
-  }
-  if (!config.allowedUserIds.has(authenticatedUser)) {
-    return NextResponse.json(
-      { error: "This user is not permitted to use the local chatbot." },
-      { status: 403 }
     );
   }
 
@@ -59,39 +70,79 @@ export async function POST(request: NextRequest) {
   }
 
   let chatRequest: ChatRequest;
+  let pendingMessageId: string;
   let threadId: string;
   let runId: string;
+  let selectedContext: SelectedChatContext | undefined;
+  let shouldGenerateTitle = false;
+  let initialMessageContent = "";
   try {
     const params = await chatParamsFromRequest(request);
-    chatRequest = chatRequestSchema.parse({
-      messages: chatMessagesFromTanStack(params.messages),
-      ...(params.forwardedProps.activeRecipeData !== undefined
-        ? { activeRecipeData: params.forwardedProps.activeRecipeData }
-        : {}),
-      ...(params.forwardedProps.recipeDraftInput !== undefined
-        ? { recipeDraftInput: params.forwardedProps.recipeDraftInput }
-        : {})
+    const persistence = chatTurnPersistenceSchema.parse({
+      conversationId: params.forwardedProps.conversationId,
+      clientMessageId: params.forwardedProps.clientMessageId
     });
+    const latestMessage = chatMessagesFromTanStack(params.messages).at(-1);
+    if (!latestMessage || latestMessage.role !== "user") {
+      throw new Error("The latest chat message must be from the user.");
+    }
+    // Validate the current text before it reaches the transcript database.
+    chatRequestSchema.parse({ messages: [latestMessage] });
+
     if (params.forwardedProps.selectedAccountContext !== undefined) {
       const selection = chatContextSelectionSchema.parse(
         params.forwardedProps.selectedAccountContext
       );
-      const selectedAccountContext = await getSelectedChatContext(
-        authenticatedUser,
-        selection
-      );
-      if (!selectedAccountContext) {
+      selectedContext = await getSelectedChatContext(access.userId, selection);
+      if (!selectedContext) {
         return NextResponse.json(
           { error: "The selected recipe or brew is not available." },
           { status: 400 }
         );
       }
-      chatRequest.selectedAccountContext = selectedAccountContext;
     }
-    threadId = params.threadId;
+
+    const pending = await appendPendingChatMessage({
+      userId: access.userId,
+      conversationId: persistence.conversationId,
+      clientMessageId: persistence.clientMessageId,
+      content: latestMessage.content
+    });
+    if (pending.duplicate) {
+      return NextResponse.json(
+        { error: "This chat message was already submitted. Reload the conversation before trying again." },
+        { status: 409 }
+      );
+    }
+    pendingMessageId = pending.message.id;
+    shouldGenerateTitle = pending.isFirstMessage;
+    initialMessageContent = latestMessage.content;
+
+    const [messages, latestDraft] = await Promise.all([
+      getChatProviderHistory({
+        userId: access.userId,
+        conversationId: persistence.conversationId,
+        pendingMessageId
+      }),
+      getLatestChatDraftForProvider({
+        userId: access.userId,
+        conversationId: persistence.conversationId
+      })
+    ]);
+    const persistedRecipeData = recipeDataV2Schema.safeParse(latestDraft?.recipeData);
+    const persistedDraftInput = buildRecipeDraftInputSchema.safeParse(
+      latestDraft?.recipeDraftInput
+    );
+    chatRequest = chatRequestSchema.parse({
+      messages,
+      ...(persistedRecipeData.success ? { activeRecipeData: persistedRecipeData.data } : {}),
+      ...(persistedDraftInput.success ? { recipeDraftInput: persistedDraftInput.data } : {})
+    });
+    if (selectedContext) chatRequest.selectedAccountContext = selectedContext;
+    threadId = persistence.conversationId;
     runId = params.runId;
-  } catch {
-    return NextResponse.json({ error: "Invalid chat request." }, { status: 400 });
+  } catch (error) {
+    return persistenceErrorResponse(error);
   }
 
   const requestId = crypto.randomUUID();
@@ -99,7 +150,7 @@ export async function POST(request: NextRequest) {
   try {
     await reserveChatbotUsage({
       requestId,
-      userId: authenticatedUser,
+      userId: access.userId,
       environment: config.usageEnvironment,
       model: config.model,
       limits: {
@@ -110,6 +161,11 @@ export async function POST(request: NextRequest) {
       now: requestStartedAt
     });
   } catch (error) {
+    await failPendingMessageSilently({
+      userId: access.userId,
+      conversationId: threadId,
+      pendingMessageId
+    });
     if (error instanceof ChatbotUsageLimitError) {
       return NextResponse.json(
         { error: error.message },
@@ -118,7 +174,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Unable to reserve chatbot usage safely.", {
       requestId,
-      userId: authenticatedUser,
+      userId: access.userId,
       environment: config.usageEnvironment
     });
     return NextResponse.json(
@@ -126,11 +182,15 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   }
+
   const client = new FireworksChatClient({
     apiKey: config.apiKey,
     model: config.model,
     annotations: { project: "chatbot", environment: config.usageEnvironment }
   });
+  const selectedContextReference = selectedContext
+    ? contextReferenceFrom(selectedContext)
+    : undefined;
 
   const stream = streamRecipeChatTurn({
     model: config.model,
@@ -138,9 +198,16 @@ export async function POST(request: NextRequest) {
     threadId,
     run: async (onEvent) => {
       try {
+        const titlePromise = shouldGenerateTitle
+          ? generateChatConversationTitle({
+              client,
+              userId: access.userId,
+              firstMessage: initialMessageContent
+            }).catch(() => undefined)
+          : undefined;
         const result = await runChatTurn({
           client,
-          userId: authenticatedUser,
+          userId: access.userId,
           request: chatRequest,
           maxOutputTokens: config.maxOutputTokens,
           maxToolCalls: config.maxToolCalls,
@@ -199,17 +266,44 @@ export async function POST(request: NextRequest) {
           },
           onEvent
         });
-        await recordCompletedUsage({
+        const titleResult = titlePromise ? await titlePromise : undefined;
+        const usage = mergeTitleUsage(result.usage, titleResult);
+        const recipeData = recipeDataFromToolResults(result.toolResults);
+        const usageEventId = await recordCompletedUsage({
           requestId,
-          userId: authenticatedUser,
-          usage: result.usage,
+          userId: access.userId,
+          usage,
           requestStartedAt
         });
+        await completeChatTurn({
+          userId: access.userId,
+          conversationId: threadId,
+          pendingMessageId,
+          answer: result.answer,
+          citations: citationsFromAnswer(result.answer),
+          ...(result.recipeDraftInput ? { recipeDraftInput: result.recipeDraftInput } : {}),
+          ...(recipeData ? { recipeData } : {}),
+          ...(selectedContextReference ? { contexts: [selectedContextReference] } : {}),
+          generation: {
+            ...(usageEventId ? { usageEventId } : {}),
+            provider: usage.provider,
+            model: usage.model,
+            status: "completed",
+            latencyMs: usage.latencyMs
+          }
+        });
+        if (titleResult) {
+          await updateChatConversationState({
+            userId: access.userId,
+            conversationId: threadId,
+            title: titleResult.title
+          });
+        }
         console.info(
           "Hosted chatbot usage",
           JSON.stringify({
             requestId,
-            userId: authenticatedUser,
+            userId: access.userId,
             environment: config.usageEnvironment,
             model: result.usage.model,
             providerCalls: result.usage.requestIds.length,
@@ -219,11 +313,16 @@ export async function POST(request: NextRequest) {
             totalTokens: result.usage.totalTokens
           })
         );
-        return result;
+        return titleResult ? { ...result, conversationTitle: titleResult.title } : result;
       } catch (error) {
+        await failPendingMessageSilently({
+          userId: access.userId,
+          conversationId: threadId,
+          pendingMessageId
+        });
         await recordFailedUsage({
           requestId,
-          userId: authenticatedUser,
+          userId: access.userId,
           model: config.model,
           requestStartedAt
         });
@@ -246,9 +345,9 @@ async function recordCompletedUsage(options: {
   userId: number;
   usage: Awaited<ReturnType<typeof runChatTurn>>["usage"];
   requestStartedAt: Date;
-}) {
+}): Promise<string | undefined> {
   try {
-    await completeChatbotUsage({
+    return await completeChatbotUsage({
       requestId: options.requestId,
       userId: options.userId,
       usage: options.usage,
@@ -260,6 +359,7 @@ async function recordCompletedUsage(options: {
       requestId: options.requestId,
       userId: options.userId
     });
+    return undefined;
   }
 }
 
@@ -295,6 +395,77 @@ async function recordFailedUsage(options: {
   }
 }
 
+async function failPendingMessageSilently(options: {
+  userId: number;
+  conversationId: string;
+  pendingMessageId: string;
+}) {
+  try {
+    await failPendingChatMessage(options);
+  } catch {
+    // Do not hide the provider/usage error with a best-effort state cleanup failure.
+  }
+}
+
+function persistenceErrorResponse(error: unknown) {
+  if (error instanceof ChatConversationNotFoundError) {
+    return NextResponse.json({ error: error.message }, { status: 404 });
+  }
+  if (error instanceof ChatConversationCapacityError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
+  }
+  if (error instanceof ChatConversationUnavailableError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
+  }
+  return NextResponse.json({ error: "Invalid chat request." }, { status: 400 });
+}
+
+function contextReferenceFrom(context: SelectedChatContext) {
+  return context.kind === "recipe"
+    ? { kind: "recipe" as const, recordId: String(context.recipe.id), label: context.label }
+    : { kind: "brew" as const, recordId: context.brew.id, label: context.label };
+}
+
+function citationsFromAnswer(answer: string) {
+  const citations = new Map<string, { title: string; url: string }>();
+  for (const match of answer.matchAll(/\[([^\]]{1,240})\]\((https?:\/\/[^\s)]+)\)/g)) {
+    citations.set(match[2], { title: match[1], url: match[2] });
+  }
+  return [...citations.values()];
+}
+
+function mergeTitleUsage(
+  usage: Awaited<ReturnType<typeof runChatTurn>>["usage"],
+  title: Awaited<ReturnType<typeof generateChatConversationTitle>> | undefined
+) {
+  if (!title) return usage;
+  return {
+    ...usage,
+    ...(usage.requestIds.length === 0
+      ? { provider: "fireworks" as const, model: title.model }
+      : {}),
+    inputTokens: usage.inputTokens + title.usage.inputTokens,
+    cachedInputTokens: usage.cachedInputTokens + title.usage.cachedInputTokens,
+    outputTokens: usage.outputTokens + title.usage.outputTokens,
+    totalTokens: usage.totalTokens + title.usage.totalTokens,
+    requestIds: [...usage.requestIds, title.providerRequestId]
+  };
+}
+
+function recipeDataFromToolResults(
+  toolResults: Array<{ toolName: string; result: unknown }>
+): unknown {
+  for (const toolResult of [...toolResults].reverse()) {
+    if (!isRecord(toolResult.result) || toolResult.result.status !== "ok") continue;
+    const workflow = toolResult.result.result;
+    if (isRecord(workflow) && workflow.status === "recipe") {
+      const recipeData = recipeDataV2Schema.safeParse(workflow.recipeData);
+      if (recipeData.success) return recipeData.data;
+    }
+  }
+  return undefined;
+}
+
 function numberOrUndefined(
   value: string | number | null | { toString(): string }
 ): number | undefined {
@@ -310,7 +481,7 @@ function chatMessagesFromTanStack(messages: unknown[]): Array<{ role: "user" | "
     const content = textContent(message);
     const role: "user" | "assistant" = message.role === "user" ? "user" : "assistant";
     return content ? [{ role, content }] : [];
-  }).slice(-12);
+  });
 }
 
 function textContent(message: Record<string, unknown>): string {

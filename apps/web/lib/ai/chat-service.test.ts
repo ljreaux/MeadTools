@@ -820,6 +820,36 @@ test("German mead questions stay inside the chatbot scope", async () => {
   assert.equal(requests.length, 1);
 });
 
+test("recipe-style traditional shorthand stays inside the chatbot scope", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "traditional-mead-shorthand",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "What batch size would you like for the avocado blossom traditional?"
+          },
+          usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Lets make an avocado blossom traditional" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "test-model");
+  assert.equal(requests.length, 1);
+  assert.match(result.answer, /avocado blossom traditional/i);
+});
+
 test("a catalog correction stays in scope during a mead conversation", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
