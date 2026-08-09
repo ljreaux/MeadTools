@@ -84,3 +84,92 @@ export const createBjcpIngredientRequestBodySchema =
   });
 export const createBjcpIngredientFailureErrorResponseSchema =
   apiErrorResponseSchema;
+
+export const chatAccessModeSchema = z.enum([
+  "beta_allowlist",
+  "all_active_users"
+]);
+export const chatAccessStatusResponseSchema = z.object({
+  chatEnabled: z.boolean(),
+  mode: chatAccessModeSchema,
+  granted: z.boolean(),
+  paymentRestricted: z.boolean()
+});
+export const chatAccessErrorResponseSchema = z.object({ error: z.string() });
+export const chatAccessGrantResponseSchema = z.object({
+  userId: z.number().int().positive(),
+  grantedAt: z.string().datetime(),
+  grantedByUserId: z.number().int().positive()
+});
+export const chatAccessAdministrationResponseSchema = z.object({
+  mode: chatAccessModeSchema,
+  updatedAt: z.string().datetime().nullable(),
+  grants: z.array(chatAccessGrantResponseSchema)
+});
+export const updateChatAccessAdministrationRequestBodySchema = z.object({
+  mode: chatAccessModeSchema
+}).strict();
+export const createChatAccessGrantRequestBodySchema = z.object({
+  userId: z.number().int().positive()
+}).strict();
+export const createChatAccessGrantResponseSchema = z.object({
+  granted: z.boolean()
+});
+export const createChatCreditGrantRequestBodySchema = z.object({
+  userId: z.number().int().positive(),
+  creditAmount: z.number().int().min(1).max(1_000_000)
+}).strict();
+export const createChatCreditGrantResponseSchema = z.object({
+  creditsGranted: z.number().int().positive(),
+  availableCredits: z.number().int()
+});
+export const chatAccessGrantPathParamsSchema = z.object({
+  userId: z.string().regex(/^\d+$/)
+});
+export const deleteChatAccessGrantResponseSchema = z.object({ revoked: z.boolean() });
+
+export const creditPaymentRecoveryKindSchema = z.enum([
+  "stripe_refund",
+  "stripe_dispute"
+]);
+export const creditPaymentRecoveryStatusSchema = z.enum([
+  "applied",
+  "review_required",
+  "resolved"
+]);
+export const creditPaymentRecoveryResponseSchema = z.object({
+  id: z.string().uuid(),
+  kind: creditPaymentRecoveryKindSchema,
+  status: creditPaymentRecoveryStatusSchema,
+  externalReference: z.string(),
+  amountCents: z.number().int().nonnegative(),
+  currency: z.string().length(3),
+  creditDelta: z.number().int().nullable(),
+  resolutionCreditDelta: z.number().int().nullable(),
+  resolutionNote: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  resolvedAt: z.string().datetime().nullable(),
+  userId: z.number().int().positive(),
+  email: z.string().email(),
+  publicUsername: z.string().nullable(),
+  paymentRestricted: z.boolean(),
+  stripeDashboardUrl: z.string().url().nullable(),
+  packId: z.string(),
+  packCredits: z.number().int().positive()
+});
+export const creditPaymentRecoveryAdministrationResponseSchema = z.object({
+  recoveries: z.array(creditPaymentRecoveryResponseSchema)
+});
+export const creditPaymentRecoveryPathParamsSchema = z.object({
+  recoveryId: z.string().uuid()
+});
+export const resolveCreditPaymentRecoveryRequestBodySchema = z.object({
+  creditDelta: z.number().int().min(-1_000_000).max(1_000_000),
+  note: z.string().trim().min(3).max(500),
+  releaseChat: z.boolean()
+}).strict();
+export const resolveCreditPaymentRecoveryResponseSchema = z.object({
+  resolved: z.literal(true),
+  availableCredits: z.number().int().nullable(),
+  chatReleased: z.boolean()
+});

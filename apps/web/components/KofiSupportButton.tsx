@@ -5,13 +5,16 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
 
 const KofiButton = () => {
   const { t } = useTranslation();
   const { isLoggedIn, loading } = useAuth();
+  const { data: chatAccess, isLoading: isChatAccessLoading } = useChatAccess();
 
   if (loading) return null;
-  if (isLoggedIn) return <RecipeChatLauncher />;
+  if (isLoggedIn && isChatAccessLoading) return null;
+  if (isLoggedIn && chatAccess?.chatEnabled) return <RecipeChatLauncher />;
 
   return (
     <a

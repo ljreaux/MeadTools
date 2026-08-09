@@ -3,8 +3,9 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getLocalChatbotConfig } from "./chat-config";
 import { verifyUser } from "@/lib/userAccessFunctions";
+import { getChatAccessStatus } from "@/lib/db/chat-access";
 
-/** The evaluator remains private while chat persistence is being built. */
+/** Ensures a configured chatbot request also has database-backed access. */
 export async function requireLocalChatbotUser(
   request: NextRequest
 ): Promise<{ userId: number } | NextResponse> {
@@ -21,9 +22,10 @@ export async function requireLocalChatbotUser(
       { status: 503 }
     );
   }
-  if (!config.allowedUserIds.has(authenticatedUser)) {
+  const status = await getChatAccessStatus(authenticatedUser);
+  if (!status.chatEnabled) {
     return NextResponse.json(
-      { error: "This user is not permitted to use the local chatbot." },
+      { error: "This user is not permitted to use the recipe chatbot." },
       { status: 403 }
     );
   }

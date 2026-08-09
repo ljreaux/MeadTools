@@ -1,6 +1,6 @@
 export const DEFAULT_FIREWORKS_MODEL =
   "accounts/fireworks/models/deepseek-v4-flash";
-/** Generous only for private, allow-listed evaluation sessions. */
+/** Generous only for private evaluator sessions. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_MAX_TOOL_CALLS = 6;
 /** A turn may use tools, but cannot run an unbounded provider loop. */
@@ -28,12 +28,12 @@ export type LocalChatbotConfig = {
   maxRequestsPerDay: number;
   maxTokensPerDay: number;
   usageEnvironment: string;
-  allowedUserIds: ReadonlySet<number>;
 };
 
 /**
- * Local chat remains fail-closed until an operator both enables it and names
- * the authenticated user IDs permitted to incur provider usage.
+ * Chat remains fail-closed until an operator enables it and configures a
+ * provider key. Per-user entitlement is enforced by the database-backed chat
+ * access policy, so it can be audited and managed from the admin panel.
  */
 export function getLocalChatbotConfig(
   environment: Readonly<Record<string, string | undefined>> = process.env
@@ -41,8 +41,7 @@ export function getLocalChatbotConfig(
   if (environment.CHATBOT_LOCAL_TEST_ENABLED !== "true") return null;
 
   const apiKey = environment.FIREWORKS_API_KEY?.trim();
-  const allowedUserIds = parseUserIds(environment.CHATBOT_ALLOWED_USER_IDS);
-  if (!apiKey || allowedUserIds.size === 0) return null;
+  if (!apiKey) return null;
 
   return {
     apiKey,
@@ -104,18 +103,8 @@ export function getLocalChatbotConfig(
     ),
     usageEnvironment: parseUsageEnvironment(
       environment.CHATBOT_USAGE_ENVIRONMENT ?? environment.VERCEL_ENV ?? "local"
-    ),
-    allowedUserIds
+    )
   };
-}
-
-function parseUserIds(value: string | undefined): ReadonlySet<number> {
-  return new Set(
-    (value ?? "")
-      .split(",")
-      .map((part) => Number(part.trim()))
-      .filter((id) => Number.isSafeInteger(id) && id > 0)
-  );
 }
 
 function parseBoundedInteger(

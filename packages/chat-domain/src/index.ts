@@ -1,4 +1,11 @@
 import { z } from "zod";
+import {
+  quoteTurnCredits,
+  type CreditFeePolicy,
+  type CreditQuote,
+  type ModelTokenPricing,
+  type TokenUsage
+} from "@meadtools/credit-accounting";
 
 export const CHAT_THREAD_RETENTION_DAYS = 90;
 export const CHAT_THREAD_MAX_MESSAGES = 500;
@@ -6,6 +13,8 @@ export const CHAT_THREAD_MAX_CONTENT_BYTES = 1_048_576;
 /** Reserve room for an assistant reply when accepting a new user turn. */
 export const CHAT_THREAD_ASSISTANT_RESERVATION_BYTES = 65_536;
 export const CHAT_PROVIDER_HISTORY_MESSAGES = 16;
+/** Covers the compact title request's bounded prompt and 32-token completion. */
+export const CHAT_TITLE_RESERVATION_TOKENS = 2_000;
 
 export const chatConversationStateSchema = z.enum(["active", "archived"]);
 export const chatMessageRoleSchema = z.enum(["user", "assistant"]);
@@ -59,4 +68,45 @@ export function conversationIsAtCapacity(options: {
 }): boolean {
   return options.messageCount >= CHAT_THREAD_MAX_MESSAGES ||
     options.contentBytes >= CHAT_THREAD_MAX_CONTENT_BYTES;
+}
+
+/**
+ * Reserve for the worst bounded provider turn by pricing every remaining token
+ * at the output rate. This intentionally over-reserves, then settlement
+ * returns the unused credits from the immutable ledger.
+ */
+export function reserveCreditsForBoundedChatTurn(options: {
+  maxProviderTokens: number;
+  includesTitleGeneration: boolean;
+  pricing: ModelTokenPricing;
+  feePolicy: CreditFeePolicy;
+}): CreditQuote {
+  const titleTokens = options.includesTitleGeneration ? CHAT_TITLE_RESERVATION_TOKENS : 0;
+  return quoteTurnCredits({
+    usage: {
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: options.maxProviderTokens + titleTokens
+    },
+    pricing: options.pricing,
+    feePolicy: options.feePolicy
+  });
+}
+
+/** Returns no charge when a turn stayed entirely deterministic. */
+export function quoteCreditsForChatUsage(options: {
+  usage: TokenUsage;
+  providerCallCount: number;
+  pricing: ModelTokenPricing;
+  feePolicy: CreditFeePolicy;
+}): CreditQuote | undefined {
+  if (!Number.isSafeInteger(options.providerCallCount) || options.providerCallCount < 0) {
+    throw new RangeError("Provider call count must be a non-negative safe integer.");
+  }
+  if (options.providerCallCount === 0) return undefined;
+  return quoteTurnCredits({
+    usage: options.usage,
+    pricing: options.pricing,
+    feePolicy: options.feePolicy
+  });
 }

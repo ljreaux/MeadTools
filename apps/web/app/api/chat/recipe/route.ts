@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
+import {
+  quoteCreditsForChatUsage,
+  reserveCreditsForBoundedChatTurn
+} from "@meadtools/chat-domain";
+import { InsufficientCreditsError } from "@meadtools/credit-accounting";
 import { buildRecipeDraftInputSchema } from "@meadtools/recipe-workflows";
 import { recipeDataV2Schema } from "@meadtools/schemas";
 import { z } from "zod";
@@ -27,6 +32,17 @@ import {
   reserveChatbotUsage
 } from "@/lib/db/chatbot-usage";
 import {
+  CreditFeePolicyNotConfiguredError,
+  CreditPricingNotConfiguredError,
+  getActiveCreditFeePolicy,
+  getActiveCreditPricing
+} from "@/lib/db/credit-pricing";
+import {
+  reserveCreditBalance,
+  reverseCreditReservation,
+  settleCreditReservation
+} from "@/lib/db/credit-accounting";
+import {
   ChatConversationCapacityError,
   ChatConversationNotFoundError,
   ChatConversationUnavailableError,
@@ -51,6 +67,8 @@ const chatTurnPersistenceSchema = z.object({
  * Private evaluator endpoint. The signed-in user may only send a message to
  * an owned active conversation. The provider receives the bounded persisted
  * transcript and latest structured draft—not client-supplied history.
+ * @add 402:CreditAccountErrorResponse
+ * @openapi
  */
 export async function POST(request: NextRequest) {
   const access = await requireLocalChatbotUser(request);
@@ -147,6 +165,61 @@ export async function POST(request: NextRequest) {
 
   const requestId = crypto.randomUUID();
   const requestStartedAt = new Date();
+  let creditPricing: Awaited<ReturnType<typeof getActiveCreditPricing>>;
+  let creditFeePolicy: Awaited<ReturnType<typeof getActiveCreditFeePolicy>>;
+  try {
+    [creditPricing, creditFeePolicy] = await Promise.all([
+      getActiveCreditPricing({ provider: "fireworks", model: config.model, at: requestStartedAt }),
+      getActiveCreditFeePolicy({ at: requestStartedAt })
+    ]);
+    const reservation = reserveCreditsForBoundedChatTurn({
+      // The loop stops before its next request once this threshold is reached,
+      // so one final bounded completion may extend beyond it.
+      maxProviderTokens: config.maxTotalProviderTokens + config.maxOutputTokens,
+      includesTitleGeneration: shouldGenerateTitle,
+      pricing: creditPricing.pricing,
+      feePolicy: creditFeePolicy.policy
+    });
+    await reserveCreditBalance({
+      userId: access.userId,
+      operationId: requestId,
+      idempotencyKey: `chat-reservation:${requestId}`,
+      reservationCredits: reservation.chargedCredits,
+      pricingVersionId: creditPricing.id,
+      feePolicyVersionId: creditFeePolicy.id,
+      now: requestStartedAt
+    });
+  } catch (error) {
+    await failPendingMessageSilently({
+      userId: access.userId,
+      conversationId: threadId,
+      pendingMessageId
+    });
+    if (error instanceof InsufficientCreditsError) {
+      return NextResponse.json({
+        error: error.message,
+        availableCredits: error.availableCredits,
+        requiredCredits: error.requiredCredits
+      }, { status: 402 });
+    }
+    if (
+      error instanceof CreditPricingNotConfiguredError ||
+      error instanceof CreditFeePolicyNotConfiguredError
+    ) {
+      return NextResponse.json({ error: "Chat billing is not configured for this model." }, { status: 503 });
+    }
+    console.error("Unable to reserve chat credits safely.", {
+      requestId,
+      userId: access.userId,
+      model: config.model,
+      error: error instanceof Error ? error.message : "unknown"
+    });
+    return NextResponse.json(
+      { error: "The chatbot billing guard is unavailable. Please try again later." },
+      { status: 503 }
+    );
+  }
+
   try {
     await reserveChatbotUsage({
       requestId,
@@ -161,6 +234,11 @@ export async function POST(request: NextRequest) {
       now: requestStartedAt
     });
   } catch (error) {
+    await reverseCreditReservationSilently({
+      userId: access.userId,
+      operationId: requestId,
+      idempotencyKey: `chat-reversal:${requestId}`
+    });
     await failPendingMessageSilently({
       userId: access.userId,
       conversationId: threadId,
@@ -197,6 +275,8 @@ export async function POST(request: NextRequest) {
     runId,
     threadId,
     run: async (onEvent) => {
+      let providerResultCompleted = false;
+      let creditReservationFinalized = false;
       try {
         const titlePromise = shouldGenerateTitle
           ? generateChatConversationTitle({
@@ -268,6 +348,37 @@ export async function POST(request: NextRequest) {
         });
         const titleResult = titlePromise ? await titlePromise : undefined;
         const usage = mergeTitleUsage(result.usage, titleResult);
+        providerResultCompleted = true;
+        const creditQuote = quoteCreditsForChatUsage({
+          usage: {
+            inputTokens: usage.inputTokens,
+            cachedInputTokens: usage.cachedInputTokens,
+            outputTokens: usage.outputTokens
+          },
+          providerCallCount: usage.requestIds.length,
+          pricing: creditPricing.pricing,
+          feePolicy: creditFeePolicy.policy
+        });
+        if (creditQuote) {
+          await settleCreditReservation({
+            userId: access.userId,
+            operationId: requestId,
+            idempotencyKey: `chat-settlement:${requestId}`,
+            chargedCredits: creditQuote.chargedCredits,
+            providerCostPicousd: creditQuote.providerCostPicousd,
+            pricingVersionId: creditPricing.id,
+            feePolicyVersionId: creditFeePolicy.id,
+            now: new Date()
+          });
+        } else {
+          await reverseCreditReservation({
+            userId: access.userId,
+            operationId: requestId,
+            idempotencyKey: `chat-reversal:${requestId}`,
+            now: new Date()
+          });
+        }
+        creditReservationFinalized = true;
         const recipeData = recipeDataFromToolResults(result.toolResults);
         const usageEventId = await recordCompletedUsage({
           requestId,
@@ -320,6 +431,13 @@ export async function POST(request: NextRequest) {
           conversationId: threadId,
           pendingMessageId
         });
+        if (!providerResultCompleted && !creditReservationFinalized) {
+          await reverseCreditReservationSilently({
+            userId: access.userId,
+            operationId: requestId,
+            idempotencyKey: `chat-reversal:${requestId}`
+          });
+        }
         await recordFailedUsage({
           requestId,
           userId: access.userId,
@@ -338,6 +456,22 @@ export async function POST(request: NextRequest) {
       "x-accel-buffering": "no"
     }
   });
+}
+
+async function reverseCreditReservationSilently(options: {
+  userId: number;
+  operationId: string;
+  idempotencyKey: string;
+}) {
+  try {
+    await reverseCreditReservation(options);
+  } catch (error) {
+    console.error("Unable to reverse an unspent chat credit reservation.", {
+      operationId: options.operationId,
+      userId: options.userId,
+      error: error instanceof Error ? error.message : "unknown"
+    });
+  }
 }
 
 async function recordCompletedUsage(options: {

@@ -54,6 +54,8 @@ next-env.d.ts
 .mcp.json
 AGENTS.md
 CLAUDE.md
+.agents/*
+skills-lock.json
 # Sentry Config File
 .env.sentry-build-plugin
 # next-agents-md

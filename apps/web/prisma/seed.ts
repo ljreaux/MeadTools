@@ -17,6 +17,10 @@ import {
   temp_units
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
+import {
+  initialCreditFeePolicy,
+  initialFireworksDeepseekV4FlashPricing
+} from "@/lib/billing/credit-pricing";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");
@@ -26,6 +30,7 @@ async function main() {
   assertSeedSafe();
   // Drop and recreate tables is unnecessary; Prisma migrations handle this.
   await clearDb();
+  await seedCreditBillingDefaults();
   // Seed users
   const adminEmail = process.env.ADMIN_EMAIL || "";
   const adminPassword = process.env.ADMIN_PASSWORD
@@ -61,6 +66,15 @@ async function main() {
   });
 
   console.log("Users seeded");
+  const localChatTestUser = users.find((user) => user.role === "user") ?? users[0];
+  if (localChatTestUser) {
+    await prisma.chat_access_grants.create({
+      data: {
+        user_id: localChatTestUser.id,
+        granted_by_user_id: users.find((user) => user.role === "admin")?.id ?? localChatTestUser.id
+      }
+    });
+  }
   const userIds = users.map((u) => u.id);
   // Seed ingredients
   await prisma.ingredients.createMany({ data: INGREDIENTS });
@@ -373,6 +387,14 @@ async function createHydrometerLogSeries({
 
 async function clearDb() {
   // Order matters because of FKs
+  await prisma.chat_access_grants.deleteMany();
+  await prisma.chat_access_settings.deleteMany();
+  await prisma.credit_payment_webhook_events.deleteMany();
+  await prisma.credit_checkout_sessions.deleteMany();
+  await prisma.credit_ledger_entries.deleteMany();
+  await prisma.credit_accounts.deleteMany();
+  await prisma.credit_pricing_versions.deleteMany();
+  await prisma.credit_fee_policy_versions.deleteMany();
   await prisma.logs.deleteMany();
   await prisma.brew_entries.deleteMany(); // <-- add this
   await prisma.devices.deleteMany();
@@ -392,6 +414,44 @@ async function clearDb() {
   await prisma.users.deleteMany();
 
   console.log("✅ Database cleared");
+}
+
+async function seedCreditBillingDefaults() {
+  await prisma.credit_pricing_versions.upsert({
+    where: {
+      provider_model_version: {
+        provider: initialFireworksDeepseekV4FlashPricing.provider,
+        model: initialFireworksDeepseekV4FlashPricing.model,
+        version: initialFireworksDeepseekV4FlashPricing.version
+      }
+    },
+    create: {
+      provider: initialFireworksDeepseekV4FlashPricing.provider,
+      model: initialFireworksDeepseekV4FlashPricing.model,
+      version: initialFireworksDeepseekV4FlashPricing.version,
+      uncached_input_picousd_per_million_tokens:
+        initialFireworksDeepseekV4FlashPricing.pricing.uncachedInputPicousdPerMillionTokens,
+      cached_input_picousd_per_million_tokens:
+        initialFireworksDeepseekV4FlashPricing.pricing.cachedInputPicousdPerMillionTokens,
+      output_picousd_per_million_tokens:
+        initialFireworksDeepseekV4FlashPricing.pricing.outputPicousdPerMillionTokens,
+      effective_at: initialFireworksDeepseekV4FlashPricing.effectiveAt
+    },
+    update: {}
+  });
+
+  await prisma.credit_fee_policy_versions.upsert({
+    where: { version: initialCreditFeePolicy.version },
+    create: {
+      version: initialCreditFeePolicy.version,
+      markup_basis_points: initialCreditFeePolicy.policy.markupBasisPoints,
+      fixed_turn_credits: initialCreditFeePolicy.policy.fixedTurnCredits,
+      minimum_turn_credits: initialCreditFeePolicy.policy.minimumTurnCredits,
+      effective_at: initialCreditFeePolicy.effectiveAt
+    },
+    update: {}
+  });
+  console.log("Credit billing defaults seeded.");
 }
 
 function assertSafeDatabaseUrl() {

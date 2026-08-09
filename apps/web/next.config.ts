@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@meadtools/api-contract",
     "@meadtools/brew-domain",
+    "@meadtools/credit-accounting",
     "@meadtools/core",
     "@meadtools/i18n",
     "@meadtools/schemas",
