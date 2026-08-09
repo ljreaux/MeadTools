@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "223552406114e768ce7b952ec74322a23048f6ec8e1bad9a329cd96167d8c0d9";
+  "e8e5b255fcb24a1aeb930f8e55698be7e6484acee0e5245ee3feb30b3e546f2e";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -56,6 +56,17 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/chat/recipe"];
   delete pathsWithoutApprovedAdditions["/chat/conversations"];
   delete pathsWithoutApprovedAdditions["/chat/conversations/{conversationId}"];
+  delete pathsWithoutApprovedAdditions["/account/credits"];
+  delete pathsWithoutApprovedAdditions["/account/credits/checkout"];
+  delete pathsWithoutApprovedAdditions["/account/credits/history"];
+  delete pathsWithoutApprovedAdditions["/webhooks/stripe"];
+  delete pathsWithoutApprovedAdditions["/chat/access"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access/grants"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access/grants/{userId}"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access/credits"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access/payment-recoveries"];
+  delete pathsWithoutApprovedAdditions["/admin/chat-access/payment-recoveries/{recoveryId}"];
   const canonicalPaths = JSON.stringify(
     sortJson(pathsWithoutApprovedAdditions)
   );

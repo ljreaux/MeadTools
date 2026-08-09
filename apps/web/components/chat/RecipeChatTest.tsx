@@ -48,6 +48,7 @@ import {
   MessageScrollerViewport
 } from "@/components/ui/message-scroller";
 import SearchableInput from "@/components/ui/SearchableInput";
+import Header from "@/components/account/header";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
@@ -55,6 +56,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useCreditAccount } from "@/hooks/reactQuery/useCreditAccount";
+import { qk } from "@/lib/db/queryKeys";
+import { cn } from "@/lib/utils";
 import { isRecipeData } from "@/types/recipeData";
 import {
   formatChatSessionMarkdown,
@@ -72,6 +76,7 @@ import {
   type UIMessage as TanStackUIMessage,
   useChat
 } from "@tanstack/ai-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Archive,
@@ -92,6 +97,7 @@ import {
   Search,
   Send,
   Trash2,
+  WalletCards,
   X
 } from "lucide-react";
 import Fuse from "fuse.js";
@@ -110,6 +116,7 @@ import { useTranslation } from "react-i18next";
 
 type ChatMessage = ChatSessionMessage & {
   id: string;
+  status?: PersistedChatMessage["status"];
 };
 
 type ChatTurnUsage = {
@@ -182,17 +189,20 @@ type RecipeChatProps = {
   fullscreen?: boolean;
   onClose?: () => void;
   onToggleFullscreen?: () => void;
+  embedded?: boolean;
 };
 
 export default function RecipeChatTest({
   compact = false,
   fullscreen = false,
   onClose,
-  onToggleFullscreen
+  onToggleFullscreen,
+  embedded = false
 }: RecipeChatProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const token = useAuthToken();
   const { status: authStatus } = useSession();
   const canUseChat = Boolean(token) || authStatus === "authenticated";
@@ -226,6 +236,10 @@ export default function RecipeChatTest({
   const [contextOptionsError, setContextOptionsError] = useState<string>();
   const [model, setModel] = useState<string>();
   const [error, setError] = useState<string>();
+  const [insufficientCredits, setInsufficientCredits] = useState<{
+    availableCredits?: number;
+    requiredCredits?: number;
+  }>();
   const [turnResults, setTurnResults] = useState<Record<string, ChatTurnResult>>({});
   const [copiedMessageId, setCopiedMessageId] = useState<string>();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -239,6 +253,10 @@ export default function RecipeChatTest({
   const conversationIdRef = useRef<string | undefined>(undefined);
   const clientMessageIdRef = useRef<string | undefined>(undefined);
   const threadAtCapacityRef = useRef(false);
+  const insufficientCreditsRef = useRef<{
+    availableCredits?: number;
+    requiredCredits?: number;
+  } | undefined>(undefined);
   const capacityToastShownRef = useRef(false);
   const tanStackMessagesRef = useRef<TanStackUIMessage[]>([]);
   const activeRecipeDataRef = useRef<RecipeDataV2 | undefined>(undefined);
@@ -246,6 +264,10 @@ export default function RecipeChatTest({
   const selectedAccountContextRef = useRef<ChatContextSelection | undefined>(undefined);
   const createRecipeMutation = useCreateRecipeMutation();
   const createBrewEntryMutation = useCreateBrewEntry();
+  const creditAccount = useCreditAccount();
+  const [persistedMessageStatuses, setPersistedMessageStatuses] = useState<
+    Record<string, PersistedChatMessage["status"]>
+  >({});
 
   tokenRef.current = token;
   conversationIdRef.current = conversationId;
@@ -297,6 +319,12 @@ export default function RecipeChatTest({
             threadAtCapacityRef.current = Boolean(
               payload?.error?.includes("reached its message or content limit")
             );
+          }
+          if (response.status === 402) {
+            insufficientCreditsRef.current = (await response.clone().json().catch(() => null)) as {
+              availableCredits?: number;
+              requiredCredits?: number;
+            } | undefined;
           }
           return response;
         },
@@ -362,9 +390,23 @@ export default function RecipeChatTest({
         showThreadCapacity();
         return;
       }
+      if (insufficientCreditsRef.current) {
+        const credits = insufficientCreditsRef.current;
+        setInsufficientCredits(credits);
+        setError(t("chatbotTest.errors.insufficientCredits"));
+        toast({
+          title: t("chatbotTest.insufficientCredits"),
+          description: t("chatbotTest.errors.insufficientCredits"),
+          variant: "destructive"
+        });
+        return;
+      }
       setError(t("chatbotTest.errors.requestFailed"));
     },
-    onFinish: () => setToolActivity([])
+    onFinish: () => {
+      setToolActivity([]);
+      void queryClient.invalidateQueries({ queryKey: qk.creditAccount });
+    }
   });
   tanStackMessagesRef.current = tanStackMessages;
 
@@ -412,6 +454,7 @@ export default function RecipeChatTest({
         );
       });
       setMessages(persistedMessagesToTanStack(payload.messages));
+      setPersistedMessageStatuses(statusesFromPersistedMessages(payload.messages));
       setThreadNextBeforeSequence(payload.nextBeforeSequence);
       setThreadAtCapacity(false);
       threadAtCapacityRef.current = false;
@@ -470,6 +513,10 @@ export default function RecipeChatTest({
         ...persistedMessagesToTanStack(payload.messages),
         ...tanStackMessagesRef.current
       ]);
+      setPersistedMessageStatuses((current) => ({
+        ...current,
+        ...statusesFromPersistedMessages(payload.messages)
+      }));
       setThreadNextBeforeSequence(payload.nextBeforeSequence);
     } catch {
       setError(t("chatbotTest.errors.threadFailed"));
@@ -507,6 +554,7 @@ export default function RecipeChatTest({
     setConversationId(undefined);
     setActiveConversationSummary(undefined);
     setMessages([]);
+    setPersistedMessageStatuses({});
     setTurnResults({});
     setActiveRecipeData(undefined);
     setRecipeDraftInput(undefined);
@@ -649,9 +697,10 @@ export default function RecipeChatTest({
     () => displayMessagesFromTanStack(
       tanStackMessages,
       turnResults,
-      t("additionalLinks.wiki")
+      t("additionalLinks.wiki"),
+      persistedMessageStatuses
     ),
-    [tanStackMessages, t, turnResults]
+    [persistedMessageStatuses, tanStackMessages, t, turnResults]
   );
 
   const latestUsage = useMemo(
@@ -676,6 +725,8 @@ export default function RecipeChatTest({
 
     setInput("");
     setError(undefined);
+    setInsufficientCredits(undefined);
+    insufficientCreditsRef.current = undefined;
     setThreadAtCapacity(false);
     threadAtCapacityRef.current = false;
     capacityToastShownRef.current = false;
@@ -690,6 +741,10 @@ export default function RecipeChatTest({
       clientMessageIdRef.current = undefined;
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
+      } else if (insufficientCreditsRef.current) {
+        const credits = insufficientCreditsRef.current;
+        setInsufficientCredits(credits);
+        setError(t("chatbotTest.errors.insufficientCredits"));
       } else {
         setError(t("chatbotTest.errors.requestFailed"));
       }
@@ -837,9 +892,12 @@ export default function RecipeChatTest({
           ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 sm:p-6 sm:pt-24"
           : compact
           ? "flex h-[min(40rem,calc(100vh-6rem))] w-full min-w-0 flex-col rounded-xl bg-card p-3"
-          : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 sm:p-10"
+          : embedded
+          ? "w-full"
+          : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 pt-16 sm:p-10 sm:pt-20"
       }
     >
+      {!compact && !fullscreen ? <Header /> : null}
       {popupLayout ? (
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold" title={activeConversationTitle}>
@@ -1072,6 +1130,19 @@ export default function RecipeChatTest({
                                   <span>{t("chatbotTest.toolsUsed")}</span>
                                 </MessageFooter>
                               ) : null}
+                              {message.status === "pending" ? (
+                                <MessageFooter>
+                                  <span className="text-muted-foreground">
+                                    {t("chatbotTest.pendingMessage")}
+                                  </span>
+                                </MessageFooter>
+                              ) : message.status === "failed" || message.status === "cancelled" ? (
+                                <MessageFooter>
+                                  <span className="text-destructive">
+                                    {t("chatbotTest.interruptedMessage")}
+                                  </span>
+                                </MessageFooter>
+                              ) : null}
                               {proposal ? (
                                 <BrewActionProposalCard
                                   confirmed={confirmedBrewActions.has(message.id)}
@@ -1159,15 +1230,23 @@ export default function RecipeChatTest({
               value={input}
             />
             <div className="flex items-center justify-between gap-3">
-              {!popupLayout ? (
-                <p className="text-xs text-muted-foreground">
-                  {t("chatbotTest.localOnly")}
-                </p>
-              ) : <span />}
+              <div className="min-w-0">
+                {!popupLayout ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("chatbotTest.localOnly")}
+                  </p>
+                ) : null}
+                <ChatCreditBalance
+                  availableCredits={creditAccount.data?.availableCredits}
+                  insufficient={Boolean(insufficientCredits)}
+                  isLoading={creditAccount.isLoading}
+                  t={t}
+                />
+              </div>
               {isSubmitting ? (
                 <Button onClick={cancelRequest} type="button" variant="outline">
                   <X />
-                  {t("chatbotTest.stop")}
+                  {t("chatbotTest.stopStreaming")}
                 </Button>
               ) : (
                 <Button disabled={!input.trim() || !canUseChat} type="submit">
@@ -1184,6 +1263,18 @@ export default function RecipeChatTest({
                 <Button onClick={startNewConversation} size="sm" type="button" variant="outline">
                   <Plus />
                   {t("chatbotTest.newChat")}
+                </Button>
+              </div>
+            ) : insufficientCredits ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
+                <p>
+                  {error}
+                  {typeof insufficientCredits.availableCredits === "number"
+                    ? ` ${t("chatbotTest.availableCredits", { credits: insufficientCredits.availableCredits.toLocaleString() })}`
+                    : ""}
+                </p>
+                <Button asChild size="sm" type="button" variant="outline">
+                  <Link href="/account/credits">{t("chatbotTest.viewCredits")}</Link>
                 </Button>
               </div>
             ) : error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
@@ -1366,6 +1457,44 @@ function persistedMessagesToTanStack(
     role: message.role,
     parts: [{ type: "text", content: message.content }]
   })) as TanStackUIMessage[];
+}
+
+function statusesFromPersistedMessages(
+  messages: PersistedChatMessage[]
+): Record<string, PersistedChatMessage["status"]> {
+  return Object.fromEntries(messages.map((message) => [message.id, message.status]));
+}
+
+function ChatCreditBalance({
+  availableCredits,
+  insufficient,
+  isLoading,
+  t
+}: {
+  availableCredits: number | undefined;
+  insufficient: boolean;
+  isLoading: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}) {
+  const label = isLoading
+    ? t("credits.available")
+    : t("chatbotTest.availableCredits", {
+      credits: (availableCredits ?? 0).toLocaleString()
+    });
+  return (
+    <p
+      className={cn(
+        "mt-1 flex items-center gap-1 text-xs",
+        !isLoading && (insufficient || (availableCredits ?? 0) <= 0)
+          ? "text-destructive"
+          : "text-muted-foreground"
+      )}
+      title={label}
+    >
+      <WalletCards aria-hidden="true" className="size-3" />
+      <span>{isLoading ? "…" : label}</span>
+    </p>
+  );
 }
 
 function ChatThreadHeader({
@@ -1742,7 +1871,8 @@ function ToolActivityMarker({
 function displayMessagesFromTanStack(
   messages: TanStackUIMessage[],
   turnResults: Record<string, ChatTurnResult>,
-  wikiLabel: string
+  wikiLabel: string,
+  persistedMessageStatuses: Record<string, PersistedChatMessage["status"]>
 ): ChatMessage[] {
   return messages.flatMap((message) => {
     if (message.role !== "user" && message.role !== "assistant") return [];
@@ -1763,6 +1893,9 @@ function displayMessagesFromTanStack(
             tools: result.toolResults.map(({ toolName }) => toolName),
             usage: result.usage
           }
+        : {}),
+      ...(persistedMessageStatuses[message.id]
+        ? { status: persistedMessageStatuses[message.id] }
         : {})
     }];
   });

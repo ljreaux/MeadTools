@@ -5,21 +5,18 @@ import {
   getLocalChatbotConfig
 } from "./chat-config";
 
-test("local chatbot configuration is disabled until explicitly enabled and allow-listed", () => {
+test("local chatbot configuration is disabled until explicitly enabled and configured", () => {
   assert.equal(getLocalChatbotConfig({ FIREWORKS_API_KEY: "key" }), null);
-  assert.equal(
-    getLocalChatbotConfig({
-      CHATBOT_LOCAL_TEST_ENABLED: "true",
-      FIREWORKS_API_KEY: "key"
-    }),
-    null
-  );
+  assert.equal(getLocalChatbotConfig({ CHATBOT_LOCAL_TEST_ENABLED: "true" }), null);
+  assert.ok(getLocalChatbotConfig({
+    CHATBOT_LOCAL_TEST_ENABLED: "true",
+    FIREWORKS_API_KEY: "key"
+  }));
 });
 
 test("local chatbot configuration clamps operator-controlled limits", () => {
   const config = getLocalChatbotConfig({
     CHATBOT_LOCAL_TEST_ENABLED: "true",
-    CHATBOT_ALLOWED_USER_IDS: " 4, bad, 9, 4 ",
     FIREWORKS_API_KEY: "key",
     CHATBOT_MAX_OUTPUT_TOKENS: "9000",
     CHATBOT_MAX_TOOL_CALLS: "100",
@@ -45,5 +42,4 @@ test("local chatbot configuration clamps operator-controlled limits", () => {
   assert.equal(config.maxRequestsPerDay, 500);
   assert.equal(config.maxTokensPerDay, 1_000_000);
   assert.equal(config.usageEnvironment, "preview-test");
-  assert.deepEqual([...config.allowedUserIds], [4, 9]);
 });

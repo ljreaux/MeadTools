@@ -6,7 +6,7 @@
 - `packages/api-contract` and `packages/api-client` already expose the `/api/recipes/derived` contract. The web route validates recipe data and calls `calculateRecipeDerivedApiResponse`.
 - The browser recipe builder keeps editable draft state in `RecipeProvider` and calculates through `@meadtools/core`; its target-OG action uses `calculateHoneyAndWaterL`.
 - The web app supports NextAuth sessions plus the existing custom bearer-token path in `verifyUser`. Recipe ownership and saving already use the `users` and recipe infrastructure.
-- Private persistent conversations are implemented for the evaluator: ownership-scoped threads, messages, draft snapshots, idempotent turns, a bounded provider transcript, and a 90-day retention window renewed by a completed turn. The daily cron purges expired threads. Paid-plan, billing, and entitlement infrastructure remain future work; the evaluator is not public product infrastructure.
+- Private persistent conversations are implemented for the evaluator: ownership-scoped threads, messages, draft snapshots, idempotent turns, a bounded provider transcript, and a 90-day retention window renewed by a completed turn. The daily cron purges expired threads; a separate five-minute cron marks abandoned turns as failed and reverses their unmatched credit reservations after a one-hour grace period. The evaluator remains private product infrastructure while beta access and payment operations are validated.
 
 ## Selected boundaries
 
@@ -88,12 +88,12 @@ a routing catalog; the selected retrieved page is the source for a process claim
   resistance. These are ready for a selected provider runner.
 - Completed: a Fireworks-compatible Node adapter and private local-test SSE
   route at `/api/chat/recipe`. It is disabled by default, requires existing
-  bearer authentication plus an explicit user-ID allow-list, has strict
+  authentication plus database-backed beta access, has strict
   per-turn provider-call/output/context caps, and applies durable per-user
-  hourly/daily request and daily token limits before a provider call. It emits
-  non-sensitive provider/model/token/latency telemetry without persisting
-  conversation content or charging credits.
-- Completed: a private, authenticated evaluator at `/account/chat`. It renders
+  hourly/daily request and daily token limits before a provider call. It
+  reserves a bounded prompt-credit amount before provider work and settles the
+  immutable ledger against measured token use afterward.
+- Completed: a private, access-gated evaluator at `/account/chat`. It renders
   model Markdown, tool activity, citations, and per-turn metering; it retains
   the active draft in browser memory so follow-up refine/explain requests can
   use it without exposing the recipe payload to the model. A user can save the
@@ -111,7 +111,7 @@ a routing catalog; the selected retrieved page is the source for a process claim
   intake question. Wiki retrieval remains selective rather than a required
   step for every recipe request.
 
-## Checkpoint status — July 2026
+## Checkpoint status — August 2026
 
 This is a development checkpoint, not a release. The private evaluator is ready
 for continued real-model testing: it can conduct a bounded tool-calling
@@ -122,9 +122,9 @@ user's account. The save path was verified end-to-end against the local app;
 it persists the structured v2 recipe payload through the existing recipe API,
 not a reconstruction of the chatbot's prose.
 
-Still deliberately out of scope for this checkpoint: user credits or payment,
-public availability, production observability, and automated wiki-index
-publishing. Persistent chat history is now implemented for the private
+Still deliberately out of scope for this checkpoint: public availability,
+production observability, automated wiki-index publishing, and an enabled
+Stripe purchase flow. Persistent chat history is implemented for the private
 evaluator: users can manage multiple private threads, retain the visible
 transcript for 90 days after the last completed turn, and recover explicitly
 when a thread reaches its bounded capacity. The local evaluator uses DeepSeek
@@ -157,8 +157,9 @@ mutation remains reviewable.
 | Assist with an active brew | Private evaluator | User explicitly selects one owned brew. The assistant receives a bounded snapshot of the brew, stage, and recent timeline context to answer questions such as “what is next?” or “does this gravity trend look normal?” |
 | Prepare a brew action | Private evaluator | With an explicitly selected brew, the assistant can prepare a typed note, addition, measurement, volume reading, or stage action. The UI shows the selected brew and exact entry payload; only a separate user confirmation calls the existing ownership-checked brew API. |
 | Hydrometer-aware assistance | Later | Add an opt-in read-only summary of linked-device state and recent readings; never let model output control devices or alerts. |
-| Persistent conversations | Private evaluator | Multiple owner-scoped threads, bounded transcripts, 90-day inactivity retention, daily purge, and explicit recipe/brew context. Billing is deliberately separate. |
-| User credits | Later | Use a MeadTools credit ledger and explicit model tier selection before public access. |
+| Persistent conversations | Private evaluator | Multiple owner-scoped threads, bounded transcripts, 90-day inactivity retention, daily purge, five-minute abandoned-turn reconciliation after a one-hour grace period, and explicit recipe/brew context. Billing is deliberately separate. |
+| User credits | Private beta foundation | Append-only, versioned pricing ledger with grant support, bounded reservations, exact usage settlement, wallet activity, and a disabled-by-default Stripe checkout boundary. Stripe refunds reconcile proportionally against unspent credits; ambiguous, overspent, and disputed payments restrict new chat spend for explicit administrator resolution. Admins can issue an immutable, arbitrary positive credit allocation independently of chatbot access. |
+| Beta access rollout | Private beta foundation | Database-backed server policy defaults to explicit invitations, with an auditable admin switch to all active users. The policy gates API access, account navigation, and the floating chat UI. |
 
 ### User recipe and brew context boundary
 
@@ -273,15 +274,34 @@ adjustable fermentable or given a backsweetening target, the bot must proceed
 or ask a genuinely new high-impact question, never ask the same confirmation
 again.
 
+### Deferred chatbot regression pass — after Stripe sandbox integration
+
+Keep the current payment and entitlement work focused. After the Stripe sandbox
+flow is complete, run a dedicated recipe-workflow regression pass before
+resuming broader model refinement:
+
+1. **Traditional intake:** eliminate the repeated “single adjustable
+   fermentable” confirmation. Once the user has identified honey as the
+   adjustable fermentable, the workflow must either draft or ask a genuinely
+   new high-impact question.
+2. **Optional recipe-builder stages:** an explicit negative stage choice must
+   be a valid resolved value. In particular, the 2026-08-09 raspberry-mead
+   evaluator specified 24 lb primary raspberry and no secondary raspberry;
+   the workflow kept demanding confirmation that the secondary amount was
+   zero. Model and workflow input normalization must represent an omitted
+   secondary fruit addition without requiring a zero-value line, then produce
+   the draft. Add a deterministic regression test for that exact exchange.
+
+Do not treat either regression as resolved by prompt wording alone; the
+workflow and its saved recipe payload must be covered by deterministic tests.
+
 ## Local real-model test setup
 
 The local endpoint is intentionally fail-closed. Add the following only to the
-ignored `apps/web/.env.local` file, substituting the numeric ID returned by the
-local login endpoint and a Fireworks server API key:
+ignored `apps/web/.env.local` file, substituting a Fireworks server API key:
 
 ```bash
 CHATBOT_LOCAL_TEST_ENABLED=true
-CHATBOT_ALLOWED_USER_IDS=1
 FIREWORKS_API_KEY=...
 # Optional model and guardrail overrides:
 # CHATBOT_FIREWORKS_MODEL=accounts/fireworks/models/deepseek-v4-flash
@@ -295,6 +315,10 @@ FIREWORKS_API_KEY=...
 # CHATBOT_MAX_REQUESTS_PER_DAY=100
 # CHATBOT_MAX_TOKENS_PER_DAY=200000
 # CHATBOT_USAGE_ENVIRONMENT=local
+# Stripe test-mode checkout stays off unless every value below is configured:
+# CHAT_CREDIT_PURCHASES_ENABLED=false
+# STRIPE_SECRET_KEY=...
+# STRIPE_WEBHOOK_SECRET=...
 ```
 
 Start the app with `npm run dev:web`, sign in normally, then open
@@ -302,14 +326,50 @@ Start the app with `npm run dev:web`, sign in normally, then open
 evaluator shows the selected model, tool activity, and the token/latency totals
 for the last turn. When a recipe tool returns a draft, the page keeps it in
 browser memory for follow-up requests. The signed-in evaluator can explicitly
-save the validated active draft through the existing recipe API; it still does
-not persist chat messages or telemetry, charge credits, or accept payments.
+save the validated active draft through the existing recipe API. Owner-scoped
+threads, messages, and draft snapshots are retained for the configured window;
+token usage and credit settlements are persisted without provider secrets.
+Payment purchases remain disabled until Stripe sandbox configuration is
+explicitly enabled with `CHAT_CREDIT_PURCHASES_ENABLED=true`, a server-only
+Stripe secret key, and a webhook signing secret. Credentials alone never
+enable the purchase surface or Checkout endpoint.
+
+The connected Stripe account uses Managed Payments for digital products. Its
+hosted Checkout flow selects payment methods dynamically, so the credit-pack
+session must not set `payment_method_types`. Inline credit-pack products use
+Stripe's eligible `txcd_10105001` AIaaS cloud-based personal-use tax code and
+tax-exclusive USD price data; Managed Payments calculates applicable taxes at
+Checkout. Credit fulfillment remains webhook-only: fulfill a paid
+`checkout.session.completed` event, or a paid
+`checkout.session.async_payment_succeeded` event for a delayed method. Before
+live activation, review Managed Payments eligibility, terms, and whether
+tax-exclusive pack display is the desired customer-facing price policy; this
+does not affect sandbox credit-ledger validation.
+
+Purchased prompt-credit packs are final except where required by law or for a
+billing error; the product does not expose a self-service refund action. The
+local payment boundary nevertheless receives Stripe refund events and records
+an immutable recovery record for every successful refund. When the original
+verified payment amount and currency are available, it revokes the
+corresponding proportion of the pack from the user’s unused balance. A
+currency or amount mismatch, a refund that would leave the wallet negative,
+or `charge.dispute.created` (with `charge.dispute.funds_withdrawn` as an
+idempotent follow-up) creates a review case and blocks new chat reservations
+and purchases for that account. Stripe does not guarantee webhook delivery
+order, so a dispute that arrives before its Checkout fulfillment is retained
+as a minimal deferred event and reconciled once the payment-intent mapping is
+stored. An administrator can inspect the
+case, append a signed adjustment with a required note, and release chat only
+when no other review case remains and the ledger balance is non-negative.
+This preserves the original purchase and usage entries for audit rather than
+rewriting history. No production Stripe keys, webhook endpoints, or purchase
+flag are enabled as part of this local architecture work.
 
 The evaluator can export the current browser-session transcript as a Markdown
 file. The export includes displayed messages, tool names, and per-response
-metering. Chat text remains browser-local; the server stores only guarded
+metering. The server retains only owner-scoped thread content plus guarded
 request metadata (request ID, user ID, environment, model, provider request
-IDs, status, and token/call totals) for limit enforcement and incident review.
+IDs, status, and token/call totals) for the configured retention period.
 Place exports worth reviewing in `docs/chatbot-evals/exports/` with the date,
 scenario, and model in the filename.
 
@@ -332,10 +392,13 @@ returns server-sent events: `ready`, `tool_call`, `tool_result`, then either
    transcripts, user-facing rename/archive/delete controls, capacity recovery,
    and a safe local fixture seed are implemented. Add scheduled purge of
    operational usage records before public rollout.
-5. Define paid access separately from the model provider: an append-only
-   MeadTools credit ledger with grants, reservations, settlements, reversals,
-   and Stripe payment-webhook reconciliation. Before public access, reserve a
-   user's maximum allowed turn cost and settle against actual token usage.
-   Provider account caps remain a global backstop only.
+5. Complete private-beta paid-access validation: access grants, independent
+   credit grants, exact reservation settlement, verified Checkout fulfillment,
+   and refund/dispute reconciliation are implemented locally. After a database
+   migration is deployed to a non-production environment, test successful and
+   partial refunds plus a review-required case through sandbox webhooks; only
+   then consider enabling purchases. Before public access, reserve a user's
+   maximum allowed turn cost and settle against actual token usage. Provider
+   account caps remain a global backstop only.
 6. Reduce the separate MCP server to an optional adapter that imports or calls
    the shared operations, then add parity tests between MCP and hosted tools.

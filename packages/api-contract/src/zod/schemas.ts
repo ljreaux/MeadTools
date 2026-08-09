@@ -4,6 +4,7 @@ export {
 } from "@meadtools/schemas";
 export * from "./catalog";
 export * from "./chat";
+export * from "./credits";
 export * from "./auth";
 export * from "./recipes";
 export * from "./brews";

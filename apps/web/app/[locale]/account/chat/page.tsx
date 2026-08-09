@@ -1,5 +1,6 @@
-import RecipeChatTest from "@/components/chat/RecipeChatTest";
+import ChatAccessGate from "@/components/account/ChatAccessGate";
+import ChatWorkspace from "@/components/account/ChatWorkspace";
 
 export default function ChatTestPage() {
-  return <RecipeChatTest />;
+  return <ChatAccessGate><ChatWorkspace /></ChatAccessGate>;
 }

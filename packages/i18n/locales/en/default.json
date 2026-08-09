@@ -121,6 +121,28 @@
     },
     "viewRecipe": "View Recipe"
   },
+  "credits": {
+    "activity": "Credit activity",
+    "activityAdjustment": "Credit adjustment",
+    "activityGrant": "Evaluation credit grant",
+    "activityPurchase": "Credits added",
+    "activityRefund": "Credit refund",
+    "activityUsage": "Chat usage",
+    "available": "Available prompt credits",
+    "checkoutCancelled": "Checkout was canceled. No credits were added.",
+    "checkoutComplete": "Checkout completed. Your balance will update after Stripe confirms the payment.",
+    "checkoutFailed": "Could not start secure checkout. Please try again.",
+    "description": "Track the prompt credits available for MeadTools chat and your recent credit activity.",
+    "loadFailed": "Could not load your credit activity.",
+    "loadMore": "Load more activity",
+    "noActivity": "No credit activity yet.",
+    "purchase": "Add prompt credits",
+    "purchaseDescription": "Choose a prepaid credit pack. Purchased credits remain available until you use them. Purchases are final except where required by law or for a billing error. Applicable tax is calculated securely at checkout.",
+    "purchasePack": "{{credits}} credits — {{price}}",
+    "purchaseProcessing": "Opening secure checkout…",
+    "refresh": "Refresh",
+    "title": "Prompt credits"
+  },
   "chatbotTest": {
     "activeDraft": "Active unsaved draft available",
     "activeChats": "Active",
@@ -141,6 +163,7 @@
     "chatHistory": "Chat history",
     "chatActions": "Chat actions",
     "chatLimitReached": "Chat limit reached",
+    "insufficientCredits": "Not enough prompt credits",
     "chatStatus": "Chat status",
     "chatTitle": "Chat title",
     "contextBrew": "Brew: {{name}}",
@@ -161,6 +184,7 @@
       "copyFailed": "Could not copy the message.",
       "brewActionFailed": "Could not log the brew action.",
       "contextFailed": "Could not load your recipes and brews.",
+      "insufficientCredits": "You do not have enough prompt credits for this chat request.",
       "noToken": "Sign in again before using the chatbot evaluator.",
       "requestFailed": "The chatbot request failed.",
       "saveFailed": "Could not save the recipe draft.",
@@ -170,6 +194,12 @@
       "threadUpdateFailed": "Could not update the chat."
     },
     "inputLabel": "Chatbot message",
+    "availableCredits": "Available: {{credits}} credits.",
+    "interruptedMessage": "This message did not complete. Send it again to retry.",
+    "pendingMessage": "This message is still processing.",
+    "paymentReviewDescription": "Chat is temporarily unavailable while a payment adjustment is reviewed.",
+    "paymentReviewSupport": "If you need help with a purchase or refund, please contact MeadTools support.",
+    "paymentReviewTitle": "Payment review in progress",
     "inputTokens": "Input tokens",
     "loadMoreChats": "Load more chats",
     "loadOlderMessages": "Load older messages",
@@ -198,6 +228,7 @@
     "renameChatDescription": "Choose a short, recognizable title for this chat.",
     "restoreChat": "Restore chat",
     "stop": "Stop",
+    "stopStreaming": "Stop streaming",
     "title": "MeadTools assistant",
     "chatHistoryDescription": "Your recent chats are available for 90 days.",
     "currentChat": "Current chat: {{title}}",
@@ -211,7 +242,8 @@
     "toolActivityRunning": "Checking MeadTools data and recipe calculations…",
     "toolActivityWriting": "Brewing…",
     "toolsUsed": "MeadTools data and calculations checked.",
-    "untitledDraft": "Untitled recipe"
+    "untitledDraft": "Untitled recipe",
+    "viewCredits": "View credits"
   },
   "chatbotPopup": {
     "collapse": "Return to popup size",
@@ -250,6 +282,27 @@
       "description": "Inspect every brew in the tracker without changing owner data.",
       "searchPlaceholder": "Search brews, recipes, or owners"
     },
+    "chatPayments": {
+      "creditAdjustment": "Credit adjustment",
+      "description": "Refunds reconcile automatically when possible. Disputes or overspent refunds restrict chat until you review them here.",
+      "dispute": "Stripe dispute",
+      "disputeResolutionGuidance": "First accept or counter the dispute in Stripe. Then record the corresponding credit decision here.",
+      "empty": "No payment recoveries recorded.",
+      "loadFailed": "Could not load payment recoveries.",
+      "loading": "Loading payment recoveries…",
+      "openStripeDispute": "Open dispute in Stripe",
+      "packCredits": "credits",
+      "reconciled": "Reconciled",
+      "refund": "Stripe refund",
+      "retryRelease": "Retry chat release",
+      "releaseChat": "Release chat",
+      "resolutionNote": "Resolution note",
+      "resolutionNotePlaceholder": "Why was this resolved?",
+      "resolve": "Resolve",
+      "resolved": "Resolved",
+      "reviewRequired": "Review required",
+      "title": "Payment recovery"
+    },
     "ingredients": {
       "add": "Add ingredient"
     },
@@ -276,6 +329,7 @@
     "nav": {
       "additives": "Additives",
       "brews": "Brews",
+      "chat": "Chat beta",
       "ingredients": "Ingredients",
       "maintenance": "Maintenance",
       "overview": "Overview",

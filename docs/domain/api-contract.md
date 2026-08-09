@@ -10,11 +10,11 @@ from them.
 Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 `next-openapi-gen` and captured as the endpoint compatibility baseline.
 
-- Paths: 54
+- Paths: 67
 - Canonical endpoint-path SHA-256:
-  `b04650619e96df83b3f5eba864c44cd4599039be01125b2b0b4966aaa068880a`
+  `17093a3520993176a4f681b74166fe4c1a5d839508afbf0f4ba2c0c73c1d1fb8`
 - Reviewed Zod document SHA-256:
-  `223552406114e768ce7b952ec74322a23048f6ec8e1bad9a329cd96167d8c0d9`
+  `ecc9f8bc4d4ae856dbbdf5562dde24b3ed90b5895fc375ebb4d06d4462415df1`
 
 The parity test preserves the complete pre-migration `paths` object: routes,
 methods, parameters, descriptions, response statuses, and component references.
@@ -33,6 +33,25 @@ earlier endpoint documentation remains unchanged.
 The persistent-chat update intentionally adds `/chat/conversations` and
 `/chat/conversations/{conversationId}`. The same path-parity check removes
 these private authenticated endpoints before comparing earlier API paths.
+
+The credit-accounting update intentionally adds `/account/credits`,
+`/account/credits/checkout`, `/account/credits/history`, and `/webhooks/stripe`.
+The same check removes these endpoints while preserving the documented behavior
+of every earlier path. It also adds the documented `402` insufficient-credit
+response to the private `/chat/recipe` endpoint.
+
+The chat-beta access update intentionally adds `/chat/access` and the
+admin-only `/admin/chat-access` access and credit-grant endpoints. The same
+check removes these private endpoints while preserving the documented behavior
+of every earlier route.
+
+The payment-recovery update intentionally adds the admin-only
+`/admin/chat-access/payment-recoveries` read and resolution endpoints. They
+record and resolve refunds or disputes after verified provider webhooks; the
+same path-parity check removes them before comparing the earlier route set.
+For Stripe disputes, each recovery response also includes a server-derived
+Stripe Dashboard URL so an administrator can review or resolve the case before
+recording the corresponding credit decision in MeadTools.
 
 Run:
 

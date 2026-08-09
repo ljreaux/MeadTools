@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { getChatContextOptions } from "@/lib/ai/chat-account-context";
-import { verifyUser } from "@/lib/userAccessFunctions";
+import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,34 +21,17 @@ export const dynamic = "force-dynamic";
  * @openapi
  */
 export async function GET(request: NextRequest) {
-  const authenticatedUser = await verifyUser(request);
-  if (authenticatedUser instanceof NextResponse) return authenticatedUser;
-  if (typeof authenticatedUser !== "number") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const config = getLocalChatbotConfig();
-  if (!config) {
-    return NextResponse.json(
-      { error: "Local chatbot testing is not configured." },
-      { status: 503 }
-    );
-  }
-  if (!config.allowedUserIds.has(authenticatedUser)) {
-    return NextResponse.json(
-      { error: "This user is not permitted to use the local chatbot." },
-      { status: 403 }
-    );
-  }
+  const access = await requireLocalChatbotUser(request);
+  if (access instanceof NextResponse) return access;
 
   try {
     return NextResponse.json(
-      { contexts: await getChatContextOptions(authenticatedUser) },
+      { contexts: await getChatContextOptions(access.userId) },
       { status: 200 }
     );
   } catch (error) {
     console.error("Unable to load chatbot context options.", {
-      userId: authenticatedUser,
+      userId: access.userId,
       error: error instanceof Error ? error.message : "unknown"
     });
     return NextResponse.json(

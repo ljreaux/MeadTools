@@ -12,6 +12,7 @@
     "./foundation": "./src/zod/foundation.ts",
     "./catalog": "./src/zod/catalog.ts",
     "./chat": "./src/zod/chat.ts",
+    "./credits": "./src/zod/credits.ts",
     "./recipes": "./src/zod/recipes.ts",
     "./routes": "./src/zod/routes.ts",
     "./contracts": "./src/contracts.ts",
@@ -22,6 +23,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@meadtools/credit-accounting": "*",
     "@meadtools/schemas": "*",
     "zod": "^4.0.0"
   },

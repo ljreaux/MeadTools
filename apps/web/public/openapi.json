@@ -21,6 +21,136 @@
       }
     },
     "schemas": {
+      "CreateCreditCheckoutRequestBody": {
+        "type": "object",
+        "properties": {
+          "packId": {
+            "type": "string",
+            "enum": [
+              "starter",
+              "standard",
+              "reserve"
+            ]
+          }
+        },
+        "required": [
+          "packId"
+        ]
+      },
+      "CreateCreditCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "CreditAccountErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "availableCredits": {
+            "type": "integer"
+          },
+          "requiredCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "CreditActivityResponse": {
+        "type": "object",
+        "properties": {
+          "availableCredits": {
+            "type": "integer"
+          },
+          "purchasesEnabled": {
+            "type": "boolean"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "operationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "occurredAt": {
+                  "type": "string"
+                },
+                "creditsDelta": {
+                  "type": "integer"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "purchase",
+                    "grant",
+                    "usage",
+                    "refund",
+                    "adjustment"
+                  ]
+                },
+                "entryTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "paymentAmountCents": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "paymentCurrency": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 3,
+                  "nullable": true
+                }
+              },
+              "required": [
+                "operationId",
+                "occurredAt",
+                "creditsDelta",
+                "kind",
+                "entryTypes",
+                "paymentAmountCents",
+                "paymentCurrency"
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "availableCredits",
+          "purchasesEnabled",
+          "activities",
+          "nextCursor"
+        ]
+      },
+      "CreditBalanceResponse": {
+        "type": "object",
+        "properties": {
+          "availableCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "availableCredits"
+        ]
+      },
       "AdditiveByIdResponse": {
         "$ref": "#/components/schemas/AdditiveResponse"
       },
@@ -214,6 +344,181 @@
       },
       "CreateAdditiveFailureErrorResponse": {
         "$ref": "#/components/schemas/additiveAdminFailureSchema"
+      },
+      "CreateChatCreditGrantRequestBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "creditAmount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          }
+        },
+        "required": [
+          "userId",
+          "creditAmount"
+        ]
+      },
+      "CreateChatCreditGrantResponse": {
+        "type": "object",
+        "properties": {
+          "creditsGranted": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "availableCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creditsGranted",
+          "availableCredits"
+        ]
+      },
+      "ChatAccessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "DeleteChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "CreateChatAccessGrantRequestBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "CreateChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "granted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "granted"
+        ]
+      },
+      "ResolveCreditPaymentRecoveryRequestBody": {
+        "type": "object",
+        "properties": {
+          "creditDelta": {
+            "type": "integer",
+            "maximum": 1000000
+          },
+          "note": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "releaseChat": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "creditDelta",
+          "note",
+          "releaseChat"
+        ]
+      },
+      "ResolveCreditPaymentRecoveryResponse": {
+        "type": "object",
+        "properties": {
+          "resolved": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "availableCredits": {
+            "type": "integer",
+            "nullable": true
+          },
+          "chatReleased": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resolved",
+          "availableCredits",
+          "chatReleased"
+        ]
+      },
+      "CreditPaymentRecoveryAdministrationResponse": {
+        "type": "object",
+        "properties": {
+          "recoveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditPaymentRecoveryResponse"
+            }
+          }
+        },
+        "required": [
+          "recoveries"
+        ]
+      },
+      "ChatAccessAdministrationResponse": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatAccessGrantResponse"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "updatedAt",
+          "grants"
+        ]
+      },
+      "UpdateChatAccessAdministrationRequestBody": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          }
+        },
+        "required": [
+          "mode"
+        ]
       },
       "AccountInfoResponse": {
         "type": "object",
@@ -1615,6 +1920,29 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "ChatAccessStatusResponse": {
+        "type": "object",
+        "properties": {
+          "chatEnabled": {
+            "type": "boolean"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          },
+          "granted": {
+            "type": "boolean"
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "chatEnabled",
+          "mode",
+          "granted",
+          "paymentRestricted"
         ]
       },
       "ChatContextOptionsResponse": {
@@ -3166,6 +3494,20 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "StripeWebhookReceiptResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "received"
         ]
       },
       "YeastByIdResponse": {
@@ -4744,6 +5086,36 @@
           "COMPLETE"
         ]
       },
+      "ChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "grantedAt": {
+            "type": "string"
+          },
+          "grantedByUserId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "userId",
+          "grantedAt",
+          "grantedByUserId"
+        ]
+      },
+      "ChatAccessMode": {
+        "type": "string",
+        "enum": [
+          "beta_allowlist",
+          "all_active_users"
+        ]
+      },
       "ChatCitationResponse": {
         "type": "object",
         "properties": {
@@ -4924,6 +5296,116 @@
           "citations",
           "createdAt",
           "completedAt"
+        ]
+      },
+      "CreditPaymentRecoveryKind": {
+        "type": "string",
+        "enum": [
+          "stripe_refund",
+          "stripe_dispute"
+        ]
+      },
+      "CreditPaymentRecoveryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CreditPaymentRecoveryKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CreditPaymentRecoveryStatus"
+          },
+          "externalReference": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "creditDelta": {
+            "type": "integer",
+            "nullable": true
+          },
+          "resolutionCreditDelta": {
+            "type": "integer",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "publicUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          },
+          "stripeDashboardUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "packId": {
+            "type": "string"
+          },
+          "packCredits": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "externalReference",
+          "amountCents",
+          "currency",
+          "creditDelta",
+          "resolutionCreditDelta",
+          "resolutionNote",
+          "createdAt",
+          "resolvedAt",
+          "userId",
+          "email",
+          "publicUsername",
+          "paymentRestricted",
+          "stripeDashboardUrl",
+          "packId",
+          "packCredits"
+        ]
+      },
+      "CreditPaymentRecoveryStatus": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "review_required",
+          "resolved"
         ]
       },
       "EndHydrometerBrewResponse": {
@@ -5899,6 +6381,54 @@
     }
   },
   "paths": {
+    "/account/credits": {
+      "get": {
+        "operationId": "get-account-credits",
+        "summary": "Return the signed-in user's available prepaid prompt credits.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/account-info": {
       "get": {
         "operationId": "get-auth-account-info",
@@ -6082,6 +6612,151 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateUsernameFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/credits/checkout": {
+      "post": {
+        "operationId": "post-account-credits-checkout",
+        "summary": "Create a Stripe Checkout Session for one fixed prompt-credit pack.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCreditCheckoutRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateCreditCheckoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/credits/history": {
+      "get": {
+        "operationId": "get-account-credits-history",
+        "summary": "Return grouped prepaid-credit activity for the signed-in user's wallet.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditActivityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
                 }
               }
             }
@@ -6685,6 +7360,159 @@
         }
       }
     },
+    "/admin/chat-access": {
+      "get": {
+        "operationId": "get-admin-chat-access",
+        "summary": "Return the private-chat rollout policy and active beta invitations.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessAdministrationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-admin-chat-access",
+        "summary": "Change whether chatbot access is restricted to beta grants or available to",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatAccessAdministrationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessAdministrationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/summary": {
       "get": {
         "operationId": "get-admin-summary",
@@ -6958,6 +7786,413 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/admin/chat-access/credits": {
+      "post": {
+        "operationId": "post-admin-chat-access-credits",
+        "summary": "Add an arbitrary positive prompt-credit allocation to an active user's",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatCreditGrantRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatCreditGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/grants": {
+      "post": {
+        "operationId": "post-admin-chat-access-grants",
+        "summary": "Grant an active user private chatbot access. Credit allocations are a",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatAccessGrantRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatAccessGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/payment-recoveries": {
+      "get": {
+        "operationId": "get-admin-chat-access-payment-recoveries",
+        "summary": "Return recent payment refunds and disputes so administrators can resolve",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditPaymentRecoveryAdministrationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/grants/{userId}": {
+      "delete": {
+        "operationId": "delete-admin-chat-access-grants-{userId}",
+        "summary": "Revoke a user's explicit beta invitation. Existing ledger activity remains immutable.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteChatAccessGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/payment-recoveries/{recoveryId}": {
+      "patch": {
+        "operationId": "patch-admin-chat-access-payment-recoveries-{recoveryId}",
+        "summary": "Resolve an administrator-reviewed refund or dispute. The optional immutable",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveCreditPaymentRecoveryRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveCreditPaymentRecoveryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -7316,6 +8551,59 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyTokenFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/stripe": {
+      "post": {
+        "operationId": "post-webhooks-stripe",
+        "summary": "Verify and fulfill a Stripe payment webhook for prompt-credit purchases.",
+        "description": "",
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StripeWebhookReceiptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
                 }
               }
             }
@@ -8455,6 +9743,44 @@
         }
       }
     },
+    "/chat/access": {
+      "get": {
+        "operationId": "get-chat-access",
+        "summary": "Return whether the signed-in user can use the private recipe chatbot.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/chat/context": {
       "get": {
         "operationId": "get-chat-context",
@@ -8698,6 +10024,16 @@
         "responses": {
           "400": {
             "$ref": "#/components/responses/400"
+          },
+          "402": {
+            "description": "HTTP 402",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/500"

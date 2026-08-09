@@ -13,6 +13,8 @@ export const qk = {
 
   // Full account info (user + recipes)
   accountInfo: ["auth", "account-info"] as const,
+  creditAccount: ["account", "credits"] as const,
+  chatAccess: ["chat", "access"] as const,
 
   ingredients: (category?: string) =>
     category
@@ -43,6 +45,8 @@ export const qk = {
   hydrometerBrewLogsPrefix: ["hydrometer", "logs", "brew"] as const,
 
   adminUsers: ["admin", "users"] as const,
+  adminChatAccess: ["admin", "chat-access"] as const,
+  adminChatPaymentRecoveries: ["admin", "chat-access", "payment-recoveries"] as const,
   adminRecipes: (page: number, limit: number, query: string) =>
     ["admin", "recipes", { page, limit, query }] as const,
   adminSummary: ["admin", "summary"] as const,

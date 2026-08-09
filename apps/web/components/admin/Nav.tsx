@@ -9,6 +9,7 @@ import {
   NotebookText,
   TestTube2,
   Users,
+  MessageCircle,
   Wheat
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,7 @@ const navLinks = [
   { key: "brews", fallback: "Brews", to: `${baseRoute}/brews`, icon: Beer },
   { key: "recipes", fallback: "Recipes", to: `${baseRoute}/recipes`, icon: NotebookText },
   { key: "users", fallback: "Users", to: `${baseRoute}/users`, icon: Users },
+  { key: "chat", fallback: "Chat beta", to: `${baseRoute}/chat-access`, icon: MessageCircle },
   { key: "yeasts", fallback: "Yeasts", to: `${baseRoute}/yeasts`, icon: FlaskConical },
   { key: "ingredients", fallback: "Ingredients", to: `${baseRoute}/ingredients`, icon: Wheat },
   { key: "additives", fallback: "Additives", to: `${baseRoute}/additives`, icon: TestTube2 },

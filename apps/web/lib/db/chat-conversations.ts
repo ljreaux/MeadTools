@@ -492,6 +492,31 @@ export async function failPendingChatMessage(options: {
   if (result.count === 0) throw new ChatConversationNotFoundError();
 }
 
+/**
+ * Marks user messages whose provider turn could not have completed as failed.
+ *
+ * Chat model calls have a bounded timeout, so this intentionally uses a much
+ * longer grace period. It is safe to run repeatedly alongside a request that
+ * happens to finish at the same time: a completed turn changes the message
+ * status before this update can match it.
+ */
+export async function failAbandonedPendingChatMessages(options?: {
+  olderThan?: Date;
+  now?: Date;
+}): Promise<{ failed: number }> {
+  const now = options?.now ?? new Date();
+  const olderThan = options?.olderThan ?? new Date(now.getTime() - 60 * 60 * 1000);
+  const result = await prisma.chat_messages.updateMany({
+    where: {
+      role: "user",
+      status: "pending",
+      created_at: { lte: olderThan }
+    },
+    data: { status: "failed", completed_at: now }
+  });
+  return { failed: result.count };
+}
+
 export async function updateChatConversationState(options: {
   userId: number;
   conversationId: string;
