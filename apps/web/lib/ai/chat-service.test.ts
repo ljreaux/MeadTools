@@ -10,7 +10,11 @@ import {
   chatRequestSchema,
   calculatorLinkForProcessMessage,
   directRecipeToolAnswer,
+  removeGeneralBrewingContextForWikiOnlyRequest,
+  removeUnsupportedSulfurInterventions,
   removeUnrequestedCalculatorDoses,
+  removeUnsupportedRackingFallback,
+  removeUnsupportedProcessThresholds,
   removeCompletedRecipeFollowUp,
   runChatTurn
 } from "./chat-service";
@@ -68,6 +72,13 @@ test("process calculator routing prefers the dedicated MeadTools calculators", (
   );
 });
 
+test("an empty generic yeast lookup is not presented as a missing user-supplied yeast", () => {
+  assert.equal(
+    directRecipeToolAnswer("search_yeasts", { status: "ok", result: [] }),
+    undefined
+  );
+});
+
 test("exact calculator requests link to MeadTools without invoking the model", async () => {
   const result = await runChatTurn({
     client: {
@@ -107,6 +118,316 @@ test("stabilization process answers keep the workflow but remove unsolicited dos
   assert.match(answer, /Confirm fermentation is complete/);
   assert.match(answer, /Wait 24 hours/);
   assert.doesNotMatch(answer, /2\.2 g|2\.5 g|tablet per gallon/);
+});
+
+test("racking and step-feeding answers do not turn numeric examples into universal thresholds", () => {
+  const rackingRequest = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "My mead has lees. Should I rack it now?" }]
+  });
+  assert.equal(
+    removeUnsupportedProcessThresholds("Take two readings 3-5 days apart, then decide from the batch state.", rackingRequest),
+    "Take two readings on separate occasions, then decide from the batch state."
+  );
+  assert.equal(
+    removeUnsupportedProcessThresholds(
+      "Take another reading in 3-5 days. If nothing changed over that period, reassess the batch.",
+      rackingRequest
+    ),
+    "Take another reading later and compare it with the first. If nothing changed between those readings, reassess the batch."
+  );
+
+  const stepFeedRequest = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "How should I step-feed a high-gravity traditional mead?" }]
+  });
+  assert.equal(
+    removeUnsupportedProcessThresholds("Add honey after a 30 gravity points drop.", stepFeedRequest),
+    "Add honey after a fixed gravity-point threshold drop."
+  );
+
+  const stabilizationRequest = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "What should I do before I backsweeten a finished mead?" }]
+  });
+  assert.equal(
+    removeUnsupportedProcessThresholds(
+      "Take hydrometer readings a few days apart, then wait a few hours or overnight before backsweetening.",
+      stabilizationRequest,
+      true
+    ),
+    "Take hydrometer readings on separate occasions, then wait a few hours or overnight before backsweetening."
+  );
+});
+
+test("a process question using the word correct is not routed straight to a calculator", async () => {
+  let providerCalls = 0;
+  await runChatTurn({
+    client: {
+      async complete() {
+        providerCalls += 1;
+        return {
+          id: "process-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "I need to retrieve the wiki process guidance." },
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "What is the correct process for stabilizing mead before backsweetening?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 2
+  });
+
+  assert.equal(providerCalls, 1);
+});
+
+test("an explicit medium-sweet draft request applies the revisable dry-fermentation default", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "medium-sweet-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "build-medium-sweet",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  batchVolume: { value: 1, unit: "gal" },
+                  targetOriginalGravity: 1.09,
+                  ingredients: [{ name: "Honey", role: "adjustable_fermentable" }]
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon medium sweet traditional at 1.090 OG. Make sensible assumptions and give me the recipe." }]
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 3,
+    yeastLookup: async () => [{
+      id: 71,
+      name: "71B-1122",
+      brand: "Lalvin",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 15,
+      highTemperature: 30
+    }]
+  });
+
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.015);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+});
+
+test("an explicit draft request completes a structured plan instead of asking for duplicate approval", async () => {
+  let providerCalls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        providerCalls += 1;
+        if (providerCalls === 1) {
+          return {
+            id: "retain-medium-sweet-plan",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "retain-plan",
+                type: "function",
+                function: {
+                  name: "record_recipe_plan",
+                  arguments: JSON.stringify({
+                    plan: {
+                      batchVolume: { value: 1, unit: "gal" },
+                      targetOriginalGravity: 1.09,
+                      fermentationFinalGravity: 0.999,
+                      backsweetening: { targetFinalGravity: 1.015 },
+                      stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+                      nutrients: {
+                        enabled: true,
+                        yeastId: 71,
+                        yeastBrand: "Lalvin",
+                        yeastStrain: "71B-1122",
+                        nitrogenRequirement: "Low",
+                        schedule: "tosna",
+                        numberOfAdditions: 3,
+                        goFermType: "Go-Ferm"
+                      },
+                      ingredients: [{ name: "Honey", role: "adjustable_fermentable" }]
+                    }
+                  })
+                }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "unnecessary-confirmation",
+          model: "test-model",
+          message: { role: "assistant", content: "Would you like me to make the full recipe draft?" },
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon medium sweet traditional at 1.090 OG. Make sensible assumptions and give me the recipe." }]
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 4
+  });
+
+  assert.equal(providerCalls, 2);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.015);
+});
+
+test("no-added-backsweetening honey does not become a honey varietal or FG target", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "secondary-fruit-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "build-secondary-fruit",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  batchVolume: { value: 1, unit: "gal" },
+                  targetOriginalGravity: 1.09,
+                  fermentationFinalGravity: 0.999,
+                  backsweetening: { targetFinalGravity: 1.01 },
+                  ingredients: [
+                    { name: "Honey", role: "adjustable_fermentable" },
+                    { name: "Blueberry", category: "fruit", brix: 10, secondary: true, amount: { kind: "weight", value: 3, unit: "lb" } }
+                  ],
+                  nutrients: nutrientPlan
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon dry blueberry mead at 1.090 OG with 3 lb blueberry in secondary. Do not add backsweetening honey." }]
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 3
+  });
+
+  assert.equal(result.recipeDraftInput?.backsweetening, undefined);
+  assert.equal(result.recipeDraftInput?.backsweeteningIntent, false);
+  assert.doesNotMatch(result.answer, /No Added Backsweetening Honey/i);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+});
+
+test("racking fallback does not present general advice as MeadTools guidance", () => {
+  const request = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "According to the MeadTools wiki, when should I rack my mead?" }]
+  });
+
+  const answer = removeUnsupportedRackingFallback(
+    "The Getting Started page doesn't directly address racking timing, but general best practice is to rack after a week.",
+    request
+  );
+
+  assert.match(answer, /could not find a MeadTools wiki page that directly covers racking timing/i);
+  assert.doesNotMatch(answer, /general best practice|after a week/i);
+});
+
+test("wiki-only requests discard a separately labelled general-brewing section", () => {
+  const request = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "When should I rack mead with lees? Please only give guidance that the MeadTools wiki supports." }]
+  });
+  const answer = removeGeneralBrewingContextForWikiOnlyRequest(
+    "The MeadTools wiki does not provide a universal racking rule.\n\nGeneral brewing context: Rack after stable gravity and a compact lees layer.\n\nSource: https://wiki.meadtools.com/en/getting_started",
+    request
+  );
+
+  assert.equal(
+    answer,
+    "The MeadTools wiki does not provide a universal racking rule.\n\nSource: https://wiki.meadtools.com/en/getting_started"
+  );
+});
+
+test("sulfur troubleshooting removes an uncited aeration intervention", () => {
+  const request = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "My fermenting mead smells like rotten eggs. What should I do first?" }]
+  });
+  const answer = removeUnsupportedSulfurInterventions(
+    "With those details, I can help decide whether a simple nutrient addition will resolve the issue, or whether a different approach (like aeration or yeast hulls) is needed.",
+    request
+  );
+
+  assert.match(answer, /wiki-listed yeast hulls/i);
+  assert.doesNotMatch(answer, /aeration/i);
+});
+
+test("sulfur troubleshooting discards a detailed intervention plan that is not source-bound", () => {
+  const request = chatRequestSchema.parse({
+    messages: [{ role: "user", content: "My fermenting mead smells like rotten eggs. What should I do first?" }]
+  });
+  const answer = removeUnsupportedSulfurInterventions(
+    "Add DAP or Fermaid, degas gently, and wait 24–48 hours. Source: https://wiki.meadtools.com/en/faq/basic_problems",
+    request,
+    "https://wiki.meadtools.com/en/faq/basic_problems"
+  );
+
+  assert.match(answer, /please share the yeast, original gravity, current gravity/i);
+  assert.match(answer, /https:\/\/wiki\.meadtools\.com\/en\/faq\/basic_problems/);
+  assert.doesNotMatch(answer, /DAP|Fermaid|degas|24/i);
+});
+
+test("racking requests explicitly asking for wiki guidance force a wiki lookup", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "racking-wiki-source",
+          model: "test-model",
+          message: { role: "assistant", content: "No tool call." },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "My mead has lees. Should I rack it now? Please use MeadTools wiki guidance." }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "search_wiki" }
+  });
+  assert.match(result.answer, /could not retrieve the MeadTools wiki page/i);
 });
 
 test("calculator-only brewing vocabulary stays inside the chatbot scope", async () => {
@@ -161,6 +482,28 @@ test("completed recipe answers render the same backsweetening ingredient returne
   assert.match(answer ?? "", /Honey \(backsweetening\)/);
   assert.match(answer ?? "", /\*\*Backsweetened FG:\*\* 1\.015/);
   assert.doesNotMatch(answer ?? "", /Let me know if/);
+});
+
+test("completed secondary-fruit drafts explain MeadTools' unfermented-secondary convention", () => {
+  const workflow = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Raspberry", category: "fruit", brix: 8, secondary: true, amount: { kind: "weight", value: 3, unit: "lb" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+  const answer = directRecipeToolAnswer("build_recipe_draft", {
+    status: "ok",
+    result: workflow
+  }, { explainSecondaryFruitSweetness: true });
+
+  assert.equal(workflow.status, "recipe");
+  assert.match(answer ?? "", /secondary as unfermented/i);
+  assert.match(answer ?? "", /without separate backsweetening honey/i);
 });
 
 test("completed recipe drafts render practical ingredient and additive amounts", () => {
@@ -794,6 +1137,188 @@ test("unrelated requests are refused before they reach the model", async () => {
   assert.equal(requests.length, 0);
 });
 
+test("an ambiguous getting-started opener reaches the conversational agent", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "getting-started",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "I can help you choose a simple first mead. Would you like a traditional or fruit mead?"
+          },
+          usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "What do I need to get started?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "test-model");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.toolChoice, "auto");
+  assert.match(result.answer, /traditional or fruit mead/i);
+});
+
+test("generic recipe exploration does not force catalog lookup or a draft", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "fruit-exploration",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "Fruit mead is a great direction. Do you want a berry-forward or stone-fruit profile?"
+          },
+          usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Yes, let's make a mead recipe with fruit." }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.toolChoice, "auto");
+  assert.match(result.answer, /berry-forward or stone-fruit/i);
+});
+
+test("a generic yeast recommendation is not treated as a missing named yeast", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "yeast-recommendation",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "For a sweet traditional, I would start by comparing a fruit-forward option with a more neutral one."
+          },
+          usage: { inputTokens: 10, outputTokens: 14, totalTokens: 24, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{
+        role: "user",
+        content: "I want it sweet and do not have a yeast in mind. What would you recommend?"
+      }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.toolChoice, "auto");
+  assert.doesNotMatch(result.answer, /could not match the requested yeast/i);
+});
+
+test("partial recipe context does not force another draft calculation", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "partial-context",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "Great—one gallon is a very approachable size. Do you have a fruit in mind, or would you like a few suggestions?"
+          },
+          usage: { inputTokens: 10, outputTokens: 16, totalTokens: 26, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Let's make a fruit mead." },
+        { role: "assistant", content: "What batch size sounds right?" },
+        { role: "user", content: "One gallon." }
+      ],
+      recipeDraftInput: { batchVolume: { value: 1, unit: "gal" } }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.toolChoice, "auto");
+  assert.match(result.answer, /fruit in mind/i);
+});
+
+test("assistant capability questions use the deterministic product description", async () => {
+  let called = false;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        called = true;
+        throw new Error("Capability questions should not reach the provider.");
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "What can you help with?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(called, false);
+  assert.equal(result.usage.model, "deterministic-capabilities");
+  assert.match(result.answer, /build and refine MeadTools recipe drafts/i);
+  assert.match(result.answer, /saved recipes or active brews/i);
+});
+
+test("conversational capability questions use the deterministic product description", async () => {
+  const result = await runChatTurn({
+    client: { async complete() { throw new Error("Capability questions should not reach the provider."); } },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "What can you help me do?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "deterministic-capabilities");
+});
+
+test("conversational gravity readings use the deterministic ABV calculator", async () => {
+  const result = await runChatTurn({
+    client: { async complete() { throw new Error("ABV calculations should not reach the provider."); } },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "My mead went from 1.106 to 1.012. What ABV is that?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "deterministic-abv-calculation");
+  assert.match(result.answer, /12\.507% ABV/);
+  assert.match(result.answer, /\[ABV calculator\]\(\/extra-calcs\/abv\)/);
+});
+
 test("German mead questions stay inside the chatbot scope", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
@@ -911,6 +1436,167 @@ test("a catalog correction still forces lookup of a yeast named earlier in intak
     type: "function",
     function: { name: "search_yeasts" }
   });
+});
+
+test("an initial Lalvin 71B lookup seeds the draft with the catalog yeast details", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "lookup-71b",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "lookup-71b-tool",
+                type: "function",
+                function: { name: "search_yeasts", arguments: '{"query":"Lalvin 71B"}' }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 2) {
+          return {
+            id: "lookup-71b-ingredients",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "lookup-71b-ingredients-tool",
+                type: "function",
+                function: { name: "search_ingredients", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 3) {
+          return {
+            id: "lookup-71b-build",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "lookup-71b-build-tool",
+                type: "function",
+                function: {
+                  name: "build_recipe_draft",
+                  arguments: JSON.stringify({
+                    batchVolume: { value: 1, unit: "gal" },
+                    targetOriginalGravity: 1.09,
+                    fermentationFinalGravity: 0.999,
+                    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                    nutrients: { enabled: true, schedule: "justK", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+                    stabilizers: { enabled: false }
+                  })
+                }
+              }]
+            },
+            usage: { inputTokens: 14, outputTokens: 4, totalTokens: 18, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "lookup-71b-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "Your draft is ready." },
+          usage: { inputTokens: 12, outputTokens: 8, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon traditional mead with Lalvin 71B, Fermaid K, Go-Ferm, target OG 1.090, and a dry finish." }]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6,
+    yeastLookup: async () => [{
+      id: 71,
+      brand: "Lalvin",
+      name: "71B-1122",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 15,
+      highTemperature: 30
+    }],
+    ingredientLookup: async () => [{ id: 1, name: "Honey", category: "sugar", brix: 80 }]
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "search_yeasts" }
+  });
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastId, 71);
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastBrand, "Lalvin");
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastStrain, "71B-1122");
+  assert.equal(result.recipeDraftInput?.nutrients?.nitrogenRequirement, "Low");
+});
+
+test("a broad provider yeast query is narrowed to the brewer-stated strain", async () => {
+  let queriedYeast = "";
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        if (!request.messages.some((message) => message.role === "tool")) {
+          return {
+            id: "broad-yeast-query",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "broad-yeast-query-call",
+                type: "function",
+                function: { name: "search_yeasts", arguments: '{"query":"Lalvin"}' }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "broad-yeast-query-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "The yeast is resolved." },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon traditional mead with Lalvin 71B." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: { enabled: true, schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 2,
+    yeastLookup: async (query) => {
+      queriedYeast = query;
+      return [{
+        id: 71,
+        brand: "Lalvin",
+        name: "71B",
+        nitrogenRequirement: "Low",
+        tolerance: 14,
+        lowTemperature: 15,
+        highTemperature: 30
+      }];
+    }
+  });
+
+  assert.equal(queriedYeast, "Lalvin 71B");
+  assert.equal(result.recipeDraftInput?.nutrients?.nitrogenRequirement, "Low");
 });
 
 test("a catalog correction keeps the earlier finished-volume intake", async () => {
@@ -1046,7 +1732,13 @@ test("a request to build with a named ingredient forces catalog lookup first", a
             {
               id: "tool-1",
               type: "function",
-              function: { name: "build_recipe_draft", arguments: "{}" }
+              function: {
+                name: "build_recipe_draft",
+                // The model may attempt to fabricate a target after an
+                // earlier same-turn tool call established backsweetening
+                // intent. Only the brewer can set this value.
+                arguments: '{"backsweetening":{"targetFinalGravity":1.01}}'
+              }
             }
           ]
         },
@@ -1065,10 +1757,7 @@ test("a request to build with a named ingredient forces catalog lookup first", a
     maxToolCalls: 6
   });
 
-  assert.deepEqual(requests[0]?.toolChoice, {
-    type: "function",
-    function: { name: "search_ingredients" }
-  });
+  assert.equal(requests[0]?.toolChoice, "auto");
   assert.match(result.answer, /batch (size|volume)/i);
   assert.match(result.answer, /batch and targets/i);
   assert.doesNotMatch(result.answer, /traditional/i);
@@ -1221,10 +1910,7 @@ test("recipe drafting selects a catalog ingredient before requesting its Brix", 
     "search_ingredients",
     "build_recipe_draft"
   ]);
-  assert.deepEqual(requests[2]?.toolChoice, {
-    type: "function",
-    function: { name: "build_recipe_draft" }
-  });
+  assert.equal(requests[2]?.toolChoice, "auto");
 });
 
 test("a gravity calculation continues into recipe drafting during recipe design", async () => {
@@ -1390,6 +2076,333 @@ test("partial recipe intake persists across turns instead of repeating answered 
   assert.match(second.answer, /^## Unsaved MeadTools recipe draft/);
   assert.equal(second.recipeDraftInput?.batchVolume?.value, 5);
   assert.equal(second.recipeDraftInput?.fermentationFinalGravity, 0.996);
+});
+
+test("a recorded conversational recipe plan becomes a saved draft context after the brewer accepts it", async () => {
+  let firstCalls = 0;
+  const firstClient: ChatModelClient = {
+    async complete() {
+      firstCalls += 1;
+      if (firstCalls === 1) {
+        return {
+          id: "record-plan",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [
+              {
+                id: "tool-record-plan",
+                type: "function",
+                function: {
+                  name: "record_recipe_plan",
+                  arguments: JSON.stringify({
+                    plan: {
+                      name: "Sweet Raspberry Mead",
+                      style: "Fruit Mead",
+                      batchVolume: { value: 1, unit: "gal" },
+                      targetOriginalGravity: 1.1,
+                      fermentationFinalGravity: 0.999,
+                      backsweetening: { targetFinalGravity: 1.015 },
+                      ingredients: [
+                        { name: "Honey", role: "adjustable_fermentable" },
+                        { name: "Raspberry", catalogId: 11, category: "fruit", brix: 8, amount: { kind: "weight", value: 1.5, unit: "lb" } },
+                        { name: "Raspberry", catalogId: 11, category: "fruit", brix: 8, secondary: true, amount: { kind: "weight", value: 1.5, unit: "lb" } }
+                      ],
+                      nutrients: {
+                        enabled: true,
+                        yeastBrand: "Lalvin",
+                        yeastStrain: "D47",
+                        nitrogenRequirement: "Low",
+                        schedule: "tosna",
+                        numberOfAdditions: 4,
+                        goFermType: "Go-Ferm"
+                      },
+                      assumptions: ["Use 3 lb of raspberry, split evenly between primary and secondary."]
+                    }
+                  })
+                }
+              }
+            ]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      return {
+        id: "record-plan-render",
+        model: "test-model",
+        message: {
+          role: "assistant",
+          content: "Raspberry is a good fit. How much raspberry would you like to use?"
+        },
+        usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+      };
+    }
+  };
+  const initialMessage = "Plan a 1 gallon raspberry mead with a target OG of 1.100, finishing dry and backsweeten to 1.015. Use D47 and TOSNA.";
+  const first = await runChatTurn({
+    client: firstClient,
+    userId: 7,
+    request: chatRequestSchema.parse({ messages: [{ role: "user", content: initialMessage }] }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(first.toolResults.map((tool) => tool.toolName), ["record_recipe_plan"]);
+  assert.equal(first.recipeDraftInput?.ingredients.filter((ingredient) => ingredient.name === "Raspberry").length, 2);
+  assert.deepEqual(
+    first.recipeDraftInput?.ingredients.filter((ingredient) => ingredient.name === "Raspberry").map((ingredient) => ingredient.amount),
+    [
+      { kind: "weight", value: 1.5, unit: "lb" },
+      { kind: "weight", value: 1.5, unit: "lb" }
+    ]
+  );
+
+  const secondClient: ChatModelClient = {
+    async complete() {
+      return {
+        id: "build-recorded-plan",
+        model: "test-model",
+        message: {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: "tool-build-recorded-plan",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: "{}"
+              }
+            }
+          ]
+        },
+        usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+      };
+    }
+  };
+  const second = await runChatTurn({
+    client: secondClient,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: initialMessage },
+        { role: "assistant", content: first.answer },
+        { role: "user", content: "Yes, use the recommended defaults and make the draft." }
+      ],
+      recipeDraftInput: first.recipeDraftInput
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(second.toolResults.map((tool) => tool.toolName), ["build_recipe_draft"]);
+  assert.match(second.answer, /^## Unsaved MeadTools recipe draft/);
+  const raspberries = second.recipeDraftInput?.ingredients.filter((ingredient) => ingredient.name === "Raspberry") ?? [];
+  assert.deepEqual(raspberries.map((ingredient) => ingredient.amount), [
+    { kind: "weight", value: 1.5, unit: "lb" },
+    { kind: "weight", value: 1.5, unit: "lb" }
+  ]);
+});
+
+test("an accepted retained plan uses the documented beginner gravity defaults and drafts immediately", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "accepted-plan-default-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "accepted-plan-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Help me make a one gallon medium-sweet traditional mead." },
+        { role: "assistant", content: "I recommend the retained beginner plan." },
+        { role: "user", content: "Yes, use the recommended defaults and make the draft now." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        backsweeteningIntent: true,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: {
+          enabled: true,
+          yeastBrand: "Lalvin",
+          yeastStrain: "ICV D47",
+          nitrogenRequirement: "Low",
+          schedule: "tosna",
+          numberOfAdditions: 3,
+          goFermType: "Go-Ferm"
+        },
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  assert.equal(requests.length, 0);
+  assert.equal(result.recipeDraftInput?.targetOriginalGravity, 1.09);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.015);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.match(result.answer, /medium-strength beginner default of 1\.090 OG/i);
+});
+
+test("an explicit default-draft request recovers when the provider missed plan recording", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "missed-plan-default-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "missed-plan-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: "{}"
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Help me make a one gallon sweet traditional mead." },
+        { role: "assistant", content: "I recommend 71B and TOSNA for this beginner batch." },
+        { role: "user", content: "Use all of your recommended defaults and make the recipe draft now." }
+      ]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1,
+    yeastLookup: async () => [{
+      id: 71,
+      brand: "Lalvin",
+      name: "71B",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 59,
+      highTemperature: 86
+    }]
+  });
+
+  assert.equal(requests.length, 0);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(result.recipeDraftInput?.targetOriginalGravity, 1.09);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastStrain, "71B");
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.015);
+});
+
+test("a delegated beginner traditional request drafts after explicit default acceptance", async () => {
+  const result = await runChatTurn({
+    client: { async complete() { throw new Error("Explicit acceptance should not reopen the plan."); } },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content: "I have never made mead before. I want a simple one-gallon medium-sweet traditional with whatever beginner-friendly yeast and honey you recommend. What should I plan for?"
+        },
+        { role: "assistant", content: "I recommend a beginner wildflower traditional plan." },
+        { role: "user", content: "Wildflower is fine. Use your recommended defaults and make the draft." }
+      ]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1,
+    yeastLookup: async () => [{
+      id: 71,
+      brand: "Lalvin",
+      name: "71B",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 59,
+      highTemperature: 86
+    }]
+  });
+
+  assert.equal(result.usage.model, "deterministic-accepted-plan-draft");
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(result.recipeDraftInput?.batchVolume?.value, 1);
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.015);
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastStrain, "71B");
+});
+
+test("an accepted fruit plan recovers a catalog fruit and a stated split amount", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        throw new Error("Accepted defaults should build without another provider response.");
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Help me make a 4 L semi-sweet blueberry mead." },
+        { role: "assistant", content: "I recommend a blueberry melomel direction." },
+        { role: "user", content: "Use 500 g blueberry split, with reasonable defaults, and make the recipe draft." }
+      ]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1,
+    ingredientLookup: async () => [{ id: 11, name: "Blueberry", category: "Fruit", brix: 7.86 }],
+    yeastLookup: async () => [{
+      id: 71,
+      brand: "Lalvin",
+      name: "71B",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 59,
+      highTemperature: 86
+    }]
+  });
+
+  assert.equal(requests.length, 0);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients.filter((ingredient) => ingredient.name === "Blueberry"),
+    [
+      {
+        name: "Blueberry",
+        catalogId: 11,
+        category: "Fruit",
+        brix: 7.86,
+        amount: { kind: "weight", value: 250, unit: "g" }
+      },
+      {
+        name: "Blueberry",
+        catalogId: 11,
+        category: "Fruit",
+        brix: 7.86,
+        amount: { kind: "weight", value: 250, unit: "g" },
+        secondary: true
+      }
+    ]
+  );
 });
 
 test("explicit recipe choices survive a provider omission and stay stage-specific", async () => {
@@ -1562,11 +2575,14 @@ test("an approximate ABV, exact yeast, qualitative blueberry preference, and no 
     result.recipeDraftInput?.ingredients
       .filter((ingredient) => ingredient.name === "Blueberry")
       .map((ingredient) => ingredient.amount),
-    [undefined, undefined]
+    [
+      { kind: "weight", value: 10, unit: "lb" },
+      { kind: "weight", value: 10, unit: "lb" }
+    ]
   );
   assert.equal(
-    result.recipeDraftInput?.assumptions?.some((assumption) => /heavy.*(?:blackberry|blueberry)/i.test(assumption)) ?? false,
-    false
+    result.recipeDraftInput?.assumptions?.some((assumption) => /heavy fruit-load assumption of 4 lb per gallon/i.test(assumption)) ?? false,
+    true
   );
   assert.ok(
     result.recipeDraftInput?.assumptions.includes(
@@ -1577,7 +2593,7 @@ test("an approximate ABV, exact yeast, qualitative blueberry preference, and no 
     type: "function",
     function: { name: "search_yeasts" }
   });
-  assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
 });
 
 test("a named fruit is looked up before yeast selection and draft construction", async () => {
@@ -1641,13 +2657,70 @@ test("a named fruit is looked up before yeast selection and draft construction",
     "search_yeasts"
   ]);
   assert.deepEqual(requests.slice(1).map((request) => request.toolChoice), [
-    { type: "function", function: { name: "search_ingredients" } },
     { type: "function", function: { name: "search_yeasts" } },
+    "auto",
+    "auto",
     { type: "function", function: { name: "build_recipe_draft" } }
   ]);
 });
 
-test("a qualitative fruit preference does not produce a model-invented fruit amount", async () => {
+test("ingredient-selection requests search the catalog without forcing a recipe draft", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "tart-cherry-search",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "tart-cherry-search-call",
+                type: "function",
+                function: { name: "search_ingredients", arguments: '{"query":"tart cherries"}' }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "tart-cherry-answer",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "The Tart Cherry catalog entry is the best match. I have not calculated a recipe draft yet."
+          },
+          usage: { inputTokens: 16, outputTokens: 8, totalTokens: 24, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{
+        role: "user",
+        content: "I want to make a 3 gallon mead with tart cherries. Help me choose the best ingredient match before calculating anything."
+      }]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6,
+    ingredientLookup: async () => [
+      { id: 17, name: "Tart Cherry", category: "fruit", brix: 13 },
+      { id: 18, name: "Cherry Juice", category: "juice", brix: 12 }
+    ]
+  });
+
+  assert.deepEqual(requests.map((request) => request.toolChoice), [
+    { type: "function", function: { name: "search_ingredients" } },
+    "auto"
+  ]);
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), ["search_ingredients"]);
+  assert.match(result.answer, /Tart Cherry catalog entry/);
+});
+
+test("a qualitative fruit preference preserves a clearly labelled fruit assumption", async () => {
   const client: ChatModelClient = {
     async complete(request) {
       if (request.messages.some((message) => message.role === "tool")) {
@@ -1671,8 +2744,8 @@ test("a qualitative fruit preference does not produce a model-invented fruit amo
               name: "build_recipe_draft",
               arguments: JSON.stringify({
                 ingredients: [
-                  { name: "Blackberry", amount: { kind: "weight", value: 25, unit: "lb" } },
-                  { name: "Blackberry", secondary: true, amount: { kind: "weight", value: 25, unit: "lb" } }
+                  { name: "Blackberry", amount: { kind: "weight", value: 7.5, unit: "lb" } },
+                  { name: "Blackberry", secondary: true, amount: { kind: "weight", value: 7.5, unit: "lb" } }
                 ]
               })
             }
@@ -1726,9 +2799,13 @@ test("a qualitative fruit preference does not produce a model-invented fruit amo
     result.recipeDraftInput?.ingredients
       .filter((ingredient) => ingredient.name === "Blackberry")
       .map((ingredient) => ingredient.amount?.value),
-    [undefined, undefined]
+    [10, 10]
   );
-  assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+  assert.match(
+    result.recipeDraftInput?.assumptions.join(" ") ?? "",
+    /heavy fruit-load assumption of 4 lb per gallon/i
+  );
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
 });
 
 test("a whole vanilla bean is retained as an additive instead of being asked again", async () => {
@@ -1786,6 +2863,175 @@ test("a whole vanilla bean is retained as an additive instead of being asked aga
   );
 });
 
+test("a count of lemon zests is retained as an additive instead of becoming a missing amount", async () => {
+  const client: ChatModelClient = {
+    async complete(request) {
+      if (!request.messages.some((message) => message.role === "tool")) {
+        return {
+          id: "lemon-zest-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "lemon-zest-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({ ingredients: [{ name: "Lemon zest", secondary: true }] })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      return {
+        id: "lemon-zest-complete",
+        model: "test-model",
+        message: { role: "assistant", content: "Your lemon-mead draft is ready." },
+        usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+      };
+    }
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Create a lemon mead recipe." },
+        { role: "assistant", content: "What additions should it include?" },
+        { role: "user", content: "Use 15 lemon zests in secondary." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.deepEqual(
+    result.recipeDraftInput?.additives.find((additive) => additive.name === "Lemon zest"),
+    { name: "Lemon zest", amount: 15, unit: "units", secondary: true }
+  );
+});
+
+test("a generic catalog spice preserves a brewer's countable form", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        if (!request.messages.some((message) => message.role === "tool")) {
+          return {
+            id: "cinnamon-build",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "cinnamon-build-call",
+                type: "function",
+                function: {
+                  name: "build_recipe_draft",
+                  arguments: JSON.stringify({
+                    additives: [{ name: "Cinnamon", amount: 2, unit: "oz", secondary: true }]
+                  })
+                }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "cinnamon-complete",
+          model: "test-model",
+          message: { role: "assistant", content: "Your cinnamon draft is ready." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a one gallon mead with two cinnamon sticks in secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 4,
+    additiveLookup: async () => [
+      { id: "cinnamon", name: "Cinnamon", dosagePerGallon: 1, unit: "oz" }
+    ]
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Cinnamon", amount: 2, unit: "units", secondary: true }
+  ]);
+});
+
+test("omitted culinary additions remain additives with their user-supplied units", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        if (!request.messages.some((message) => message.role === "tool")) {
+          return {
+            id: "omitted-culinary-additives",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "omitted-culinary-additives-build",
+                type: "function",
+                function: { name: "build_recipe_draft", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "omitted-culinary-additives-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "I need the black tea amount." },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Build a 5 gallon spiced mead with 2 cloves, 3 cinnamon sticks, 1 star anise, and black tea." }],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 2,
+    additiveLookup: async () => []
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Cloves", amount: 2, unit: "units" },
+    { name: "Cinnamon Stick", amount: 3, unit: "units" },
+    { name: "Star Anise", amount: 1, unit: "units" },
+    { name: "Black Tea", unit: undefined }
+  ]);
+});
+
 test("countable additive units are normalized and duplicate model lines collapse", async () => {
   const client: ChatModelClient = {
     async complete() {
@@ -1837,6 +3083,218 @@ test("countable additive units are normalized and duplicate model lines collapse
   ]);
 });
 
+test("an explicit bean count overrides a catalog ounce default", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            id: "vanilla-catalog-search",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "vanilla-catalog-search-call",
+                type: "function",
+                function: { name: "search_additives", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "vanilla-catalog-build",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "vanilla-catalog-build-call",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  additives: [{ name: "Vanilla Bean", amount: 1, unit: "oz" }]
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a one gallon mead with one vanilla bean in secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 3,
+    additiveLookup: async () => [{
+      id: "vanilla",
+      name: "Vanilla",
+      dosagePerGallon: 1,
+      unit: "oz"
+    }]
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Vanilla", amount: 1, unit: "units", secondary: true }
+  ]);
+});
+
+test("an explicit bean count overrides a model-provided ounce unit", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "vanilla-model-ounce",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "vanilla-model-ounce-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  additives: [{ name: "Vanilla Bean", amount: 1, unit: "oz" }]
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a one gallon mead with one vanilla bean in secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Vanilla Bean", amount: 1, unit: "units", secondary: true }
+  ]);
+});
+
+test("a plural catalog spice name preserves a brewer's stick count", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        return {
+          id: `cinnamon-${calls}`,
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: `cinnamon-tool-${calls}`,
+              type: "function",
+              function: calls === 1
+                ? { name: "search_additives", arguments: "{}" }
+                : { name: "build_recipe_draft", arguments: JSON.stringify({ additives: [{ name: "Cinnamon Sticks", amount: 2, unit: "oz" }] }) }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a one gallon mead with two cinnamon sticks in secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 3,
+    additiveLookup: async () => [{ id: "cinnamon", name: "Cinnamon Sticks", dosagePerGallon: 1, unit: "oz" }]
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Cinnamon Sticks", amount: 2, unit: "units", secondary: true }
+  ]);
+});
+
+test("unquantified honey labels collapse to one clean adjustable varietal", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "duplicate-honey-build",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "duplicate-honey-build-call",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  batchVolume: { value: 1, unit: "gal" },
+                  targetOriginalGravity: 1.09,
+                  fermentationFinalGravity: 0.999,
+                  ingredients: [
+                    {
+                      name: "ABV Wildflower Honey",
+                      amount: { kind: "weight", value: 1, unit: "lb" }
+                    },
+                    { name: "Enough Wildflower Honey", role: "adjustable_fermentable" }
+                  ],
+                  nutrients: nutrientPlan,
+                  stabilizers: { enabled: false }
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a one gallon peach mead at 11% ABV with enough wildflower honey to hit the target." }]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients.filter((ingredient) => /honey/i.test(ingredient.name)),
+    [{ name: "Wildflower Honey", role: "adjustable_fermentable" }]
+  );
+});
+
 test("a complete named catalog additive is still checked against the additive catalog", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const toolCompletion = (name: string, argumentsObject: Record<string, unknown>) => ({
@@ -1860,7 +3318,7 @@ test("a complete named catalog additive is still checked against the additive ca
         assert.deepEqual(request.toolChoice, { type: "function", function: { name: "search_additives" } });
         return toolCompletion("search_additives", {});
       }
-      assert.deepEqual(request.toolChoice, { type: "function", function: { name: "build_recipe_draft" } });
+      assert.equal(request.toolChoice, "auto");
       return toolCompletion("build_recipe_draft", {
         additives: [{ name: "Bentonite", amount: 1, unit: "g" }]
       });
@@ -1918,7 +3376,7 @@ test("a catalog additive without a supplied unit is resolved before drafting", a
         assert.deepEqual(request.toolChoice, { type: "function", function: { name: "search_additives" } });
         return toolCompletion("search_additives", {});
       }
-      assert.deepEqual(request.toolChoice, { type: "function", function: { name: "build_recipe_draft" } });
+      assert.equal(request.toolChoice, "auto");
       return toolCompletion("build_recipe_draft", {
         additives: [{ name: "Bentonite" }]
       });
@@ -1955,7 +3413,73 @@ test("a catalog additive without a supplied unit is resolved before drafting", a
   assert.match(result.answer, /\| Bentonite \| 6 g \|/);
 });
 
-test("a fixed-fermentable cyser request reaches the generic recipe agent", async () => {
+test("a brewer-supplied catalog additive amount is not overwritten by its default dose", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        return calls === 1
+          ? {
+              id: "supplied-additive-search",
+              model: "test-model",
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [{
+                  id: "supplied-additive-search-call",
+                  type: "function",
+                  function: { name: "search_additives", arguments: "{}" }
+                }]
+              },
+              usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+            }
+          : {
+              id: "supplied-additive-draft",
+              model: "test-model",
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [{
+                  id: "supplied-additive-draft-call",
+                  type: "function",
+                  function: {
+                    name: "build_recipe_draft",
+                    arguments: JSON.stringify({
+                      additives: [{ name: "Estate Tannin", amount: 5, unit: "g" }]
+                    })
+                  }
+                }]
+              },
+              usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+            };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a 1 gallon mead with 5 g Estate Tannin." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.1,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 3,
+    additiveLookup: async () => [
+      { id: "estate-tannin", name: "Estate Tannin", dosagePerGallon: 1.9, unit: "g" }
+    ]
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Estate Tannin", amount: 5, unit: "g" }
+  ]);
+});
+
+test("a fixed-fermentable draft request is routed to the shared recipe workflow", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
     client: {
@@ -1976,7 +3500,7 @@ test("a fixed-fermentable cyser request reaches the generic recipe agent", async
     request: chatRequestSchema.parse({
       messages: [{
         role: "user",
-        content: "Draft a 1 gallon cyser with 1 gallon of fresh apple cider and 3 lb of wildflower honey. I want it around 10% ABV, finishing at 1.010. Use Lalvin D47, Fermaid K and Go-Ferm with two additions. I do not plan to backsweeten or stabilize."
+        content: "Draft a 1 gallon cyser with 1 gallon fresh apple cider and 3 lb of wildflower honey. I want it around 10% ABV, finishing at 1.010. Use Lalvin D47, Fermaid K and Go-Ferm with two additions. I do not plan to backsweeten or stabilize."
       }]
     }),
     maxOutputTokens: 4_000,
@@ -1985,7 +3509,12 @@ test("a fixed-fermentable cyser request reaches the generic recipe agent", async
 
   assert.equal(result.answer, "I will use MeadTools to evaluate those fixed fermentables before drafting.");
   assert.equal(result.usage.model, "test-model");
-  assert.equal(requests.length, 1);
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests[0]?.toolChoice, { type: "function", function: { name: "build_recipe_draft" } });
+  assert.match(
+    String(requests[1]?.messages.at(-1)?.content),
+    /must now call build_recipe_draft/i
+  );
 });
 
 test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool call", async () => {
@@ -2060,8 +3589,70 @@ test("a no-sulfite correction and fixed ingredient volumes survive a recipe tool
   const honey = result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Wildflower Honey");
   assert.equal(honey?.role, "adjustable_fermentable");
   assert.equal(honey?.amount, undefined);
-  assert.match(result.answer, /fixed primary ingredient.*Apple Juice/i);
+  assert.match(result.answer, /fixed (?:primary )?ingredients?.*Apple Juice/i);
   assert.match(result.answer, /larger batch/i);
+});
+
+test("catalog reconciliation maps apple cider without overwriting the distinct honey fermentable", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        const name = calls === 1 ? "build_recipe_draft" : calls === 2 ? "search_ingredients" : "build_recipe_draft";
+        return {
+          id: `cyser-catalog-${calls}`,
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: `cyser-catalog-tool-${calls}`,
+              type: "function",
+              function: { name, arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{
+        role: "user",
+        content: "Draft a 1 gallon cyser with 1 gallon fresh apple cider and 3 lb wildflower honey at 10% ABV, finishing at 1.010. I will not backsweeten or stabilize."
+      }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.075,
+        fermentationFinalGravity: 1.01,
+        ingredients: [
+          { name: "Apple Cider", amount: { kind: "volume", value: 1, unit: "gal" } },
+          { name: "Wildflower Honey", amount: { kind: "weight", value: 3, unit: "lb" } }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6,
+    ingredientLookup: async () => [
+      { id: 12, name: "Apple Juice", category: "juice", brix: 11 },
+      { id: 13, name: "Wildflower Honey", category: "honey", brix: 81 }
+    ]
+  });
+
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
+    "build_recipe_draft",
+    "search_ingredients",
+    "build_recipe_draft"
+  ]);
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients.map((ingredient) => ingredient.name),
+    ["Apple Juice", "Wildflower Honey"]
+  );
+  assert.match(result.answer, /fixed (?:primary )?ingredients?.*Apple Juice/i);
+  assert.match(result.answer, /Wildflower Honey/i);
 });
 
 test("an explicit honey confirmation overrides a stale inferred honey amount", async () => {
@@ -2117,9 +3708,23 @@ test("an explicit honey confirmation overrides a stale inferred honey amount", a
   assert.equal(requests.length, 1);
 });
 
-test("a medium-sweet request requires an explicit sweetness strategy before drafting", async () => {
+test("a medium-sweet beginner request is handled by the conversational agent", async () => {
+  const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
-    client: { complete: async () => { throw new Error("provider should not be called"); } },
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "medium-sweet-exploration",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: "A medium-sweet traditional is a good starting point. Do you want a one-gallon batch or something larger?"
+          },
+          usage: { inputTokens: 10, outputTokens: 14, totalTokens: 24, cachedInputTokens: 0 }
+        };
+      }
+    },
     userId: 7,
     request: chatRequestSchema.parse({
       messages: [{
@@ -2131,10 +3736,94 @@ test("a medium-sweet request requires an explicit sweetness strategy before draf
     maxToolCalls: 6
   });
 
-  assert.match(result.answer, /sweetness strategy/i);
-  assert.match(result.answer, /stabilize, and then backsweeten/i);
-  assert.match(result.answer, /target ABV/i);
-  assert.equal(result.usage.model, "deterministic-intake-check");
+  assert.equal(result.usage.model, "test-model");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.toolChoice, "auto");
+  assert.match(result.answer, /medium-sweet traditional/i);
+});
+
+test("a beginner recommendation retains the catalog yeast in the proposed plan", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const yeastQueries: string[] = [];
+  const result = await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        if (requests.length === 1) {
+          return {
+            id: "beginner-yeast-search",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "beginner-yeast-search-tool",
+                type: "function",
+                // The service must override a broad or incorrect model query.
+                function: { name: "search_yeasts", arguments: JSON.stringify({ query: "US-05" }) }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        if (requests.length === 2) {
+          return {
+            id: "beginner-record-plan",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "beginner-record-plan-tool",
+                type: "function",
+                function: {
+                  name: "record_recipe_plan",
+                  arguments: JSON.stringify({
+                    plan: {
+                      batchVolume: { value: 1, unit: "gal" },
+                      ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                      nutrients: { ...nutrientPlan, yeastBrand: "Lalvin", yeastStrain: "71B-1122", nitrogenRequirement: "Low" },
+                      assumptions: ["A one-gallon medium-sweet traditional is a sensible first batch."]
+                    }
+                  })
+                }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "beginner-plan-answer",
+          model: "test-model",
+          message: { role: "assistant", content: "I recommend Lalvin 71B for this approachable traditional. Want me to make the draft with those defaults?" },
+          usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "I am a beginner. Help me make my first one gallon medium-sweet traditional mead and recommend everything." }]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6,
+    yeastLookup: async (query) => {
+      yeastQueries.push(query);
+      return [{ id: 71, brand: "Lalvin", name: "71B-1122", nitrogenRequirement: "Low", tolerance: 14, lowTemperature: 15, highTemperature: 30 }];
+    }
+  });
+
+  assert.deepEqual(requests.map((request) => request.toolChoice), [
+    { type: "function", function: { name: "search_yeasts" } }
+  ]);
+  assert.deepEqual(yeastQueries, ["71B"]);
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastId, 71);
+  assert.equal(result.recipeDraftInput?.nutrients?.yeastStrain, "71B-1122");
+  assert.deepEqual(result.toolResults.map((tool) => tool.toolName), [
+    "search_yeasts",
+    "record_recipe_plan"
+  ]);
+  assert.match(result.answer, /Lalvin 71B-1122/i);
+  assert.doesNotMatch(result.answer, /SafAle|DAP|Fermaid O/i);
 });
 
 test("invalid model tool arguments cannot discard established recipe intake", async () => {
@@ -2214,10 +3903,10 @@ test("invalid model tool arguments cannot discard established recipe intake", as
     result.recipeDraftInput?.ingredients
       .filter((ingredient) => ingredient.name === "Blackberry")
       .map((ingredient) => ingredient.amount?.value),
-    [undefined, undefined]
+    [10, 10]
   );
   assert.equal(result.toolResults[0]?.toolName, "build_recipe_draft");
-  assert.equal(result.answer, "Your unsaved blackberry draft is ready.");
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
 });
 
 test("a model cannot invent a fixed honey amount when the user chose an OG target", async () => {
@@ -2378,6 +4067,115 @@ test("a traditional backsweetening intake keeps dry fermentation gravity and imp
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
   assert.match(result.answer, /Honey \(backsweetening\)/);
   assert.equal(requests.length, 1);
+});
+
+test("a direct medium-sweet fruit draft keeps its stated finished gravity and uses a labelled medium fruit assumption", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            id: "raspberry-direct-build",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "raspberry-direct-build-tool",
+                type: "function",
+                function: { name: "build_recipe_draft", arguments: "{}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "raspberry-direct-render",
+          model: "test-model",
+          message: { role: "assistant", content: "Your raspberry recipe draft is ready." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{
+        role: "user",
+        content: "Create a 10 L raspberry mead recipe, medium-sweet at 1.012 by backsweetening."
+      }],
+      recipeDraftInput: {
+        batchVolume: { value: 10, unit: "L" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Honey", role: "adjustable_fermentable" },
+          { name: "Raspberry", catalogId: 11, category: "fruit", brix: 8 }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.012);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  const raspberryAmount = result.recipeDraftInput?.ingredients.find(
+    (ingredient) => ingredient.name === "Raspberry"
+  )?.amount;
+  assert.equal(raspberryAmount?.kind, "weight");
+  assert.equal(raspberryAmount?.unit, "kg");
+  assert.ok(raspberryAmount && Math.abs(raspberryAmount.value - 3.595) < 0.001);
+  assert.ok(result.recipeDraftInput?.assumptions?.some((assumption) => /medium fruit-load assumption/i.test(assumption)));
+});
+
+test("a dry draft phrased as finishes dry defaults to no stabilizer calculation", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "finishes-dry-build",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "finishes-dry-build-tool",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{
+        role: "user",
+        content: "Make this 3 gallon blueberry mead. It finishes dry and does not include backsweetening."
+      }],
+      recipeDraftInput: {
+        batchVolume: { value: 3, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Honey", role: "adjustable_fermentable" },
+          { name: "Blueberry", catalogId: 10, category: "fruit", brix: 8, amount: { kind: "weight", value: 6, unit: "lb" } }
+        ],
+        nutrients: nutrientPlan
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.recipeDraftInput?.stabilizers?.enabled, false);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.doesNotMatch(result.answer, /Should this draft include stabilizer calculations/i);
 });
 
 test("a gravity-targeted fruit mead restores honey when a model omits its base fermentable", async () => {
@@ -2761,7 +4559,7 @@ test("a rounded model echo cannot replace the authoritative gravity target", asy
 
   assert.deepEqual(requests.map((request) => request.toolChoice), [
     { type: "function", function: { name: "calculate_gravity_target" } },
-    { type: "function", function: { name: "build_recipe_draft" } }
+    "auto"
   ]);
   assert.ok(result.recipeDraftInput);
   assert.ok(Math.abs((result.recipeDraftInput?.targetOriginalGravity ?? 0) - 1.1044328386135414) < 1e-12);
@@ -2848,4 +4646,724 @@ test("completed recipe prose never exposes internal recipe labels", async () => 
     result.answer,
     "Blackberry, Honey, Fermaid K, and potassium metabisulfite."
   );
+});
+
+test("an affirmative honey reply resolves a stale traditional honey amount without another confirmation", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "traditional-honey-confirmation",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "traditional-honey-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Create a one gallon sweet traditional mead at 14% ABV." },
+        { role: "assistant", content: "Should I use the wildflower honey to hit the target?" },
+        { role: "user", content: "Yes, use honey to hit the target." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.12,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Wildflower Honey", amount: { kind: "weight", value: 3, unit: "lb" } }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const honey = result.recipeDraftInput?.ingredients.find(
+    (ingredient) => ingredient.name === "Wildflower Honey"
+  );
+  assert.equal(honey?.role, "adjustable_fermentable");
+  assert.equal(honey?.amount, undefined);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.ok(!/which single primary fermentable/i.test(result.answer));
+});
+
+test("a named honey-only reply resolves the adjustable fermentable without repeating the question", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "raspberry-blossom-honey-build",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "raspberry-blossom-honey-build-call",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Help me make a traditional mead recipe with raspberry blossom honey." },
+        { role: "assistant", content: "Which honey should MeadTools adjust to hit the target OG?" },
+        { role: "user", content: "I only want to include raspberry blossom honey." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.097,
+        fermentationFinalGravity: 0.999,
+        backsweetening: { targetFinalGravity: 1.015 },
+        ingredients: [{ name: "Honey" }],
+        nutrients: {
+          enabled: true,
+          yeastBrand: "Lalvin",
+          yeastStrain: "DV10",
+          nitrogenRequirement: "Low",
+          schedule: "tosna",
+          numberOfAdditions: 3,
+          goFermType: "none"
+        },
+        stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const honey = result.recipeDraftInput?.ingredients.find(
+    (ingredient) => ingredient.secondary !== true && /honey/i.test(ingredient.name)
+  );
+  assert.equal(honey?.name, "Raspberry Blossom Honey");
+  assert.equal(honey?.role, "adjustable_fermentable");
+  assert.equal(honey?.amount, undefined);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.doesNotMatch(result.answer, /which honey/i);
+});
+
+test("an explicit no-secondary-fruit choice removes a stale secondary ingredient instead of asking for zero", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "no-secondary-raspberry",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "no-secondary-raspberry-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Create a five gallon raspberry mead at 14% ABV." },
+        { role: "assistant", content: "Should the raspberry be split across primary and secondary?" },
+        { role: "user", content: "Use 10 lb raspberry in primary and no secondary raspberry." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.104,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Honey", role: "adjustable_fermentable" },
+          {
+            name: "Raspberry",
+            catalogId: 11,
+            category: "fruit",
+            brix: 7,
+            amount: { kind: "weight", value: 10, unit: "lb" }
+          },
+          { name: "Raspberry", catalogId: 11, category: "fruit", brix: 7, secondary: true }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const raspberries = result.recipeDraftInput?.ingredients.filter(
+    (ingredient) => ingredient.name === "Raspberry"
+  ) ?? [];
+  assert.deepEqual(raspberries, [{
+    name: "Raspberry",
+    catalogId: 11,
+    category: "fruit",
+    brix: 7,
+    amount: { kind: "weight", value: 10, unit: "lb" }
+  }]);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.ok(!/amount and unit.*secondary/i.test(result.answer));
+});
+
+test("refractometer correction routes directly to the MeadTools calculator", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        throw new Error("The provider must not be called for calculator routing.");
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "How do I correct a refractometer reading after fermentation?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.usage.model, "deterministic-calculator-routing");
+  assert.match(result.answer, /refractometer correction calculator/i);
+});
+
+test("bench trials are treated as a mead process question rather than rejected by scope", async () => {
+  let calls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            id: "bench-trials-search",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "bench-trials-search-call",
+                type: "function",
+                function: { name: "search_wiki", arguments: "{\"query\":\"mead bench trials\"}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        if (calls === 2) {
+          return {
+            id: "bench-trials-fetch",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [{
+                id: "bench-trials-fetch-call",
+                type: "function",
+                function: { name: "fetch_wiki_page", arguments: "{\"url\":\"https://wiki.meadtools.com/en/process/bench_trials\"}" }
+              }]
+            },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "bench-trials-process",
+          model: "test-model",
+          message: { role: "assistant", content: "Use a small set of measured bench trials before changing the full batch." },
+          usage: { inputTokens: 10, outputTokens: 8, totalTokens: 18, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "I have a dry 5 gallon traditional and want to compare different sweetness levels before committing. How should I run bench trials?" }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+    wikiFetcher
+  });
+
+  assert.equal(result.usage.model, "test-model");
+  assert.match(result.answer, /bench trials/i);
+});
+
+test("traditional recipe requests continue from gravity targeting into recipe drafting", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        return {
+          id: "traditional-gravity",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "traditional-gravity-call",
+              type: "function",
+              function: { name: "calculate_gravity_target", arguments: "{\"targetAbv\":12,\"fermentationFinalGravity\":0.999}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      if (requests.length === 2) {
+        return {
+          id: "traditional-ingredient-search",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "traditional-ingredient-search-call",
+              type: "function",
+              function: { name: "search_ingredients", arguments: "{\"query\":\"orange blossom honey\"}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      if (requests.length === 3) {
+        return {
+          id: "traditional-yeast-search",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "traditional-yeast-search-call",
+              type: "function",
+              function: { name: "search_yeasts", arguments: "{\"query\":\"Lalvin 71B\"}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+      return {
+        id: "traditional-draft",
+        model: "test-model",
+        message: {
+          role: "assistant",
+          content: null,
+          tool_calls: [{
+            id: "traditional-draft-call",
+            type: "function",
+            function: {
+              name: "build_recipe_draft",
+              arguments: "{\"batchVolume\":{\"value\":2,\"unit\":\"gal\"},\"fermentationFinalGravity\":0.999,\"ingredients\":[{\"name\":\"Orange Blossom Honey\",\"amount\":{\"kind\":\"weight\",\"value\":6,\"unit\":\"lb\"}}],\"nutrients\":{\"enabled\":true,\"yeastBrand\":\"Lalvin\",\"yeastStrain\":\"71B\",\"nitrogenRequirement\":\"Medium\",\"schedule\":\"justK\",\"numberOfAdditions\":3,\"goFermType\":\"Go-Ferm\"},\"stabilizers\":{\"enabled\":false}}"
+            }
+          }]
+        },
+        usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+      };
+    }
+  };
+
+  await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a 2 gallon dry traditional with 6 lb of orange blossom honey, Lalvin 71B, Go-Ferm, and Fermaid K in three additions. Target 12% ABV and do not stabilize or backsweeten." }]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 4,
+    ingredientLookup: async () => [{
+      id: 1,
+      name: "Orange Blossom Honey",
+      category: "honey",
+      brix: 81
+    }],
+    yeastLookup: async () => [{
+      id: 71,
+      brand: "Lalvin",
+      name: "71B-1122",
+      nitrogenRequirement: "Medium",
+      tolerance: 14,
+      lowTemperature: 15,
+      highTemperature: 30
+    }]
+  });
+
+  assert.deepEqual(requests.map((request) => request.toolChoice).filter((choice) => choice !== "none"), [
+    { type: "function", function: { name: "calculate_gravity_target" } },
+    { type: "function", function: { name: "search_yeasts" } },
+    "auto",
+    "auto"
+  ]);
+});
+
+test("fixed cider and honey quantities stay fixed so the workflow returns the volume conflict", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "fixed-cyser-draft",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "fixed-cyser-build",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  ingredients: [
+                    { name: "Honey", role: "adjustable_fermentable" },
+                    { name: "Wildflower Honey", role: "adjustable_fermentable" }
+                  ]
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 1 gallon cyser with 1 gallon fresh apple cider and 3 lb of wildflower honey. I want it around 10% ABV, finishing at 1.010. Use Lalvin D47, Fermaid K and Go-Ferm with two additions. I do not plan to backsweeten or stabilize." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.075,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Apple Juice", category: "juice", brix: 11 },
+          { name: "Wildflower Honey", role: "adjustable_fermentable" }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const honey = result.recipeDraftInput?.ingredients.find((ingredient) => /honey/i.test(ingredient.name));
+  const juice = result.recipeDraftInput?.ingredients.find((ingredient) => /apple juice/i.test(ingredient.name));
+  assert.equal(honey?.name, "Wildflower Honey");
+  assert.deepEqual(honey?.amount, { kind: "weight", value: 3, unit: "lb" });
+  assert.equal(honey?.role, "fixed");
+  assert.equal(
+    result.recipeDraftInput?.ingredients.filter(
+      (ingredient) => ingredient.secondary !== true && ingredient.name === "Wildflower Honey"
+    ).length,
+    1
+  );
+  assert.deepEqual(juice?.amount, { kind: "volume", value: 1, unit: "gal" });
+  assert.match(result.answer, /fixed ingredients/i);
+  assert.doesNotMatch(result.answer, /Wildflower Honey, [^\n]*Wildflower Honey/i);
+});
+
+test("a measured named honey keeps its varietal without absorbing the measurement unit", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "measured-varietal-honey",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "measured-varietal-honey-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 2 gallon traditional with 3 lb of wildflower honey at 12% ABV." }],
+      recipeDraftInput: {
+        batchVolume: { value: 2, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const honey = result.recipeDraftInput?.ingredients.find((ingredient) => /honey/i.test(ingredient.name));
+  assert.equal(honey?.name, "Wildflower Honey");
+  assert.deepEqual(honey?.amount, { kind: "weight", value: 3, unit: "lb" });
+  assert.equal(honey?.role, "fixed");
+});
+
+test("a shared fruit amount split evenly across stages is divided once", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "equal-fruit-split",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "equal-fruit-split-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a 5 gallon strawberry mead. Use 15 lb of strawberry split evenly between primary and secondary." }],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.1,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Honey", role: "adjustable_fermentable" },
+          { name: "Strawberry", category: "fruit", brix: 7.5 },
+          { name: "Strawberry", category: "fruit", brix: 7.5, secondary: true }
+        ],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  assert.deepEqual(
+    result.recipeDraftInput?.ingredients
+      .filter((ingredient) => ingredient.name === "Strawberry")
+      .map((ingredient) => ingredient.amount),
+    [
+      { kind: "weight", value: 7.5, unit: "lb" },
+      { kind: "weight", value: 7.5, unit: "lb" }
+    ]
+  );
+});
+
+test("an accepted fruit plan retains an explicit secondary-only fruit amount", async () => {
+  const result = await runChatTurn({
+    client: { async complete() { throw new Error("An accepted plan should draft directly."); } },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Make a one gallon sweet raspberry mead." },
+        { role: "assistant", content: "I can use beginner defaults and calculate a draft. Shall I continue?" },
+        { role: "user", content: "Yes. Use 3 lb of raspberry in secondary and make the draft." }
+      ],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }]
+      }
+    }),
+    ingredientLookup: async () => [{ id: 1, name: "Raspberry", category: "fruit", brix: 8 }],
+    yeastLookup: async () => [{
+      id: 2,
+      brand: "Lalvin",
+      name: "71B",
+      nitrogenRequirement: "Low",
+      tolerance: 14,
+      lowTemperature: 59,
+      highTemperature: 86
+    }],
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  const raspberry = result.recipeDraftInput?.ingredients.find((ingredient) => ingredient.name === "Raspberry");
+  assert.equal(raspberry?.secondary, true);
+  assert.deepEqual(raspberry?.amount, { kind: "weight", value: 3, unit: "lb" });
+});
+
+test("catalog additives named in a long request survive a model omission", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "omitted-additives",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "omitted-additives-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Make a 1 gallon mead with one vanilla bean in secondary and 2 g Estate Tannin." }],
+      recipeDraftInput: {
+        batchVolume: { value: 1, unit: "gal" },
+        targetOriginalGravity: 1.09,
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+        nutrients: nutrientPlan,
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1,
+    additiveLookup: async () => [
+      { id: "vanilla-bean", name: "Vanilla Bean", dosagePerGallon: 1, unit: "units" },
+      { id: "estate-tannin", name: "Estate Tannin", dosagePerGallon: 1.9, unit: "g" }
+    ]
+  });
+
+  assert.deepEqual(result.recipeDraftInput?.additives, [
+    { name: "Vanilla Bean", amount: 1, unit: "units", secondary: true },
+    { name: "Estate Tannin", amount: 2, unit: "g" }
+  ]);
+});
+
+test("a partial yeast name still forces catalog lookup until a yeast ID is present", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  await runChatTurn({
+    client: {
+      async complete(request) {
+        requests.push(request);
+        return {
+          id: "partial-yeast",
+          model: "test-model",
+          message: { role: "assistant", content: "What batch volume should MeadTools use?" },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Use Lalvin 71B for this mead." }],
+      recipeDraftInput: {
+        ingredients: [{ name: "Honey" }],
+        nutrients: { enabled: true, yeastBrand: "Lalvin", yeastStrain: "71B", schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm" }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 2,
+    yeastLookup: async () => []
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "search_yeasts" }
+  });
+});
+
+test("an unlisted named yeast asks for a specific replacement detail instead of a generic nutrient checklist", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "unlisted-yeast",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "unlisted-yeast-call",
+              type: "function",
+              function: { name: "search_yeasts", arguments: '{"query":"Belle Saison"}' }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Draft a 5 gallon cyser with Belle Saison." }],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        fermentationFinalGravity: 0.999,
+        ingredients: [{ name: "Honey", amount: { kind: "weight", value: 10, unit: "lb" } }],
+        nutrients: { enabled: true, schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+        stabilizers: { enabled: false }
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 2,
+    yeastLookup: async () => []
+  });
+
+  assert.match(result.answer, /could not match the requested yeast/i);
+  assert.match(result.answer, /nitrogen requirement/i);
+  assert.doesNotMatch(result.answer, /still needs yeast brand and strain/i);
+});
+
+test("a backsweetening request without an FG remains an intake question", async () => {
+  let callCount = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        callCount += 1;
+        if (callCount > 1) {
+          return {
+            id: "backsweetening-target-question",
+            model: "test-model",
+            message: { role: "assistant", content: "What finished gravity should MeadTools target after backsweetening?" },
+            usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+          };
+        }
+        return {
+          id: "backsweetening-target-needed",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "backsweetening-target-needed-build",
+              type: "function",
+              function: { name: "build_recipe_draft", arguments: "{}" }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 4, totalTokens: 14, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "Create a 5 gallon blueberry mead at 16% ABV. Use 15 lb split between primary and secondary, finish dry, and backsweeten." }],
+      recipeDraftInput: {
+        batchVolume: { value: 5, unit: "gal" },
+        targetOriginalGravity: 1.125,
+        fermentationFinalGravity: 0.999,
+        ingredients: [
+          { name: "Honey", role: "adjustable_fermentable" },
+          { name: "Blueberry", category: "fruit", brix: 10 },
+          { name: "Blueberry", category: "fruit", brix: 10, secondary: true }
+        ],
+        nutrients: nutrientPlan
+      }
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 1
+  });
+
+  assert.equal(result.recipeDraftInput?.backsweeteningIntent, true);
+  assert.equal(result.recipeDraftInput?.backsweetening, undefined);
+  assert.match(result.answer, /finished gravity.*backsweetening/i);
 });

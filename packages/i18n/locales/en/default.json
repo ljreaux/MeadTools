@@ -178,7 +178,9 @@
     "copyLink": "Copy link",
     "closeDialog": "Close",
     "description": "Draft recipes, ask brewing questions, and use MeadTools process guidance.",
-    "emptyState": "Ask about a mead recipe, a brewing process, or a MeadTools calculator.",
+    "emptyState": "Build or refine a recipe, troubleshoot a batch, ask about a MeadTools process, or find the right calculator.",
+    "emptyStateContext": "You can attach a saved recipe or brew for read-only, batch-specific guidance.",
+    "emptyStateTitle": "What can I help you brew?",
     "externalLinkWarning": "You're about to visit an external website.",
     "errors": {
       "copyFailed": "Could not copy the message.",

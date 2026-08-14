@@ -3,6 +3,7 @@
 import RecipeChatTest from "@/components/chat/RecipeChatTest";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
@@ -11,9 +12,13 @@ const KofiButton = () => {
   const { t } = useTranslation();
   const { isLoggedIn, loading } = useAuth();
   const { data: chatAccess, isLoading: isChatAccessLoading } = useChatAccess();
+  const pathname = usePathname();
 
   if (loading) return null;
   if (isLoggedIn && isChatAccessLoading) return null;
+  // The account chat route already renders the full workspace. Mounting the
+  // popup there creates two independent assistants and ambiguous thread state.
+  if (isLoggedIn && chatAccess?.chatEnabled && pathname === "/account/chat") return null;
   if (isLoggedIn && chatAccess?.chatEnabled) return <RecipeChatLauncher />;
 
   return (
@@ -57,7 +62,7 @@ function RecipeChatLauncher() {
       <button
         aria-expanded={isOpen}
         aria-label={t("chatbotPopup.open")}
-        className="fixed bottom-4 left-2 z-[1001] hidden size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring sm:flex"
+        className="fixed bottom-4 left-2 z-[1001] flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring"
         onClick={toggleAssistant}
         title={t("chatbotPopup.open")}
         type="button"
@@ -68,8 +73,8 @@ function RecipeChatLauncher() {
         <div
           className={
             isExpanded
-              ? "fixed inset-0 z-[1001] hidden sm:block"
-              : "fixed bottom-16 left-2 z-[1001] hidden w-[calc(100vw-1rem)] max-w-md sm:block"
+              ? "fixed inset-0 z-[1001] block"
+              : "fixed inset-x-2 bottom-16 z-[1001] block h-[min(40rem,calc(100dvh-5rem))] sm:inset-x-auto sm:left-2 sm:h-auto sm:w-[calc(100vw-1rem)] sm:max-w-md"
           }
         >
           <RecipeChatTest

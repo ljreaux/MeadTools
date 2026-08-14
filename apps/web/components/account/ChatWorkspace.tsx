@@ -54,7 +54,7 @@ export default function ChatWorkspace({ paymentRestricted = false }: { paymentRe
   }
 
   return (
-    <div className="relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-8 sm:p-12">
+    <div className="relative w-11/12 max-w-[1200px] rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
       <Header />
       {paymentRestricted ? (
         <div className="mt-10 space-y-6">

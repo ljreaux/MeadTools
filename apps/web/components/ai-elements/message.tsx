@@ -69,6 +69,10 @@ export const MessageResponse = memo(
         className
       )}
       components={{ ...components, a: ChatMarkdownLink }}
+      // ChatMarkdownLink performs the app's internal-route handling and the
+      // external-link confirmation itself. Streamdown's default safety layer
+      // otherwise rewrites relative calculator URLs to a blocked placeholder.
+      linkSafety={{ enabled: false }}
       plugins={streamdownPlugins}
       {...props}
     />

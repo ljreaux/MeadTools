@@ -356,7 +356,7 @@ model credit_stripe_dispute_events {
   @@index([stripe_dispute_id])
 }
 
-/// Retains aggregate limits and non-sensitive provider usage for chatbot cost control.
+/// Retains aggregate, non-sensitive provider usage for operational auditing.
 model chatbot_usage_windows {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id             Int

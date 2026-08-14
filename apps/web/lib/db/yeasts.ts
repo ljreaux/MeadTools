@@ -80,8 +80,15 @@ function yeastLookupScore(
   const name = normalizeYeastLookup(yeast.name);
   const brand = normalizeYeastLookup(yeast.brand);
   const combined = `${brand}${name}`;
+  // Lalvin commonly markets strains such as ICV D47 as simply “Lalvin D47”.
+  // Treat the ICV prefix as an optional catalog label, while retaining the
+  // stored canonical strain name in the returned result.
+  const nameWithoutIcv = name.replace(/^icv/, "");
+  const combinedWithoutIcv = `${brand}${nameWithoutIcv}`;
   if (name === query || combined === query) return 100;
+  if (nameWithoutIcv === query || combinedWithoutIcv === query) return 95;
   if (name.includes(query)) return 80;
+  if (nameWithoutIcv.includes(query) || combinedWithoutIcv.includes(query)) return 75;
   if (combined.includes(query)) return 70;
   if (query.includes(name) && name.length >= 3) return 60;
   const queryTokens = query.match(/[a-z]+|\d+/g) ?? [];

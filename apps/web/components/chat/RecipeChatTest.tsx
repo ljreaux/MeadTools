@@ -1081,8 +1081,14 @@ export default function RecipeChatTest({
                     ) : null}
                     {messages.length === 0 ? (
                       <MessageScrollerItem messageId="empty-chat">
-                        <div className="flex min-h-[16rem] items-center justify-center text-center text-sm text-muted-foreground">
-                          {t("chatbotTest.emptyState")}
+                        <div className="flex min-h-[16rem] items-center justify-center px-4 text-center text-sm text-muted-foreground">
+                          <div className="max-w-xl space-y-3">
+                            <p className="font-medium text-foreground">
+                              {t("chatbotTest.emptyStateTitle")}
+                            </p>
+                            <p>{t("chatbotTest.emptyState")}</p>
+                            <p className="text-xs">{t("chatbotTest.emptyStateContext")}</p>
+                          </div>
                         </div>
                       </MessageScrollerItem>
                     ) : (
