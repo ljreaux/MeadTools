@@ -2,62 +2,24 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type { ChatTurnUsage } from "@/lib/ai/chat-service";
 
-type UsageWindow = "hour" | "day";
-
-export type ChatbotUsageLimits = {
-  maxRequestsPerHour: number;
-  maxRequestsPerDay: number;
-  maxTokensPerDay: number;
-};
-
-export class ChatbotUsageLimitError extends Error {
-  constructor() {
-    super("The chatbot usage limit has been reached. Please try again later.");
-    this.name = "ChatbotUsageLimitError";
-  }
-}
-
-export async function reserveChatbotUsage(options: {
+/**
+ * Stores an audit record before the provider call. Credits, rather than an
+ * arbitrary request quota, control a user's ordinary chatbot access.
+ */
+export async function recordChatbotUsageStart(options: {
   requestId: string;
   userId: number;
   environment: string;
   model: string;
-  limits: ChatbotUsageLimits;
-  now?: Date;
 }): Promise<void> {
-  const now = options.now ?? new Date();
-  const hourStart = startOfUtcHour(now);
-  const dayStart = startOfUtcDay(now);
-
-  return prisma.$transaction(async (tx) => {
-    const hourlyReserved = await reserveWindow(tx, {
-      userId: options.userId,
-      window: "hour",
-      windowStart: hourStart,
-      maxRequests: options.limits.maxRequestsPerHour
-    });
-    if (!hourlyReserved) throw new ChatbotUsageLimitError();
-
-    const dailyReserved = await reserveWindow(tx, {
-      userId: options.userId,
-      window: "day",
-      windowStart: dayStart,
-      maxRequests: options.limits.maxRequestsPerDay,
-      maxTokens: options.limits.maxTokensPerDay
-    });
-    if (!dailyReserved) throw new ChatbotUsageLimitError();
-
-    await tx.$executeRaw(Prisma.sql`
-      INSERT INTO "chatbot_usage_events" (
-        "request_id", "user_id", "environment", "model", "status"
-      ) VALUES (
-        ${options.requestId}::uuid,
-        ${options.userId},
-        ${options.environment},
-        ${options.model},
-        'reserved'
-      )
-    `);
+  await prisma.chatbot_usage_events.create({
+    data: {
+      request_id: options.requestId,
+      user_id: options.userId,
+      environment: options.environment,
+      model: options.model,
+      status: "reserved"
+    }
   });
 }
 
@@ -98,52 +60,30 @@ export async function completeChatbotUsage(options: {
       { window: "day" as const, windowStart: dayStart }
     ]) {
       await tx.$executeRaw(Prisma.sql`
-        UPDATE "chatbot_usage_windows"
+        INSERT INTO "chatbot_usage_windows" (
+          "user_id", "window", "window_start", "request_count",
+          "provider_calls", "input_tokens", "cached_input_tokens",
+          "output_tokens", "total_tokens"
+        ) VALUES (
+          ${options.userId}, ${window.window}, ${window.windowStart}, 1,
+          ${providerCalls}, ${options.usage.inputTokens},
+          ${options.usage.cachedInputTokens}, ${options.usage.outputTokens},
+          ${totalTokens}
+        )
+        ON CONFLICT ("user_id", "window", "window_start") DO UPDATE
         SET
-          "provider_calls" = "provider_calls" + ${providerCalls},
-          "input_tokens" = "input_tokens" + ${options.usage.inputTokens},
-          "cached_input_tokens" = "cached_input_tokens" + ${options.usage.cachedInputTokens},
-          "output_tokens" = "output_tokens" + ${options.usage.outputTokens},
-          "total_tokens" = "total_tokens" + ${totalTokens},
+          "request_count" = "chatbot_usage_windows"."request_count" + 1,
+          "provider_calls" = "chatbot_usage_windows"."provider_calls" + ${providerCalls},
+          "input_tokens" = "chatbot_usage_windows"."input_tokens" + ${options.usage.inputTokens},
+          "cached_input_tokens" = "chatbot_usage_windows"."cached_input_tokens" + ${options.usage.cachedInputTokens},
+          "output_tokens" = "chatbot_usage_windows"."output_tokens" + ${options.usage.outputTokens},
+          "total_tokens" = "chatbot_usage_windows"."total_tokens" + ${totalTokens},
           "updated_at" = NOW()
-        WHERE
-          "user_id" = ${options.userId}
-          AND "window" = ${window.window}
-          AND "window_start" = ${window.windowStart}
       `);
     }
 
     return usageRows[0]?.id;
   });
-}
-
-async function reserveWindow(
-  tx: Prisma.TransactionClient,
-  options: {
-    userId: number;
-    window: UsageWindow;
-    windowStart: Date;
-    maxRequests: number;
-    maxTokens?: number;
-  }
-): Promise<boolean> {
-  const maxTokens = options.maxTokens ?? 2_147_483_647;
-  const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
-    INSERT INTO "chatbot_usage_windows" (
-      "user_id", "window", "window_start", "request_count"
-    ) VALUES (
-      ${options.userId}, ${options.window}, ${options.windowStart}, 1
-    )
-    ON CONFLICT ("user_id", "window", "window_start") DO UPDATE
-    SET
-      "request_count" = "chatbot_usage_windows"."request_count" + 1,
-      "updated_at" = NOW()
-    WHERE
-      "chatbot_usage_windows"."request_count" < ${options.maxRequests}
-      AND "chatbot_usage_windows"."total_tokens" < ${maxTokens}
-    RETURNING "id"
-  `);
-  return rows.length === 1;
 }
 
 function normalizedTotalTokens(usage: ChatTurnUsage): number {

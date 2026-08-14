@@ -5,6 +5,7 @@ import {
   calculateGravityTargetInputSchema,
   explainRecipe,
   explainRecipeInputSchema,
+  type BuildRecipeDraftInput,
   type ChatbotRecipeWorkflowResult
 } from "@meadtools/recipe-workflows";
 import {
@@ -26,7 +27,8 @@ export { hostedAgentPolicy } from "./policy";
 
 export type RecipeAgentToolName =
   | "build_recipe_draft"
-  | "explain_recipe";
+  | "explain_recipe"
+  | "record_recipe_plan";
 
 export type RecipeAgentTool = {
   name: RecipeAgentToolName;
@@ -61,6 +63,23 @@ export const recipeAgentTools: readonly RecipeAgentTool[] = [
 
 const gravityTargetToolName = "calculate_gravity_target" as const;
 const prepareBrewActionToolName = "prepare_brew_action" as const;
+const recordRecipePlanToolName = "record_recipe_plan" as const;
+
+const recordRecipePlanInputSchema = z.object({
+  plan: buildRecipeDraftInputSchema
+}).strict();
+
+/**
+ * Persists a reviewable, partial recipe direction without calculating a
+ * recipe. The agent calls it when it proposes data-backed defaults and before
+ * asking the brewer to accept them.
+ */
+export const recordRecipePlanAgentTool = {
+  name: recordRecipePlanToolName,
+  description:
+    "Record a partial MeadTools recipe plan after you recommend data-backed defaults. Use it before asking the brewer to accept a specific fruit amount, yeast, nutrient plan, sweetness strategy, or other draft assumption. This does not calculate or create a recipe; it preserves the proposed plan for a later explicit draft request.",
+  inputSchema: recordRecipePlanInputSchema
+};
 
 export type GravityTargetAgentTool = {
   name: typeof gravityTargetToolName;
@@ -221,6 +240,10 @@ export type RecipeAgentToolExecution =
   | { status: "ok"; result: ChatbotRecipeWorkflowResult }
   | { status: "unknown_tool"; toolName: string };
 
+export type RecordRecipePlanAgentToolExecution =
+  | { status: "ok"; result: { status: "plan"; plan: BuildRecipeDraftInput } }
+  | { status: "invalid_input"; issues: string[] };
+
 export function executeRecipeAgentTool(
   toolName: string,
   input: unknown
@@ -229,6 +252,14 @@ export function executeRecipeAgentTool(
   if (!tool) return { status: "unknown_tool", toolName };
 
   return { status: "ok", result: tool.execute(input) };
+}
+
+export function executeRecordRecipePlanAgentTool(
+  input: unknown
+): RecordRecipePlanAgentToolExecution {
+  const parsed = recordRecipePlanInputSchema.safeParse(input);
+  if (!parsed.success) return invalidInput(parsed.error.issues);
+  return { status: "ok", result: { status: "plan", plan: parsed.data.plan } };
 }
 
 const wikiSearchInputSchema = z.object({
@@ -375,8 +406,9 @@ export function createWikiAgentTools(
  */
 export const wikiAgentTools = createWikiAgentTools();
 
-export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | BrewActionAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof additiveSearchAgentTool | typeof yeastSearchAgentTool;
+export type HostedAgentTool = RecipeAgentTool | GravityTargetAgentTool | BrewActionAgentTool | WikiAgentTool | typeof ingredientSearchAgentTool | typeof additiveSearchAgentTool | typeof yeastSearchAgentTool | typeof recordRecipePlanAgentTool;
 export const hostedAgentTools: readonly HostedAgentTool[] = [
+  recordRecipePlanAgentTool,
   ...recipeAgentTools,
   gravityTargetAgentTool,
   prepareBrewActionAgentTool,
@@ -398,6 +430,22 @@ export type HostedAgentToolDefinition = {
  * request, never from model-controlled tool arguments.
  */
 export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = [
+  {
+    name: recordRecipePlanToolName,
+    description: descriptionFor(recordRecipePlanToolName),
+    parameters: {
+      type: "object",
+      properties: {
+        plan: {
+          type: "object",
+          description: "A partial BuildRecipeDraftInput containing only the specific, data-backed defaults you just proposed.",
+          additionalProperties: true
+        }
+      },
+      required: ["plan"],
+      additionalProperties: false
+    }
+  },
   {
     name: "build_recipe_draft",
     description: descriptionFor("build_recipe_draft"),
@@ -624,6 +672,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] = 
 
 export type HostedAgentToolExecution =
   | RecipeAgentToolExecution
+  | RecordRecipePlanAgentToolExecution
   | ReturnType<typeof executeGravityTargetAgentTool>
   | BrewActionAgentToolExecution
   | CatalogAgentToolExecution
@@ -640,6 +689,9 @@ export async function executeHostedAgentTool(
     brewActionTarget?: BrewActionTarget;
   } = {}
 ): Promise<HostedAgentToolExecution> {
+  if (toolName === recordRecipePlanToolName) {
+    return executeRecordRecipePlanAgentTool(input);
+  }
   if (recipeAgentTools.some((tool) => tool.name === toolName)) {
     return executeRecipeAgentTool(toolName, input);
   }

@@ -14,7 +14,7 @@ test("local chatbot configuration is disabled until explicitly enabled and confi
   }));
 });
 
-test("local chatbot configuration clamps operator-controlled limits", () => {
+test("local chatbot configuration clamps per-turn operator-controlled limits", () => {
   const config = getLocalChatbotConfig({
     CHATBOT_LOCAL_TEST_ENABLED: "true",
     FIREWORKS_API_KEY: "key",
@@ -24,22 +24,16 @@ test("local chatbot configuration clamps operator-controlled limits", () => {
     CHATBOT_MAX_TOTAL_OUTPUT_TOKENS: "20000",
     CHATBOT_MAX_PROVIDER_INPUT_CHARACTERS: "90000",
     CHATBOT_MAX_TOTAL_PROVIDER_TOKENS: "200000",
-    CHATBOT_MAX_REQUESTS_PER_HOUR: "500",
-    CHATBOT_MAX_REQUESTS_PER_DAY: "1000",
-    CHATBOT_MAX_TOKENS_PER_DAY: "2000000",
     CHATBOT_USAGE_ENVIRONMENT: "Preview-Test"
   });
 
   assert.ok(config);
   assert.equal(config.model, DEFAULT_FIREWORKS_MODEL);
   assert.equal(config.maxOutputTokens, 8_000);
-  assert.equal(config.maxToolCalls, 6);
-  assert.equal(config.maxProviderCalls, 8);
+  assert.equal(config.maxToolCalls, 8);
+  assert.equal(config.maxProviderCalls, 12);
   assert.equal(config.maxTotalOutputTokens, 12_000);
   assert.equal(config.maxProviderInputCharacters, 80_000);
   assert.equal(config.maxTotalProviderTokens, 100_000);
-  assert.equal(config.maxRequestsPerHour, 100);
-  assert.equal(config.maxRequestsPerDay, 500);
-  assert.equal(config.maxTokensPerDay, 1_000_000);
   assert.equal(config.usageEnvironment, "preview-test");
 });

@@ -4,6 +4,7 @@ import {
   createWikiAgentTools,
   executeGravityTargetAgentTool,
   executePrepareBrewActionTool,
+  executeRecordRecipePlanAgentTool,
   executeRecipeAgentTool,
   executeHostedAgentTool,
   hostedAgentToolDefinitions,
@@ -45,6 +46,22 @@ test("agent tool execution delegates general recipe drafting to the shared workf
   if (execution.status !== "ok") return;
   assert.equal(execution.result.operation, "build_recipe_draft");
   assert.equal(execution.result.status, "recipe");
+});
+
+test("a recipe plan records validated partial draft context without calculating", () => {
+  const execution = executeRecordRecipePlanAgentTool({
+    plan: {
+      batchVolume: { value: 1, unit: "gal" },
+      ingredients: [{ name: "Raspberry", catalogId: 11, category: "fruit", brix: 8 }],
+      assumptions: ["Use raspberries in a beginner-friendly fruit mead."]
+    }
+  });
+
+  assert.equal(execution.status, "ok");
+  if (execution.status !== "ok") return;
+  assert.equal(execution.result.plan.batchVolume?.value, 1);
+  assert.equal(execution.result.plan.ingredients[0]?.name, "Raspberry");
+  assert.equal(execution.result.plan.assumptions[0], "Use raspberries in a beginner-friendly fruit mead.");
 });
 
 test("gravity target tool delegates ABV target math to the shared workflow", () => {
@@ -238,8 +255,7 @@ test("wiki tools return validation errors without calling retrieval", async () =
 
 test("POC evaluation cases reference only the hosted tool surface", () => {
   const toolNames = new Set([
-    ...recipeAgentTools.map((tool) => tool.name),
-    ...createWikiAgentTools().map((tool) => tool.name)
+    ...hostedAgentTools.map((tool) => tool.name)
   ]);
 
   for (const evaluation of hostedPocEvaluations) {
@@ -272,12 +288,22 @@ test("provider tool definitions stay aligned with the executable tool surface", 
 test("hosted policy distinguishes wiki guidance from brief general context", () => {
   assert.ok(
     hostedAgentPolicy.instructions.some((instruction) =>
-      instruction.includes("clearly labelled general-brewing context")
+      instruction.includes("General brewing context")
     )
   );
   assert.ok(
     hostedAgentPolicy.instructions.some((instruction) =>
       instruction.includes("cite the canonical URL")
+    )
+  );
+  assert.ok(
+    hostedAgentPolicy.instructions.some((instruction) =>
+      instruction.includes("fixed fermentable amounts")
+    )
+  );
+  assert.ok(
+    hostedAgentPolicy.instructions.some((instruction) =>
+      instruction.includes("clearly labelled fruit-load assumption")
     )
   );
 });

@@ -28,6 +28,66 @@ test("general recipe intake asks for recipe composition instead of assuming a st
   assert.equal(result.questions[0]?.id, "recipe_ingredients");
 });
 
+test("backsweetening intent without a target asks for the finished gravity", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    backsweeteningIntent: true,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+  });
+
+  assert.equal(result.status, "needs_input");
+  if (result.status !== "needs_input") return;
+  assert.ok(result.questions.some((question) => question.id === "backsweetening_target"));
+});
+
+test("fixed secondary fruit supplies backsweetening when no target is provided", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "gal" },
+    targetOriginalGravity: 1.12,
+    fermentationFinalGravity: 0.999,
+    backsweeteningIntent: true,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Blueberry", category: "fruit", brix: 10, amount: { kind: "weight", value: 7.5, unit: "lb" } },
+      { name: "Blueberry", category: "fruit", brix: 10, secondary: true, amount: { kind: "weight", value: 7.5, unit: "lb" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.derived.gravity.backsweetenedFg > 0.999);
+  assert.equal(result.recipeData.ingredients.some((ingredient) => ingredient.lineId === "backsweetening-sweetener"), false);
+  assert.ok(result.assumptions.some((assumption) => assumption.includes("Fixed secondary additions provide the backsweetening")));
+});
+
+test("secondary fruit that exceeds the stated sweetness target is retained without extra honey", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "gal" },
+    targetOriginalGravity: 1.12,
+    fermentationFinalGravity: 0.999,
+    backsweetening: { targetFinalGravity: 1.001 },
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Blueberry", category: "fruit", brix: 10, amount: { kind: "weight", value: 7.5, unit: "lb" } },
+      { name: "Blueberry", category: "fruit", brix: 10, secondary: true, amount: { kind: "weight", value: 7.5, unit: "lb" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.derived.gravity.backsweetenedFg >= 1.001);
+  assert.equal(result.recipeData.ingredients.some((ingredient) => ingredient.lineId === "backsweetening-sweetener"), false);
+  assert.ok(result.assumptions.some((assumption) => assumption.includes("No additional sweetener was calculated")));
+});
+
 test("general recipe drafting solves honey and water around explicit fruit inputs", () => {
   const result = buildRecipeDraft({
     name: "Blackberry draft",
@@ -127,6 +187,116 @@ test("an explicit fill-liquid amount remains fixed and water balances the batch"
   const cider = result.recipeData.ingredients.find((ingredient) => ingredient.name === "Apple Juice");
   assert.equal(cider?.amounts.volume.value, "8");
   assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
+test("fixed ingredients that already fill the target volume return a concrete conflict", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.075,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      {
+        name: "Apple Juice",
+        category: "juice",
+        brix: 11,
+        amount: { kind: "volume", value: 1, unit: "gal" }
+      },
+      {
+        name: "Wildflower Honey",
+        amount: { kind: "weight", value: 3, unit: "lb" }
+      }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /fixed ingredients/i);
+  assert.match(result.message, /larger finished batch volume/i);
+});
+
+test("a mistakenly retained dynamic role cannot hide a fixed-volume conflict", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.075,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      {
+        name: "Apple Juice",
+        category: "juice",
+        brix: 11,
+        amount: { kind: "volume", value: 1, unit: "gal" },
+        role: "fill_liquid"
+      },
+      {
+        name: "Wildflower Honey",
+        amount: { kind: "weight", value: 3, unit: "lb" },
+        role: "adjustable_fermentable"
+      }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /fixed ingredients/i);
+  assert.match(result.message, /larger finished batch volume/i);
+});
+
+test("an unquantified water line is treated as the automatic volume balance", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Water" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
+test("fixed fermentables calculate their resulting gravity without an adjustable confirmation", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "L" },
+    targetOriginalGravity: 1.108,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", amount: { kind: "weight", value: 1.7, unit: "kg" } },
+      { name: "Blueberry", category: "fruit", brix: 10, amount: { kind: "weight", value: 250, unit: "g" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Honey"));
+  assert.ok(result.recipeData.ingredients.some((ingredient) => ingredient.name === "Water"));
+});
+
+test("a fixed fermentable amount explains an ABV mismatch without changing the recipe", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 2, unit: "gal" },
+    targetOriginalGravity: 1.092,
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Orange Blossom Honey", amount: { kind: "weight", value: 6, unit: "lb" } }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.ok(result.warnings.some((warning) => /supplied fixed fermentables calculate to/i.test(warning)));
+  assert.ok(result.warnings.some((warning) => /reduce a fixed fermentable or increase the finished batch volume/i.test(warning)));
+  assert.ok(result.assumptions.some((assumption) => /All ingredient amounts were supplied explicitly/i.test(assumption)));
 });
 
 test("enabled stabilization defaults to potassium metabisulfite and pH 3.5", () => {

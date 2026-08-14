@@ -27,9 +27,8 @@ import {
   type SelectedChatContext
 } from "@/lib/ai/chat-account-context";
 import {
-  ChatbotUsageLimitError,
   completeChatbotUsage,
-  reserveChatbotUsage
+  recordChatbotUsageStart
 } from "@/lib/db/chatbot-usage";
 import {
   CreditFeePolicyNotConfiguredError,
@@ -221,17 +220,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await reserveChatbotUsage({
+    await recordChatbotUsageStart({
       requestId,
       userId: access.userId,
       environment: config.usageEnvironment,
-      model: config.model,
-      limits: {
-        maxRequestsPerHour: config.maxRequestsPerHour,
-        maxRequestsPerDay: config.maxRequestsPerDay,
-        maxTokensPerDay: config.maxTokensPerDay
-      },
-      now: requestStartedAt
+      model: config.model
     });
   } catch (error) {
     await reverseCreditReservationSilently({
@@ -244,19 +237,13 @@ export async function POST(request: NextRequest) {
       conversationId: threadId,
       pendingMessageId
     });
-    if (error instanceof ChatbotUsageLimitError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 429, headers: { "retry-after": "3600" } }
-      );
-    }
-    console.error("Unable to reserve chatbot usage safely.", {
+    console.error("Unable to start chatbot usage auditing safely.", {
       requestId,
       userId: access.userId,
       environment: config.usageEnvironment
     });
     return NextResponse.json(
-      { error: "The chatbot usage guard is unavailable. Please try again later." },
+      { error: "The chatbot usage audit is unavailable. Please try again later." },
       { status: 503 }
     );
   }

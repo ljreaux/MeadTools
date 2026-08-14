@@ -33,8 +33,9 @@ Follow-up, if needed:
 
 Expected: the bot looks up raspberry and yeast data instead of asking for Brix
 or nitrogen requirements. Vanilla belongs in Additives rather than Ingredients.
-It may ask only for a genuinely missing quantity, and it should recognize that
-secondary fruit ferments before stabilization.
+It may ask only for a genuinely missing quantity. MeadTools models the
+secondary raspberry as unfermented, so its sugar contributes to the finished
+backsweetened gravity and volume.
 
 ## 4. Cyser with an explicit honey amount
 
@@ -293,8 +294,9 @@ silently changing the apple juice, honey, or fruit.
 > additives. It should ferment dry before the secondary additions; I will
 > stabilize before adding them.
 
-Expected: secondary fermentables are not treated as magically non-fermentable;
-the response retains the stabilization requirement. Lemon zest, lactose,
+Expected: MeadTools models secondary fermentables as unfermented; the response
+retains the stabilization requirement and accounts for their sugar in the
+backsweetened result. Lemon zest, lactose,
 vanilla, cinnamon, and tannin belong in Additives, while juice/honey/sugar stay
 in Ingredients. The bot should ask only for genuinely needed remaining details.
 

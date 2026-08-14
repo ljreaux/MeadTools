@@ -13,7 +13,7 @@
     "brew:rebuild-abv": "tsx scripts/rebuildEstimatedAbv.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "openapi:generate": "next-openapi-gen generate && node ../../scripts/normalize-zod-openapi.mjs",
-    "lint": "next lint",
+    "lint": "eslint .",
     "check:unused-exports": "knip",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
