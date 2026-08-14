@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAuthorizedCronRequest } from "@/lib/cron/authorize-cron";
 import { failAbandonedPendingChatMessages } from "@/lib/db/chat-conversations";
 import { reverseAbandonedCreditReservations } from "@/lib/db/credit-accounting";
 
@@ -9,7 +10,7 @@ import { reverseAbandonedCreditReservations } from "@/lib/db/credit-accounting";
  */
 export async function GET(request: NextRequest) {
   const authorization = request.headers.get("authorization");
-  if (authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronRequest(authorization)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

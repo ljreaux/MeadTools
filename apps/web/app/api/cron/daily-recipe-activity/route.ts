@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAuthorizedCronRequest } from "@/lib/cron/authorize-cron";
 import {
   deleteStaleActivityUpdates,
   sendYesterdayRecipeActivityEmails
@@ -8,7 +9,7 @@ import { purgeExpiredChatConversations } from "@/lib/db/chat-conversations";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronRequest(authHeader)) {
     return new Response("Unauthorized", {
       status: 401
     });

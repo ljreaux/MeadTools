@@ -356,6 +356,24 @@ model credit_stripe_dispute_events {
   @@index([stripe_dispute_id])
 }
 
+/// Retains the minimal verified fields required to replay a succeeded refund
+/// that arrives before its Checkout fulfillment webhook.
+model credit_stripe_refund_events {
+  id                       String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  external_event_id        String                             @unique @db.VarChar(255)
+  event_type               String                             @db.VarChar(128)
+  stripe_refund_id         String                             @db.VarChar(255)
+  stripe_payment_intent_id String                             @db.VarChar(255)
+  amount_cents             Int
+  currency                 String                             @db.VarChar(3)
+  status                   credit_stripe_refund_event_status  @default(deferred)
+  created_at               DateTime                           @default(now()) @db.Timestamptz(6)
+  processed_at             DateTime?                          @db.Timestamptz(6)
+
+  @@index([stripe_payment_intent_id, status])
+  @@index([stripe_refund_id])
+}
+
 /// Retains aggregate, non-sensitive provider usage for operational auditing.
 model chatbot_usage_windows {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -747,6 +765,11 @@ enum credit_payment_recovery_status {
 }
 
 enum credit_stripe_dispute_event_status {
+  deferred
+  processed
+}
+
+enum credit_stripe_refund_event_status {
   deferred
   processed
 }

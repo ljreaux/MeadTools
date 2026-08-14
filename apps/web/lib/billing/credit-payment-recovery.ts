@@ -4,7 +4,8 @@ import {
   Prisma,
   credit_payment_recovery_kind,
   credit_payment_recovery_status,
-  credit_stripe_dispute_event_status
+  credit_stripe_dispute_event_status,
+  credit_stripe_refund_event_status
 } from "@prisma/client";
 import type Stripe from "stripe";
 import prisma from "@/lib/prisma";
@@ -53,25 +54,64 @@ export async function reconcileStripeRefund(options: {
     return "ignored";
   }
 
-  return prisma.$transaction(async (tx) => {
-    const inserted = await tx.credit_payment_webhook_events.createMany({
+  try {
+    await prisma.credit_stripe_refund_events.create({
       data: {
-        provider: "stripe",
         external_event_id: options.eventId,
-        event_type: options.eventType
-      },
-      skipDuplicates: true
+        event_type: options.eventType,
+        stripe_refund_id: options.refund.id,
+        stripe_payment_intent_id: paymentIntentId,
+        amount_cents: options.refund.amount,
+        currency
+      }
     });
-    if (inserted.count === 0) return "duplicate" as const;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return "duplicate";
+    }
+    throw error;
+  }
 
-    const checkout = await findCheckoutForUpdate(tx, paymentIntentId);
-    if (!checkout || checkout.status === "pending") return "ignored" as const;
+  return processStoredStripeRefundEvent(options.eventId);
+}
+
+/** Replays succeeded refunds received before Checkout fulfillment. */
+export async function reconcileDeferredStripeRefunds(paymentIntentId: string): Promise<void> {
+  const events = await prisma.credit_stripe_refund_events.findMany({
+    where: {
+      stripe_payment_intent_id: paymentIntentId,
+      status: {
+        in: [
+          credit_stripe_refund_event_status.deferred,
+          credit_stripe_refund_event_status.processed
+        ]
+      }
+    },
+    select: { external_event_id: true }
+  });
+  for (const event of events) await processStoredStripeRefundEvent(event.external_event_id);
+}
+
+async function processStoredStripeRefundEvent(eventId: string): Promise<CreditPaymentRecoveryResult> {
+  return prisma.$transaction(async (tx) => {
+    const event = await tx.credit_stripe_refund_events.findUnique({
+      where: { external_event_id: eventId }
+    });
+    if (!event) return "ignored" as const;
+    const checkout = await findCheckoutForUpdate(tx, event.stripe_payment_intent_id);
+    // Before Checkout fulfillment persists its payment-intent mapping there
+    // is intentionally no local row to join against yet. Keep the verified
+    // refund event deferred; fulfillment replays it once that mapping exists.
+    if (!checkout || checkout.status === "pending") return "deferred" as const;
 
     const existing = await tx.credit_payment_recoveries.findUnique({
-      where: { external_reference: options.refund.id },
+      where: { external_reference: event.stripe_refund_id },
       select: { id: true }
     });
-    if (existing) return "duplicate" as const;
+    if (existing) {
+      await markStoredRefundProcessed(tx, event.id);
+      return "duplicate" as const;
+    }
 
     const prior = await tx.credit_payment_recoveries.aggregate({
       where: {
@@ -93,17 +133,18 @@ export async function reconcileStripeRefund(options: {
     const canReconcile =
       paymentAmountCents !== null &&
       paymentAmountCents > 0 &&
-      checkout.stripe_payment_currency?.toLowerCase() === currency;
+      checkout.stripe_payment_currency?.toLowerCase() === event.currency;
 
     if (!canReconcile) {
       await createReviewRecovery(tx, {
         checkoutId: checkout.id,
-        externalReference: options.refund.id,
-        amountCents: options.refund.amount,
-        currency,
+        externalReference: event.stripe_refund_id,
+        amountCents: event.amount_cents,
+        currency: event.currency,
         kind: credit_payment_recovery_kind.stripe_refund,
         reason: "A refund could not be reconciled to the original verified payment total."
       });
+      await markStoredRefundProcessed(tx, event.id);
       return "review_required" as const;
     }
 
@@ -114,17 +155,18 @@ export async function reconcileStripeRefund(options: {
         paymentAmountCents: paymentAmountCents as number,
         priorRefundedAmountCents,
         priorRevokedCredits,
-        refundAmountCents: options.refund.amount
+        refundAmountCents: event.amount_cents
       });
     } catch {
       await createReviewRecovery(tx, {
         checkoutId: checkout.id,
-        externalReference: options.refund.id,
-        amountCents: options.refund.amount,
-        currency,
+        externalReference: event.stripe_refund_id,
+        amountCents: event.amount_cents,
+        currency: event.currency,
         kind: credit_payment_recovery_kind.stripe_refund,
         reason: "Refund amounts could not be reconciled safely to this credit purchase."
       });
+      await markStoredRefundProcessed(tx, event.id);
       return "review_required" as const;
     }
 
@@ -133,9 +175,9 @@ export async function reconcileStripeRefund(options: {
         checkout_id: checkout.id,
         recovery_kind: credit_payment_recovery_kind.stripe_refund,
         status: credit_payment_recovery_status.applied,
-        external_reference: options.refund.id,
-        amount_cents: options.refund.amount,
-        currency,
+        external_reference: event.stripe_refund_id,
+        amount_cents: event.amount_cents,
+        currency: event.currency,
         credit_delta: -reconciliation.creditsToRevoke
       }
     });
@@ -143,11 +185,11 @@ export async function reconcileStripeRefund(options: {
       ? await recordCreditAdjustmentInTransaction(tx, {
         userId: checkout.user_id,
         operationId: recovery.id,
-        idempotencyKey: `stripe-refund:${options.refund.id}`,
+        idempotencyKey: `stripe-refund:${event.stripe_refund_id}`,
         creditsDelta: -reconciliation.creditsToRevoke,
-        sourceAmountCents: options.refund.amount,
-        sourceCurrency: currency,
-        externalReference: options.refund.id,
+        sourceAmountCents: event.amount_cents,
+        sourceCurrency: event.currency,
+        externalReference: event.stripe_refund_id,
         entryType: "refund",
         metadata: { reason: "stripe_refund", checkoutId: checkout.id }
       })
@@ -171,12 +213,24 @@ export async function reconcileStripeRefund(options: {
       });
       await restrictCreditAccount(tx, {
         userId: checkout.user_id,
-        externalReference: options.refund.id,
+        externalReference: event.stripe_refund_id,
         reason: "A refund exceeds the available prompt-credit balance."
       });
+      await markStoredRefundProcessed(tx, event.id);
       return "review_required" as const;
     }
+    await markStoredRefundProcessed(tx, event.id);
     return "applied" as const;
+  });
+}
+
+async function markStoredRefundProcessed(tx: Prisma.TransactionClient, eventId: string): Promise<void> {
+  await tx.credit_stripe_refund_events.update({
+    where: { id: eventId },
+    data: {
+      status: credit_stripe_refund_event_status.processed,
+      processed_at: new Date()
+    }
   });
 }
 
