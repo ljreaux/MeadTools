@@ -304,7 +304,7 @@ ignored `apps/web/.env.local` file, substituting a Fireworks server API key:
 CHATBOT_LOCAL_TEST_ENABLED=true
 FIREWORKS_API_KEY=...
 # Optional model and guardrail overrides:
-# CHATBOT_FIREWORKS_MODEL=accounts/fireworks/models/deepseek-v4-flash
+# CHATBOT_FIREWORKS_MODEL=accounts/fireworks/models/deepseek-v4-flash-0731
 # CHATBOT_MAX_OUTPUT_TOKENS=4000
 # CHATBOT_MAX_TOOL_CALLS=6
 # CHATBOT_MAX_PROVIDER_CALLS=7

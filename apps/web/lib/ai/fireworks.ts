@@ -148,7 +148,10 @@ export class FireworksChatClient implements ChatModelClient {
         );
 
         if (!response.ok) {
-          throw new Error(`Fireworks inference failed with HTTP ${response.status}.`);
+          const detail = await fireworksErrorDetail(response);
+          throw new Error(
+            `Fireworks inference failed with HTTP ${response.status}.${detail ? ` ${detail}` : ""}`
+          );
         }
 
         const parsed = completionSchema.safeParse(await response.json());
@@ -183,6 +186,29 @@ export class FireworksChatClient implements ChatModelClient {
     throw lastError;
   }
 
+}
+
+async function fireworksErrorDetail(response: Response): Promise<string | undefined> {
+  try {
+    const payload: unknown = await response.json();
+    const message = errorMessageFromPayload(payload);
+    return message ? `Provider detail: ${message}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function errorMessageFromPayload(payload: unknown): string | undefined {
+  const message = typeof payload === "object" && payload !== null
+    ? "error" in payload && typeof payload.error === "object" && payload.error !== null && "message" in payload.error
+      ? payload.error.message
+      : "message" in payload
+        ? payload.message
+        : undefined
+    : undefined;
+  if (typeof message !== "string") return undefined;
+  const normalized = message.replace(/[\r\n\t]+/g, " ").trim();
+  return normalized ? normalized.slice(0, 500) : undefined;
 }
 
 function isRetryableFireworksError(error: unknown): boolean {

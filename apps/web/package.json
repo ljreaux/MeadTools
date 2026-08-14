@@ -17,6 +17,7 @@
     "check:unused-exports": "knip",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:credit-pricing": "tsx prisma/seed-credit-pricing.ts",
     "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts"
   },
   "type": "module",

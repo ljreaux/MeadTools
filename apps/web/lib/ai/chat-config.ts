@@ -1,5 +1,5 @@
 export const DEFAULT_FIREWORKS_MODEL =
-  "accounts/fireworks/models/deepseek-v4-flash";
+  "accounts/fireworks/models/deepseek-v4-flash-0731";
 /** Generous only for private evaluator sessions. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_MAX_TOOL_CALLS = 7;

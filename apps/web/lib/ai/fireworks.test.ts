@@ -82,6 +82,26 @@ test("Fireworks client retries one transient timeout", async () => {
   assert.equal(completion.message.content, "Recovered");
 });
 
+test("Fireworks client retains a bounded provider error detail for server-side diagnosis", async () => {
+  const client = new FireworksChatClient({
+    apiKey: "test-key",
+    model: "accounts/fireworks/models/test-model",
+    fetcher: async () => Response.json(
+      { error: { message: "The requested model is not available to this API key." } },
+      { status: 404 }
+    )
+  });
+
+  await assert.rejects(
+    () => client.complete({
+      messages: [{ role: "user", content: "Hello" }],
+      maxOutputTokens: 300,
+      userId: 42
+    }),
+    /Fireworks inference failed with HTTP 404\. Provider detail: The requested model is not available to this API key\./
+  );
+});
+
 test("Fireworks client disables reasoning for a compact title request", async () => {
   let request: Request | undefined;
   const client = new FireworksChatClient({

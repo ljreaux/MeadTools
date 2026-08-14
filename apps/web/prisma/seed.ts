@@ -19,7 +19,7 @@ import {
 import { calcABV } from "@meadtools/core/gravity";
 import {
   initialCreditFeePolicy,
-  initialFireworksDeepseekV4FlashPricing
+  currentFireworksDeepseekV4FlashPricing
 } from "@/lib/billing/credit-pricing";
 
 if (process.env.NODE_ENV === "production") {
@@ -420,22 +420,22 @@ async function seedCreditBillingDefaults() {
   await prisma.credit_pricing_versions.upsert({
     where: {
       provider_model_version: {
-        provider: initialFireworksDeepseekV4FlashPricing.provider,
-        model: initialFireworksDeepseekV4FlashPricing.model,
-        version: initialFireworksDeepseekV4FlashPricing.version
+        provider: currentFireworksDeepseekV4FlashPricing.provider,
+        model: currentFireworksDeepseekV4FlashPricing.model,
+        version: currentFireworksDeepseekV4FlashPricing.version
       }
     },
     create: {
-      provider: initialFireworksDeepseekV4FlashPricing.provider,
-      model: initialFireworksDeepseekV4FlashPricing.model,
-      version: initialFireworksDeepseekV4FlashPricing.version,
+      provider: currentFireworksDeepseekV4FlashPricing.provider,
+      model: currentFireworksDeepseekV4FlashPricing.model,
+      version: currentFireworksDeepseekV4FlashPricing.version,
       uncached_input_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.uncachedInputPicousdPerMillionTokens,
+        currentFireworksDeepseekV4FlashPricing.pricing.uncachedInputPicousdPerMillionTokens,
       cached_input_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.cachedInputPicousdPerMillionTokens,
+        currentFireworksDeepseekV4FlashPricing.pricing.cachedInputPicousdPerMillionTokens,
       output_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.outputPicousdPerMillionTokens,
-      effective_at: initialFireworksDeepseekV4FlashPricing.effectiveAt
+        currentFireworksDeepseekV4FlashPricing.pricing.outputPicousdPerMillionTokens,
+      effective_at: currentFireworksDeepseekV4FlashPricing.effectiveAt
     },
     update: {}
   });

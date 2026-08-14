@@ -1,20 +1,20 @@
 import type { ModelTokenPricing, CreditFeePolicy } from "@meadtools/credit-accounting";
 
 /**
- * Snapshot of Fireworks standard-serverless pricing checked on 2026-08-08.
+ * Snapshot of Fireworks standard-serverless pricing checked on 2026-08-14.
  * Values are picodollars per one million tokens. New provider prices must be
  * added as a new database version rather than mutating this historical value.
  */
-export const initialFireworksDeepseekV4FlashPricing = {
+export const currentFireworksDeepseekV4FlashPricing = {
   provider: "fireworks",
-  model: "accounts/fireworks/models/deepseek-v4-flash",
-  version: "fireworks-deepseek-v4-flash-standard-2026-08-08",
+  model: "accounts/fireworks/models/deepseek-v4-flash-0731",
+  version: "fireworks-deepseek-v4-flash-0731-standard-2026-08-14",
   pricing: {
     uncachedInputPicousdPerMillionTokens: BigInt(140_000_000_000),
     cachedInputPicousdPerMillionTokens: BigInt(28_000_000_000),
     outputPicousdPerMillionTokens: BigInt(280_000_000_000)
   } satisfies ModelTokenPricing,
-  effectiveAt: new Date("2026-08-08T00:00:00.000Z"),
+  effectiveAt: new Date("2026-08-14T00:00:00.000Z"),
   sourceUrl: "https://docs.fireworks.ai/serverless/pricing"
 } as const;
 
