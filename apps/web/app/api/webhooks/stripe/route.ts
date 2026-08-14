@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { fulfillCreditCheckoutFromStripeEvent } from "@/lib/billing/credit-checkout";
+import {
+  finalizeCreditCheckoutTerminalEvent,
+  fulfillCreditCheckoutFromStripeEvent
+} from "@/lib/billing/credit-checkout";
 import {
   flagStripeDisputeForReview,
   reconcileStripeRefund
 } from "@/lib/billing/credit-payment-recovery";
 import {
   isStripeDisputeRecoveryEvent,
-  isStripeRefundEvent
+  isStripeRefundEvent,
+  isTerminalCreditCheckoutEvent
 } from "@/lib/billing/credit-checkout-events";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 
@@ -55,6 +59,8 @@ export async function POST(request: NextRequest) {
         eventType: event.type,
         dispute: event.data.object as Stripe.Dispute
       });
+    } else if (isTerminalCreditCheckoutEvent(event.type)) {
+      await finalizeCreditCheckoutTerminalEvent(event);
     } else {
       await fulfillCreditCheckoutFromStripeEvent(event);
     }

@@ -4,6 +4,12 @@ export function isPaidCreditCheckoutEvent(eventType: string): boolean {
     eventType === "checkout.session.async_payment_succeeded";
 }
 
+/** Checkout terminal events do not grant credits but must close pending rows. */
+export function isTerminalCreditCheckoutEvent(eventType: string): boolean {
+  return eventType === "checkout.session.async_payment_failed" ||
+    eventType === "checkout.session.expired";
+}
+
 export function isStripeRefundEvent(eventType: string): boolean {
   return eventType === "refund.created" || eventType === "refund.updated";
 }

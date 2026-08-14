@@ -44,6 +44,7 @@ import {
 import {
   ChatConversationCapacityError,
   ChatConversationNotFoundError,
+  ChatConversationTurnInFlightError,
   ChatConversationUnavailableError,
   appendPendingChatMessage,
   completeChatTurn,
@@ -413,6 +414,15 @@ export async function POST(request: NextRequest) {
         );
         return titleResult ? { ...result, conversationTitle: titleResult.title } : result;
       } catch (error) {
+        console.error("Hosted chatbot turn failed.", {
+          requestId,
+          userId: access.userId,
+          environment: config.usageEnvironment,
+          model: config.model,
+          providerResultCompleted,
+          creditReservationFinalized,
+          error: error instanceof Error ? error.message : "unknown"
+        });
         await failPendingMessageSilently({
           userId: access.userId,
           conversationId: threadId,
@@ -425,12 +435,14 @@ export async function POST(request: NextRequest) {
             idempotencyKey: `chat-reversal:${requestId}`
           });
         }
-        await recordFailedUsage({
-          requestId,
-          userId: access.userId,
-          model: config.model,
-          requestStartedAt
-        });
+        if (!providerResultCompleted) {
+          await recordFailedUsage({
+            requestId,
+            userId: access.userId,
+            model: config.model,
+            requestStartedAt
+          });
+        }
         throw error;
       }
     }
@@ -533,6 +545,9 @@ function persistenceErrorResponse(error: unknown) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
   if (error instanceof ChatConversationCapacityError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
+  }
+  if (error instanceof ChatConversationTurnInFlightError) {
     return NextResponse.json({ error: error.message }, { status: 409 });
   }
   if (error instanceof ChatConversationUnavailableError) {

@@ -40,6 +40,14 @@ export class ChatConversationCapacityError extends Error {
   }
 }
 
+/** A conversation has an accepted turn that has not reached a terminal state. */
+export class ChatConversationTurnInFlightError extends Error {
+  constructor() {
+    super("This chat is still processing its previous message. Please wait for it to finish.");
+    this.name = "ChatConversationTurnInFlightError";
+  }
+}
+
 type LockedConversation = {
   id: string;
   title: string;
@@ -247,6 +255,15 @@ export async function appendPendingChatMessage(options: {
         isFirstMessage: false
       };
     }
+    const inFlight = await tx.chat_messages.findFirst({
+      where: {
+        conversation_id: conversation.id,
+        role: "user",
+        status: "pending"
+      },
+      select: { id: true }
+    });
+    if (inFlight) throw new ChatConversationTurnInFlightError();
     assertConversationCanReceiveMessage(
       conversation,
       now,

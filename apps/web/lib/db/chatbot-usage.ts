@@ -52,8 +52,20 @@ export async function completeChatbotUsage(options: {
         "provider_request_ids" = ${providerRequestIds},
         "completed_at" = NOW()
       WHERE "request_id" = ${options.requestId}::uuid
+        AND "status" = 'reserved'
       RETURNING "id"
     `);
+
+    // Completion is intentionally idempotent. A retry after a transient
+    // downstream failure must not double-count the same provider turn in the
+    // hourly/daily audit windows.
+    if (usageRows.length === 0) {
+      const existing = await tx.chatbot_usage_events.findUnique({
+        where: { request_id: options.requestId },
+        select: { id: true }
+      });
+      return existing?.id;
+    }
 
     for (const window of [
       { window: "hour" as const, windowStart: hourStart },
