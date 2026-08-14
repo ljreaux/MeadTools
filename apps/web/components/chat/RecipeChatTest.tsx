@@ -253,6 +253,7 @@ export default function RecipeChatTest({
   const conversationIdRef = useRef<string | undefined>(undefined);
   const clientMessageIdRef = useRef<string | undefined>(undefined);
   const threadAtCapacityRef = useRef(false);
+  const turnInFlightRef = useRef(false);
   const insufficientCreditsRef = useRef<{
     availableCredits?: number;
     requiredCredits?: number;
@@ -318,6 +319,9 @@ export default function RecipeChatTest({
             } | null;
             threadAtCapacityRef.current = Boolean(
               payload?.error?.includes("reached its message or content limit")
+            );
+            turnInFlightRef.current = Boolean(
+              payload?.error?.includes("still processing its previous message")
             );
           }
           if (response.status === 402) {
@@ -388,6 +392,10 @@ export default function RecipeChatTest({
     onError: () => {
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
+        return;
+      }
+      if (turnInFlightRef.current) {
+        setError(t("chatbotTest.errors.turnInFlight"));
         return;
       }
       if (insufficientCreditsRef.current) {
@@ -567,6 +575,7 @@ export default function RecipeChatTest({
     setThreadNextBeforeSequence(null);
     setThreadAtCapacity(false);
     threadAtCapacityRef.current = false;
+    turnInFlightRef.current = false;
     capacityToastShownRef.current = false;
   }
 
@@ -741,6 +750,8 @@ export default function RecipeChatTest({
       clientMessageIdRef.current = undefined;
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
+      } else if (turnInFlightRef.current) {
+        setError(t("chatbotTest.errors.turnInFlight"));
       } else if (insufficientCreditsRef.current) {
         const credits = insufficientCreditsRef.current;
         setInsufficientCredits(credits);
@@ -786,7 +797,13 @@ export default function RecipeChatTest({
   }
 
   function openSaveDraft() {
-    setSavedDraftName(recipeDraftInput?.name?.trim() || t("chatbotTest.untitledDraft"));
+    setSavedDraftName(
+      recipeDraftInput?.name?.trim() ||
+        suggestedRecipeName(recipeDraftInput) ||
+        (activeConversationTitle === t("chatbotTest.newChat")
+          ? t("chatbotTest.untitledDraft")
+          : activeConversationTitle)
+    );
     setSaveDialogOpen(true);
   }
 
@@ -1441,6 +1458,31 @@ export default function RecipeChatTest({
       </Dialog>
     </main>
   );
+}
+
+/** Use the completed draft's actual ingredients when pre-filling the save name. */
+function suggestedRecipeName(input: BuildRecipeDraftInput | undefined): string | undefined {
+  if (!input) return undefined;
+  const ingredientNames = input.ingredients
+    .map((ingredient) => ingredient.name.trim())
+    .filter((name) => name && !/^(?:honey|honey\s+\(backsweetening\)|water)$/i.test(name))
+    .slice(0, 2);
+  const additiveNames = input.additives
+    .map((additive) => additive.name.trim())
+    .filter(Boolean)
+    .slice(0, Math.max(0, 2 - ingredientNames.length));
+  const parts = [...ingredientNames, ...additiveNames]
+    .map(singularizeRecipeNamePart)
+    .filter(Boolean);
+  if (parts.length > 0) return `${parts.join(" ")} Mead`;
+  return "Traditional Mead";
+}
+
+function singularizeRecipeNamePart(name: string): string {
+  return name
+    .replace(/\b([\p{L}]+)ies\b/giu, "$1y")
+    .replace(/\b([\p{L}]+)s\b/giu, "$1")
+    .trim();
 }
 
 function contextOptionValue(context: ChatContextOption): string {

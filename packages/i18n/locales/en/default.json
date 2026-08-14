@@ -188,9 +188,10 @@
       "contextFailed": "Could not load your recipes and brews.",
       "insufficientCredits": "You do not have enough prompt credits for this chat request.",
       "noToken": "Sign in again before using the chatbot evaluator.",
-      "requestFailed": "The chatbot request failed.",
+      "requestFailed": "The recipe assistant couldn't finish that response. Please try again.",
       "saveFailed": "Could not save the recipe draft.",
       "threadCapacity": "This chat has reached its limit. Start a new chat to continue.",
+      "turnInFlight": "This chat is already working on another message. Wait for its reply before sending another.",
       "threadDeleteFailed": "Could not delete the chat.",
       "threadFailed": "Could not load the saved chat.",
       "threadUpdateFailed": "Could not update the chat."

@@ -344,6 +344,109 @@ test("no-added-backsweetening honey does not become a honey varietal or FG targe
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
 });
 
+test("a bare gravity reply keeps an earlier backsweetening target for the recipe workflow", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "bare-backsweetening-target",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "build-after-bare-target",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                // Deliberately omit backsweetening. The most recent brewer
+                // reply only gives the requested finished gravity.
+                arguments: JSON.stringify({
+                  batchVolume: { value: 1, unit: "gal" },
+                  targetOriginalGravity: 1.09,
+                  fermentationFinalGravity: 0.999,
+                  ingredients: [
+                    { name: "Honey", role: "adjustable_fermentable" }
+                  ],
+                  nutrients: nutrientPlan,
+                  stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 }
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "Help me make a traditional mead." },
+        { role: "assistant", content: "What finished gravity should I target after backsweetening?" },
+        { role: "user", content: "One gallon would be good." },
+        { role: "user", content: "Medium strength, dry fermentation, and I want to backsweeten a bit." },
+        { role: "assistant", content: "What final gravity sounds good for the finished mead?" },
+        { role: "user", content: "1.010 would be good" }
+      ]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.backsweetening?.targetFinalGravity, 1.01);
+  const workflow = buildRecipeDraft(result.recipeDraftInput!);
+  assert.equal(workflow.status, "recipe");
+  if (workflow.status === "recipe") {
+    assert.ok(workflow.recipeData.ingredients.some((ingredient) => ingredient.lineId === "backsweetening-sweetener"));
+  }
+});
+
+test("a bare gravity reply does not override an earlier refusal to backsweeten", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "bare-gravity-without-backsweetening",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: null,
+            tool_calls: [{
+              id: "build-after-dry-target",
+              type: "function",
+              function: {
+                name: "build_recipe_draft",
+                arguments: JSON.stringify({
+                  batchVolume: { value: 1, unit: "gal" },
+                  targetOriginalGravity: 1.09,
+                  fermentationFinalGravity: 0.999,
+                  ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                  nutrients: nutrientPlan,
+                  stabilizers: { enabled: false }
+                })
+              }
+            }]
+          },
+          usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "I don't plan to backsweeten this batch." },
+        { role: "assistant", content: "What fermentation final gravity should I use?" },
+        { role: "user", content: "1.010 would be good" }
+      ]
+    }),
+    maxOutputTokens: 4_000,
+    maxToolCalls: 6
+  });
+
+  assert.equal(result.recipeDraftInput?.backsweetening, undefined);
+});
+
 test("racking fallback does not present general advice as MeadTools guidance", () => {
   const request = chatRequestSchema.parse({
     messages: [{ role: "user", content: "According to the MeadTools wiki, when should I rack my mead?" }]
@@ -479,6 +582,7 @@ test("completed recipe answers render the same backsweetening ingredient returne
   });
 
   assert.equal(workflow.status, "recipe");
+  assert.match(answer ?? "", /\*\*Recipe:\*\* Traditional Mead/);
   assert.match(answer ?? "", /Honey \(backsweetening\)/);
   assert.match(answer ?? "", /\*\*Backsweetened FG:\*\* 1\.015/);
   assert.doesNotMatch(answer ?? "", /Let me know if/);
@@ -629,6 +733,7 @@ test("chat turn executes a wiki search and meters every provider call", async ()
     latencyMs: result.usage.latencyMs
   });
   assert.ok(result.usage.latencyMs >= 0);
+  assert.ok(requests.every((request) => request.reasoningEffort === "none"));
   assert.equal(requests[1]?.messages.at(-2)?.role, "tool");
   assert.equal(requests[1]?.messages.at(-1)?.role, "system");
   assert.equal(requests[2]?.messages.at(-2)?.role, "tool");
@@ -1196,6 +1301,37 @@ test("generic recipe exploration does not force catalog lookup or a draft", asyn
   assert.equal(requests.length, 1);
   assert.equal(requests[0]?.toolChoice, "auto");
   assert.match(result.answer, /berry-forward or stone-fruit/i);
+});
+
+test("provider echoes of internal draft policy are removed from a conversational answer", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return {
+          id: "leaked-policy-fragment",
+          model: "test-model",
+          message: {
+            role: "assistant",
+            content: [
+              "Do not present recipe prose or calculated amounts as if the draft had completed.",
+              "",
+              "Here's a sensible direction: a one-gallon raspberry mead with a medium fruit load. Would you like to choose the sweetness next?"
+            ].join("\n")
+          },
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30, cachedInputTokens: 0 }
+        };
+      }
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "I want ideas for a raspberry mead." }]
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6
+  });
+
+  assert.doesNotMatch(result.answer, /Do not present recipe prose or calculated amounts/i);
+  assert.match(result.answer, /sensible direction/i);
 });
 
 test("a generic yeast recommendation is not treated as a missing named yeast", async () => {

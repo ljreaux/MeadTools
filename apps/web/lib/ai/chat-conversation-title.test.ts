@@ -28,23 +28,27 @@ test("conversation titles use one compact tool-free provider request", async () 
   assert.equal(request?.toolChoice, "none");
   assert.equal(request?.reasoningEffort, "none");
   assert.equal(request?.responseFormat?.type, "json_schema");
-  assert.equal(result.title, "Blackberry Mead Recipe");
+  assert.equal(result.title, "Blackberry Mead");
 });
 
-test("conversation title sanitization falls back to the first message", () => {
+test("conversation title sanitization keeps titles compact when the provider falls back or echoes request framing", () => {
   assert.equal(
     sanitizeConversationTitle("** Blackberry mead! **", "Draft a blackberry mead"),
-    "Blackberry mead"
+    "Blackberry Mead"
   );
   assert.equal(
     sanitizeConversationTitle(null, " Draft a blackberry mead "),
-    "Draft a blackberry mead"
+    "Blackberry Mead"
   );
   assert.equal(
     sanitizeConversationTitle(
       "We need to create a concise title for this MeadTools chat",
       "Can you help draft a strawberry mead recipe?"
     ),
-    "Can you help draft a strawberry mead recipe?"
+    "Strawberry Mead"
+  );
+  assert.equal(
+    sanitizeConversationTitle("Help me make a blueberry vanilla mead", "New chat"),
+    "Blueberry Vanilla Mead"
   );
 });

@@ -394,6 +394,10 @@ export async function runChatTurn(options: {
       messages,
       tools,
       toolChoice,
+      // DeepSeek V4 enables extended reasoning by default. The chatbot's
+      // structured tools and workflow supply the needed deliberation, while
+      // disabling hidden reasoning keeps interactive turns responsive.
+      reasoningEffort: "none",
       maxOutputTokens: Math.min(requestedMaxOutputTokens, remainingOutputTokens),
       userId: options.userId
     });
@@ -1853,7 +1857,8 @@ function mergeRecipeDraftInput(
     const merged = applyExplicitRecipeIntakeHints(
       seededFromConversation,
       latestUserMessage,
-      shouldAssumeHoney
+      shouldAssumeHoney,
+      historicalIntake
     );
     // The brewer has explicitly authorized the recommendation defaults in
     // this turn. Preserve the provider's structured representation of those
@@ -1892,7 +1897,8 @@ function mergeRecipeDraftInput(
           : { additives: mergeRecipeAdditives(previous.additives, nextAdditives) })
       },
       latestUserMessage,
-      shouldAssumeHoney
+      shouldAssumeHoney,
+      historicalIntake
     ),
     latestUserMessage,
     previous,
@@ -1935,7 +1941,8 @@ function mergeRecipePlanInput(
     applyExplicitRecipeIntakeHints(
       merged,
       latestUserMessage,
-      shouldAssumeHoney
+      shouldAssumeHoney,
+      historicalIntake
     ),
     historicalIntake
   );
@@ -2143,7 +2150,8 @@ function restoreMissingHistoricalRecipeIntake(
 function applyExplicitRecipeIntakeHints(
   input: Record<string, unknown>,
   latestUserMessage: string,
-  shouldAssumeHoney: boolean
+  shouldAssumeHoney: boolean,
+  historicalIntake = latestUserMessage
 ): Record<string, unknown> {
   const result: Record<string, unknown> = { ...input };
   addImpliedHoneyForMead(result, latestUserMessage, shouldAssumeHoney);
@@ -2168,7 +2176,8 @@ function applyExplicitRecipeIntakeHints(
   if (finalGravity !== undefined) result.fermentationFinalGravity = finalGravity;
 
   const declinesBacksweetening = declinesStabilizers(latestUserMessage);
-  const backsweeteningTarget = backsweeteningTargetFromMessage(latestUserMessage);
+  const backsweeteningTarget = backsweeteningTargetFromMessage(latestUserMessage) ??
+    backsweeteningTargetFromBareGravityReply(latestUserMessage, historicalIntake);
   if (backsweeteningTarget !== undefined) {
     result.backsweetening = {
       ...(isRecord(result.backsweetening) ? result.backsweetening : {}),
@@ -2900,9 +2909,11 @@ function discardUnstatedRecipeValues(
   // the user provided it in this or an earlier turn.
   const bareGravityReply = previous?.backsweeteningIntent === true &&
     /^\s*1\.\d{3,4}\s*[.!]?\s*$/i.test(latestUserMessage);
+  const suppliedBacksweeteningTarget = backsweeteningTargetFromMessage(latestUserMessage) ??
+    backsweeteningTargetFromBareGravityReply(latestUserMessage, historicalIntake);
   if (
     previous?.backsweetening === undefined &&
-    backsweeteningTargetFromMessage(latestUserMessage) === undefined &&
+    suppliedBacksweeteningTarget === undefined &&
     !bareGravityReply
   ) {
     delete result.backsweetening;
@@ -3271,6 +3282,34 @@ function backsweeteningTargetFromMessage(message: string): number | undefined {
     /\b(?:medium|semi)[\s-]?sweet\b[^.]{0,100}?\b(?:to|target(?:ing)?|at)\s*(1\.\d{3,4})\b[^.]{0,100}?\bback[\s-]?sweeten/i
   );
   return sweetnessThenBacksweetening ? Number(sweetnessThenBacksweetening[1]) : undefined;
+}
+
+/**
+ * A brewer commonly answers the assistant's focused backsweetening question
+ * with just "1.010 would be good." That number is a finished gravity when
+ * the existing conversation has an active backsweetening request; it must not
+ * be misfiled as the fermentation FG or discarded because the final reply did
+ * not repeat the word "backsweeten."
+ */
+function backsweeteningTargetFromBareGravityReply(
+  latestMessage: string,
+  historicalIntake: string
+): number | undefined {
+  const bareGravity = latestMessage.match(
+    /^\s*(1\.\d{3,4})(?:\s+(?:would\s+be\s+good|sounds?\s+good|is\s+fine|please))?[.!]?\s*$/i
+  );
+  if (!bareGravity?.[1]) return undefined;
+  const historicalMessages = historicalIntake.split("\n");
+  const hasBacksweeteningRequest = historicalMessages.some(
+    (message) => /\bback\s*-?sweeten(?:ing|ed)?\b/i.test(message) && !declinesStabilizers(message)
+  );
+  // `recipeIntakeContext` intentionally puts newer user messages first for
+  // field extraction. Do not try to infer chronology from that string: if a
+  // brewer has ever explicitly declined backsweetening, require them to state
+  // the target again rather than turning a bare gravity reading into sugar.
+  const hasBacksweeteningDecline = historicalMessages.some(declinesStabilizers);
+  if (!hasBacksweeteningRequest || hasBacksweeteningDecline) return undefined;
+  return Number(bareGravity[1]);
 }
 
 function duplicateIngredientsAcrossStages(ingredients: unknown): unknown {
@@ -3832,6 +3871,7 @@ function renderCompletedRecipeDraft(
 
   return [
     "## Unsaved MeadTools recipe draft",
+    `**Recipe:** ${recipeDraftTitle(workflow.recipeData)}`,
     `**Fermentation FG:** ${workflow.recipeData.fg}  \n**Backsweetened FG:** ${formatCalculationValue(workflow.derived.gravity.backsweetenedFg)}  \n**Estimated ABV:** ${formatCalculationValue(workflow.derived.alcohol.abv)}%`,
     "### Ingredients\n| Ingredient | Amount | Stage |\n| --- | ---: | --- |\n" + ingredientLines.join("\n"),
     additiveLines.length > 0
@@ -3842,6 +3882,24 @@ function renderCompletedRecipeDraft(
     assumptions ? `### Assumptions\n${assumptions}` : "",
     warnings ? `### Warnings\n${warnings}` : ""
   ].filter(Boolean).join("\n\n");
+}
+
+function recipeDraftTitle(recipeData: RecipeDataV2): string {
+  const ingredients = recipeData.ingredients
+    .map((ingredient) => ingredient.name.trim())
+    .filter((name) => name && !/^(?:honey|honey\s+\(backsweetening\)|water)$/i.test(name))
+    .slice(0, 2);
+  const additives = recipeData.additives
+    .map((additive) => additive.name.trim())
+    .filter(Boolean)
+    .slice(0, Math.max(0, 2 - ingredients.length));
+  const components = [...ingredients, ...additives]
+    .map((name) => name
+      .replace(/\b([\p{L}]+)ies\b/giu, "$1y")
+      .replace(/\b([\p{L}]+)s\b/giu, "$1")
+      .trim())
+    .filter(Boolean);
+  return components.length > 0 ? `${components.join(" ")} Mead` : "Traditional Mead";
 }
 
 /**
@@ -3998,9 +4056,14 @@ function formatCalculationValue(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(3);
 }
 
-/** Remove internal recipe-model labels if a provider echoes them in prose. */
+/**
+ * Remove internal recipe-model labels and policy fragments if a provider
+ * echoes them in prose. System instructions are never useful to a brewer,
+ * even when the rest of a response is useful and safe to retain.
+ */
 function sanitizeUserFacingRecipeAnswer(answer: string): string {
-  return answer
+  const withoutLeakedPolicy = removeLeakedPolicyFragments(answer);
+  return withoutLeakedPolicy
     .replace(/\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?)*?/gu, "")
     .replace(/[\uFE0E\uFE0F]/g, "")
     .replace(/\s*\(catalog\)/gi, "")
@@ -4014,6 +4077,29 @@ function sanitizeUserFacingRecipeAnswer(answer: string): string {
     .replace(/\n{2,}(?:\*{0,2}next steps:?\*{0,2})[\s\S]*$/i, "")
     .replace(/^\s*Do not ask them about catalog IDs or internal fields\.\s*$/gim, "")
     .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+/**
+ * These are implementation-only statements that have appeared verbatim in
+ * provider output. Keep this list deliberately narrow: it is an output safety
+ * net, not a second attempt to rewrite the assistant's brewing advice.
+ */
+const leakedPolicyFragments = [
+  "Only a build_recipe_draft result whose status is recipe is a completed, savable recipe draft.",
+  "If that tool reports missing input, ask only its remaining question; never present recipe prose, calculated amounts, or a save-ready draft as if the draft had completed.",
+  "Do not present recipe prose or calculated amounts as if the draft had completed.",
+  "Catalog IDs, Brix values, internal tool names, implementation details, internal enum values, and labels such as catalog, adjustable, justK, or kmeta are never user-facing.",
+  "Never reveal scratchwork, chain-of-thought, or internal decision-making."
+] as const;
+
+function removeLeakedPolicyFragments(answer: string): string {
+  return leakedPolicyFragments
+    .reduce((sanitized, fragment) => {
+      const escaped = fragment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replaceAll(" ", "\\s+");
+      return sanitized.replace(new RegExp(`(?:^|\\n)\\s*(?:[-*>#]+\\s*)?(?:\\*{1,3})?${escaped}(?:\\*{1,3})?\\s*`, "gim"), "\n");
+    }, answer)
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
