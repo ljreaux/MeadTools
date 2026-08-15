@@ -216,6 +216,26 @@ test("fixed ingredients that already fill the target volume return a concrete co
   assert.match(result.message, /larger finished batch volume/i);
 });
 
+test("a fruit-mass volume conflict explains fruit contribution without calling it liquid", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 10, unit: "L" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Blueberry", category: "fruit", brix: 10, amount: { kind: "weight", value: 5, unit: "kg" } },
+      { name: "Blueberry", category: "fruit", brix: 10, secondary: true, amount: { kind: "weight", value: 5, unit: "kg" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /stated primary fruit load/i);
+  assert.match(result.message, /fruit mass as fruit, not as a liquid measurement/i);
+});
+
 test("a mistakenly retained dynamic role cannot hide a fixed-volume conflict", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },

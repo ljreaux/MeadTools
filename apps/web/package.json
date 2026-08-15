@@ -17,6 +17,7 @@
     "check:unused-exports": "knip",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:sync-credit-pricing": "node --env-file-if-exists=.env.local --import tsx scripts/sync-credit-pricing.ts",
     "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts"
   },
   "type": "module",

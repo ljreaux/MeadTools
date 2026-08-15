@@ -16,6 +16,7 @@ import {
   InputGroupButton,
   InputGroupInput
 } from "@/components/ui/input-group";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 
 type SearchableInputProps<T> = {
   items: T[];
@@ -30,6 +31,9 @@ type SearchableInputProps<T> = {
 
   getValue?: (item: T) => string; // ✅ NEW (canonical id/value)
   sortItems?: (items: T[]) => T[];
+  dropdownPlacement?: "above" | "below";
+  /** Render results outside a clipping parent, such as the compact chat form. */
+  dropdownPortal?: boolean;
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -42,7 +46,9 @@ function SearchableInput<T extends Record<string, any>>({
   getLabel,
   placeholder,
   getValue,
-  sortItems
+  sortItems,
+  dropdownPlacement = "below",
+  dropdownPortal = false
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -146,9 +152,8 @@ function SearchableInput<T extends Record<string, any>>({
 
   const listboxId = "searchable-input-listbox";
 
-  return (
-    <div className="relative">
-      <InputGroup className="h-12">
+  const inputGroup = (
+    <InputGroup className="h-12">
         <InputGroupInput
           ref={inputRef}
           value={inputValue}
@@ -196,36 +201,77 @@ function SearchableInput<T extends Record<string, any>>({
             </InputGroupButton>
           )}
         </InputGroupAddon>
-      </InputGroup>
+    </InputGroup>
+  );
 
-      {dropdownOpen && visibleSuggestions.length > 0 && (
-        <ul
-          id={listboxId}
-          ref={dropdownRef}
-          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-input bg-background text-sm shadow-sm"
-          role="listbox"
+  const suggestionsMenu = (
+    <ul
+      id={listboxId}
+      ref={dropdownRef}
+      className="max-h-60 w-full overflow-auto rounded-md border border-input bg-background text-sm shadow-sm"
+      role="listbox"
+    >
+      {visibleSuggestions.map((suggestion, index) => {
+        const isHighlighted = index === highlightIndex;
+        return (
+          <li
+            key={index}
+            role="option"
+            aria-selected={isHighlighted}
+            className={`cursor-pointer px-3 py-2 text-foreground ${
+              isHighlighted ? "bg-muted" : "hover:bg-muted"
+            }`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              commitSelect(suggestion);
+            }}
+          >
+            {renderItem ? renderItem(suggestion) : labelOf(suggestion)}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  if (dropdownPortal) {
+    return (
+      <Popover
+        onOpenChange={(open) => {
+          setDropdownOpen(open);
+          if (!open) setHighlightIndex(-1);
+        }}
+        open={dropdownOpen}
+      >
+        <PopoverAnchor asChild>
+          <div>{inputGroup}</div>
+        </PopoverAnchor>
+        {dropdownOpen && visibleSuggestions.length > 0 ? (
+          <PopoverContent
+            align="start"
+            className="z-[1100] w-[var(--radix-popper-anchor-width)] max-w-[calc(100vw-1rem)] p-0"
+            collisionPadding={8}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            side={dropdownPlacement === "above" ? "top" : "bottom"}
+          >
+            {suggestionsMenu}
+          </PopoverContent>
+        ) : null}
+      </Popover>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {inputGroup}
+      {dropdownOpen && visibleSuggestions.length > 0 ? (
+        <div
+          className={`absolute z-30 w-full ${
+            dropdownPlacement === "above" ? "bottom-full mb-1" : "mt-1"
+          }`}
         >
-          {visibleSuggestions.map((suggestion, index) => {
-            const isHighlighted = index === highlightIndex;
-            return (
-              <li
-                key={index}
-                role="option"
-                aria-selected={isHighlighted}
-                className={`cursor-pointer px-3 py-2 text-foreground ${
-                  isHighlighted ? "bg-muted" : "hover:bg-muted"
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  commitSelect(suggestion);
-                }}
-              >
-                {renderItem ? renderItem(suggestion) : labelOf(suggestion)}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+          {suggestionsMenu}
+        </div>
+      ) : null}
     </div>
   );
 }

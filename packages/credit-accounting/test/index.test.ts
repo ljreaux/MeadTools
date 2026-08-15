@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   InsufficientCreditsError,
-  SettlementExceedsReservationError,
   availableCreditsFromLedger,
   assertSufficientCredits,
   calculateCreditCharge,
@@ -76,6 +75,12 @@ test("a reservation blocks an insufficient account before a provider request", (
       error.availableCredits === 19 &&
       error.requiredCredits === 20
   );
+  assert.throws(
+    () => assertSufficientCredits({ availableCredits: -38, requiredCredits: 50 }),
+    (error: unknown) => error instanceof InsufficientCreditsError &&
+      error.availableCredits === -38 &&
+      error.requiredCredits === 50
+  );
 });
 
 test("reservation, settlement, and reversal entries keep balance derived from the ledger", () => {
@@ -88,10 +93,18 @@ test("reservation, settlement, and reversal entries keep balance derived from th
   assert.equal(availableCreditsFromLedger([100, reservation, reverseReservedCredits(12)]), 100);
 });
 
-test("settlement cannot spend more than its reservation", () => {
-  assert.throws(
-    () => settleReservedCredits({ reservationCredits: 5, chargedCredits: 6 }),
-    SettlementExceedsReservationError
+test("settlement records a bounded overage and can leave the ledger negative", () => {
+  const settlement = settleReservedCredits({ reservationCredits: 50, chargedCredits: 88 });
+
+  assert.deepEqual(settlement, {
+    reservationCredits: 50,
+    chargedCredits: 88,
+    overageCredits: 38,
+    settlementCreditsDelta: -38
+  });
+  assert.equal(
+    availableCreditsFromLedger([50, reservationCreditsDelta(50), settlement.settlementCreditsDelta]),
+    -38
   );
 });
 

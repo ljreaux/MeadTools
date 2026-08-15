@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
       environment: config.usageEnvironment,
       model: config.model
     });
-  } catch (error) {
+  } catch {
     await reverseCreditReservationSilently({
       userId: access.userId,
       operationId: requestId,

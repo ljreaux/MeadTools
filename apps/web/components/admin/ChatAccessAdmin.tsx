@@ -150,7 +150,7 @@ export default function ChatAccessAdmin() {
       <Card>
         <CardHeader>
           <CardTitle>Beta users and credits</CardTitle>
-          <CardDescription>Chat access and prompt credits are separate. Add any whole number of credits without changing a user's access. Revoking access never removes ledger history or credits.</CardDescription>
+          <CardDescription>Chat access and prompt credits are separate. Add any whole number of credits without changing a user&apos;s access. Revoking access never removes ledger history or credits.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <InputGroup>

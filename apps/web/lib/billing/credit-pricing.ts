@@ -36,16 +36,15 @@ export const initialOpenAIGpt54MiniPricing = {
 } as const;
 
 /**
- * Stable customer-facing credit burn policy for beta and paid launch. Future
- * retail economics should adjust new credit-pack pricing, not silently change
- * what an existing credit balance can purchase.
+ * Stable customer-facing credit burn policy for beta and paid launch. Changes
+ * receive a new immutable version so every settled chat turn remains auditable.
  */
 export const currentCreditFeePolicy = {
-  version: "standard-35-percent-2026-08-14",
+  version: "standard-75-percent-2026-08-15",
   policy: {
-    markupBasisPoints: 3_500,
+    markupBasisPoints: 7_500,
     fixedTurnCredits: 0,
     minimumTurnCredits: 1
   } satisfies CreditFeePolicy,
-  effectiveAt: new Date("2026-08-14T00:00:00.000Z")
+  effectiveAt: new Date("2026-08-15T00:00:00.000Z")
 } as const;

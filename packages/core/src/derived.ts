@@ -86,7 +86,13 @@ export function calculateRecipeStabilizerResults(args: {
   if (!args.addingStabilizers) return { sorbate: 0, sulfite: 0, campden: 0 };
   const ppm = phToPpm(Math.round(parseNumber(args.phReading) * 10) / 10);
   const gallons = args.totalVolumeL / 3.78541;
-  const sorbate = ((-args.abv * 25 + 400) / 0.75) * (args.totalVolumeL / 1000);
+  // The dosage curve reaches zero at 16% ABV. Above that point the raw
+  // equation becomes negative, but a negative addition is not meaningful or
+  // actionable in either the recipe builder or a chatbot draft.
+  const sorbate = Math.max(
+    0,
+    ((-args.abv * 25 + 400) / 0.75) * (args.totalVolumeL / 1000)
+  );
   const multiplier = args.stabilizerType === "kmeta" ? 570 : 674;
   return {
     sorbate,

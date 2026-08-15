@@ -10,6 +10,7 @@ import {
 } from "@meadtools/recipe-workflows";
 import {
   fetchWikiPage,
+  normalizeWikiUrl,
   searchWikiIndex,
   type WikiFetcher,
   type WikiPageContent,
@@ -356,7 +357,7 @@ export type WikiAgentTool = {
 };
 
 export function createWikiAgentTools(
-  options: { fetcher?: WikiFetcher } = {}
+  options: { fetcher?: WikiFetcher; allowedWikiFetchUrls?: readonly string[] } = {}
 ): readonly WikiAgentTool[] {
   return [
     {
@@ -382,6 +383,27 @@ export function createWikiAgentTools(
       async execute(input) {
         const parsed = wikiFetchInputSchema.safeParse(input);
         if (!parsed.success) return invalidInput(parsed.error.issues);
+
+        if (options.allowedWikiFetchUrls) {
+          let requestedUrl: string;
+          try {
+            requestedUrl = normalizeWikiUrl(parsed.data.url);
+          } catch (error) {
+            return {
+              status: "invalid_input",
+              issues: [error instanceof Error ? error.message : "The wiki URL is invalid."]
+            };
+          }
+          const allowedUrls = new Set(
+            options.allowedWikiFetchUrls.map((url) => normalizeWikiUrl(url))
+          );
+          if (!allowedUrls.has(requestedUrl)) {
+            return {
+              status: "invalid_input",
+              issues: ["Select a non-recipe page returned by the current wiki search before fetching it."]
+            };
+          }
+        }
 
         try {
           return {
@@ -683,6 +705,7 @@ export async function executeHostedAgentTool(
   input: unknown,
   options: {
     fetcher?: WikiFetcher;
+    allowedWikiFetchUrls?: readonly string[];
     ingredientLookup?: IngredientLookup;
     additiveLookup?: AdditiveLookup;
     yeastLookup?: YeastLookup;

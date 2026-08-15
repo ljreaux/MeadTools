@@ -246,6 +246,26 @@ test("wiki page fetches retain the constrained wiki retrieval contract", async (
   assert.match(execution.result.text, /Trusted guidance/);
 });
 
+test("a constrained wiki fetch cannot switch from a process result to a recipe page", async () => {
+  let fetched = false;
+  const execution = await executeHostedAgentTool(
+    "fetch_wiki_page",
+    { url: "https://wiki.meadtools.com/en/recipes/beginner/0001" },
+    {
+      allowedWikiFetchUrls: ["https://wiki.meadtools.com/en/process/process_summary"],
+      fetcher: async () => {
+        fetched = true;
+        throw new Error("The rejected wiki page must not be fetched.");
+      }
+    }
+  );
+
+  assert.equal(execution.status, "invalid_input");
+  assert.equal(fetched, false);
+  if (execution.status !== "invalid_input") return;
+  assert.match(execution.issues.join(" "), /non-recipe page returned by the current wiki search/i);
+});
+
 test("wiki tools return validation errors without calling retrieval", async () => {
   const execution = await executeHostedAgentTool("fetch_wiki_page", { url: "" });
   assert.equal(execution.status, "invalid_input");

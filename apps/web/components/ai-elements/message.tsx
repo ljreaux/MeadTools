@@ -90,6 +90,7 @@ function ChatMarkdownLink({
   node: _node,
   ...props
 }: ComponentProps<"a"> & { node?: unknown }) {
+  void _node;
   const [isOpen, setIsOpen] = useState(false);
   const linkClassName = cn(
     "wrap-anywhere font-medium text-primary underline",

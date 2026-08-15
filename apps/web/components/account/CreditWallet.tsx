@@ -12,6 +12,10 @@ import {
 } from "@/hooks/reactQuery/useCreditAccount";
 import { cn } from "@/lib/utils";
 import { CREDIT_PACKS, type CreditPack } from "@meadtools/credit-accounting";
+import {
+  CHAT_TURN_CREDIT_WARNING_CREDITS,
+  CHAT_TURN_PREAUTHORIZATION_CREDITS
+} from "@meadtools/chat-domain";
 import { CircleAlert, History, LoaderCircle, Plus, RefreshCw, WalletCards } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -43,6 +47,12 @@ export default function CreditWallet({
   const effectiveNextCursor = nextCursor === undefined
     ? wallet.data?.nextCursor ?? null
     : nextCursor;
+  const availableCredits = wallet.data?.availableCredits ?? 0;
+  const creditBalanceIsNegative = availableCredits < 0;
+  const creditBalanceBelowPreauthorization = availableCredits < CHAT_TURN_PREAUTHORIZATION_CREDITS;
+  const creditBalanceWarning =
+    !creditBalanceBelowPreauthorization &&
+    availableCredits <= CHAT_TURN_CREDIT_WARNING_CREDITS;
 
   async function loadMore() {
     if (!effectiveNextCursor || loadingMore) return;
@@ -107,12 +117,24 @@ export default function CreditWallet({
           {wallet.isLoading ? (
             <Skeleton className="h-10 w-36" />
           ) : (
-            <CardTitle className="text-4xl tabular-nums">
-              {(wallet.data?.availableCredits ?? 0).toLocaleString()}
+            <CardTitle className={cn(
+              "text-4xl tabular-nums",
+              creditBalanceBelowPreauthorization
+                ? "text-destructive"
+                : creditBalanceWarning
+                  ? "text-warning"
+                  : undefined
+            )}>
+              {availableCredits.toLocaleString()}
             </CardTitle>
           )}
         </CardHeader>
       </Card>
+      {creditBalanceIsNegative ? (
+        <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {t("credits.negativeBalance")}
+        </p>
+      ) : null}
 
       {wallet.data?.purchasesEnabled && !paymentRestricted ? (
         <section className="mt-6">

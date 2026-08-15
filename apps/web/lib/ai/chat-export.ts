@@ -20,7 +20,7 @@ export function formatChatSessionMarkdown(options: {
 }): string {
   const { messages, exportedAt, model } = options;
   const header = [
-    "# MeadTools recipe chatbot evaluator session",
+    "# MeadTools assistant session",
     "",
     `- Exported: ${exportedAt.toISOString()}`,
     `- Model: ${model ?? "Not reported"}`,

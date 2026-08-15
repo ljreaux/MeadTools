@@ -52,6 +52,7 @@ import Header from "@/components/account/header";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
@@ -69,6 +70,10 @@ import {
   buildRecipeDraftInputSchema,
   type BuildRecipeDraftInput
 } from "@meadtools/recipe-workflows";
+import {
+  CHAT_TURN_CREDIT_WARNING_CREDITS,
+  CHAT_TURN_PREAUTHORIZATION_CREDITS
+} from "@meadtools/chat-domain";
 import type { RecipeDataV2 } from "@meadtools/schemas";
 import type { BrewActionProposal } from "@meadtools/brew-domain/action-proposal";
 import {
@@ -200,12 +205,14 @@ export default function RecipeChatTest({
   embedded = false
 }: RecipeChatProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const token = useAuthToken();
   const { status: authStatus } = useSession();
   const canUseChat = Boolean(token) || authStatus === "authenticated";
+  const showEvaluatorDetails = user?.role === "admin";
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string>();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
@@ -265,6 +272,11 @@ export default function RecipeChatTest({
   const createRecipeMutation = useCreateRecipeMutation();
   const createBrewEntryMutation = useCreateBrewEntry();
   const creditAccount = useCreditAccount();
+  const availableCredits = creditAccount.data?.availableCredits;
+  const creditBalanceBelowPreauthorization =
+    typeof availableCredits === "number" &&
+    availableCredits < CHAT_TURN_PREAUTHORIZATION_CREDITS;
+  const creditBalanceIsNegative = (availableCredits ?? 0) < 0;
   const [persistedMessageStatuses, setPersistedMessageStatuses] = useState<
     Record<string, PersistedChatMessage["status"]>
   >({});
@@ -393,10 +405,11 @@ export default function RecipeChatTest({
       if (insufficientCreditsRef.current) {
         const credits = insufficientCreditsRef.current;
         setInsufficientCredits(credits);
-        setError(t("chatbotTest.errors.insufficientCredits"));
+        const creditError = creditErrorMessage(credits, t);
+        setError(creditError);
         toast({
           title: t("chatbotTest.insufficientCredits"),
-          description: t("chatbotTest.errors.insufficientCredits"),
+          description: creditError,
           variant: "destructive"
         });
         return;
@@ -675,7 +688,6 @@ export default function RecipeChatTest({
       cancelled = true;
     };
   // `token` may refresh while this evaluator is open; reload only on a real identity change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canUseChat, token]);
 
   useEffect(() => {
@@ -690,7 +702,6 @@ export default function RecipeChatTest({
     }, 200);
     return () => window.clearTimeout(timeout);
   // Search is intentionally server-backed so conversations outside the loaded page remain findable.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canUseChat, historyOpen, historyQuery, historyStatusFilter, token]);
 
   const messages = useMemo(
@@ -722,6 +733,12 @@ export default function RecipeChatTest({
       setError(t("chatbotTest.errors.noToken"));
       return;
     }
+    if (creditBalanceBelowPreauthorization) {
+      const credits = { availableCredits };
+      setInsufficientCredits(credits);
+      setError(creditErrorMessage(credits, t));
+      return;
+    }
 
     setInput("");
     setError(undefined);
@@ -744,7 +761,7 @@ export default function RecipeChatTest({
       } else if (insufficientCreditsRef.current) {
         const credits = insufficientCreditsRef.current;
         setInsufficientCredits(credits);
-        setError(t("chatbotTest.errors.insufficientCredits"));
+        setError(creditErrorMessage(credits, t));
       } else {
         setError(t("chatbotTest.errors.requestFailed"));
       }
@@ -1208,6 +1225,11 @@ export default function RecipeChatTest({
                 <label>
                   <span className="sr-only">{t("chatbotTest.contextLabel")}</span>
                   <SearchableInput
+                    // The picker sits at the bottom of every chat layout.
+                    // Always overlay upward so results cannot be clipped by
+                    // the transcript card or fall below the viewport.
+                    dropdownPlacement="above"
+                    dropdownPortal
                     getLabel={contextOptionLabel}
                     getValue={contextOptionValue}
                     items={contextOptions}
@@ -1243,7 +1265,7 @@ export default function RecipeChatTest({
                   </p>
                 ) : null}
                 <ChatCreditBalance
-                  availableCredits={creditAccount.data?.availableCredits}
+                  availableCredits={availableCredits}
                   insufficient={Boolean(insufficientCredits)}
                   isLoading={creditAccount.isLoading}
                   t={t}
@@ -1255,7 +1277,10 @@ export default function RecipeChatTest({
                   {t("chatbotTest.stopStreaming")}
                 </Button>
               ) : (
-                <Button disabled={!input.trim() || !canUseChat} type="submit">
+                <Button
+                  disabled={!input.trim() || !canUseChat || creditBalanceBelowPreauthorization}
+                  type="submit"
+                >
                   <Send />
                   {t("chatbotTest.send")}
                 </Button>
@@ -1271,12 +1296,20 @@ export default function RecipeChatTest({
                   {t("chatbotTest.newChat")}
                 </Button>
               </div>
-            ) : insufficientCredits ? (
+            ) : creditBalanceBelowPreauthorization || insufficientCredits ? (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">
                 <p>
-                  {error}
-                  {typeof insufficientCredits.availableCredits === "number"
-                    ? ` ${t("chatbotTest.availableCredits", { credits: insufficientCredits.availableCredits.toLocaleString() })}`
+                  {creditBalanceIsNegative
+                    ? t("chatbotTest.errors.negativeCreditBalance")
+                    : creditBalanceBelowPreauthorization
+                      ? t("chatbotTest.errors.belowPreauthorization", {
+                        credits: CHAT_TURN_PREAUTHORIZATION_CREDITS
+                      })
+                      : error}
+                  {typeof (availableCredits ?? insufficientCredits?.availableCredits) === "number"
+                    ? ` ${t("chatbotTest.availableCredits", {
+                      credits: (availableCredits ?? insufficientCredits?.availableCredits)?.toLocaleString()
+                    })}`
                     : ""}
                 </p>
                 <Button asChild size="sm" type="button" variant="outline">
@@ -1288,7 +1321,7 @@ export default function RecipeChatTest({
         </CardContent>
       </Card>
 
-      {!popupLayout ? (
+      {!popupLayout && showEvaluatorDetails ? (
         <details className="mt-4 rounded-lg border bg-card px-4 py-3">
           <summary className="cursor-pointer text-sm font-medium">
             {t("chatbotTest.evaluatorDetails")}
@@ -1491,9 +1524,11 @@ function ChatCreditBalance({
     <p
       className={cn(
         "mt-1 flex items-center gap-1 text-xs",
-        !isLoading && (insufficient || (availableCredits ?? 0) <= 0)
+        !isLoading && (insufficient || (availableCredits ?? 0) < CHAT_TURN_PREAUTHORIZATION_CREDITS)
           ? "text-destructive"
-          : "text-muted-foreground"
+          : !isLoading && (availableCredits ?? 0) <= CHAT_TURN_CREDIT_WARNING_CREDITS
+            ? "text-warning"
+            : "text-muted-foreground"
       )}
       title={label}
     >
@@ -1501,6 +1536,15 @@ function ChatCreditBalance({
       <span>{isLoading ? "…" : label}</span>
     </p>
   );
+}
+
+function creditErrorMessage(
+  credits: { availableCredits?: number },
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
+  return typeof credits.availableCredits === "number" && credits.availableCredits < 0
+    ? t("chatbotTest.errors.negativeCreditBalance")
+    : t("chatbotTest.errors.insufficientCredits");
 }
 
 function ChatThreadHeader({

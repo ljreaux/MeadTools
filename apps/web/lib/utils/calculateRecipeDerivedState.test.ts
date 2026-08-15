@@ -58,6 +58,18 @@ test("stabilizer pH is rounded to one decimal before lookup", () => {
   assert.equal(roundedUp.sulfite, (3.78541 * 39) / 570);
 });
 
+test("stabilizer results never return a negative sorbate amount at high ABV", () => {
+  const result = calculateRecipeStabilizerResults({
+    addingStabilizers: true,
+    stabilizerType: "kmeta",
+    totalVolumeL: 3.78541,
+    abv: 18,
+    phReading: "3.5"
+  });
+
+  assert.equal(result.sorbate, 0);
+});
+
 test("derived recipe POST serializes the same golden result", async () => {
   const request = new NextRequest("http://localhost/api/recipes/derived", {
     method: "POST",

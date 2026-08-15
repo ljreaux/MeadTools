@@ -54,6 +54,8 @@ export type CreditQuote = {
 export type CreditSettlement = {
   reservationCredits: number;
   chargedCredits: number;
+  /** Usage beyond the preauthorization. This becomes a bounded negative balance. */
+  overageCredits: number;
   settlementCreditsDelta: number;
 };
 
@@ -72,18 +74,6 @@ export class InsufficientCreditsError extends Error {
     this.name = "InsufficientCreditsError";
     this.availableCredits = options.availableCredits;
     this.requiredCredits = options.requiredCredits;
-  }
-}
-
-export class SettlementExceedsReservationError extends Error {
-  readonly reservationCredits: number;
-  readonly chargedCredits: number;
-
-  constructor(options: { reservationCredits: number; chargedCredits: number }) {
-    super("A credit settlement cannot exceed its reservation.");
-    this.name = "SettlementExceedsReservationError";
-    this.reservationCredits = options.reservationCredits;
-    this.chargedCredits = options.chargedCredits;
   }
 }
 
@@ -206,9 +196,11 @@ export function reservationCreditsDelta(reservationCredits: number): number {
 }
 
 /**
- * Settling a reservation appends the unused portion as a positive ledger
- * adjustment. The original reservation remains immutable, so the two entries
- * sum to the final charged amount.
+ * Settling a reservation appends either the unused portion as a positive
+ * ledger adjustment or a bounded overage as a negative adjustment. The
+ * original reservation remains immutable, so the two entries always sum to
+ * the final measured charge. An overage may leave the account negative and
+ * therefore unable to reserve another provider turn until it is topped up.
  */
 export function settleReservedCredits(options: {
   reservationCredits: number;
@@ -217,13 +209,10 @@ export function settleReservedCredits(options: {
   assertNonNegativeInteger(options.reservationCredits, "reservation credits");
   assertNonNegativeInteger(options.chargedCredits, "charged credits");
 
-  if (options.chargedCredits > options.reservationCredits) {
-    throw new SettlementExceedsReservationError(options);
-  }
-
   return {
     reservationCredits: options.reservationCredits,
     chargedCredits: options.chargedCredits,
+    overageCredits: Math.max(0, options.chargedCredits - options.reservationCredits),
     settlementCreditsDelta: options.reservationCredits - options.chargedCredits
   };
 }

@@ -222,6 +222,10 @@ function fixedIngredientVolumeConflict(input: BuildRecipeDraftInput): string | u
     const requestedVolumeL = input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
     if (fixedVolumeL < requestedVolumeL - 0.000001) return undefined;
     const names = input.ingredients.map((ingredient) => ingredient.name).join(", ");
+    const fruitMass = input.ingredients.filter(isSolidFruitMassIngredient);
+    if (fruitMass.length > 0) {
+      return `The stated fruit load (${fruitMass.map((ingredient) => ingredient.name).join(", ")}) contributes enough expected juice volume to fill the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its juice still affects finished volume and gravity. Reduce the fruit load or choose a larger finished batch volume before calculating the remaining fermentables.`;
+    }
     return `The fixed ingredient${input.ingredients.length === 1 ? "" : "s"} (${names}) already use the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left to reconcile the supplied fermentables with the requested gravity target. Reduce a fixed liquid or fermentable amount, or choose a larger finished batch volume.`;
   } catch {
     // Missing catalog data is handled by the normal intake questions.
@@ -468,6 +472,12 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
         .filter((ingredient) => ingredient.volumeL > 0)
         .map((ingredient) => ingredient.name)
         .join(", ");
+      const fixedPrimaryFruit = fixedPrimary.filter(isSolidFruitMassSuppliedIngredient);
+      if (fixedPrimaryFruit.length > 0) {
+        throw new Error(
+          `The stated primary fruit load (${fixedPrimaryFruit.map((ingredient) => ingredient.name).join(", ")}) leaves no liquid room in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its expected juice volume still contributes to the batch. Reduce the primary fruit load or choose a larger finished batch volume.`
+        );
+      }
       throw new Error(
         `The fixed primary ingredient${fixedPrimaryNames.includes(",") ? "s" : ""} (${fixedPrimaryNames || "provided liquid"}) already use${fixedPrimaryNames.includes(",") ? "" : "s"} the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. Reduce a fixed liquid ingredient or choose a larger batch; lowering the ABV target alone cannot resolve this volume conflict.`
       );
@@ -638,6 +648,14 @@ function solvePrimaryVolumeWithBacksweetening(input: {
 }
 
 type SuppliedIngredient = { name: string; catalogId?: number; category: string; brix: number; sg: number; volumeL: number; secondary: boolean; role: "fixed" | "adjustable_fermentable" | "fill_liquid" };
+
+function isSolidFruitMassIngredient(ingredient: BuildRecipeDraftInput["ingredients"][number]): boolean {
+  return ingredient.amount?.kind === "weight" && /fruit/i.test(ingredient.category ?? inferCategory(ingredient.name));
+}
+
+function isSolidFruitMassSuppliedIngredient(ingredient: SuppliedIngredient): boolean {
+  return /fruit/i.test(ingredient.category);
+}
 
 function toSuppliedIngredient(ingredient: BuildRecipeDraftInput["ingredients"][number]): SuppliedIngredient {
   const brix = ingredientBrix(ingredient);

@@ -15,6 +15,16 @@ export const CHAT_THREAD_ASSISTANT_RESERVATION_BYTES = 65_536;
 export const CHAT_PROVIDER_HISTORY_MESSAGES = 16;
 /** Covers the compact title request's bounded prompt and 32-token completion. */
 export const CHAT_TITLE_RESERVATION_TOKENS = 2_000;
+/**
+ * A small up-front authorization keeps chat approachable while the immutable
+ * ledger settles measured provider usage afterward. A bounded overage can put
+ * the account below zero, which blocks the next provider turn until top-up.
+ */
+export const CHAT_TURN_PREAUTHORIZATION_CREDITS = 67;
+/** A 1.5× warning band gives brewers time to top up before chat is blocked. */
+export const CHAT_TURN_CREDIT_WARNING_CREDITS = Math.floor(
+  CHAT_TURN_PREAUTHORIZATION_CREDITS * 1.5
+);
 
 export const chatConversationStateSchema = z.enum(["active", "archived"]);
 export const chatMessageRoleSchema = z.enum(["user", "assistant"]);
@@ -72,8 +82,9 @@ export function conversationIsAtCapacity(options: {
 
 /**
  * Reserve for the worst bounded provider turn by pricing every remaining token
- * at the output rate. This intentionally over-reserves, then settlement
- * returns the unused credits from the immutable ledger.
+ * at the output rate. The customer hold is intentionally capped at a small,
+ * fixed preauthorization; settlement records the exact measured charge and
+ * can create a bounded negative balance when usage exceeds that hold.
  */
 export function reserveCreditsForBoundedChatTurn(options: {
   maxProviderTokens: number;
@@ -82,7 +93,7 @@ export function reserveCreditsForBoundedChatTurn(options: {
   feePolicy: CreditFeePolicy;
 }): CreditQuote {
   const titleTokens = options.includesTitleGeneration ? CHAT_TITLE_RESERVATION_TOKENS : 0;
-  return quoteTurnCredits({
+  const maximumQuote = quoteTurnCredits({
     usage: {
       inputTokens: 0,
       cachedInputTokens: 0,
@@ -91,6 +102,10 @@ export function reserveCreditsForBoundedChatTurn(options: {
     pricing: options.pricing,
     feePolicy: options.feePolicy
   });
+  return {
+    ...maximumQuote,
+    chargedCredits: Math.min(maximumQuote.chargedCredits, CHAT_TURN_PREAUTHORIZATION_CREDITS)
+  };
 }
 
 /** Returns no charge when a turn stayed entirely deterministic. */

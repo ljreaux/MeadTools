@@ -4,6 +4,8 @@ import {
   CHAT_THREAD_ASSISTANT_RESERVATION_BYTES,
   CHAT_THREAD_MAX_CONTENT_BYTES,
   CHAT_THREAD_MAX_MESSAGES,
+  CHAT_TURN_CREDIT_WARNING_CREDITS,
+  CHAT_TURN_PREAUTHORIZATION_CREDITS,
   CHAT_TITLE_RESERVATION_TOKENS,
   conversationExpiresAt,
   conversationIsAtCapacity,
@@ -56,7 +58,20 @@ test("chat credit billing reserves the bounded maximum and skips deterministic t
     feePolicy
   });
   assert.equal(CHAT_TITLE_RESERVATION_TOKENS, 2_000);
+  assert.equal(CHAT_TURN_PREAUTHORIZATION_CREDITS, 67);
+  assert.equal(CHAT_TURN_CREDIT_WARNING_CREDITS, 100);
   assert.equal(reservation.chargedCredits, 22);
+  const expensiveReservation = reserveCreditsForBoundedChatTurn({
+    maxProviderTokens: 66_000,
+    includesTitleGeneration: true,
+    pricing: {
+      uncachedInputPicousdPerMillionTokens: 750_000_000_000n,
+      cachedInputPicousdPerMillionTokens: 75_000_000_000n,
+      outputPicousdPerMillionTokens: 4_500_000_000_000n
+    },
+    feePolicy: { markupBasisPoints: 3_500, fixedTurnCredits: 0, minimumTurnCredits: 1 }
+  });
+  assert.equal(expensiveReservation.chargedCredits, CHAT_TURN_PREAUTHORIZATION_CREDITS);
   assert.equal(
     quoteCreditsForChatUsage({
       usage: { inputTokens: 1_000, cachedInputTokens: 200, outputTokens: 300 },
