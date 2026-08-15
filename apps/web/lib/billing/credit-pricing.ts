@@ -19,15 +19,33 @@ export const initialFireworksDeepseekV4FlashPricing = {
 } as const;
 
 /**
- * The initial 25% usage markup leaves room for payment processing and a small
- * operating margin. Credit packs remain simple whole-credit purchases.
+ * Snapshot of direct OpenAI pricing checked on 2026-08-14. The chatbot uses
+ * the dated model ID so a future model upgrade must add a new price version.
  */
-export const initialCreditFeePolicy = {
-  version: "standard-25-percent-2026-08-08",
+export const initialOpenAIGpt54MiniPricing = {
+  provider: "openai",
+  model: "gpt-5.4-mini-2026-03-17",
+  version: "openai-gpt-5.4-mini-2026-03-17-2026-08-14",
+  pricing: {
+    uncachedInputPicousdPerMillionTokens: BigInt(750_000_000_000),
+    cachedInputPicousdPerMillionTokens: BigInt(75_000_000_000),
+    outputPicousdPerMillionTokens: BigInt(4_500_000_000_000)
+  } satisfies ModelTokenPricing,
+  effectiveAt: new Date("2026-08-14T00:00:00.000Z"),
+  sourceUrl: "https://openai.com/api/pricing/"
+} as const;
+
+/**
+ * Stable customer-facing credit burn policy for beta and paid launch. Future
+ * retail economics should adjust new credit-pack pricing, not silently change
+ * what an existing credit balance can purchase.
+ */
+export const currentCreditFeePolicy = {
+  version: "standard-35-percent-2026-08-14",
   policy: {
-    markupBasisPoints: 2_500,
+    markupBasisPoints: 3_500,
     fixedTurnCredits: 0,
     minimumTurnCredits: 1
   } satisfies CreditFeePolicy,
-  effectiveAt: new Date("2026-08-08T00:00:00.000Z")
+  effectiveAt: new Date("2026-08-14T00:00:00.000Z")
 } as const;

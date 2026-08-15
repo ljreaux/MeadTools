@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { EventType } from "@tanstack/ai/client";
 import { streamRecipeChatTurn } from "./tanstack-chat-stream";
+import { ChatProviderRequestError } from "./chat-model";
 
 test("adapts a recipe turn to the TanStack AG-UI event stream", async () => {
   const chunks = [];
@@ -47,4 +48,25 @@ test("adapts a recipe turn to the TanStack AG-UI event stream", async () => {
     "A concise recipe answer."
   );
   assert.equal(chunks.at(-1)?.type, EventType.RUN_FINISHED);
+});
+
+test("keeps provider transport details out of a streamed chat error", async () => {
+  const chunks = [];
+  for await (const chunk of streamRecipeChatTurn({
+    model: "gpt-5.4-mini-2026-03-17",
+    runId: "run-2",
+    threadId: "thread-2",
+    run: async () => {
+      throw new ChatProviderRequestError("openai", 503);
+    }
+  })) {
+    chunks.push(chunk);
+  }
+
+  const error = chunks.at(-1);
+  assert.equal(error?.type, EventType.RUN_ERROR);
+  assert.equal(
+    "message" in (error ?? {}) ? error.message : undefined,
+    "The recipe assistant is temporarily unavailable. Your credits were not used; please try again."
+  );
 });

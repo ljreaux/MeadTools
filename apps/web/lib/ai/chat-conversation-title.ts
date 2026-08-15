@@ -2,13 +2,13 @@ import {
   conversationTitleFromMessage,
   isUnusableConversationTitle
 } from "@meadtools/chat-domain";
-import type { ChatModelClient, FireworksUsage } from "./fireworks";
+import type { ChatModelClient, ChatUsage } from "./chat-model";
 
 const MAX_TITLE_LENGTH = 80;
 
 export type ChatConversationTitleResult = {
   title: string;
-  usage: FireworksUsage;
+  usage: ChatUsage;
   providerRequestId: string;
   model: string;
 };
@@ -35,10 +35,13 @@ export async function generateChatConversationTitle(options: {
           type: "object",
           additionalProperties: false,
           properties: {
-            title: { type: "string", minLength: 2, maxLength: MAX_TITLE_LENGTH }
+            // Keep this to the strict Structured Outputs subset. Length is
+            // enforced by sanitizeConversationTitle after completion.
+            title: { type: "string" }
           },
           required: ["title"]
-        }
+        },
+        strict: true
       }
     },
     messages: [
@@ -62,11 +65,18 @@ export async function generateChatConversationTitle(options: {
 
 function titleFromCompletion(content: string | null): string | null {
   if (!content) return null;
+  const normalized = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
   try {
-    const parsed = JSON.parse(content) as { title?: unknown };
+    const parsed = JSON.parse(normalized) as { title?: unknown };
     return typeof parsed.title === "string" ? parsed.title : null;
   } catch {
-    return null;
+    // A title is presentation-only. Accept a compact plain-text answer if a
+    // provider degrades structured output rather than showing the raw opener.
+    return normalized.includes("{") || normalized.includes("}") ? null : normalized;
   }
 }
 

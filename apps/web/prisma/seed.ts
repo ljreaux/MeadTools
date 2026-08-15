@@ -18,8 +18,9 @@ import {
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
 import {
-  initialCreditFeePolicy,
-  initialFireworksDeepseekV4FlashPricing
+  currentCreditFeePolicy,
+  initialFireworksDeepseekV4FlashPricing,
+  initialOpenAIGpt54MiniPricing
 } from "@/lib/billing/credit-pricing";
 
 if (process.env.NODE_ENV === "production") {
@@ -417,37 +418,42 @@ async function clearDb() {
 }
 
 async function seedCreditBillingDefaults() {
-  await prisma.credit_pricing_versions.upsert({
-    where: {
-      provider_model_version: {
-        provider: initialFireworksDeepseekV4FlashPricing.provider,
-        model: initialFireworksDeepseekV4FlashPricing.model,
-        version: initialFireworksDeepseekV4FlashPricing.version
-      }
-    },
-    create: {
-      provider: initialFireworksDeepseekV4FlashPricing.provider,
-      model: initialFireworksDeepseekV4FlashPricing.model,
-      version: initialFireworksDeepseekV4FlashPricing.version,
-      uncached_input_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.uncachedInputPicousdPerMillionTokens,
-      cached_input_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.cachedInputPicousdPerMillionTokens,
-      output_picousd_per_million_tokens:
-        initialFireworksDeepseekV4FlashPricing.pricing.outputPicousdPerMillionTokens,
-      effective_at: initialFireworksDeepseekV4FlashPricing.effectiveAt
-    },
-    update: {}
-  });
+  for (const pricing of [
+    initialFireworksDeepseekV4FlashPricing,
+    initialOpenAIGpt54MiniPricing
+  ]) {
+    await prisma.credit_pricing_versions.upsert({
+      where: {
+        provider_model_version: {
+          provider: pricing.provider,
+          model: pricing.model,
+          version: pricing.version
+        }
+      },
+      create: {
+        provider: pricing.provider,
+        model: pricing.model,
+        version: pricing.version,
+        uncached_input_picousd_per_million_tokens:
+          pricing.pricing.uncachedInputPicousdPerMillionTokens,
+        cached_input_picousd_per_million_tokens:
+          pricing.pricing.cachedInputPicousdPerMillionTokens,
+        output_picousd_per_million_tokens:
+          pricing.pricing.outputPicousdPerMillionTokens,
+        effective_at: pricing.effectiveAt
+      },
+      update: {}
+    });
+  }
 
   await prisma.credit_fee_policy_versions.upsert({
-    where: { version: initialCreditFeePolicy.version },
+    where: { version: currentCreditFeePolicy.version },
     create: {
-      version: initialCreditFeePolicy.version,
-      markup_basis_points: initialCreditFeePolicy.policy.markupBasisPoints,
-      fixed_turn_credits: initialCreditFeePolicy.policy.fixedTurnCredits,
-      minimum_turn_credits: initialCreditFeePolicy.policy.minimumTurnCredits,
-      effective_at: initialCreditFeePolicy.effectiveAt
+      version: currentCreditFeePolicy.version,
+      markup_basis_points: currentCreditFeePolicy.policy.markupBasisPoints,
+      fixed_turn_credits: currentCreditFeePolicy.policy.fixedTurnCredits,
+      minimum_turn_credits: currentCreditFeePolicy.policy.minimumTurnCredits,
+      effective_at: currentCreditFeePolicy.effectiveAt
     },
     update: {}
   });

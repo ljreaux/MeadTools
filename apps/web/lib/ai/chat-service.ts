@@ -24,13 +24,14 @@ import {
   isAssistantCapabilitiesRequest
 } from "./chat-capabilities";
 import type {
+  ChatProvider,
   ChatModelClient,
-  FireworksCompletion,
-  FireworksFunctionTool,
-  FireworksMessage,
-  FireworksToolCall,
-  FireworksUsage
-} from "./fireworks";
+  ChatCompletion,
+  ChatFunctionTool,
+  ChatMessage,
+  ChatToolCall,
+  ChatUsage
+} from "./chat-model";
 
 export const chatRequestSchema = z
   .object({
@@ -64,8 +65,8 @@ export type ChatTurnEvent =
   | { type: "tool_call"; toolName: string }
   | { type: "tool_result"; toolName: string; status: string };
 
-export type ChatTurnUsage = FireworksUsage & {
-  provider: "fireworks";
+export type ChatTurnUsage = ChatUsage & {
+  provider: ChatProvider;
   model: string;
   requestIds: string[];
   toolCalls: number;
@@ -136,6 +137,7 @@ export async function runChatTurn(options: {
   onEvent?: (event: ChatTurnEvent) => void;
 }): Promise<ChatTurnResult> {
   const startedAt = performance.now();
+  const provider = options.client.provider ?? "fireworks";
   if (isAssistantCapabilitiesRequest(options.request.messages.at(-1)?.content ?? "")) {
     return {
       answer: assistantCapabilitiesAnswer,
@@ -143,7 +145,7 @@ export async function runChatTurn(options: {
       recipeDraftInput: options.request.recipeDraftInput,
       usage: {
         ...emptyUsage(),
-        provider: "fireworks",
+        provider,
         model: "deterministic-capabilities",
         toolCalls: 0,
         latencyMs: Math.round(performance.now() - startedAt)
@@ -157,7 +159,7 @@ export async function runChatTurn(options: {
       recipeDraftInput: options.request.recipeDraftInput,
       usage: {
         ...emptyUsage(),
-        provider: "fireworks",
+        provider,
         model: "deterministic-scope-check",
         toolCalls: 0,
         latencyMs: Math.round(performance.now() - startedAt)
@@ -172,7 +174,7 @@ export async function runChatTurn(options: {
       recipeDraftInput: options.request.recipeDraftInput,
       usage: {
         ...emptyUsage(),
-        provider: "fireworks",
+        provider,
         model: "deterministic-abv-calculation",
         toolCalls: 0,
         latencyMs: Math.round(performance.now() - startedAt)
@@ -187,7 +189,7 @@ export async function runChatTurn(options: {
       recipeDraftInput: options.request.recipeDraftInput,
       usage: {
         ...emptyUsage(),
-        provider: "fireworks",
+        provider,
         model: "deterministic-calculator-routing",
         toolCalls: 0,
         latencyMs: Math.round(performance.now() - startedAt)
@@ -282,7 +284,7 @@ export async function runChatTurn(options: {
         recipeDraftInput,
         usage: {
           ...usage,
-          provider: "fireworks",
+          provider,
           model: "deterministic-accepted-plan-draft",
           toolCalls,
           latencyMs: Math.round(performance.now() - startedAt)
@@ -300,7 +302,7 @@ export async function runChatTurn(options: {
           recipeDraftInput,
           usage: {
             ...usage,
-            provider: "fireworks",
+            provider,
             model: "deterministic-accepted-plan-draft",
             toolCalls,
             latencyMs: Math.round(performance.now() - startedAt)
@@ -313,6 +315,7 @@ export async function runChatTurn(options: {
   while (true) {
     if (usage.totalTokens >= maxTotalProviderTokens) {
       return resultForSafetyLimit({
+        provider,
         usage,
         model,
         toolCalls,
@@ -324,6 +327,7 @@ export async function runChatTurn(options: {
     }
     if (usage.requestIds.length >= maxProviderCalls) {
       return resultForSafetyLimit({
+        provider,
         usage,
         model,
         toolCalls,
@@ -364,6 +368,7 @@ export async function runChatTurn(options: {
     const remainingOutputTokens = maxTotalOutputTokens - usage.outputTokens;
     if (remainingOutputTokens < 128) {
       return resultForSafetyLimit({
+        provider,
         usage,
         model,
         toolCalls,
@@ -522,7 +527,7 @@ export async function runChatTurn(options: {
             recipeDraftInput,
             usage: {
               ...usage,
-              provider: "fireworks",
+              provider,
               model,
               toolCalls,
               latencyMs: Math.round(performance.now() - startedAt)
@@ -537,7 +542,7 @@ export async function runChatTurn(options: {
           recipeDraftInput,
           usage: {
             ...usage,
-            provider: "fireworks",
+            provider,
             model,
             toolCalls,
             latencyMs: Math.round(performance.now() - startedAt)
@@ -557,6 +562,7 @@ export async function runChatTurn(options: {
         }
 
         return resultForTruncatedResponse({
+          provider,
           usage,
           model,
           toolCalls,
@@ -591,7 +597,7 @@ export async function runChatTurn(options: {
         recipeDraftInput,
         usage: {
           ...usage,
-          provider: "fireworks",
+          provider,
           model,
           toolCalls,
           latencyMs: Math.round(performance.now() - startedAt)
@@ -720,7 +726,7 @@ export async function runChatTurn(options: {
             recipeDraftInput,
             usage: {
               ...usage,
-              provider: "fireworks",
+              provider,
               model,
               toolCalls,
               latencyMs: Math.round(performance.now() - startedAt)
@@ -777,7 +783,7 @@ export async function runChatTurn(options: {
           recipeDraftInput,
           usage: {
             ...usage,
-            provider: "fireworks",
+            provider,
             model,
             toolCalls,
             latencyMs: Math.round(performance.now() - startedAt)
@@ -1039,7 +1045,7 @@ function requiresWikiSourceForRequest(request: ChatRequest): boolean {
 }
 
 function completionWasTruncated(
-  completion: FireworksCompletion,
+  completion: ChatCompletion,
   maxOutputTokens: number
 ): boolean {
   return (
@@ -1050,6 +1056,7 @@ function completionWasTruncated(
 }
 
 function resultForTruncatedResponse(options: {
+  provider: ChatProvider;
   usage: ReturnType<typeof emptyUsage>;
   model: string;
   toolCalls: number;
@@ -1064,7 +1071,7 @@ function resultForTruncatedResponse(options: {
     recipeDraftInput: options.recipeDraftInput,
     usage: {
       ...options.usage,
-      provider: "fireworks",
+      provider: options.provider,
       model: options.model,
       toolCalls: options.toolCalls,
       latencyMs: Math.round(performance.now() - options.startedAt)
@@ -1073,6 +1080,7 @@ function resultForTruncatedResponse(options: {
 }
 
 function resultForSafetyLimit(options: {
+  provider: ChatProvider;
   usage: ReturnType<typeof emptyUsage>;
   model: string;
   toolCalls: number;
@@ -1087,7 +1095,7 @@ function resultForSafetyLimit(options: {
     recipeDraftInput: options.recipeDraftInput,
     usage: {
       ...options.usage,
-      provider: "fireworks",
+      provider: options.provider,
       model: options.model,
       toolCalls: options.toolCalls,
       latencyMs: Math.round(performance.now() - options.startedAt)
@@ -1096,13 +1104,13 @@ function resultForSafetyLimit(options: {
 }
 
 function serializedProviderInputLength(
-  messages: FireworksMessage[],
-  tools: FireworksFunctionTool[] | undefined
+  messages: ChatMessage[],
+  tools: ChatFunctionTool[] | undefined
 ): number {
   return JSON.stringify({ messages, tools }).length;
 }
 
-function initialMessages(request: ChatRequest): FireworksMessage[] {
+function initialMessages(request: ChatRequest): ChatMessage[] {
   const activeDraftInstruction = request.activeRecipeData
     ? "An active unsaved recipe draft is available. Refine and explain tools receive it from the server; do not ask the user to paste it."
     : "No active recipe draft is available. Do not call refine or explain tools until one is available.";
@@ -1397,7 +1405,7 @@ function wikiSourceUrl(toolResults: ChatTurnResult["toolResults"]): string | und
 }
 
 async function executeToolCall(options: {
-  call: FireworksToolCall;
+  call: ChatToolCall;
   activeRecipeData: RecipeDataV2 | undefined;
   recipeDraftInput: BuildRecipeDraftInput | undefined;
   latestUserMessage: string;
@@ -3649,7 +3657,7 @@ function emptyUsage(): Omit<ChatTurnUsage, "provider" | "model" | "toolCalls" | 
 
 function collectUsage(
   aggregate: ReturnType<typeof emptyUsage>,
-  completion: FireworksCompletion
+  completion: ChatCompletion
 ): void {
   aggregate.inputTokens += completion.usage.inputTokens;
   aggregate.outputTokens += completion.usage.outputTokens;

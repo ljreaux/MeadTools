@@ -1,23 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  DEFAULT_FIREWORKS_MODEL,
+  DEFAULT_OPENAI_MODEL,
   getLocalChatbotConfig
 } from "./chat-config";
 
 test("local chatbot configuration is disabled until explicitly enabled and configured", () => {
-  assert.equal(getLocalChatbotConfig({ FIREWORKS_API_KEY: "key" }), null);
+  assert.equal(getLocalChatbotConfig({ OPENAI_API_KEY: "key" }), null);
   assert.equal(getLocalChatbotConfig({ CHATBOT_LOCAL_TEST_ENABLED: "true" }), null);
   assert.ok(getLocalChatbotConfig({
     CHATBOT_LOCAL_TEST_ENABLED: "true",
-    FIREWORKS_API_KEY: "key"
+    OPENAI_API_KEY: "key"
   }));
 });
 
 test("local chatbot configuration clamps per-turn operator-controlled limits", () => {
   const config = getLocalChatbotConfig({
     CHATBOT_LOCAL_TEST_ENABLED: "true",
-    FIREWORKS_API_KEY: "key",
+    OPENAI_API_KEY: "key",
     CHATBOT_MAX_OUTPUT_TOKENS: "9000",
     CHATBOT_MAX_TOOL_CALLS: "100",
     CHATBOT_MAX_PROVIDER_CALLS: "100",
@@ -28,7 +28,8 @@ test("local chatbot configuration clamps per-turn operator-controlled limits", (
   });
 
   assert.ok(config);
-  assert.equal(config.model, DEFAULT_FIREWORKS_MODEL);
+  assert.equal(config.provider, "openai");
+  assert.equal(config.model, DEFAULT_OPENAI_MODEL);
   assert.equal(config.maxOutputTokens, 8_000);
   assert.equal(config.maxToolCalls, 8);
   assert.equal(config.maxProviderCalls, 12);

@@ -1,4 +1,25 @@
 import { z } from "zod";
+import type {
+  ChatCompletion,
+  ChatCompletionRequest,
+  ChatModelClient,
+  ChatFunctionTool,
+  ChatMessage,
+  ChatResponseFormat,
+  ChatToolCall
+} from "./chat-model";
+
+// Compatibility aliases keep historical test fixtures focused on Fireworks
+// while the recipe workflow itself now speaks provider-neutral types.
+export type FireworksMessage = ChatMessage;
+export type FireworksToolCall = ChatToolCall;
+export type FireworksFunctionTool = ChatFunctionTool;
+export type FireworksToolChoice = ChatCompletionRequest["toolChoice"];
+export type FireworksResponseFormat = ChatResponseFormat;
+export type FireworksUsage = ChatCompletion["usage"];
+export type FireworksCompletion = ChatCompletion;
+export type FireworksCompletionRequest = ChatCompletionRequest;
+export type { ChatModelClient, ChatProvider } from "./chat-model";
 
 const FIREWORKS_INFERENCE_URL =
   "https://api.fireworks.ai/inference/v1/chat/completions";
@@ -40,65 +61,13 @@ const completionSchema = z.object({
     .optional()
 });
 
-export type FireworksMessage =
-  | { role: "system" | "user"; content: string }
-  | { role: "assistant"; content: string | null; tool_calls?: FireworksToolCall[] }
-  | { role: "tool"; tool_call_id: string; content: string };
-
-export type FireworksToolCall = z.infer<typeof toolCallSchema>;
-
-export type FireworksFunctionTool = {
-  type: "function";
-  function: {
-    name: string;
-    description: string;
-    parameters: Record<string, unknown>;
-  };
-};
-
-export type FireworksToolChoice =
-  | "auto"
-  | "none"
-  | { type: "function"; function: { name: string } };
-
-export type FireworksResponseFormat = {
-  type: "json_schema";
-  json_schema: {
-    name: string;
-    schema: Record<string, unknown>;
-  };
-};
-
-export type FireworksUsage = {
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  cachedInputTokens: number;
-};
-
-export type FireworksCompletion = {
-  id: string;
-  model: string;
-  message: Extract<FireworksMessage, { role: "assistant" }>;
-  usage: FireworksUsage;
-  finishReason?: string | null;
-};
-
-export type FireworksCompletionRequest = {
-  messages: FireworksMessage[];
-  tools?: FireworksFunctionTool[];
-  toolChoice?: FireworksToolChoice;
-  reasoningEffort?: "none" | "low" | "medium" | "high" | "max";
-  responseFormat?: FireworksResponseFormat;
-  maxOutputTokens: number;
-  userId: number;
-};
-
-export interface ChatModelClient {
-  complete(request: FireworksCompletionRequest): Promise<FireworksCompletion>;
-}
-
+/**
+ * Retained only for historical / rollback support. New chatbot profiles use
+ * the direct OpenAI adapter in openai.ts.
+ */
 export class FireworksChatClient implements ChatModelClient {
+  readonly provider = "fireworks" as const;
+
   constructor(
     private readonly options: {
       apiKey: string;
@@ -108,9 +77,7 @@ export class FireworksChatClient implements ChatModelClient {
     }
   ) {}
 
-  async complete(
-    request: FireworksCompletionRequest
-  ): Promise<FireworksCompletion> {
+  async complete(request: ChatCompletionRequest): Promise<ChatCompletion> {
     let lastError: unknown;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
@@ -163,7 +130,7 @@ export class FireworksChatClient implements ChatModelClient {
           message: {
             role: "assistant",
             content: choice.message.content ?? null,
-            tool_calls: choice.message.tool_calls
+            tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined
           },
           usage: {
             inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
@@ -182,7 +149,6 @@ export class FireworksChatClient implements ChatModelClient {
     }
     throw lastError;
   }
-
 }
 
 function isRetryableFireworksError(error: unknown): boolean {

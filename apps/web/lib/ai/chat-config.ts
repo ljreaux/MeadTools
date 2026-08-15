@@ -1,5 +1,9 @@
-export const DEFAULT_FIREWORKS_MODEL =
-  "accounts/fireworks/models/deepseek-v4-flash";
+/**
+ * This dated model ID is intentionally pinned. A model upgrade is a reviewed
+ * profile/pricing change followed by evaluator qualification, never an alias
+ * update hidden behind a deployment.
+ */
+export const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini-2026-03-17";
 /** Generous only for private evaluator sessions. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_MAX_TOOL_CALLS = 7;
@@ -17,6 +21,7 @@ export const DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS = 60_000;
 export const DEFAULT_MAX_TOTAL_PROVIDER_TOKENS = 60_000;
 
 export type LocalChatbotConfig = {
+  provider: "openai";
   apiKey: string;
   model: string;
   maxOutputTokens: number;
@@ -38,13 +43,14 @@ export function getLocalChatbotConfig(
 ): LocalChatbotConfig | null {
   if (environment.CHATBOT_LOCAL_TEST_ENABLED !== "true") return null;
 
-  const apiKey = environment.FIREWORKS_API_KEY?.trim();
+  const apiKey = environment.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
 
   return {
+    provider: "openai",
     apiKey,
     model:
-      environment.CHATBOT_FIREWORKS_MODEL?.trim() || DEFAULT_FIREWORKS_MODEL,
+      environment.CHATBOT_OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL,
     maxOutputTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_OUTPUT_TOKENS,
       DEFAULT_MAX_OUTPUT_TOKENS,

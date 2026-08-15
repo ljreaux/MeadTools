@@ -1,5 +1,6 @@
 import type { StreamChunk } from "@tanstack/ai";
 import { EventType } from "@tanstack/ai/client";
+import { ChatProviderRequestError } from "./chat-model";
 import type { ChatTurnEvent, ChatTurnResult } from "./chat-service";
 
 const DISPLAY_CHUNK_SIZE = 48;
@@ -87,7 +88,7 @@ async function* createStream(options: {
       finishReason: "stop"
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Chatbot request failed.";
+    const message = userFacingChatError(error);
     yield {
       type: EventType.RUN_ERROR,
       runId: options.runId,
@@ -98,6 +99,13 @@ async function* createStream(options: {
       error: { message }
     };
   }
+}
+
+function userFacingChatError(error: unknown): string {
+  if (error instanceof ChatProviderRequestError) {
+    return "The recipe assistant is temporarily unavailable. Your credits were not used; please try again.";
+  }
+  return error instanceof Error ? error.message : "Chatbot request failed.";
 }
 
 function splitForDisplay(answer: string): string[] {

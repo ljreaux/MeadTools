@@ -21,7 +21,7 @@ VALUES (
 )
 ON CONFLICT ("provider", "model", "version") DO NOTHING;
 
--- This 25% usage markup is the initial reserve for payment processing and a
+-- The 35% usage markup is the stable reserve for payment processing and a
 -- small operating margin. It is distinct from the whole-credit pack price.
 INSERT INTO "credit_fee_policy_versions" (
   "version",
@@ -31,10 +31,10 @@ INSERT INTO "credit_fee_policy_versions" (
   "effective_at"
 )
 VALUES (
-  'standard-25-percent-2026-08-08',
-  2500,
+  'standard-35-percent-2026-08-14',
+  3500,
   0,
   1,
-  '2026-08-08T00:00:00.000Z'
+  '2026-08-14T00:00:00.000Z'
 )
 ON CONFLICT ("version") DO NOTHING;

@@ -15,8 +15,9 @@ import {
 } from "@/lib/ai/chat-service";
 import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { generateChatConversationTitle } from "@/lib/ai/chat-conversation-title";
+import { ChatProviderRequestError } from "@/lib/ai/chat-model";
 import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
-import { FireworksChatClient } from "@/lib/ai/fireworks";
+import { OpenAIChatClient } from "@/lib/ai/openai";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
 import { getAdditiveCatalogForChat } from "@/lib/db/additives";
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest) {
   let creditFeePolicy: Awaited<ReturnType<typeof getActiveCreditFeePolicy>>;
   try {
     [creditPricing, creditFeePolicy] = await Promise.all([
-      getActiveCreditPricing({ provider: "fireworks", model: config.model, at: requestStartedAt }),
+      getActiveCreditPricing({ provider: config.provider, model: config.model, at: requestStartedAt }),
       getActiveCreditFeePolicy({ at: requestStartedAt })
     ]);
     const reservation = reserveCreditsForBoundedChatTurn({
@@ -249,10 +250,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const client = new FireworksChatClient({
+  const client = new OpenAIChatClient({
     apiKey: config.apiKey,
-    model: config.model,
-    annotations: { project: "chatbot", environment: config.usageEnvironment }
+    model: config.model
   });
   const selectedContextReference = selectedContext
     ? contextReferenceFrom(selectedContext)
@@ -271,7 +271,25 @@ export async function POST(request: NextRequest) {
               client,
               userId: access.userId,
               firstMessage: initialMessageContent
-            }).catch(() => undefined)
+            }).catch((error) => {
+              const providerError = error instanceof ChatProviderRequestError
+                ? {
+                    status: error.status,
+                    ...(error.details?.type ? { type: error.details.type } : {}),
+                    ...(error.details?.code ? { code: error.details.code } : {}),
+                    ...(error.details?.parameter ? { parameter: error.details.parameter } : {})
+                  }
+                : undefined;
+              console.warn("Hosted chatbot title generation failed.", {
+                requestId,
+                userId: access.userId,
+                provider: config.provider,
+                model: config.model,
+                error: error instanceof Error ? error.message : "unknown",
+                ...(providerError ? { providerError } : {})
+              });
+              return undefined;
+            })
           : undefined;
         const result = await runChatTurn({
           client,
@@ -335,7 +353,7 @@ export async function POST(request: NextRequest) {
           onEvent
         });
         const titleResult = titlePromise ? await titlePromise : undefined;
-        const usage = mergeTitleUsage(result.usage, titleResult);
+        const usage = mergeTitleUsage(result.usage, titleResult, config.provider);
         providerResultCompleted = true;
         const creditQuote = quoteCreditsForChatUsage({
           usage: {
@@ -439,6 +457,7 @@ export async function POST(request: NextRequest) {
           await recordFailedUsage({
             requestId,
             userId: access.userId,
+            provider: config.provider,
             model: config.model,
             requestStartedAt
           });
@@ -499,6 +518,7 @@ async function recordCompletedUsage(options: {
 async function recordFailedUsage(options: {
   requestId: string;
   userId: number;
+  provider: "openai";
   model: string;
   requestStartedAt: Date;
 }) {
@@ -507,7 +527,7 @@ async function recordFailedUsage(options: {
       requestId: options.requestId,
       userId: options.userId,
       usage: {
-        provider: "fireworks",
+        provider: options.provider,
         model: options.model,
         inputTokens: 0,
         outputTokens: 0,
@@ -572,13 +592,14 @@ function citationsFromAnswer(answer: string) {
 
 function mergeTitleUsage(
   usage: Awaited<ReturnType<typeof runChatTurn>>["usage"],
-  title: Awaited<ReturnType<typeof generateChatConversationTitle>> | undefined
+  title: Awaited<ReturnType<typeof generateChatConversationTitle>> | undefined,
+  provider: "openai"
 ) {
   if (!title) return usage;
   return {
     ...usage,
     ...(usage.requestIds.length === 0
-      ? { provider: "fireworks" as const, model: title.model }
+      ? { provider, model: title.model }
       : {}),
     inputTokens: usage.inputTokens + title.usage.inputTokens,
     cachedInputTokens: usage.cachedInputTokens + title.usage.cachedInputTokens,
