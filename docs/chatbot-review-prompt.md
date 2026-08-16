@@ -1,4 +1,10 @@
+# Hosted chatbot review prompt
+
 Perform a read-only code review of the hosted-chatbot feature work in this repository.
+
+Use [the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md)
+as the current design reference. Dated plans, review findings, and evaluator
+exports are historical context only and must be verified against code/schema.
 
 First, read AGENTS.md completely. Do not start development servers, do not call the real model provider, do not inspect .env files or credentials, and do not modify application source code. Treat the current branch as potentially dirty: preserve all existing changes.
 

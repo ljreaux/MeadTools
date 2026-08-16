@@ -4,6 +4,13 @@ Use a fresh evaluator session for each scenario unless the scenario explicitly
 contains multiple messages. Export any notable session into the ignored
 `docs/chatbot-evals/exports/` folder for review.
 
+These prompts evaluate the behavior defined in
+[the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md).
+They are not authorization to contact a real provider: obtain explicit approval
+that states the model and expected number of turns/spend before any paid-model
+run. Historical evaluator reports may name earlier providers or persistence
+behavior and are evidence, not current architecture.
+
 ## 1. One-message complete blueberry draft
 
 > Create a 5 gallon blueberry mead recipe. I want it to finish dry and backsweeten, with 15 lb of blueberry split evenly between primary and secondary. Target about 16% ABV. Use Lalvin 71B, Fermaid K only with Go-Ferm, and three nutrient additions. Use potassium metabisulfite; I am not taking a pH reading.

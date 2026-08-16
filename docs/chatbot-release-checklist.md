@@ -5,13 +5,17 @@ repeat existing website authentication, email, Google OAuth, or unrelated
 application configuration. Secrets belong only in Vercel environment variables
 and never in source control, exports, screenshots, or chat logs.
 
+Architecture, retention, credit, Stripe, and provider decisions are defined in
+[the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md).
+This checklist records operational gates; it does not supersede that document.
+
 ## Private beta: required configuration
 
 ### Vercel Production or the dedicated beta Preview branch
 
 - [ ] Set `CHATBOT_LOCAL_TEST_ENABLED=true`. Despite its historical name, this
       is the server-side fail-closed switch used to enable the hosted chatbot.
-- [ ] Set `FIREWORKS_API_KEY` to the dedicated beta/production service-account
+- [ ] Set `OPENAI_API_KEY` to the dedicated beta/production service-account
       key. Keep local, preview, and production keys separate for auditability.
 - [ ] Set `CHATBOT_USAGE_ENVIRONMENT` to a clear audit label such as `beta`.
 - [ ] Confirm the existing `DATABASE_URL` targets the database intended for
@@ -25,7 +29,7 @@ and never in source control, exports, screenshots, or chat logs.
 These chatbot-limit variables are already active through safe code defaults;
 they are optional overrides, not a setup requirement:
 
-- `CHATBOT_FIREWORKS_MODEL`
+- `CHATBOT_OPENAI_MODEL`
 - `CHATBOT_MAX_OUTPUT_TOKENS`
 - `CHATBOT_MAX_TOOL_CALLS`
 - `CHATBOT_MAX_PROVIDER_CALLS`
@@ -67,10 +71,10 @@ value cannot raise them beyond the reviewed maximum.
 - [ ] Verify an allowlisted user can create a thread, send a prompt, see the
       balance change, return to the thread, and save a completed recipe.
 - [ ] Confirm one insufficient-credit request returns a client-visible block
-      before Fireworks receives a call.
+      before OpenAI receives a call.
 - [ ] Confirm the 90-day chat-retention language and cleanup behavior match the
       agreed policy.
-- [ ] Check Fireworks usage by the dedicated key/model after the first beta
+- [ ] Check OpenAI usage by the dedicated key/model after the first beta
       sessions. Keep auto-reload disabled until normal usage is established.
 
 ## Chat quality gate
@@ -110,6 +114,9 @@ ready. It is intentionally separate from beta launch.
       test succeeds. Keys alone do not enable Checkout.
 - [ ] Complete one small live purchase and verify webhook-only fulfillment,
       wallet activity, and the admin recovery flow.
+- [ ] Exercise Checkout terminal events (`checkout.session.expired` and
+      `checkout.session.async_payment_failed`) and the complete documented
+      refund/dispute event set before relying on paid purchases.
 
 ## Fast rollback
 

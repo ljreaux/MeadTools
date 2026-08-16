@@ -1,401 +1,340 @@
-# Hosted recipe chatbot architecture
+# Hosted chatbot architecture
 
-## Repository findings
+> **Canonical current-state document.** This document describes the hosted
+> chatbot implemented on `feat/chatbot-provider-pivot`. Code, Prisma schema,
+> and committed migrations remain the source of truth when this document and
+> implementation differ. Historical plans, reviews, and evaluator exports are
+> evidence of decisions or test runs, not alternative architecture documents.
 
-- `packages/schemas` owns the authoritative v2 recipe and nutrient Zod schemas. `packages/core` owns recipe, gravity, ABV, nutrient, stabilizer, and conversion calculations.
-- `packages/api-contract` and `packages/api-client` already expose the `/api/recipes/derived` contract. The web route validates recipe data and calls `calculateRecipeDerivedApiResponse`.
-- The browser recipe builder keeps editable draft state in `RecipeProvider` and calculates through `@meadtools/core`; its target-OG action uses `calculateHoneyAndWaterL`.
-- The web app supports NextAuth sessions plus the existing custom bearer-token path in `verifyUser`. Recipe ownership and saving already use the `users` and recipe infrastructure.
-- Private persistent conversations are implemented for the evaluator: ownership-scoped threads, messages, draft snapshots, idempotent turns, a bounded provider transcript, and a 90-day retention window renewed by a completed turn. The daily cron purges expired threads; a separate five-minute cron marks abandoned turns as failed and reverses their unmatched credit reservations after a one-hour grace period. The evaluator remains private product infrastructure while beta access and payment operations are validated.
+## Product and access model
 
-## Selected boundaries
+MeadTools provides a private, authenticated recipe assistant for mead-focused
+work. It can help draft and refine recipes, discuss mead-brewing process and
+troubleshooting questions, retrieve MeadTools wiki guidance, route exact work
+to MeadTools calculators, and work from one explicitly selected recipe or
+brew. It is not a general-purpose assistant: clear non-mead requests are
+rejected before a provider call.
 
-```text
-packages/recipe-workflows/              deterministic, transport-free operations
-  src/contracts.ts                      versioned needs_input | recipe | error results
-  src/build-recipe-draft.ts             general recipe intake and draft operation
-  eval/representative-conversations.ts  product/evaluation cases
+The feature is a controlled beta. A user must be active, the server-side chat
+switch and provider configuration must be present, and the user must either
+have an explicit beta grant or be covered by the administrator-selected
+`all_active_users` rollout mode. Payment-restricted accounts cannot start
+chat. The default rollout mode is `beta_allowlist`; granting chat access does
+not grant credits.
 
-packages/recipe-agent/                  provider-neutral tool orchestration
-packages/wiki-knowledge/                wiki index search, source metadata, safe page retrieval
-apps/web/lib/ai/                        future model provider and server composition
-apps/web/app/api/chat/recipe/route.ts    private auth, persistence, and streaming boundary
-apps/web/components/chat/                private evaluator, thread history, and structured chat UI
-apps/web/prisma/                         conversations, messages, drafts, usage, and future entitlements
+The account experience provides the assistant, prompt-credit wallet, private
+thread history, per-thread search/archive/restore/rename/delete, transcript
+export, a recipe/brew context picker, and explicit recipe-save and brew-entry
+confirmation actions. The compact launcher and full account page are views of
+the same web feature, not separate assistants.
 
-meadtools-mcp (separate repository)      future thin adapter/development harness only
-```
+## Architecture boundaries
 
-The deterministic package has no HTTP, authentication, persistence, model, or UI dependency. It receives already interpreted structured input, validates any generated payload against `recipeDataV2Schema`, invokes `@meadtools/core`, and validates the calculated response against the existing API contract. This lets the hosted agent, web API, tests, and an optional MCP adapter share one source of workflow behavior.
+The reusable domain layer is deliberately independent of MeadTools-web:
 
-The hosted bot lives entirely in this monorepo. MeadBot and MeadBotAPI are reference implementations only: their useful ideas are a bounded tool-calling loop, source-cited wiki guidance, safe retrieval, and usage/feedback observability. MeadTools must not import them or call them at runtime.
+| Layer | Responsibility |
+| --- | --- |
+| `@meadtools/chat-domain` | Thread limits and expiry, conversation contracts, bounded credit preauthorization, and whole-turn quoting. |
+| `@meadtools/credit-accounting` | Integer credit packs, effective-dated pricing selection, exact token-cost arithmetic, rounding, and ledger settlement math. |
+| `@meadtools/recipe-agent` | Provider-neutral policy, tool definitions/execution, catalog adapters, wiki-tool boundary, recipe-draft workflow bridge, and brew-action proposals. |
+| `@meadtools/recipe-workflows`, schemas, core, and brew domain | Validated draft construction, MeadTools calculations, recipe representation, and reviewable brew-entry proposals. |
+| `@meadtools/wiki-knowledge` | Reviewed versioned wiki index plus bounded retrieval from the canonical MeadTools wiki host. |
+| `@meadtools/api-contract` | Runtime request/response schemas and the generated OpenAPI/type surface for the web adapters. |
 
-## Wiki knowledge boundary
+`apps/web` owns the product-specific boundary: Next route handlers, session and
+admin authorization, Prisma persistence, the OpenAI and Stripe transports,
+catalog/database lookups, streaming UI, and the existing recipe/brew mutation
+adapters. A provider, database, or React component must not become the sole
+home of mead domain behavior.
 
-The MeadTools wiki is authoritative for brewing process, technique,
-troubleshooting, and ingredient guidance. The model must ground those answers in
-retrieved wiki pages and cite the relevant canonical page URLs. Recipe payloads
-and calculations remain authoritative only when produced by the shared MeadTools
-schemas and calculation/workflow packages.
+## Conversational behavior and evidence
 
-`packages/wiki-knowledge` will own a versioned wiki index artifact plus its
-source revision and generation time. A server-side search tool will rank title,
-summary, category, keywords, and related pages and return a small candidate set.
-A separate fetch tool will only retrieve approved `wiki.meadtools.com` HTML URLs,
-including redirect validation and response-size/text/link limits. Neither tool
-will be a general-purpose web fetcher.
+The server receives only the new client message. It reloads the bounded,
+owned transcript and latest structured draft from the selected thread, so a
+browser cannot replace history or draft state. Deterministic fast paths handle
+capability questions, off-topic refusal, the sparkling/stabilized/
+backsweetened safety conflict, a simple ABV calculation, and exact calculator
+routing without provider cost.
 
-The index is refreshed deliberately from the wiki source/publish workflow or an
-explicit maintenance action, not by a runtime crawl or a routine full recrawl.
-A lightweight integrity check can verify indexed URLs periodically. The index is
-a routing catalog; the selected retrieved page is the source for a process claim.
+For provider-backed work, the shared agent can use validated tools to:
 
-## MCP migration decisions
+- build or explain a recipe draft and calculate a gravity target;
+- search MeadTools ingredient, additive, and yeast catalog data;
+- search the bundled wiki index and fetch a selected canonical wiki page; and
+- prepare, but never itself commit, a brew-entry proposal for the selected
+  owned brew.
 
-| MCP area                                                            | Decision                                               | Reason                                                                                                                            |
-| ------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `src/workflows.ts` intake questions and dry-vs-backsweetening rules | Rewrite incrementally in deterministic operations      | The intent is reusable, but the current function mixes inference, catalog HTTP, payload construction, calculation, and reporting. |
-| `src/volume.ts` and recipe math helpers                             | Discard duplicates                                     | Use `@meadtools/core` constants and calculations.                                                                                 |
-| `src/schemas.ts` recipe payload definitions                         | Discard                                                | Permissive records allowed schema drift; import `@meadtools/schemas` instead.                                                     |
-| `src/meadtools-client.ts`                                           | Keep only in a future thin MCP adapter                 | In-process hosted workflows should not call MeadTools back through public HTTP.                                                   |
-| `src/recipe-report.ts`                                              | Migrate presentation concepts later                    | Structured cards belong in chatbot response/view contracts, not the calculation boundary.                                         |
-| `src/prompts.ts`                                                    | Rewrite as hosted agent policy and evaluation criteria | Tool-use principles remain useful, but MCP prompt registration is not the product architecture.                                   |
-| mocked workflow tests                                               | Replace                                                | Contract tests must parse real shared schemas and run the real calculation engine.                                                |
+Recipe results are produced and validated by the shared workflow, not by
+model prose. User-supplied values take precedence over catalog defaults.
+Catalog discovery is data for selection, not evidence or permission to replace
+a supplied ingredient, amount, unit, stage, yeast, nutrient plan, or
+stabilization choice. Drafts can contain labelled assumptions/defaults, but a
+workflow returns focused missing-input or conflict information rather than
+silently changing fixed constraints. The system preserves the distinction
+between an explicit original-gravity target and an ABV-derived target.
 
-## POC progress
+The model may recommend a practical next step or ask a focused question, but
+it does not have a general web tool and cannot invoke arbitrary calculations.
+Exact calculator requests are directed to the existing MeadTools calculator.
+Process and troubleshooting guidance uses the wiki index only to find likely
+pages; a MeadTools-specific process claim must use a fetched canonical page
+and the response includes its canonical citation. The retrieval layer permits
+only HTTPS on `wiki.meadtools.com`, checks every redirect, requires HTML,
+enforces response/text/link limits, and treats retrieved text and account
+notes as untrusted reference data rather than instructions.
 
-- Completed: transport-free `build_recipe_draft` and `explain_recipe` workflow
-  operations, plus a gravity-target calculation for ABV/OG/FG conversions.
-  `build_recipe_draft` is style-neutral: it accepts any ingredient list, asks
-  for missing high-impact inputs, and can solve one selected fermentable plus
-  water against a target OG. The hosted adapter uses the existing MeadTools
-  ingredient catalog to supply catalog ID, category, and Brix before drafting.
-  A separate yeast-catalog lookup resolves a user-supplied strain (including a
-  partial strain name) to its canonical identity and nitrogen requirement before
-  nutrient planning. Catalog IDs, Brix, tool names, and internal schedule values
-  are server/model context, never user-facing content. Every draft requires a
-  nutrient plan; each operation then uses the shared
-  schemas and calculation engine. The earlier traditional-only operation
-  remains a workflow test fixture, not a hosted chatbot tool.
-- Completed: `@meadtools/recipe-agent`, a provider-neutral registry that exposes
-  deterministic recipe operations plus opt-in wiki search and restricted page
-  retrieval to a future model adapter.
-- Completed: `@meadtools/wiki-knowledge`, with the reviewed 75-page wiki index,
-  deterministic candidate search, index metadata, and constrained canonical-page
-  retrieval (host, redirect, response-size, text, and link limits).
-- Completed: provider-independent hosted-POC evaluation cases and policy for
-  tool choice, ambiguity handling, wiki grounding, citations, and untrusted URL
-  resistance. These are ready for a selected provider runner.
-- Completed: a Fireworks-compatible Node adapter and private local-test SSE
-  route at `/api/chat/recipe`. It is disabled by default, requires existing
-  authentication plus database-backed beta access, has strict
-  per-turn provider-call/output/context caps, and applies durable per-user
-  hourly/daily request and daily token limits before a provider call. It
-  reserves a bounded prompt-credit amount before provider work and settles the
-  immutable ledger against measured token use afterward.
-- Completed: a private, access-gated evaluator at `/account/chat`. It renders
-  model Markdown, tool activity, citations, and per-turn metering; it retains
-  the active draft in browser memory so follow-up refine/explain requests can
-  use it without exposing the recipe payload to the model. A user can save the
-  validated active draft to their account through the existing authenticated
-  recipe API; chat messages and evaluation telemetry remain unsaved.
-- Completed: deterministic rendering for workflow questions and calculation
-  explanations. Those responses do not make a second model request, preventing
-  uncited process advice or invented calculation explanations from being added.
-- Completed: explicit ABV targets force the gravity-target tool, and truncated
-  model output is retried once as a concise final response rather than rendered
-  as scratchwork.
-- Completed: when the model elects to retrieve a reviewed wiki reference, it
-  may use that material for clearly labeled draft assumptions when a user gives
-  a qualitative preference, rather than turning every preference into another
-  intake question. Wiki retrieval remains selective rather than a required
-  step for every recipe request.
+Known constraints are intentional: the assistant cannot guarantee that a
+generative answer is exhaustive; it may ask for necessary data rather than
+invent it; and exact calculations and packaging-safety decisions remain in the
+deterministic workflows/calculators. The hard sparkling + stabilization +
+fermentable-backsweetening conflict is answered before the provider. There is
+no public-recipe search or arbitrary public-record access tool. Prompts that
+say a draft is “inspired by” a public recipe are evaluator/product inputs, not
+authorization to fetch that recipe or expose its private data.
 
-## Checkpoint status — August 2026
+## MeadTools data, recipe, and brew integration
 
-This is a development checkpoint, not a release. The private evaluator is ready
-for continued real-model testing: it can conduct a bounded tool-calling
-conversation, use MeadTools calculations and catalog lookups, selectively cite
-the reviewed wiki, render a streaming-style chat experience, export a local
-session transcript, and save the active validated recipe draft to the signed-in
-user's account. The save path was verified end-to-end against the local app;
-it persists the structured v2 recipe payload through the existing recipe API,
-not a reconstruction of the chatbot's prose.
+Ingredient lookup exposes catalog name/category/Brix, additives expose their
+canonical unit and dosage per gallon, and yeast lookup exposes the catalog
+brand, strain, nitrogen requirement, tolerance, and temperature range. The
+server filters invalid catalog data before it becomes a tool result. The
+recipe agent validates tool arguments and returns shared workflow results;
+the web route derives a validated `RecipeDataV2` snapshot from a completed
+draft.
 
-Still deliberately out of scope for this checkpoint: public availability,
-production observability, automated wiki-index publishing, and an enabled
-Stripe purchase flow. Persistent chat history is implemented for the private
-evaluator: users can manage multiple private threads, retain the visible
-transcript for 90 days after the last completed turn, and recover explicitly
-when a thread reaches its bounded capacity. The local evaluator uses DeepSeek
-V4 Flash as its selected development default; any premium-model choice remains
-a future user-facing option rather than a silent fallback. Continue evaluating
-conversation quality and recipe output before taking public access on. Local
-evaluator transcripts remain private and ignored by Git.
+A completed draft remains unsaved until the brewer supplies a name and uses
+the existing recipe-creation flow, including the chosen privacy setting. The
+UI does not claim that drafting itself saved a recipe. The chat draft and the
+created recipe are separate at present; `chat_drafts.saved_recipe_id` is not
+written by the current save flow.
 
-For local persistence UI testing, the opt-in fixture command
-`ALLOW_CHAT_TEST_DATA=true npm run db:seed:chat-test-data --workspace=@meadtools/web`
-creates owner-scoped demo threads only in the approved local development/test
-database. It includes enough history for chat-list pagination, a 60-message
-transcript for message pagination, archived conversations, and a full thread
-for capacity recovery. It makes no provider request and refuses production or
-an unapproved database name.
+For an attached recipe or brew, the picker first returns only safe ownership-
+scoped summaries. On a turn, the server re-authorizes the selected identifier
+and loads its full current state. A recipe supplies validated recipe data. A
+brew can supply stage, dates, volume, gravity, related recipe snapshot, and a
+bounded set of recent entries; free-form entry notes are marked untrusted.
+The selection applies to that user turn only and is recorded as a lightweight
+message-context reference, never silently reattached to later turns. A brew
+action is a reviewable proposal; the browser displays its payload and sends an
+existing ownership-checked brew-entry mutation only after the brewer confirms.
 
-## Refined product feature list — August 2026
+## Private conversation persistence
 
-The chatbot is a MeadTools assistant, not a separate recipe store or a
-general-purpose agent. Its product surface is deliberately split into explicit
-capabilities so users understand what account data is in play and every
-mutation remains reviewable.
+`chat_conversations` is the owner-scoped thread root. It records title,
+active/archived state, sequence/capacity counters, activity timestamps, and
+expiry. `chat_messages` stores only user-visible user/assistant text, status,
+citations, and client-message id; it does not store raw provider prompts,
+hidden reasoning, or raw tool payloads. `chat_drafts` stores versioned
+validated draft snapshots, and `chat_generations` connects a visible assistant
+message to non-content usage metadata. `chat_message_contexts` retains the
+selected record id/label for that turn.
 
-| Capability                            | Status                  | Product boundary                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Draft a new recipe                    | Private evaluator       | Gather intent, use MeadTools catalog/calculations, present a validated draft, and save only through the existing explicit save flow.                                                                                                                                                                                                                                                                                                                          |
-| Explain/refine the current draft      | Private evaluator       | Work from browser-held validated draft state; never treat model prose as the recipe source of truth.                                                                                                                                                                                                                                                                                                                                                          |
-| Mead process and troubleshooting help | Private evaluator       | Retrieve and cite the authoritative MeadTools wiki page; direct numeric work to MeadTools calculators.                                                                                                                                                                                                                                                                                                                                                        |
-| Continue a saved recipe               | Private evaluator       | User explicitly selects one owned recipe. The assistant receives a bounded, server-loaded recipe context and may explain or prepare a refinement, but cannot overwrite the recipe directly.                                                                                                                                                                                                                                                                   |
-| Assist with an active brew            | Private evaluator       | User explicitly selects one owned brew. The assistant receives a bounded snapshot of the brew, stage, and recent timeline context to answer questions such as “what is next?” or “does this gravity trend look normal?”                                                                                                                                                                                                                                       |
-| Prepare a brew action                 | Private evaluator       | With an explicitly selected brew, the assistant can prepare a typed note, addition, measurement, volume reading, or stage action. The UI shows the selected brew and exact entry payload; only a separate user confirmation calls the existing ownership-checked brew API.                                                                                                                                                                                    |
-| Hydrometer-aware assistance           | Later                   | Add an opt-in read-only summary of linked-device state and recent readings; never let model output control devices or alerts.                                                                                                                                                                                                                                                                                                                                 |
-| Persistent conversations              | Private evaluator       | Multiple owner-scoped threads, bounded transcripts, 90-day inactivity retention, daily purge, five-minute abandoned-turn reconciliation after a one-hour grace period, and explicit recipe/brew context. Billing is deliberately separate.                                                                                                                                                                                                                    |
-| User credits                          | Private beta foundation | Append-only, versioned pricing ledger with grant support, bounded reservations, exact usage settlement, wallet activity, and a disabled-by-default Stripe checkout boundary. Stripe refunds reconcile proportionally against unspent credits; ambiguous, overspent, and disputed payments restrict new chat spend for explicit administrator resolution. Admins can issue an immutable, arbitrary positive credit allocation independently of chatbot access. |
-| Beta access rollout                   | Private beta foundation | Database-backed server policy defaults to explicit invitations, with an auditable admin switch to all active users. The policy gates API access, account navigation, and the floating chat UI.                                                                                                                                                                                                                                                                |
+Threads are strictly owner-scoped in every read, write, update, and delete.
+Client message IDs make repeated submissions idempotent. The transaction lock
+and a partial unique index permit only one pending user turn per conversation,
+so a concurrent tab is rejected before reservation/provider work. Active
+threads accept at most 500 messages and 1 MiB of content; accepting a user
+turn reserves room for an assistant answer. Thread/history pages contain at
+most 100 results (50 by default), and provider context uses at most the most
+recent 16 persisted visible messages.
 
-### User recipe and brew context boundary
+Titles begin with a deterministic first-message fallback. On a first turn,
+the service can make one compact tool-free title-generation request; invalid
+or failed title generation leaves the deterministic title in place. Users can
+rename titles, search them case-insensitively, archive/restore threads, and
+delete a thread. Delete cascades the thread’s messages, drafts, generations,
+and message-context rows. It does not erase separate usage, ledger, checkout,
+or payment-recovery evidence.
 
-The first account-context slice is **read-only and explicit**:
+Conversation expiry is 90 days after the most recent completed turn. The
+daily authenticated maintenance route purges expired conversations. Pending
+messages and unmatched reservations have a separate one-hour grace period and
+are reconciled by the authenticated five-minute maintenance route. There is
+currently **no implemented automatic deletion policy for usage events/windows,
+credit ledger entries, checkout receipts, or payment-recovery records**; that
+is future data-retention work, not a configured retention period.
 
-1. The chat UI offers a picker for the signed-in user’s saved recipes and
-   active brews. Nothing is attached automatically, and the user can remove
-   the attachment before sending a message.
-2. The server loads the selected record directly through ownership-scoped
-   database functions; the model never receives a database credential, a
-   general account-search capability, or a public/private bypass.
-3. Recipe context is a validated v2 recipe.
-   Brew context is a bounded view of the recipe snapshot, current stage,
-   relevant measurements, and recent timeline entries. User-authored notes are
-   untrusted reference data, not instructions for the assistant.
-4. A context tool may explain, compare, or prepare a proposed change, but it
-   must not mutate recipes, brews, timeline entries, devices, notifications, or
-   user settings. A typed brew-action proposal is target-bound by the trusted
-   selected context, then the UI sends it through an existing
-   ownership-checked API only after visible user confirmation.
-5. Selected context is supplied only for the active request. The visible
-   conversation transcript is retained in its private thread for up to 90 days
-   after the last completed turn; broader account recall and cross-brew
-   recommendations remain separate future decisions with their own consent
-   rules.
+## Provider architecture and cost telemetry
 
-The first tool surface should therefore be limited to:
+The active transport is direct OpenAI Chat Completions using the pinned model
+`gpt-5.4-mini-2026-03-17`. The pin is intentional: a model change requires a
+reviewed configuration/pricing change and evaluator qualification, rather than
+an alias changing behavior at deployment time. The server requires the chat
+enable switch and an OpenAI API key; the model may be overridden only through
+the documented, bounded configuration path. It sends `store: false`, sets a
+60-second timeout, disables parallel tool calls, and maps provider errors to
+redacted customer-safe failures. It does not automatically retry a completion,
+so a transport failure cannot conceal a duplicate model charge.
 
-- a picker endpoint, returning only owned recipe and brew identifiers and
-  summaries;
-- `get_selected_account_context`, returning bounded, ownership-checked context
-  for the user-selected identifier; and
-- deterministic explain/prepare operations that consume that context without
-  writing to the account.
+The provider-neutral `ChatModelClient` interface is what the agent and title
+generator receive. It normalizes messages, tool calls, structured-output title
+responses, usage, provider request IDs, and errors. `OpenAIChatClient` is the
+current adapter. `FireworksChatClient` and its historical pricing snapshot are
+retained only for compatibility/rollback history; Fireworks is **not** the
+active hosted production architecture and must not be configured as the normal
+chat provider.
 
-## Active refinement plan — July 28, 2026
+Each turn is bounded by validated request size, provider input characters,
+tool calls, provider calls, per-completion output, combined output, and
+combined provider tokens. Defaults are 4,000 output tokens, seven tool calls,
+ten provider calls, 8,000 combined output tokens, 60,000 provider-input
+characters, and 60,000 combined provider tokens; overrides are clamped. A
+first-thread title call is included in the turn’s measured provider usage.
 
-The next pass is about recipe correctness and reliable saved payloads, not a
-new product release. The following decisions and work items supersede the
-earlier generic “refine the evaluator” step.
+`chatbot_usage_events` records request id, user id, environment label, model,
+status, provider-call count, token totals, provider request IDs, and timing.
+Hourly/daily windows aggregate those values for audit; they are not an
+ordinary per-user rate quota. A completed visible response also has a
+generation record with provider/model/status/latency. Server operational logs
+record request/user identifiers and token totals, not prompts, transcripts,
+keys, or raw tool data.
 
-### Settled product rules
+## Prompt credits and ledger
 
-- A requested **target ABV always means the finished batch ABV**. It includes
-  dilution from calculated secondary additions such as backsweetening honey.
-  A draft must not silently interpret the target as a pre-backsweetening
-  fermentation ABV.
-- A request to backsweeten to a final gravity is sufficient for MeadTools to
-  calculate the secondary sweetener. The bot must not ask the user to choose
-  the amount unless the user deliberately supplies a fixed amount instead.
-- An explicit numerical fermentation FG takes precedence over qualitative
-  wording such as “finish dry.”
-- “No Go-Ferm” is a real recipe setting and must be rendered and saved as
-  `none`; display text and the saved v2 recipe payload may never disagree.
-- The normal brewing convention is that a stated batch size is the target
-  finished batch volume unless the user says otherwise.
+Credits are whole integers; 1,000 credits represent one US dollar of face
+value. The immutable `credit_ledger_entries` table is the balance source of
+truth, protected from update/delete by a database trigger. Purchases, grants,
+reservations, settlements, reversals, refunds, and signed adjustments are
+separate entries with operation/idempotency keys. Balance is the ledger sum.
 
-### Priority 1 — recipe workflow and intake regressions
+Before any provider request, the route chooses effective-dated OpenAI model
+pricing and fee-policy rows at request start, writes a negative reservation,
+and writes a reserved usage event. The maximum hold is a 67-credit bounded
+preauthorization (including the first-thread title allowance); the UI warns
+below 100 credits and blocks new sends below 67. This is a hold, not the final
+price. The route fails before provider work if the account cannot cover it or
+is payment restricted.
 
-1. Move the inverse backsweetening calculation into a shared `@meadtools/core`
-   helper. Reuse it from the browser recipe builder and hosted workflow rather
-   than maintaining parallel math. Extend the helper/workflow solve so a
-   target finished ABV, finished volume, fermentation FG, and backsweetened FG
-   resolve together, including the volume of the calculated secondary
-   sweetener.
-2. Preserve `backsweetening.targetFinalGravity` through every agent turn and
-   call the deterministic workflow immediately when that target is known. Add
-   regression coverage for “enough honey to reach 1.015” so it cannot turn
-   into an amount question or a repeated confirmation.
-3. Correct intake precedence: explicit gravity beats “dry”; explicit negative
-   choices such as “no Go-Ferm” beat model defaults; a named yeast followed by
-   “look it up” must call yeast lookup before asking for nitrogen information.
-4. Treat a supplied yeast plus its declared nitrogen requirement as valid even
-   without a catalog match, while retaining the catalog lookup path for known
-   strains. Keep catalog and implementation details out of user-facing text.
-5. Make “best judgment” accept normal defaults rather than reopening already
-   supplied choices: batch size means finished volume, honey is the adjustable
-   fermentable for a traditional/cyser when implied, and the established
-   K-meta/pH 3.5 default applies when stabilization is needed.
-6. Add contract and end-to-end save tests proving that the displayed draft and
-   saved `dataV2` have the same ingredients, additions, nutrient settings,
-   stabilizers, fermentation FG, backsweetened FG, and finished ABV basis.
+After the turn, the server aggregates uncached input, cached input, and output
+tokens across every provider call, including title generation. It prices the
+aggregate once with the selected immutable pricing version and the then-active
+fee policy, settles the unused portion of the hold, and records provider cost
+in picodollars. The current fee policy is versioned, has a 75% markup, no
+fixed fee, and a one-credit minimum for every provider-backed turn. A fully
+deterministic turn reverses its reservation and has no net charge. Because
+the hold is intentionally capped, a costly bounded turn can settle to a
+negative balance; the next provider turn remains blocked until recovery.
 
-### Priority 2 — answer boundaries and calculator/process experience
+Failures before completed provider work reverse the reservation and complete
+usage as failed. If a request disconnects or a process dies, the five-minute
+reconciler reverses unmatched reservations and marks stale pending messages
+failed after the grace period. Settlement/reversal operations are idempotent;
+the maintenance route tolerates a concurrently finishing request.
 
-1. Finish calculator routing: direct users to the appropriate MeadTools
-   calculator for ABV, sulfite, carbonation, hydrometer/refractometer, bench
-   trial, and additive-dose questions rather than duplicating calculator math
-   in model prose. Where a calculator can safely return a quick deterministic
-   result, show that result and link the calculator.
-2. Keep process answers concise and source-labeled: MeadTools wiki claims must
-   cite the retrieved canonical page; brief general brewing context is allowed
-   only when clearly distinguished from the wiki guidance.
-3. Continue narrowing the deterministic scope gate to obvious off-topic
-   requests. The system policy remains the main scope boundary, and each
-   change must be evaluated against mead-adjacent phrasing, unrelated pivots,
-   and normal brewing questions so valid questions do not get rejected.
-4. Preserve the existing rule that additives belong in the recipe Additives
-   section. Later, add structured answer controls (selects, target fields, and
-   similar UI components) for high-confidence questions; this is deliberately
-   deferred until the conversational data model is stable.
+## Stripe credit-purchase architecture
 
-### Verification gate before the next milestone
+Stripe is wired for one-time fixed prompt-credit packs, but paid purchase is
+separately gated. Checkout is available only when the explicit purchase flag
+is true **and** server-only Stripe secret/webhook configuration is present.
+Provider credentials alone do not expose purchase controls. The initial packs
+are 5,000/$5, 10,000/$10, and 25,000/$25 (USD); the browser submits only a
+pack id and the server derives price, credits, currency, URLs, metadata, and
+idempotency key.
 
-Run the focused backsweetening, dry-FG, no-Go-Ferm, named-yeast lookup, cyser
-fill-liquid, rich-additive, process/wiki, calculator-routing, and adversarial
-scope scenarios. Export each notable session and save successful recipes. For
-each saved recipe, compare the visible draft to the persisted `dataV2` payload.
-The repeated adjustable-fermentable/backsweetening confirmation regression is
-an explicit blocking check: once the user has identified honey as the
-adjustable fermentable or given a backsweetening target, the bot must proceed
-or ask a genuinely new high-impact question, never ask the same confirmation
-again.
+The success redirect is not fulfillment. The webhook route verifies Stripe’s
+raw request-body signature, validates a paid payment-mode Checkout Session
+against its local pending checkout, deduplicates the event identity, and then
+appends one purchase ledger entry transactionally. It also handles terminal
+Checkout failure/expiry. Raw webhook payloads are deliberately not stored;
+only event identity/type and the minimal verified fields needed for recovery
+are retained.
 
-### Deferred chatbot regression pass — after Stripe sandbox integration
+Succeeded refunds reconcile proportionally against the original pack and
+append negative refund entries where safe. A refund or dispute received before
+Checkout fulfillment is durably deferred and replayed once the payment-intent
+mapping exists. Unreconcilable, overspent, or disputed payment cases create a
+review record and restrict new chat spend/Checkout. Administrators resolve a
+case with a required note and optional signed adjustment; chat can be released
+only when all review-required cases are resolved and the balance is
+non-negative. Refund processing is automatic when safely reconcilable;
+disputes are intentionally operator-reviewed.
 
-Keep the current payment and entitlement work focused. After the Stripe sandbox
-flow is complete, run a dedicated recipe-workflow regression pass before
-resuming broader model refinement:
+Subscriptions, premium tiers, recurring billing, discounts, tax policy,
+customer self-service refunds, and non-Stripe payment methods are not live
+features. Treat Stripe test-mode validation and the launch checklist as a
+precondition before enabling paid purchases in any live environment.
 
-1. **Traditional intake:** eliminate the repeated “single adjustable
-   fermentable” confirmation. Once the user has identified honey as the
-   adjustable fermentable, the workflow must either draft or ask a genuinely
-   new high-impact question.
-2. **Optional recipe-builder stages:** an explicit negative stage choice must
-   be a valid resolved value. In particular, the 2026-08-09 raspberry-mead
-   evaluator specified 24 lb primary raspberry and no secondary raspberry;
-   the workflow kept demanding confirmation that the secondary amount was
-   zero. Model and workflow input normalization must represent an omitted
-   secondary fruit addition without requiring a zero-value line, then produce
-   the draft. Add a deterministic regression test for that exact exchange.
+## Administration and reporting
 
-Do not treat either regression as resolved by prompt wording alone; the
-workflow and its saved recipe payload must be covered by deterministic tests.
+Admin-only operations are divided between **Chat access and credits** and
+**Chat operations**:
 
-## Local real-model test setup
+- set rollout mode; grant/revoke an active user’s beta access;
+- issue an arbitrary positive evaluation-credit grant without changing access;
+- inspect recent refund/dispute recovery records and resolve a review case with
+  a documented note, signed adjustment, and deliberate release request; and
+- view operational usage/cost reporting.
 
-The local endpoint is intentionally fail-closed. Add the following only to the
-ignored `apps/web/.env.local` file, substituting a Fireworks server API key:
+The usage dashboard defaults to a 30-day, half-open UTC range and supports
+date range, environment substring, model substring, status, user identity
+search, and paginated user rows. It reports request/completed/failed/pending
+counts, unpriced completions, provider calls/tokens, charged credits, provider
+cost, credit-equivalent value, estimated spread, daily totals, model/provider
+totals, eligible/active-user counts, current wallet balance, current access
+state, payment restrictions, and pending recovery count. Time filtering is by
+usage-event creation time; charge/cost totals are joined from the final ledger
+operation. It intentionally does not return transcripts, provider prompt
+payloads, hidden reasoning, or raw payment webhook bodies.
 
-```bash
-CHATBOT_LOCAL_TEST_ENABLED=true
-FIREWORKS_API_KEY=...
-# Optional model and guardrail overrides:
-# CHATBOT_FIREWORKS_MODEL=accounts/fireworks/models/deepseek-v4-flash
-# CHATBOT_MAX_OUTPUT_TOKENS=4000
-# CHATBOT_MAX_TOOL_CALLS=6
-# CHATBOT_MAX_PROVIDER_CALLS=7
-# CHATBOT_MAX_TOTAL_OUTPUT_TOKENS=8000
-# CHATBOT_MAX_PROVIDER_INPUT_CHARACTERS=60000
-# CHATBOT_MAX_TOTAL_PROVIDER_TOKENS=60000
-# CHATBOT_USAGE_ENVIRONMENT=local
-# Stripe test-mode checkout stays off unless every value below is configured:
-# CHAT_CREDIT_PURCHASES_ENABLED=false
-# STRIPE_SECRET_KEY=...
-# STRIPE_WEBHOOK_SECRET=...
-```
+## Security and operations
 
-Start the app with `npm run dev:web`, sign in normally, then open
-`/account/chat` (for example, `http://localhost:3000/en/account/chat`). The
-evaluator shows the selected model, tool activity, and the token/latency totals
-for the last turn. When a recipe tool returns a draft, the page keeps it in
-browser memory for follow-up requests. The signed-in evaluator can explicitly
-save the validated active draft through the existing recipe API. Owner-scoped
-threads, messages, and draft snapshots are retained for the configured window;
-token usage and credit settlements are persisted without provider secrets.
-Payment purchases remain disabled until Stripe sandbox configuration is
-explicitly enabled with `CHAT_CREDIT_PURCHASES_ENABLED=true`, a server-only
-Stripe secret key, and a webhook signing secret. Credentials alone never
-enable the purchase surface or Checkout endpoint.
+- API handlers verify authenticated user ownership or administrator privilege
+  at the web boundary; selected recipe/brew IDs are rechecked server-side.
+- The provider key, Stripe secret, Stripe webhook secret, and cron secret are
+  server-only configuration. Documentation names required variables but never
+  contains values. Missing chat/provider, payment, or cron configuration
+  fails closed.
+- The cron authorization check rejects missing/blank secrets and values such
+  as `Bearer undefined`. The five-minute reconciler and daily expiry cleanup
+  must be configured in the deployed web project.
+- The request path uses message/content/context/provider/tool/token bounds,
+  one-in-flight-turn enforcement, credit preauthorization, payment
+  restrictions, idempotency keys, immutable accounting, and provider-error
+  redaction to contain spend, retries, and data exposure.
+- Chat transcript retention is separate from billing/accounting evidence. The
+  exact non-transcript operational-retention policy still needs an approved
+  implementation before claiming a deletion schedule.
 
-The connected Stripe account uses Managed Payments for digital products. Its
-hosted Checkout flow selects payment methods dynamically, so the credit-pack
-session must not set `payment_method_types`. Inline credit-pack products use
-Stripe's eligible `txcd_10105001` AIaaS cloud-based personal-use tax code and
-tax-exclusive USD price data; Managed Payments calculates applicable taxes at
-Checkout. Credit fulfillment remains webhook-only: fulfill a paid
-`checkout.session.completed` event, or a paid
-`checkout.session.async_payment_succeeded` event for a delayed method. Before
-live activation, review Managed Payments eligibility, terms, and whether
-tax-exclusive pack display is the desired customer-facing price policy; this
-does not affect sandbox credit-ledger validation.
+For deployment details, use
+[the chatbot beta and paid-credit launch checklist](chatbot-release-checklist.md).
+For API shape/change process, use
+[the shared API contract document](domain/api-contract.md).
 
-Purchased prompt-credit packs are final except where required by law or for a
-billing error; the product does not expose a self-service refund action. The
-local payment boundary nevertheless receives Stripe refund events and records
-an immutable recovery record for every successful refund. When the original
-verified payment amount and currency are available, it revokes the
-corresponding proportion of the pack from the user’s unused balance. A
-currency or amount mismatch, a refund that would leave the wallet negative,
-or `charge.dispute.created` (with `charge.dispute.funds_withdrawn` as an
-idempotent follow-up) creates a review case and blocks new chat reservations
-and purchases for that account. Stripe does not guarantee webhook delivery
-order, so a dispute that arrives before its Checkout fulfillment is retained
-as a minimal deferred event and reconciled once the payment-intent mapping is
-stored. An administrator can inspect the
-case, append a signed adjustment with a required note, and release chat only
-when no other review case remains and the ledger balance is non-negative.
-This preserves the original purchase and usage entries for audit rather than
-rewriting history. No production Stripe keys, webhook endpoints, or purchase
-flag are enabled as part of this local architecture work.
+## Testing and evaluation
 
-The evaluator can export the current browser-session transcript as a Markdown
-file. The export includes displayed messages, tool names, and per-response
-metering. The server retains only owner-scoped thread content plus guarded
-request metadata (request ID, user ID, environment, model, provider request
-IDs, status, and token/call totals) for the configured retention period.
-Place exports worth reviewing in `docs/chatbot-evals/exports/` with the date,
-scenario, and model in the filename.
+Deterministic tests cover chat-domain/credit arithmetic, recipe workflows and
+agent policy, wiki retrieval restrictions, API schemas, web route/service
+behavior, concurrency, persistence, and billing/Stripe ordering. A behavior
+found in an evaluator session must receive a deterministic regression test
+before a fix is treated as complete. Safe unit/type/lint/API-contract checks
+are not paid provider evaluations.
 
-The same endpoint can be used by a scripted evaluation harness. It accepts a
-JSON POST at `/api/chat/recipe` with `Authorization: Bearer <accessToken>` and
-returns server-sent events: `ready`, `tool_call`, `tool_result`, then either
-`final` (answer, tool results, and telemetry) or `error`.
+`docs/chatbot-eval-prompts.md` is the current scenario suite. A real-model
+evaluation or batch requires explicit approval first, including the model and
+expected number of turns/spend; do not infer that approval from permission to
+run local tests. Evaluator transcripts and dated reports document observed
+historical runs. They may name Fireworks, browser-only persistence, or a model
+that is no longer active, so they cannot override this document or current
+code.
 
-## Remaining delivery sequence
+## Explicit future work
 
-1. Complete the Priority 1 recipe correctness work and rerun the focused
-   evaluator suite. The repeated backsweetening confirmation regression is a
-   release-blocking behavior check.
-2. Run evaluations for selected-recipe refinement and active-brew guidance,
-   including authorization failures and concise follow-up prompts.
-3. Refine the evaluator from observed turns, including structured recipe cards,
-   warnings, citations, and context-aware actions. Keep changes that write a
-   recipe or brew behind a visible confirmation.
-4. Maintain the persistent-thread experience: paginated history and
-   transcripts, user-facing rename/archive/delete controls, capacity recovery,
-   and a safe local fixture seed are implemented. Add scheduled purge of
-   operational usage records before public rollout.
-5. Complete private-beta paid-access validation: access grants, independent
-   credit grants, exact reservation settlement, verified Checkout fulfillment,
-   and refund/dispute reconciliation are implemented locally. After a database
-   migration is deployed to a non-production environment, test successful and
-   partial refunds plus a review-required case through sandbox webhooks; only
-   then consider enabling purchases. Before public access, reserve a user's
-   maximum allowed turn cost and settle against actual token usage. Provider
-   account caps remain a global backstop only.
-6. Reduce the separate MCP server to an optional adapter that imports or calls
-   the shared operations, then add parity tests between MCP and hosted tools.
+The following are not implemented and must not be presented as current
+behavior:
+
+- subscriptions, premium plans, recurring allowances, discounts, and broader
+  commerce/tax decisions;
+- user image analysis, attachment storage, vision prompts, or image-derived
+  recipe data;
+- public/free anonymous chat, public recipe browsing through the assistant,
+  and broad external integrations;
+- end-user or administrator multi-model selection and automatic model
+  failover;
+- a dedicated mobile-native chat experience beyond the current responsive web
+  UI; and
+- an approved cleanup/retention policy and job for non-transcript usage,
+  ledger, checkout, and payment-recovery data.
+
+Future work must preserve the reusable domain boundary, server-side ownership
+checks, explicit mutation confirmation, provider-cost attribution, and
+versioned financial records described above.

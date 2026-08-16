@@ -1,12 +1,18 @@
 # Hosted chatbot manual review checklist
 
-Use this checklist only after the agent follow-up in `docs/reviews/hosted-chatbot-agent-followup.md` is complete and its automated checks pass.
+> **Review checklist, not architecture.** Apply it against current code and
+> [the canonical hosted-chatbot architecture](../hosted-chatbot-architecture.md).
+> The linked historical follow-up may describe findings that have since been
+> addressed; re-verify them rather than assuming either status.
+
+Use this checklist after current deterministic checks pass and the reviewer has
+re-checked any relevant historical follow-up finding against current code.
 
 Use an isolated local/test database, a deliberately configured evaluator account, and Stripe test mode. Do not use production credentials or production customer data. Export notable evaluator sessions only to the ignored `docs/chatbot-evals/exports/` directory.
 
 ## Pre-review gate
 
-- [ ] The follow-up agent reports that every Priority 0 and Priority 1 item in `docs/reviews/hosted-chatbot-agent-followup.md` is fixed.
+- [ ] Every applicable Priority 0 and Priority 1 item in `docs/reviews/hosted-chatbot-agent-followup.md` has been re-verified against current code or explicitly recorded as unresolved.
 - [ ] A clean dependency install and the complete affected test suite pass in CI or a clean checkout.
 - [ ] All new Prisma migrations apply successfully to a fresh database and an upgraded representative database.
 - [ ] Credit purchases remain disabled outside Stripe test mode until all payment checks below pass.

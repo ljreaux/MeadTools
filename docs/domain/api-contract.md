@@ -5,6 +5,11 @@ used by MeadTools, the OpenAPI generator, and external TypeScript consumers.
 Zod schemas are the source of truth. Public TypeScript contracts are inferred
 from them.
 
+For the implemented hosted-chatbot product, access, persistence, billing, and
+operations architecture, see
+[Hosted chatbot architecture](../hosted-chatbot-architecture.md). This document
+defines the contract process and endpoint compatibility, not chatbot behavior.
+
 ## OpenAPI compatibility
 
 Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
@@ -59,6 +64,13 @@ per-user cost data from immutable usage and credit-ledger records; it does not
 return chat transcripts or provider prompt payloads. The same path-parity check
 removes this endpoint while preserving the documented behavior of every earlier
 route.
+
+Chat contract ownership is split by concern: `zod/chat.ts` owns private thread,
+transcript, context, and conversation schemas; `zod/credits.ts` owns wallet,
+activity, Checkout, and webhook receipts; and `zod/admin.ts` owns rollout,
+grant, recovery, and usage-report schemas. The streaming `/chat/recipe` route
+uses the TanStack chat transport plus the documented insufficient-credit `402`
+response; its durable thread state is loaded through the conversation routes.
 
 Run:
 

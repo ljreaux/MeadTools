@@ -1,5 +1,12 @@
 # Conversational MeadTools assistant plan
 
+> **Historical planning record.** This proposal predates the current OpenAI
+> implementation and contains future-looking alternatives. For implemented
+> behavior and current decisions, use
+> [the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md).
+> In particular, its references to DeepSeek/Fireworks are not active provider
+> guidance.
+
 ## Purpose
 
 Shift the recipe chatbot from a workflow-first intake form to a helpful,
@@ -15,8 +22,9 @@ free-flowing MeadTools brewing assistant without weakening the sources of truth:
   Its suggestions never bypass schema validation, calculation, ownership,
   billing, or mutation confirmation.
 
-This is a behavior and architecture change, not a new model-provider project.
-DeepSeek V4 Flash remains the beta default while this is evaluated.
+This was a behavior and architecture proposal, not a provider-selection
+decision. At the time it was authored it assumed DeepSeek V4 Flash; that
+assumption is superseded by the current OpenAI architecture.
 
 ## Why change
 

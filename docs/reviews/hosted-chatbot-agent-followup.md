@@ -1,6 +1,14 @@
 # Hosted chatbot agent follow-up before manual review
 
-Use this document as the implementation brief for the next coding agent. Complete these fixes and automated checks before asking a person to run `docs/reviews/hosted-chatbot-manual-review.md`.
+> **Historical remediation brief.** This record describes findings from a
+> pre-pivot review; several items may have been implemented subsequently. Do
+> not treat its old evidence or provider references as current architecture.
+> Verify against code/schema and
+> [the canonical hosted-chatbot architecture](../hosted-chatbot-architecture.md).
+
+This preserved remediation brief can help a reviewer identify areas to
+re-check. It is not an open implementation plan; current code and the
+canonical architecture determine whether an item is still applicable.
 
 ## Objective
 
