@@ -350,349 +350,889 @@ import {
   yeastsResponseSchema,
 } from "./schemas";
 
-export type AccountInfoFetchErrorResponse = z.infer<typeof accountInfoFetchErrorResponseSchema>;
-export type AccountInfoNotFoundErrorResponse = z.infer<typeof accountInfoNotFoundErrorResponseSchema>;
+export type AccountInfoFetchErrorResponse = z.infer<
+  typeof accountInfoFetchErrorResponseSchema
+>;
+export type AccountInfoNotFoundErrorResponse = z.infer<
+  typeof accountInfoNotFoundErrorResponseSchema
+>;
 export type AccountInfoResponse = z.infer<typeof accountInfoResponseSchema>;
-export type AccountInfoUnauthorizedErrorResponse = z.infer<typeof accountInfoUnauthorizedErrorResponseSchema>;
-export type AccountRecipeOwnerResponse = z.infer<typeof accountRecipeOwnerResponseSchema>;
+export type AccountInfoUnauthorizedErrorResponse = z.infer<
+  typeof accountInfoUnauthorizedErrorResponseSchema
+>;
+export type AccountRecipeOwnerResponse = z.infer<
+  typeof accountRecipeOwnerResponseSchema
+>;
 export type AccountRecipeResponse = z.infer<typeof accountRecipeResponseSchema>;
 export type AccountUserResponse = z.infer<typeof accountUserResponseSchema>;
 export type AdditiveAmountDim = z.infer<typeof additiveAmountDimSchema>;
-export type AdditiveByIdPathParams = z.infer<typeof additiveByIdPathParamsSchema>;
+export type AdditiveByIdPathParams = z.infer<
+  typeof additiveByIdPathParamsSchema
+>;
 export type AdditiveByIdResponse = z.infer<typeof additiveByIdResponseSchema>;
-export type AdditiveFetchErrorResponse = z.infer<typeof additiveFetchErrorResponseSchema>;
+export type AdditiveFetchErrorResponse = z.infer<
+  typeof additiveFetchErrorResponseSchema
+>;
 export type AdditiveLineResponse = z.infer<typeof additiveLineResponseSchema>;
-export type AdditiveNotFoundErrorResponse = z.infer<typeof additiveNotFoundErrorResponseSchema>;
+export type AdditiveNotFoundErrorResponse = z.infer<
+  typeof additiveNotFoundErrorResponseSchema
+>;
 export type AdditiveQueryParams = z.infer<typeof additiveQueryParamsSchema>;
 export type AdditiveResponse = z.infer<typeof additiveResponseSchema>;
-export type AdditivesFetchErrorResponse = z.infer<typeof additivesFetchErrorResponseSchema>;
+export type AdditivesFetchErrorResponse = z.infer<
+  typeof additivesFetchErrorResponseSchema
+>;
 export type AdditivesResponse = z.infer<typeof additivesResponseSchema>;
 export type AdditiveUnitResponse = z.infer<typeof additiveUnitResponseSchema>;
-export type AdminAuthErrorResponse = z.infer<typeof adminAuthErrorResponseSchema>;
-export type AdminChatUsageDailyRow = z.infer<typeof adminChatUsageDailyRowSchema>;
-export type AdminChatUsageModelRow = z.infer<typeof adminChatUsageModelRowSchema>;
-export type AdminChatUsageQueryParams = z.infer<typeof adminChatUsageQueryParamsSchema>;
-export type AdminChatUsageReportResponse = z.infer<typeof adminChatUsageReportResponseSchema>;
+export type AdminAuthErrorResponse = z.infer<
+  typeof adminAuthErrorResponseSchema
+>;
+export type AdminChatUsageDailyRow = z.infer<
+  typeof adminChatUsageDailyRowSchema
+>;
+export type AdminChatUsageModelRow = z.infer<
+  typeof adminChatUsageModelRowSchema
+>;
+export type AdminChatUsageQueryParams = z.infer<
+  typeof adminChatUsageQueryParamsSchema
+>;
+export type AdminChatUsageReportResponse = z.infer<
+  typeof adminChatUsageReportResponseSchema
+>;
 export type AdminChatUsageUserRow = z.infer<typeof adminChatUsageUserRowSchema>;
-export type AdminRecipeListItemResponse = z.infer<typeof adminRecipeListItemResponseSchema>;
-export type AdminRecipesFetchErrorResponse = z.infer<typeof adminRecipesFetchErrorResponseSchema>;
-export type AdminRecipesPageResponse = z.infer<typeof adminRecipesPageResponseSchema>;
-export type AdminRecipesQueryParams = z.infer<typeof adminRecipesQueryParamsSchema>;
-export type AdminUserDeleteErrorResponse = z.infer<typeof adminUserDeleteErrorResponseSchema>;
-export type AdminUserFetchErrorResponse = z.infer<typeof adminUserFetchErrorResponseSchema>;
-export type AdminUserListItemResponse = z.infer<typeof adminUserListItemResponseSchema>;
-export type AdminUserNotFoundErrorResponse = z.infer<typeof adminUserNotFoundErrorResponseSchema>;
+export type AdminRecipeListItemResponse = z.infer<
+  typeof adminRecipeListItemResponseSchema
+>;
+export type AdminRecipesFetchErrorResponse = z.infer<
+  typeof adminRecipesFetchErrorResponseSchema
+>;
+export type AdminRecipesPageResponse = z.infer<
+  typeof adminRecipesPageResponseSchema
+>;
+export type AdminRecipesQueryParams = z.infer<
+  typeof adminRecipesQueryParamsSchema
+>;
+export type AdminUserDeleteErrorResponse = z.infer<
+  typeof adminUserDeleteErrorResponseSchema
+>;
+export type AdminUserFetchErrorResponse = z.infer<
+  typeof adminUserFetchErrorResponseSchema
+>;
+export type AdminUserListItemResponse = z.infer<
+  typeof adminUserListItemResponseSchema
+>;
+export type AdminUserNotFoundErrorResponse = z.infer<
+  typeof adminUserNotFoundErrorResponseSchema
+>;
 export type AdminUserPathParams = z.infer<typeof adminUserPathParamsSchema>;
 export type AdminUserResponse = z.infer<typeof adminUserResponseSchema>;
-export type AdminUsersFetchErrorResponse = z.infer<typeof adminUsersFetchErrorResponseSchema>;
+export type AdminUsersFetchErrorResponse = z.infer<
+  typeof adminUsersFetchErrorResponseSchema
+>;
 export type AdminUsersResponse = z.infer<typeof adminUsersResponseSchema>;
-export type AdminUserUpdateErrorResponse = z.infer<typeof adminUserUpdateErrorResponseSchema>;
-export type AdoptLogsForBrewRequestBody = z.infer<typeof adoptLogsForBrewRequestBodySchema>;
-export type AdoptLogsForBrewResponse = z.infer<typeof adoptLogsForBrewResponseSchema>;
+export type AdminUserUpdateErrorResponse = z.infer<
+  typeof adminUserUpdateErrorResponseSchema
+>;
+export type AdoptLogsForBrewRequestBody = z.infer<
+  typeof adoptLogsForBrewRequestBodySchema
+>;
+export type AdoptLogsForBrewResponse = z.infer<
+  typeof adoptLogsForBrewResponseSchema
+>;
 export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
-export type AttachDeviceToBrewRequestBody = z.infer<typeof attachDeviceToBrewRequestBodySchema>;
-export type AttachDeviceToBrewResponse = z.infer<typeof attachDeviceToBrewResponseSchema>;
-export type AuthenticatedRouteErrorResponse = z.infer<typeof authenticatedRouteErrorResponseSchema>;
-export type BjcpIngredientResponse = z.infer<typeof bjcpIngredientResponseSchema>;
-export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFetchErrorResponseSchema>;
-export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
-export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
-export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSchema>;
-export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionErrorResponseSchema>;
-export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
-export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
-export type BrewEntryDeleteErrorResponse = z.infer<typeof brewEntryDeleteErrorResponseSchema>;
-export type BrewEntryIdConflictErrorResponse = z.infer<typeof brewEntryIdConflictErrorResponseSchema>;
+export type AttachDeviceToBrewRequestBody = z.infer<
+  typeof attachDeviceToBrewRequestBodySchema
+>;
+export type AttachDeviceToBrewResponse = z.infer<
+  typeof attachDeviceToBrewResponseSchema
+>;
+export type AuthenticatedRouteErrorResponse = z.infer<
+  typeof authenticatedRouteErrorResponseSchema
+>;
+export type BjcpIngredientResponse = z.infer<
+  typeof bjcpIngredientResponseSchema
+>;
+export type BjcpIngredientsFetchErrorResponse = z.infer<
+  typeof bjcpIngredientsFetchErrorResponseSchema
+>;
+export type BjcpIngredientsResponse = z.infer<
+  typeof bjcpIngredientsResponseSchema
+>;
+export type BrewCreateErrorResponse = z.infer<
+  typeof brewCreateErrorResponseSchema
+>;
+export type BrewDeleteErrorResponse = z.infer<
+  typeof brewDeleteErrorResponseSchema
+>;
+export type BrewDeviceActionErrorResponse = z.infer<
+  typeof brewDeviceActionErrorResponseSchema
+>;
+export type BrewEntriesByStageResponse = z.infer<
+  typeof brewEntriesByStageResponseSchema
+>;
+export type BrewEntryCreateErrorResponse = z.infer<
+  typeof brewEntryCreateErrorResponseSchema
+>;
+export type BrewEntryDeleteErrorResponse = z.infer<
+  typeof brewEntryDeleteErrorResponseSchema
+>;
+export type BrewEntryIdConflictErrorResponse = z.infer<
+  typeof brewEntryIdConflictErrorResponseSchema
+>;
 export type BrewEntryPathParams = z.infer<typeof brewEntryPathParamsSchema>;
 export type BrewEntryResponse = z.infer<typeof brewEntryResponseSchema>;
 export type BrewEntryTypeResponse = z.infer<typeof brewEntryTypeResponseSchema>;
-export type BrewEntryUpdateErrorResponse = z.infer<typeof brewEntryUpdateErrorResponseSchema>;
-export type BrewEntryWithBrewIdResponse = z.infer<typeof brewEntryWithBrewIdResponseSchema>;
-export type BrewFetchErrorResponse = z.infer<typeof brewFetchErrorResponseSchema>;
+export type BrewEntryUpdateErrorResponse = z.infer<
+  typeof brewEntryUpdateErrorResponseSchema
+>;
+export type BrewEntryWithBrewIdResponse = z.infer<
+  typeof brewEntryWithBrewIdResponseSchema
+>;
+export type BrewFetchErrorResponse = z.infer<
+  typeof brewFetchErrorResponseSchema
+>;
 export type BrewListItemResponse = z.infer<typeof brewListItemResponseSchema>;
 export type BrewPathParams = z.infer<typeof brewPathParamsSchema>;
-export type BrewRecipeSnapshotResponse = z.infer<typeof brewRecipeSnapshotResponseSchema>;
+export type BrewRecipeSnapshotResponse = z.infer<
+  typeof brewRecipeSnapshotResponseSchema
+>;
 export type BrewResponse = z.infer<typeof brewResponseSchema>;
 export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
 export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
-export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;
-export type BrewValidationErrorResponse = z.infer<typeof brewValidationErrorResponseSchema>;
-export type ChatAccessAdministrationResponse = z.infer<typeof chatAccessAdministrationResponseSchema>;
-export type ChatAccessErrorResponse = z.infer<typeof chatAccessErrorResponseSchema>;
-export type ChatAccessGrantPathParams = z.infer<typeof chatAccessGrantPathParamsSchema>;
-export type ChatAccessGrantResponse = z.infer<typeof chatAccessGrantResponseSchema>;
+export type BrewUpdateErrorResponse = z.infer<
+  typeof brewUpdateErrorResponseSchema
+>;
+export type BrewValidationErrorResponse = z.infer<
+  typeof brewValidationErrorResponseSchema
+>;
+export type ChatAccessAdministrationResponse = z.infer<
+  typeof chatAccessAdministrationResponseSchema
+>;
+export type ChatAccessErrorResponse = z.infer<
+  typeof chatAccessErrorResponseSchema
+>;
+export type ChatAccessGrantPathParams = z.infer<
+  typeof chatAccessGrantPathParamsSchema
+>;
+export type ChatAccessGrantResponse = z.infer<
+  typeof chatAccessGrantResponseSchema
+>;
 export type ChatAccessMode = z.infer<typeof chatAccessModeSchema>;
-export type ChatAccessStatusResponse = z.infer<typeof chatAccessStatusResponseSchema>;
+export type ChatAccessStatusResponse = z.infer<
+  typeof chatAccessStatusResponseSchema
+>;
 export type ChatCitationResponse = z.infer<typeof chatCitationResponseSchema>;
-export type ChatContextErrorResponse = z.infer<typeof chatContextErrorResponseSchema>;
-export type ChatContextKindResponse = z.infer<typeof chatContextKindResponseSchema>;
-export type ChatContextOptionResponse = z.infer<typeof chatContextOptionResponseSchema>;
-export type ChatContextOptionsResponse = z.infer<typeof chatContextOptionsResponseSchema>;
-export type ChatConversationErrorResponse = z.infer<typeof chatConversationErrorResponseSchema>;
-export type ChatConversationIdPathParams = z.infer<typeof chatConversationIdPathParamsSchema>;
-export type ChatConversationListQuery = z.infer<typeof chatConversationListQuerySchema>;
-export type ChatConversationResponse = z.infer<typeof chatConversationResponseSchema>;
-export type ChatConversationsResponse = z.infer<typeof chatConversationsResponseSchema>;
-export type ChatConversationStateResponse = z.infer<typeof chatConversationStateResponseSchema>;
-export type ChatConversationThreadResponse = z.infer<typeof chatConversationThreadResponseSchema>;
+export type ChatContextErrorResponse = z.infer<
+  typeof chatContextErrorResponseSchema
+>;
+export type ChatContextKindResponse = z.infer<
+  typeof chatContextKindResponseSchema
+>;
+export type ChatContextOptionResponse = z.infer<
+  typeof chatContextOptionResponseSchema
+>;
+export type ChatContextOptionsResponse = z.infer<
+  typeof chatContextOptionsResponseSchema
+>;
+export type ChatConversationErrorResponse = z.infer<
+  typeof chatConversationErrorResponseSchema
+>;
+export type ChatConversationIdPathParams = z.infer<
+  typeof chatConversationIdPathParamsSchema
+>;
+export type ChatConversationListQuery = z.infer<
+  typeof chatConversationListQuerySchema
+>;
+export type ChatConversationResponse = z.infer<
+  typeof chatConversationResponseSchema
+>;
+export type ChatConversationsResponse = z.infer<
+  typeof chatConversationsResponseSchema
+>;
+export type ChatConversationStateResponse = z.infer<
+  typeof chatConversationStateResponseSchema
+>;
+export type ChatConversationThreadResponse = z.infer<
+  typeof chatConversationThreadResponseSchema
+>;
 export type ChatDraftResponse = z.infer<typeof chatDraftResponseSchema>;
-export type ChatMessageContextResponse = z.infer<typeof chatMessageContextResponseSchema>;
+export type ChatMessageContextResponse = z.infer<
+  typeof chatMessageContextResponseSchema
+>;
 export type ChatMessageResponse = z.infer<typeof chatMessageResponseSchema>;
 export type ChatThreadQuery = z.infer<typeof chatThreadQuerySchema>;
 export type ContactRequestBody = z.infer<typeof contactRequestBodySchema>;
-export type ContactSendErrorResponse = z.infer<typeof contactSendErrorResponseSchema>;
-export type ContactSuccessResponse = z.infer<typeof contactSuccessResponseSchema>;
-export type ContactValidationErrorResponse = z.infer<typeof contactValidationErrorResponseSchema>;
-export type CreateAdditiveFailureErrorResponse = z.infer<typeof createAdditiveFailureErrorResponseSchema>;
-export type CreateAdditiveRequestBody = z.infer<typeof createAdditiveRequestBodySchema>;
-export type CreateAdditiveValidationErrorResponse = z.infer<typeof createAdditiveValidationErrorResponseSchema>;
-export type CreateBjcpIngredientFailureErrorResponse = z.infer<typeof createBjcpIngredientFailureErrorResponseSchema>;
-export type CreateBjcpIngredientRequestBody = z.infer<typeof createBjcpIngredientRequestBodySchema>;
-export type CreateBrewEntryRequestBody = z.infer<typeof createBrewEntryRequestBodySchema>;
-export type CreateBrewEntryResponse = z.infer<typeof createBrewEntryResponseSchema>;
+export type ContactSendErrorResponse = z.infer<
+  typeof contactSendErrorResponseSchema
+>;
+export type ContactSuccessResponse = z.infer<
+  typeof contactSuccessResponseSchema
+>;
+export type ContactValidationErrorResponse = z.infer<
+  typeof contactValidationErrorResponseSchema
+>;
+export type CreateAdditiveFailureErrorResponse = z.infer<
+  typeof createAdditiveFailureErrorResponseSchema
+>;
+export type CreateAdditiveRequestBody = z.infer<
+  typeof createAdditiveRequestBodySchema
+>;
+export type CreateAdditiveValidationErrorResponse = z.infer<
+  typeof createAdditiveValidationErrorResponseSchema
+>;
+export type CreateBjcpIngredientFailureErrorResponse = z.infer<
+  typeof createBjcpIngredientFailureErrorResponseSchema
+>;
+export type CreateBjcpIngredientRequestBody = z.infer<
+  typeof createBjcpIngredientRequestBodySchema
+>;
+export type CreateBrewEntryRequestBody = z.infer<
+  typeof createBrewEntryRequestBodySchema
+>;
+export type CreateBrewEntryResponse = z.infer<
+  typeof createBrewEntryResponseSchema
+>;
 export type CreateBrewRequestBody = z.infer<typeof createBrewRequestBodySchema>;
 export type CreateBrewResponse = z.infer<typeof createBrewResponseSchema>;
-export type CreateChatAccessGrantRequestBody = z.infer<typeof createChatAccessGrantRequestBodySchema>;
-export type CreateChatAccessGrantResponse = z.infer<typeof createChatAccessGrantResponseSchema>;
-export type CreateChatConversationRequestBody = z.infer<typeof createChatConversationRequestBodySchema>;
-export type CreateChatConversationResponse = z.infer<typeof createChatConversationResponseSchema>;
-export type CreateChatCreditGrantRequestBody = z.infer<typeof createChatCreditGrantRequestBodySchema>;
-export type CreateChatCreditGrantResponse = z.infer<typeof createChatCreditGrantResponseSchema>;
-export type CreateCreditCheckoutRequestBody = z.infer<typeof createCreditCheckoutRequestBodySchema>;
-export type CreateCreditCheckoutResponse = z.infer<typeof createCreditCheckoutResponseSchema>;
-export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
-export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
-export type CreateRecipeCommentFailureErrorResponse = z.infer<typeof createRecipeCommentFailureErrorResponseSchema>;
-export type CreateRecipeCommentRequestBody = z.infer<typeof createRecipeCommentRequestBodySchema>;
-export type CreateRecipeCommentResponse = z.infer<typeof createRecipeCommentResponseSchema>;
-export type CreateRecipeCommentValidationErrorResponse = z.infer<typeof createRecipeCommentValidationErrorResponseSchema>;
-export type CreateRecipeFailureErrorResponse = z.infer<typeof createRecipeFailureErrorResponseSchema>;
-export type CreateRecipeRequestBody = z.infer<typeof createRecipeRequestBodySchema>;
+export type CreateChatAccessGrantRequestBody = z.infer<
+  typeof createChatAccessGrantRequestBodySchema
+>;
+export type CreateChatAccessGrantResponse = z.infer<
+  typeof createChatAccessGrantResponseSchema
+>;
+export type CreateChatConversationRequestBody = z.infer<
+  typeof createChatConversationRequestBodySchema
+>;
+export type CreateChatConversationResponse = z.infer<
+  typeof createChatConversationResponseSchema
+>;
+export type CreateChatCreditGrantRequestBody = z.infer<
+  typeof createChatCreditGrantRequestBodySchema
+>;
+export type CreateChatCreditGrantResponse = z.infer<
+  typeof createChatCreditGrantResponseSchema
+>;
+export type CreateCreditCheckoutRequestBody = z.infer<
+  typeof createCreditCheckoutRequestBodySchema
+>;
+export type CreateCreditCheckoutResponse = z.infer<
+  typeof createCreditCheckoutResponseSchema
+>;
+export type CreateIngredientFailureErrorResponse = z.infer<
+  typeof createIngredientFailureErrorResponseSchema
+>;
+export type CreateIngredientRequestBody = z.infer<
+  typeof createIngredientRequestBodySchema
+>;
+export type CreateRecipeCommentFailureErrorResponse = z.infer<
+  typeof createRecipeCommentFailureErrorResponseSchema
+>;
+export type CreateRecipeCommentRequestBody = z.infer<
+  typeof createRecipeCommentRequestBodySchema
+>;
+export type CreateRecipeCommentResponse = z.infer<
+  typeof createRecipeCommentResponseSchema
+>;
+export type CreateRecipeCommentValidationErrorResponse = z.infer<
+  typeof createRecipeCommentValidationErrorResponseSchema
+>;
+export type CreateRecipeFailureErrorResponse = z.infer<
+  typeof createRecipeFailureErrorResponseSchema
+>;
+export type CreateRecipeRequestBody = z.infer<
+  typeof createRecipeRequestBodySchema
+>;
 export type CreateRecipeResponse = z.infer<typeof createRecipeResponseSchema>;
-export type CreateRecipeValidationErrorResponse = z.infer<typeof createRecipeValidationErrorResponseSchema>;
-export type CreateUsernameFailureErrorResponse = z.infer<typeof createUsernameFailureErrorResponseSchema>;
-export type CreateUsernameRequestBody = z.infer<typeof createUsernameRequestBodySchema>;
-export type CreateUsernameSuccessResponse = z.infer<typeof createUsernameSuccessResponseSchema>;
-export type CreateUsernameValidationErrorResponse = z.infer<typeof createUsernameValidationErrorResponseSchema>;
-export type CreateYeastFailureErrorResponse = z.infer<typeof createYeastFailureErrorResponseSchema>;
-export type CreateYeastRequestBody = z.infer<typeof createYeastRequestBodySchema>;
-export type CreateYeastValidationErrorResponse = z.infer<typeof createYeastValidationErrorResponseSchema>;
-export type CreditAccountErrorResponse = z.infer<typeof creditAccountErrorResponseSchema>;
+export type CreateRecipeValidationErrorResponse = z.infer<
+  typeof createRecipeValidationErrorResponseSchema
+>;
+export type CreateUsernameFailureErrorResponse = z.infer<
+  typeof createUsernameFailureErrorResponseSchema
+>;
+export type CreateUsernameRequestBody = z.infer<
+  typeof createUsernameRequestBodySchema
+>;
+export type CreateUsernameSuccessResponse = z.infer<
+  typeof createUsernameSuccessResponseSchema
+>;
+export type CreateUsernameValidationErrorResponse = z.infer<
+  typeof createUsernameValidationErrorResponseSchema
+>;
+export type CreateYeastFailureErrorResponse = z.infer<
+  typeof createYeastFailureErrorResponseSchema
+>;
+export type CreateYeastRequestBody = z.infer<
+  typeof createYeastRequestBodySchema
+>;
+export type CreateYeastValidationErrorResponse = z.infer<
+  typeof createYeastValidationErrorResponseSchema
+>;
+export type CreditAccountErrorResponse = z.infer<
+  typeof creditAccountErrorResponseSchema
+>;
 export type CreditActivityQuery = z.infer<typeof creditActivityQuerySchema>;
-export type CreditActivityResponse = z.infer<typeof creditActivityResponseSchema>;
+export type CreditActivityResponse = z.infer<
+  typeof creditActivityResponseSchema
+>;
 export type CreditBalanceResponse = z.infer<typeof creditBalanceResponseSchema>;
-export type CreditPaymentRecoveryAdministrationResponse = z.infer<typeof creditPaymentRecoveryAdministrationResponseSchema>;
-export type CreditPaymentRecoveryKind = z.infer<typeof creditPaymentRecoveryKindSchema>;
-export type CreditPaymentRecoveryPathParams = z.infer<typeof creditPaymentRecoveryPathParamsSchema>;
-export type CreditPaymentRecoveryResponse = z.infer<typeof creditPaymentRecoveryResponseSchema>;
-export type CreditPaymentRecoveryStatus = z.infer<typeof creditPaymentRecoveryStatusSchema>;
-export type DeleteAdditiveFailureErrorResponse = z.infer<typeof deleteAdditiveFailureErrorResponseSchema>;
-export type DeleteAdditiveSuccessResponse = z.infer<typeof deleteAdditiveSuccessResponseSchema>;
-export type DeleteAdminUserSuccessResponse = z.infer<typeof deleteAdminUserSuccessResponseSchema>;
-export type DeleteBrewEntrySuccessResponse = z.infer<typeof deleteBrewEntrySuccessResponseSchema>;
-export type DeleteBrewSuccessResponse = z.infer<typeof deleteBrewSuccessResponseSchema>;
-export type DeleteChatAccessGrantResponse = z.infer<typeof deleteChatAccessGrantResponseSchema>;
-export type DeleteChatConversationResponse = z.infer<typeof deleteChatConversationResponseSchema>;
-export type DeleteHydrometerBrewResponse = z.infer<typeof deleteHydrometerBrewResponseSchema>;
-export type DeleteHydrometerDeviceResponse = z.infer<typeof deleteHydrometerDeviceResponseSchema>;
-export type DeleteHydrometerLogsInRangeResponse = z.infer<typeof deleteHydrometerLogsInRangeResponseSchema>;
-export type DeleteIngredientFailureErrorResponse = z.infer<typeof deleteIngredientFailureErrorResponseSchema>;
-export type DeleteIngredientSuccessResponse = z.infer<typeof deleteIngredientSuccessResponseSchema>;
-export type DeleteRecipeCommentFailureErrorResponse = z.infer<typeof deleteRecipeCommentFailureErrorResponseSchema>;
-export type DeleteRecipeCommentResponse = z.infer<typeof deleteRecipeCommentResponseSchema>;
-export type DeleteRecipeFailureErrorResponse = z.infer<typeof deleteRecipeFailureErrorResponseSchema>;
-export type DeleteRecipeForbiddenErrorResponse = z.infer<typeof deleteRecipeForbiddenErrorResponseSchema>;
-export type DeleteRecipeSuccessResponse = z.infer<typeof deleteRecipeSuccessResponseSchema>;
-export type DeleteYeastFailureErrorResponse = z.infer<typeof deleteYeastFailureErrorResponseSchema>;
-export type DeleteYeastSuccessResponse = z.infer<typeof deleteYeastSuccessResponseSchema>;
-export type EndHydrometerBrewResponse = z.infer<typeof endHydrometerBrewResponseSchema>;
+export type CreditPaymentRecoveryAdministrationResponse = z.infer<
+  typeof creditPaymentRecoveryAdministrationResponseSchema
+>;
+export type CreditPaymentRecoveryKind = z.infer<
+  typeof creditPaymentRecoveryKindSchema
+>;
+export type CreditPaymentRecoveryPathParams = z.infer<
+  typeof creditPaymentRecoveryPathParamsSchema
+>;
+export type CreditPaymentRecoveryResponse = z.infer<
+  typeof creditPaymentRecoveryResponseSchema
+>;
+export type CreditPaymentRecoveryStatus = z.infer<
+  typeof creditPaymentRecoveryStatusSchema
+>;
+export type DeleteAdditiveFailureErrorResponse = z.infer<
+  typeof deleteAdditiveFailureErrorResponseSchema
+>;
+export type DeleteAdditiveSuccessResponse = z.infer<
+  typeof deleteAdditiveSuccessResponseSchema
+>;
+export type DeleteAdminUserSuccessResponse = z.infer<
+  typeof deleteAdminUserSuccessResponseSchema
+>;
+export type DeleteBrewEntrySuccessResponse = z.infer<
+  typeof deleteBrewEntrySuccessResponseSchema
+>;
+export type DeleteBrewSuccessResponse = z.infer<
+  typeof deleteBrewSuccessResponseSchema
+>;
+export type DeleteChatAccessGrantResponse = z.infer<
+  typeof deleteChatAccessGrantResponseSchema
+>;
+export type DeleteChatConversationResponse = z.infer<
+  typeof deleteChatConversationResponseSchema
+>;
+export type DeleteHydrometerBrewResponse = z.infer<
+  typeof deleteHydrometerBrewResponseSchema
+>;
+export type DeleteHydrometerDeviceResponse = z.infer<
+  typeof deleteHydrometerDeviceResponseSchema
+>;
+export type DeleteHydrometerLogsInRangeResponse = z.infer<
+  typeof deleteHydrometerLogsInRangeResponseSchema
+>;
+export type DeleteIngredientFailureErrorResponse = z.infer<
+  typeof deleteIngredientFailureErrorResponseSchema
+>;
+export type DeleteIngredientSuccessResponse = z.infer<
+  typeof deleteIngredientSuccessResponseSchema
+>;
+export type DeleteRecipeCommentFailureErrorResponse = z.infer<
+  typeof deleteRecipeCommentFailureErrorResponseSchema
+>;
+export type DeleteRecipeCommentResponse = z.infer<
+  typeof deleteRecipeCommentResponseSchema
+>;
+export type DeleteRecipeFailureErrorResponse = z.infer<
+  typeof deleteRecipeFailureErrorResponseSchema
+>;
+export type DeleteRecipeForbiddenErrorResponse = z.infer<
+  typeof deleteRecipeForbiddenErrorResponseSchema
+>;
+export type DeleteRecipeSuccessResponse = z.infer<
+  typeof deleteRecipeSuccessResponseSchema
+>;
+export type DeleteYeastFailureErrorResponse = z.infer<
+  typeof deleteYeastFailureErrorResponseSchema
+>;
+export type DeleteYeastSuccessResponse = z.infer<
+  typeof deleteYeastSuccessResponseSchema
+>;
+export type EndHydrometerBrewResponse = z.infer<
+  typeof endHydrometerBrewResponseSchema
+>;
 export type GetRecipeResponse = z.infer<typeof getRecipeResponseSchema>;
 export type GoFermType = z.infer<typeof goFermTypeSchema>;
 export type GravityUnitResponse = z.infer<typeof gravityUnitResponseSchema>;
-export type HydrometerAccountErrorResponse = z.infer<typeof hydrometerAccountErrorResponseSchema>;
-export type HydrometerAccountResponse = z.infer<typeof hydrometerAccountResponseSchema>;
-export type HydrometerAuthErrorResponse = z.infer<typeof hydrometerAuthErrorResponseSchema>;
-export type HydrometerBrewAlertResponse = z.infer<typeof hydrometerBrewAlertResponseSchema>;
-export type HydrometerBrewDevicePairItemResponse = z.infer<typeof hydrometerBrewDevicePairItemResponseSchema>;
-export type HydrometerBrewErrorResponse = z.infer<typeof hydrometerBrewErrorResponseSchema>;
-export type HydrometerBrewResponse = z.infer<typeof hydrometerBrewResponseSchema>;
-export type HydrometerBrewsResponse = z.infer<typeof hydrometerBrewsResponseSchema>;
-export type HydrometerBrewValidationErrorResponse = z.infer<typeof hydrometerBrewValidationErrorResponseSchema>;
-export type HydrometerDeviceBrewResponse = z.infer<typeof hydrometerDeviceBrewResponseSchema>;
-export type HydrometerDeviceErrorResponse = z.infer<typeof hydrometerDeviceErrorResponseSchema>;
-export type HydrometerDevicePathParams = z.infer<typeof hydrometerDevicePathParamsSchema>;
-export type HydrometerDeviceResponse = z.infer<typeof hydrometerDeviceResponseSchema>;
-export type HydrometerIngestRequestBody = z.infer<typeof hydrometerIngestRequestBodySchema>;
-export type HydrometerLogErrorResponse = z.infer<typeof hydrometerLogErrorResponseSchema>;
-export type HydrometerLogMutationParams = z.infer<typeof hydrometerLogMutationParamsSchema>;
-export type HydrometerLogMutationQueryParams = z.infer<typeof hydrometerLogMutationQueryParamsSchema>;
-export type HydrometerLogPathParams = z.infer<typeof hydrometerLogPathParamsSchema>;
-export type HydrometerLogRangeDeleteQueryParams = z.infer<typeof hydrometerLogRangeDeleteQueryParamsSchema>;
+export type HydrometerAccountErrorResponse = z.infer<
+  typeof hydrometerAccountErrorResponseSchema
+>;
+export type HydrometerAccountResponse = z.infer<
+  typeof hydrometerAccountResponseSchema
+>;
+export type HydrometerAuthErrorResponse = z.infer<
+  typeof hydrometerAuthErrorResponseSchema
+>;
+export type HydrometerBrewAlertResponse = z.infer<
+  typeof hydrometerBrewAlertResponseSchema
+>;
+export type HydrometerBrewDevicePairItemResponse = z.infer<
+  typeof hydrometerBrewDevicePairItemResponseSchema
+>;
+export type HydrometerBrewErrorResponse = z.infer<
+  typeof hydrometerBrewErrorResponseSchema
+>;
+export type HydrometerBrewResponse = z.infer<
+  typeof hydrometerBrewResponseSchema
+>;
+export type HydrometerBrewsResponse = z.infer<
+  typeof hydrometerBrewsResponseSchema
+>;
+export type HydrometerBrewValidationErrorResponse = z.infer<
+  typeof hydrometerBrewValidationErrorResponseSchema
+>;
+export type HydrometerDeviceBrewResponse = z.infer<
+  typeof hydrometerDeviceBrewResponseSchema
+>;
+export type HydrometerDeviceErrorResponse = z.infer<
+  typeof hydrometerDeviceErrorResponseSchema
+>;
+export type HydrometerDevicePathParams = z.infer<
+  typeof hydrometerDevicePathParamsSchema
+>;
+export type HydrometerDeviceResponse = z.infer<
+  typeof hydrometerDeviceResponseSchema
+>;
+export type HydrometerIngestRequestBody = z.infer<
+  typeof hydrometerIngestRequestBodySchema
+>;
+export type HydrometerLogErrorResponse = z.infer<
+  typeof hydrometerLogErrorResponseSchema
+>;
+export type HydrometerLogMutationParams = z.infer<
+  typeof hydrometerLogMutationParamsSchema
+>;
+export type HydrometerLogMutationQueryParams = z.infer<
+  typeof hydrometerLogMutationQueryParamsSchema
+>;
+export type HydrometerLogPathParams = z.infer<
+  typeof hydrometerLogPathParamsSchema
+>;
+export type HydrometerLogRangeDeleteQueryParams = z.infer<
+  typeof hydrometerLogRangeDeleteQueryParamsSchema
+>;
 export type HydrometerLogResponse = z.infer<typeof hydrometerLogResponseSchema>;
-export type HydrometerLogsQueryParams = z.infer<typeof hydrometerLogsQueryParamsSchema>;
-export type HydrometerLogsResponse = z.infer<typeof hydrometerLogsResponseSchema>;
-export type HydrometerLogValidationErrorResponse = z.infer<typeof hydrometerLogValidationErrorResponseSchema>;
-export type HydrometerTokenResponse = z.infer<typeof hydrometerTokenResponseSchema>;
-export type IngredientByIdErrorResponse = z.infer<typeof ingredientByIdErrorResponseSchema>;
-export type IngredientByIdPathParams = z.infer<typeof ingredientByIdPathParamsSchema>;
-export type IngredientByIdResponse = z.infer<typeof ingredientByIdResponseSchema>;
-export type IngredientLineAmountsResponse = z.infer<typeof ingredientLineAmountsResponseSchema>;
-export type IngredientLineResponse = z.infer<typeof ingredientLineResponseSchema>;
+export type HydrometerLogsQueryParams = z.infer<
+  typeof hydrometerLogsQueryParamsSchema
+>;
+export type HydrometerLogsResponse = z.infer<
+  typeof hydrometerLogsResponseSchema
+>;
+export type HydrometerLogValidationErrorResponse = z.infer<
+  typeof hydrometerLogValidationErrorResponseSchema
+>;
+export type HydrometerTokenResponse = z.infer<
+  typeof hydrometerTokenResponseSchema
+>;
+export type IngredientByIdErrorResponse = z.infer<
+  typeof ingredientByIdErrorResponseSchema
+>;
+export type IngredientByIdPathParams = z.infer<
+  typeof ingredientByIdPathParamsSchema
+>;
+export type IngredientByIdResponse = z.infer<
+  typeof ingredientByIdResponseSchema
+>;
+export type IngredientLineAmountsResponse = z.infer<
+  typeof ingredientLineAmountsResponseSchema
+>;
+export type IngredientLineResponse = z.infer<
+  typeof ingredientLineResponseSchema
+>;
 export type IngredientQueryParams = z.infer<typeof ingredientQueryParamsSchema>;
 export type IngredientRefResponse = z.infer<typeof ingredientRefResponseSchema>;
 export type IngredientResponse = z.infer<typeof ingredientResponseSchema>;
-export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchErrorResponseSchema>;
+export type IngredientsFetchErrorResponse = z.infer<
+  typeof ingredientsFetchErrorResponseSchema
+>;
 export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
-export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
-export type LinkRecipeToHydrometerBrewRequestBody = z.infer<typeof linkRecipeToHydrometerBrewRequestBodySchema>;
-export type LinkRecipeToHydrometerBrewResponse = z.infer<typeof linkRecipeToHydrometerBrewResponseSchema>;
-export type LoginFailureErrorResponse = z.infer<typeof loginFailureErrorResponseSchema>;
-export type LoginInvalidCredentialsErrorResponse = z.infer<typeof loginInvalidCredentialsErrorResponseSchema>;
-export type LoginMissingCredentialsErrorResponse = z.infer<typeof loginMissingCredentialsErrorResponseSchema>;
+export type InvalidRecipeIdErrorResponse = z.infer<
+  typeof invalidRecipeIdErrorResponseSchema
+>;
+export type LinkRecipeToHydrometerBrewRequestBody = z.infer<
+  typeof linkRecipeToHydrometerBrewRequestBodySchema
+>;
+export type LinkRecipeToHydrometerBrewResponse = z.infer<
+  typeof linkRecipeToHydrometerBrewResponseSchema
+>;
+export type LoginFailureErrorResponse = z.infer<
+  typeof loginFailureErrorResponseSchema
+>;
+export type LoginInvalidCredentialsErrorResponse = z.infer<
+  typeof loginInvalidCredentialsErrorResponseSchema
+>;
+export type LoginMissingCredentialsErrorResponse = z.infer<
+  typeof loginMissingCredentialsErrorResponseSchema
+>;
 export type LoginRequestBody = z.infer<typeof loginRequestBodySchema>;
 export type LoginSuccessResponse = z.infer<typeof loginSuccessResponseSchema>;
 export type NitrogenRequirement = z.infer<typeof nitrogenRequirementSchema>;
 export type NoteLineResponse = z.infer<typeof noteLineResponseSchema>;
 export type NotesResponse = z.infer<typeof notesResponseSchema>;
-export type NutrientAdditionsDerivedResponse = z.infer<typeof nutrientAdditionsDerivedResponseSchema>;
-export type NutrientAdjustmentsResponse = z.infer<typeof nutrientAdjustmentsResponseSchema>;
-export type NutrientAmountsByKeyNumberResponse = z.infer<typeof nutrientAmountsByKeyNumberResponseSchema>;
-export type NutrientAmountsByKeyResponse = z.infer<typeof nutrientAmountsByKeyResponseSchema>;
+export type NutrientAdditionsDerivedResponse = z.infer<
+  typeof nutrientAdditionsDerivedResponseSchema
+>;
+export type NutrientAdjustmentsResponse = z.infer<
+  typeof nutrientAdjustmentsResponseSchema
+>;
+export type NutrientAmountsByKeyNumberResponse = z.infer<
+  typeof nutrientAmountsByKeyNumberResponseSchema
+>;
+export type NutrientAmountsByKeyResponse = z.infer<
+  typeof nutrientAmountsByKeyResponseSchema
+>;
 export type NutrientDataResponse = z.infer<typeof nutrientDataResponseSchema>;
-export type NutrientDerivedStateResponse = z.infer<typeof nutrientDerivedStateResponseSchema>;
-export type NutrientInputsResponse = z.infer<typeof nutrientInputsResponseSchema>;
+export type NutrientDerivedStateResponse = z.infer<
+  typeof nutrientDerivedStateResponseSchema
+>;
+export type NutrientInputsResponse = z.infer<
+  typeof nutrientInputsResponseSchema
+>;
 export type NutrientScheduleType = z.infer<typeof nutrientScheduleTypeSchema>;
-export type NutrientSelectedResponse = z.infer<typeof nutrientSelectedResponseSchema>;
-export type NutrientSettingsResponse = z.infer<typeof nutrientSettingsResponseSchema>;
+export type NutrientSelectedResponse = z.infer<
+  typeof nutrientSelectedResponseSchema
+>;
+export type NutrientSettingsResponse = z.infer<
+  typeof nutrientSettingsResponseSchema
+>;
 export type NutrientVolumeUnit = z.infer<typeof nutrientVolumeUnitSchema>;
-export type PublicBrewDetailResponse = z.infer<typeof publicBrewDetailResponseSchema>;
-export type PublicBrewEntriesByStageResponse = z.infer<typeof publicBrewEntriesByStageResponseSchema>;
-export type PublicBrewEntryResponse = z.infer<typeof publicBrewEntryResponseSchema>;
-export type PublicBrewFetchErrorResponse = z.infer<typeof publicBrewFetchErrorResponseSchema>;
-export type PublicBrewListItemResponse = z.infer<typeof publicBrewListItemResponseSchema>;
+export type PublicBrewDetailResponse = z.infer<
+  typeof publicBrewDetailResponseSchema
+>;
+export type PublicBrewEntriesByStageResponse = z.infer<
+  typeof publicBrewEntriesByStageResponseSchema
+>;
+export type PublicBrewEntryResponse = z.infer<
+  typeof publicBrewEntryResponseSchema
+>;
+export type PublicBrewFetchErrorResponse = z.infer<
+  typeof publicBrewFetchErrorResponseSchema
+>;
+export type PublicBrewListItemResponse = z.infer<
+  typeof publicBrewListItemResponseSchema
+>;
 export type PublicBrewLogResponse = z.infer<typeof publicBrewLogResponseSchema>;
-export type PublicBrewNotFoundErrorResponse = z.infer<typeof publicBrewNotFoundErrorResponseSchema>;
-export type PublicBrewOwnerResponse = z.infer<typeof publicBrewOwnerResponseSchema>;
-export type PublicBrewValidationErrorResponse = z.infer<typeof publicBrewValidationErrorResponseSchema>;
-export type PublicRecipeBrewPathParams = z.infer<typeof publicRecipeBrewPathParamsSchema>;
-export type PublicRecipeBrewResponse = z.infer<typeof publicRecipeBrewResponseSchema>;
-export type PublicRecipeBrewsPathParams = z.infer<typeof publicRecipeBrewsPathParamsSchema>;
-export type PublicRecipeBrewsResponse = z.infer<typeof publicRecipeBrewsResponseSchema>;
-export type PublicRecipeListItemResponse = z.infer<typeof publicRecipeListItemResponseSchema>;
-export type PublicRecipeOwnerResponse = z.infer<typeof publicRecipeOwnerResponseSchema>;
-export type PublicRecipesFetchErrorResponse = z.infer<typeof publicRecipesFetchErrorResponseSchema>;
-export type PublicRecipesPageResponse = z.infer<typeof publicRecipesPageResponseSchema>;
-export type PublicRecipesQueryParams = z.infer<typeof publicRecipesQueryParamsSchema>;
-export type RaptPillCloudIngestRequestBody = z.infer<typeof raptPillCloudIngestRequestBodySchema>;
-export type RaptPillRegisterErrorResponse = z.infer<typeof raptPillRegisterErrorResponseSchema>;
-export type RaptPillRegisterRequestBody = z.infer<typeof raptPillRegisterRequestBodySchema>;
-export type RateRecipeFailureErrorResponse = z.infer<typeof rateRecipeFailureErrorResponseSchema>;
+export type PublicBrewNotFoundErrorResponse = z.infer<
+  typeof publicBrewNotFoundErrorResponseSchema
+>;
+export type PublicBrewOwnerResponse = z.infer<
+  typeof publicBrewOwnerResponseSchema
+>;
+export type PublicBrewValidationErrorResponse = z.infer<
+  typeof publicBrewValidationErrorResponseSchema
+>;
+export type PublicRecipeBrewPathParams = z.infer<
+  typeof publicRecipeBrewPathParamsSchema
+>;
+export type PublicRecipeBrewResponse = z.infer<
+  typeof publicRecipeBrewResponseSchema
+>;
+export type PublicRecipeBrewsPathParams = z.infer<
+  typeof publicRecipeBrewsPathParamsSchema
+>;
+export type PublicRecipeBrewsResponse = z.infer<
+  typeof publicRecipeBrewsResponseSchema
+>;
+export type PublicRecipeListItemResponse = z.infer<
+  typeof publicRecipeListItemResponseSchema
+>;
+export type PublicRecipeOwnerResponse = z.infer<
+  typeof publicRecipeOwnerResponseSchema
+>;
+export type PublicRecipesFetchErrorResponse = z.infer<
+  typeof publicRecipesFetchErrorResponseSchema
+>;
+export type PublicRecipesPageResponse = z.infer<
+  typeof publicRecipesPageResponseSchema
+>;
+export type PublicRecipesQueryParams = z.infer<
+  typeof publicRecipesQueryParamsSchema
+>;
+export type RaptPillCloudIngestRequestBody = z.infer<
+  typeof raptPillCloudIngestRequestBodySchema
+>;
+export type RaptPillRegisterErrorResponse = z.infer<
+  typeof raptPillRegisterErrorResponseSchema
+>;
+export type RaptPillRegisterRequestBody = z.infer<
+  typeof raptPillRegisterRequestBodySchema
+>;
+export type RateRecipeFailureErrorResponse = z.infer<
+  typeof rateRecipeFailureErrorResponseSchema
+>;
 export type RateRecipeRequestBody = z.infer<typeof rateRecipeRequestBodySchema>;
 export type RateRecipeResponse = z.infer<typeof rateRecipeResponseSchema>;
-export type RateRecipeValidationErrorResponse = z.infer<typeof rateRecipeValidationErrorResponseSchema>;
-export type RecipeAmountInputResponse = z.infer<typeof recipeAmountInputResponseSchema>;
-export type RecipeCommentAuthorResponse = z.infer<typeof recipeCommentAuthorResponseSchema>;
-export type RecipeCommentListItemResponse = z.infer<typeof recipeCommentListItemResponseSchema>;
-export type RecipeCommentListPathParams = z.infer<typeof recipeCommentListPathParamsSchema>;
-export type RecipeCommentListQueryParams = z.infer<typeof recipeCommentListQueryParamsSchema>;
-export type RecipeCommentPathParams = z.infer<typeof recipeCommentPathParamsSchema>;
-export type RecipeCommentRepliesPathParams = z.infer<typeof recipeCommentRepliesPathParamsSchema>;
+export type RateRecipeValidationErrorResponse = z.infer<
+  typeof rateRecipeValidationErrorResponseSchema
+>;
+export type RecipeAmountInputResponse = z.infer<
+  typeof recipeAmountInputResponseSchema
+>;
+export type RecipeCommentAuthorResponse = z.infer<
+  typeof recipeCommentAuthorResponseSchema
+>;
+export type RecipeCommentListItemResponse = z.infer<
+  typeof recipeCommentListItemResponseSchema
+>;
+export type RecipeCommentListPathParams = z.infer<
+  typeof recipeCommentListPathParamsSchema
+>;
+export type RecipeCommentListQueryParams = z.infer<
+  typeof recipeCommentListQueryParamsSchema
+>;
+export type RecipeCommentPathParams = z.infer<
+  typeof recipeCommentPathParamsSchema
+>;
+export type RecipeCommentRepliesPathParams = z.infer<
+  typeof recipeCommentRepliesPathParamsSchema
+>;
 export type RecipeCommentResponse = z.infer<typeof recipeCommentResponseSchema>;
-export type RecipeCommentsFetchErrorResponse = z.infer<typeof recipeCommentsFetchErrorResponseSchema>;
-export type RecipeCommentsPageResponse = z.infer<typeof recipeCommentsPageResponseSchema>;
-export type RecipeCommentsValidationErrorResponse = z.infer<typeof recipeCommentsValidationErrorResponseSchema>;
+export type RecipeCommentsFetchErrorResponse = z.infer<
+  typeof recipeCommentsFetchErrorResponseSchema
+>;
+export type RecipeCommentsPageResponse = z.infer<
+  typeof recipeCommentsPageResponseSchema
+>;
+export type RecipeCommentsValidationErrorResponse = z.infer<
+  typeof recipeCommentsValidationErrorResponseSchema
+>;
 export type RecipeDataV2Response = z.infer<typeof recipeDataV2ResponseSchema>;
-export type RecipeDerivedByIdValidationErrorResponse = z.infer<typeof recipeDerivedByIdValidationErrorResponseSchema>;
-export type RecipeDerivedFailureErrorResponse = z.infer<typeof recipeDerivedFailureErrorResponseSchema>;
-export type RecipeDerivedStateResponse = z.infer<typeof recipeDerivedStateResponseSchema>;
-export type RecipeDerivedStateResponseBody = z.infer<typeof recipeDerivedStateResponseBodySchema>;
-export type RecipeDerivedValidationErrorResponse = z.infer<typeof recipeDerivedValidationErrorResponseSchema>;
+export type RecipeDerivedByIdValidationErrorResponse = z.infer<
+  typeof recipeDerivedByIdValidationErrorResponseSchema
+>;
+export type RecipeDerivedFailureErrorResponse = z.infer<
+  typeof recipeDerivedFailureErrorResponseSchema
+>;
+export type RecipeDerivedStateResponse = z.infer<
+  typeof recipeDerivedStateResponseSchema
+>;
+export type RecipeDerivedStateResponseBody = z.infer<
+  typeof recipeDerivedStateResponseBodySchema
+>;
+export type RecipeDerivedValidationErrorResponse = z.infer<
+  typeof recipeDerivedValidationErrorResponseSchema
+>;
 export type RecipeDetailResponse = z.infer<typeof recipeDetailResponseSchema>;
-export type RecipeFetchErrorResponse = z.infer<typeof recipeFetchErrorResponseSchema>;
-export type RecipeForbiddenErrorResponse = z.infer<typeof recipeForbiddenErrorResponseSchema>;
-export type RecipeNotFoundErrorResponse = z.infer<typeof recipeNotFoundErrorResponseSchema>;
+export type RecipeFetchErrorResponse = z.infer<
+  typeof recipeFetchErrorResponseSchema
+>;
+export type RecipeForbiddenErrorResponse = z.infer<
+  typeof recipeForbiddenErrorResponseSchema
+>;
+export type RecipeNotFoundErrorResponse = z.infer<
+  typeof recipeNotFoundErrorResponseSchema
+>;
 export type RecipeOwnerResponse = z.infer<typeof recipeOwnerResponseSchema>;
 export type RecipePathParams = z.infer<typeof recipePathParamsSchema>;
-export type RecipeRatingAggregateResponse = z.infer<typeof recipeRatingAggregateResponseSchema>;
+export type RecipeRatingAggregateResponse = z.infer<
+  typeof recipeRatingAggregateResponseSchema
+>;
 export type RecipeRatingResponse = z.infer<typeof recipeRatingResponseSchema>;
-export type RecipeStabilizerResultsResponse = z.infer<typeof recipeStabilizerResultsResponseSchema>;
-export type RecipeUnitDefaultsResponse = z.infer<typeof recipeUnitDefaultsResponseSchema>;
-export type RefreshTokenFailureErrorResponse = z.infer<typeof refreshTokenFailureErrorResponseSchema>;
-export type RefreshTokenInvalidEmailErrorResponse = z.infer<typeof refreshTokenInvalidEmailErrorResponseSchema>;
-export type RefreshTokenRequestBody = z.infer<typeof refreshTokenRequestBodySchema>;
-export type RefreshTokenSuccessResponse = z.infer<typeof refreshTokenSuccessResponseSchema>;
-export type RefreshTokenValidationErrorResponse = z.infer<typeof refreshTokenValidationErrorResponseSchema>;
-export type RegisterFailureErrorResponse = z.infer<typeof registerFailureErrorResponseSchema>;
+export type RecipeStabilizerResultsResponse = z.infer<
+  typeof recipeStabilizerResultsResponseSchema
+>;
+export type RecipeUnitDefaultsResponse = z.infer<
+  typeof recipeUnitDefaultsResponseSchema
+>;
+export type RefreshTokenFailureErrorResponse = z.infer<
+  typeof refreshTokenFailureErrorResponseSchema
+>;
+export type RefreshTokenInvalidEmailErrorResponse = z.infer<
+  typeof refreshTokenInvalidEmailErrorResponseSchema
+>;
+export type RefreshTokenRequestBody = z.infer<
+  typeof refreshTokenRequestBodySchema
+>;
+export type RefreshTokenSuccessResponse = z.infer<
+  typeof refreshTokenSuccessResponseSchema
+>;
+export type RefreshTokenValidationErrorResponse = z.infer<
+  typeof refreshTokenValidationErrorResponseSchema
+>;
+export type RegisterFailureErrorResponse = z.infer<
+  typeof registerFailureErrorResponseSchema
+>;
 export type RegisterRequestBody = z.infer<typeof registerRequestBodySchema>;
-export type RegisterSuccessResponse = z.infer<typeof registerSuccessResponseSchema>;
-export type RegisterValidationErrorResponse = z.infer<typeof registerValidationErrorResponseSchema>;
-export type RenameHydrometerBrewResponse = z.infer<typeof renameHydrometerBrewResponseSchema>;
-export type RequestPasswordResetBody = z.infer<typeof requestPasswordResetBodySchema>;
-export type RequestPasswordResetSuccessResponse = z.infer<typeof requestPasswordResetSuccessResponseSchema>;
-export type RequestPasswordResetValidationErrorResponse = z.infer<typeof requestPasswordResetValidationErrorResponseSchema>;
-export type ResetPasswordInvalidTokenErrorResponse = z.infer<typeof resetPasswordInvalidTokenErrorResponseSchema>;
-export type ResetPasswordRequestBody = z.infer<typeof resetPasswordRequestBodySchema>;
-export type ResetPasswordSuccessResponse = z.infer<typeof resetPasswordSuccessResponseSchema>;
-export type ResetPasswordValidationErrorResponse = z.infer<typeof resetPasswordValidationErrorResponseSchema>;
-export type ResolveCreditPaymentRecoveryRequestBody = z.infer<typeof resolveCreditPaymentRecoveryRequestBodySchema>;
-export type ResolveCreditPaymentRecoveryResponse = z.infer<typeof resolveCreditPaymentRecoveryResponseSchema>;
-export type SelectedNutrientsResponse = z.infer<typeof selectedNutrientsResponseSchema>;
+export type RegisterSuccessResponse = z.infer<
+  typeof registerSuccessResponseSchema
+>;
+export type RegisterValidationErrorResponse = z.infer<
+  typeof registerValidationErrorResponseSchema
+>;
+export type RenameHydrometerBrewResponse = z.infer<
+  typeof renameHydrometerBrewResponseSchema
+>;
+export type RequestPasswordResetBody = z.infer<
+  typeof requestPasswordResetBodySchema
+>;
+export type RequestPasswordResetSuccessResponse = z.infer<
+  typeof requestPasswordResetSuccessResponseSchema
+>;
+export type RequestPasswordResetValidationErrorResponse = z.infer<
+  typeof requestPasswordResetValidationErrorResponseSchema
+>;
+export type ResetPasswordInvalidTokenErrorResponse = z.infer<
+  typeof resetPasswordInvalidTokenErrorResponseSchema
+>;
+export type ResetPasswordRequestBody = z.infer<
+  typeof resetPasswordRequestBodySchema
+>;
+export type ResetPasswordSuccessResponse = z.infer<
+  typeof resetPasswordSuccessResponseSchema
+>;
+export type ResetPasswordValidationErrorResponse = z.infer<
+  typeof resetPasswordValidationErrorResponseSchema
+>;
+export type ResolveCreditPaymentRecoveryRequestBody = z.infer<
+  typeof resolveCreditPaymentRecoveryRequestBodySchema
+>;
+export type ResolveCreditPaymentRecoveryResponse = z.infer<
+  typeof resolveCreditPaymentRecoveryResponseSchema
+>;
+export type SelectedNutrientsResponse = z.infer<
+  typeof selectedNutrientsResponseSchema
+>;
 export type StabilizersResponse = z.infer<typeof stabilizersResponseSchema>;
-export type StartHydrometerBrewRequestBody = z.infer<typeof startHydrometerBrewRequestBodySchema>;
-export type StartHydrometerBrewResponse = z.infer<typeof startHydrometerBrewResponseSchema>;
-export type StripeWebhookReceiptResponse = z.infer<typeof stripeWebhookReceiptResponseSchema>;
-export type TemperatureUnitResponse = z.infer<typeof temperatureUnitResponseSchema>;
+export type StartHydrometerBrewRequestBody = z.infer<
+  typeof startHydrometerBrewRequestBodySchema
+>;
+export type StartHydrometerBrewResponse = z.infer<
+  typeof startHydrometerBrewResponseSchema
+>;
+export type StripeWebhookReceiptResponse = z.infer<
+  typeof stripeWebhookReceiptResponseSchema
+>;
+export type TemperatureUnitResponse = z.infer<
+  typeof temperatureUnitResponseSchema
+>;
 export type TiltColor = z.infer<typeof tiltColorSchema>;
 export type TiltIngestQueryParams = z.infer<typeof tiltIngestQueryParamsSchema>;
 export type TiltIngestRequestBody = z.infer<typeof tiltIngestRequestBodySchema>;
-export type UpdateAccountInfoErrorResponse = z.infer<typeof updateAccountInfoErrorResponseSchema>;
-export type UpdateAccountInfoRequestBody = z.infer<typeof updateAccountInfoRequestBodySchema>;
-export type UpdateAccountInfoResponse = z.infer<typeof updateAccountInfoResponseSchema>;
-export type UpdateAdditiveFailureErrorResponse = z.infer<typeof updateAdditiveFailureErrorResponseSchema>;
-export type UpdateAdditiveRequestBody = z.infer<typeof updateAdditiveRequestBodySchema>;
-export type UpdateAdminUserRequestBody = z.infer<typeof updateAdminUserRequestBodySchema>;
-export type UpdateBrewEntryRequestBody = z.infer<typeof updateBrewEntryRequestBodySchema>;
-export type UpdateBrewEntryResponse = z.infer<typeof updateBrewEntryResponseSchema>;
+export type UpdateAccountInfoErrorResponse = z.infer<
+  typeof updateAccountInfoErrorResponseSchema
+>;
+export type UpdateAccountInfoRequestBody = z.infer<
+  typeof updateAccountInfoRequestBodySchema
+>;
+export type UpdateAccountInfoResponse = z.infer<
+  typeof updateAccountInfoResponseSchema
+>;
+export type UpdateAdditiveFailureErrorResponse = z.infer<
+  typeof updateAdditiveFailureErrorResponseSchema
+>;
+export type UpdateAdditiveRequestBody = z.infer<
+  typeof updateAdditiveRequestBodySchema
+>;
+export type UpdateAdminUserRequestBody = z.infer<
+  typeof updateAdminUserRequestBodySchema
+>;
+export type UpdateBrewEntryRequestBody = z.infer<
+  typeof updateBrewEntryRequestBodySchema
+>;
+export type UpdateBrewEntryResponse = z.infer<
+  typeof updateBrewEntryResponseSchema
+>;
 export type UpdateBrewRequestBody = z.infer<typeof updateBrewRequestBodySchema>;
 export type UpdateBrewResponse = z.infer<typeof updateBrewResponseSchema>;
-export type UpdateChatAccessAdministrationRequestBody = z.infer<typeof updateChatAccessAdministrationRequestBodySchema>;
-export type UpdateChatConversationRequestBody = z.infer<typeof updateChatConversationRequestBodySchema>;
-export type UpdateChatConversationResponse = z.infer<typeof updateChatConversationResponseSchema>;
-export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
-export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
-export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;
-export type UpdateHydrometerDeviceRequestBody = z.infer<typeof updateHydrometerDeviceRequestBodySchema>;
-export type UpdateHydrometerLogRequestBody = z.infer<typeof updateHydrometerLogRequestBodySchema>;
-export type UpdateIngredientFailureErrorResponse = z.infer<typeof updateIngredientFailureErrorResponseSchema>;
-export type UpdateIngredientRequestBody = z.infer<typeof updateIngredientRequestBodySchema>;
-export type UpdateRecipeCommentFailureErrorResponse = z.infer<typeof updateRecipeCommentFailureErrorResponseSchema>;
-export type UpdateRecipeCommentRequestBody = z.infer<typeof updateRecipeCommentRequestBodySchema>;
-export type UpdateRecipeCommentResponse = z.infer<typeof updateRecipeCommentResponseSchema>;
-export type UpdateRecipeCommentValidationErrorResponse = z.infer<typeof updateRecipeCommentValidationErrorResponseSchema>;
-export type UpdateRecipeFailureErrorResponse = z.infer<typeof updateRecipeFailureErrorResponseSchema>;
-export type UpdateRecipeForbiddenErrorResponse = z.infer<typeof updateRecipeForbiddenErrorResponseSchema>;
-export type UpdateRecipeRequestBody = z.infer<typeof updateRecipeRequestBodySchema>;
+export type UpdateChatAccessAdministrationRequestBody = z.infer<
+  typeof updateChatAccessAdministrationRequestBodySchema
+>;
+export type UpdateChatConversationRequestBody = z.infer<
+  typeof updateChatConversationRequestBodySchema
+>;
+export type UpdateChatConversationResponse = z.infer<
+  typeof updateChatConversationResponseSchema
+>;
+export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<
+  typeof updateHydrometerBrewRecipeOrAlertsResponseSchema
+>;
+export type UpdateHydrometerBrewRequestBody = z.infer<
+  typeof updateHydrometerBrewRequestBodySchema
+>;
+export type UpdateHydrometerBrewResponse = z.infer<
+  typeof updateHydrometerBrewResponseSchema
+>;
+export type UpdateHydrometerDeviceRequestBody = z.infer<
+  typeof updateHydrometerDeviceRequestBodySchema
+>;
+export type UpdateHydrometerLogRequestBody = z.infer<
+  typeof updateHydrometerLogRequestBodySchema
+>;
+export type UpdateIngredientFailureErrorResponse = z.infer<
+  typeof updateIngredientFailureErrorResponseSchema
+>;
+export type UpdateIngredientRequestBody = z.infer<
+  typeof updateIngredientRequestBodySchema
+>;
+export type UpdateRecipeCommentFailureErrorResponse = z.infer<
+  typeof updateRecipeCommentFailureErrorResponseSchema
+>;
+export type UpdateRecipeCommentRequestBody = z.infer<
+  typeof updateRecipeCommentRequestBodySchema
+>;
+export type UpdateRecipeCommentResponse = z.infer<
+  typeof updateRecipeCommentResponseSchema
+>;
+export type UpdateRecipeCommentValidationErrorResponse = z.infer<
+  typeof updateRecipeCommentValidationErrorResponseSchema
+>;
+export type UpdateRecipeFailureErrorResponse = z.infer<
+  typeof updateRecipeFailureErrorResponseSchema
+>;
+export type UpdateRecipeForbiddenErrorResponse = z.infer<
+  typeof updateRecipeForbiddenErrorResponseSchema
+>;
+export type UpdateRecipeRequestBody = z.infer<
+  typeof updateRecipeRequestBodySchema
+>;
 export type UpdateRecipeResponse = z.infer<typeof updateRecipeResponseSchema>;
-export type UpdateRecipeValidationErrorResponse = z.infer<typeof updateRecipeValidationErrorResponseSchema>;
-export type UpdateYeastFailureErrorResponse = z.infer<typeof updateYeastFailureErrorResponseSchema>;
-export type UpdateYeastRequestBody = z.infer<typeof updateYeastRequestBodySchema>;
-export type VerifyTokenFailureErrorResponse = z.infer<typeof verifyTokenFailureErrorResponseSchema>;
-export type VerifyTokenNotFoundErrorResponse = z.infer<typeof verifyTokenNotFoundErrorResponseSchema>;
-export type VerifyTokenRequestBody = z.infer<typeof verifyTokenRequestBodySchema>;
-export type VerifyTokenSuccessResponse = z.infer<typeof verifyTokenSuccessResponseSchema>;
-export type VerifyTokenUnauthorizedErrorResponse = z.infer<typeof verifyTokenUnauthorizedErrorResponseSchema>;
-export type VerifyTokenUserResponse = z.infer<typeof verifyTokenUserResponseSchema>;
-export type VerifyTokenValidationErrorResponse = z.infer<typeof verifyTokenValidationErrorResponseSchema>;
+export type UpdateRecipeValidationErrorResponse = z.infer<
+  typeof updateRecipeValidationErrorResponseSchema
+>;
+export type UpdateYeastFailureErrorResponse = z.infer<
+  typeof updateYeastFailureErrorResponseSchema
+>;
+export type UpdateYeastRequestBody = z.infer<
+  typeof updateYeastRequestBodySchema
+>;
+export type VerifyTokenFailureErrorResponse = z.infer<
+  typeof verifyTokenFailureErrorResponseSchema
+>;
+export type VerifyTokenNotFoundErrorResponse = z.infer<
+  typeof verifyTokenNotFoundErrorResponseSchema
+>;
+export type VerifyTokenRequestBody = z.infer<
+  typeof verifyTokenRequestBodySchema
+>;
+export type VerifyTokenSuccessResponse = z.infer<
+  typeof verifyTokenSuccessResponseSchema
+>;
+export type VerifyTokenUnauthorizedErrorResponse = z.infer<
+  typeof verifyTokenUnauthorizedErrorResponseSchema
+>;
+export type VerifyTokenUserResponse = z.infer<
+  typeof verifyTokenUserResponseSchema
+>;
+export type VerifyTokenValidationErrorResponse = z.infer<
+  typeof verifyTokenValidationErrorResponseSchema
+>;
 export type VolumeUnit = z.infer<typeof volumeUnitSchema>;
 export type WeightUnit = z.infer<typeof weightUnitSchema>;
 export type YeastBrandResponse = z.infer<typeof yeastBrandResponseSchema>;
-export type YeastByIdErrorResponse = z.infer<typeof yeastByIdErrorResponseSchema>;
+export type YeastByIdErrorResponse = z.infer<
+  typeof yeastByIdErrorResponseSchema
+>;
 export type YeastByIdPathParams = z.infer<typeof yeastByIdPathParamsSchema>;
 export type YeastByIdResponse = z.infer<typeof yeastByIdResponseSchema>;
 export type YeastLookupResponse = z.infer<typeof yeastLookupResponseSchema>;
-export type YeastNitrogenRequirementResponse = z.infer<typeof yeastNitrogenRequirementResponseSchema>;
-export type YeastNotFoundErrorResponse = z.infer<typeof yeastNotFoundErrorResponseSchema>;
+export type YeastNitrogenRequirementResponse = z.infer<
+  typeof yeastNitrogenRequirementResponseSchema
+>;
+export type YeastNotFoundErrorResponse = z.infer<
+  typeof yeastNotFoundErrorResponseSchema
+>;
 export type YeastQueryParams = z.infer<typeof yeastQueryParamsSchema>;
 export type YeastResponse = z.infer<typeof yeastResponseSchema>;
-export type YeastsFetchErrorResponse = z.infer<typeof yeastsFetchErrorResponseSchema>;
+export type YeastsFetchErrorResponse = z.infer<
+  typeof yeastsFetchErrorResponseSchema
+>;
 export type YeastsResponse = z.infer<typeof yeastsResponseSchema>;

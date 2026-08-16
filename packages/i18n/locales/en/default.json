@@ -1931,11 +1931,7 @@
     "backsweetenedFg": "This value is automatically calculated based on the ingredients marked \"secondary\". Adjusting the value and clicking submit will alter the amounts of these secondary ingredients to meet your target gravity.",
     "benchTrials": {
       "body": "Bench Trials are a complicated topic that require further research than I can easily provide here. Follow these links for additional information ",
-      "linkTexts": [
-        "DtM Video, ",
-        "Scott Labs Article, ",
-        "Chef's Article."
-      ]
+      "linkTexts": ["DtM Video, ", "Scott Labs Article, ", "Chef's Article."]
     },
     "brix": "Brix measures the amount of dissolved solids in solution. 1g of sucrose in 100ml of water is 1 Brix, so it is roughly the same as percent sugar. You can measure brix with a refractometer, calculate it by nutrition facts, or convert your SG to brix over on ExtraCalc to use custom sugar percentages in this calculator. ",
     "campden": "Campden tablets vary quite a bit in the amount of free SO2 that they provide MeadTools assumes that one campden tablet provides 75PPM of free SO2.",

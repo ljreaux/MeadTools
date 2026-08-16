@@ -26,16 +26,10 @@
         "properties": {
           "packId": {
             "type": "string",
-            "enum": [
-              "starter",
-              "standard",
-              "reserve"
-            ]
+            "enum": ["starter", "standard", "reserve"]
           }
         },
-        "required": [
-          "packId"
-        ]
+        "required": ["packId"]
       },
       "CreateCreditCheckoutResponse": {
         "type": "object",
@@ -45,9 +39,7 @@
             "format": "uri"
           }
         },
-        "required": [
-          "url"
-        ]
+        "required": ["url"]
       },
       "CreditAccountErrorResponse": {
         "type": "object",
@@ -62,9 +54,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreditActivityResponse": {
         "type": "object",
@@ -92,13 +82,7 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": [
-                    "purchase",
-                    "grant",
-                    "usage",
-                    "refund",
-                    "adjustment"
-                  ]
+                  "enum": ["purchase", "grant", "usage", "refund", "adjustment"]
                 },
                 "entryTypes": {
                   "type": "array",
@@ -147,9 +131,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "availableCredits"
-        ]
+        "required": ["availableCredits"]
       },
       "AdditiveByIdResponse": {
         "$ref": "#/components/schemas/AdditiveResponse"
@@ -159,28 +141,20 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Additive not found"
-            ]
+            "enum": ["Additive not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdditiveFetchErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch additive"
-            ]
+            "enum": ["Failed to fetch additive"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateAdditiveRequestBody": {
         "type": "object",
@@ -205,9 +179,7 @@
               },
               {
                 "type": "string",
-                "enum": [
-                  "fl oz"
-                ]
+                "enum": ["fl oz"]
               }
             ]
           }
@@ -232,13 +204,7 @@
             "$ref": "#/components/schemas/AdditiveUnitResponse"
           }
         },
-        "required": [
-          "id",
-          "created_at",
-          "name",
-          "dosage",
-          "unit"
-        ]
+        "required": ["id", "created_at", "name", "dosage", "unit"]
       },
       "AdminAuthErrorResponse": {
         "type": "object",
@@ -258,9 +224,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateAdditiveFailureErrorResponse": {
         "type": "object",
@@ -274,9 +238,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteAdditiveSuccessResponse": {
         "type": "object",
@@ -285,9 +247,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "DeleteAdditiveFailureErrorResponse": {
         "type": "object",
@@ -301,9 +261,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdditivesResponse": {
         "type": "array",
@@ -316,14 +274,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch additives"
-            ]
+            "enum": ["Failed to fetch additives"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateAdditiveRequestBody": {
         "$ref": "#/components/schemas/createAdditiveRequestBodyObjectSchema"
@@ -333,14 +287,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Missing required fields"
-            ]
+            "enum": ["Missing required fields"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateAdditiveFailureErrorResponse": {
         "$ref": "#/components/schemas/additiveAdminFailureSchema"
@@ -533,9 +483,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateChatCreditGrantRequestBody": {
         "type": "object",
@@ -551,10 +499,7 @@
             "maximum": 1000000
           }
         },
-        "required": [
-          "userId",
-          "creditAmount"
-        ]
+        "required": ["userId", "creditAmount"]
       },
       "CreateChatCreditGrantResponse": {
         "type": "object",
@@ -568,10 +513,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "creditsGranted",
-          "availableCredits"
-        ]
+        "required": ["creditsGranted", "availableCredits"]
       },
       "DeleteChatAccessGrantResponse": {
         "type": "object",
@@ -580,9 +522,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "revoked"
-        ]
+        "required": ["revoked"]
       },
       "CreateChatAccessGrantRequestBody": {
         "type": "object",
@@ -593,9 +533,7 @@
             "exclusiveMinimum": true
           }
         },
-        "required": [
-          "userId"
-        ]
+        "required": ["userId"]
       },
       "CreateChatAccessGrantResponse": {
         "type": "object",
@@ -604,9 +542,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "granted"
-        ]
+        "required": ["granted"]
       },
       "ResolveCreditPaymentRecoveryRequestBody": {
         "type": "object",
@@ -624,20 +560,14 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "creditDelta",
-          "note",
-          "releaseChat"
-        ]
+        "required": ["creditDelta", "note", "releaseChat"]
       },
       "ResolveCreditPaymentRecoveryResponse": {
         "type": "object",
         "properties": {
           "resolved": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "availableCredits": {
             "type": "integer",
@@ -647,11 +577,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "resolved",
-          "availableCredits",
-          "chatReleased"
-        ]
+        "required": ["resolved", "availableCredits", "chatReleased"]
       },
       "CreditPaymentRecoveryAdministrationResponse": {
         "type": "object",
@@ -663,9 +589,7 @@
             }
           }
         },
-        "required": [
-          "recoveries"
-        ]
+        "required": ["recoveries"]
       },
       "ChatAccessAdministrationResponse": {
         "type": "object",
@@ -684,11 +608,7 @@
             }
           }
         },
-        "required": [
-          "mode",
-          "updatedAt",
-          "grants"
-        ]
+        "required": ["mode", "updatedAt", "grants"]
       },
       "UpdateChatAccessAdministrationRequestBody": {
         "type": "object",
@@ -697,9 +617,7 @@
             "$ref": "#/components/schemas/ChatAccessMode"
           }
         },
-        "required": [
-          "mode"
-        ]
+        "required": ["mode"]
       },
       "AccountInfoResponse": {
         "type": "object",
@@ -714,52 +632,37 @@
             }
           }
         },
-        "required": [
-          "user",
-          "recipes"
-        ]
+        "required": ["user", "recipes"]
       },
       "AccountInfoUnauthorizedErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Unauthorized"
-            ]
+            "enum": ["Unauthorized"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AccountInfoNotFoundErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "User not found"
-            ]
+            "enum": ["User not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AccountInfoFetchErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch account info"
-            ]
+            "enum": ["Failed to fetch account info"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateAccountInfoRequestBody": {
         "type": "object",
@@ -840,14 +743,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to update account info"
-            ]
+            "enum": ["Failed to update account info"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateUsernameRequestBody": {
         "type": "object",
@@ -856,42 +755,31 @@
             "type": "string"
           }
         },
-        "required": [
-          "public_username"
-        ]
+        "required": ["public_username"]
       },
       "CreateUsernameSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Public username successfully updated."
-            ]
+            "enum": ["Public username successfully updated."]
           },
           "public_username": {
             "type": "string",
             "nullable": true
           }
         },
-        "required": [
-          "message",
-          "public_username"
-        ]
+        "required": ["message", "public_username"]
       },
       "CreateUsernameValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Public username is required."
-            ]
+            "enum": ["Public username is required."]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AuthenticatedRouteErrorResponse": {
         "type": "object",
@@ -908,9 +796,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateUsernameFailureErrorResponse": {
         "type": "object",
@@ -923,9 +809,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "LoginRequestBody": {
         "type": "object",
@@ -937,19 +821,14 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "LoginSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Successfully logged in!"
-            ]
+            "enum": ["Successfully logged in!"]
           },
           "accessToken": {
             "type": "string"
@@ -982,42 +861,30 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Please provide email and password"
-            ]
+            "enum": ["Please provide email and password"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "LoginInvalidCredentialsErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid email or password"
-            ]
+            "enum": ["Invalid email or password"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "LoginFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to log in user"
-            ]
+            "enum": ["Failed to log in user"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RefreshTokenRequestBody": {
         "type": "object",
@@ -1029,10 +896,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "refreshToken"
-        ]
+        "required": ["email", "refreshToken"]
       },
       "RefreshTokenSuccessResponse": {
         "type": "object",
@@ -1041,52 +905,37 @@
             "type": "string"
           }
         },
-        "required": [
-          "accessToken"
-        ]
+        "required": ["accessToken"]
       },
       "RefreshTokenValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Email and refreshToken are required"
-            ]
+            "enum": ["Email and refreshToken are required"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RefreshTokenInvalidEmailErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid email"
-            ]
+            "enum": ["Invalid email"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RefreshTokenFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid refresh token",
-              "Failed to refresh token"
-            ]
+            "enum": ["Invalid refresh token", "Failed to refresh token"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RegisterRequestBody": {
         "type": "object",
@@ -1101,19 +950,14 @@
             "type": "string"
           }
         },
-        "required": [
-          "email",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "RegisterSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Thank you for signing up!"
-            ]
+            "enum": ["Thank you for signing up!"]
           },
           "accessToken": {
             "type": "string"
@@ -1129,13 +973,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "accessToken",
-          "refreshToken",
-          "role",
-          "email"
-        ]
+        "required": ["message", "accessToken", "refreshToken", "role", "email"]
       },
       "RegisterValidationErrorResponse": {
         "type": "object",
@@ -1148,23 +986,17 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RegisterFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to register user"
-            ]
+            "enum": ["Failed to register user"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RequestPasswordResetBody": {
         "type": "object",
@@ -1173,9 +1005,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "RequestPasswordResetSuccessResponse": {
         "type": "object",
@@ -1188,23 +1018,17 @@
             ]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "RequestPasswordResetValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Email is required"
-            ]
+            "enum": ["Email is required"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "ResetPasswordRequestBody": {
         "type": "object",
@@ -1216,52 +1040,37 @@
             "type": "string"
           }
         },
-        "required": [
-          "token",
-          "password"
-        ]
+        "required": ["token", "password"]
       },
       "ResetPasswordSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Password updated successfully."
-            ]
+            "enum": ["Password updated successfully."]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "ResetPasswordValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Missing token or password."
-            ]
+            "enum": ["Missing token or password."]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "ResetPasswordInvalidTokenErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid or expired token."
-            ]
+            "enum": ["Invalid or expired token."]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VerifyTokenRequestBody": {
         "type": "object",
@@ -1271,18 +1080,13 @@
           },
           "provider": {
             "type": "string",
-            "enum": [
-              "google"
-            ]
+            "enum": ["google"]
           },
           "email": {
             "type": "string"
           }
         },
-        "required": [
-          "token",
-          "provider"
-        ]
+        "required": ["token", "provider"]
       },
       "VerifyTokenSuccessResponse": {
         "type": "object",
@@ -1300,12 +1104,7 @@
             "$ref": "#/components/schemas/VerifyTokenUserResponse"
           }
         },
-        "required": [
-          "token",
-          "accessToken",
-          "refreshToken",
-          "user"
-        ]
+        "required": ["token", "accessToken", "refreshToken", "user"]
       },
       "VerifyTokenValidationErrorResponse": {
         "type": "object",
@@ -1318,52 +1117,37 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VerifyTokenUnauthorizedErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid token",
-              "Invalid ID token"
-            ]
+            "enum": ["Invalid token", "Invalid ID token"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VerifyTokenNotFoundErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "User not found"
-            ]
+            "enum": ["User not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VerifyTokenFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Authentication failed"
-            ]
+            "enum": ["Authentication failed"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BjcpIngredientsResponse": {
         "type": "array",
@@ -1376,14 +1160,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch ingredients"
-            ]
+            "enum": ["Failed to fetch ingredients"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateBjcpIngredientRequestBody": {
         "type": "object",
@@ -1424,13 +1204,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "created_at",
-          "label",
-          "category",
-          "value"
-        ]
+        "required": ["id", "created_at", "label", "category", "value"]
       },
       "CreateBjcpIngredientFailureErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
@@ -1452,18 +1226,14 @@
             "nullable": true
           }
         },
-        "required": [
-          "device_id"
-        ]
+        "required": ["device_id"]
       },
       "AdoptLogsForBrewResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Logs adopted"
-            ]
+            "enum": ["Logs adopted"]
           },
           "adopted_count": {
             "type": "number"
@@ -1475,12 +1245,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "adopted_count",
-          "brew_id",
-          "device_id"
-        ]
+        "required": ["message", "adopted_count", "brew_id", "device_id"]
       },
       "BrewDeviceActionErrorResponse": {
         "type": "object",
@@ -1499,9 +1264,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AttachDeviceToBrewRequestBody": {
         "type": "object",
@@ -1513,19 +1276,14 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "device_id"
-        ]
+        "required": ["device_id"]
       },
       "AttachDeviceToBrewResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Device already attached",
-              "Device attached"
-            ]
+            "enum": ["Device already attached", "Device attached"]
           },
           "device_id": {
             "type": "string"
@@ -1534,11 +1292,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "device_id",
-          "brew_id"
-        ]
+        "required": ["message", "device_id", "brew_id"]
       },
       "UpdateBrewEntryRequestBody": {
         "$ref": "#/components/schemas/brewEntryMutationObjectSchema"
@@ -1554,9 +1308,7 @@
             ]
           }
         },
-        "required": [
-          "entry"
-        ]
+        "required": ["entry"]
       },
       "BrewValidationErrorResponse": {
         "type": "object",
@@ -1572,53 +1324,37 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BrewEntryUpdateErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to update entry.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to update entry.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteBrewEntrySuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Entry deleted successfully."
-            ]
+            "enum": ["Entry deleted successfully."]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "BrewEntryDeleteErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to delete entry.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to delete entry.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateBrewEntryRequestBody": {
         "type": "object",
@@ -1671,9 +1407,7 @@
             "format": "uuid"
           }
         },
-        "required": [
-          "type"
-        ]
+        "required": ["type"]
       },
       "CreateBrewEntryResponse": {
         "type": "object",
@@ -1682,38 +1416,27 @@
             "$ref": "#/components/schemas/BrewResponse"
           }
         },
-        "required": [
-          "brew"
-        ]
+        "required": ["brew"]
       },
       "BrewEntryIdConflictErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Entry ID is already in use"
-            ]
+            "enum": ["Entry ID is already in use"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BrewEntryCreateErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to create entry.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to create entry.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BrewResponse": {
         "type": "object",
@@ -1824,9 +1547,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateBrewRequestBody": {
         "type": "object",
@@ -1942,44 +1663,30 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to update brew.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to update brew.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteBrewSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Brew deleted successfully."
-            ]
+            "enum": ["Brew deleted successfully."]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "BrewDeleteErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to delete brew.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to delete brew.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BrewsResponse": {
         "type": "object",
@@ -1991,9 +1698,7 @@
             }
           }
         },
-        "required": [
-          "brews"
-        ]
+        "required": ["brews"]
       },
       "CreateBrewRequestBody": {
         "type": "object",
@@ -2010,9 +1715,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "recipe_id"
-        ]
+        "required": ["recipe_id"]
       },
       "CreateBrewResponse": {
         "type": "object",
@@ -2021,24 +1724,17 @@
             "$ref": "#/components/schemas/brewMutationResponseObjectSchema"
           }
         },
-        "required": [
-          "brew"
-        ]
+        "required": ["brew"]
       },
       "BrewCreateErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to create brew.",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to create brew.", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateHydrometerBrewRequestBody": {
         "type": "object",
@@ -2054,9 +1750,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "brew_id"
-        ]
+        "required": ["brew_id"]
       },
       "UpdateHydrometerBrewResponse": {
         "oneOf": [
@@ -2081,9 +1775,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "HydrometerBrewErrorResponse": {
         "type": "object",
@@ -2099,9 +1791,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "ChatAccessStatusResponse": {
         "type": "object",
@@ -2119,12 +1809,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "chatEnabled",
-          "mode",
-          "granted",
-          "paymentRestricted"
-        ]
+        "required": ["chatEnabled", "mode", "granted", "paymentRestricted"]
       },
       "ChatContextOptionsResponse": {
         "type": "object",
@@ -2136,9 +1821,7 @@
             }
           }
         },
-        "required": [
-          "contexts"
-        ]
+        "required": ["contexts"]
       },
       "ChatContextErrorResponse": {
         "type": "object",
@@ -2147,9 +1830,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "ChatConversationThreadResponse": {
         "type": "object",
@@ -2191,9 +1872,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateChatConversationRequestBody": {
         "type": "object",
@@ -2220,14 +1899,10 @@
         "properties": {
           "deleted": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           }
         },
-        "required": [
-          "deleted"
-        ]
+        "required": ["deleted"]
       },
       "ChatConversationsResponse": {
         "type": "object",
@@ -2246,10 +1921,7 @@
             ]
           }
         },
-        "required": [
-          "conversations",
-          "nextBefore"
-        ]
+        "required": ["conversations", "nextBefore"]
       },
       "CreateChatConversationRequestBody": {
         "type": "object",
@@ -2268,9 +1940,7 @@
             "$ref": "#/components/schemas/ChatConversationResponse"
           }
         },
-        "required": [
-          "conversation"
-        ]
+        "required": ["conversation"]
       },
       "UpdateRecipeCommentRequestBody": {
         "type": "object",
@@ -2279,9 +1949,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "comment"
-        ]
+        "required": ["comment"]
       },
       "UpdateRecipeCommentResponse": {
         "type": "object",
@@ -2290,38 +1958,27 @@
             "$ref": "#/components/schemas/RecipeCommentResponse"
           }
         },
-        "required": [
-          "comment"
-        ]
+        "required": ["comment"]
       },
       "UpdateRecipeCommentValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Comment text is required"
-            ]
+            "enum": ["Comment text is required"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateRecipeCommentFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to update comment",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to update comment", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteRecipeCommentResponse": {
         "type": "object",
@@ -2337,30 +1994,20 @@
                 "nullable": true
               }
             },
-            "required": [
-              "id",
-              "deleted_at"
-            ]
+            "required": ["id", "deleted_at"]
           }
         },
-        "required": [
-          "deleted"
-        ]
+        "required": ["deleted"]
       },
       "DeleteRecipeCommentFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to delete comment",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to delete comment", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "ContactRequestBody": {
         "type": "object",
@@ -2375,53 +2022,37 @@
             "type": "string"
           }
         },
-        "required": [
-          "user_name",
-          "user_email",
-          "message"
-        ]
+        "required": ["user_name", "user_email", "message"]
       },
       "ContactSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Email sent successfully"
-            ]
+            "enum": ["Email sent successfully"]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "ContactValidationErrorResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "All fields are required"
-            ]
+            "enum": ["All fields are required"]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "ContactSendErrorResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Failed to send email"
-            ]
+            "enum": ["Failed to send email"]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "LinkRecipeToHydrometerBrewRequestBody": {
         "type": "object",
@@ -2449,14 +2080,10 @@
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "Brew deleted successfully."
-            ]
+            "enum": ["Brew deleted successfully."]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "HydrometerBrewsResponse": {
         "type": "array",
@@ -2474,10 +2101,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "device_id",
-          "brew_name"
-        ]
+        "required": ["device_id", "brew_name"]
       },
       "StartHydrometerBrewResponse": {
         "type": "array",
@@ -2495,9 +2119,7 @@
             }
           }
         },
-        "required": [
-          "coefficients"
-        ]
+        "required": ["coefficients"]
       },
       "HydrometerDeviceResponse": {
         "$ref": "#/components/schemas/hydrometerDeviceObjectSchema"
@@ -2514,9 +2136,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteHydrometerDeviceResponse": {
         "type": "object",
@@ -2525,9 +2145,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "HydrometerLogsResponse": {
         "type": "array",
@@ -2551,9 +2169,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateHydrometerLogRequestBody": {
         "type": "object",
@@ -2574,10 +2190,7 @@
           },
           "temp_units": {
             "type": "string",
-            "enum": [
-              "F",
-              "C"
-            ]
+            "enum": ["F", "C"]
           },
           "battery": {
             "allOf": [
@@ -2631,9 +2244,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteHydrometerLogsInRangeResponse": {
         "type": "object",
@@ -2642,9 +2253,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "RaptPillCloudIngestRequestBody": {
         "$ref": "#/components/schemas/hydrometerIngestObjectSchema"
@@ -2654,15 +2263,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Missing token",
-              "Invalid token"
-            ]
+            "enum": ["Missing token", "Invalid token"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RaptPillRegisterRequestBody": {
         "type": "object",
@@ -2677,25 +2281,17 @@
             "type": "number"
           }
         },
-        "required": [
-          "token",
-          "name",
-          "gravity"
-        ]
+        "required": ["token", "name", "gravity"]
       },
       "RaptPillRegisterErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to get device info"
-            ]
+            "enum": ["Failed to get device info"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "HydrometerIngestRequestBody": {
         "$ref": "#/components/schemas/hydrometerIngestObjectSchema"
@@ -2714,10 +2310,7 @@
             }
           }
         },
-        "required": [
-          "hydro_token",
-          "devices"
-        ]
+        "required": ["hydro_token", "devices"]
       },
       "HydrometerAccountErrorResponse": {
         "type": "object",
@@ -2731,9 +2324,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "TiltIngestRequestBody": {
         "type": "object",
@@ -2761,12 +2352,7 @@
             ]
           }
         },
-        "required": [
-          "Beer",
-          "Temp",
-          "SG",
-          "Color"
-        ]
+        "required": ["Beer", "Temp", "SG", "Color"]
       },
       "HydrometerTokenResponse": {
         "type": "object",
@@ -2775,9 +2361,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "token"
-        ]
+        "required": ["token"]
       },
       "IngredientByIdResponse": {
         "type": "object",
@@ -2798,13 +2382,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "sugar_content",
-          "water_content",
-          "category"
-        ]
+        "required": ["id", "name", "sugar_content", "water_content", "category"]
       },
       "IngredientByIdErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
@@ -2845,13 +2423,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "sugar_content",
-          "water_content",
-          "category"
-        ]
+        "required": ["id", "name", "sugar_content", "water_content", "category"]
       },
       "UpdateIngredientFailureErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
@@ -2863,9 +2435,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "DeleteIngredientFailureErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
@@ -2881,14 +2451,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch ingredients"
-            ]
+            "enum": ["Failed to fetch ingredients"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateIngredientRequestBody": {
         "$ref": "#/components/schemas/createIngredientRequestBodyObjectSchema"
@@ -2905,38 +2471,27 @@
             "$ref": "#/components/schemas/PublicBrewDetailResponse"
           }
         },
-        "required": [
-          "brew"
-        ]
+        "required": ["brew"]
       },
       "PublicBrewValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID",
-              "Missing brew_id"
-            ]
+            "enum": ["Invalid recipe ID", "Missing brew_id"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "PublicBrewNotFoundErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Brew not found"
-            ]
+            "enum": ["Brew not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "PublicBrewFetchErrorResponse": {
         "type": "object",
@@ -2949,9 +2504,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "PublicRecipeBrewsResponse": {
         "type": "object",
@@ -2963,9 +2516,7 @@
             }
           }
         },
-        "required": [
-          "brews"
-        ]
+        "required": ["brews"]
       },
       "RecipeCommentsPageResponse": {
         "type": "object",
@@ -2984,40 +2535,27 @@
             "type": "number"
           }
         },
-        "required": [
-          "data",
-          "nextCursor",
-          "totalCount"
-        ]
+        "required": ["data", "nextCursor", "totalCount"]
       },
       "RecipeCommentsValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe id",
-              "Missing commentId"
-            ]
+            "enum": ["Invalid recipe id", "Missing commentId"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeCommentsFetchErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch comments"
-            ]
+            "enum": ["Failed to fetch comments"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateRecipeCommentRequestBody": {
         "type": "object",
@@ -3030,9 +2568,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "comment"
-        ]
+        "required": ["comment"]
       },
       "CreateRecipeCommentResponse": {
         "type": "object",
@@ -3041,39 +2577,27 @@
             "$ref": "#/components/schemas/RecipeCommentResponse"
           }
         },
-        "required": [
-          "comment"
-        ]
+        "required": ["comment"]
       },
       "CreateRecipeCommentValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID",
-              "Comment text is required"
-            ]
+            "enum": ["Invalid recipe ID", "Comment text is required"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateRecipeCommentFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to add comment",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to add comment", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RateRecipeRequestBody": {
         "type": "object",
@@ -3082,9 +2606,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "rating"
-        ]
+        "required": ["rating"]
       },
       "RateRecipeResponse": {
         "type": "object",
@@ -3093,39 +2615,27 @@
             "$ref": "#/components/schemas/RecipeRatingAggregateResponse"
           }
         },
-        "required": [
-          "rating"
-        ]
+        "required": ["rating"]
       },
       "RateRecipeValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID",
-              "Rating is a required field"
-            ]
+            "enum": ["Invalid recipe ID", "Rating is a required field"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RateRecipeFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to add rating",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to add rating", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "GetRecipeResponse": {
         "type": "object",
@@ -3134,52 +2644,37 @@
             "$ref": "#/components/schemas/RecipeDetailResponse"
           }
         },
-        "required": [
-          "recipe"
-        ]
+        "required": ["recipe"]
       },
       "InvalidRecipeIdErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID"
-            ]
+            "enum": ["Invalid recipe ID"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeForbiddenErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "You are not authorized to view this recipe"
-            ]
+            "enum": ["You are not authorized to view this recipe"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeNotFoundErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Recipe not found",
-              "User not found"
-            ]
+            "enum": ["Recipe not found", "User not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeFetchErrorResponse": {
         "type": "object",
@@ -3192,9 +2687,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateRecipeRequestBody": {
         "type": "object",
@@ -3225,44 +2718,30 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID",
-              "Invalid payload"
-            ]
+            "enum": ["Invalid recipe ID", "Invalid payload"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateRecipeForbiddenErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "You are not authorized to update this recipe"
-            ]
+            "enum": ["You are not authorized to update this recipe"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateRecipeFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to update recipe",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to update recipe", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteRecipeSuccessResponse": {
         "type": "object",
@@ -3271,38 +2750,27 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "DeleteRecipeForbiddenErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "You are not authorized to delete this recipe"
-            ]
+            "enum": ["You are not authorized to delete this recipe"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteRecipeFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to delete recipe",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to delete recipe", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeDerivedStateResponseBody": {
         "type": "object",
@@ -3314,25 +2782,17 @@
             "$ref": "#/components/schemas/RecipeDerivedStateResponse"
           }
         },
-        "required": [
-          "recipeData",
-          "derived"
-        ]
+        "required": ["recipeData", "derived"]
       },
       "RecipeDerivedByIdValidationErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe ID",
-              "Recipe does not have valid dataV2."
-            ]
+            "enum": ["Invalid recipe ID", "Recipe does not have valid dataV2."]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeDerivedFailureErrorResponse": {
         "type": "object",
@@ -3345,9 +2805,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "RecipeDataV2Response": {
         "$ref": "#/components/schemas/recipeDataV2Schema"
@@ -3357,14 +2815,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Invalid recipe data payload."
-            ]
+            "enum": ["Invalid recipe data payload."]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "PublicRecipesPageResponse": {
         "type": "object",
@@ -3388,27 +2842,17 @@
             "type": "number"
           }
         },
-        "required": [
-          "recipes",
-          "totalCount",
-          "totalPages",
-          "page",
-          "limit"
-        ]
+        "required": ["recipes", "totalCount", "totalPages", "page", "limit"]
       },
       "PublicRecipesFetchErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch recipes"
-            ]
+            "enum": ["Failed to fetch recipes"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdminRecipesPageResponse": {
         "type": "object",
@@ -3432,13 +2876,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "recipes",
-          "totalCount",
-          "totalPages",
-          "page",
-          "limit"
-        ]
+        "required": ["recipes", "totalCount", "totalPages", "page", "limit"]
       },
       "AdminRecipesFetchErrorResponse": {
         "type": "object",
@@ -3452,9 +2890,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateRecipeRequestBody": {
         "$ref": "#/components/schemas/createRecipeRequestObjectSchema"
@@ -3466,9 +2902,7 @@
             "$ref": "#/components/schemas/recipeRecordSchema"
           }
         },
-        "required": [
-          "recipe"
-        ]
+        "required": ["recipe"]
       },
       "CreateRecipeValidationErrorResponse": {
         "type": "object",
@@ -3481,24 +2915,17 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateRecipeFailureErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to create recipe",
-              "Server misconfiguration"
-            ]
+            "enum": ["Failed to create recipe", "Server misconfiguration"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdminUserResponse": {
         "type": "object",
@@ -3558,14 +2985,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "User not found"
-            ]
+            "enum": ["User not found"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdminUserFetchErrorResponse": {
         "type": "object",
@@ -3579,9 +3002,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "UpdateAdminUserRequestBody": {
         "type": "object",
@@ -3621,23 +3042,17 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "DeleteAdminUserSuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string",
-            "enum": [
-              "User deleted successfully"
-            ]
+            "enum": ["User deleted successfully"]
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "AdminUserDeleteErrorResponse": {
         "type": "object",
@@ -3651,9 +3066,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "AdminUsersResponse": {
         "type": "array",
@@ -3673,23 +3086,17 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "StripeWebhookReceiptResponse": {
         "type": "object",
         "properties": {
           "received": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           }
         },
-        "required": [
-          "received"
-        ]
+        "required": ["received"]
       },
       "YeastByIdResponse": {
         "type": "object",
@@ -3797,9 +3204,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "DeleteYeastFailureErrorResponse": {
         "$ref": "#/components/schemas/ApiErrorResponse"
@@ -3822,14 +3227,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Failed to fetch yeasts"
-            ]
+            "enum": ["Failed to fetch yeasts"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateYeastRequestBody": {
         "$ref": "#/components/schemas/createYeastRequestBodyObjectSchema"
@@ -3839,14 +3240,10 @@
         "properties": {
           "error": {
             "type": "string",
-            "enum": [
-              "Yeast name is required"
-            ]
+            "enum": ["Yeast name is required"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "CreateYeastFailureErrorResponse": {
         "type": "object",
@@ -3860,9 +3257,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "adminUserListItemObjectSchema": {
         "type": "object",
@@ -3909,11 +3304,7 @@
       },
       "chatUsageStatusSchema": {
         "type": "string",
-        "enum": [
-          "completed",
-          "failed",
-          "reserved"
-        ]
+        "enum": ["completed", "failed", "reserved"]
       },
       "accountUserResponseObjectSchema": {
         "type": "object",
@@ -4455,19 +3846,14 @@
             "nullable": true
           }
         },
-        "required": [
-          "name",
-          "dataV2"
-        ]
+        "required": ["name", "dataV2"]
       },
       "chatContextRecipeOptionResponseSchema": {
         "type": "object",
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "recipe"
-            ]
+            "enum": ["recipe"]
           },
           "id": {
             "type": "integer",
@@ -4478,20 +3864,14 @@
             "type": "string"
           }
         },
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ]
+        "required": ["kind", "id", "name"]
       },
       "chatContextBrewOptionResponseSchema": {
         "type": "object",
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "brew"
-            ]
+            "enum": ["brew"]
           },
           "id": {
             "type": "string",
@@ -4508,13 +3888,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "kind",
-          "id",
-          "name",
-          "stage",
-          "recipeName"
-        ]
+        "required": ["kind", "id", "name", "stage", "recipeName"]
       },
       "nutrientAmountsByKeyNumberSchema": {
         "type": "object",
@@ -4532,12 +3906,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "fermO",
-          "fermK",
-          "dap",
-          "other"
-        ]
+        "required": ["fermO", "fermK", "dap", "other"]
       },
       "createAdditiveRequestBodyObjectSchema": {
         "type": "object",
@@ -4562,18 +3931,12 @@
               },
               {
                 "type": "string",
-                "enum": [
-                  "fl oz"
-                ]
+                "enum": ["fl oz"]
               }
             ]
           }
         },
-        "required": [
-          "name",
-          "dosage",
-          "unit"
-        ]
+        "required": ["name", "dosage", "unit"]
       },
       "additiveAdminFailureSchema": {
         "type": "object",
@@ -4587,9 +3950,7 @@
             ]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "createIngredientRequestBodyObjectSchema": {
         "type": "object",
@@ -4607,12 +3968,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "sugar_content",
-          "water_content",
-          "category"
-        ]
+        "required": ["name", "sugar_content", "water_content", "category"]
       },
       "createYeastRequestBodyObjectSchema": {
         "type": "object",
@@ -4846,10 +4202,7 @@
           },
           "temp_units": {
             "type": "string",
-            "enum": [
-              "F",
-              "C"
-            ]
+            "enum": ["F", "C"]
           },
           "battery": {
             "type": "number"
@@ -4861,12 +4214,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "token",
-          "name",
-          "temperature",
-          "gravity"
-        ]
+        "required": ["token", "name", "temperature", "gravity"]
       },
       "AccountRecipeOwnerResponse": {
         "type": "object",
@@ -4876,9 +4224,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "public_username"
-        ]
+        "required": ["public_username"]
       },
       "AccountRecipeResponse": {
         "type": "object",
@@ -5351,10 +4697,7 @@
                 "type": "boolean"
               }
             },
-            "required": [
-              "public_username",
-              "active"
-            ],
+            "required": ["public_username", "active"],
             "nullable": true
           },
           "public_username": {
@@ -5400,9 +4743,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "BrewEntriesByStageResponse": {
         "type": "object",
@@ -5417,10 +4758,7 @@
             }
           }
         },
-        "required": [
-          "stage",
-          "entries"
-        ]
+        "required": ["stage", "entries"]
       },
       "BrewEntryResponse": {
         "$ref": "#/components/schemas/brewEntryObjectSchema"
@@ -5530,13 +4868,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "version",
-          "dataV2",
-          "snapshottedAt"
-        ]
+        "required": ["id", "name", "version", "dataV2", "snapshottedAt"]
       },
       "BrewStageResponse": {
         "type": "string",
@@ -5568,18 +4900,11 @@
             "exclusiveMinimum": true
           }
         },
-        "required": [
-          "userId",
-          "grantedAt",
-          "grantedByUserId"
-        ]
+        "required": ["userId", "grantedAt", "grantedByUserId"]
       },
       "ChatAccessMode": {
         "type": "string",
-        "enum": [
-          "beta_allowlist",
-          "all_active_users"
-        ]
+        "enum": ["beta_allowlist", "all_active_users"]
       },
       "ChatCitationResponse": {
         "type": "object",
@@ -5592,10 +4917,7 @@
             "format": "uri"
           }
         },
-        "required": [
-          "title",
-          "url"
-        ]
+        "required": ["title", "url"]
       },
       "ChatContextOptionResponse": {
         "type": "object",
@@ -5659,10 +4981,7 @@
       },
       "ChatConversationStateResponse": {
         "type": "string",
-        "enum": [
-          "active",
-          "archived"
-        ]
+        "enum": ["active", "archived"]
       },
       "ChatDraftResponse": {
         "type": "object",
@@ -5717,19 +5036,11 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "user",
-              "assistant"
-            ]
+            "enum": ["user", "assistant"]
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "complete",
-              "failed",
-              "cancelled"
-            ]
+            "enum": ["pending", "complete", "failed", "cancelled"]
           },
           "content": {
             "type": "string"
@@ -5765,10 +5076,7 @@
       },
       "CreditPaymentRecoveryKind": {
         "type": "string",
-        "enum": [
-          "stripe_refund",
-          "stripe_dispute"
-        ]
+        "enum": ["stripe_refund", "stripe_dispute"]
       },
       "CreditPaymentRecoveryResponse": {
         "type": "object",
@@ -5867,11 +5175,7 @@
       },
       "CreditPaymentRecoveryStatus": {
         "type": "string",
-        "enum": [
-          "applied",
-          "review_required",
-          "resolved"
-        ]
+        "enum": ["applied", "review_required", "resolved"]
       },
       "EndHydrometerBrewResponse": {
         "type": "array",
@@ -5881,10 +5185,7 @@
       },
       "GravityUnitResponse": {
         "type": "string",
-        "enum": [
-          "SG",
-          "BRIX"
-        ]
+        "enum": ["SG", "BRIX"]
       },
       "HydrometerBrewAlertResponse": {
         "type": "object",
@@ -5893,9 +5194,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ]
+        "required": ["message"]
       },
       "HydrometerBrewDevicePairItemResponse": {
         "oneOf": [
@@ -5921,10 +5220,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "name"
-        ]
+        "required": ["id", "name"]
       },
       "LinkRecipeToHydrometerBrewResponse": {
         "$ref": "#/components/schemas/HydrometerBrewResponse"
@@ -6045,10 +5341,7 @@
             }
           }
         },
-        "required": [
-          "stage",
-          "entries"
-        ]
+        "required": ["stage", "entries"]
       },
       "PublicBrewEntryResponse": {
         "$ref": "#/components/schemas/publicBrewEntryObjectSchema"
@@ -6096,9 +5389,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "displayName"
-        ]
+        "required": ["displayName"]
       },
       "PublicRecipeListItemResponse": {
         "type": "object",
@@ -6218,10 +5509,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "public_username",
-          "active"
-        ]
+        "required": ["public_username", "active"]
       },
       "RecipeCommentAuthorResponse": {
         "type": "object",
@@ -6238,10 +5526,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "public_username",
-          "avatarUrl"
-        ]
+        "required": ["public_username", "avatarUrl"]
       },
       "RecipeCommentListItemResponse": {
         "type": "object",
@@ -6348,11 +5633,7 @@
                 "type": "number"
               }
             },
-            "required": [
-              "ogPrimary",
-              "backsweetenedFg",
-              "totalForAbv"
-            ]
+            "required": ["ogPrimary", "backsweetenedFg", "totalForAbv"]
           },
           "volume": {
             "type": "object",
@@ -6399,10 +5680,7 @@
                 "type": "number"
               }
             },
-            "required": [
-              "abv",
-              "delle"
-            ]
+            "required": ["abv", "delle"]
           },
           "stabilizers": {
             "type": "object",
@@ -6417,11 +5695,7 @@
                 "type": "number"
               }
             },
-            "required": [
-              "sorbate",
-              "sulfite",
-              "campden"
-            ]
+            "required": ["sorbate", "sulfite", "campden"]
           },
           "nutrients": {
             "type": "object",
@@ -6445,10 +5719,7 @@
                     "$ref": "#/components/schemas/nutrientAmountsByKeyNumberSchema"
                   }
                 },
-                "required": [
-                  "totalGrams",
-                  "perAddition"
-                ]
+                "required": ["totalGrams", "perAddition"]
               },
               "providedYanPpm": {
                 "$ref": "#/components/schemas/nutrientAmountsByKeyNumberSchema"
@@ -6463,10 +5734,7 @@
                     "type": "number"
                   }
                 },
-                "required": [
-                  "amount",
-                  "water"
-                ]
+                "required": ["amount", "water"]
               }
             },
             "required": [
@@ -6479,13 +5747,7 @@
             ]
           }
         },
-        "required": [
-          "gravity",
-          "volume",
-          "alcohol",
-          "stabilizers",
-          "nutrients"
-        ]
+        "required": ["gravity", "volume", "alcohol", "stabilizers", "nutrients"]
       },
       "RecipeDetailResponse": {
         "type": "object",
@@ -6610,10 +5872,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "public_username",
-          "active"
-        ]
+        "required": ["public_username", "active"]
       },
       "RecipeRatingAggregateResponse": {
         "type": "object",
@@ -6648,30 +5907,15 @@
             "type": "number"
           }
         },
-        "required": [
-          "rating",
-          "user_id"
-        ]
+        "required": ["rating", "user_id"]
       },
       "TemperatureUnitResponse": {
         "type": "string",
-        "enum": [
-          "F",
-          "C",
-          "K"
-        ]
+        "enum": ["F", "C", "K"]
       },
       "TiltColor": {
         "type": "string",
-        "enum": [
-          "BLUE",
-          "BLACK",
-          "RED",
-          "ORANGE",
-          "YELLOW",
-          "PURPLE",
-          "PINK"
-        ]
+        "enum": ["BLUE", "BLACK", "RED", "ORANGE", "YELLOW", "PURPLE", "PINK"]
       },
       "VerifyTokenUserResponse": {
         "type": "object",
@@ -6686,34 +5930,18 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "email",
-          "role"
-        ]
+        "required": ["id", "email", "role"]
       },
       "VolumeUnit": {
         "$ref": "#/components/schemas/sharedVolumeUnitSchema"
       },
       "YeastBrandResponse": {
         "type": "string",
-        "enum": [
-          "Lalvin",
-          "Fermentis",
-          "Mangrove Jack",
-          "Red Star",
-          "Other"
-        ]
+        "enum": ["Lalvin", "Fermentis", "Mangrove Jack", "Red Star", "Other"]
       },
       "YeastNitrogenRequirementResponse": {
         "type": "string",
-        "enum": [
-          "Very Low",
-          "Low",
-          "Medium",
-          "High",
-          "Very High"
-        ]
+        "enum": ["Very Low", "Low", "Medium", "High", "Very High"]
       },
       "YeastsResponse": {
         "type": "array",
@@ -6851,9 +6079,7 @@
         "operationId": "get-account-credits",
         "summary": "Return the signed-in user's available prepaid prompt credits.",
         "description": "",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -6899,9 +6125,7 @@
         "operationId": "get-auth-account-info",
         "summary": "Get account info",
         "description": "Returns the authenticated user's account details and saved recipes.",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -6955,9 +6179,7 @@
         "operationId": "patch-auth-account-info",
         "summary": "Update account info",
         "description": "Updates fields on the authenticated user's account. Passwords are hashed before storage.",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -7012,9 +6234,7 @@
         "operationId": "patch-auth-create-username",
         "summary": "Set public username",
         "description": "Sets or updates the authenticated user's public username.",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -7089,9 +6309,7 @@
         "operationId": "post-account-credits-checkout",
         "summary": "Create a Stripe Checkout Session for one fixed prompt-credit pack.",
         "description": "",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -7176,9 +6394,7 @@
         "operationId": "get-account-credits-history",
         "summary": "Return grouped prepaid-credit activity for the signed-in user's wallet.",
         "description": "",
-        "tags": [
-          "Account"
-        ],
+        "tags": ["Account"],
         "parameters": [],
         "security": [
           {
@@ -7234,9 +6450,7 @@
         "operationId": "get-additives",
         "summary": "List additives",
         "description": "Returns additives ordered by name. Pass a name query to fetch exact case-insensitive matches.",
-        "tags": [
-          "Additives"
-        ],
+        "tags": ["Additives"],
         "parameters": [
           {
             "in": "query",
@@ -7274,9 +6488,7 @@
         "operationId": "post-additives",
         "summary": "Create additive",
         "description": "Admin-only. Creates a catalog additive used by recipe-building tools.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -7361,9 +6573,7 @@
         "operationId": "get-additives-{id}",
         "summary": "Get additive by ID",
         "description": "Returns a single additive by UUID.",
-        "tags": [
-          "Additives"
-        ],
+        "tags": ["Additives"],
         "parameters": [
           {
             "in": "path",
@@ -7412,9 +6622,7 @@
         "operationId": "patch-additives-{id}",
         "summary": "Update additive",
         "description": "Admin-only. Updates a catalog additive by UUID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -7497,9 +6705,7 @@
         "operationId": "delete-additives-{id}",
         "summary": "Delete additive",
         "description": "Admin-only. Deletes a catalog additive by UUID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -7575,9 +6781,7 @@
         "operationId": "get-recipes",
         "summary": "List recipes as admin",
         "description": "Admin-only. Returns a paginated list of all recipes, including private recipes.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "query",
@@ -7666,9 +6870,7 @@
         "operationId": "post-recipes",
         "summary": "Create recipe",
         "description": "Creates a recipe for the authenticated user. New clients should send dataV2.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [],
         "security": [
           {
@@ -7743,9 +6945,7 @@
         "operationId": "get-users",
         "summary": "List users",
         "description": "Admin-only. Returns all MeadTools user accounts.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -7811,9 +7011,7 @@
         "operationId": "get-admin-brews",
         "summary": "",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "responses": {
           "400": {
@@ -7830,9 +7028,7 @@
         "operationId": "get-admin-chat-access",
         "summary": "Return the private-chat rollout policy and active beta invitations.",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -7896,9 +7092,7 @@
         "operationId": "patch-admin-chat-access",
         "summary": "Change whether chatbot access is restricted to beta grants or available to",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -7983,9 +7177,7 @@
         "operationId": "get-admin-summary",
         "summary": "",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "responses": {
           "400": {
@@ -8002,9 +7194,7 @@
         "operationId": "get-users-{id}",
         "summary": "Get user",
         "description": "Admin-only. Returns an active MeadTools user by numeric ID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -8078,9 +7268,7 @@
         "operationId": "patch-users-{id}",
         "summary": "Update user",
         "description": "Admin-only. Updates account fields for a MeadTools user. Set updateToken to generate a new hydrometer token.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -8163,9 +7351,7 @@
         "operationId": "delete-users-{id}",
         "summary": "Delete user",
         "description": "Admin-only. Soft-deletes a MeadTools user by setting active to false.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -8241,9 +7427,7 @@
         "operationId": "get-admin-brews-{brew_id}",
         "summary": "",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "responses": {
           "400": {
@@ -8260,9 +7444,7 @@
         "operationId": "get-admin-chat-usage",
         "summary": "Return aggregate, non-sensitive chat operations reporting. Provider cost is",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "query",
@@ -8303,11 +7485,7 @@
             "name": "status",
             "schema": {
               "type": "string",
-              "enum": [
-                "completed",
-                "failed",
-                "reserved"
-              ]
+              "enum": ["completed", "failed", "reserved"]
             },
             "required": false
           },
@@ -8422,9 +7600,7 @@
         "operationId": "post-admin-chat-access-credits",
         "summary": "Add an arbitrary positive prompt-credit allocation to an active user's",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -8509,9 +7685,7 @@
         "operationId": "post-admin-chat-access-grants",
         "summary": "Grant an active user private chatbot access. Credit allocations are a",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -8596,9 +7770,7 @@
         "operationId": "get-admin-chat-access-payment-recoveries",
         "summary": "Return recent payment refunds and disputes so administrators can resolve",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -8664,9 +7836,7 @@
         "operationId": "delete-admin-chat-access-grants-{userId}",
         "summary": "Revoke a user's explicit beta invitation. Existing ledger activity remains immutable.",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -8742,9 +7912,7 @@
         "operationId": "patch-admin-chat-access-payment-recoveries-{recoveryId}",
         "summary": "Resolve an administrator-reviewed refund or dispute. The optional immutable",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -8829,9 +7997,7 @@
         "operationId": "post-admin-users-{id}-password-reset",
         "summary": "",
         "description": "",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "responses": {
           "400": {
@@ -8848,9 +8014,7 @@
         "operationId": "post-auth-login",
         "summary": "Log in",
         "description": "Authenticates a user with email and password and returns access and refresh tokens.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -8910,9 +8074,7 @@
         "operationId": "post-auth-refresh",
         "summary": "Refresh access token",
         "description": "Exchanges a valid refresh token for a new access token.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -8972,9 +8134,7 @@
         "operationId": "post-auth-register",
         "summary": "Register",
         "description": "Creates a user account and returns access and refresh tokens.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9024,9 +8184,7 @@
         "operationId": "post-auth-request-reset",
         "summary": "Request password reset",
         "description": "Sends a password reset email when the address belongs to an account. The response does not reveal whether the user exists.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9066,9 +8224,7 @@
         "operationId": "post-auth-reset-password",
         "summary": "Reset password",
         "description": "Updates a user's password using a valid password-reset token.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9118,9 +8274,7 @@
         "operationId": "post-auth-verify-token",
         "summary": "Verify OAuth token",
         "description": "Verifies a Google ID token or access token and returns a MeadTools access token for an existing user.",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9190,9 +8344,7 @@
         "operationId": "post-webhooks-stripe",
         "summary": "Verify and fulfill a Stripe payment webhook for prompt-credit purchases.",
         "description": "",
-        "tags": [
-          "Billing"
-        ],
+        "tags": ["Billing"],
         "parameters": [],
         "responses": {
           "200": {
@@ -9243,9 +8395,7 @@
         "operationId": "get-bjcp-ingredients",
         "summary": "List BJCP ingredients",
         "description": "Returns the BJCP ingredient catalog used by recipe-building tools.",
-        "tags": [
-          "BJCP Ingredients"
-        ],
+        "tags": ["BJCP Ingredients"],
         "parameters": [],
         "responses": {
           "200": {
@@ -9274,9 +8424,7 @@
         "operationId": "post-bjcp-ingredients",
         "summary": "Create BJCP ingredient",
         "description": "Admin-only. Creates a BJCP ingredient catalog entry.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -9351,9 +8499,7 @@
         "operationId": "get-brews",
         "summary": "List brews",
         "description": "Returns the authenticated user's brew list with recipe names and latest tracking summary fields.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [],
         "security": [
           {
@@ -9407,9 +8553,7 @@
         "operationId": "post-brews",
         "summary": "Create brew",
         "description": "Starts a new brew from one of the authenticated user's recipes and snapshots the current recipe data.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [],
         "security": [
           {
@@ -9482,9 +8626,7 @@
         "operationId": "patch-brews",
         "summary": "Update hydrometer brew",
         "description": "Renames a brew when brew_name is provided, otherwise detaches the device.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [],
         "security": [
           {
@@ -9559,9 +8701,7 @@
         "operationId": "get-brews-{brew_id}",
         "summary": "Get brew",
         "description": "Returns a single authenticated-user brew with entries grouped by stage.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -9635,9 +8775,7 @@
         "operationId": "patch-brews-{brew_id}",
         "summary": "Update brew",
         "description": "Updates brew metadata. Setting stage to COMPLETE automatically sets end_date when one is not provided.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -9720,9 +8858,7 @@
         "operationId": "delete-brews-{brew_id}",
         "summary": "Delete brew",
         "description": "Deletes a brew owned by the authenticated user, detaches its devices, and deletes logs associated with the brew.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -9798,9 +8934,7 @@
         "operationId": "post-brews-{brew_id}-adopt-logs",
         "summary": "Adopt device logs for brew",
         "description": "Assigns existing hydrometer logs from one of the authenticated user's devices to this brew.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -9885,9 +9019,7 @@
         "operationId": "post-brews-{brew_id}-attach-device",
         "summary": "Attach device to brew",
         "description": "Attaches one of the authenticated user's hydrometer devices to a brew.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -9972,9 +9104,7 @@
         "operationId": "post-brews-{brew_id}-entries",
         "summary": "Create brew entry",
         "description": "Adds a timeline entry to a brew. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -10069,9 +9199,7 @@
         "operationId": "get-recipes-{id}-brews",
         "summary": "List public brews for recipe",
         "description": "Returns brews whose owners explicitly made them public for the given public recipe. Private recipes and private brews return an empty list.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -10122,9 +9250,7 @@
         "operationId": "patch-brews-{brew_id}-entries-{entry_id}",
         "summary": "Update brew entry",
         "description": "Updates a timeline entry for a brew. Stage change entries only allow datetime and note edits.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -10216,9 +9342,7 @@
         "operationId": "delete-brews-{brew_id}-entries-{entry_id}",
         "summary": "Delete brew entry",
         "description": "Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -10303,9 +9427,7 @@
         "operationId": "get-recipes-{id}-brews-{brew_id}",
         "summary": "Get public brew for recipe",
         "description": "Returns the read-only tracker data for a brew whose owner explicitly made it public and whose linked recipe is public.",
-        "tags": [
-          "Brews"
-        ],
+        "tags": ["Brews"],
         "parameters": [
           {
             "in": "path",
@@ -10375,9 +9497,7 @@
         "operationId": "get-chat-access",
         "summary": "Return whether the signed-in user can use the private recipe chatbot.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10413,9 +9533,7 @@
         "operationId": "get-chat-context",
         "summary": "Return picker-safe summaries of records owned by the authenticated local",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10481,9 +9599,7 @@
         "operationId": "get-chat-conversations",
         "summary": "List private, non-expired chatbot conversation summaries for the signed-in user.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10557,9 +9673,7 @@
         "operationId": "post-chat-conversations",
         "summary": "Create an empty, private chatbot conversation for the signed-in user.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10644,9 +9758,7 @@
         "operationId": "post-chat-recipe",
         "summary": "Private evaluator endpoint. The signed-in user may only send a message to",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "responses": {
           "400": {
@@ -10673,9 +9785,7 @@
         "operationId": "get-chat-conversations-{conversationId}",
         "summary": "Load one private chatbot thread and a page of its visible transcript.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10759,9 +9869,7 @@
         "operationId": "patch-chat-conversations-{conversationId}",
         "summary": "Rename, archive, or restore one private chatbot conversation.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10854,9 +9962,7 @@
         "operationId": "delete-chat-conversations-{conversationId}",
         "summary": "Permanently delete one private chatbot conversation and its retained draft snapshots.",
         "description": "",
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "parameters": [],
         "security": [
           {
@@ -10942,9 +10048,7 @@
         "operationId": "post-contact",
         "summary": "Send contact message",
         "description": "Sends a contact form message to the MeadTools support inbox.",
-        "tags": [
-          "Contact"
-        ],
+        "tags": ["Contact"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -10994,9 +10098,7 @@
         "operationId": "get-hydrometer",
         "summary": "Get hydrometer account info",
         "description": "Returns the authenticated user's hydrometer token and registered devices.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [],
         "security": [
           {
@@ -11052,9 +10154,7 @@
         "operationId": "get-hydrometer-brew",
         "summary": "List hydrometer brews",
         "description": "Returns brews owned by the authenticated user for hydrometer management screens.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [],
         "security": [
           {
@@ -11108,9 +10208,7 @@
         "operationId": "post-hydrometer-brew",
         "summary": "Start hydrometer brew",
         "description": "Creates a brew and attaches the given hydrometer device to it.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [],
         "security": [
           {
@@ -11183,9 +10281,7 @@
         "operationId": "patch-hydrometer-brew",
         "summary": "Update hydrometer brew",
         "description": "Renames a hydrometer brew when brew_name is provided, otherwise ends the brew and detaches the device.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [],
         "security": [
           {
@@ -11260,9 +10356,7 @@
         "operationId": "get-hydrometer-logs",
         "summary": "List hydrometer logs by device",
         "description": "Returns logs for a device between start_date and end_date. This endpoint currently uses device_id query lookup and does not require bearer auth.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "query",
@@ -11318,9 +10412,7 @@
         "operationId": "post-hydrometer-token",
         "summary": "Create hydrometer token",
         "description": "Generates and stores a new hydrometer ingest token for the authenticated user.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [],
         "security": [
           {
@@ -11376,9 +10468,7 @@
         "operationId": "patch-hydrometer-brew-{brew_id}",
         "summary": "Link recipe or alert settings to hydrometer brew",
         "description": "Links one of the authenticated user's recipes to a hydrometer brew, or updates email-alert preference when recipe_id is omitted.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "path",
@@ -11461,9 +10551,7 @@
         "operationId": "delete-hydrometer-brew-{brew_id}",
         "summary": "Delete hydrometer brew",
         "description": "Deletes a hydrometer brew owned by the authenticated user and removes its associated logs.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "path",
@@ -11539,9 +10627,7 @@
         "operationId": "patch-hydrometer-device-{device_id}",
         "summary": "Update hydrometer device",
         "description": "Updates calibration coefficients for one of the authenticated user's hydrometer devices.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "path",
@@ -11614,9 +10700,7 @@
         "operationId": "delete-hydrometer-device-{device_id}",
         "summary": "Delete hydrometer device",
         "description": "Deletes a hydrometer device and removes or detaches its associated logs.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "path",
@@ -11682,9 +10766,7 @@
         "operationId": "get-hydrometer-logs-{id}",
         "summary": "List hydrometer logs by brew",
         "description": "Returns logs for a brew owned by the authenticated user. The id path parameter is the brew id.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "path",
@@ -11748,9 +10830,7 @@
         "operationId": "patch-hydrometer-logs-{id}",
         "summary": "Update hydrometer log",
         "description": "Updates numeric log fields for a hydrometer log. device_id is required as a query parameter.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "query",
@@ -11841,9 +10921,7 @@
         "operationId": "delete-hydrometer-logs-{id}",
         "summary": "Delete hydrometer log",
         "description": "Deletes a hydrometer log by id. device_id is required as a query parameter.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "query",
@@ -11927,9 +11005,7 @@
         "operationId": "delete-hydrometer-logs-range",
         "summary": "Delete hydrometer logs in range",
         "description": "Deletes logs for a device within a date range for the authenticated user.",
-        "tags": [
-          "Hydrometer"
-        ],
+        "tags": ["Hydrometer"],
         "parameters": [
           {
             "in": "query",
@@ -12020,9 +11096,7 @@
         "operationId": "post-ispindel",
         "summary": "iSpindel log",
         "description": "Intended for iSpindel devices to post readings to MeadTools. Registers or finds a device by name and writes a hydrometer log using the user's hydrometer token.",
-        "tags": [
-          "Hydrometer Logging"
-        ],
+        "tags": ["Hydrometer Logging"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -12082,9 +11156,7 @@
         "operationId": "post-hydrometer-rapt-pill",
         "summary": "RAPT Pill log",
         "description": "Intended for RAPT Pill devices to post readings to MeadTools. Registers or finds a device by name and writes a hydrometer log using the user's hydrometer token.",
-        "tags": [
-          "Hydrometer Logging"
-        ],
+        "tags": ["Hydrometer Logging"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -12144,9 +11216,7 @@
         "operationId": "post-hydrometer-tilt",
         "summary": "Tilt log",
         "description": "Intended for Tilt devices or Tilt integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Accepts JSON or application/x-www-form-urlencoded bodies.",
-        "tags": [
-          "Hydrometer Logging"
-        ],
+        "tags": ["Hydrometer Logging"],
         "parameters": [
           {
             "in": "query",
@@ -12225,9 +11295,7 @@
         "operationId": "post-hydrometer-rapt-pill-cloud",
         "summary": "RAPT Pill cloud log",
         "description": "Intended for RAPT Pill cloud integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Celsius temperatures are converted to Fahrenheit before storage.",
-        "tags": [
-          "Hydrometer Logging"
-        ],
+        "tags": ["Hydrometer Logging"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -12287,9 +11355,7 @@
         "operationId": "post-hydrometer-rapt-pill-register",
         "summary": "Register RAPT Pill device",
         "description": "Intended for RAPT Pill devices or integrations to register with MeadTools. Registers or finds a device by name and returns the device record.",
-        "tags": [
-          "Hydrometer Logging"
-        ],
+        "tags": ["Hydrometer Logging"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -12349,9 +11415,7 @@
         "operationId": "get-ingredients",
         "summary": "List ingredients",
         "description": "Returns all ingredients, or filters by exact case-insensitive category or name.",
-        "tags": [
-          "Ingredients"
-        ],
+        "tags": ["Ingredients"],
         "parameters": [
           {
             "in": "query",
@@ -12397,9 +11461,7 @@
         "operationId": "post-ingredients",
         "summary": "Create ingredient",
         "description": "Admin-only. Creates a sugar/fruit/other ingredient used by recipe-building tools.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -12474,9 +11536,7 @@
         "operationId": "get-ingredients-{id}",
         "summary": "Get ingredient by ID",
         "description": "Returns a single ingredient by numeric ID, or null when no ingredient matches.",
-        "tags": [
-          "Ingredients"
-        ],
+        "tags": ["Ingredients"],
         "parameters": [
           {
             "in": "path",
@@ -12515,9 +11575,7 @@
         "operationId": "patch-ingredients-{id}",
         "summary": "Update ingredient",
         "description": "Admin-only. Updates an ingredient by numeric ID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -12600,9 +11658,7 @@
         "operationId": "delete-ingredients-{id}",
         "summary": "Delete ingredient",
         "description": "Admin-only. Deletes an ingredient by numeric ID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -12678,9 +11734,7 @@
         "operationId": "get-nutrient-presets",
         "summary": "List nutrient presets for the Other Nutrient autofill input.",
         "description": "Returns curated nutrient presets ordered by product name. Selecting a preset populates the existing Other nutrient inputs.",
-        "tags": [
-          "Nutrients"
-        ],
+        "tags": ["Nutrients"],
         "parameters": [],
         "responses": {
           "200": {
@@ -12711,9 +11765,7 @@
         "operationId": "patch-comments-{id}",
         "summary": "Update recipe comment",
         "description": "Updates one of the authenticated user's own recipe comments.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -12796,9 +11848,7 @@
         "operationId": "delete-comments-{id}",
         "summary": "Delete recipe comment",
         "description": "Soft-deletes a recipe comment. Users can delete their own comments; admins can delete any comment.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -12864,9 +11914,7 @@
         "operationId": "get-recipes-{id}",
         "summary": "Get recipe by ID",
         "description": "Returns a public recipe by ID. Private recipes require the owner or an admin bearer token.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -12945,9 +11993,7 @@
         "operationId": "patch-recipes-{id}",
         "summary": "Update recipe",
         "description": "Updates an owned recipe. Admin users may also update recipes they do not own.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -13040,9 +12086,7 @@
         "operationId": "delete-recipes-{id}",
         "summary": "Delete recipe",
         "description": "Deletes an owned recipe. Admin users may also delete recipes they do not own.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -13128,9 +12172,7 @@
         "operationId": "post-recipes-derived",
         "summary": "Calculate recipe derived state",
         "description": "Calculates the same derived recipe state used by the recipe builder from a v2 recipe data payload.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -13180,9 +12222,7 @@
         "operationId": "get-recipes-public",
         "summary": "List public recipes",
         "description": "Returns a paginated list of public recipes, optionally filtered by recipe name or owner username.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "query",
@@ -13246,9 +12286,7 @@
         "operationId": "post-recipes-{id}-comments",
         "summary": "Create recipe comment",
         "description": "Adds a comment or reply to a recipe as the authenticated user.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -13333,9 +12371,7 @@
         "operationId": "post-recipes-{id}-ratings",
         "summary": "Rate recipe",
         "description": "Creates or updates the authenticated user's rating for a recipe and returns aggregate rating data.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -13420,9 +12456,7 @@
         "operationId": "get-recipes-derived-{id}",
         "summary": "Get recipe derived state by ID",
         "description": "Returns v2 recipe data plus the same derived recipe state used by the recipe builder. Public recipes are accessible to everyone; private recipes require the owner or an admin bearer token.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "path",
@@ -13503,9 +12537,7 @@
         "operationId": "get-recipes-{id}-comments-roots",
         "summary": "List root recipe comments",
         "description": "Returns paginated top-level comments for a recipe, including reply counts and public author display info.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "query",
@@ -13528,10 +12560,7 @@
             "name": "order",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "required": false
           },
@@ -13584,9 +12613,7 @@
         "operationId": "get-recipes-{id}-comments-{commentId}-replies",
         "summary": "List recipe comment replies",
         "description": "Returns paginated replies for a recipe comment, including public author display info.",
-        "tags": [
-          "Recipes"
-        ],
+        "tags": ["Recipes"],
         "parameters": [
           {
             "in": "query",
@@ -13609,10 +12636,7 @@
             "name": "order",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
+              "enum": ["asc", "desc"]
             },
             "required": false
           },
@@ -13674,9 +12698,7 @@
         "operationId": "get-yeasts",
         "summary": "List or search yeasts",
         "description": "Returns all yeasts by default. Use brand for matching yeasts, or name/id for a single yeast.",
-        "tags": [
-          "Yeasts"
-        ],
+        "tags": ["Yeasts"],
         "parameters": [
           {
             "in": "query",
@@ -13740,9 +12762,7 @@
         "operationId": "post-yeasts",
         "summary": "Create yeast",
         "description": "Admin-only. Creates a yeast catalog entry.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [],
         "security": [
           {
@@ -13827,9 +12847,7 @@
         "operationId": "get-yeasts-{id}",
         "summary": "Get yeast by ID",
         "description": "Returns a single yeast by numeric ID, or null when no yeast matches.",
-        "tags": [
-          "Yeasts"
-        ],
+        "tags": ["Yeasts"],
         "parameters": [
           {
             "in": "path",
@@ -13868,9 +12886,7 @@
         "operationId": "patch-yeasts-{id}",
         "summary": "Update yeast",
         "description": "Admin-only. Updates a yeast catalog entry by numeric ID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",
@@ -13953,9 +12969,7 @@
         "operationId": "delete-yeasts-{id}",
         "summary": "Delete yeast",
         "description": "Admin-only. Deletes a yeast catalog entry by numeric ID.",
-        "tags": [
-          "Admin"
-        ],
+        "tags": ["Admin"],
         "parameters": [
           {
             "in": "path",

@@ -21,7 +21,9 @@ export type ChatUsageReportFilters = {
   limit?: number;
 };
 
-export type NormalizedChatUsageReportFilters = Required<Pick<ChatUsageReportFilters, "from" | "to">> & {
+export type NormalizedChatUsageReportFilters = Required<
+  Pick<ChatUsageReportFilters, "from" | "to">
+> & {
   environment: string | null;
   model: string | null;
   status: "completed" | "failed" | "reserved" | null;
@@ -57,16 +59,18 @@ export type ChatUsageReport = {
   };
   daily: Array<ChatUsageMetrics & { day: string }>;
   models: Array<ChatUsageMetrics & { provider: string; model: string }>;
-  users: Array<ChatUsageMetrics & {
-    userId: number;
-    email: string;
-    publicUsername: string | null;
-    active: boolean;
-    chatEnabled: boolean;
-    paymentRestricted: boolean;
-    availableCredits: number;
-    lastActivityAt: Date | null;
-  }>;
+  users: Array<
+    ChatUsageMetrics & {
+      userId: number;
+      email: string;
+      publicUsername: string | null;
+      active: boolean;
+      chatEnabled: boolean;
+      paymentRestricted: boolean;
+      availableCredits: number;
+      lastActivityAt: Date | null;
+    }
+  >;
   totalUsers: number;
 };
 
@@ -76,12 +80,19 @@ export type ChatUsageReport = {
  * this query surface.
  */
 export async function getAdminChatUsageReport(
-  input: ChatUsageReportFilters = {}
+  input: ChatUsageReportFilters = {},
 ): Promise<ChatUsageReport> {
   const filters = normalizeFilters(input);
   const base = usageTurnsCte(filters);
 
-  const [summaryRows, dailyRows, modelRows, userRows, totalUserRows, alertRows] = await Promise.all([
+  const [
+    summaryRows,
+    dailyRows,
+    modelRows,
+    userRows,
+    totalUserRows,
+    alertRows,
+  ] = await Promise.all([
     prisma.$queryRaw<MetricRow[]>(Prisma.sql`
       ${base}
       SELECT
@@ -120,7 +131,9 @@ export async function getAdminChatUsageReport(
       GROUP BY "day"
       ORDER BY "day" ASC
     `),
-    prisma.$queryRaw<Array<MetricRow & { provider: string; model: string }>>(Prisma.sql`
+    prisma.$queryRaw<
+      Array<MetricRow & { provider: string; model: string }>
+    >(Prisma.sql`
       ${base}
       SELECT
         "provider",
@@ -186,11 +199,16 @@ export async function getAdminChatUsageReport(
       SELECT COUNT(DISTINCT "user_id")::bigint AS "total_users"
       FROM "turns"
     `),
-    prisma.$queryRaw<Array<{ payment_restricted_accounts: bigint; pending_payment_recoveries: bigint }>>(Prisma.sql`
+    prisma.$queryRaw<
+      Array<{
+        payment_restricted_accounts: bigint;
+        pending_payment_recoveries: bigint;
+      }>
+    >(Prisma.sql`
       SELECT
         (SELECT COUNT(*)::bigint FROM "credit_accounts" WHERE "payment_restricted_at" IS NOT NULL) AS "payment_restricted_accounts",
         (SELECT COUNT(*)::bigint FROM "credit_payment_recoveries" WHERE "status" = 'review_required') AS "pending_payment_recoveries"
-    `)
+    `),
   ]);
 
   const summary = metricFromRow(summaryRows[0]);
@@ -200,14 +218,18 @@ export async function getAdminChatUsageReport(
     summary: {
       ...summary,
       activeUsers: toSafeNumber(summaryRows[0]?.active_users ?? ZERO_BIGINT),
-      paymentRestrictedAccounts: toSafeNumber(alerts?.payment_restricted_accounts ?? ZERO_BIGINT),
-      pendingPaymentRecoveries: toSafeNumber(alerts?.pending_payment_recoveries ?? ZERO_BIGINT)
+      paymentRestrictedAccounts: toSafeNumber(
+        alerts?.payment_restricted_accounts ?? ZERO_BIGINT,
+      ),
+      pendingPaymentRecoveries: toSafeNumber(
+        alerts?.pending_payment_recoveries ?? ZERO_BIGINT,
+      ),
     },
     daily: dailyRows.map((row) => ({ ...metricFromRow(row), day: row.day })),
     models: modelRows.map((row) => ({
       ...metricFromRow(row),
       provider: row.provider,
-      model: row.model
+      model: row.model,
     })),
     users: userRows.map((row) => ({
       ...metricFromRow(row),
@@ -218,22 +240,36 @@ export async function getAdminChatUsageReport(
       chatEnabled: row.chat_enabled,
       paymentRestricted: row.payment_restricted,
       availableCredits: toSafeNumber(row.available_credits),
-      lastActivityAt: row.last_activity_at
+      lastActivityAt: row.last_activity_at,
     })),
-    totalUsers: toSafeNumber(totalUserRows[0]?.total_users ?? ZERO_BIGINT)
+    totalUsers: toSafeNumber(totalUserRows[0]?.total_users ?? ZERO_BIGINT),
   };
 }
 
-function normalizeFilters(input: ChatUsageReportFilters): NormalizedChatUsageReportFilters {
+function normalizeFilters(
+  input: ChatUsageReportFilters,
+): NormalizedChatUsageReportFilters {
   const to = input.to ?? new Date();
-  const from = input.from ?? new Date(to.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000);
-  if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from >= to) {
+  const from =
+    input.from ??
+    new Date(to.getTime() - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000);
+  if (
+    !Number.isFinite(from.getTime()) ||
+    !Number.isFinite(to.getTime()) ||
+    from >= to
+  ) {
     throw new RangeError("The chat usage date range is invalid.");
   }
 
   const page = input.page ?? 1;
   const limit = input.limit ?? DEFAULT_LIMIT;
-  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
+  if (
+    !Number.isInteger(page) ||
+    page < 1 ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > MAX_LIMIT
+  ) {
     throw new RangeError("The chat usage page is invalid.");
   }
 
@@ -246,14 +282,14 @@ function normalizeFilters(input: ChatUsageReportFilters): NormalizedChatUsageRep
     userId: input.userId ?? null,
     query: input.query?.trim() || null,
     page,
-    limit
+    limit,
   };
 }
 
 function usageTurnsCte(filters: NormalizedChatUsageReportFilters): Prisma.Sql {
   const conditions: Prisma.Sql[] = [
     Prisma.sql`"events"."created_at" >= ${filters.from}`,
-    Prisma.sql`"events"."created_at" < ${filters.to}`
+    Prisma.sql`"events"."created_at" < ${filters.to}`,
   ];
   if (filters.environment) {
     const environment = `%${filters.environment}%`;
@@ -263,8 +299,10 @@ function usageTurnsCte(filters: NormalizedChatUsageReportFilters): Prisma.Sql {
     const model = `%${filters.model}%`;
     conditions.push(Prisma.sql`"events"."model" ILIKE ${model}`);
   }
-  if (filters.status) conditions.push(Prisma.sql`"events"."status" = ${filters.status}`);
-  if (filters.userId) conditions.push(Prisma.sql`"events"."user_id" = ${filters.userId}`);
+  if (filters.status)
+    conditions.push(Prisma.sql`"events"."status" = ${filters.status}`);
+  if (filters.userId)
+    conditions.push(Prisma.sql`"events"."user_id" = ${filters.userId}`);
   if (filters.query) {
     const query = `%${filters.query}%`;
     conditions.push(Prisma.sql`(
@@ -372,7 +410,9 @@ type UserMetricRow = MetricRow & {
 };
 
 function metricFromRow(row: MetricRow | undefined): ChatUsageMetrics {
-  const providerCostPicousd = toBigInt(row?.provider_cost_picousd ?? ZERO_BIGINT);
+  const providerCostPicousd = toBigInt(
+    row?.provider_cost_picousd ?? ZERO_BIGINT,
+  );
   const chargedCredits = toSafeNumber(row?.charged_credits ?? ZERO_BIGINT);
   const creditEquivalentPicousd = BigInt(chargedCredits) * PICOUSD_PER_CREDIT;
   return {
@@ -380,7 +420,9 @@ function metricFromRow(row: MetricRow | undefined): ChatUsageMetrics {
     completedTurns: toSafeNumber(row?.completed_turns ?? ZERO_BIGINT),
     failedTurns: toSafeNumber(row?.failed_turns ?? ZERO_BIGINT),
     pendingTurns: toSafeNumber(row?.pending_turns ?? ZERO_BIGINT),
-    unpricedCompletedTurns: toSafeNumber(row?.unpriced_completed_turns ?? ZERO_BIGINT),
+    unpricedCompletedTurns: toSafeNumber(
+      row?.unpriced_completed_turns ?? ZERO_BIGINT,
+    ),
     providerCalls: toSafeNumber(row?.provider_calls ?? ZERO_BIGINT),
     inputTokens: toSafeNumber(row?.input_tokens ?? ZERO_BIGINT),
     cachedInputTokens: toSafeNumber(row?.cached_input_tokens ?? ZERO_BIGINT),
@@ -389,7 +431,9 @@ function metricFromRow(row: MetricRow | undefined): ChatUsageMetrics {
     chargedCredits,
     providerCostPicousd: providerCostPicousd.toString(),
     creditEquivalentPicousd: creditEquivalentPicousd.toString(),
-    estimatedSpreadPicousd: (creditEquivalentPicousd - providerCostPicousd).toString()
+    estimatedSpreadPicousd: (
+      creditEquivalentPicousd - providerCostPicousd
+    ).toString(),
   };
 }
 
@@ -401,6 +445,9 @@ function toBigInt(value: bigint | number | string): bigint {
 
 function toSafeNumber(value: bigint | number): number {
   const numeric = typeof value === "bigint" ? Number(value) : value;
-  if (!Number.isSafeInteger(numeric)) throw new RangeError("Chat usage metric exceeds JavaScript's safe integer range.");
+  if (!Number.isSafeInteger(numeric))
+    throw new RangeError(
+      "Chat usage metric exceeds JavaScript's safe integer range.",
+    );
   return numeric;
 }
