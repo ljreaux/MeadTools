@@ -38,4 +38,8 @@ test("chat conversation list search accepts compact title queries", () => {
     chatConversationListQuerySchema.safeParse({ query: "" }).success,
     false,
   );
+  assert.deepEqual(
+    chatConversationListQuerySchema.parse({ cursor: "opaque-page-cursor" }),
+    { cursor: "opaque-page-cursor" },
+  );
 });

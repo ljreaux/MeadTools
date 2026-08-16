@@ -3,7 +3,7 @@
 Perform a read-only code review of the hosted-chatbot feature work in this repository.
 
 Use [the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md)
-as the current design reference. Dated plans, review findings, and evaluator
+as the current design reference. Dated plans, review findings, and validation
 exports are historical context only and must be verified against code/schema.
 
 First, read AGENTS.md completely. Do not start development servers, do not call the real model provider, do not inspect .env files or credentials, and do not modify application source code. Treat the current branch as potentially dirty: preserve all existing changes.
@@ -15,7 +15,7 @@ Review the complete chatbot-related implementation against its merge base with `
 - API routes and generated API-contract/OpenAPI artifacts
 - Prisma schema and migrations
 - access control, data ownership, thread retention, reservations/reconciliation, and abuse/cost safeguards
-- translations, tests, docs, and ignored evaluator artifacts
+- translations, tests, docs, and ignored validation artifacts
 
 Pay special attention to:
 
@@ -48,7 +48,7 @@ The document must include:
    - how to inspect each risky flow in the UI
    - what database/ledger state to verify
    - what webhook/payment behavior to verify in Stripe test mode
-   - what evaluator prompts to manually run
+   - what validation prompts to manually run
    - what should block merge or beta release
 4. A concise list of what was not reviewed or could not be verified.
 5. A final recommended decision: approve, approve with follow-ups, or do not approve.

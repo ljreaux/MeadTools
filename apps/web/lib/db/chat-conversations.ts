@@ -86,6 +86,11 @@ export type StoredChatConversation = {
   updatedAt: string;
 };
 
+export type ChatConversationCursor = {
+  lastActivityAt: Date;
+  id: string;
+};
+
 export type StoredChatDraft = {
   id: string;
   revision: number;
@@ -124,11 +129,11 @@ export async function listChatConversations(options: {
   state?: ChatConversationState;
   query?: string;
   limit?: number;
-  before?: Date;
+  cursor?: ChatConversationCursor;
   now?: Date;
 }): Promise<{
   conversations: StoredChatConversation[];
-  nextBefore: string | null;
+  nextCursor: string | null;
 }> {
   const take = normalizePageSize(options.limit);
   const now = options.now ?? new Date();
@@ -137,18 +142,30 @@ export async function listChatConversations(options: {
       user_id: options.userId,
       expires_at: { gt: now },
       ...(options.state ? { state: options.state } : {}),
-      ...(options.query
-        ? {
-            AND: options.query
+      AND: [
+        ...(options.query
+          ? options.query
               .trim()
               .split(/\s+/)
               .filter(Boolean)
               .map((term) => ({
                 title: { contains: term, mode: "insensitive" as const },
-              })),
-          }
-        : {}),
-      ...(options.before ? { last_activity_at: { lt: options.before } } : {}),
+              }))
+          : []),
+        ...(options.cursor
+          ? [
+              {
+                OR: [
+                  { last_activity_at: { lt: options.cursor.lastActivityAt } },
+                  {
+                    last_activity_at: options.cursor.lastActivityAt,
+                    id: { lt: options.cursor.id },
+                  },
+                ],
+              },
+            ]
+          : []),
+      ],
     },
     orderBy: [{ last_activity_at: "desc" }, { id: "desc" }],
     take: take + 1,
@@ -178,8 +195,55 @@ export async function listChatConversations(options: {
   const last = conversations.at(-1);
   return {
     conversations,
-    nextBefore: hasNext && last ? last.lastActivityAt : null,
+    nextCursor:
+      hasNext && last
+        ? encodeChatConversationCursor({
+            lastActivityAt: new Date(last.lastActivityAt),
+            id: last.id,
+          })
+        : null,
   };
+}
+
+/** Opaque, stable pagination cursor for the `(last_activity_at, id)` ordering. */
+export function encodeChatConversationCursor(
+  cursor: ChatConversationCursor,
+): string {
+  return Buffer.from(
+    JSON.stringify({ at: cursor.lastActivityAt.toISOString(), id: cursor.id }),
+  ).toString("base64url");
+}
+
+export function decodeChatConversationCursor(
+  value: string,
+): ChatConversationCursor | undefined {
+  try {
+    const parsed: unknown = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    );
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !("at" in parsed) ||
+      !("id" in parsed) ||
+      typeof parsed.at !== "string" ||
+      typeof parsed.id !== "string"
+    ) {
+      return undefined;
+    }
+    const lastActivityAt = new Date(parsed.at);
+    if (
+      !Number.isFinite(lastActivityAt.getTime()) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        parsed.id,
+      )
+    ) {
+      return undefined;
+    }
+    return { lastActivityAt, id: parsed.id };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function getChatThread(options: {

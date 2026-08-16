@@ -13,8 +13,8 @@ This checklist records operational gates; it does not supersede that document.
 
 ### Vercel Production or the dedicated beta Preview branch
 
-- [ ] Set `CHATBOT_LOCAL_TEST_ENABLED=true`. Despite its historical name, this
-      is the server-side fail-closed switch used to enable the hosted chatbot.
+- [ ] Set `CHATBOT_ENABLED=true`. This is the server-side fail-closed switch
+      used to enable the hosted chatbot.
 - [ ] Set `OPENAI_API_KEY` to the dedicated beta/production service-account
       key. Keep local, preview, and production keys separate for auditability.
 - [ ] Set `CHATBOT_USAGE_ENVIRONMENT` to a clear audit label such as `beta`.
@@ -51,8 +51,10 @@ No extra environment variables are needed to turn these on:
       provider-call, response-output, total-output, and total-provider-token caps.
 - [x] **Pre-provider balance reservation:** a prompt is blocked before any
       model call if the user cannot cover its bounded credit reservation.
-- [x] **Abandoned-turn recovery:** the production cron reverses stale credit
-      reservations and fails stale pending messages every five minutes.
+- [x] **Abandoned-turn recovery:** the production cron settles stale
+      checkpointed provider usage with its original pricing versions, reverses
+      only reservations with confirmed zero dispatches, repairs terminal usage
+      auditing, and fails stale pending messages every five minutes.
 
 The limit overrides above are clamped in code, so an accidental environment
 value cannot raise them beyond the reviewed maximum.
@@ -65,15 +67,17 @@ value cannot raise them beyond the reviewed maximum.
       cron jobs do not run for Preview deployments.
 - [ ] In admin, keep global access set to **beta allowlist**.
 - [ ] Grant chat access to each selected user, then grant their planned 1,000
-      evaluation credits with the separate admin credit action.
+      beta credits with the separate admin credit action.
 - [ ] Verify a non-allowlisted user cannot see the chat launcher, chat route,
       or credit UI.
 - [ ] Verify an allowlisted user can create a thread, send a prompt, see the
       balance change, return to the thread, and save a completed recipe.
 - [ ] Confirm one insufficient-credit request returns a client-visible block
       before OpenAI receives a call.
-- [ ] Confirm the 90-day chat-retention language and cleanup behavior match the
-      agreed policy.
+- [ ] Confirm transcript cleanup removes conversations 90 days after the most
+      recent completed turn, while the documented absence of an automatic
+      retention schedule for usage, ledger, checkout, and recovery records is
+      explicitly accepted for this release.
 - [ ] Check OpenAI usage by the dedicated key/model after the first beta
       sessions. Keep auto-reload disabled until normal usage is established.
 
@@ -121,7 +125,7 @@ ready. It is intentionally separate from beta launch.
 ## Fast rollback
 
 1. Revoke a user’s beta grant or keep global access on **beta allowlist**.
-2. Set `CHATBOT_LOCAL_TEST_ENABLED=false` and redeploy to stop model calls.
+2. Set `CHATBOT_ENABLED=false` and redeploy to stop model calls.
 3. Keep `CHAT_CREDIT_PURCHASES_ENABLED=false` to stop new purchases while
    retaining the existing credit ledger.
 4. Roll back application code only after checking whether later database

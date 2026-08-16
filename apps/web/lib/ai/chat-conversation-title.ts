@@ -14,6 +14,20 @@ export type ChatConversationTitleResult = {
 };
 
 /**
+ * Title generation is provider work just like an agent completion. The caller
+ * supplies its durable reservation marker so a title transport failure cannot
+ * be mistaken for a no-cost optional enhancement.
+ */
+export async function generateChatConversationTitleAfterProviderAttempt(
+  options: Parameters<typeof generateChatConversationTitle>[0] & {
+    recordProviderAttempt: () => Promise<void> | void;
+  },
+): Promise<ChatConversationTitleResult> {
+  await options.recordProviderAttempt();
+  return generateChatConversationTitle(options);
+}
+
+/**
  * One compact, tool-free provider call for a new thread's human-readable title.
  * The caller must keep the deterministic first-message title when this fails.
  */

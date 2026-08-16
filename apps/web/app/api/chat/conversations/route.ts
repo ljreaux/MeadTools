@@ -3,9 +3,10 @@ import {
   chatConversationListQuerySchema,
   createChatConversationRequestBodySchema,
 } from "@meadtools/api-contract/chat";
-import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
+import { requireChatbotUser } from "@/lib/ai/chat-access";
 import {
   createChatConversation,
+  decodeChatConversationCursor,
   listChatConversations,
 } from "@/lib/db/chat-conversations";
 
@@ -27,18 +28,27 @@ export const dynamic = "force-dynamic";
  * @openapi
  */
 export async function GET(request: NextRequest) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
 
   const parsed = chatConversationListQuerySchema.safeParse({
     state: request.nextUrl.searchParams.get("state") ?? undefined,
     query: request.nextUrl.searchParams.get("query") ?? undefined,
-    before: request.nextUrl.searchParams.get("before") ?? undefined,
+    cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
     limit: request.nextUrl.searchParams.get("limit") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid chat conversation query." },
+      { status: 400 },
+    );
+  }
+  const cursor = parsed.data.cursor
+    ? decodeChatConversationCursor(parsed.data.cursor)
+    : undefined;
+  if (parsed.data.cursor && !cursor) {
+    return NextResponse.json(
+      { error: "Invalid chat conversation cursor." },
       { status: 400 },
     );
   }
@@ -50,7 +60,7 @@ export async function GET(request: NextRequest) {
         ...(parsed.data.state ? { state: parsed.data.state } : {}),
         ...(parsed.data.query ? { query: parsed.data.query } : {}),
         ...(parsed.data.limit ? { limit: parsed.data.limit } : {}),
-        ...(parsed.data.before ? { before: new Date(parsed.data.before) } : {}),
+        ...(cursor ? { cursor } : {}),
       }),
     );
   } catch (error) {
@@ -80,7 +90,7 @@ export async function GET(request: NextRequest) {
  * @openapi
  */
 export async function POST(request: NextRequest) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
 
   const body = await request.json().catch(() => null);

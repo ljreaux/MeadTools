@@ -1,6 +1,6 @@
-# Recipe chatbot evaluator prompts
+# Recipe chatbot validation prompts
 
-Use a fresh evaluator session for each scenario unless the scenario explicitly
+Use a fresh chat session for each scenario unless the scenario explicitly
 contains multiple messages. Export any notable session into the ignored
 `docs/chatbot-evals/exports/` folder for review.
 
@@ -8,7 +8,7 @@ These prompts evaluate the behavior defined in
 [the canonical hosted-chatbot architecture](hosted-chatbot-architecture.md).
 They are not authorization to contact a real provider: obtain explicit approval
 that states the model and expected number of turns/spend before any paid-model
-run. Historical evaluator reports may name earlier providers or persistence
+run. Historical validation reports may name earlier providers or persistence
 behavior and are evidence, not current architecture.
 
 ## 1. One-message complete blueberry draft

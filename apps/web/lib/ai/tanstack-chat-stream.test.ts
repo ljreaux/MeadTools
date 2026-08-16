@@ -73,6 +73,6 @@ test("keeps provider transport details out of a streamed chat error", async () =
   assert.equal(error?.type, EventType.RUN_ERROR);
   assert.equal(
     "message" in (error ?? {}) ? error.message : undefined,
-    "The recipe assistant is temporarily unavailable. Your credits were not used; please try again.",
+    "The recipe assistant is temporarily unavailable. Your balance may include a temporary hold while we verify this request; please try again later.",
   );
 });

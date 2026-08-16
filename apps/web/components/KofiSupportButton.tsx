@@ -1,6 +1,6 @@
 "use client";
 
-import RecipeChatTest from "@/components/chat/RecipeChatTest";
+import RecipeChat from "@/components/chat/RecipeChat";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -78,7 +78,7 @@ function RecipeChatLauncher() {
               : "fixed inset-x-2 bottom-16 z-[1001] block h-[min(40rem,calc(100dvh-5rem))] sm:inset-x-auto sm:left-2 sm:h-auto sm:w-[calc(100vw-1rem)] sm:max-w-md"
           }
         >
-          <RecipeChatTest
+          <RecipeChat
             compact={!isExpanded}
             fullscreen={isExpanded}
             onClose={closeAssistant}

@@ -1,12 +1,12 @@
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getLocalChatbotConfig } from "./chat-config";
+import { getChatbotConfig } from "./chat-config";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { getChatAccessStatus } from "@/lib/db/chat-access";
 
 /** Ensures a configured chatbot request also has database-backed access. */
-export async function requireLocalChatbotUser(
+export async function requireChatbotUser(
   request: NextRequest,
 ): Promise<{ userId: number } | NextResponse> {
   const authenticatedUser = await verifyUser(request);
@@ -15,10 +15,10 @@ export async function requireLocalChatbotUser(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const config = getLocalChatbotConfig();
+  const config = getChatbotConfig();
   if (!config) {
     return NextResponse.json(
-      { error: "Local chatbot testing is not configured." },
+      { error: "The recipe assistant is not currently available." },
       { status: 503 },
     );
   }

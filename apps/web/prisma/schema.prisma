@@ -407,7 +407,8 @@ model chatbot_usage_events {
   cached_input_tokens  Int       @default(0)
   output_tokens        Int       @default(0)
   total_tokens         Int       @default(0)
-  provider_request_ids String[]  @default([])
+  provider_request_ids   String[] @default([])
+  provider_attempt_count Int      @default(0)
   created_at           DateTime  @default(now()) @db.Timestamptz(6)
   completed_at         DateTime? @db.Timestamptz(6)
 

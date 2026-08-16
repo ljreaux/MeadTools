@@ -1,24 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_OPENAI_MODEL, getLocalChatbotConfig } from "./chat-config";
+import { DEFAULT_OPENAI_MODEL, getChatbotConfig } from "./chat-config";
 
-test("local chatbot configuration is disabled until explicitly enabled and configured", () => {
-  assert.equal(getLocalChatbotConfig({ OPENAI_API_KEY: "key" }), null);
-  assert.equal(
-    getLocalChatbotConfig({ CHATBOT_LOCAL_TEST_ENABLED: "true" }),
-    null,
-  );
+test("chatbot configuration is disabled until explicitly enabled and configured", () => {
+  assert.equal(getChatbotConfig({ OPENAI_API_KEY: "key" }), null);
+  assert.equal(getChatbotConfig({ CHATBOT_ENABLED: "true" }), null);
   assert.ok(
-    getLocalChatbotConfig({
-      CHATBOT_LOCAL_TEST_ENABLED: "true",
+    getChatbotConfig({
+      CHATBOT_ENABLED: "true",
       OPENAI_API_KEY: "key",
     }),
   );
 });
 
-test("local chatbot configuration clamps per-turn operator-controlled limits", () => {
-  const config = getLocalChatbotConfig({
-    CHATBOT_LOCAL_TEST_ENABLED: "true",
+test("chatbot configuration clamps per-turn operator-controlled limits", () => {
+  const config = getChatbotConfig({
+    CHATBOT_ENABLED: "true",
     OPENAI_API_KEY: "key",
     CHATBOT_MAX_OUTPUT_TOKENS: "9000",
     CHATBOT_MAX_TOOL_CALLS: "100",

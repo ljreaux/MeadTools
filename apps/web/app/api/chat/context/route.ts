@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getChatContextOptions } from "@/lib/ai/chat-account-context";
-import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
+import { requireChatbotUser } from "@/lib/ai/chat-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Return picker-safe summaries of records owned by the authenticated local
- * chatbot evaluator user. Full recipe/brew data is fetched only after a
+ * entitled chatbot user. Full recipe/brew data is fetched only after a
  * selected identifier is re-authorized by the chat turn route.
  *
  * @response 200:ChatContextOptionsResponse
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * @openapi
  */
 export async function GET(request: NextRequest) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
 
   try {

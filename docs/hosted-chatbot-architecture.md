@@ -3,7 +3,7 @@
 > **Canonical current-state document.** This document describes the hosted
 > chatbot implemented on `feat/chatbot-provider-pivot`. Code, Prisma schema,
 > and committed migrations remain the source of truth when this document and
-> implementation differ. Historical plans, reviews, and evaluator exports are
+> implementation differ. Historical plans, reviews, and validation exports are
 > evidence of decisions or test runs, not alternative architecture documents.
 
 ## Product and access model
@@ -32,14 +32,14 @@ the same web feature, not separate assistants.
 
 The reusable domain layer is deliberately independent of MeadTools-web:
 
-| Layer | Responsibility |
-| --- | --- |
-| `@meadtools/chat-domain` | Thread limits and expiry, conversation contracts, bounded credit preauthorization, and whole-turn quoting. |
-| `@meadtools/credit-accounting` | Integer credit packs, effective-dated pricing selection, exact token-cost arithmetic, rounding, and ledger settlement math. |
-| `@meadtools/recipe-agent` | Provider-neutral policy, tool definitions/execution, catalog adapters, wiki-tool boundary, recipe-draft workflow bridge, and brew-action proposals. |
-| `@meadtools/recipe-workflows`, schemas, core, and brew domain | Validated draft construction, MeadTools calculations, recipe representation, and reviewable brew-entry proposals. |
-| `@meadtools/wiki-knowledge` | Reviewed versioned wiki index plus bounded retrieval from the canonical MeadTools wiki host. |
-| `@meadtools/api-contract` | Runtime request/response schemas and the generated OpenAPI/type surface for the web adapters. |
+| Layer                                                         | Responsibility                                                                                                                                      |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@meadtools/chat-domain`                                      | Thread limits and expiry, conversation contracts, bounded credit preauthorization, and whole-turn quoting.                                          |
+| `@meadtools/credit-accounting`                                | Integer credit packs, effective-dated pricing selection, exact token-cost arithmetic, rounding, and ledger settlement math.                         |
+| `@meadtools/recipe-agent`                                     | Provider-neutral policy, tool definitions/execution, catalog adapters, wiki-tool boundary, recipe-draft workflow bridge, and brew-action proposals. |
+| `@meadtools/recipe-workflows`, schemas, core, and brew domain | Validated draft construction, MeadTools calculations, recipe representation, and reviewable brew-entry proposals.                                   |
+| `@meadtools/wiki-knowledge`                                   | Reviewed versioned wiki index plus bounded retrieval from the canonical MeadTools wiki host.                                                        |
+| `@meadtools/api-contract`                                     | Runtime request/response schemas and the generated OpenAPI/type surface for the web adapters.                                                       |
 
 `apps/web` owns the product-specific boundary: Next route handlers, session and
 admin authorization, Prisma persistence, the OpenAI and Stripe transports,
@@ -89,7 +89,7 @@ invent it; and exact calculations and packaging-safety decisions remain in the
 deterministic workflows/calculators. The hard sparkling + stabilization +
 fermentable-backsweetening conflict is answered before the provider. There is
 no public-recipe search or arbitrary public-record access tool. Prompts that
-say a draft is “inspired by” a public recipe are evaluator/product inputs, not
+say a draft is “inspired by” a public recipe are product-validation inputs, not
 authorization to fetch that recipe or expose its private data.
 
 ## MeadTools data, recipe, and brew integration
@@ -158,7 +158,7 @@ is future data-retention work, not a configured retention period.
 
 The active transport is direct OpenAI Chat Completions using the pinned model
 `gpt-5.4-mini-2026-03-17`. The pin is intentional: a model change requires a
-reviewed configuration/pricing change and evaluator qualification, rather than
+reviewed configuration/pricing change and validation, rather than
 an alias changing behavior at deployment time. The server requires the chat
 enable switch and an OpenAI API key; the model may be overridden only through
 the documented, bounded configuration path. It sends `store: false`, sets a
@@ -211,15 +211,24 @@ aggregate once with the selected immutable pricing version and the then-active
 fee policy, settles the unused portion of the hold, and records provider cost
 in picodollars. The current fee policy is versioned, has a 75% markup, no
 fixed fee, and a one-credit minimum for every provider-backed turn. A fully
-deterministic turn reverses its reservation and has no net charge. Because
+deterministic turn is answered before reservation and has no charge. Because
 the hold is intentionally capped, a costly bounded turn can settle to a
 negative balance; the next provider turn remains blocked until recovery.
 
-Failures before completed provider work reverse the reservation and complete
-usage as failed. If a request disconnects or a process dies, the five-minute
-reconciler reverses unmatched reservations and marks stale pending messages
-failed after the grace period. Settlement/reversal operations are idempotent;
-the maintenance route tolerates a concurrently finishing request.
+Before every provider dispatch, the route atomically increments a durable
+attempt count. Failures before that increment safely reverse the reservation
+and complete usage as failed. After each successful provider completion, the
+route checkpoints cumulative token usage and its completed-call count before
+attempting another tool or title call. If any dispatch lacks a durable usage
+checkpoint, the reservation remains held for repair rather than settling only
+the earlier calls or being guessed as zero work. When every dispatch is
+checkpointed, a later step failure settles that known usage with the original
+pricing snapshot and records the turn as failed. If a request disconnects or a
+process dies, the five-minute reconciler settles a fully checkpointed
+reservation, reverses only an explicitly unattempted reservation, repairs
+usage rows whose ledger operation is already final, and marks stale pending
+messages failed after the grace period. Settlement/reversal operations are
+idempotent; the maintenance route tolerates a concurrently finishing request.
 
 ## Stripe credit-purchase architecture
 
@@ -260,7 +269,7 @@ Admin-only operations are divided between **Chat access and credits** and
 **Chat operations**:
 
 - set rollout mode; grant/revoke an active user’s beta access;
-- issue an arbitrary positive evaluation-credit grant without changing access;
+- issue an arbitrary positive beta-credit grant without changing access;
 - inspect recent refund/dispute recovery records and resolve a review case with
   a documented note, signed adjustment, and deliberate release request; and
 - view operational usage/cost reporting.
@@ -300,19 +309,19 @@ For deployment details, use
 For API shape/change process, use
 [the shared API contract document](domain/api-contract.md).
 
-## Testing and evaluation
+## Testing and validation
 
 Deterministic tests cover chat-domain/credit arithmetic, recipe workflows and
 agent policy, wiki retrieval restrictions, API schemas, web route/service
 behavior, concurrency, persistence, and billing/Stripe ordering. A behavior
-found in an evaluator session must receive a deterministic regression test
+found in a validation session must receive a deterministic regression test
 before a fix is treated as complete. Safe unit/type/lint/API-contract checks
-are not paid provider evaluations.
+are not paid provider validations.
 
-`docs/chatbot-eval-prompts.md` is the current scenario suite. A real-model
-evaluation or batch requires explicit approval first, including the model and
+`docs/chatbot-validation-prompts.md` is the current scenario suite. A real-model
+validation run or batch requires explicit approval first, including the model and
 expected number of turns/spend; do not infer that approval from permission to
-run local tests. Evaluator transcripts and dated reports document observed
+run local tests. Validation transcripts and dated reports document observed
 historical runs. They may name Fireworks, browser-only persistence, or a model
 that is no longer active, so they cannot override this document or current
 code.

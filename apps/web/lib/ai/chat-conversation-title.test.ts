@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   generateChatConversationTitle,
+  generateChatConversationTitleAfterProviderAttempt,
   sanitizeConversationTitle,
 } from "./chat-conversation-title";
 import type { FireworksCompletionRequest } from "./fireworks";
@@ -68,6 +69,28 @@ test("conversation titles accept a compact plain-text provider response", async 
   });
 
   assert.equal(result.title, "Raspberry Mead Draft");
+});
+
+test("a failed title request propagates after its durable provider attempt", async () => {
+  let providerAttempts = 0;
+
+  await assert.rejects(
+    generateChatConversationTitleAfterProviderAttempt({
+      userId: 7,
+      firstMessage: "Help me create a blackberry mead recipe.",
+      recordProviderAttempt: () => {
+        providerAttempts += 1;
+      },
+      client: {
+        async complete() {
+          throw new Error("title provider unavailable");
+        },
+      },
+    }),
+    /title provider unavailable/,
+  );
+
+  assert.equal(providerAttempts, 1);
 });
 
 test("conversation title sanitization falls back to the first message", () => {

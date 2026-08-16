@@ -143,3 +143,31 @@ export function quoteCreditsForChatUsage(options: {
     feePolicy: options.feePolicy,
   });
 }
+
+/** The only safe action for an interrupted provider-backed reservation. */
+export type FailedProviderReservationAction = "settle" | "reverse" | "hold";
+
+/**
+ * A completed checkpoint is insufficient when a later provider dispatch did
+ * not checkpoint. Preserve the hold until every durable dispatch is accounted
+ * for or an operator can reconcile it.
+ */
+export function failedProviderReservationAction(options: {
+  providerAttemptCount: number;
+  checkpointedProviderCallCount: number;
+}): FailedProviderReservationAction {
+  if (
+    !Number.isSafeInteger(options.providerAttemptCount) ||
+    options.providerAttemptCount < 0 ||
+    !Number.isSafeInteger(options.checkpointedProviderCallCount) ||
+    options.checkpointedProviderCallCount < 0
+  ) {
+    throw new RangeError(
+      "Provider attempt and checkpoint counts must be non-negative safe integers.",
+    );
+  }
+  if (options.providerAttemptCount > options.checkpointedProviderCallCount) {
+    return "hold";
+  }
+  return options.checkpointedProviderCallCount > 0 ? "settle" : "reverse";
+}

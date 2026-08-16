@@ -1,10 +1,10 @@
 /**
  * This dated model ID is intentionally pinned. A model upgrade is a reviewed
- * profile/pricing change followed by evaluator qualification, never an alias
+ * profile/pricing change followed by validation, never an alias
  * update hidden behind a deployment.
  */
 export const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini-2026-03-17";
-/** Generous only for private evaluator sessions. */
+/** Per-turn output bound for recipe drafting and process guidance. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
 export const DEFAULT_MAX_TOOL_CALLS = 7;
 /** A turn may use tools, but cannot run an unbounded provider loop. */
@@ -20,7 +20,7 @@ export const DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS = 60_000;
 /** Stops a turn once cumulative provider-reported token usage becomes excessive. */
 export const DEFAULT_MAX_TOTAL_PROVIDER_TOKENS = 60_000;
 
-export type LocalChatbotConfig = {
+export type ChatbotConfig = {
   provider: "openai";
   apiKey: string;
   model: string;
@@ -38,10 +38,10 @@ export type LocalChatbotConfig = {
  * provider key. Per-user entitlement is enforced by the database-backed chat
  * access policy, so it can be audited and managed from the admin panel.
  */
-export function getLocalChatbotConfig(
+export function getChatbotConfig(
   environment: Readonly<Record<string, string | undefined>> = process.env,
-): LocalChatbotConfig | null {
-  if (environment.CHATBOT_LOCAL_TEST_ENABLED !== "true") return null;
+): ChatbotConfig | null {
+  if (environment.CHATBOT_ENABLED !== "true") return null;
 
   const apiKey = environment.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;

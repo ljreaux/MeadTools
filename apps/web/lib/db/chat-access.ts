@@ -145,7 +145,7 @@ export async function grantChatEvaluationCredits(options: {
     idempotencyKey: `chat-admin-credit-grant:${randomUUID()}`,
     creditAmount: options.creditAmount,
     metadata: {
-      purpose: "chat evaluation credits",
+      purpose: "chat beta credits",
       grantedByUserId: options.grantedByUserId,
     },
     now: options.now,

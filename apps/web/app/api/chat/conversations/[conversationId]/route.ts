@@ -4,7 +4,7 @@ import {
   chatThreadQuerySchema,
   updateChatConversationRequestBodySchema,
 } from "@meadtools/api-contract/chat";
-import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
+import { requireChatbotUser } from "@/lib/ai/chat-access";
 import {
   ChatConversationNotFoundError,
   deleteChatConversation,
@@ -34,7 +34,7 @@ type RouteContext = { params: Promise<{ conversationId: string }> };
  * @openapi
  */
 export async function GET(request: NextRequest, context: RouteContext) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
   const path = chatConversationIdPathParamsSchema.safeParse(
     await context.params,
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
  * @openapi
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
   const path = chatConversationIdPathParamsSchema.safeParse(
     await context.params,
@@ -144,7 +144,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * @openapi
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
   const path = chatConversationIdPathParamsSchema.safeParse(
     await context.params,

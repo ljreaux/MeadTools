@@ -103,7 +103,7 @@ async function* createStream(options: {
 
 function userFacingChatError(error: unknown): string {
   if (error instanceof ChatProviderRequestError) {
-    return "The recipe assistant is temporarily unavailable. Your credits were not used; please try again.";
+    return "The recipe assistant is temporarily unavailable. Your balance may include a temporary hold while we verify this request; please try again later.";
   }
   return error instanceof Error ? error.message : "Chatbot request failed.";
 }

@@ -2238,17 +2238,14 @@
               "$ref": "#/components/schemas/ChatConversationResponse"
             }
           },
-          "nextBefore": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/isoDateTimeSchema"
-              }
-            ]
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
           "conversations",
-          "nextBefore"
+          "nextCursor"
         ]
       },
       "CreateChatConversationRequestBody": {
@@ -10642,7 +10639,7 @@
     "/chat/recipe": {
       "post": {
         "operationId": "post-chat-recipe",
-        "summary": "Private evaluator endpoint. The signed-in user may only send a message to",
+        "summary": "An entitled user may only send a message to an owned active conversation.",
         "description": "",
         "tags": [
           "Chat"

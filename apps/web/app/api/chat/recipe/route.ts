@@ -4,6 +4,7 @@ import {
   toServerSentEventsResponse,
 } from "@tanstack/ai";
 import {
+  failedProviderReservationAction,
   quoteCreditsForChatUsage,
   reserveCreditsForBoundedChatTurn,
 } from "@meadtools/chat-domain";
@@ -13,13 +14,17 @@ import { recipeDataV2Schema } from "@meadtools/schemas";
 import { z } from "zod";
 import {
   chatRequestSchema,
+  runDeterministicChatTurn,
   runChatTurn,
   type ChatRequest,
 } from "@/lib/ai/chat-service";
-import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
-import { generateChatConversationTitle } from "@/lib/ai/chat-conversation-title";
+import { getChatbotConfig } from "@/lib/ai/chat-config";
+import {
+  generateChatConversationTitleAfterProviderAttempt,
+  type ChatConversationTitleResult,
+} from "@/lib/ai/chat-conversation-title";
 import { ChatProviderRequestError } from "@/lib/ai/chat-model";
-import { requireLocalChatbotUser } from "@/lib/ai/chat-access";
+import { requireChatbotUser } from "@/lib/ai/chat-access";
 import { OpenAIChatClient } from "@/lib/ai/openai";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
@@ -32,6 +37,9 @@ import {
 } from "@/lib/ai/chat-account-context";
 import {
   completeChatbotUsage,
+  getChatbotUsageCheckpoint,
+  recordChatbotProviderAttempt,
+  recordChatbotUsageProgress,
   recordChatbotUsageStart,
 } from "@/lib/db/chatbot-usage";
 import {
@@ -70,20 +78,20 @@ const chatTurnPersistenceSchema = z
   .strict();
 
 /**
- * Private evaluator endpoint. The signed-in user may only send a message to
- * an owned active conversation. The provider receives the bounded persisted
- * transcript and latest structured draft—not client-supplied history.
+ * An entitled user may only send a message to an owned active conversation.
+ * The provider receives the bounded persisted transcript and latest structured
+ * draft—not client-supplied history.
  * @add 402:CreditAccountErrorResponse
  * @openapi
  */
 export async function POST(request: NextRequest) {
-  const access = await requireLocalChatbotUser(request);
+  const access = await requireChatbotUser(request);
   if (access instanceof NextResponse) return access;
 
-  const config = getLocalChatbotConfig();
+  const config = getChatbotConfig();
   if (!config) {
     return NextResponse.json(
-      { error: "Local chatbot testing is not configured." },
+      { error: "The recipe assistant is not currently available." },
       { status: 503 },
     );
   }
@@ -182,6 +190,66 @@ export async function POST(request: NextRequest) {
     runId = params.runId;
   } catch (error) {
     return persistenceErrorResponse(error);
+  }
+
+  // These exact capabilities, scope, safety, and calculator answers do not
+  // contact a provider. Resolve them before obtaining a price snapshot or
+  // reserving the user's balance, while keeping their persisted transcript
+  // behavior identical to a provider-backed turn.
+  const deterministicResult = runDeterministicChatTurn({
+    request: chatRequest,
+    provider: config.provider,
+  });
+  if (deterministicResult) {
+    try {
+      await completeChatTurn({
+        userId: access.userId,
+        conversationId: threadId,
+        pendingMessageId,
+        answer: deterministicResult.answer,
+        citations: citationsFromAnswer(deterministicResult.answer),
+        ...(selectedContext
+          ? { contexts: [contextReferenceFrom(selectedContext)] }
+          : {}),
+        generation: {
+          provider: deterministicResult.usage.provider,
+          model: deterministicResult.usage.model,
+          status: "completed",
+          latencyMs: deterministicResult.usage.latencyMs,
+        },
+      });
+    } catch (error) {
+      await failPendingMessageSilently({
+        userId: access.userId,
+        conversationId: threadId,
+        pendingMessageId,
+      });
+      console.error("Unable to persist deterministic chatbot turn.", {
+        userId: access.userId,
+        conversationId: threadId,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+      return NextResponse.json(
+        { error: "Unable to save this chat response. Please try again." },
+        { status: 503 },
+      );
+    }
+
+    return toServerSentEventsResponse(
+      streamRecipeChatTurn({
+        model: deterministicResult.usage.model,
+        runId,
+        threadId,
+        run: async () => deterministicResult,
+      }),
+      {
+        headers: {
+          "cache-control": "no-store",
+          connection: "keep-alive",
+          "x-accel-buffering": "no",
+        },
+      },
+    );
   }
 
   const requestId = crypto.randomUUID();
@@ -299,41 +367,8 @@ export async function POST(request: NextRequest) {
     runId,
     threadId,
     run: async (onEvent) => {
-      let providerResultCompleted = false;
       let creditReservationFinalized = false;
       try {
-        const titlePromise = shouldGenerateTitle
-          ? generateChatConversationTitle({
-              client,
-              userId: access.userId,
-              firstMessage: initialMessageContent,
-            }).catch((error) => {
-              const providerError =
-                error instanceof ChatProviderRequestError
-                  ? {
-                      status: error.status,
-                      ...(error.details?.type
-                        ? { type: error.details.type }
-                        : {}),
-                      ...(error.details?.code
-                        ? { code: error.details.code }
-                        : {}),
-                      ...(error.details?.parameter
-                        ? { parameter: error.details.parameter }
-                        : {}),
-                    }
-                  : undefined;
-              console.warn("Hosted chatbot title generation failed.", {
-                requestId,
-                userId: access.userId,
-                provider: config.provider,
-                model: config.model,
-                error: error instanceof Error ? error.message : "unknown",
-                ...(providerError ? { providerError } : {}),
-              });
-              return undefined;
-            })
-          : undefined;
         const result = await runChatTurn({
           client,
           userId: access.userId,
@@ -401,14 +436,54 @@ export async function POST(request: NextRequest) {
             });
           },
           onEvent,
+          onProviderAttempt: () => recordChatbotProviderAttempt({ requestId }),
+          onUsage: (usage) => recordChatbotUsageProgress({ requestId, usage }),
         });
-        const titleResult = titlePromise ? await titlePromise : undefined;
+        let titleResult: ChatConversationTitleResult | undefined;
+        if (shouldGenerateTitle && result.usage.requestIds.length > 0) {
+          titleResult = await generateChatConversationTitleAfterProviderAttempt(
+            {
+              client,
+              userId: access.userId,
+              firstMessage: initialMessageContent,
+              recordProviderAttempt: () =>
+                recordChatbotProviderAttempt({ requestId }),
+            },
+          ).catch((error) => {
+            const providerError =
+              error instanceof ChatProviderRequestError
+                ? {
+                    status: error.status,
+                    ...(error.details?.type
+                      ? { type: error.details.type }
+                      : {}),
+                    ...(error.details?.code
+                      ? { code: error.details.code }
+                      : {}),
+                    ...(error.details?.parameter
+                      ? { parameter: error.details.parameter }
+                      : {}),
+                  }
+                : undefined;
+            console.warn("Hosted chatbot title generation failed.", {
+              requestId,
+              userId: access.userId,
+              provider: config.provider,
+              model: config.model,
+              error: error instanceof Error ? error.message : "unknown",
+              ...(providerError ? { providerError } : {}),
+            });
+            throw error;
+          });
+        }
         const usage = mergeTitleUsage(
           result.usage,
           titleResult,
           config.provider,
         );
-        providerResultCompleted = true;
+        // The title call is a second provider completion. Persist its tokens
+        // before settlement so an interruption cannot erase known spend.
+        await recordChatbotUsageProgress({ requestId, usage });
         const creditQuote = quoteCreditsForChatUsage({
           usage: {
             inputTokens: usage.inputTokens,
@@ -440,11 +515,12 @@ export async function POST(request: NextRequest) {
         }
         creditReservationFinalized = true;
         const recipeData = recipeDataFromToolResults(result.toolResults);
-        const usageEventId = await recordCompletedUsage({
+        const usageEventId = await completeChatbotUsage({
           requestId,
           userId: access.userId,
           usage,
-          requestStartedAt,
+          status: "completed",
+          windowAt: requestStartedAt,
         });
         await completeChatTurn({
           userId: access.userId,
@@ -497,7 +573,6 @@ export async function POST(request: NextRequest) {
           userId: access.userId,
           environment: config.usageEnvironment,
           model: config.model,
-          providerResultCompleted,
           creditReservationFinalized,
           error: error instanceof Error ? error.message : "unknown",
         });
@@ -506,17 +581,38 @@ export async function POST(request: NextRequest) {
           conversationId: threadId,
           pendingMessageId,
         });
-        if (!providerResultCompleted && !creditReservationFinalized) {
-          await reverseCreditReservationSilently({
+        let checkpoint: Awaited<ReturnType<typeof getChatbotUsageCheckpoint>>;
+        let usageCheckpointReadable = true;
+        try {
+          checkpoint = await getChatbotUsageCheckpoint(requestId);
+        } catch (usageError) {
+          usageCheckpointReadable = false;
+          console.error("Unable to read chatbot usage checkpoint safely.", {
+            requestId,
             userId: access.userId,
-            operationId: requestId,
-            idempotencyKey: `chat-reversal:${requestId}`,
+            error: usageError instanceof Error ? usageError.message : "unknown",
           });
         }
-        if (!providerResultCompleted) {
+        let finalization: "settled" | "reversed" | "held" = "held";
+        if (!creditReservationFinalized && usageCheckpointReadable) {
+          finalization = await finalizeFailedReservation({
+            userId: access.userId,
+            requestId,
+            checkpoint,
+            pricing: creditPricing,
+            feePolicy: creditFeePolicy,
+          });
+          creditReservationFinalized = finalization !== "held";
+        }
+        if (
+          usageCheckpointReadable &&
+          checkpoint &&
+          (creditReservationFinalized || finalization !== "held")
+        ) {
           await recordFailedUsage({
             requestId,
             userId: access.userId,
+            usage: checkpoint.usage,
             provider: config.provider,
             model: config.model,
             requestStartedAt,
@@ -552,32 +648,12 @@ async function reverseCreditReservationSilently(options: {
   }
 }
 
-async function recordCompletedUsage(options: {
-  requestId: string;
-  userId: number;
-  usage: Awaited<ReturnType<typeof runChatTurn>>["usage"];
-  requestStartedAt: Date;
-}): Promise<string | undefined> {
-  try {
-    return await completeChatbotUsage({
-      requestId: options.requestId,
-      userId: options.userId,
-      usage: options.usage,
-      status: "completed",
-      windowAt: options.requestStartedAt,
-    });
-  } catch {
-    console.error("Failed to persist completed chatbot usage.", {
-      requestId: options.requestId,
-      userId: options.userId,
-    });
-    return undefined;
-  }
-}
-
 async function recordFailedUsage(options: {
   requestId: string;
   userId: number;
+  usage: NonNullable<
+    Awaited<ReturnType<typeof getChatbotUsageCheckpoint>>
+  >["usage"];
   provider: "openai";
   model: string;
   requestStartedAt: Date;
@@ -586,7 +662,7 @@ async function recordFailedUsage(options: {
     await completeChatbotUsage({
       requestId: options.requestId,
       userId: options.userId,
-      usage: {
+      usage: options.usage ?? {
         provider: options.provider,
         model: options.model,
         inputTokens: 0,
@@ -605,6 +681,72 @@ async function recordFailedUsage(options: {
       requestId: options.requestId,
       userId: options.userId,
     });
+  }
+}
+
+/**
+ * A provider response can be known even though the turn as a whole failed
+ * (for example, the next tool call timed out). Settle only that checkpoint;
+ * reverse only when the durable state confirms no provider dispatch occurred.
+ */
+async function finalizeFailedReservation(options: {
+  userId: number;
+  requestId: string;
+  checkpoint: Awaited<ReturnType<typeof getChatbotUsageCheckpoint>>;
+  pricing: Awaited<ReturnType<typeof getActiveCreditPricing>>;
+  feePolicy: Awaited<ReturnType<typeof getActiveCreditFeePolicy>>;
+}): Promise<"settled" | "reversed" | "held"> {
+  try {
+    const action = failedProviderReservationAction({
+      providerAttemptCount: options.checkpoint?.providerAttemptCount ?? 0,
+      checkpointedProviderCallCount:
+        options.checkpoint?.checkpointedProviderCallCount ?? 0,
+    });
+    if (action === "settle" && options.checkpoint) {
+      const quote = quoteCreditsForChatUsage({
+        usage: {
+          inputTokens: options.checkpoint.usage.inputTokens,
+          cachedInputTokens: options.checkpoint.usage.cachedInputTokens,
+          outputTokens: options.checkpoint.usage.outputTokens,
+        },
+        providerCallCount: options.checkpoint.checkpointedProviderCallCount,
+        pricing: options.pricing.pricing,
+        feePolicy: options.feePolicy.policy,
+      });
+      if (quote) {
+        await settleCreditReservation({
+          userId: options.userId,
+          operationId: options.requestId,
+          idempotencyKey: `chat-settlement:${options.requestId}`,
+          chargedCredits: quote.chargedCredits,
+          providerCostPicousd: quote.providerCostPicousd,
+          pricingVersionId: options.pricing.id,
+          feePolicyVersionId: options.feePolicy.id,
+          now: new Date(),
+        });
+        return "settled";
+      }
+      return "held";
+    }
+
+    if (action === "hold") return "held";
+
+    await reverseCreditReservation({
+      userId: options.userId,
+      operationId: options.requestId,
+      idempotencyKey: `chat-reversal:${options.requestId}`,
+      now: new Date(),
+    });
+    return "reversed";
+  } catch (error) {
+    // Leave the original hold intact. The reconciler has the usage checkpoint
+    // and can safely settle it instead of granting completed provider work.
+    console.error("Unable to finalize failed chatbot credit reservation.", {
+      requestId: options.requestId,
+      userId: options.userId,
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return "held";
   }
 }
 
@@ -662,7 +804,7 @@ function citationsFromAnswer(answer: string) {
 
 function mergeTitleUsage(
   usage: Awaited<ReturnType<typeof runChatTurn>>["usage"],
-  title: Awaited<ReturnType<typeof generateChatConversationTitle>> | undefined,
+  title: ChatConversationTitleResult | undefined,
   provider: "openai",
 ) {
   if (!title) return usage;

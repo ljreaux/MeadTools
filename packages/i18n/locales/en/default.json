@@ -124,7 +124,7 @@
   "credits": {
     "activity": "Credit activity",
     "activityAdjustment": "Credit adjustment",
-    "activityGrant": "Evaluation credit grant",
+    "activityGrant": "Beta credit grant",
     "activityPurchase": "Credits added",
     "activityRefund": "Credit refund",
     "activityUsage": "Chat usage",
@@ -366,7 +366,7 @@
     },
     "chatAccess": {
       "accessGranted": "Access granted",
-      "availabilityDescription": "Keep chat invitation-only while testing, or make it available to every active account.",
+      "availabilityDescription": "Keep chat invitation-only during beta, or make it available to every active account.",
       "availabilityTitle": "Chat availability",
       "chatOperations": "Chat operations",
       "grantAccess": "Grant chat access",

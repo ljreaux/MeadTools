@@ -23,6 +23,83 @@ export async function recordChatbotUsageStart(options: {
   });
 }
 
+/**
+ * Checkpoint known provider usage while a turn is still running. A later tool
+ * or provider failure must not turn an already-completed model response into
+ * an untracked, free reservation reversal.
+ */
+export async function recordChatbotUsageProgress(options: {
+  requestId: string;
+  usage: ChatTurnUsage;
+}): Promise<void> {
+  const updated = await prisma.chatbot_usage_events.updateMany({
+    where: { request_id: options.requestId, status: "reserved" },
+    data: usageFields(options.usage),
+  });
+  if (updated.count !== 1) {
+    throw new Error("The pending chatbot usage event is unavailable.");
+  }
+}
+
+/**
+ * Atomically records every provider dispatch before it happens. If a later
+ * completion cannot checkpoint its usage, the attempt count preserves the
+ * reservation instead of settling only earlier work or reversing as zero work.
+ */
+export async function recordChatbotProviderAttempt(options: {
+  requestId: string;
+}): Promise<void> {
+  const updated = await prisma.chatbot_usage_events.updateMany({
+    where: { request_id: options.requestId, status: "reserved" },
+    data: { provider_attempt_count: { increment: 1 } },
+  });
+  if (updated.count !== 1) {
+    throw new Error("The pending chatbot usage event is unavailable.");
+  }
+}
+
+export type ChatbotUsageCheckpoint = {
+  usage: ChatTurnUsage;
+  providerAttemptCount: number;
+  checkpointedProviderCallCount: number;
+};
+
+/** Returns the durable usage and dispatch state for a reserved or failed turn. */
+export async function getChatbotUsageCheckpoint(
+  requestId: string,
+): Promise<ChatbotUsageCheckpoint | undefined> {
+  const event = await prisma.chatbot_usage_events.findUnique({
+    where: { request_id: requestId },
+    select: {
+      status: true,
+      model: true,
+      provider_calls: true,
+      input_tokens: true,
+      cached_input_tokens: true,
+      output_tokens: true,
+      total_tokens: true,
+      provider_request_ids: true,
+      provider_attempt_count: true,
+    },
+  });
+  if (!event) return undefined;
+  return {
+    providerAttemptCount: event.provider_attempt_count,
+    checkpointedProviderCallCount: event.provider_calls,
+    usage: {
+      provider: "openai",
+      model: event.model,
+      inputTokens: event.input_tokens,
+      cachedInputTokens: event.cached_input_tokens,
+      outputTokens: event.output_tokens,
+      totalTokens: event.total_tokens,
+      requestIds: event.provider_request_ids,
+      toolCalls: 0,
+      latencyMs: 0,
+    },
+  };
+}
+
 export async function completeChatbotUsage(options: {
   requestId: string;
   userId: number;
@@ -35,22 +112,19 @@ export async function completeChatbotUsage(options: {
   const dayStart = startOfUtcDay(now);
   const providerCalls = options.usage.requestIds.length;
   const totalTokens = normalizedTotalTokens(options.usage);
-  const providerRequestIds =
-    options.usage.requestIds.length > 0
-      ? Prisma.sql`ARRAY[${Prisma.join(options.usage.requestIds)}]::TEXT[]`
-      : Prisma.sql`ARRAY[]::TEXT[]`;
 
   return prisma.$transaction(async (tx) => {
     const usageRows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       UPDATE "chatbot_usage_events"
       SET
         "status" = ${options.status},
+        "model" = ${options.usage.model},
         "provider_calls" = ${providerCalls},
         "input_tokens" = ${options.usage.inputTokens},
         "cached_input_tokens" = ${options.usage.cachedInputTokens},
         "output_tokens" = ${options.usage.outputTokens},
         "total_tokens" = ${totalTokens},
-        "provider_request_ids" = ${providerRequestIds},
+        "provider_request_ids" = ${providerRequestIds(options.usage)},
         "completed_at" = NOW()
       WHERE "request_id" = ${options.requestId}::uuid
         AND "status" = 'reserved'
@@ -97,6 +171,24 @@ export async function completeChatbotUsage(options: {
 
     return usageRows[0]?.id;
   });
+}
+
+function usageFields(usage: ChatTurnUsage) {
+  return {
+    model: usage.model,
+    provider_calls: usage.requestIds.length,
+    input_tokens: usage.inputTokens,
+    cached_input_tokens: usage.cachedInputTokens,
+    output_tokens: usage.outputTokens,
+    total_tokens: normalizedTotalTokens(usage),
+    provider_request_ids: usage.requestIds,
+  };
+}
+
+function providerRequestIds(usage: ChatTurnUsage) {
+  return usage.requestIds.length > 0
+    ? Prisma.sql`ARRAY[${Prisma.join(usage.requestIds)}]::TEXT[]`
+    : Prisma.sql`ARRAY[]::TEXT[]`;
 }
 
 function normalizedTotalTokens(usage: ChatTurnUsage): number {

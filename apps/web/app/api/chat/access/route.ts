@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chatAccessStatusResponseSchema } from "@meadtools/api-contract/admin";
-import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
+import { getChatbotConfig } from "@/lib/ai/chat-config";
 import { getChatAccessStatus } from "@/lib/db/chat-access";
 import { verifyUser } from "@/lib/userAccessFunctions";
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     chatAccessStatusResponseSchema.parse({
       ...status,
-      chatEnabled: status.chatEnabled && Boolean(getLocalChatbotConfig()),
+      chatEnabled: status.chatEnabled && Boolean(getChatbotConfig()),
     }),
   );
 }

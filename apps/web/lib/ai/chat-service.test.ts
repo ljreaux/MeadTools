@@ -16,6 +16,7 @@ import {
   removeUnsupportedRackingFallback,
   removeUnsupportedProcessThresholds,
   removeCompletedRecipeFollowUp,
+  runDeterministicChatTurn,
   runChatTurn,
 } from "./chat-service";
 import type { WikiFetcher } from "@meadtools/wiki-knowledge";
@@ -116,6 +117,194 @@ test("exact calculator requests link to MeadTools without invoking the model", a
     result.answer,
     /\[Sulfite calculator\]\(\/extra-calcs\/sulfite\)/,
   );
+});
+
+test("deterministic preflight keeps first-turn scope answers provider-free", () => {
+  const result = runDeterministicChatTurn({
+    provider: "openai",
+    request: chatRequestSchema.parse({
+      messages: [{ role: "user", content: "What is Bitcoin trading at?" }],
+    }),
+  });
+
+  assert.equal(result?.usage.model, "deterministic-scope-check");
+  assert.equal(result?.usage.requestIds.length, 0);
+});
+
+test("usage progress survives a later provider failure in a tool turn", async () => {
+  let completions = 0;
+  const checkpoints: Array<{ requestIds: string[]; totalTokens: number }> = [];
+
+  await assert.rejects(
+    runChatTurn({
+      client: {
+        async complete() {
+          completions += 1;
+          if (completions > 1) throw new Error("second provider call failed");
+          return {
+            id: "first-completed-provider-call",
+            model: "test-model",
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [
+                {
+                  id: "ingredient-search",
+                  type: "function",
+                  function: {
+                    name: "search_ingredients",
+                    arguments: '{"query":"wildflower honey"}',
+                  },
+                },
+              ],
+            },
+            usage: {
+              inputTokens: 12,
+              cachedInputTokens: 3,
+              outputTokens: 4,
+              totalTokens: 16,
+            },
+          };
+        },
+      },
+      userId: 7,
+      request: chatRequestSchema.parse({
+        messages: [
+          {
+            role: "user",
+            content:
+              "Create a one gallon traditional mead with wildflower honey.",
+          },
+        ],
+      }),
+      maxOutputTokens: 500,
+      maxToolCalls: 6,
+      ingredientLookup: async () => [
+        { id: 1, name: "Honey", category: "Honey", brix: 80 },
+      ],
+      onUsage: (usage) => {
+        checkpoints.push({
+          requestIds: [...usage.requestIds],
+          totalTokens: usage.totalTokens,
+        });
+      },
+    }),
+    /second provider call failed/,
+  );
+
+  assert.deepEqual(checkpoints, [
+    { requestIds: ["first-completed-provider-call"], totalTokens: 16 },
+  ]);
+});
+
+test("a durable provider-attempt write is required before provider dispatch", async () => {
+  let providerCalled = false;
+
+  await assert.rejects(
+    runChatTurn({
+      client: {
+        async complete() {
+          providerCalled = true;
+          throw new Error("The provider must not be reached.");
+        },
+      },
+      userId: 7,
+      request: chatRequestSchema.parse({
+        messages: [
+          { role: "user", content: "Help me make a traditional mead." },
+        ],
+      }),
+      maxOutputTokens: 500,
+      maxToolCalls: 6,
+      onProviderAttempt: () => {
+        throw new Error("Unable to record provider attempt");
+      },
+    }),
+    /Unable to record provider attempt/,
+  );
+
+  assert.equal(providerCalled, false);
+});
+
+test("a later completion without a durable usage checkpoint remains distinguishable", async () => {
+  let providerAttempts = 0;
+  const checkpointedCallCounts: number[] = [];
+  let completions = 0;
+
+  await assert.rejects(
+    runChatTurn({
+      client: {
+        async complete() {
+          completions += 1;
+          if (completions === 1) {
+            return {
+              id: "checkpointed-tool-call",
+              model: "test-model",
+              message: {
+                role: "assistant",
+                content: null,
+                tool_calls: [
+                  {
+                    id: "ingredient-search",
+                    type: "function",
+                    function: {
+                      name: "search_ingredients",
+                      arguments: '{"query":"wildflower honey"}',
+                    },
+                  },
+                ],
+              },
+              usage: {
+                inputTokens: 12,
+                cachedInputTokens: 3,
+                outputTokens: 4,
+                totalTokens: 16,
+              },
+            };
+          }
+          return {
+            id: "uncheckpointed-final-call",
+            model: "test-model",
+            message: { role: "assistant", content: "Here is the result." },
+            usage: {
+              inputTokens: 8,
+              cachedInputTokens: 2,
+              outputTokens: 5,
+              totalTokens: 13,
+            },
+          };
+        },
+      },
+      userId: 7,
+      request: chatRequestSchema.parse({
+        messages: [
+          {
+            role: "user",
+            content:
+              "Create a one gallon traditional mead with wildflower honey.",
+          },
+        ],
+      }),
+      maxOutputTokens: 500,
+      maxToolCalls: 6,
+      ingredientLookup: async () => [
+        { id: 1, name: "Honey", category: "Honey", brix: 80 },
+      ],
+      onProviderAttempt: () => {
+        providerAttempts += 1;
+      },
+      onUsage: (usage) => {
+        if (usage.requestIds.length === 2) {
+          throw new Error("The second usage checkpoint did not persist.");
+        }
+        checkpointedCallCounts.push(usage.requestIds.length);
+      },
+    }),
+    /second usage checkpoint did not persist/,
+  );
+
+  assert.equal(providerAttempts, 2);
+  assert.deepEqual(checkpointedCallCounts, [1]);
 });
 
 test("a process request with a calculator need returns both sourced guidance and the calculator link", async () => {
@@ -1044,7 +1233,7 @@ test("chat turn executes a wiki search and meters every provider call", async ()
     "tool_result:fetch_wiki_page",
   ]);
   assert.deepEqual(result.usage, {
-    provider: "fireworks",
+    provider: "openai",
     model: "test-model",
     inputTokens: 600,
     outputTokens: 60,

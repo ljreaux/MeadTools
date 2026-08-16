@@ -14,7 +14,7 @@ export const chatConversationIdPathParamsSchema = z.object({
 export const chatConversationListQuerySchema = z.object({
   state: chatConversationStateResponseSchema.optional(),
   query: z.string().trim().min(1).max(160).optional(),
-  before: isoDateTimeSchema.optional(),
+  cursor: z.string().min(1).max(256).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
@@ -79,7 +79,7 @@ export const chatDraftResponseSchema = z.object({
 
 export const chatConversationsResponseSchema = z.object({
   conversations: z.array(chatConversationResponseSchema),
-  nextBefore: isoDateTimeSchema.nullable(),
+  nextCursor: z.string().nullable(),
 });
 
 export const chatConversationThreadResponseSchema = z.object({

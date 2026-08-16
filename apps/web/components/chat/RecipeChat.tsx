@@ -125,7 +125,7 @@ type ChatMessage = ChatSessionMessage & {
 };
 
 type ChatTurnUsage = {
-  provider: "fireworks";
+  provider: "openai";
   model: string;
   inputTokens: number;
   outputTokens: number;
@@ -197,7 +197,7 @@ type RecipeChatProps = {
   embedded?: boolean;
 };
 
-export default function RecipeChatTest({
+export default function RecipeChat({
   compact = false,
   fullscreen = false,
   onClose,
@@ -212,13 +212,13 @@ export default function RecipeChatTest({
   const token = useAuthToken();
   const { status: authStatus } = useSession();
   const canUseChat = Boolean(token) || authStatus === "authenticated";
-  const showEvaluatorDetails = user?.role === "admin";
+  const showAdminDiagnostics = user?.role === "admin";
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string>();
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [activeConversationSummary, setActiveConversationSummary] =
     useState<ChatConversation>();
-  const [conversationNextBefore, setConversationNextBefore] = useState<
+  const [conversationNextCursor, setConversationNextCursor] = useState<
     string | null
   >(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -519,12 +519,12 @@ export default function RecipeChatTest({
 
   async function loadRecentConversations(options?: {
     append?: boolean;
-    before?: string;
+    cursor?: string;
     query?: string;
     state?: Exclude<ChatHistoryStatusFilter, "all">;
   }) {
     const searchParams = new URLSearchParams({ limit: "20" });
-    if (options?.before) searchParams.set("before", options.before);
+    if (options?.cursor) searchParams.set("cursor", options.cursor);
     if (options?.query) searchParams.set("query", options.query);
     if (options?.state) searchParams.set("state", options.state);
     const response = await fetch(`/api/chat/conversations?${searchParams}`, {
@@ -532,7 +532,7 @@ export default function RecipeChatTest({
     });
     const payload = (await response.json().catch(() => null)) as {
       conversations?: ChatConversation[];
-      nextBefore?: string | null;
+      nextCursor?: string | null;
     } | null;
     if (!response.ok || !payload?.conversations) {
       throw new Error("Unable to load chat conversations.");
@@ -547,7 +547,7 @@ export default function RecipeChatTest({
         ),
       ];
     });
-    setConversationNextBefore(payload.nextBefore ?? null);
+    setConversationNextCursor(payload.nextCursor ?? null);
     return payload.conversations;
   }
 
@@ -637,12 +637,12 @@ export default function RecipeChatTest({
   }
 
   async function loadMoreConversations() {
-    if (!conversationNextBefore || isLoadingMoreConversations) return;
+    if (!conversationNextCursor || isLoadingMoreConversations) return;
     setIsLoadingMoreConversations(true);
     try {
       await loadRecentConversations({
         append: true,
-        before: conversationNextBefore,
+        cursor: conversationNextCursor,
         ...(historyQuery.trim() ? { query: historyQuery.trim() } : {}),
         ...(historyStatusFilter === "all"
           ? {}
@@ -739,7 +739,7 @@ export default function RecipeChatTest({
     return () => {
       cancelled = true;
     };
-    // `token` may refresh while this evaluator is open; reload only on a real identity change.
+    // `token` may refresh while chat is open; reload only on a real identity change.
   }, [canUseChat, token]);
 
   useEffect(() => {
@@ -1117,7 +1117,7 @@ export default function RecipeChatTest({
               activeConversationTitle={activeConversationTitle}
               conversations={conversations}
               disabled={isSubmitting || isLoadingThread}
-              hasMore={Boolean(conversationNextBefore)}
+              hasMore={Boolean(conversationNextCursor)}
               isLoadingMore={isLoadingMoreConversations}
               onClose={() => setHistoryOpen(false)}
               onDelete={(conversation) => setDeletingConversation(conversation)}
@@ -1467,7 +1467,7 @@ export default function RecipeChatTest({
         </CardContent>
       </Card>
 
-      {!popupLayout && showEvaluatorDetails ? (
+      {!popupLayout && showAdminDiagnostics ? (
         <details className="mt-4 rounded-lg border bg-card px-4 py-3">
           <summary className="cursor-pointer text-sm font-medium">
             {t("chatbotTest.evaluatorDetails")}

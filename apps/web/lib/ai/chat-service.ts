@@ -80,6 +80,60 @@ export type ChatTurnResult = {
   usage: ChatTurnUsage;
 };
 
+/**
+ * Resolve the narrow, provider-free answers before the route reserves credits.
+ * These checks must stay shared with `runChatTurn` so callers cannot disagree
+ * about whether a first turn can safely avoid a provider request.
+ */
+export function runDeterministicChatTurn(options: {
+  request: ChatRequest;
+  provider: ChatProvider;
+  startedAt?: number;
+}): ChatTurnResult | undefined {
+  const startedAt = options.startedAt ?? performance.now();
+  const { request, provider } = options;
+  const result = (answer: string, model: string): ChatTurnResult => ({
+    answer,
+    toolResults: [],
+    recipeDraftInput: request.recipeDraftInput,
+    usage: {
+      ...emptyUsage(),
+      provider,
+      model,
+      toolCalls: 0,
+      latencyMs: Math.round(performance.now() - startedAt),
+    },
+  });
+  if (isAssistantCapabilitiesRequest(request.messages.at(-1)?.content ?? "")) {
+    return result(assistantCapabilitiesAnswer, "deterministic-capabilities");
+  }
+  if (!isMeadScopedRequest(request)) {
+    return result(outOfScopeAnswer, "deterministic-scope-check");
+  }
+  const sparklingSweetnessConflict = sparklingSweetnessConflictAnswer(request);
+  if (sparklingSweetnessConflict !== undefined) {
+    return result(
+      sparklingSweetnessConflict,
+      "deterministic-sparkling-safety-check",
+    );
+  }
+  const quickAbv = quickAbvCalculationForRequest(request);
+  if (quickAbv !== undefined) {
+    return result(
+      `MeadTools estimates **${formatCalculationValue(quickAbv)}% ABV** from the supplied OG and FG. For the full calculation, use the [ABV calculator](/extra-calcs/abv).`,
+      "deterministic-abv-calculation",
+    );
+  }
+  const calculatorRoute = calculatorRouteForRequest(request);
+  if (calculatorRoute && !requiresWikiSourceForRequest(request)) {
+    return result(
+      `For an exact result, use the [${calculatorRoute.label}](${calculatorRoute.href}). It uses your MeadTools inputs instead of a generic wiki formula.`,
+      "deterministic-calculator-routing",
+    );
+  }
+  return undefined;
+}
+
 export class ChatSafetyLimitError extends Error {
   constructor(message: string) {
     super(message);
@@ -136,93 +190,20 @@ export async function runChatTurn(options: {
   yeastLookup?: YeastLookup;
   wikiFetcher?: WikiFetcher;
   onEvent?: (event: ChatTurnEvent) => void;
+  /** Called immediately before every provider dispatch. Must fail closed. */
+  onProviderAttempt?: () => Promise<void> | void;
+  /** Called after every successful provider completion with all known usage. */
+  onUsage?: (usage: ChatTurnUsage) => Promise<void> | void;
 }): Promise<ChatTurnResult> {
   const startedAt = performance.now();
-  const provider = options.client.provider ?? "fireworks";
-  if (
-    isAssistantCapabilitiesRequest(
-      options.request.messages.at(-1)?.content ?? "",
-    )
-  ) {
-    return {
-      answer: assistantCapabilitiesAnswer,
-      toolResults: [],
-      recipeDraftInput: options.request.recipeDraftInput,
-      usage: {
-        ...emptyUsage(),
-        provider,
-        model: "deterministic-capabilities",
-        toolCalls: 0,
-        latencyMs: Math.round(performance.now() - startedAt),
-      },
-    };
-  }
-  if (!isMeadScopedRequest(options.request)) {
-    return {
-      answer: outOfScopeAnswer,
-      toolResults: [],
-      recipeDraftInput: options.request.recipeDraftInput,
-      usage: {
-        ...emptyUsage(),
-        provider,
-        model: "deterministic-scope-check",
-        toolCalls: 0,
-        latencyMs: Math.round(performance.now() - startedAt),
-      },
-    };
-  }
-  const sparklingSweetnessConflict = sparklingSweetnessConflictAnswer(
-    options.request,
-  );
-  if (sparklingSweetnessConflict !== undefined) {
-    return {
-      answer: sparklingSweetnessConflict,
-      toolResults: [],
-      recipeDraftInput: options.request.recipeDraftInput,
-      usage: {
-        ...emptyUsage(),
-        provider,
-        model: "deterministic-sparkling-safety-check",
-        toolCalls: 0,
-        latencyMs: Math.round(performance.now() - startedAt),
-      },
-    };
-  }
-  const quickAbv = quickAbvCalculationForRequest(options.request);
-  if (quickAbv !== undefined) {
-    return {
-      answer: `MeadTools estimates **${formatCalculationValue(quickAbv)}% ABV** from the supplied OG and FG. For the full calculation, use the [ABV calculator](/extra-calcs/abv).`,
-      toolResults: [],
-      recipeDraftInput: options.request.recipeDraftInput,
-      usage: {
-        ...emptyUsage(),
-        provider,
-        model: "deterministic-abv-calculation",
-        toolCalls: 0,
-        latencyMs: Math.round(performance.now() - startedAt),
-      },
-    };
-  }
+  const provider = options.client.provider ?? "openai";
+  const deterministic = runDeterministicChatTurn({
+    request: options.request,
+    provider,
+    startedAt,
+  });
+  if (deterministic) return deterministic;
   const requiresWikiSource = requiresWikiSourceForRequest(options.request);
-  const calculatorRoute = calculatorRouteForRequest(options.request);
-  // A request can ask for both process guidance and the calculator. Keep an
-  // exact calculator-only question fast and deterministic, but let a stated
-  // process/wiki request retrieve its evidence before appending the relevant
-  // MeadTools calculator link.
-  if (calculatorRoute && !requiresWikiSource) {
-    return {
-      answer: `For an exact result, use the [${calculatorRoute.label}](${calculatorRoute.href}). It uses your MeadTools inputs instead of a generic wiki formula.`,
-      toolResults: [],
-      recipeDraftInput: options.request.recipeDraftInput,
-      usage: {
-        ...emptyUsage(),
-        provider,
-        model: "deterministic-calculator-routing",
-        toolCalls: 0,
-        latencyMs: Math.round(performance.now() - startedAt),
-      },
-    };
-  }
   const messages = initialMessages(options.request);
   const toolResults: ChatTurnResult["toolResults"] = [];
   const usage = emptyUsage();
@@ -515,6 +496,7 @@ export async function runChatTurn(options: {
         "This chat turn grew beyond the safe provider-context limit. Please start a new chat or send a shorter follow-up.",
       );
     }
+    await options.onProviderAttempt?.();
     const completion = await options.client.complete({
       messages,
       tools,
@@ -527,6 +509,15 @@ export async function runChatTurn(options: {
     });
     model = completion.model;
     collectUsage(usage, completion);
+    await options.onUsage?.(
+      usageSnapshot({
+        usage,
+        provider,
+        model,
+        toolCalls,
+        startedAt,
+      }),
+    );
 
     const calls = completion.message.tool_calls ?? [];
     if (calls.length === 0) {
@@ -3837,7 +3828,8 @@ function ensureExplicitIngredientStageSplits(
         ingredientNamesMatch(candidate.name, name),
     );
     if (!hasPrimary) {
-      const { secondary: _secondary, ...primaryIngredient } = ingredient;
+      const primaryIngredient = { ...ingredient };
+      delete primaryIngredient.secondary;
       input.ingredients.push(primaryIngredient);
     }
     if (!hasSecondary)
@@ -5588,11 +5580,9 @@ function discardUnstatedRecipeValues(
               ...(explicit.secondary ? { secondary: true } : {}),
             }
           : (() => {
-              const {
-                amount: _amount,
-                unit: _unit,
-                ...withoutModelAmount
-              } = additive;
+              const withoutModelAmount = { ...additive };
+              delete withoutModelAmount.amount;
+              delete withoutModelAmount.unit;
               return { ...withoutModelAmount, unit: undefined };
             })();
       });
@@ -6594,6 +6584,23 @@ function collectUsage(
   aggregate.totalTokens += completion.usage.totalTokens;
   aggregate.cachedInputTokens += completion.usage.cachedInputTokens;
   aggregate.requestIds.push(completion.id);
+}
+
+function usageSnapshot(options: {
+  usage: ReturnType<typeof emptyUsage>;
+  provider: ChatProvider;
+  model: string;
+  toolCalls: number;
+  startedAt: number;
+}): ChatTurnUsage {
+  return {
+    ...options.usage,
+    requestIds: [...options.usage.requestIds],
+    provider: options.provider,
+    model: options.model,
+    toolCalls: options.toolCalls,
+    latencyMs: Math.round(performance.now() - options.startedAt),
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -45,7 +45,10 @@ Use an isolated local/test database, a deliberately configured evaluator account
 - [ ] Prepare a brew action and inspect the exact target and payload. Confirm no mutation occurs until the separate confirmation control is used.
 - [ ] Delete a thread and verify its messages, drafts, generations, and message-context rows are removed.
 - [ ] Advance an isolated test thread past 90 days, run authenticated cleanup, and verify the expired transcript is removed.
-- [ ] Verify usage and billing records follow the approved operational-retention policy after transcript deletion.
+- [ ] Verify transcript deletion does not delete usage or billing records. The
+      current release deliberately has no automatic deletion policy for usage
+      events/windows, ledger entries, checkout receipts, or recovery records;
+      record explicit operator acceptance of that constraint.
 
 ## User-supplied recipe values and catalog defaults
 
@@ -126,7 +129,9 @@ Use an isolated local/test database, a deliberately configured evaluator account
 - [ ] Verify rounding occurs once per complete turn, not once per internal provider call.
 - [ ] Test a sub-credit provider turn, a multi-call sub-credit turn, and a multi-credit turn. The wallet must equal the immutable ledger sum.
 - [ ] Confirm the UI discloses the minimum one-credit provider-backed turn and whole-turn rounding behavior.
-- [ ] Inject failure before provider work, after provider response, after settlement, after usage completion, and during message completion.
+- [ ] Inject failure before the durable provider-attempt marker and verify the hold reverses with a failed usage event.
+- [ ] Inject failure after a provider response but before its usage checkpoint persists, including after an earlier checkpointed tool/title call; verify the hold remains for reconciliation and is never reversed or partially settled as zero work.
+- [ ] Inject failure after settlement, after usage terminalization, and during message completion; verify reconciliation terminalizes the audit event exactly once.
 - [ ] Confirm no completed provider usage becomes a free abandoned reversal.
 - [ ] Confirm no settled answer becomes unrecoverably failed or invisible.
 - [ ] Re-run reconciliation and confirm every finalization path is idempotent.
@@ -138,7 +143,9 @@ Use an isolated local/test database, a deliberately configured evaluator account
 - [ ] Verify every reservation, settlement, reversal, purchase, grant, refund, and adjustment has the intended sign and an accepted database constraint.
 - [ ] Verify balance is always derivable from the immutable ledger.
 - [ ] Verify a transcript deletion cannot delete purchase, refund, dispute, or required ledger evidence.
-- [ ] Verify usage events/windows expire according to the approved policy while required billing evidence remains.
+- [ ] Verify no transcript cleanup path deletes usage events/windows or required
+      billing evidence. Confirm the release record explicitly accepts the
+      current absence of an automatic non-transcript retention schedule.
 - [ ] Verify cleanup jobs are bounded and idempotent.
 - [ ] Call each cron route with no secret, a blank secret, `Bearer undefined`, an incorrect token, and the correct token. Only the correct configured token may run work.
 
@@ -169,7 +176,7 @@ Use an isolated local/test database, a deliberately configured evaluator account
 
 ## Evaluator prompts
 
-- [ ] Run all scenarios in `docs/chatbot-eval-prompts.md` in fresh sessions where instructed.
+- [ ] Run all scenarios in `docs/chatbot-validation-prompts.md` in fresh sessions where instructed.
 - [ ] Prioritize #1-7, #11-14, #19-21, #24-30, and #31-33.
 - [ ] Use #12 as a hard packaging-safety gate.
 - [ ] Use #26 and #28 to verify unfermented secondary sugars and Ingredients/Additives separation.

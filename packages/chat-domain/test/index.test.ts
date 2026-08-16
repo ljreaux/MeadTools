@@ -10,6 +10,7 @@ import {
   conversationExpiresAt,
   conversationIsAtCapacity,
   conversationTitleFromMessage,
+  failedProviderReservationAction,
   isUnusableConversationTitle,
   quoteCreditsForChatUsage,
   reserveCreditsForBoundedChatTurn,
@@ -126,5 +127,50 @@ test("chat credit billing reserves the bounded maximum and skips deterministic t
       feePolicy,
     }),
     { providerCostPicousd: BigInt(201_600_000), chargedCredits: 1 },
+  );
+});
+
+test("interrupted provider reservations reverse only confirmed unattempted work", () => {
+  assert.equal(
+    failedProviderReservationAction({
+      providerAttemptCount: 0,
+      checkpointedProviderCallCount: 0,
+    }),
+    "reverse",
+  );
+  assert.equal(
+    failedProviderReservationAction({
+      providerAttemptCount: 1,
+      checkpointedProviderCallCount: 0,
+    }),
+    "hold",
+  );
+  assert.equal(
+    failedProviderReservationAction({
+      providerAttemptCount: 1,
+      checkpointedProviderCallCount: 1,
+    }),
+    "settle",
+  );
+  assert.equal(
+    failedProviderReservationAction({
+      // Rows created before attempt counting have zero attempts but retain a
+      // durable historic provider checkpoint, which remains safe to settle.
+      providerAttemptCount: 0,
+      checkpointedProviderCallCount: 1,
+    }),
+    "settle",
+  );
+});
+
+test("a failed title attempt prevents settlement of only the earlier agent completion", () => {
+  assert.equal(
+    failedProviderReservationAction({
+      // One agent completion checkpointed; the title request was dispatched
+      // but failed before its usage checkpoint could persist.
+      providerAttemptCount: 2,
+      checkpointedProviderCallCount: 1,
+    }),
+    "hold",
   );
 });

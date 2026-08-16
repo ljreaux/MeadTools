@@ -8,7 +8,15 @@ import {
   settleReservedCredits,
   type CreditSettlement,
 } from "@meadtools/credit-accounting";
+import {
+  failedProviderReservationAction,
+  quoteCreditsForChatUsage,
+} from "@meadtools/chat-domain";
 import { Prisma, credit_ledger_entry_type } from "@prisma/client";
+import {
+  completeChatbotUsage,
+  getChatbotUsageCheckpoint,
+} from "@/lib/db/chatbot-usage";
 import prisma from "@/lib/prisma";
 
 export class CreditReservationNotFoundError extends Error {
@@ -84,7 +92,7 @@ export async function reverseAbandonedCreditReservations(options?: {
   olderThan?: Date;
   limit?: number;
   now?: Date;
-}): Promise<{ reversed: number; skipped: number }> {
+}): Promise<{ reversed: number; settled: number; skipped: number }> {
   const olderThan = options?.olderThan ?? new Date(Date.now() - 60 * 60 * 1000);
   const limit = options?.limit ?? 100;
   if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
@@ -117,9 +125,88 @@ export async function reverseAbandonedCreditReservations(options?: {
   `);
 
   let reversed = 0;
+  let settled = 0;
   let skipped = 0;
   for (const candidate of candidates) {
     try {
+      const checkpoint = await getChatbotUsageCheckpoint(
+        candidate.operation_id,
+      );
+      const action = failedProviderReservationAction({
+        providerAttemptCount: checkpoint?.providerAttemptCount ?? 0,
+        checkpointedProviderCallCount:
+          checkpoint?.checkpointedProviderCallCount ?? 0,
+      });
+      if (action === "settle" && checkpoint) {
+        const reservation = await prisma.credit_ledger_entries.findFirst({
+          where: {
+            operation_id: candidate.operation_id,
+            entry_type: credit_ledger_entry_type.reservation,
+          },
+          select: {
+            pricing_version: true,
+            fee_policy_version: true,
+          },
+        });
+        if (!reservation?.pricing_version || !reservation.fee_policy_version) {
+          // The hold is safer than granting a completed provider call when an
+          // historic pricing snapshot is unexpectedly unavailable.
+          skipped += 1;
+          continue;
+        }
+        const quote = quoteCreditsForChatUsage({
+          usage: {
+            inputTokens: checkpoint.usage.inputTokens,
+            cachedInputTokens: checkpoint.usage.cachedInputTokens,
+            outputTokens: checkpoint.usage.outputTokens,
+          },
+          providerCallCount: checkpoint.checkpointedProviderCallCount,
+          pricing: {
+            uncachedInputPicousdPerMillionTokens:
+              reservation.pricing_version
+                .uncached_input_picousd_per_million_tokens,
+            cachedInputPicousdPerMillionTokens:
+              reservation.pricing_version
+                .cached_input_picousd_per_million_tokens,
+            outputPicousdPerMillionTokens:
+              reservation.pricing_version.output_picousd_per_million_tokens,
+          },
+          feePolicy: {
+            markupBasisPoints:
+              reservation.fee_policy_version.markup_basis_points,
+            fixedTurnCredits: reservation.fee_policy_version.fixed_turn_credits,
+            minimumTurnCredits:
+              reservation.fee_policy_version.minimum_turn_credits,
+          },
+        });
+        if (!quote) {
+          skipped += 1;
+          continue;
+        }
+        await settleCreditReservation({
+          userId: candidate.user_id,
+          operationId: candidate.operation_id,
+          idempotencyKey: `credit-maintenance-settlement:${candidate.operation_id}`,
+          chargedCredits: quote.chargedCredits,
+          providerCostPicousd: quote.providerCostPicousd,
+          pricingVersionId: reservation.pricing_version.id,
+          feePolicyVersionId: reservation.fee_policy_version.id,
+          now: options?.now,
+        });
+        await completeChatbotUsage({
+          requestId: candidate.operation_id,
+          userId: candidate.user_id,
+          usage: checkpoint.usage,
+          status: "failed",
+          windowAt: options?.now,
+        });
+        settled += 1;
+        continue;
+      }
+      if (action === "hold") {
+        skipped += 1;
+        continue;
+      }
       await reverseCreditReservation({
         userId: candidate.user_id,
         operationId: candidate.operation_id,
@@ -138,7 +225,68 @@ export async function reverseAbandonedCreditReservations(options?: {
     }
   }
 
-  return { reversed, skipped };
+  return { reversed, settled, skipped };
+}
+
+/**
+ * Repairs usage rows that remain reserved after their corresponding credit
+ * reservation has already been settled or reversed. This is intentionally
+ * separate from reservation reconciliation: the ledger is final, so only the
+ * audit-window terminalization remains to be made durable.
+ */
+export async function reconcileFinalizedChatbotUsageEvents(options?: {
+  olderThan?: Date;
+  limit?: number;
+  now?: Date;
+}): Promise<{ finalized: number; skipped: number }> {
+  const olderThan = options?.olderThan ?? new Date(Date.now() - 60 * 60 * 1000);
+  const limit = options?.limit ?? 100;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+    throw new RangeError(
+      "Chat usage reconciliation limit must be between 1 and 500.",
+    );
+  }
+  const candidates = await prisma.$queryRaw<
+    Array<{ user_id: number; request_id: string }>
+  >(Prisma.sql`
+    SELECT "events"."user_id", "events"."request_id"::text AS "request_id"
+    FROM "chatbot_usage_events" AS "events"
+    WHERE "events"."status" = 'reserved'
+      AND "events"."created_at" <= ${olderThan}
+      AND EXISTS (
+        SELECT 1
+        FROM "credit_ledger_entries" AS "final_entries"
+        WHERE "final_entries"."operation_id" = "events"."request_id"
+          AND "final_entries"."entry_type" IN (
+            ${credit_ledger_entry_type.settlement},
+            ${credit_ledger_entry_type.reversal}
+          )
+      )
+    ORDER BY "events"."created_at" ASC
+    LIMIT ${limit}
+  `);
+
+  let finalized = 0;
+  let skipped = 0;
+  for (const candidate of candidates) {
+    const checkpoint = await getChatbotUsageCheckpoint(candidate.request_id);
+    if (!checkpoint) {
+      skipped += 1;
+      continue;
+    }
+    await completeChatbotUsage({
+      requestId: candidate.request_id,
+      userId: candidate.user_id,
+      usage: checkpoint.usage,
+      // A completed event would already be terminal. A stale reserved event
+      // follows an interrupted persistence path, so it is conservatively
+      // retained as failed while still contributing its known usage once.
+      status: "failed",
+      windowAt: options?.now,
+    });
+    finalized += 1;
+  }
+  return { finalized, skipped };
 }
 
 /**

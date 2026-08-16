@@ -104,7 +104,7 @@ Current evidence:
 - `packages/recipe-workflows/src/build-recipe-draft.ts:103-119` has no packaging or carbonation intent.
 - `packages/recipe-agent/src/policy.ts:23-38` defaults stabilization for backsweetening but has no compatibility rule for sparkling packaging.
 - `apps/web/lib/ai/chat-service.ts:1132-1157` routes calculator-style carbonation requests but does not guard recipe design.
-- `docs/chatbot-eval-prompts.md:129-140` expects safe behavior only at evaluator level.
+- `docs/chatbot-validation-prompts.md:129-140` expects safe behavior only at validation level.
 
 Required work:
 
@@ -151,7 +151,7 @@ Current evidence:
 
 - `apps/web/lib/ai/chat-service.ts:1662-1722` requires literal catalog punctuation for mention and amount recovery.
 - `apps/web/lib/ai/chat-service.ts:2632-2652` uses punctuation-normalized equivalence only after a line exists.
-- `docs/chatbot-eval-prompts.md:315-327` covers only exact `Opti-Red`.
+- `docs/chatbot-validation-prompts.md:315-327` covers only exact `Opti-Red`.
 
 Required work:
 
@@ -190,7 +190,7 @@ Current evidence:
 
 - `apps/web/lib/db/chat-conversations.ts:221-285` inserts a pending message without checking for another pending turn.
 - `apps/web/lib/db/chat-conversations.ts:287-320` includes only the caller's pending message in provider history.
-- `apps/web/components/chat/RecipeChatTest.tsx:352-360` mitigates only the normal UI with `queue: "drop"`.
+- `apps/web/components/chat/RecipeChat.tsx:352-360` mitigates only the normal UI with `queue: "drop"`.
 
 Required work:
 
@@ -281,7 +281,7 @@ Define an operational retention period, add bounded/idempotent cleanup for usage
 
 - `packages/credit-accounting/src/index.ts:90-135` rounds marked-up cost to whole credits and enforces a one-credit minimum.
 - `apps/web/app/api/chat/recipe/route.ts:335-348` correctly aggregates all provider calls before one quote.
-- `packages/i18n/locales/en/default.json:124-144` and `apps/web/components/chat/RecipeChatTest.tsx:1474-1503` do not explain the minimum/rounding rule.
+- `packages/i18n/locales/en/default.json:124-144` and `apps/web/components/chat/RecipeChat.tsx:1474-1503` do not explain the minimum/rounding rule.
 
 Keep once-per-turn aggregation. Add clear purchase/chat disclosure that provider-backed turns have a one-credit minimum and are rounded once per complete turn. Add tests proving deterministic zero-provider turns are free and internal calls are not rounded separately.
 

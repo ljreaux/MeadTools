@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import CreditWallet from "@/components/account/CreditWallet";
 import Header from "@/components/account/header";
-import RecipeChatTest from "@/components/chat/RecipeChatTest";
+import RecipeChat from "@/components/chat/RecipeChat";
 import {
   Card,
   CardContent,
@@ -93,7 +93,7 @@ export default function ChatWorkspace({
             <TabsTrigger value="credits">Prompt credits</TabsTrigger>
           </TabsList>
           <TabsContent value="assistant">
-            <RecipeChatTest embedded />
+            <RecipeChat embedded />
           </TabsContent>
           <TabsContent value="credits">
             <CreditWallet embedded />
