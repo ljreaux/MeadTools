@@ -26,7 +26,11 @@ export function useChatAccess() {
   const enabled = Boolean(token) || status === "authenticated";
 
   return useQuery({
-    queryKey: qk.chatAccess,
+    // `useAuthToken` reads localStorage after hydration. Keep the token value
+    // out of React Query's cache key, but distinguish that hydrated state from
+    // the initial session-only request so a transient 401 cannot strand a
+    // freshly signed-in brewer on the chat loading screen.
+    queryKey: [...qk.chatAccess, token ? "bearer" : "session"] as const,
     queryFn: () => fetchChatAccess(token),
     enabled,
     staleTime: 5_000,

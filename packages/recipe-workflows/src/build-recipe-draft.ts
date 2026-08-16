@@ -159,12 +159,19 @@ export function buildRecipeDraft(rawInput: unknown): ChatbotRecipeWorkflowResult
     }
 
     const warnings = ["This is an unsaved recipe draft."];
-    const targetAbv = input.targetOriginalGravity === undefined
-      ? undefined
-      : calcABV(input.targetOriginalGravity, input.fermentationFinalGravity!);
-    if (targetAbv !== undefined && Math.abs(authoritative.data.derived.alcohol.abv - targetAbv) > 0.01) {
+    if (
+      input.targetOriginalGravity !== undefined &&
+      !input.ingredients.some(
+        (ingredient) => ingredient.role === "adjustable_fermentable" && ingredient.amount === undefined
+      ) &&
+      Math.abs(authoritative.data.derived.gravity.ogPrimary - input.targetOriginalGravity) > 0.0005
+    ) {
+      const calculatedOg = authoritative.data.derived.gravity.ogPrimary;
+      const gravityAdjustment = calculatedOg > input.targetOriginalGravity
+        ? "reduce a fixed fermentable or increase the finished batch volume to lower the gravity"
+        : "increase a fixed fermentable or reduce the finished batch volume to raise the gravity";
       warnings.push(
-        `The supplied fixed fermentables calculate to ${formatNumber(authoritative.data.derived.alcohol.abv)}% ABV rather than the ${formatNumber(targetAbv)}% target. MeadTools kept the stated amounts unchanged; reduce a fixed fermentable or increase the finished batch volume to lower the ABV.`
+        `The supplied fixed fermentables calculate to an original gravity of ${formatNumber(calculatedOg)} rather than the requested ${formatNumber(input.targetOriginalGravity)}. MeadTools kept the stated amounts unchanged; ${gravityAdjustment}.`
       );
     }
 
@@ -445,8 +452,14 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
           fermentationFinalGravity: input.fermentationFinalGravity,
           targetFinalGravity: input.backsweetening.targetFinalGravity,
           sweetenerSg: backsweeteningSweetenerSg(input.backsweetening)
-        })
+      })
       : requestedFinishedVolumeL - fixedSecondaryVolumeL;
+    // Do this feasibility check before deriving a primary ABV. Otherwise a
+    // malformed or over-large secondary volume reaches calcOG as NaN and
+    // leaks a low-level calculator validation error into the chat.
+    if (!Number.isFinite(desiredPrimaryVolumeL) || desiredPrimaryVolumeL <= 0) {
+      throw new Error("The finished batch volume is too small to accommodate the fixed secondary ingredients and a fermenting primary must. Reduce the secondary amount or choose a larger finished batch volume.");
+    }
     const fixedPrimary = fixed.filter((ingredient) => !ingredient.secondary);
     const fixedPrimaryVolumeL = fixedPrimary.reduce((total, ingredient) => total + ingredient.volumeL, 0);
     const fixedPrimaryGravityVolume = fixedPrimary.reduce((total, ingredient) => total + ingredient.sg * ingredient.volumeL, 0);

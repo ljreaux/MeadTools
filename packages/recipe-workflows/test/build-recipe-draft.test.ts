@@ -66,6 +66,34 @@ test("fixed secondary fruit supplies backsweetening when no target is provided",
   assert.ok(result.assumptions.some((assumption) => assumption.includes("Fixed secondary additions provide the backsweetening")));
 });
 
+test("a fixed recipe with an OG target preserves the target as gravity in its warning", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 10, unit: "L" },
+    targetOriginalGravity: 1.106,
+    fermentationFinalGravity: 0.996,
+    ingredients: [
+      { name: "Honey", amount: { kind: "weight", value: 2.8, unit: "kg" } },
+      { name: "Cherry, Sweet", category: "fruit", brix: 12, amount: { kind: "weight", value: 2.7, unit: "kg" } },
+      { name: "Cherry, Tart", category: "fruit", brix: 12, amount: { kind: "weight", value: 0.8, unit: "kg" } }
+    ],
+    nutrients: {
+      ...nutrientPlan,
+      schedule: "dap",
+      numberOfAdditions: 3,
+      goFermType: "none"
+    },
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  const warning = result.warnings.find((candidate) => candidate.includes("fixed fermentables"));
+  assert.match(warning ?? "", /original gravity of 1\.\d{3}/);
+  assert.match(warning ?? "", /requested 1\.106/);
+  assert.match(warning ?? "", /increase a fixed fermentable or reduce the finished batch volume/);
+  assert.doesNotMatch(warning ?? "", /% target/);
+});
+
 test("secondary fruit that exceeds the stated sweetness target is retained without extra honey", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 5, unit: "gal" },
@@ -591,4 +619,28 @@ test("general recipe drafting requires a nutrient plan and rejects nutrient opt-
     stabilizers: { enabled: false }
   });
   assert.equal(optedOut.status, "error");
+});
+
+test("a secondary volume that leaves no primary must returns a recipe feasibility error", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.1,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", category: "honey", brix: 81, role: "adjustable_fermentable" },
+      {
+        name: "Raspberry Juice",
+        category: "fruit juice",
+        brix: 10,
+        amount: { kind: "volume", value: 1, unit: "gal" },
+        secondary: true
+      }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  });
+
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /finished batch volume is too small/i);
 });

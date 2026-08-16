@@ -22,7 +22,13 @@ export function useAuth() {
     isError,
     error
   } = useQuery<AuthUser | null>({
-    queryKey: qk.authMe,
+    // Credential login populates localStorage after the first client render.
+    // Keep auth query results separated by credential availability without
+    // putting the bearer value itself into the client query cache.
+    queryKey: [
+      ...qk.authMe,
+      accessToken ? "bearer" : nextAuthAccessToken ? "session" : "anonymous"
+    ] as const,
     queryFn: () => fetchAccountInfo(accessToken, nextAuthAccessToken),
     enabled,
     staleTime: 5 * 60 * 1000,
