@@ -45,6 +45,8 @@ export const qk = {
   hydrometerBrewLogsPrefix: ["hydrometer", "logs", "brew"] as const,
 
   adminUsers: ["admin", "users"] as const,
+  adminChatUsage: (filters: Record<string, string | number | undefined>) =>
+    ["admin", "chat-usage", filters] as const,
   adminChatAccess: ["admin", "chat-access"] as const,
   adminChatPaymentRecoveries: ["admin", "chat-access", "payment-recoveries"] as const,
   adminRecipes: (page: number, limit: number, query: string) =>

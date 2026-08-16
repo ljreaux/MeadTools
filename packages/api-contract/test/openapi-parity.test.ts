@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "e8e5b255fcb24a1aeb930f8e55698be7e6484acee0e5245ee3feb30b3e546f2e";
+  "dfb7f887be5ebb8050dd761c6274668741026ef40b94b21f487a696dad197c42";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -67,6 +67,7 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/admin/chat-access/credits"];
   delete pathsWithoutApprovedAdditions["/admin/chat-access/payment-recoveries"];
   delete pathsWithoutApprovedAdditions["/admin/chat-access/payment-recoveries/{recoveryId}"];
+  delete pathsWithoutApprovedAdditions["/admin/chat/usage"];
   const canonicalPaths = JSON.stringify(
     sortJson(pathsWithoutApprovedAdditions)
   );

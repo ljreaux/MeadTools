@@ -173,3 +173,78 @@ export const resolveCreditPaymentRecoveryResponseSchema = z.object({
   availableCredits: z.number().int().nullable(),
   chatReleased: z.boolean()
 });
+
+const picousdStringSchema = z.string().regex(/^-?\d+$/);
+const chatUsageStatusSchema = z.enum(["completed", "failed", "reserved"]);
+
+export const adminChatUsageQueryParamsSchema = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  environment: z.string().trim().min(1).max(32).optional(),
+  model: z.string().trim().min(1).max(255).optional(),
+  status: chatUsageStatusSchema.optional(),
+  userId: z.coerce.number().int().positive().optional(),
+  query: z.string().trim().max(255).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional()
+}).strict();
+
+const chatUsageMetricSchema = z.object({
+  requestCount: z.number().int().nonnegative(),
+  completedTurns: z.number().int().nonnegative(),
+  failedTurns: z.number().int().nonnegative(),
+  pendingTurns: z.number().int().nonnegative(),
+  unpricedCompletedTurns: z.number().int().nonnegative(),
+  providerCalls: z.number().int().nonnegative(),
+  inputTokens: z.number().int().nonnegative(),
+  cachedInputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+  totalTokens: z.number().int().nonnegative(),
+  chargedCredits: z.number().int().nonnegative(),
+  providerCostPicousd: picousdStringSchema,
+  creditEquivalentPicousd: picousdStringSchema,
+  estimatedSpreadPicousd: picousdStringSchema
+});
+
+export const adminChatUsageUserRowSchema = chatUsageMetricSchema.extend({
+  userId: z.number().int().positive(),
+  email: z.string().email(),
+  publicUsername: z.string().nullable(),
+  active: z.boolean(),
+  chatEnabled: z.boolean(),
+  paymentRestricted: z.boolean(),
+  availableCredits: z.number().int(),
+  lastActivityAt: z.string().datetime().nullable()
+});
+
+export const adminChatUsageDailyRowSchema = chatUsageMetricSchema.extend({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
+export const adminChatUsageModelRowSchema = chatUsageMetricSchema.extend({
+  provider: z.string(),
+  model: z.string()
+});
+
+export const adminChatUsageReportResponseSchema = z.object({
+  filters: z.object({
+    from: z.string().datetime(),
+    to: z.string().datetime(),
+    environment: z.string().nullable(),
+    model: z.string().nullable(),
+    status: chatUsageStatusSchema.nullable(),
+    userId: z.number().int().positive().nullable(),
+    query: z.string().nullable(),
+    page: z.number().int().positive(),
+    limit: z.number().int().positive()
+  }),
+  summary: chatUsageMetricSchema.extend({
+    activeUsers: z.number().int().nonnegative(),
+    paymentRestrictedAccounts: z.number().int().nonnegative(),
+    pendingPaymentRecoveries: z.number().int().nonnegative()
+  }),
+  daily: z.array(adminChatUsageDailyRowSchema),
+  models: z.array(adminChatUsageModelRowSchema),
+  users: z.array(adminChatUsageUserRowSchema),
+  totalUsers: z.number().int().nonnegative()
+});

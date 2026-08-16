@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import type { AdminChatUsageReportResponse } from "@meadtools/api-contract/contracts";
 import type { AdminBrewsPage, AdminSummary } from "@/lib/db/admin";
 import { qk } from "@/lib/db/queryKeys";
 import type { BrewViewDetail } from "@/types/brewView";
@@ -14,6 +15,32 @@ export function useAdminSummary() {
     queryKey: qk.adminSummary,
     queryFn: () => fetchWithAuth<AdminSummary>("/api/admin/summary"),
     staleTime: 60 * 1000
+  });
+}
+
+export function useAdminChatUsage(filters: {
+  from: string;
+  to: string;
+  environment?: string;
+  model?: string;
+  status?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const fetchWithAuth = useFetchWithAuth();
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== "") searchParams.set(key, String(value));
+  }
+
+  return useQuery<AdminChatUsageReportResponse>({
+    queryKey: qk.adminChatUsage(filters),
+    queryFn: () => fetchWithAuth<AdminChatUsageReportResponse>(
+      `/api/admin/chat/usage?${searchParams.toString()}`
+    ),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000
   });
 }
 

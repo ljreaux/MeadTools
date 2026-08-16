@@ -27,7 +27,7 @@ const navLinks = [
   { key: "brews", fallback: "Brews", to: `${baseRoute}/brews`, icon: Beer },
   { key: "recipes", fallback: "Recipes", to: `${baseRoute}/recipes`, icon: NotebookText },
   { key: "users", fallback: "Users", to: `${baseRoute}/users`, icon: Users },
-  { key: "chat", fallback: "Chat beta", to: `${baseRoute}/chat-access`, icon: MessageCircle },
+  { key: "chat", fallback: "Chat operations", to: `${baseRoute}/chat`, icon: MessageCircle },
   { key: "yeasts", fallback: "Yeasts", to: `${baseRoute}/yeasts`, icon: FlaskConical },
   { key: "ingredients", fallback: "Ingredients", to: `${baseRoute}/ingredients`, icon: Wheat },
   { key: "additives", fallback: "Additives", to: `${baseRoute}/additives`, icon: TestTube2 },

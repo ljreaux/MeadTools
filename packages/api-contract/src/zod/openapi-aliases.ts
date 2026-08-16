@@ -20,6 +20,11 @@ import {
   additivesFetchErrorResponseSchema,
   additivesResponseSchema,
   adminAuthErrorResponseSchema,
+  adminChatUsageDailyRowSchema,
+  adminChatUsageModelRowSchema,
+  adminChatUsageQueryParamsSchema,
+  adminChatUsageReportResponseSchema,
+  adminChatUsageUserRowSchema,
   adminRecipeListItemResponseSchema,
   adminRecipesFetchErrorResponseSchema,
   adminRecipesPageResponseSchema,
@@ -363,6 +368,11 @@ export const AdditivesFetchErrorResponse = additivesFetchErrorResponseSchema;
 export const AdditivesResponse = additivesResponseSchema;
 export const AdditiveUnitResponse = additiveUnitResponseSchema;
 export const AdminAuthErrorResponse = adminAuthErrorResponseSchema;
+export const AdminChatUsageDailyRow = adminChatUsageDailyRowSchema;
+export const AdminChatUsageModelRow = adminChatUsageModelRowSchema;
+export const AdminChatUsageQueryParams = adminChatUsageQueryParamsSchema;
+export const AdminChatUsageReportResponse = adminChatUsageReportResponseSchema;
+export const AdminChatUsageUserRow = adminChatUsageUserRowSchema;
 export const AdminRecipeListItemResponse = adminRecipeListItemResponseSchema;
 export const AdminRecipesFetchErrorResponse = adminRecipesFetchErrorResponseSchema;
 export const AdminRecipesPageResponse = adminRecipesPageResponseSchema;

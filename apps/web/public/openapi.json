@@ -345,6 +345,198 @@
       "CreateAdditiveFailureErrorResponse": {
         "$ref": "#/components/schemas/additiveAdminFailureSchema"
       },
+      "AdminChatUsageReportResponse": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "environment": {
+                "type": "string",
+                "nullable": true
+              },
+              "model": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/chatUsageStatusSchema"
+                  }
+                ]
+              },
+              "userId": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "nullable": true
+              },
+              "query": {
+                "type": "string",
+                "nullable": true
+              },
+              "page": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "environment",
+              "model",
+              "status",
+              "userId",
+              "query",
+              "page",
+              "limit"
+            ]
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "requestCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "completedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pendingTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unpricedCompletedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "providerCalls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "inputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cachedInputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "outputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "totalTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "chargedCredits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "providerCostPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "creditEquivalentPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "estimatedSpreadPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "activeUsers": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "paymentRestrictedAccounts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pendingPaymentRecoveries": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "requestCount",
+              "completedTurns",
+              "failedTurns",
+              "pendingTurns",
+              "unpricedCompletedTurns",
+              "providerCalls",
+              "inputTokens",
+              "cachedInputTokens",
+              "outputTokens",
+              "totalTokens",
+              "chargedCredits",
+              "providerCostPicousd",
+              "creditEquivalentPicousd",
+              "estimatedSpreadPicousd",
+              "activeUsers",
+              "paymentRestrictedAccounts",
+              "pendingPaymentRecoveries"
+            ]
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageDailyRow"
+            }
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageModelRow"
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageUserRow"
+            }
+          },
+          "totalUsers": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "filters",
+          "summary",
+          "daily",
+          "models",
+          "users",
+          "totalUsers"
+        ]
+      },
+      "ChatAccessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "CreateChatCreditGrantRequestBody": {
         "type": "object",
         "properties": {
@@ -379,17 +571,6 @@
         "required": [
           "creditsGranted",
           "availableCredits"
-        ]
-      },
-      "ChatAccessErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "error"
         ]
       },
       "DeleteChatAccessGrantResponse": {
@@ -3722,6 +3903,18 @@
           "active"
         ]
       },
+      "picousdStringSchema": {
+        "type": "string",
+        "pattern": "^-?\\d+$"
+      },
+      "chatUsageStatusSchema": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "reserved"
+        ]
+      },
       "accountUserResponseObjectSchema": {
         "type": "object",
         "properties": {
@@ -4806,6 +4999,278 @@
           "quarts",
           "gal",
           "tbsp"
+        ]
+      },
+      "AdminChatUsageDailyRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "day": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "day"
+        ]
+      },
+      "AdminChatUsageModelRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "provider",
+          "model"
+        ]
+      },
+      "AdminChatUsageUserRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "publicUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "chatEnabled": {
+            "type": "boolean"
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          },
+          "availableCredits": {
+            "type": "integer"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "userId",
+          "email",
+          "publicUsername",
+          "active",
+          "chatEnabled",
+          "paymentRestricted",
+          "availableCredits",
+          "lastActivityAt"
         ]
       },
       "AdminRecipeListItemResponse": {
@@ -7786,6 +8251,168 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/admin/chat/usage": {
+      "get": {
+        "operationId": "get-admin-chat-usage",
+        "summary": "Return aggregate, non-sensitive chat operations reporting. Provider cost is",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "failed",
+                "reserved"
+              ]
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminChatUsageReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
           }
         }
       }

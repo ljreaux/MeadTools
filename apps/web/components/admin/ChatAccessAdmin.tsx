@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, ExternalLink, Search, UsersRound, X } from "lucide-react";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -41,6 +42,16 @@ export default function ChatAccessAdmin() {
   const paymentRecoveries = useAdminChatPaymentRecoveries();
   const resolvePaymentRecovery = useResolveAdminChatPaymentRecovery();
 
+  useEffect(() => {
+    if (window.location.hash !== "#payment-recovery") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("payment-recovery")?.scrollIntoView({
+        block: "start"
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [access.isLoading, users.isLoading]);
+
   const grantsByUserId = useMemo(
     () => new Set(access.data?.grants.map((entry) => entry.userId) ?? []),
     [access.data?.grants]
@@ -55,37 +66,40 @@ export default function ChatAccessAdmin() {
 
   if (access.isLoading || users.isLoading) return <Loading />;
   if (access.isError || users.isError || !access.data) {
-    return <p className="text-destructive">Unable to load chat beta settings.</p>;
+    return <p className="text-destructive">Unable to load chat administration settings.</p>;
   }
 
   const allActive = access.data.mode === "all_active_users";
   const mutationError = grant.error ?? grantCredits.error ?? revoke.error ?? updateMode.error;
   return (
     <div className="w-full max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Recipe chatbot beta</h1>
-        <p className="mt-2 text-muted-foreground">Control access to the private recipe chatbot and grant evaluation credits.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Chat access and credits</h1>
+          <p className="mt-2 text-muted-foreground">Control access, grant credits, and resolve payment restrictions.</p>
+        </div>
+        <Button asChild size="sm" variant="outline"><Link href="/admin/chat">{t("admin.chatAccess.chatOperations")}</Link></Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Rollout mode</CardTitle>
-          <CardDescription>Beta grants are the safe default. Switching to all active users immediately shows chat to every active account.</CardDescription>
+          <CardTitle>{t("admin.chatAccess.availabilityTitle")}</CardTitle>
+          <CardDescription>{t("admin.chatAccess.availabilityDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium">{allActive ? "All active users" : "Beta allowlist"}</span>
+            <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium">{allActive ? "All active users" : t("admin.chatAccess.invitationOnly")}</span>
             {!allActive ? <span className="text-sm text-muted-foreground">Only explicitly granted users can open chat.</span> : null}
           </div>
           {allActive ? (
-            <Button variant="outline" disabled={updateMode.isPending} onClick={() => updateMode.mutate("beta_allowlist")}>Return to beta allowlist</Button>
+            <Button variant="outline" disabled={updateMode.isPending} onClick={() => updateMode.mutate("beta_allowlist")}>{t("admin.chatAccess.returnToInvitationOnly")}</Button>
           ) : (
             <Button disabled={updateMode.isPending} onClick={() => setConfirmGlobalEnable(true)}><UsersRound className="mr-2 size-4" />Enable for all active users</Button>
           )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="scroll-mt-24" id="payment-recovery">
         <CardHeader>
           <CardTitle>{t("admin.chatPayments.title", "Payment recovery")}</CardTitle>
           <CardDescription>{t("admin.chatPayments.description", "Refunds reconcile automatically when possible. Disputes or overspent refunds restrict chat until you review them here.")}</CardDescription>
@@ -149,7 +163,7 @@ export default function ChatAccessAdmin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Beta users and credits</CardTitle>
+          <CardTitle>Users and credits</CardTitle>
           <CardDescription>Chat access and prompt credits are separate. Add any whole number of credits without changing a user&apos;s access. Revoking access never removes ledger history or credits.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -168,11 +182,11 @@ export default function ChatAccessAdmin() {
                     <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {hasGrant ? <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium"><Check className="mr-1 size-3" />Beta granted</span> : null}
+                    {hasGrant ? <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium"><Check className="mr-1 size-3" />{t("admin.chatAccess.accessGranted")}</span> : null}
                     {hasGrant ? (
                       <Button variant="outline" size="sm" disabled={revoke.isPending} onClick={() => revoke.mutate(user.id)}>Revoke</Button>
                     ) : (
-                      <Button size="sm" disabled={grant.isPending} onClick={() => grant.mutate(user.id)}>Grant chat beta</Button>
+                      <Button size="sm" disabled={grant.isPending} onClick={() => grant.mutate(user.id)}>{t("admin.chatAccess.grantAccess")}</Button>
                     )}
                     <CreditGrantControl
                       disabled={grantCredits.isPending}

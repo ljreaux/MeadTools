@@ -21,6 +21,11 @@ import {
   additivesFetchErrorResponseSchema,
   additivesResponseSchema,
   adminAuthErrorResponseSchema,
+  adminChatUsageDailyRowSchema,
+  adminChatUsageModelRowSchema,
+  adminChatUsageQueryParamsSchema,
+  adminChatUsageReportResponseSchema,
+  adminChatUsageUserRowSchema,
   adminRecipeListItemResponseSchema,
   adminRecipesFetchErrorResponseSchema,
   adminRecipesPageResponseSchema,
@@ -364,6 +369,11 @@ export type AdditivesFetchErrorResponse = z.infer<typeof additivesFetchErrorResp
 export type AdditivesResponse = z.infer<typeof additivesResponseSchema>;
 export type AdditiveUnitResponse = z.infer<typeof additiveUnitResponseSchema>;
 export type AdminAuthErrorResponse = z.infer<typeof adminAuthErrorResponseSchema>;
+export type AdminChatUsageDailyRow = z.infer<typeof adminChatUsageDailyRowSchema>;
+export type AdminChatUsageModelRow = z.infer<typeof adminChatUsageModelRowSchema>;
+export type AdminChatUsageQueryParams = z.infer<typeof adminChatUsageQueryParamsSchema>;
+export type AdminChatUsageReportResponse = z.infer<typeof adminChatUsageReportResponseSchema>;
+export type AdminChatUsageUserRow = z.infer<typeof adminChatUsageUserRowSchema>;
 export type AdminRecipeListItemResponse = z.infer<typeof adminRecipeListItemResponseSchema>;
 export type AdminRecipesFetchErrorResponse = z.infer<typeof adminRecipesFetchErrorResponseSchema>;
 export type AdminRecipesPageResponse = z.infer<typeof adminRecipesPageResponseSchema>;

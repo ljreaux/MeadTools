@@ -7,6 +7,8 @@ import {
   creditPaymentRecoveryAdministrationResponseSchema,
   resolveCreditPaymentRecoveryRequestBodySchema,
   updateChatAccessAdministrationRequestBodySchema,
+  adminChatUsageQueryParamsSchema,
+  adminChatUsageReportResponseSchema,
   adminAuthErrorResponseSchema,
   adminRecipesQueryParamsSchema,
   adminUserResponseSchema,
@@ -120,5 +122,81 @@ test("payment recovery schemas preserve immutable recovery details and operator 
       releaseChat: true
     }),
     { creditDelta: 0, note: "Refund reconciled after support review.", releaseChat: true }
+  );
+});
+
+test("chat usage reporting schemas accept settled ledger-backed operational data", () => {
+  assert.deepEqual(
+    adminChatUsageQueryParamsSchema.parse({
+      from: "2026-08-01T00:00:00.000Z",
+      to: "2026-08-16T00:00:00.000Z",
+      status: "completed",
+      page: "2",
+      limit: "25"
+    }),
+    {
+      from: "2026-08-01T00:00:00.000Z",
+      to: "2026-08-16T00:00:00.000Z",
+      status: "completed",
+      page: 2,
+      limit: 25
+    }
+  );
+
+  const metric = {
+    requestCount: 1,
+    completedTurns: 1,
+    failedTurns: 0,
+    pendingTurns: 0,
+    unpricedCompletedTurns: 0,
+    providerCalls: 2,
+    inputTokens: 1_200,
+    cachedInputTokens: 800,
+    outputTokens: 200,
+    totalTokens: 1_400,
+    chargedCredits: 35,
+    providerCostPicousd: "12000000000",
+    creditEquivalentPicousd: "35000000000",
+    estimatedSpreadPicousd: "23000000000"
+  };
+  assert.equal(
+    adminChatUsageReportResponseSchema.safeParse({
+      filters: {
+        from: "2026-08-01T00:00:00.000Z",
+        to: "2026-08-16T00:00:00.000Z",
+        environment: "production",
+        model: "gpt-5.4-mini",
+        status: "completed",
+        userId: null,
+        query: null,
+        page: 1,
+        limit: 25
+      },
+      summary: {
+        ...metric,
+        activeUsers: 1,
+        paymentRestrictedAccounts: 0,
+        pendingPaymentRecoveries: 0
+      },
+      daily: [{ ...metric, day: "2026-08-15" }],
+      models: [{ ...metric, provider: "openai", model: "gpt-5.4-mini" }],
+      users: [{
+        ...metric,
+        userId: 24,
+        email: "user@example.com",
+        publicUsername: "meadmaker",
+        active: true,
+        chatEnabled: true,
+        paymentRestricted: false,
+        availableCredits: 965,
+        lastActivityAt: "2026-08-15T10:00:00.000Z"
+      }],
+      totalUsers: 1
+    }).success,
+    true
+  );
+  assert.equal(
+    adminChatUsageQueryParamsSchema.safeParse({ status: "unknown" }).success,
+    false
   );
 });

@@ -273,6 +273,7 @@ model credit_ledger_entries {
   @@unique([account_id, idempotency_key])
   @@unique([account_id, operation_id, entry_type])
   @@index([account_id, created_at])
+  @@index([entry_type, created_at])
   @@index([operation_id])
   @@index([external_reference])
 }
@@ -413,6 +414,8 @@ model chatbot_usage_events {
   chat_generations chat_generations[]
 
   @@index([user_id, created_at])
+  @@index([created_at, status])
+  @@index([model, created_at])
   @@index([environment, created_at])
   @@index([status, created_at])
 }

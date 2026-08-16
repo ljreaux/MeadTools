@@ -14,7 +14,7 @@ Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 - Canonical endpoint-path SHA-256:
   `17093a3520993176a4f681b74166fe4c1a5d839508afbf0f4ba2c0c73c1d1fb8`
 - Reviewed Zod document SHA-256:
-  `ecc9f8bc4d4ae856dbbdf5562dde24b3ed90b5895fc375ebb4d06d4462415df1`
+  `dfb7f887be5ebb8050dd761c6274668741026ef40b94b21f487a696dad197c42`
 
 The parity test preserves the complete pre-migration `paths` object: routes,
 methods, parameters, descriptions, response statuses, and component references.
@@ -52,6 +52,13 @@ same path-parity check removes them before comparing the earlier route set.
 For Stripe disputes, each recovery response also includes a server-derived
 Stripe Dashboard URL so an administrator can review or resolve the case before
 recording the corresponding credit decision in MeadTools.
+
+The chat-operations update intentionally adds the admin-only
+`/admin/chat/usage` reporting endpoint. It returns aggregate operational and
+per-user cost data from immutable usage and credit-ledger records; it does not
+return chat transcripts or provider prompt payloads. The same path-parity check
+removes this endpoint while preserving the documented behavior of every earlier
+route.
 
 Run:
 
