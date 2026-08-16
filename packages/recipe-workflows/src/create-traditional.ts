@@ -8,24 +8,24 @@ import {
   KG_TO_WEIGHT,
   L_TO_VOLUME,
   VOLUME_TO_L,
-  calculateHoneyAndWaterL
+  calculateHoneyAndWaterL,
 } from "@meadtools/core/recipe";
 import {
   recipeDataV2Schema,
   type NutrientDataV2,
   type RecipeDataV2,
   type VolumeUnit,
-  type WeightUnit
+  type WeightUnit,
 } from "@meadtools/schemas";
 import {
   chatbotRecipeWorkflowResultSchema,
   type ChatbotRecipeWorkflowResult,
-  type WorkflowQuestion
+  type WorkflowQuestion,
 } from "./contracts";
 
 const batchVolumeSchema = z.object({
   value: z.number().positive().optional(),
-  unit: z.enum(["gal", "L"]).optional()
+  unit: z.enum(["gal", "L"]).optional(),
 });
 
 const nutrientPreferencesSchema = z.object({
@@ -45,19 +45,17 @@ const nutrientPreferencesSchema = z.object({
       "oAndk",
       "oAndDap",
       "kAndDap",
-      "other"
+      "other",
     ])
     .optional(),
   numberOfAdditions: z.number().int().min(1).max(10).optional(),
-  goFermType: z
-    .enum(["Go-Ferm", "protect", "sterol-flash", "none"])
-    .optional()
+  goFermType: z.enum(["Go-Ferm", "protect", "sterol-flash", "none"]).optional(),
 });
 
 const stabilizerPreferencesSchema = z.object({
   enabled: z.boolean(),
   type: z.enum(["kmeta", "nameta"]).optional(),
-  phReading: z.number().min(2).max(5).optional()
+  phReading: z.number().min(2).max(5).optional(),
 });
 
 export const traditionalMeadInputSchema = z
@@ -66,7 +64,7 @@ export const traditionalMeadInputSchema = z
     targetOriginalGravity: z.number().min(1.001).max(1.2).optional(),
     fermentationFinalGravity: z.number().min(0.97).max(1.2).optional(),
     nutrients: nutrientPreferencesSchema.optional(),
-    stabilizers: stabilizerPreferencesSchema.optional()
+    stabilizers: stabilizerPreferencesSchema.optional(),
   })
   .strict();
 
@@ -74,11 +72,11 @@ export type TraditionalMeadInput = z.infer<typeof traditionalMeadInputSchema>;
 
 const resultBase = {
   contractVersion: 1 as const,
-  operation: "create_traditional" as const
+  operation: "create_traditional" as const,
 };
 
 export function createTraditionalMead(
-  rawInput: unknown
+  rawInput: unknown,
 ): ChatbotRecipeWorkflowResult {
   const parsedInput = traditionalMeadInputSchema.safeParse(rawInput);
   if (!parsedInput.success) {
@@ -89,8 +87,8 @@ export function createTraditionalMead(
       message: "Traditional mead intake contains invalid values.",
       issues: parsedInput.error.issues.map((issue) => ({
         path: issue.path.join("."),
-        message: issue.message
-      }))
+        message: issue.message,
+      })),
     });
   }
 
@@ -100,7 +98,7 @@ export function createTraditionalMead(
     return validateResult({
       ...resultBase,
       status: "needs_input",
-      questions
+      questions,
     });
   }
 
@@ -114,7 +112,7 @@ export function createTraditionalMead(
       status: "error",
       code: "invalid_input",
       message:
-        "Fermentation final gravity must be lower than original gravity for this workflow."
+        "Fermentation final gravity must be lower than original gravity for this workflow.",
     });
   }
 
@@ -129,14 +127,12 @@ export function createTraditionalMead(
         message: "Generated recipe data failed the authoritative schema.",
         issues: recipeValidation.error.issues.map((issue) => ({
           path: issue.path.join("."),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
 
-    const calculated = calculateRecipeDerivedApiResponse(
-      recipeValidation.data
-    );
+    const calculated = calculateRecipeDerivedApiResponse(recipeValidation.data);
     const authoritativeResult =
       recipeDerivedStateResponseBodySchema.safeParse(calculated);
     if (!authoritativeResult.success) {
@@ -147,8 +143,8 @@ export function createTraditionalMead(
         message: "Calculated recipe data failed the API response contract.",
         issues: authoritativeResult.error.issues.map((issue) => ({
           path: issue.path.join("."),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
 
@@ -159,9 +155,9 @@ export function createTraditionalMead(
       derived: authoritativeResult.data.derived,
       assumptions: [
         "Used water at 0 Brix and honey at the MeadTools standard 79.6 Brix.",
-        "The draft uses custom ingredient references until catalog selection is added to the hosted agent."
+        "The draft uses custom ingredient references until catalog selection is added to the hosted agent.",
       ],
-      warnings: ["This is an unsaved recipe draft."]
+      warnings: ["This is an unsaved recipe draft."],
     });
   } catch (error) {
     return validateResult({
@@ -171,7 +167,7 @@ export function createTraditionalMead(
       message:
         error instanceof Error
           ? error.message
-          : "MeadTools could not calculate the recipe draft."
+          : "MeadTools could not calculate the recipe draft.",
     });
   }
 }
@@ -212,7 +208,7 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       field: "batchVolume",
       prompt: "What finished batch volume should this recipe target?",
       answerType: "object",
-      options: ["gal", "L"]
+      options: ["gal", "L"],
     });
   }
   if (input.targetOriginalGravity === undefined) {
@@ -220,15 +216,16 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       id: "target_original_gravity",
       field: "targetOriginalGravity",
       prompt: "What original gravity should the traditional mead target?",
-      answerType: "number"
+      answerType: "number",
     });
   }
   if (input.fermentationFinalGravity === undefined) {
     questions.push({
       id: "fermentation_final_gravity",
       field: "fermentationFinalGravity",
-      prompt: "What fermentation final gravity should MeadTools calculate toward?",
-      answerType: "number"
+      prompt:
+        "What fermentation final gravity should MeadTools calculate toward?",
+      answerType: "number",
     });
   }
   if (!input.nutrients) {
@@ -236,7 +233,7 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       id: "nutrient_intent",
       field: "nutrients",
       prompt: "Should this draft include a nutrient plan?",
-      answerType: "boolean"
+      answerType: "boolean",
     });
   } else if (
     input.nutrients.enabled &&
@@ -252,7 +249,7 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       field: "nutrients",
       prompt:
         "Which yeast, nitrogen requirement, schedule, addition count, and Go-Ferm type should the nutrient calculation use?",
-      answerType: "object"
+      answerType: "object",
     });
   }
   if (!input.stabilizers) {
@@ -260,7 +257,7 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       id: "stabilizer_intent",
       field: "stabilizers",
       prompt: "Should this draft include stabilizer calculations?",
-      answerType: "boolean"
+      answerType: "boolean",
     });
   } else if (
     input.stabilizers.enabled &&
@@ -272,7 +269,7 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
       prompt:
         "Which metabisulfite type and measured pH should the stabilizer calculation use?",
       answerType: "object",
-      options: ["kmeta", "nameta"]
+      options: ["kmeta", "nameta"],
     });
   }
 
@@ -281,13 +278,12 @@ function missingQuestions(input: TraditionalMeadInput): WorkflowQuestion[] {
 
 function buildRecipeData(input: CompleteTraditionalMeadInput): RecipeDataV2 {
   const volumeUnit: VolumeUnit = input.batchVolume.unit;
-  const weightUnit: WeightUnit =
-    input.batchVolume.unit === "gal" ? "lb" : "kg";
+  const weightUnit: WeightUnit = input.batchVolume.unit === "gal" ? "lb" : "kg";
   const totalVolumeL =
     input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
   const { honeyL, waterL } = calculateHoneyAndWaterL(
     input.targetOriginalGravity,
-    totalVolumeL
+    totalVolumeL,
   );
   const honeySg = toSG(HONEY_BRIX);
   const waterSg = toSG(0);
@@ -304,7 +300,7 @@ function buildRecipeData(input: CompleteTraditionalMeadInput): RecipeDataV2 {
         volumeL: waterL,
         sg: waterSg,
         volumeUnit,
-        weightUnit
+        weightUnit,
       }),
       ingredientLine({
         lineId: "traditional-honey",
@@ -314,8 +310,8 @@ function buildRecipeData(input: CompleteTraditionalMeadInput): RecipeDataV2 {
         volumeL: honeyL,
         sg: honeySg,
         volumeUnit,
-        weightUnit
-      })
+        weightUnit,
+      }),
     ],
     fg: formatNumber(input.fermentationFinalGravity),
     additives: [],
@@ -324,24 +320,24 @@ function buildRecipeData(input: CompleteTraditionalMeadInput): RecipeDataV2 {
           adding: true,
           takingPh: true,
           phReading: formatNumber(input.stabilizers.phReading),
-          type: input.stabilizers.type
+          type: input.stabilizers.type,
         }
       : {
           adding: false,
           takingPh: false,
           phReading: "",
-          type: "kmeta"
+          type: "kmeta",
         },
     notes: {
       primary: [
         {
           lineId: "traditional-workflow-note",
-          content: ["Created by the MeadTools recipe workflow.", ""]
-        }
+          content: ["Created by the MeadTools recipe workflow.", ""],
+        },
       ],
-      secondary: []
+      secondary: [],
     },
-    flags: { private: true }
+    flags: { private: true },
   };
 
   if (input.nutrients.enabled) {
@@ -371,18 +367,16 @@ function ingredientLine(input: {
     amounts: {
       weight: {
         value: formatNumber(
-          input.volumeL * input.sg * KG_TO_WEIGHT[input.weightUnit]
+          input.volumeL * input.sg * KG_TO_WEIGHT[input.weightUnit],
         ),
-        unit: input.weightUnit
+        unit: input.weightUnit,
       },
       volume: {
-        value: formatNumber(
-          input.volumeL * L_TO_VOLUME[input.volumeUnit]
-        ),
-        unit: input.volumeUnit
+        value: formatNumber(input.volumeL * L_TO_VOLUME[input.volumeUnit]),
+        unit: input.volumeUnit,
       },
-      basis: "volume"
-    }
+      basis: "volume",
+    },
   };
 }
 
@@ -399,7 +393,7 @@ function nutrientData(input: CompleteTraditionalMeadInput): NutrientDataV2 {
       volume: formatNumber(input.batchVolume.value),
       volumeUnits: input.batchVolume.unit === "gal" ? "gal" : "liter",
       numberOfAdditions: String(input.nutrients.numberOfAdditions),
-      goFermType: input.nutrients.goFermType
+      goFermType: input.nutrients.goFermType,
     },
     selected: {
       ...defaults.selected,
@@ -408,19 +402,19 @@ function nutrientData(input: CompleteTraditionalMeadInput): NutrientDataV2 {
       yeastId: input.nutrients.yeastId,
       nitrogenRequirement: input.nutrients.nitrogenRequirement,
       schedule: input.nutrients.schedule,
-      selectedNutrients
-    }
+      selectedNutrients,
+    },
   });
 }
 
 function nutrientSelection(
-  schedule: NutrientDataV2["selected"]["schedule"]
+  schedule: NutrientDataV2["selected"]["schedule"],
 ): NutrientDataV2["selected"]["selectedNutrients"] {
   return {
     fermO: ["tbe", "tosna", "oAndk", "oAndDap"].includes(schedule),
     fermK: ["tbe", "justK", "oAndk", "kAndDap"].includes(schedule),
     dap: ["tbe", "dap", "oAndDap", "kAndDap"].includes(schedule),
-    other: schedule === "other"
+    other: schedule === "other",
   };
 }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   chatAccessErrorResponseSchema,
-  creditPaymentRecoveryAdministrationResponseSchema
+  creditPaymentRecoveryAdministrationResponseSchema,
 } from "@meadtools/api-contract/admin";
 import { getCreditPaymentRecoveryAdministration } from "@/lib/billing/credit-payment-recovery";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
@@ -28,17 +28,24 @@ export async function GET(request: NextRequest) {
 
   try {
     const recoveries = await getCreditPaymentRecoveryAdministration();
-    return NextResponse.json(creditPaymentRecoveryAdministrationResponseSchema.parse({
-      recoveries: recoveries.map((recovery) => ({
-        ...recovery,
-        createdAt: recovery.createdAt.toISOString(),
-        resolvedAt: recovery.resolvedAt?.toISOString() ?? null
-      }))
-    }));
+    return NextResponse.json(
+      creditPaymentRecoveryAdministrationResponseSchema.parse({
+        recoveries: recoveries.map((recovery) => ({
+          ...recovery,
+          createdAt: recovery.createdAt.toISOString(),
+          resolvedAt: recovery.resolvedAt?.toISOString() ?? null,
+        })),
+      }),
+    );
   } catch (error) {
     console.error("Unable to load payment recoveries.", {
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json(chatAccessErrorResponseSchema.parse({ error: "Unable to load payment recoveries." }), { status: 500 });
+    return NextResponse.json(
+      chatAccessErrorResponseSchema.parse({
+        error: "Unable to load payment recoveries.",
+      }),
+      { status: 500 },
+    );
   }
 }

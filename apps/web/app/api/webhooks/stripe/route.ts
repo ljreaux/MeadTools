@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import {
   finalizeCreditCheckoutTerminalEvent,
-  fulfillCreditCheckoutFromStripeEvent
+  fulfillCreditCheckoutFromStripeEvent,
 } from "@/lib/billing/credit-checkout";
 import {
   flagStripeDisputeForReview,
-  reconcileStripeRefund
+  reconcileStripeRefund,
 } from "@/lib/billing/credit-payment-recovery";
 import {
   isStripeDisputeRecoveryEvent,
   isStripeRefundEvent,
-  isTerminalCreditCheckoutEvent
+  isTerminalCreditCheckoutEvent,
 } from "@/lib/billing/credit-checkout-events";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
 
@@ -33,17 +33,30 @@ export async function POST(request: NextRequest) {
   const webhookSecret = getStripeWebhookSecret();
   const signature = request.headers.get("stripe-signature");
   if (!stripe || !webhookSecret) {
-    return NextResponse.json({ error: "Stripe webhooks are not configured." }, { status: 503 });
+    return NextResponse.json(
+      { error: "Stripe webhooks are not configured." },
+      { status: 503 },
+    );
   }
   if (!signature) {
-    return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing Stripe signature." },
+      { status: 400 },
+    );
   }
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(await request.text(), signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(
+      await request.text(),
+      signature,
+      webhookSecret,
+    );
   } catch {
-    return NextResponse.json({ error: "Invalid Stripe signature." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid Stripe signature." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -51,13 +64,13 @@ export async function POST(request: NextRequest) {
       await reconcileStripeRefund({
         eventId: event.id,
         eventType: event.type,
-        refund: event.data.object as Stripe.Refund
+        refund: event.data.object as Stripe.Refund,
       });
     } else if (isStripeDisputeRecoveryEvent(event.type)) {
       await flagStripeDisputeForReview({
         eventId: event.id,
         eventType: event.type,
-        dispute: event.data.object as Stripe.Dispute
+        dispute: event.data.object as Stripe.Dispute,
       });
     } else if (isTerminalCreditCheckoutEvent(event.type)) {
       await finalizeCreditCheckoutTerminalEvent(event);
@@ -69,8 +82,11 @@ export async function POST(request: NextRequest) {
     console.error("Unable to fulfill Stripe credit webhook.", {
       eventId: event.id,
       eventType: event.type,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json({ error: "Unable to fulfill Stripe webhook." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to fulfill Stripe webhook." },
+      { status: 500 },
+    );
   }
 }

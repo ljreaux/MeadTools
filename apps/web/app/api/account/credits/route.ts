@@ -27,8 +27,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Unable to load credit balance.", {
       userId,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json({ error: "Unable to load credit balance." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to load credit balance." },
+      { status: 500 },
+    );
   }
 }

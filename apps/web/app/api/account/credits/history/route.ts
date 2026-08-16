@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   creditActivityQuerySchema,
-  creditActivityResponseSchema
+  creditActivityResponseSchema,
 } from "@meadtools/api-contract/credits";
 import { getCreditBalance } from "@/lib/db/credit-accounting";
 import {
   InvalidCreditActivityCursorError,
-  getCreditActivityPage
+  getCreditActivityPage,
 } from "@/lib/db/credit-history";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { areCreditPurchasesAvailable } from "@/lib/billing/credit-purchase-config";
@@ -33,34 +33,45 @@ export async function GET(request: NextRequest) {
   }
 
   const parsed = creditActivityQuerySchema.safeParse(
-    Object.fromEntries(request.nextUrl.searchParams)
+    Object.fromEntries(request.nextUrl.searchParams),
   );
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid credit history query." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid credit history query." },
+      { status: 400 },
+    );
   }
 
   try {
     const [balance, activity] = await Promise.all([
       getCreditBalance(userId),
-      getCreditActivityPage({ userId, ...parsed.data })
+      getCreditActivityPage({ userId, ...parsed.data }),
     ]);
-    return NextResponse.json(creditActivityResponseSchema.parse({
-      availableCredits: balance.availableCredits,
-      purchasesEnabled: areCreditPurchasesAvailable(),
-      activities: activity.activities.map((item) => ({
-        ...item,
-        occurredAt: item.occurredAt.toISOString()
-      })),
-      nextCursor: activity.nextCursor
-    }));
+    return NextResponse.json(
+      creditActivityResponseSchema.parse({
+        availableCredits: balance.availableCredits,
+        purchasesEnabled: areCreditPurchasesAvailable(),
+        activities: activity.activities.map((item) => ({
+          ...item,
+          occurredAt: item.occurredAt.toISOString(),
+        })),
+        nextCursor: activity.nextCursor,
+      }),
+    );
   } catch (error) {
-    if (error instanceof InvalidCreditActivityCursorError || error instanceof RangeError) {
+    if (
+      error instanceof InvalidCreditActivityCursorError ||
+      error instanceof RangeError
+    ) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error("Unable to load credit history.", {
       userId,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json({ error: "Unable to load credit history." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to load credit history." },
+      { status: 500 },
+    );
   }
 }

@@ -3,14 +3,14 @@ import test from "node:test";
 
 import {
   createBrewActionProposal,
-  describeBrewActionEntry
+  describeBrewActionEntry,
 } from "../src/action-proposal";
 
 test("brew action proposals bind a validated entry to a trusted target", () => {
   const proposal = createBrewActionProposal(
     {
       brewId: "11111111-1111-4111-8111-111111111111",
-      brewLabel: "Brew: Summer Traditional"
+      brewLabel: "Brew: Summer Traditional",
     },
     {
       type: "ADDITION",
@@ -18,14 +18,14 @@ test("brew action proposals bind a validated entry to a trusted target", () => {
         kind: "OTHER",
         name: "Vanilla bean",
         amount: 1,
-        unit: "units"
-      }
-    }
+        unit: "units",
+      },
+    },
   );
 
   assert.deepEqual(proposal.target, {
     brewId: "11111111-1111-4111-8111-111111111111",
-    brewLabel: "Brew: Summer Traditional"
+    brewLabel: "Brew: Summer Traditional",
   });
   assert.equal(proposal.kind, "create_brew_entry");
   assert.equal(proposal.version, 1);
@@ -37,12 +37,12 @@ test("brew action descriptions stay readable for measurements and stage changes"
     describeBrewActionEntry({
       type: "TEMPERATURE",
       temperature: 20,
-      temp_units: "C"
+      temp_units: "C",
     }),
-    "Log a temperature reading of 20 °C."
+    "Log a temperature reading of 20 °C.",
   );
   assert.equal(
     describeBrewActionEntry({ type: "STAGE_CHANGE", stage_to: "BULK_AGE" }),
-    "Move this brew to bulk age."
+    "Move this brew to bulk age.",
   );
 });

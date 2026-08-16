@@ -7,7 +7,7 @@ import { getChatAccessStatus } from "@/lib/db/chat-access";
 
 /** Ensures a configured chatbot request also has database-backed access. */
 export async function requireLocalChatbotUser(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<{ userId: number } | NextResponse> {
   const authenticatedUser = await verifyUser(request);
   if (authenticatedUser instanceof NextResponse) return authenticatedUser;
@@ -19,14 +19,14 @@ export async function requireLocalChatbotUser(
   if (!config) {
     return NextResponse.json(
       { error: "Local chatbot testing is not configured." },
-      { status: 503 }
+      { status: 503 },
     );
   }
   const status = await getChatAccessStatus(authenticatedUser);
   if (!status.chatEnabled) {
     return NextResponse.json(
       { error: "This user is not permitted to use the recipe chatbot." },
-      { status: 403 }
+      { status: 403 },
     );
   }
   return { userId: authenticatedUser };

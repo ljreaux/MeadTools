@@ -10,11 +10,22 @@ function headersFor(token: string | null) {
   return token ? { Authorization: `Bearer ${token}` } : undefined;
 }
 
-async function fetchChatAccess(token: string | null): Promise<ChatAccessStatusResponse> {
-  const response = await fetch("/api/chat/access", { headers: headersFor(token) });
-  const payload = (await response.json().catch(() => null)) as ChatAccessStatusResponse | { error?: string } | null;
+async function fetchChatAccess(
+  token: string | null,
+): Promise<ChatAccessStatusResponse> {
+  const response = await fetch("/api/chat/access", {
+    headers: headersFor(token),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | ChatAccessStatusResponse
+    | { error?: string }
+    | null;
   if (!response.ok || !payload || !("chatEnabled" in payload)) {
-    throw new Error(payload && "error" in payload ? payload.error : "Unable to load chat access.");
+    throw new Error(
+      payload && "error" in payload
+        ? payload.error
+        : "Unable to load chat access.",
+    );
   }
   return payload;
 }
@@ -34,6 +45,6 @@ export function useChatAccess() {
     queryFn: () => fetchChatAccess(token),
     enabled,
     staleTime: 5_000,
-    retry: false
+    retry: false,
   });
 }

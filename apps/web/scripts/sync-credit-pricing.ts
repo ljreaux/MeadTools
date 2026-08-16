@@ -2,21 +2,21 @@ import prisma from "../lib/prisma";
 import {
   currentCreditFeePolicy,
   initialFireworksDeepseekV4FlashPricing,
-  initialOpenAIGpt54MiniPricing
+  initialOpenAIGpt54MiniPricing,
 } from "../lib/billing/credit-pricing";
 
 async function main() {
   for (const pricing of [
     initialFireworksDeepseekV4FlashPricing,
-    initialOpenAIGpt54MiniPricing
+    initialOpenAIGpt54MiniPricing,
   ]) {
     await prisma.credit_pricing_versions.upsert({
       where: {
         provider_model_version: {
           provider: pricing.provider,
           model: pricing.model,
-          version: pricing.version
-        }
+          version: pricing.version,
+        },
       },
       create: {
         provider: pricing.provider,
@@ -28,9 +28,9 @@ async function main() {
           pricing.pricing.cachedInputPicousdPerMillionTokens,
         output_picousd_per_million_tokens:
           pricing.pricing.outputPicousdPerMillionTokens,
-        effective_at: pricing.effectiveAt
+        effective_at: pricing.effectiveAt,
       },
-      update: {}
+      update: {},
     });
   }
 
@@ -41,17 +41,17 @@ async function main() {
       markup_basis_points: currentCreditFeePolicy.policy.markupBasisPoints,
       fixed_turn_credits: currentCreditFeePolicy.policy.fixedTurnCredits,
       minimum_turn_credits: currentCreditFeePolicy.policy.minimumTurnCredits,
-      effective_at: currentCreditFeePolicy.effectiveAt
+      effective_at: currentCreditFeePolicy.effectiveAt,
     },
-    update: {}
+    update: {},
   });
 
   const activePolicy = await prisma.credit_fee_policy_versions.findFirst({
     where: {
       effective_at: { lte: new Date() },
-      OR: [{ retired_at: null }, { retired_at: { gt: new Date() } }]
+      OR: [{ retired_at: null }, { retired_at: { gt: new Date() } }],
     },
-    orderBy: [{ effective_at: "desc" }, { created_at: "desc" }]
+    orderBy: [{ effective_at: "desc" }, { created_at: "desc" }],
   });
   if (activePolicy?.version !== currentCreditFeePolicy.version) {
     throw new Error("The synced credit policy did not become active.");

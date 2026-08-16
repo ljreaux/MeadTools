@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chatParamsFromRequest, toServerSentEventsResponse } from "@tanstack/ai";
+import {
+  chatParamsFromRequest,
+  toServerSentEventsResponse,
+} from "@tanstack/ai";
 import {
   quoteCreditsForChatUsage,
-  reserveCreditsForBoundedChatTurn
+  reserveCreditsForBoundedChatTurn,
 } from "@meadtools/chat-domain";
 import { InsufficientCreditsError } from "@meadtools/credit-accounting";
 import { buildRecipeDraftInputSchema } from "@meadtools/recipe-workflows";
@@ -11,7 +14,7 @@ import { z } from "zod";
 import {
   chatRequestSchema,
   runChatTurn,
-  type ChatRequest
+  type ChatRequest,
 } from "@/lib/ai/chat-service";
 import { getLocalChatbotConfig } from "@/lib/ai/chat-config";
 import { generateChatConversationTitle } from "@/lib/ai/chat-conversation-title";
@@ -25,22 +28,22 @@ import { searchYeastsForChat } from "@/lib/db/yeasts";
 import {
   chatContextSelectionSchema,
   getSelectedChatContext,
-  type SelectedChatContext
+  type SelectedChatContext,
 } from "@/lib/ai/chat-account-context";
 import {
   completeChatbotUsage,
-  recordChatbotUsageStart
+  recordChatbotUsageStart,
 } from "@/lib/db/chatbot-usage";
 import {
   CreditFeePolicyNotConfiguredError,
   CreditPricingNotConfiguredError,
   getActiveCreditFeePolicy,
-  getActiveCreditPricing
+  getActiveCreditPricing,
 } from "@/lib/db/credit-pricing";
 import {
   reserveCreditBalance,
   reverseCreditReservation,
-  settleCreditReservation
+  settleCreditReservation,
 } from "@/lib/db/credit-accounting";
 import {
   ChatConversationCapacityError,
@@ -52,17 +55,19 @@ import {
   failPendingChatMessage,
   getChatProviderHistory,
   getLatestChatDraftForProvider,
-  updateChatConversationState
+  updateChatConversationState,
 } from "@/lib/db/chat-conversations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_CHAT_REQUEST_BYTES = 150_000;
-const chatTurnPersistenceSchema = z.object({
-  conversationId: z.string().uuid(),
-  clientMessageId: z.string().trim().min(1).max(128)
-}).strict();
+const chatTurnPersistenceSchema = z
+  .object({
+    conversationId: z.string().uuid(),
+    clientMessageId: z.string().trim().min(1).max(128),
+  })
+  .strict();
 
 /**
  * Private evaluator endpoint. The signed-in user may only send a message to
@@ -79,13 +84,19 @@ export async function POST(request: NextRequest) {
   if (!config) {
     return NextResponse.json(
       { error: "Local chatbot testing is not configured." },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
   const contentLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_REQUEST_BYTES) {
-    return NextResponse.json({ error: "Chat request is too large." }, { status: 413 });
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > MAX_CHAT_REQUEST_BYTES
+  ) {
+    return NextResponse.json(
+      { error: "Chat request is too large." },
+      { status: 413 },
+    );
   }
 
   let chatRequest: ChatRequest;
@@ -99,7 +110,7 @@ export async function POST(request: NextRequest) {
     const params = await chatParamsFromRequest(request);
     const persistence = chatTurnPersistenceSchema.parse({
       conversationId: params.forwardedProps.conversationId,
-      clientMessageId: params.forwardedProps.clientMessageId
+      clientMessageId: params.forwardedProps.clientMessageId,
     });
     const latestMessage = chatMessagesFromTanStack(params.messages).at(-1);
     if (!latestMessage || latestMessage.role !== "user") {
@@ -110,13 +121,13 @@ export async function POST(request: NextRequest) {
 
     if (params.forwardedProps.selectedAccountContext !== undefined) {
       const selection = chatContextSelectionSchema.parse(
-        params.forwardedProps.selectedAccountContext
+        params.forwardedProps.selectedAccountContext,
       );
       selectedContext = await getSelectedChatContext(access.userId, selection);
       if (!selectedContext) {
         return NextResponse.json(
           { error: "The selected recipe or brew is not available." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -125,12 +136,15 @@ export async function POST(request: NextRequest) {
       userId: access.userId,
       conversationId: persistence.conversationId,
       clientMessageId: persistence.clientMessageId,
-      content: latestMessage.content
+      content: latestMessage.content,
     });
     if (pending.duplicate) {
       return NextResponse.json(
-        { error: "This chat message was already submitted. Reload the conversation before trying again." },
-        { status: 409 }
+        {
+          error:
+            "This chat message was already submitted. Reload the conversation before trying again.",
+        },
+        { status: 409 },
       );
     }
     pendingMessageId = pending.message.id;
@@ -141,21 +155,27 @@ export async function POST(request: NextRequest) {
       getChatProviderHistory({
         userId: access.userId,
         conversationId: persistence.conversationId,
-        pendingMessageId
+        pendingMessageId,
       }),
       getLatestChatDraftForProvider({
         userId: access.userId,
-        conversationId: persistence.conversationId
-      })
+        conversationId: persistence.conversationId,
+      }),
     ]);
-    const persistedRecipeData = recipeDataV2Schema.safeParse(latestDraft?.recipeData);
+    const persistedRecipeData = recipeDataV2Schema.safeParse(
+      latestDraft?.recipeData,
+    );
     const persistedDraftInput = buildRecipeDraftInputSchema.safeParse(
-      latestDraft?.recipeDraftInput
+      latestDraft?.recipeDraftInput,
     );
     chatRequest = chatRequestSchema.parse({
       messages,
-      ...(persistedRecipeData.success ? { activeRecipeData: persistedRecipeData.data } : {}),
-      ...(persistedDraftInput.success ? { recipeDraftInput: persistedDraftInput.data } : {})
+      ...(persistedRecipeData.success
+        ? { activeRecipeData: persistedRecipeData.data }
+        : {}),
+      ...(persistedDraftInput.success
+        ? { recipeDraftInput: persistedDraftInput.data }
+        : {}),
     });
     if (selectedContext) chatRequest.selectedAccountContext = selectedContext;
     threadId = persistence.conversationId;
@@ -170,8 +190,12 @@ export async function POST(request: NextRequest) {
   let creditFeePolicy: Awaited<ReturnType<typeof getActiveCreditFeePolicy>>;
   try {
     [creditPricing, creditFeePolicy] = await Promise.all([
-      getActiveCreditPricing({ provider: config.provider, model: config.model, at: requestStartedAt }),
-      getActiveCreditFeePolicy({ at: requestStartedAt })
+      getActiveCreditPricing({
+        provider: config.provider,
+        model: config.model,
+        at: requestStartedAt,
+      }),
+      getActiveCreditFeePolicy({ at: requestStartedAt }),
     ]);
     const reservation = reserveCreditsForBoundedChatTurn({
       // The loop stops before its next request once this threshold is reached,
@@ -179,7 +203,7 @@ export async function POST(request: NextRequest) {
       maxProviderTokens: config.maxTotalProviderTokens + config.maxOutputTokens,
       includesTitleGeneration: shouldGenerateTitle,
       pricing: creditPricing.pricing,
-      feePolicy: creditFeePolicy.policy
+      feePolicy: creditFeePolicy.policy,
     });
     await reserveCreditBalance({
       userId: access.userId,
@@ -188,36 +212,45 @@ export async function POST(request: NextRequest) {
       reservationCredits: reservation.chargedCredits,
       pricingVersionId: creditPricing.id,
       feePolicyVersionId: creditFeePolicy.id,
-      now: requestStartedAt
+      now: requestStartedAt,
     });
   } catch (error) {
     await failPendingMessageSilently({
       userId: access.userId,
       conversationId: threadId,
-      pendingMessageId
+      pendingMessageId,
     });
     if (error instanceof InsufficientCreditsError) {
-      return NextResponse.json({
-        error: error.message,
-        availableCredits: error.availableCredits,
-        requiredCredits: error.requiredCredits
-      }, { status: 402 });
+      return NextResponse.json(
+        {
+          error: error.message,
+          availableCredits: error.availableCredits,
+          requiredCredits: error.requiredCredits,
+        },
+        { status: 402 },
+      );
     }
     if (
       error instanceof CreditPricingNotConfiguredError ||
       error instanceof CreditFeePolicyNotConfiguredError
     ) {
-      return NextResponse.json({ error: "Chat billing is not configured for this model." }, { status: 503 });
+      return NextResponse.json(
+        { error: "Chat billing is not configured for this model." },
+        { status: 503 },
+      );
     }
     console.error("Unable to reserve chat credits safely.", {
       requestId,
       userId: access.userId,
       model: config.model,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
     return NextResponse.json(
-      { error: "The chatbot billing guard is unavailable. Please try again later." },
-      { status: 503 }
+      {
+        error:
+          "The chatbot billing guard is unavailable. Please try again later.",
+      },
+      { status: 503 },
     );
   }
 
@@ -226,33 +259,36 @@ export async function POST(request: NextRequest) {
       requestId,
       userId: access.userId,
       environment: config.usageEnvironment,
-      model: config.model
+      model: config.model,
     });
   } catch {
     await reverseCreditReservationSilently({
       userId: access.userId,
       operationId: requestId,
-      idempotencyKey: `chat-reversal:${requestId}`
+      idempotencyKey: `chat-reversal:${requestId}`,
     });
     await failPendingMessageSilently({
       userId: access.userId,
       conversationId: threadId,
-      pendingMessageId
+      pendingMessageId,
     });
     console.error("Unable to start chatbot usage auditing safely.", {
       requestId,
       userId: access.userId,
-      environment: config.usageEnvironment
+      environment: config.usageEnvironment,
     });
     return NextResponse.json(
-      { error: "The chatbot usage audit is unavailable. Please try again later." },
-      { status: 503 }
+      {
+        error:
+          "The chatbot usage audit is unavailable. Please try again later.",
+      },
+      { status: 503 },
     );
   }
 
   const client = new OpenAIChatClient({
     apiKey: config.apiKey,
-    model: config.model
+    model: config.model,
   });
   const selectedContextReference = selectedContext
     ? contextReferenceFrom(selectedContext)
@@ -270,23 +306,30 @@ export async function POST(request: NextRequest) {
           ? generateChatConversationTitle({
               client,
               userId: access.userId,
-              firstMessage: initialMessageContent
+              firstMessage: initialMessageContent,
             }).catch((error) => {
-              const providerError = error instanceof ChatProviderRequestError
-                ? {
-                    status: error.status,
-                    ...(error.details?.type ? { type: error.details.type } : {}),
-                    ...(error.details?.code ? { code: error.details.code } : {}),
-                    ...(error.details?.parameter ? { parameter: error.details.parameter } : {})
-                  }
-                : undefined;
+              const providerError =
+                error instanceof ChatProviderRequestError
+                  ? {
+                      status: error.status,
+                      ...(error.details?.type
+                        ? { type: error.details.type }
+                        : {}),
+                      ...(error.details?.code
+                        ? { code: error.details.code }
+                        : {}),
+                      ...(error.details?.parameter
+                        ? { parameter: error.details.parameter }
+                        : {}),
+                    }
+                  : undefined;
               console.warn("Hosted chatbot title generation failed.", {
                 requestId,
                 userId: access.userId,
                 provider: config.provider,
                 model: config.model,
                 error: error instanceof Error ? error.message : "unknown",
-                ...(providerError ? { providerError } : {})
+                ...(providerError ? { providerError } : {}),
               });
               return undefined;
             })
@@ -306,24 +349,29 @@ export async function POST(request: NextRequest) {
             return ingredients.flatMap((ingredient) => {
               const brix = Number(ingredient.sugar_content);
               if (!Number.isFinite(brix) || brix < 0 || brix > 100) return [];
-              return [{
-                id: ingredient.id,
-                name: ingredient.name,
-                category: ingredient.category,
-                brix
-              }];
+              return [
+                {
+                  id: ingredient.id,
+                  name: ingredient.name,
+                  category: ingredient.category,
+                  brix,
+                },
+              ];
             });
           },
           additiveLookup: async () => {
             const additives = await getAdditiveCatalogForChat();
             return additives.flatMap((additive) => {
-              if (!Number.isFinite(additive.dosage) || additive.dosage <= 0) return [];
-              return [{
-                id: additive.id,
-                name: additive.name,
-                dosagePerGallon: additive.dosage,
-                unit: additive.unit
-              }];
+              if (!Number.isFinite(additive.dosage) || additive.dosage <= 0)
+                return [];
+              return [
+                {
+                  id: additive.id,
+                  name: additive.name,
+                  dosagePerGallon: additive.dosage,
+                  unit: additive.unit,
+                },
+              ];
             });
           },
           yeastLookup: async (query, limit) => {
@@ -339,31 +387,37 @@ export async function POST(request: NextRequest) {
               ) {
                 return [];
               }
-              return [{
-                id: yeast.id,
-                brand: yeast.brand,
-                name: yeast.name,
-                nitrogenRequirement,
-                tolerance: numberOrUndefined(yeast.tolerance),
-                lowTemperature: numberOrUndefined(yeast.low_temp),
-                highTemperature: numberOrUndefined(yeast.high_temp)
-              }];
+              return [
+                {
+                  id: yeast.id,
+                  brand: yeast.brand,
+                  name: yeast.name,
+                  nitrogenRequirement,
+                  tolerance: numberOrUndefined(yeast.tolerance),
+                  lowTemperature: numberOrUndefined(yeast.low_temp),
+                  highTemperature: numberOrUndefined(yeast.high_temp),
+                },
+              ];
             });
           },
-          onEvent
+          onEvent,
         });
         const titleResult = titlePromise ? await titlePromise : undefined;
-        const usage = mergeTitleUsage(result.usage, titleResult, config.provider);
+        const usage = mergeTitleUsage(
+          result.usage,
+          titleResult,
+          config.provider,
+        );
         providerResultCompleted = true;
         const creditQuote = quoteCreditsForChatUsage({
           usage: {
             inputTokens: usage.inputTokens,
             cachedInputTokens: usage.cachedInputTokens,
-            outputTokens: usage.outputTokens
+            outputTokens: usage.outputTokens,
           },
           providerCallCount: usage.requestIds.length,
           pricing: creditPricing.pricing,
-          feePolicy: creditFeePolicy.policy
+          feePolicy: creditFeePolicy.policy,
         });
         if (creditQuote) {
           await settleCreditReservation({
@@ -374,14 +428,14 @@ export async function POST(request: NextRequest) {
             providerCostPicousd: creditQuote.providerCostPicousd,
             pricingVersionId: creditPricing.id,
             feePolicyVersionId: creditFeePolicy.id,
-            now: new Date()
+            now: new Date(),
           });
         } else {
           await reverseCreditReservation({
             userId: access.userId,
             operationId: requestId,
             idempotencyKey: `chat-reversal:${requestId}`,
-            now: new Date()
+            now: new Date(),
           });
         }
         creditReservationFinalized = true;
@@ -390,7 +444,7 @@ export async function POST(request: NextRequest) {
           requestId,
           userId: access.userId,
           usage,
-          requestStartedAt
+          requestStartedAt,
         });
         await completeChatTurn({
           userId: access.userId,
@@ -398,22 +452,26 @@ export async function POST(request: NextRequest) {
           pendingMessageId,
           answer: result.answer,
           citations: citationsFromAnswer(result.answer),
-          ...(result.recipeDraftInput ? { recipeDraftInput: result.recipeDraftInput } : {}),
+          ...(result.recipeDraftInput
+            ? { recipeDraftInput: result.recipeDraftInput }
+            : {}),
           ...(recipeData ? { recipeData } : {}),
-          ...(selectedContextReference ? { contexts: [selectedContextReference] } : {}),
+          ...(selectedContextReference
+            ? { contexts: [selectedContextReference] }
+            : {}),
           generation: {
             ...(usageEventId ? { usageEventId } : {}),
             provider: usage.provider,
             model: usage.model,
             status: "completed",
-            latencyMs: usage.latencyMs
-          }
+            latencyMs: usage.latencyMs,
+          },
         });
         if (titleResult) {
           await updateChatConversationState({
             userId: access.userId,
             conversationId: threadId,
-            title: titleResult.title
+            title: titleResult.title,
           });
         }
         console.info(
@@ -427,10 +485,12 @@ export async function POST(request: NextRequest) {
             inputTokens: result.usage.inputTokens,
             cachedInputTokens: result.usage.cachedInputTokens,
             outputTokens: result.usage.outputTokens,
-            totalTokens: result.usage.totalTokens
-          })
+            totalTokens: result.usage.totalTokens,
+          }),
         );
-        return titleResult ? { ...result, conversationTitle: titleResult.title } : result;
+        return titleResult
+          ? { ...result, conversationTitle: titleResult.title }
+          : result;
       } catch (error) {
         console.error("Hosted chatbot turn failed.", {
           requestId,
@@ -439,18 +499,18 @@ export async function POST(request: NextRequest) {
           model: config.model,
           providerResultCompleted,
           creditReservationFinalized,
-          error: error instanceof Error ? error.message : "unknown"
+          error: error instanceof Error ? error.message : "unknown",
         });
         await failPendingMessageSilently({
           userId: access.userId,
           conversationId: threadId,
-          pendingMessageId
+          pendingMessageId,
         });
         if (!providerResultCompleted && !creditReservationFinalized) {
           await reverseCreditReservationSilently({
             userId: access.userId,
             operationId: requestId,
-            idempotencyKey: `chat-reversal:${requestId}`
+            idempotencyKey: `chat-reversal:${requestId}`,
           });
         }
         if (!providerResultCompleted) {
@@ -459,20 +519,20 @@ export async function POST(request: NextRequest) {
             userId: access.userId,
             provider: config.provider,
             model: config.model,
-            requestStartedAt
+            requestStartedAt,
           });
         }
         throw error;
       }
-    }
+    },
   });
 
   return toServerSentEventsResponse(stream, {
     headers: {
       "cache-control": "no-store",
       connection: "keep-alive",
-      "x-accel-buffering": "no"
-    }
+      "x-accel-buffering": "no",
+    },
   });
 }
 
@@ -487,7 +547,7 @@ async function reverseCreditReservationSilently(options: {
     console.error("Unable to reverse an unspent chat credit reservation.", {
       operationId: options.operationId,
       userId: options.userId,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
   }
 }
@@ -504,12 +564,12 @@ async function recordCompletedUsage(options: {
       userId: options.userId,
       usage: options.usage,
       status: "completed",
-      windowAt: options.requestStartedAt
+      windowAt: options.requestStartedAt,
     });
   } catch {
     console.error("Failed to persist completed chatbot usage.", {
       requestId: options.requestId,
-      userId: options.userId
+      userId: options.userId,
     });
     return undefined;
   }
@@ -535,15 +595,15 @@ async function recordFailedUsage(options: {
         cachedInputTokens: 0,
         requestIds: [],
         toolCalls: 0,
-        latencyMs: 0
+        latencyMs: 0,
       },
       status: "failed",
-      windowAt: options.requestStartedAt
+      windowAt: options.requestStartedAt,
     });
   } catch {
     console.error("Failed to persist unsuccessful chatbot usage.", {
       requestId: options.requestId,
-      userId: options.userId
+      userId: options.userId,
     });
   }
 }
@@ -578,13 +638,23 @@ function persistenceErrorResponse(error: unknown) {
 
 function contextReferenceFrom(context: SelectedChatContext) {
   return context.kind === "recipe"
-    ? { kind: "recipe" as const, recordId: String(context.recipe.id), label: context.label }
-    : { kind: "brew" as const, recordId: context.brew.id, label: context.label };
+    ? {
+        kind: "recipe" as const,
+        recordId: String(context.recipe.id),
+        label: context.label,
+      }
+    : {
+        kind: "brew" as const,
+        recordId: context.brew.id,
+        label: context.label,
+      };
 }
 
 function citationsFromAnswer(answer: string) {
   const citations = new Map<string, { title: string; url: string }>();
-  for (const match of answer.matchAll(/\[([^\]]{1,240})\]\((https?:\/\/[^\s)]+)\)/g)) {
+  for (const match of answer.matchAll(
+    /\[([^\]]{1,240})\]\((https?:\/\/[^\s)]+)\)/g,
+  )) {
     citations.set(match[2], { title: match[1], url: match[2] });
   }
   return [...citations.values()];
@@ -593,27 +663,26 @@ function citationsFromAnswer(answer: string) {
 function mergeTitleUsage(
   usage: Awaited<ReturnType<typeof runChatTurn>>["usage"],
   title: Awaited<ReturnType<typeof generateChatConversationTitle>> | undefined,
-  provider: "openai"
+  provider: "openai",
 ) {
   if (!title) return usage;
   return {
     ...usage,
-    ...(usage.requestIds.length === 0
-      ? { provider, model: title.model }
-      : {}),
+    ...(usage.requestIds.length === 0 ? { provider, model: title.model } : {}),
     inputTokens: usage.inputTokens + title.usage.inputTokens,
     cachedInputTokens: usage.cachedInputTokens + title.usage.cachedInputTokens,
     outputTokens: usage.outputTokens + title.usage.outputTokens,
     totalTokens: usage.totalTokens + title.usage.totalTokens,
-    requestIds: [...usage.requestIds, title.providerRequestId]
+    requestIds: [...usage.requestIds, title.providerRequestId],
   };
 }
 
 function recipeDataFromToolResults(
-  toolResults: Array<{ toolName: string; result: unknown }>
+  toolResults: Array<{ toolName: string; result: unknown }>,
 ): unknown {
   for (const toolResult of [...toolResults].reverse()) {
-    if (!isRecord(toolResult.result) || toolResult.result.status !== "ok") continue;
+    if (!isRecord(toolResult.result) || toolResult.result.status !== "ok")
+      continue;
     const workflow = toolResult.result.result;
     if (isRecord(workflow) && workflow.status === "recipe") {
       const recipeData = recipeDataV2Schema.safeParse(workflow.recipeData);
@@ -624,19 +693,27 @@ function recipeDataFromToolResults(
 }
 
 function numberOrUndefined(
-  value: string | number | null | { toString(): string }
+  value: string | number | null | { toString(): string },
 ): number | undefined {
-  const parsed = Number(typeof value === "object" && value !== null ? value.toString() : value);
+  const parsed = Number(
+    typeof value === "object" && value !== null ? value.toString() : value,
+  );
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function chatMessagesFromTanStack(messages: unknown[]): Array<{ role: "user" | "assistant"; content: string }> {
+function chatMessagesFromTanStack(
+  messages: unknown[],
+): Array<{ role: "user" | "assistant"; content: string }> {
   return messages.flatMap((message) => {
-    if (!isRecord(message) || (message.role !== "user" && message.role !== "assistant")) {
+    if (
+      !isRecord(message) ||
+      (message.role !== "user" && message.role !== "assistant")
+    ) {
       return [];
     }
     const content = textContent(message);
-    const role: "user" | "assistant" = message.role === "user" ? "user" : "assistant";
+    const role: "user" | "assistant" =
+      message.role === "user" ? "user" : "assistant";
     return content ? [{ role, content }] : [];
   });
 }
@@ -648,7 +725,7 @@ function textContent(message: Record<string, unknown>): string {
     .flatMap((part) =>
       isRecord(part) && part.type === "text" && typeof part.content === "string"
         ? [part.content]
-        : []
+        : [],
     )
     .join("\n")
     .trim();

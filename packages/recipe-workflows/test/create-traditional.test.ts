@@ -8,7 +8,7 @@ import {
   chatbotRecipeWorkflowResultSchema,
   createTraditionalMead,
   explainRecipe,
-  refineTraditionalMead
+  refineTraditionalMead,
 } from "../src/index";
 
 test("incomplete intake returns stable structured questions", () => {
@@ -24,10 +24,13 @@ test("incomplete intake returns stable structured questions", () => {
       "target_original_gravity",
       "fermentation_final_gravity",
       "nutrient_intent",
-      "stabilizer_intent"
-    ]
+      "stabilizer_intent",
+    ],
   );
-  assert.equal(chatbotRecipeWorkflowResultSchema.safeParse(result).success, true);
+  assert.equal(
+    chatbotRecipeWorkflowResultSchema.safeParse(result).success,
+    true,
+  );
 });
 
 test("traditional draft passes the shared recipe schema and real calculation engine", () => {
@@ -36,7 +39,7 @@ test("traditional draft passes the shared recipe schema and real calculation eng
     targetOriginalGravity: 1.1,
     fermentationFinalGravity: 0.996,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
 
   assert.equal(result.status, "recipe");
@@ -47,7 +50,7 @@ test("traditional draft passes the shared recipe schema and real calculation eng
 
   assert.equal(
     recipeDerivedStateResponseBodySchema.safeParse(recalculated).success,
-    true
+    true,
   );
   assert.deepEqual(result.derived, recalculated.derived);
   assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.1) < 0.00001);
@@ -68,9 +71,9 @@ test("explicit nutrient inputs are validated and calculated", () => {
       nitrogenRequirement: "Low",
       schedule: "tosna",
       numberOfAdditions: 4,
-      goFermType: "Go-Ferm"
+      goFermType: "Go-Ferm",
     },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
 
   assert.equal(result.status, "recipe");
@@ -94,9 +97,9 @@ test("nutrient schedule selects the matching authoritative calculation inputs", 
       nitrogenRequirement: "Medium",
       schedule: "justK",
       numberOfAdditions: 3,
-      goFermType: "Go-Ferm"
+      goFermType: "Go-Ferm",
     },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
 
   assert.equal(result.status, "recipe");
@@ -106,7 +109,7 @@ test("nutrient schedule selects the matching authoritative calculation inputs", 
     fermO: false,
     fermK: true,
     dap: false,
-    other: false
+    other: false,
   });
   assert.ok(result.derived.nutrients.nutrientAdditions.totalGrams.fermK > 0);
   assert.equal(result.derived.nutrients.nutrientAdditions.totalGrams.fermO, 0);
@@ -118,7 +121,7 @@ test("semantic gravity errors use the error result variant", () => {
     targetOriginalGravity: 1.05,
     fermentationFinalGravity: 1.06,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
 
   assert.equal(result.status, "error");
@@ -132,12 +135,14 @@ test("traditional refinement requires an explicit target rather than interpretin
     targetOriginalGravity: 1.1,
     fermentationFinalGravity: 0.996,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
   assert.equal(created.status, "recipe");
   if (created.status !== "recipe") return;
 
-  const result = refineTraditionalMead({ activeRecipeData: created.recipeData });
+  const result = refineTraditionalMead({
+    activeRecipeData: created.recipeData,
+  });
   assert.equal(result.status, "needs_input");
   if (result.status !== "needs_input") return;
   assert.equal(result.questions[0]?.id, "refinement_target");
@@ -149,14 +154,14 @@ test("traditional refinement recalculates an active draft through shared contrac
     targetOriginalGravity: 1.1,
     fermentationFinalGravity: 0.996,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
   assert.equal(created.status, "recipe");
   if (created.status !== "recipe") return;
 
   const result = refineTraditionalMead({
     activeRecipeData: created.recipeData,
-    targetOriginalGravity: 1.12
+    targetOriginalGravity: 1.12,
   });
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
@@ -168,7 +173,7 @@ test("traditional refinement recalculates an active draft through shared contrac
   assert.equal(recipeDataV2Schema.safeParse(result.recipeData).success, true);
   assert.deepEqual(
     result.derived,
-    calculateRecipeDerivedApiResponse(result.recipeData).derived
+    calculateRecipeDerivedApiResponse(result.recipeData).derived,
   );
 });
 
@@ -178,7 +183,7 @@ test("traditional refinement rejects drafts outside its two-ingredient boundary"
     targetOriginalGravity: 1.1,
     fermentationFinalGravity: 0.996,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
   assert.equal(created.status, "recipe");
   if (created.status !== "recipe") return;
@@ -198,12 +203,12 @@ test("traditional refinement rejects drafts outside its two-ingredient boundary"
           amounts: {
             weight: { value: "1", unit: "lb" },
             volume: { value: "0.1", unit: "gal" },
-            basis: "volume"
-          }
-        }
-      ]
+            basis: "volume",
+          },
+        },
+      ],
     },
-    targetOriginalGravity: 1.12
+    targetOriginalGravity: 1.12,
   });
   assert.equal(result.status, "error");
   if (result.status !== "error") return;
@@ -216,28 +221,31 @@ test("recipe explanations return engine-derived ABV facts without changing the d
     targetOriginalGravity: 1.1,
     fermentationFinalGravity: 0.996,
     nutrients: { enabled: false },
-    stabilizers: { enabled: false }
+    stabilizers: { enabled: false },
   });
   assert.equal(created.status, "recipe");
   if (created.status !== "recipe") return;
 
   const result = explainRecipe({
     activeRecipeData: created.recipeData,
-    topic: "abv"
+    topic: "abv",
   });
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
 
   assert.equal(result.operation, "explain_recipe");
   assert.equal(result.explanation?.topic, "abv");
-  assert.equal(result.explanation?.facts[0]?.value, result.derived.gravity.ogPrimary);
+  assert.equal(
+    result.explanation?.facts[0]?.value,
+    result.derived.gravity.ogPrimary,
+  );
   assert.equal(result.explanation?.facts[2]?.value, result.derived.alcohol.abv);
   assert.deepEqual(result.recipeData, created.recipeData);
 });
 
 test("foundation conversation evaluations produce their expected result variant", () => {
   const evaluations = representativeRecipeConversations.filter(
-    (evaluation) => evaluation.readiness === "foundation"
+    (evaluation) => evaluation.readiness === "foundation",
   );
 
   assert.ok(evaluations.length >= 3);

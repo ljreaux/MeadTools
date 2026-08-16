@@ -6,7 +6,7 @@ import {
   reservationCreditsDelta,
   reverseReservedCredits,
   settleReservedCredits,
-  type CreditSettlement
+  type CreditSettlement,
 } from "@meadtools/credit-accounting";
 import { Prisma, credit_ledger_entry_type } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -35,7 +35,9 @@ export class CreditLedgerIdempotencyConflictError extends Error {
 /** A payment recovery is awaiting review, so new provider spend is blocked. */
 export class CreditPaymentRestrictedError extends Error {
   constructor() {
-    super("Chat credits are temporarily unavailable while a payment adjustment is reviewed.");
+    super(
+      "Chat credits are temporarily unavailable while a payment adjustment is reviewed.",
+    );
     this.name = "CreditPaymentRestrictedError";
   }
 }
@@ -86,10 +88,14 @@ export async function reverseAbandonedCreditReservations(options?: {
   const olderThan = options?.olderThan ?? new Date(Date.now() - 60 * 60 * 1000);
   const limit = options?.limit ?? 100;
   if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-    throw new RangeError("Credit reservation reconciliation limit must be between 1 and 500.");
+    throw new RangeError(
+      "Credit reservation reconciliation limit must be between 1 and 500.",
+    );
   }
 
-  const candidates = await prisma.$queryRaw<Array<{ user_id: number; operation_id: string }>>(Prisma.sql`
+  const candidates = await prisma.$queryRaw<
+    Array<{ user_id: number; operation_id: string }>
+  >(Prisma.sql`
     SELECT "accounts"."user_id", "reservations"."operation_id"::text AS "operation_id"
     FROM "credit_ledger_entries" AS "reservations"
     INNER JOIN "credit_accounts" AS "accounts"
@@ -118,7 +124,7 @@ export async function reverseAbandonedCreditReservations(options?: {
         userId: candidate.user_id,
         operationId: candidate.operation_id,
         idempotencyKey: `credit-maintenance-reversal:${candidate.operation_id}`,
-        now: options?.now
+        now: options?.now,
       });
       reversed += 1;
     } catch (error) {
@@ -139,17 +145,20 @@ export async function reverseAbandonedCreditReservations(options?: {
  * Reads the ledger-derived balance. An account is created only when it first
  * receives a purchase, grant, or provider reservation.
  */
-export async function getCreditBalance(userId: number): Promise<StoredCreditBalance> {
+export async function getCreditBalance(
+  userId: number,
+): Promise<StoredCreditBalance> {
   const account = await prisma.credit_accounts.findUnique({
     where: { user_id: userId },
-    select: { id: true, payment_restricted_at: true }
+    select: { id: true, payment_restricted_at: true },
   });
-  if (!account) return { accountId: null, availableCredits: 0, paymentRestricted: false };
+  if (!account)
+    return { accountId: null, availableCredits: 0, paymentRestricted: false };
 
   return {
     accountId: account.id,
     availableCredits: await ledgerBalance(prisma, account.id),
-    paymentRestricted: Boolean(account.payment_restricted_at)
+    paymentRestricted: Boolean(account.payment_restricted_at),
   };
 }
 
@@ -160,17 +169,17 @@ export async function getCreditBalance(userId: number): Promise<StoredCreditBala
  */
 export async function getLockedCreditBalanceInTransaction(
   tx: Prisma.TransactionClient,
-  userId: number
+  userId: number,
 ): Promise<StoredCreditBalance> {
   const accountId = await getOrCreateLockedCreditAccount(tx, userId);
   const account = await tx.credit_accounts.findUnique({
     where: { id: accountId },
-    select: { payment_restricted_at: true }
+    select: { payment_restricted_at: true },
   });
   return {
     accountId,
     availableCredits: await ledgerBalance(tx, accountId),
-    paymentRestricted: Boolean(account?.payment_restricted_at)
+    paymentRestricted: Boolean(account?.payment_restricted_at),
   };
 }
 
@@ -191,7 +200,12 @@ export async function reserveCreditBalance(options: {
     const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
     await assertAccountNotPaymentRestricted(tx, accountId);
     const existing = await tx.credit_ledger_entries.findUnique({
-      where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+      where: {
+        account_id_idempotency_key: {
+          account_id: accountId,
+          idempotency_key: options.idempotencyKey,
+        },
+      },
     });
 
     if (existing) {
@@ -200,14 +214,14 @@ export async function reserveCreditBalance(options: {
         accountId,
         operationId: options.operationId,
         reservationCredits: -existing.credits_delta,
-        availableCredits: await ledgerBalance(tx, accountId)
+        availableCredits: await ledgerBalance(tx, accountId),
       };
     }
 
     const availableCredits = await ledgerBalance(tx, accountId);
     assertSufficientCredits({
       availableCredits,
-      requiredCredits: options.reservationCredits
+      requiredCredits: options.reservationCredits,
     });
 
     await tx.credit_ledger_entries.create({
@@ -219,15 +233,15 @@ export async function reserveCreditBalance(options: {
         credits_delta: reservationCreditsDelta(options.reservationCredits),
         pricing_version_id: options.pricingVersionId,
         fee_policy_version_id: options.feePolicyVersionId,
-        created_at: options.now
-      }
+        created_at: options.now,
+      },
     });
 
     return {
       accountId,
       operationId: options.operationId,
       reservationCredits: options.reservationCredits,
-      availableCredits: availableCredits - options.reservationCredits
+      availableCredits: availableCredits - options.reservationCredits,
     };
   });
 }
@@ -247,7 +261,9 @@ export async function recordCreditPurchase(options: {
   metadata?: Prisma.InputJsonValue;
   now?: Date;
 }): Promise<StoredCreditPurchase> {
-  return prisma.$transaction((tx) => recordCreditPurchaseInTransaction(tx, options));
+  return prisma.$transaction((tx) =>
+    recordCreditPurchaseInTransaction(tx, options),
+  );
 }
 
 /** Records an operator-issued or promotional credit allocation immutably. */
@@ -259,7 +275,9 @@ export async function recordCreditGrant(options: {
   metadata?: Prisma.InputJsonValue;
   now?: Date;
 }): Promise<StoredCreditGrant> {
-  return prisma.$transaction((tx) => recordCreditGrantInTransaction(tx, options));
+  return prisma.$transaction((tx) =>
+    recordCreditGrantInTransaction(tx, options),
+  );
 }
 
 export async function recordCreditGrantInTransaction(
@@ -271,12 +289,17 @@ export async function recordCreditGrantInTransaction(
     creditAmount: number;
     metadata?: Prisma.InputJsonValue;
     now?: Date;
-  }
+  },
 ): Promise<StoredCreditGrant> {
   assertPositiveInteger(options.creditAmount, "credit amount");
   const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
   const existing = await tx.credit_ledger_entries.findUnique({
-    where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+    where: {
+      account_id_idempotency_key: {
+        account_id: accountId,
+        idempotency_key: options.idempotencyKey,
+      },
+    },
   });
   if (existing) {
     if (
@@ -286,7 +309,12 @@ export async function recordCreditGrantInTransaction(
     ) {
       throw new CreditLedgerIdempotencyConflictError();
     }
-    return { accountId, operationId: options.operationId, creditAmount: options.creditAmount, availableCredits: await ledgerBalance(tx, accountId) };
+    return {
+      accountId,
+      operationId: options.operationId,
+      creditAmount: options.creditAmount,
+      availableCredits: await ledgerBalance(tx, accountId),
+    };
   }
 
   await tx.credit_ledger_entries.create({
@@ -297,10 +325,15 @@ export async function recordCreditGrantInTransaction(
       entry_type: credit_ledger_entry_type.grant,
       credits_delta: options.creditAmount,
       metadata: options.metadata,
-      created_at: options.now
-    }
+      created_at: options.now,
+    },
   });
-  return { accountId, operationId: options.operationId, creditAmount: options.creditAmount, availableCredits: await ledgerBalance(tx, accountId) };
+  return {
+    accountId,
+    operationId: options.operationId,
+    creditAmount: options.creditAmount,
+    availableCredits: await ledgerBalance(tx, accountId),
+  };
 }
 
 export async function recordCreditPurchaseInTransaction(
@@ -315,18 +348,25 @@ export async function recordCreditPurchaseInTransaction(
     externalReference: string;
     metadata?: Prisma.InputJsonValue;
     now?: Date;
-  }
+  },
 ): Promise<StoredCreditPurchase> {
   assertPositiveInteger(options.creditAmount, "credit amount");
   assertNonNegativeInteger(options.sourceAmountCents, "source amount");
   const sourceCurrency = options.sourceCurrency.trim().toLowerCase();
   if (!/^[a-z]{3}$/.test(sourceCurrency)) {
-    throw new RangeError("source currency must be a three-letter lowercase code.");
+    throw new RangeError(
+      "source currency must be a three-letter lowercase code.",
+    );
   }
 
   const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
   const existing = await tx.credit_ledger_entries.findUnique({
-    where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+    where: {
+      account_id_idempotency_key: {
+        account_id: accountId,
+        idempotency_key: options.idempotencyKey,
+      },
+    },
   });
   if (existing) {
     if (
@@ -343,7 +383,7 @@ export async function recordCreditPurchaseInTransaction(
       accountId,
       operationId: options.operationId,
       creditAmount: options.creditAmount,
-      availableCredits: await ledgerBalance(tx, accountId)
+      availableCredits: await ledgerBalance(tx, accountId),
     };
   }
 
@@ -358,15 +398,15 @@ export async function recordCreditPurchaseInTransaction(
       source_currency: sourceCurrency,
       external_reference: options.externalReference,
       metadata: options.metadata,
-      created_at: options.now
-    }
+      created_at: options.now,
+    },
   });
 
   return {
     accountId,
     operationId: options.operationId,
     creditAmount: options.creditAmount,
-    availableCredits: await ledgerBalance(tx, accountId)
+    availableCredits: await ledgerBalance(tx, accountId),
   };
 }
 
@@ -389,9 +429,17 @@ export async function recordCreditAdjustmentInTransaction(
     entryType?: "adjustment" | "refund";
     metadata?: Prisma.InputJsonValue;
     now?: Date;
-  }
-): Promise<{ accountId: string; operationId: string; creditsDelta: number; availableCredits: number }> {
-  if (!Number.isSafeInteger(options.creditsDelta) || options.creditsDelta === 0) {
+  },
+): Promise<{
+  accountId: string;
+  operationId: string;
+  creditsDelta: number;
+  availableCredits: number;
+}> {
+  if (
+    !Number.isSafeInteger(options.creditsDelta) ||
+    options.creditsDelta === 0
+  ) {
     throw new RangeError("credit adjustment must be a non-zero safe integer.");
   }
   if (options.sourceAmountCents !== undefined) {
@@ -400,12 +448,19 @@ export async function recordCreditAdjustmentInTransaction(
   const sourceCurrency = options.sourceCurrency?.trim().toLowerCase();
   const entryType = options.entryType ?? credit_ledger_entry_type.adjustment;
   if (sourceCurrency !== undefined && !/^[a-z]{3}$/.test(sourceCurrency)) {
-    throw new RangeError("source currency must be a three-letter lowercase code.");
+    throw new RangeError(
+      "source currency must be a three-letter lowercase code.",
+    );
   }
 
   const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
   const existing = await tx.credit_ledger_entries.findUnique({
-    where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+    where: {
+      account_id_idempotency_key: {
+        account_id: accountId,
+        idempotency_key: options.idempotencyKey,
+      },
+    },
   });
   if (existing) {
     if (
@@ -420,7 +475,7 @@ export async function recordCreditAdjustmentInTransaction(
       accountId,
       operationId: options.operationId,
       creditsDelta: options.creditsDelta,
-      availableCredits: await ledgerBalance(tx, accountId)
+      availableCredits: await ledgerBalance(tx, accountId),
     };
   }
 
@@ -435,14 +490,14 @@ export async function recordCreditAdjustmentInTransaction(
       source_currency: sourceCurrency,
       external_reference: options.externalReference,
       metadata: options.metadata,
-      created_at: options.now
-    }
+      created_at: options.now,
+    },
   });
   return {
     accountId,
     operationId: options.operationId,
     creditsDelta: options.creditsDelta,
-    availableCredits: await ledgerBalance(tx, accountId)
+    availableCredits: await ledgerBalance(tx, accountId),
   };
 }
 
@@ -462,30 +517,39 @@ export async function settleCreditReservation(options: {
 }): Promise<StoredCreditSettlement> {
   return prisma.$transaction(async (tx) => {
     const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
-    const reservation = await findReservation(tx, accountId, options.operationId);
+    const reservation = await findReservation(
+      tx,
+      accountId,
+      options.operationId,
+    );
     assertNonNegativeBigInt(options.providerCostPicousd, "provider cost");
     const existing = await tx.credit_ledger_entries.findUnique({
-      where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+      where: {
+        account_id_idempotency_key: {
+          account_id: accountId,
+          idempotency_key: options.idempotencyKey,
+        },
+      },
     });
 
     if (existing) {
       const settlement = settleReservedCredits({
         reservationCredits: -reservation.credits_delta,
-        chargedCredits: options.chargedCredits
+        chargedCredits: options.chargedCredits,
       });
       assertMatchingSettlement(existing, { ...options, settlement });
       return {
         accountId,
         operationId: options.operationId,
         ...settlement,
-        availableCredits: await ledgerBalance(tx, accountId)
+        availableCredits: await ledgerBalance(tx, accountId),
       };
     }
 
     await assertReservationNotFinalized(tx, accountId, options.operationId);
     const settlement = settleReservedCredits({
       reservationCredits: -reservation.credits_delta,
-      chargedCredits: options.chargedCredits
+      chargedCredits: options.chargedCredits,
     });
     await tx.credit_ledger_entries.create({
       data: {
@@ -497,15 +561,15 @@ export async function settleCreditReservation(options: {
         pricing_version_id: options.pricingVersionId,
         fee_policy_version_id: options.feePolicyVersionId,
         provider_cost_picousd: options.providerCostPicousd,
-        created_at: options.now
-      }
+        created_at: options.now,
+      },
     });
 
     return {
       accountId,
       operationId: options.operationId,
       ...settlement,
-      availableCredits: (await ledgerBalance(tx, accountId))
+      availableCredits: await ledgerBalance(tx, accountId),
     };
   });
 }
@@ -519,9 +583,18 @@ export async function reverseCreditReservation(options: {
 }): Promise<StoredCreditReservation> {
   return prisma.$transaction(async (tx) => {
     const accountId = await getOrCreateLockedCreditAccount(tx, options.userId);
-    const reservation = await findReservation(tx, accountId, options.operationId);
+    const reservation = await findReservation(
+      tx,
+      accountId,
+      options.operationId,
+    );
     const existing = await tx.credit_ledger_entries.findUnique({
-      where: { account_id_idempotency_key: { account_id: accountId, idempotency_key: options.idempotencyKey } }
+      where: {
+        account_id_idempotency_key: {
+          account_id: accountId,
+          idempotency_key: options.idempotencyKey,
+        },
+      },
     });
 
     if (existing) {
@@ -535,7 +608,7 @@ export async function reverseCreditReservation(options: {
         accountId,
         operationId: options.operationId,
         reservationCredits: -reservation.credits_delta,
-        availableCredits: await ledgerBalance(tx, accountId)
+        availableCredits: await ledgerBalance(tx, accountId),
       };
     }
 
@@ -548,22 +621,22 @@ export async function reverseCreditReservation(options: {
         idempotency_key: options.idempotencyKey,
         entry_type: credit_ledger_entry_type.reversal,
         credits_delta: reverseReservedCredits(reservationCredits),
-        created_at: options.now
-      }
+        created_at: options.now,
+      },
     });
 
     return {
       accountId,
       operationId: options.operationId,
       reservationCredits,
-      availableCredits: await ledgerBalance(tx, accountId)
+      availableCredits: await ledgerBalance(tx, accountId),
     };
   });
 }
 
 async function getOrCreateLockedCreditAccount(
   tx: Prisma.TransactionClient,
-  userId: number
+  userId: number,
 ): Promise<string> {
   const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
     INSERT INTO "credit_accounts" ("user_id")
@@ -579,11 +652,11 @@ async function getOrCreateLockedCreditAccount(
 
 async function assertAccountNotPaymentRestricted(
   tx: Prisma.TransactionClient,
-  accountId: string
+  accountId: string,
 ): Promise<void> {
   const account = await tx.credit_accounts.findUnique({
     where: { id: accountId },
-    select: { payment_restricted_at: true }
+    select: { payment_restricted_at: true },
   });
   if (account?.payment_restricted_at) throw new CreditPaymentRestrictedError();
 }
@@ -591,16 +664,16 @@ async function assertAccountNotPaymentRestricted(
 async function findReservation(
   tx: Prisma.TransactionClient,
   accountId: string,
-  operationId: string
+  operationId: string,
 ) {
   const reservation = await tx.credit_ledger_entries.findUnique({
     where: {
       account_id_operation_id_entry_type: {
         account_id: accountId,
         operation_id: operationId,
-        entry_type: credit_ledger_entry_type.reservation
-      }
-    }
+        entry_type: credit_ledger_entry_type.reservation,
+      },
+    },
   });
   if (!reservation) throw new CreditReservationNotFoundError();
   return reservation;
@@ -609,22 +682,27 @@ async function findReservation(
 async function assertReservationNotFinalized(
   tx: Prisma.TransactionClient,
   accountId: string,
-  operationId: string
+  operationId: string,
 ): Promise<void> {
   const finalEntry = await tx.credit_ledger_entries.findFirst({
     where: {
       account_id: accountId,
       operation_id: operationId,
-      entry_type: { in: [credit_ledger_entry_type.settlement, credit_ledger_entry_type.reversal] }
+      entry_type: {
+        in: [
+          credit_ledger_entry_type.settlement,
+          credit_ledger_entry_type.reversal,
+        ],
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
   if (finalEntry) throw new CreditReservationFinalizedError();
 }
 
 async function ledgerBalance(
   client: Prisma.TransactionClient | typeof prisma,
-  accountId: string
+  accountId: string,
 ): Promise<number> {
   const rows = await client.$queryRaw<Array<{ balance: bigint }>>(Prisma.sql`
     SELECT COALESCE(SUM("credits_delta"), 0)::bigint AS "balance"
@@ -632,15 +710,24 @@ async function ledgerBalance(
     WHERE "account_id" = ${accountId}::uuid
   `);
   const balance = rows[0]?.balance ?? BigInt(0);
-  if (balance > BigInt(Number.MAX_SAFE_INTEGER) || balance < BigInt(Number.MIN_SAFE_INTEGER)) {
-    throw new RangeError("The ledger balance exceeds JavaScript's safe integer range.");
+  if (
+    balance > BigInt(Number.MAX_SAFE_INTEGER) ||
+    balance < BigInt(Number.MIN_SAFE_INTEGER)
+  ) {
+    throw new RangeError(
+      "The ledger balance exceeds JavaScript's safe integer range.",
+    );
   }
   return availableCreditsFromLedger([Number(balance)]);
 }
 
 function assertMatchingReservation(
-  entry: { entry_type: credit_ledger_entry_type; operation_id: string; credits_delta: number },
-  options: { operationId: string; reservationCredits: number }
+  entry: {
+    entry_type: credit_ledger_entry_type;
+    operation_id: string;
+    credits_delta: number;
+  },
+  options: { operationId: string; reservationCredits: number },
 ): void {
   if (
     entry.entry_type !== credit_ledger_entry_type.reservation ||
@@ -662,7 +749,7 @@ function assertMatchingSettlement(
     operationId: string;
     providerCostPicousd: bigint;
     settlement: CreditSettlement;
-  }
+  },
 ): void {
   if (
     entry.entry_type !== credit_ledger_entry_type.settlement ||

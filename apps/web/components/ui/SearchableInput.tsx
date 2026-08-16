@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
   KeyboardEvent,
-  useMemo
+  useMemo,
 } from "react";
 import { Search, X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
@@ -14,9 +14,13 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
+  InputGroupInput,
 } from "@/components/ui/input-group";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 type SearchableInputProps<T> = {
   items: T[];
@@ -48,7 +52,7 @@ function SearchableInput<T extends Record<string, any>>({
   getValue,
   sortItems,
   dropdownPlacement = "below",
-  dropdownPortal = false
+  dropdownPortal = false,
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -67,7 +71,7 @@ function SearchableInput<T extends Record<string, any>>({
   // IMPORTANT: suggestions are based on what the user is currently seeing/typing
   const baseItems = useMemo(
     () => (sortItems ? sortItems(items) : items),
-    [items, sortItems]
+    [items, sortItems],
   );
 
   const { suggestions } = useSuggestions(baseItems, inputValue, keyName);
@@ -76,8 +80,8 @@ function SearchableInput<T extends Record<string, any>>({
     inputValue.trim() === ""
       ? baseItems
       : sortItems
-      ? sortItems(suggestions)
-      : suggestions;
+        ? sortItems(suggestions)
+        : suggestions;
 
   useEffect(() => {
     const match = baseItems.find((it) => valueOf(it) === query);
@@ -122,12 +126,12 @@ function SearchableInput<T extends Record<string, any>>({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlightIndex((prev) =>
-        prev < visibleSuggestions.length - 1 ? prev + 1 : 0
+        prev < visibleSuggestions.length - 1 ? prev + 1 : 0,
       );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHighlightIndex((prev) =>
-        prev > 0 ? prev - 1 : visibleSuggestions.length - 1
+        prev > 0 ? prev - 1 : visibleSuggestions.length - 1,
       );
     } else if (e.key === "Enter" && highlightIndex >= 0) {
       e.preventDefault();
@@ -154,53 +158,53 @@ function SearchableInput<T extends Record<string, any>>({
 
   const inputGroup = (
     <InputGroup className="h-12">
-        <InputGroupInput
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => {
-            const val = e.target.value;
-            setInputValue(val);
-            setQuery(val); // user typed -> treat as custom text
-            setDropdownOpen(true);
-            setHighlightIndex(-1);
-          }}
-          onFocus={(e) => {
-            e.target.select();
-            setDropdownOpen(true);
-          }}
-          onKeyDown={handleKeyDown}
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={dropdownOpen}
-          aria-controls={dropdownOpen ? listboxId : undefined}
-          className="h-full text-lg relative"
-          placeholder={placeholder}
-        />
+      <InputGroupInput
+        ref={inputRef}
+        value={inputValue}
+        onChange={(e) => {
+          const val = e.target.value;
+          setInputValue(val);
+          setQuery(val); // user typed -> treat as custom text
+          setDropdownOpen(true);
+          setHighlightIndex(-1);
+        }}
+        onFocus={(e) => {
+          e.target.select();
+          setDropdownOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={dropdownOpen}
+        aria-controls={dropdownOpen ? listboxId : undefined}
+        className="h-full text-lg relative"
+        placeholder={placeholder}
+      />
 
-        <InputGroupAddon align="inline-end">
-          {dropdownOpen || inputValue ? (
-            <InputGroupButton
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="rounded-full"
-              onClick={handleClearOrClose}
-              aria-label={inputValue ? "Clear search" : "Close suggestions"}
-            >
-              <X className="h-3 w-3" />
-            </InputGroupButton>
-          ) : (
-            <InputGroupButton
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="rounded-full"
-              disabled
-            >
-              <Search className="h-3 w-3" />
-            </InputGroupButton>
-          )}
-        </InputGroupAddon>
+      <InputGroupAddon align="inline-end">
+        {dropdownOpen || inputValue ? (
+          <InputGroupButton
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="rounded-full"
+            onClick={handleClearOrClose}
+            aria-label={inputValue ? "Clear search" : "Close suggestions"}
+          >
+            <X className="h-3 w-3" />
+          </InputGroupButton>
+        ) : (
+          <InputGroupButton
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="rounded-full"
+            disabled
+          >
+            <Search className="h-3 w-3" />
+          </InputGroupButton>
+        )}
+      </InputGroupAddon>
     </InputGroup>
   );
 

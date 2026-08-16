@@ -12,22 +12,27 @@ test("OpenAI client sends a server-side chat completion without storing content"
       return Response.json({
         id: "chatcmpl_test",
         model: "gpt-5.4-mini-2026-03-17",
-        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "Hello" } }],
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { role: "assistant", content: "Hello" },
+          },
+        ],
         usage: {
           prompt_tokens: 100,
           completion_tokens: 25,
           total_tokens: 125,
-          prompt_tokens_details: { cached_tokens: 80 }
-        }
+          prompt_tokens_details: { cached_tokens: 80 },
+        },
       });
-    }
+    },
   });
 
   const completion = await client.complete({
     userId: 2,
     maxOutputTokens: 400,
     reasoningEffort: "none",
-    messages: [{ role: "user", content: "Hello" }]
+    messages: [{ role: "user", content: "Hello" }],
   });
 
   assert.equal(client.provider, "openai");
@@ -38,7 +43,7 @@ test("OpenAI client sends a server-side chat completion without storing content"
     messages: [{ role: "user", content: "Hello" }],
     reasoning_effort: "none",
     max_completion_tokens: 400,
-    store: false
+    store: false,
   });
   assert.equal(completion.usage.cachedInputTokens, 80);
 });
@@ -53,16 +58,21 @@ test("OpenAI client omits tool choice for a deliberately tool-free request", asy
       return Response.json({
         id: "chatcmpl_test",
         model: "gpt-5.4-mini-2026-03-17",
-        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "Title" } }]
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { role: "assistant", content: "Title" },
+          },
+        ],
       });
-    }
+    },
   });
 
   await client.complete({
     userId: 2,
     maxOutputTokens: 64,
     toolChoice: "none",
-    messages: [{ role: "user", content: "Title this chat" }]
+    messages: [{ role: "user", content: "Title this chat" }],
   });
 
   assert.equal(body?.tools, undefined);
@@ -80,20 +90,31 @@ test("OpenAI client constrains parallel calls when function tools are present", 
       return Response.json({
         id: "chatcmpl_test",
         model: "gpt-5.4-mini-2026-03-17",
-        choices: [{ finish_reason: "tool_calls", message: { role: "assistant", content: null } }]
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: { role: "assistant", content: null },
+          },
+        ],
       });
-    }
+    },
   });
 
   await client.complete({
     userId: 2,
     maxOutputTokens: 64,
-    tools: [{
-      type: "function",
-      function: { name: "lookup", description: "Lookup", parameters: { type: "object" } }
-    }],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "lookup",
+          description: "Lookup",
+          parameters: { type: "object" },
+        },
+      },
+    ],
     toolChoice: "auto",
-    messages: [{ role: "user", content: "Lookup this" }]
+    messages: [{ role: "user", content: "Lookup this" }],
   });
 
   assert.equal(body?.tool_choice, "auto");
@@ -110,16 +131,21 @@ test("OpenAI client maps maximum reasoning to the highest supported effort", asy
       return Response.json({
         id: "chatcmpl_test",
         model: "gpt-5.4-mini-2026-03-17",
-        choices: [{ finish_reason: "stop", message: { role: "assistant", content: "Hello" } }]
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { role: "assistant", content: "Hello" },
+          },
+        ],
       });
-    }
+    },
   });
 
   await client.complete({
     userId: 2,
     maxOutputTokens: 400,
     reasoningEffort: "max",
-    messages: [{ role: "user", content: "Hello" }]
+    messages: [{ role: "user", content: "Hello" }],
   });
 
   assert.equal(body?.reasoning_effort, "high");
@@ -133,16 +159,16 @@ test("OpenAI client does not retry a failed completion", async () => {
     fetcher: async () => {
       calls += 1;
       return new Response("unavailable", { status: 503 });
-    }
+    },
   });
 
   await assert.rejects(
     client.complete({
       userId: 2,
       maxOutputTokens: 400,
-      messages: [{ role: "user", content: "Hello" }]
+      messages: [{ role: "user", content: "Hello" }],
     }),
-    /openai inference failed with HTTP 503\./
+    /openai inference failed with HTTP 503\./,
   );
   assert.equal(calls, 1);
 });
@@ -151,26 +177,37 @@ test("OpenAI client retains structured provider error metadata without secrets",
   const client = new OpenAIChatClient({
     apiKey: "test-key",
     model: "gpt-5.4-mini-2026-03-17",
-    fetcher: async () => Response.json({
-      error: {
-        message: "Unsupported parameter: response_format. Bearer sk-not-a-real-key",
-        type: "invalid_request_error",
-        param: "response_format",
-        code: "unsupported_parameter"
-      }
-    }, { status: 400 })
+    fetcher: async () =>
+      Response.json(
+        {
+          error: {
+            message:
+              "Unsupported parameter: response_format. Bearer sk-not-a-real-key",
+            type: "invalid_request_error",
+            param: "response_format",
+            code: "unsupported_parameter",
+          },
+        },
+        { status: 400 },
+      ),
   });
 
   await assert.rejects(
     client.complete({
       userId: 2,
       maxOutputTokens: 400,
-      messages: [{ role: "user", content: "Hello" }]
+      messages: [{ role: "user", content: "Hello" }],
     }),
     (error: unknown) => {
-      assert.match(error instanceof Error ? error.message : "", /Unsupported parameter/);
-      assert.doesNotMatch(error instanceof Error ? error.message : "", /sk-not-a-real-key/);
+      assert.match(
+        error instanceof Error ? error.message : "",
+        /Unsupported parameter/,
+      );
+      assert.doesNotMatch(
+        error instanceof Error ? error.message : "",
+        /sk-not-a-real-key/,
+      );
       return true;
-    }
+    },
   );
 });

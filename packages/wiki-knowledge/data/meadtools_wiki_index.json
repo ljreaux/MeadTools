@@ -8,9 +8,7 @@
       "title": "Main Page",
       "url": "https://wiki.meadtools.com/en/home",
       "level": 0,
-      "category": [
-        "Home"
-      ],
+      "category": ["Home"],
       "summary": "Landing page for the Modern Meadmaking Wiki, migrated from the r/mead wiki. Links out to the FAQ, ingredients, process, resources, and recipes sections.",
       "keywords": [
         "mead",
@@ -38,9 +36,7 @@
       "title": "Please Help",
       "url": "https://wiki.meadtools.com/en/please_help",
       "level": 1,
-      "category": [
-        "Meta"
-      ],
+      "category": ["Meta"],
       "summary": "A living checklist of wiki pages that need new content, proofreading, or expansion, used to coordinate volunteer contributors.",
       "keywords": [
         "wiki contribution",
@@ -67,10 +63,7 @@
       "title": "Getting Started",
       "url": "https://wiki.meadtools.com/en/faq/getting_started",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Beginner"
-      ],
+      "category": ["FAQ", "Beginner"],
       "summary": "Introduces brand-new meadmakers to the core ingredients (honey, water, yeast), why nutrients matter, and beginner techniques like aeration and staggered nutrients, with book and recipe recommendations.",
       "keywords": [
         "beginner",
@@ -101,10 +94,7 @@
       "title": "Glass Vs. Plastic",
       "url": "https://wiki.meadtools.com/en/faq/glass_vs_plastic",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Equipment"
-      ],
+      "category": ["FAQ", "Equipment"],
       "summary": "Weighs the tradeoffs between glass and plastic carboys/fermenters: breakage risk, weight, scratching, and cost.",
       "keywords": [
         "carboy",
@@ -126,10 +116,7 @@
       "title": "Hydrometers",
       "url": "https://wiki.meadtools.com/en/faq/hydrometer",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Equipment"
-      ],
+      "category": ["FAQ", "Equipment"],
       "summary": "Explains what a hydrometer measures (specific gravity), how to take an accurate reading, and how gravity trends diagnose fermentation progress or stalls.",
       "keywords": [
         "hydrometer",
@@ -153,10 +140,7 @@
       "title": "Honey (FAQ)",
       "url": "https://wiki.meadtools.com/en/faq/honey",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Ingredients"
-      ],
+      "category": ["FAQ", "Ingredients"],
       "summary": "Answers where to source honey and which varietals suit beginners (orange blossom, wildflower), plus rough cost expectations.",
       "keywords": [
         "honey",
@@ -169,18 +153,13 @@
         "honey cost",
         "honey sourcing"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/ingredients/honey"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/ingredients/honey"]
     },
     {
       "title": "Yeast Selection",
       "url": "https://wiki.meadtools.com/en/faq/yeast_selection",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Ingredients"
-      ],
+      "category": ["FAQ", "Ingredients"],
       "summary": "Recommends a handful of reliable beginner yeast strains (71B-1122, Pasteur Blanc, EC-1118) with tolerance/temperature notes and buying advice.",
       "keywords": [
         "yeast",
@@ -200,10 +179,7 @@
       "title": "LD Carlson Additives",
       "url": "https://wiki.meadtools.com/en/faq/ld_carlson_additives",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Ingredients"
-      ],
+      "category": ["FAQ", "Ingredients"],
       "summary": "Gives dosing math for L.D. Carlson's generic Nutrient and Energizer products, estimating their YAN contribution per teaspoon.",
       "keywords": [
         "L.D. Carlson",
@@ -224,10 +200,7 @@
       "title": "Alternative Nutrient Sources",
       "url": "https://wiki.meadtools.com/en/faq/alternative_nutrient_sources",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Ingredients"
-      ],
+      "category": ["FAQ", "Ingredients"],
       "summary": "Surveys non-standard nitrogen sources (dead yeast, fruit, organic products, raisins) and quantifies just how little nitrogen raisins actually add.",
       "keywords": [
         "yeast nutrients",
@@ -248,10 +221,7 @@
       "title": "Basic Problems",
       "url": "https://wiki.meadtools.com/en/faq/basic_problems",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Troubleshooting"
-      ],
+      "category": ["FAQ", "Troubleshooting"],
       "summary": "A troubleshooting rundown of the most common /r/mead questions: stuck fermentation, separated honey, cloudy mead, off smells, and minor mistakes.",
       "keywords": [
         "troubleshooting",
@@ -274,10 +244,7 @@
       "title": "Overflow",
       "url": "https://wiki.meadtools.com/en/faq/overflow",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Troubleshooting"
-      ],
+      "category": ["FAQ", "Troubleshooting"],
       "summary": "Explains why meads foam over during fermentation and how to prevent it with larger fermenters or a blowoff tube.",
       "keywords": [
         "overflow",
@@ -296,10 +263,7 @@
       "title": "Stuck Fermentation",
       "url": "https://wiki.meadtools.com/en/protocol/stuck_fermentation",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Troubleshooting"
-      ],
+      "category": ["FAQ", "Troubleshooting"],
       "summary": "A detailed diagnostic and restart protocol for stuck or sluggish fermentations, covering nutrition, temperature, pH/acid, and restart-yeast selection.",
       "keywords": [
         "stuck fermentation",
@@ -323,10 +287,7 @@
       "title": "Infection",
       "url": "https://wiki.meadtools.com/en/faq/infection",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Troubleshooting"
-      ],
+      "category": ["FAQ", "Troubleshooting"],
       "summary": "Distinguishes normal fermentation byproducts (yeast clumps, lees) from true mold/bacterial infection, with example photos and resource links.",
       "keywords": [
         "infection",
@@ -347,10 +308,7 @@
       "title": "Headspace",
       "url": "https://wiki.meadtools.com/en/faq/headspace",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Troubleshooting"
-      ],
+      "category": ["FAQ", "Troubleshooting"],
       "summary": "Covers why headspace matters after fermentation and how to minimize oxidation risk via inert gas, topping up, or (discouraged) marbles.",
       "keywords": [
         "headspace",
@@ -370,10 +328,7 @@
       "title": "Stabilization and Backsweetening (FAQ)",
       "url": "https://wiki.meadtools.com/en/faq/stabilization_and_backsweetening",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Process"
-      ],
+      "category": ["FAQ", "Process"],
       "summary": "A condensed overview of why and how to stabilize mead before backsweetening: chemical stabilization, ABV tolerance, filtration, and pasteurization.",
       "keywords": [
         "stabilization",
@@ -394,10 +349,7 @@
       "title": "Illegal Ingredients",
       "url": "https://wiki.meadtools.com/en/faq/illegal_ingredients",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Process"
-      ],
+      "category": ["FAQ", "Process"],
       "summary": "A short community-norms note discouraging the use of controlled or dangerous substances in mead, without policing what people actually do.",
       "keywords": [
         "controlled substances",
@@ -406,18 +358,13 @@
         "regulation",
         "safety"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/faq/chemicals"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/faq/chemicals"]
     },
     {
       "title": "Chemicals",
       "url": "https://wiki.meadtools.com/en/faq/chemicals",
       "level": 1,
-      "category": [
-        "FAQ",
-        "Process"
-      ],
+      "category": ["FAQ", "Process"],
       "summary": "Reassures brewers about the chemistry-sense \"chemicals\" used in mead making (sulfites, sorbate, DAP) and explains their safety and function.",
       "keywords": [
         "chemicals",
@@ -438,9 +385,7 @@
       "title": "Honey (Ingredients)",
       "url": "https://wiki.meadtools.com/en/ingredients/honey",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "In-depth guide to honey types (wildflower vs. monofloral vs. woodland), processing/quality labeling, and where to source good honey.",
       "keywords": [
         "honey",
@@ -453,17 +398,13 @@
         "TrueSource",
         "honey quality"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/faq/honey"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/faq/honey"]
     },
     {
       "title": "Yeast (Ingredients)",
       "url": "https://wiki.meadtools.com/en/ingredients/yeast",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "Comprehensive reference on yeast categories (wine, mead, beer, bread, kveik, wild), selection criteria, flocculation, and temperature control options.",
       "keywords": [
         "yeast strains",
@@ -489,9 +430,7 @@
       "title": "Water",
       "url": "https://wiki.meadtools.com/en/ingredients/water",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "Covers water source options (distilled, spring, tap, well) and how to handle chlorine/chloramine before brewing.",
       "keywords": [
         "water",
@@ -504,17 +443,13 @@
         "Consumer Confidence Report",
         "campden tablets"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/process/process_summary"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/process/process_summary"]
     },
     {
       "title": "Nutrients (Ingredients)",
       "url": "https://wiki.meadtools.com/en/ingredients/nutrients",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "Detailed breakdown of nitrogen sources (DAP, Fermaid K/O, GoFerm, boiled bread yeast) with a comparison table and dosing guidance.",
       "keywords": [
         "yeast nutrients",
@@ -538,9 +473,7 @@
       "title": "Fruit (Ingredients)",
       "url": "https://wiki.meadtools.com/en/ingredients/fruit",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "Guidance on sourcing and using whole fruit in melomels and cysers, including freezing, primary vs. secondary addition, and cyser-specific tips.",
       "keywords": [
         "fruit",
@@ -561,9 +494,7 @@
       "title": "Herbs and Spices",
       "url": "https://wiki.meadtools.com/en/ingredients/herbs_and_spices",
       "level": 1,
-      "category": [
-        "Ingredients"
-      ],
+      "category": ["Ingredients"],
       "summary": "A reference list of common metheglin herbs and spices, sourcing/storage tips, and extraction methods (tea, tincture, direct addition).",
       "keywords": [
         "herbs",
@@ -587,10 +518,7 @@
       "title": "Process Summary",
       "url": "https://wiki.meadtools.com/en/process/process_summary",
       "level": 1,
-      "category": [
-        "Process",
-        "Preparation"
-      ],
+      "category": ["Process", "Preparation"],
       "summary": "A dense, all-in-one walkthrough of a brew day and fermentation, using Meadcalc/BatchBuildr, YAN calculations, and staggered nutrients, plus a terminology table (ABV, OG, FG, YAN, SNA).",
       "keywords": [
         "process overview",
@@ -618,9 +546,7 @@
       "title": "General Safety",
       "url": "https://wiki.meadtools.com/en/process/general_safety",
       "level": 1,
-      "category": [
-        "Safety"
-      ],
+      "category": ["Safety"],
       "summary": "Covers safe handling of glass, plastic, stainless, and pressure equipment, plus mold/bacteria risks and bottle-bomb prevention.",
       "keywords": [
         "safety",
@@ -645,10 +571,7 @@
       "title": "Cleaning",
       "url": "https://wiki.meadtools.com/en/process/cleaning",
       "level": 1,
-      "category": [
-        "Process",
-        "Preparation"
-      ],
+      "category": ["Process", "Preparation"],
       "summary": "Distinguishes cleaning from sanitizing and covers brushes, cleansers (PBW, One-Step), and hot-water rinses for different equipment types.",
       "keywords": [
         "cleaning",
@@ -660,18 +583,13 @@
         "brushes",
         "hot water rinse"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/process/sanitation"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/process/sanitation"]
     },
     {
       "title": "Sanitation",
       "url": "https://wiki.meadtools.com/en/process/sanitation",
       "level": 1,
-      "category": [
-        "Process",
-        "Preparation"
-      ],
+      "category": ["Process", "Preparation"],
       "summary": "Details sanitizer options (Star San, iodine, potassium metabisulfite, heat) and exactly what/when to sanitize throughout the process.",
       "keywords": [
         "sanitation",
@@ -691,10 +609,7 @@
       "title": "Yeast Rehydration",
       "url": "https://wiki.meadtools.com/en/process/rehydration",
       "level": 1,
-      "category": [
-        "Process",
-        "Preparation"
-      ],
+      "category": ["Process", "Preparation"],
       "summary": "Step-by-step rehydration and attemperation procedures using GoFerm to maximize yeast viability before pitching.",
       "keywords": [
         "rehydration",
@@ -713,10 +628,7 @@
       "title": "pH Adjustment",
       "url": "https://wiki.meadtools.com/en/process/ph_adjustment",
       "level": 1,
-      "category": [
-        "Process",
-        "Preparation"
-      ],
+      "category": ["Process", "Preparation"],
       "summary": "Explains when (rarely) pH adjustment is needed, safe pH ranges, and additives like potassium carbonate/bicarbonate.",
       "keywords": [
         "pH",
@@ -737,10 +649,7 @@
       "title": "Fermentation",
       "url": "https://wiki.meadtools.com/en/process/fermentation",
       "level": 1,
-      "category": [
-        "Process",
-        "Fermentation"
-      ],
+      "category": ["Process", "Fermentation"],
       "summary": "Overview of the variables (yeast, OG, oxygen, nutrients, temperature, pH) that shape fermentation, plus a phase-by-phase breakdown from lag to post-fermentation aging.",
       "keywords": [
         "fermentation",
@@ -765,10 +674,7 @@
       "title": "Aeration & Degassing",
       "url": "https://wiki.meadtools.com/en/process/aeration_degassing",
       "level": 1,
-      "category": [
-        "Process",
-        "Fermentation"
-      ],
+      "category": ["Process", "Fermentation"],
       "summary": "Explains why and how to aerate and degas must during early fermentation, and cautions around fruit/adjunct caps trapping CO2.",
       "keywords": [
         "aeration",
@@ -790,10 +696,7 @@
       "title": "Staggered Nutrient Additions",
       "url": "https://wiki.meadtools.com/en/process/staggered_nutrient_additions",
       "level": 1,
-      "category": [
-        "Process",
-        "Fermentation"
-      ],
+      "category": ["Process", "Fermentation"],
       "summary": "Explains the rationale for SNA (smoothing fermentation temperature/speed spikes to reduce fusel alcohols) with a worked nutrient example.",
       "keywords": [
         "SNA",
@@ -813,10 +716,7 @@
       "title": "Nutrient Schedules",
       "url": "https://wiki.meadtools.com/en/process/nutrient_schedules",
       "level": 1,
-      "category": [
-        "Process",
-        "Fermentation"
-      ],
+      "category": ["Process", "Fermentation"],
       "summary": "Compares specific nutrient protocols (Upfront, TOSNA, Balathustrius, Bray Denard) with their ingredients and dosing steps.",
       "keywords": [
         "nutrient schedules",
@@ -838,10 +738,7 @@
       "title": "Step Feeding",
       "url": "https://wiki.meadtools.com/en/process/step_feeding",
       "level": 1,
-      "category": [
-        "Process",
-        "Fermentation"
-      ],
+      "category": ["Process", "Fermentation"],
       "summary": "Explains adding honey in steps during fermentation to reduce stress on yeast, push past alcohol tolerance, or make sweet mead without stabilizers.",
       "keywords": [
         "step feeding",
@@ -860,10 +757,7 @@
       "title": "Stabilization",
       "url": "https://wiki.meadtools.com/en/process/stabilization",
       "level": 1,
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "The definitive guide to stabilizing mead via chemical additives, alcohol tolerance, sterile filtration, or pasteurization, with dosing charts.",
       "keywords": [
         "stabilization",
@@ -886,10 +780,7 @@
       "title": "Bench Trials",
       "url": "https://wiki.meadtools.com/en/process/bench_trials",
       "level": 1,
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "A methodology for testing acid/tannin/sweetness/fining doses on small samples using stock solutions before scaling to a full batch.",
       "keywords": [
         "bench trials",
@@ -911,10 +802,7 @@
       "title": "Back Sweetening",
       "url": "https://wiki.meadtools.com/en/process/back_sweeten",
       "level": 1,
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "Process for sweetening a stabilized mead to a target gravity, with a honey-dose formula and non-fermentable sugar alternatives.",
       "keywords": [
         "back sweetening",
@@ -934,10 +822,7 @@
       "title": "Fining Agents",
       "url": "https://wiki.meadtools.com/en/process/fining",
       "level": 1,
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "An extensive reference on clarifying mead with bentonite, gelatin, isinglass, chitosan, kieselsol, and other agents, including dosing, pairing, and pectin haze fixes.",
       "keywords": [
         "fining agents",
@@ -963,10 +848,7 @@
       "title": "Aging",
       "url": "https://wiki.meadtools.com/en/process/aging",
       "level": 1,
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "Covers bulk and bottle aging, headspace/oxidation management, and cork selection and quality for long-term storage.",
       "keywords": [
         "aging",
@@ -990,10 +872,7 @@
       "title": "Packaging",
       "url": "https://wiki.meadtools.com/en/process/packaging",
       "level": 1,
-      "category": [
-        "Process",
-        "Packaging"
-      ],
+      "category": ["Process", "Packaging"],
       "summary": "Bottle and closure selection (corks, crown caps, EZ caps), a full bottling procedure, and a kegging overview.",
       "keywords": [
         "bottling",
@@ -1015,9 +894,7 @@
       "title": "Equipment Overview",
       "url": "https://wiki.meadtools.com/en/resources/equipment",
       "level": 1,
-      "category": [
-        "Resources"
-      ],
+      "category": ["Resources"],
       "summary": "A comprehensive equipment checklist spanning sanitation, fermentation vessels, measuring tools (hydrometers, scales), and packaging gear.",
       "keywords": [
         "equipment",
@@ -1042,9 +919,7 @@
       "title": "Additive Weight to Volume Conversions",
       "url": "https://wiki.meadtools.com/en/resources/additive_weight_to_volume_conversions",
       "level": 1,
-      "category": [
-        "Resources"
-      ],
+      "category": ["Resources"],
       "summary": "A quick reference table converting common additive weights (Fermaid O/K, GoFerm, honey, potassium sorbate) to teaspoon measures.",
       "keywords": [
         "weight to volume",
@@ -1056,24 +931,15 @@
         "potassium sorbate",
         "measurements"
       ],
-      "related_pages": [
-        "https://wiki.meadtools.com/en/ingredients/nutrients"
-      ]
+      "related_pages": ["https://wiki.meadtools.com/en/ingredients/nutrients"]
     },
     {
       "title": "Advanced Nutrients in Mead Making",
       "url": "https://wiki.meadtools.com/en/resources/advanced_nutrients",
       "level": 1,
-      "category": [
-        "Resources"
-      ],
+      "category": ["Resources"],
       "summary": "Points to an external, frequently-updated white paper on YAN and nutrition rather than duplicating fast-changing content on the wiki itself.",
-      "keywords": [
-        "advanced nutrients",
-        "YAN",
-        "white paper",
-        "nutrition"
-      ],
+      "keywords": ["advanced nutrients", "YAN", "white paper", "nutrition"],
       "related_pages": [
         "https://wiki.meadtools.com/en/ingredients/nutrients",
         "https://wiki.meadtools.com/en/process/nutrient_schedules"
@@ -1083,9 +949,7 @@
       "title": "Additional Reading",
       "url": "https://wiki.meadtools.com/en/resources/reading_list",
       "level": 1,
-      "category": [
-        "Resources"
-      ],
+      "category": ["Resources"],
       "summary": "A curated list of books (The Compleat Meadmaker, Understanding Wine Chemistry) and online references considered cornerstones of meadmaking.",
       "keywords": [
         "reading list",
@@ -1104,9 +968,7 @@
       "title": "Academic Journals",
       "url": "https://wiki.meadtools.com/en/resources/academic_journals",
       "level": 1,
-      "category": [
-        "Resources"
-      ],
+      "category": ["Resources"],
       "summary": "Summaries of peer-reviewed studies on yeast nitrogen metabolism, fusel alcohols, and mead-specific fermentation experiments.",
       "keywords": [
         "academic journals",
@@ -1127,9 +989,7 @@
       "title": "Style Guidelines",
       "url": "https://wiki.meadtools.com/en/guides/style_guidelines",
       "level": 1,
-      "category": [
-        "Guides"
-      ],
+      "category": ["Guides"],
       "summary": "Summarizes BJCP mead style categories (traditional, fruit, spiced, specialty) plus community style names not in the BJCP guidelines (acerglyn, bochet, capsicumel).",
       "keywords": [
         "BJCP",
@@ -1155,10 +1015,7 @@
       "title": "Starter Recipes",
       "url": "https://wiki.meadtools.com/en/recipes",
       "level": 1,
-      "category": [
-        "Recipes",
-        "Official"
-      ],
+      "category": ["Recipes", "Official"],
       "summary": "Index of wiki-maintained starter recipes across beginner, traditional, metheglin, melomel, cyser, capsicumel, hydromel, and other categories.",
       "keywords": [
         "recipes",
@@ -1181,10 +1038,7 @@
       "title": "User Recipes",
       "url": "https://wiki.meadtools.com/en/userrecipes",
       "level": 1,
-      "category": [
-        "Recipes",
-        "User"
-      ],
+      "category": ["Recipes", "User"],
       "summary": "Crowdsourced recipe index covering a wide range of fruits, spices, and styles (traditional, cyser, bochet, capsicumel, metheglin, braggot, acerglyn, melomel) contributed by wiki users.",
       "keywords": [
         "user recipes",
@@ -1212,10 +1066,7 @@
         "https://wiki.meadtools.com/en/please_help",
         "https://wiki.meadtools.com/en/process/aging"
       ],
-      "category": [
-        "Guides",
-        "Process - Post-Fermentation"
-      ],
+      "category": ["Guides", "Process - Post-Fermentation"],
       "summary": "Explains effective vs. ineffective filtration, commercial units like the Buon Vino Minijet, absolute vs. nominal pore ratings, and a full DIY keg-to-keg filtration protocol.",
       "keywords": [
         "filtration",
@@ -1237,13 +1088,8 @@
       "title": "Balancing",
       "url": "https://wiki.meadtools.com/en/process/balancing",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/please_help"
-      ],
-      "category": [
-        "Process",
-        "Post-Fermentation"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/please_help"],
+      "category": ["Process", "Post-Fermentation"],
       "summary": "Explains how sweetness, acidity, tannin, and alcohol interact to create a balanced mead, cautions against acetic/fatty acids, and recommends bench trials for tuning.",
       "keywords": [
         "balance",
@@ -1265,13 +1111,8 @@
       "title": "Guides: Competition",
       "url": "https://wiki.meadtools.com/en/guides/competition",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/please_help"
-      ],
-      "category": [
-        "Guides",
-        "Stub"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/please_help"],
+      "category": ["Guides", "Stub"],
       "summary": "Flagged on the wiki's \"Please Help\" list as needing content; intended to cover entering meads into competitions (e.g., BJCP-judged events).",
       "keywords": [
         "competitions",
@@ -1288,13 +1129,8 @@
       "title": "Guides: Barrels",
       "url": "https://wiki.meadtools.com/en/guides/barrels",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/please_help"
-      ],
-      "category": [
-        "Guides",
-        "Stub"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/please_help"],
+      "category": ["Guides", "Stub"],
       "summary": "Flagged as needing content; intended to cover barrel and oak aging of mead (oak types, toast levels, barrel vs. chips/cubes).",
       "keywords": [
         "barrels",
@@ -1313,13 +1149,8 @@
       "title": "Guides: Fruit",
       "url": "https://wiki.meadtools.com/en/guides/fruit",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/please_help"
-      ],
-      "category": [
-        "Guides",
-        "Stub"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/please_help"],
+      "category": ["Guides", "Stub"],
       "summary": "Flagged as needing content; envisioned to cover fruit selection, fruit presses, and using bulk frozen must (BFM) in melomels.",
       "keywords": [
         "fruit guide",
@@ -1338,15 +1169,8 @@
       "title": "Beginner Recipe: Basic Traditional",
       "url": "https://wiki.meadtools.com/en/recipes/beginner/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Beginner",
-        "Traditional"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Beginner", "Traditional"],
       "summary": "A thorough one-gallon beginner traditional mead recipe by /u/StormBeforeDawn, intended to finish sweet and be drinkable within 3-6 months; walks through must mixing, fermentation, racking, and bottling in detail.",
       "keywords": [
         "basic traditional",
@@ -1366,15 +1190,8 @@
       "title": "Beginner Recipe: Basic Metheglin",
       "url": "https://wiki.meadtools.com/en/recipes/beginner/0002",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Beginner",
-        "Metheglin"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Beginner", "Metheglin"],
       "summary": "A one-gallon beginner spiced mead (metheglin) recipe by /u/StormBeforeDawn, following the same simple, thoroughly-explained format as the other beginner recipes.",
       "keywords": [
         "basic metheglin",
@@ -1393,15 +1210,8 @@
       "title": "Beginner Recipe: Basic Melomel",
       "url": "https://wiki.meadtools.com/en/recipes/beginner/0003",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Beginner",
-        "Melomel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Beginner", "Melomel"],
       "summary": "A one-gallon beginner fruit mead (melomel) recipe by /u/Delta-Hotel, scaled and explained for first-time brewers.",
       "keywords": [
         "basic melomel",
@@ -1420,15 +1230,8 @@
       "title": "Beginner Recipe: Basic Cyser",
       "url": "https://wiki.meadtools.com/en/recipes/beginner/0004",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Beginner",
-        "Cyser"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Beginner", "Cyser"],
       "summary": "A one-gallon beginner cyser (apple melomel) recipe by /u/StormBeforeDawn, technically a melomel but apple-forward enough to be classed as cyser; intended to finish sweet.",
       "keywords": [
         "basic cyser",
@@ -1447,14 +1250,8 @@
       "title": "Traditional Recipe (5-gallon)",
       "url": "https://wiki.meadtools.com/en/recipes/traditionals/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Traditional"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Traditional"],
       "summary": "A five-gallon advanced traditional mead recipe by /u/StormBeforeDawn, calibrated for brewers already familiar with process fundamentals.",
       "keywords": [
         "traditional mead recipe",
@@ -1472,14 +1269,8 @@
       "title": "Metheglin Recipe: Rhodomel",
       "url": "https://wiki.meadtools.com/en/recipes/metheglins/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Metheglin"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Metheglin"],
       "summary": "A five-gallon rose-flavored metheglin recipe (rhodomel) by /u/StormBeforeDawn.",
       "keywords": [
         "rhodomel",
@@ -1497,14 +1288,8 @@
       "title": "Metheglin Recipe: Chai Metheglin",
       "url": "https://wiki.meadtools.com/en/recipes/metheglins/0002",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Metheglin"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Metheglin"],
       "summary": "A five-gallon chai-spiced metheglin recipe by /u/StormBeforeDawn and /u/Cyberrequin, using classic chai spices (cinnamon, cardamom, ginger, clove).",
       "keywords": [
         "chai metheglin",
@@ -1522,20 +1307,10 @@
       "title": "Melomel Recipe: Cherry Melomel",
       "url": "https://wiki.meadtools.com/en/recipes/melomels/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Melomel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Melomel"],
       "summary": "A five-gallon cherry-flavored melomel recipe by /u/StormBeforeDawn.",
-      "keywords": [
-        "cherry melomel",
-        "fruit mead recipe",
-        "StormBeforeDawn"
-      ],
+      "keywords": ["cherry melomel", "fruit mead recipe", "StormBeforeDawn"],
       "related_pages": [
         "https://wiki.meadtools.com/en/recipes",
         "https://wiki.meadtools.com/en/ingredients/fruit",
@@ -1546,14 +1321,8 @@
       "title": "Melomel Recipe: Blackberry Orange Blossom Melomel",
       "url": "https://wiki.meadtools.com/en/recipes/melomels/0002",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Melomel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Melomel"],
       "summary": "A five-gallon melomel recipe by /u/StormBeforeDawn combining blackberries with orange blossom honey.",
       "keywords": [
         "blackberry melomel",
@@ -1571,20 +1340,10 @@
       "title": "Cyser Recipe: Standard Cyser",
       "url": "https://wiki.meadtools.com/en/recipes/cysers/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Cyser"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Cyser"],
       "summary": "A five-gallon standard apple-based cyser recipe by /u/StormBeforeDawn.",
-      "keywords": [
-        "standard cyser",
-        "apple mead recipe",
-        "StormBeforeDawn"
-      ],
+      "keywords": ["standard cyser", "apple mead recipe", "StormBeforeDawn"],
       "related_pages": [
         "https://wiki.meadtools.com/en/recipes",
         "https://wiki.meadtools.com/en/ingredients/fruit",
@@ -1595,14 +1354,8 @@
       "title": "Capsicumel Recipe: Oaked, Smoked Capsicumel",
       "url": "https://wiki.meadtools.com/en/recipes/capsicumels/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Capsicumel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Capsicumel"],
       "summary": "A five-gallon chili pepper mead (capsicumel) recipe by /u/balathustrius, featuring oak and smoked-pepper character.",
       "keywords": [
         "capsicumel",
@@ -1621,14 +1374,8 @@
       "title": "Hydromel Recipe: Sparkling Hydromel",
       "url": "https://wiki.meadtools.com/en/recipes/hydromels/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Hydromel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Hydromel"],
       "summary": "A five-gallon low-ABV, carbonated hydromel recipe by /u/balathustrius.",
       "keywords": [
         "hydromel",
@@ -1647,14 +1394,8 @@
       "title": "Other Recipe: Bochet",
       "url": "https://wiki.meadtools.com/en/recipes/other/0001",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Bochet"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Bochet"],
       "summary": "A five-gallon caramelized-honey mead (bochet) recipe by /u/StormBeforeDawn.",
       "keywords": [
         "bochet",
@@ -1672,14 +1413,8 @@
       "title": "Other Recipe: Braggot",
       "url": "https://wiki.meadtools.com/en/recipes/other/0002",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/recipes"
-      ],
-      "category": [
-        "Recipes",
-        "Official",
-        "Braggot"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/recipes"],
+      "category": ["Recipes", "Official", "Braggot"],
       "summary": "A five-gallon malt-and-honey braggot recipe by /u/StormBeforeDawn and /u/DarkoKun.",
       "keywords": [
         "braggot",
@@ -1698,14 +1433,8 @@
       "title": "User Recipes: Traditional (Dwojniak Traditional)",
       "url": "https://wiki.meadtools.com/en/userrecipes/traditional",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Traditional"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Traditional"],
       "summary": "User-submitted traditional mead recipes, including a Dwojniak Traditional (a strong, syrupy Polish-style traditional mead with a high honey-to-water ratio).",
       "keywords": [
         "dwojniak",
@@ -1723,14 +1452,8 @@
       "title": "User Recipes: Cyser (Champagne Cyser)",
       "url": "https://wiki.meadtools.com/en/userrecipes/cyser",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Cyser"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Cyser"],
       "summary": "User-submitted cyser recipes for apple-forward meads, including a Champagne Cyser: a carbonated, bottle-conditioned apple mead using Belle Saison yeast, Fermaid O, and a priming-sugar/yeast dose per champagne bottle.",
       "keywords": [
         "champagne cyser",
@@ -1750,14 +1473,8 @@
       "title": "User Recipes: Bochet",
       "url": "https://wiki.meadtools.com/en/userrecipes/bochet",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Bochet"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Bochet"],
       "summary": "User-submitted caramelized-honey mead recipes for any mead with toffee, marshmallow, or bitter-chocolate notes, including Bochet #1, Bible Black, Pomegranate Bochet, and Boysenberry Bochet (5-gallon batches).",
       "keywords": [
         "bochet",
@@ -1777,14 +1494,8 @@
       "title": "User Recipes: Capsicumel",
       "url": "https://wiki.meadtools.com/en/userrecipes/capsicumel",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Capsicumel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Capsicumel"],
       "summary": "User-submitted chili pepper mead recipes covering everything from mild jalapenos to superhot peppers, including Reaper 2 and Mango Habanero 4 (1-gallon batches).",
       "keywords": [
         "capsicumel",
@@ -1804,14 +1515,8 @@
       "title": "User Recipes: Metheglin",
       "url": "https://wiki.meadtools.com/en/userrecipes/metheglin",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Metheglin"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Metheglin"],
       "summary": "User-submitted herb/spice-forward mead recipes (fruit and floral/tea additions welcome), including Meadow Queen's Delight (meadowfoam honey with Queen Anne's lace, vanilla, cardamom, cinnamon, and nutmeg), Chai Cyser, and Rhodomel 2.",
       "keywords": [
         "metheglin",
@@ -1831,14 +1536,8 @@
       "title": "User Recipes: Braggot",
       "url": "https://wiki.meadtools.com/en/userrecipes/braggot",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Braggot"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Braggot"],
       "summary": "User-submitted malt-and-honey braggot recipes, including Elderflower Braggot and Hefeweizen Mark 2.",
       "keywords": [
         "braggot",
@@ -1857,14 +1556,8 @@
       "title": "User Recipes: Acerglyn",
       "url": "https://wiki.meadtools.com/en/userrecipes/acerglyn",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Acerglyn"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Acerglyn"],
       "summary": "User-submitted maple-syrup mead (acerglyn) recipes, including The Lumberjack.",
       "keywords": [
         "acerglyn",
@@ -1881,14 +1574,8 @@
       "title": "User Recipes: Melomel",
       "url": "https://wiki.meadtools.com/en/userrecipes/melomel",
       "level": 2,
-      "parent_pages": [
-        "https://wiki.meadtools.com/en/userrecipes"
-      ],
-      "category": [
-        "Recipes",
-        "User",
-        "Melomel"
-      ],
+      "parent_pages": ["https://wiki.meadtools.com/en/userrecipes"],
+      "category": ["Recipes", "User", "Melomel"],
       "summary": "The largest user-recipe category, covering fruit meads across many fruits and combinations: Viking Blod, Cherry Superfruit, Wedding Wine #3, The Viking Midget, Pineapple Grapefruit 3, Triple Berry Crusher V4, Mango Peppercorn, Blackberry Mead 2.0, Mango Habanero Crusher, and Orange Cranberry V3.",
       "keywords": [
         "melomel",

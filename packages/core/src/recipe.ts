@@ -51,7 +51,7 @@ export const WEIGHT_TO_KG: Record<WeightUnit, number> = {
   kg: 1,
   g: 0.001,
   lb: 0.45359237,
-  oz: 0.028349523125
+  oz: 0.028349523125,
 };
 
 export const VOLUME_TO_L: Record<VolumeUnit, number> = {
@@ -64,14 +64,14 @@ export const VOLUME_TO_L: Record<VolumeUnit, number> = {
   imp_gal: 4.54609,
   imp_qt: 1.1365225,
   imp_pt: 0.56826125,
-  imp_fl_oz: 0.0284130625
+  imp_fl_oz: 0.0284130625,
 };
 
 export const KG_TO_WEIGHT: Record<WeightUnit, number> = {
   kg: 1,
   g: 1000,
   lb: 2.2046226218,
-  oz: 35.27396195
+  oz: 35.27396195,
 };
 
 export const L_TO_VOLUME: Record<VolumeUnit, number> = {
@@ -84,14 +84,14 @@ export const L_TO_VOLUME: Record<VolumeUnit, number> = {
   imp_gal: 0.2199692483,
   imp_qt: 0.879876993,
   imp_pt: 1.759753986,
-  imp_fl_oz: 35.19507973
+  imp_fl_oz: 35.19507973,
 };
 
 export const fmt = (value: number) =>
   Number.isFinite(value) ? value.toFixed(3) : "0.000";
 
 export function normalizeIngredientLine(
-  line: IngredientLineInput
+  line: IngredientLineInput,
 ): NormalizedIngredientLine {
   const brix = parseNumber(line.brix);
 
@@ -106,7 +106,7 @@ export function normalizeIngredientLine(
       WEIGHT_TO_KG[line.amounts.weight.unit],
     volumeL:
       parseNumber(line.amounts.volume.value) *
-      VOLUME_TO_L[line.amounts.volume.unit]
+      VOLUME_TO_L[line.amounts.volume.unit],
   };
 }
 
@@ -114,12 +114,12 @@ export function calculateBlend(inputs: BlendInput[]) {
   if (inputs.length === 0) return { sg: 1, volumeL: 0 };
 
   const { blendedValue, totalVolume } = blendValues(
-    inputs.map((input) => [input.sg, input.volumeL])
+    inputs.map((input) => [input.sg, input.volumeL]),
   );
 
   return {
     sg: blendedValue,
-    volumeL: totalVolume
+    volumeL: totalVolume,
   };
 }
 
@@ -140,21 +140,21 @@ export const HONEY_BRIX = 79.6;
 
 export function calculateHoneyAndWaterL(
   desiredOg: number,
-  totalVolumeL: number
+  totalVolumeL: number,
 ) {
   const honeyOg = toSG(HONEY_BRIX);
   const waterOg = toSG(0);
 
   if (desiredOg < waterOg || desiredOg > honeyOg) {
     throw new Error(
-      `The desired OG (${desiredOg}) must be between ${waterOg} and ${honeyOg}.`
+      `The desired OG (${desiredOg}) must be between ${waterOg} and ${honeyOg}.`,
     );
   }
 
   const honeyL = ((desiredOg - waterOg) * totalVolumeL) / (honeyOg - waterOg);
   return {
     honeyL,
-    waterL: totalVolumeL - honeyL
+    waterL: totalVolumeL - honeyL,
   };
 }
 
@@ -171,7 +171,7 @@ export const ADDITIVE_UNITS = [
   "fl_oz",
   "quarts",
   "gal",
-  "tbsp"
+  "tbsp",
 ] as const;
 
 export type AdditiveUnit = (typeof ADDITIVE_UNITS)[number];
@@ -182,7 +182,9 @@ export type AdditiveUnit = (typeof ADDITIVE_UNITS)[number];
  * builder's generic `units` value rather than creating a product-specific
  * unit such as "bean" or "stick".
  */
-export function normalizeAdditiveUnit(value: string | undefined): AdditiveUnit | undefined {
+export function normalizeAdditiveUnit(
+  value: string | undefined,
+): AdditiveUnit | undefined {
   if (!value) return undefined;
   const unit = value
     .trim()
@@ -252,7 +254,7 @@ export function normalizeAdditiveUnit(value: string | undefined): AdditiveUnit |
     tablet: "units",
     tablets: "units",
     capsule: "units",
-    capsules: "units"
+    capsules: "units",
   };
 
   return aliases[unit];
@@ -276,7 +278,7 @@ export const WEIGHT_TO_G = {
   g: 1,
   kg: 1000,
   oz: 28.349523125,
-  lbs: 453.59237
+  lbs: 453.59237,
 } as const;
 
 export const VOLUME_TO_ML = {
@@ -286,7 +288,7 @@ export const VOLUME_TO_ML = {
   tsp: 4.92892159375,
   tbsp: 14.78676478125,
   quarts: 946.352946,
-  gal: 3785.411784
+  gal: 3785.411784,
 } as const;
 
 export function convertAdditiveAmount(args: {
@@ -316,10 +318,7 @@ export function convertAdditiveAmount(args: {
   return from && to ? fmt((value * from) / to) : amountStr;
 }
 
-export function dosageToAmount(args: {
-  dosage: number;
-  totalVolumeL: number;
-}) {
+export function dosageToAmount(args: { dosage: number; totalVolumeL: number }) {
   return fmt(args.dosage * args.totalVolumeL * L_TO_VOLUME.gal);
 }
 

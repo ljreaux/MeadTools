@@ -17,7 +17,7 @@ export async function getAdditiveCatalogForChat() {
   try {
     chatAdditiveCatalog ??= prisma.additives.findMany({
       select: { id: true, name: true, dosage: true, unit: true },
-      orderBy: { name: "asc" }
+      orderBy: { name: "asc" },
     });
     return await chatAdditiveCatalog;
   } catch (error) {

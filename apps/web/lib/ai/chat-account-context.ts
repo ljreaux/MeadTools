@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 
 export const chatContextSelectionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("recipe"), id: z.number().int().positive() }),
-  z.object({ kind: z.literal("brew"), id: z.string().uuid() })
+  z.object({ kind: z.literal("brew"), id: z.string().uuid() }),
 ]);
 
 export type ChatContextSelection = z.infer<typeof chatContextSelectionSchema>;
@@ -54,13 +54,15 @@ export type SelectedChatContext =
 
 const maxNoteLength = 500;
 
-export async function getChatContextOptions(userId: number): Promise<ChatContextOption[]> {
+export async function getChatContextOptions(
+  userId: number,
+): Promise<ChatContextOption[]> {
   const [recipes, brews] = await Promise.all([
     prisma.recipes.findMany({
       where: { user_id: userId },
       orderBy: { id: "desc" },
       take: 100,
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     }),
     prisma.brews.findMany({
       where: { user_id: userId },
@@ -70,9 +72,9 @@ export async function getChatContextOptions(userId: number): Promise<ChatContext
         id: true,
         name: true,
         stage: true,
-        recipes: { select: { name: true } }
-      }
-    })
+        recipes: { select: { name: true } },
+      },
+    }),
   ]);
 
   return [
@@ -81,13 +83,13 @@ export async function getChatContextOptions(userId: number): Promise<ChatContext
       id: brew.id,
       name: brew.name?.trim() || brew.recipes?.name || "Untitled brew",
       stage: brew.stage,
-      recipeName: brew.recipes?.name ?? null
+      recipeName: brew.recipes?.name ?? null,
     })),
     ...recipes.map((recipe) => ({
       kind: "recipe" as const,
       id: recipe.id,
-      name: recipe.name.trim() || "Untitled recipe"
-    }))
+      name: recipe.name.trim() || "Untitled recipe",
+    })),
   ];
 }
 
@@ -99,12 +101,12 @@ export async function getChatContextOptions(userId: number): Promise<ChatContext
  */
 export async function getSelectedChatContext(
   userId: number,
-  selection: ChatContextSelection
+  selection: ChatContextSelection,
 ): Promise<SelectedChatContext | undefined> {
   if (selection.kind === "recipe") {
     const recipe = await prisma.recipes.findFirst({
       where: { id: selection.id, user_id: userId },
-      select: { id: true, name: true, dataV2: true }
+      select: { id: true, name: true, dataV2: true },
     });
     if (!recipe) return undefined;
 
@@ -114,7 +116,7 @@ export async function getSelectedChatContext(
     return {
       kind: "recipe",
       label: `Recipe: ${name}`,
-      recipe: { id: recipe.id, name, dataV2: parsed.data }
+      recipe: { id: recipe.id, name, dataV2: parsed.data },
     };
   }
 
@@ -140,10 +142,10 @@ export async function getSelectedChatContext(
           note: true,
           gravity: true,
           temperature: true,
-          temp_units: true
-        }
-      }
-    }
+          temp_units: true,
+        },
+      },
+    },
   });
   if (!brew) return undefined;
 
@@ -169,13 +171,15 @@ export async function getSelectedChatContext(
         gravity: numberOrNull(entry.gravity),
         temperature: numberOrNull(entry.temperature),
         temperatureUnit: entry.temp_units,
-        untrustedNote: truncateUntrustedNote(entry.note)
-      }))
-    }
+        untrustedNote: truncateUntrustedNote(entry.note),
+      })),
+    },
   };
 }
 
-function recipeSnapshotFromJson(value: unknown): { name: string; dataV2: RecipeDataV2 } | null {
+function recipeSnapshotFromJson(
+  value: unknown,
+): { name: string; dataV2: RecipeDataV2 } | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const snapshot = value as { name?: unknown; dataV2?: unknown };
   if (typeof snapshot.name !== "string") return null;
@@ -184,7 +188,9 @@ function recipeSnapshotFromJson(value: unknown): { name: string; dataV2: RecipeD
   return { name: snapshot.name, dataV2: parsed.data };
 }
 
-function numberOrNull(value: { toString(): string } | number | null): number | null {
+function numberOrNull(
+  value: { toString(): string } | number | null,
+): number | null {
   if (value === null) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;

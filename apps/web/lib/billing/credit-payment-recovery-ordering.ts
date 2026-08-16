@@ -4,7 +4,7 @@
  * rather than treating it as unrelated.
  */
 export function paymentRecoveryCheckoutDisposition(
-  status: "pending" | "fulfilled" | "failed" | "expired" | "refunded" | null
+  status: "pending" | "fulfilled" | "failed" | "expired" | "refunded" | null,
 ): "defer" | "process" | "ignore" {
   if (status === "pending") return "defer";
   return status === "fulfilled" || status === "refunded" ? "process" : "ignore";
@@ -13,7 +13,7 @@ export function paymentRecoveryCheckoutDisposition(
 /** A completed receipt with no recovery is safe to replay once. */
 export function shouldReplayStoredDispute(
   status: "deferred" | "processed",
-  recoveryExists: boolean
+  recoveryExists: boolean,
 ): boolean {
   return status === "deferred" || !recoveryExists;
 }

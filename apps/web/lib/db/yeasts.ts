@@ -57,9 +57,13 @@ export async function searchYeastsForChat(query: string) {
     const yeasts = await prisma.yeasts.findMany();
     return yeasts
       .sort((left, right) => {
-        const scoreDifference = yeastLookupScore(right, normalized) - yeastLookupScore(left, normalized);
+        const scoreDifference =
+          yeastLookupScore(right, normalized) -
+          yeastLookupScore(left, normalized);
         if (scoreDifference !== 0) return scoreDifference;
-        return `${left.brand} ${left.name}`.localeCompare(`${right.brand} ${right.name}`);
+        return `${left.brand} ${left.name}`.localeCompare(
+          `${right.brand} ${right.name}`,
+        );
       })
       .filter((yeast) => yeastLookupScore(yeast, normalized) > 0)
       .slice(0, 10);
@@ -75,7 +79,7 @@ function normalizeYeastLookup(value: string): string {
 
 function yeastLookupScore(
   yeast: { name: string; brand: string },
-  query: string
+  query: string,
 ): number {
   const name = normalizeYeastLookup(yeast.name);
   const brand = normalizeYeastLookup(yeast.brand);
@@ -88,11 +92,16 @@ function yeastLookupScore(
   if (name === query || combined === query) return 100;
   if (nameWithoutIcv === query || combinedWithoutIcv === query) return 95;
   if (name.includes(query)) return 80;
-  if (nameWithoutIcv.includes(query) || combinedWithoutIcv.includes(query)) return 75;
+  if (nameWithoutIcv.includes(query) || combinedWithoutIcv.includes(query))
+    return 75;
   if (combined.includes(query)) return 70;
   if (query.includes(name) && name.length >= 3) return 60;
   const queryTokens = query.match(/[a-z]+|\d+/g) ?? [];
-  return queryTokens.some((token) => token.length >= 2 && combined.includes(token)) ? 10 : 0;
+  return queryTokens.some(
+    (token) => token.length >= 2 && combined.includes(token),
+  )
+    ? 10
+    : 0;
 }
 
 // Get yeast by ID
@@ -151,7 +160,7 @@ export async function updateYeast(
     tolerance: number;
     lowTemp: number;
     highTemp: number;
-  }>
+  }>,
 ) {
   return prisma.yeasts.update({
     where: { id: parseInt(id, 10) },

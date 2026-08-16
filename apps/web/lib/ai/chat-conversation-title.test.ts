@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   generateChatConversationTitle,
-  sanitizeConversationTitle
+  sanitizeConversationTitle,
 } from "./chat-conversation-title";
 import type { FireworksCompletionRequest } from "./fireworks";
 
@@ -17,11 +17,19 @@ test("conversation titles use one compact tool-free provider request", async () 
         return {
           id: "title-request",
           model: "test-model",
-          message: { role: "assistant", content: "{\"title\":\"Blackberry Mead Recipe\"}" },
-          usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+          message: {
+            role: "assistant",
+            content: '{"title":"Blackberry Mead Recipe"}',
+          },
+          usage: {
+            inputTokens: 12,
+            outputTokens: 4,
+            totalTokens: 16,
+            cachedInputTokens: 0,
+          },
         };
-      }
-    }
+      },
+    },
   });
 
   assert.equal(request?.maxOutputTokens, 32);
@@ -33,7 +41,7 @@ test("conversation titles use one compact tool-free provider request", async () 
     type: "object",
     additionalProperties: false,
     properties: { title: { type: "string" } },
-    required: ["title"]
+    required: ["title"],
   });
   assert.equal(result.title, "Blackberry Mead Recipe");
 });
@@ -48,10 +56,15 @@ test("conversation titles accept a compact plain-text provider response", async 
           id: "title-request",
           model: "test-model",
           message: { role: "assistant", content: "Raspberry Mead Draft" },
-          usage: { inputTokens: 12, outputTokens: 4, totalTokens: 16, cachedInputTokens: 0 }
+          usage: {
+            inputTokens: 12,
+            outputTokens: 4,
+            totalTokens: 16,
+            cachedInputTokens: 0,
+          },
         };
-      }
-    }
+      },
+    },
   });
 
   assert.equal(result.title, "Raspberry Mead Draft");
@@ -59,18 +72,21 @@ test("conversation titles accept a compact plain-text provider response", async 
 
 test("conversation title sanitization falls back to the first message", () => {
   assert.equal(
-    sanitizeConversationTitle("** Blackberry mead! **", "Draft a blackberry mead"),
-    "Blackberry mead"
+    sanitizeConversationTitle(
+      "** Blackberry mead! **",
+      "Draft a blackberry mead",
+    ),
+    "Blackberry mead",
   );
   assert.equal(
     sanitizeConversationTitle(null, " Draft a blackberry mead "),
-    "Draft a blackberry mead"
+    "Draft a blackberry mead",
   );
   assert.equal(
     sanitizeConversationTitle(
       "We need to create a concise title for this MeadTools chat",
-      "Can you help draft a strawberry mead recipe?"
+      "Can you help draft a strawberry mead recipe?",
     ),
-    "Can you help draft a strawberry mead recipe?"
+    "Can you help draft a strawberry mead recipe?",
   );
 });

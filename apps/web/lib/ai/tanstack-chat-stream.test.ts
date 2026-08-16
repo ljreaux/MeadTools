@@ -12,10 +12,16 @@ test("adapts a recipe turn to the TanStack AG-UI event stream", async () => {
     threadId: "thread-1",
     run: async (onEvent) => {
       onEvent({ type: "tool_call", toolName: "search_ingredients" });
-      onEvent({ type: "tool_result", toolName: "search_ingredients", status: "ok" });
+      onEvent({
+        type: "tool_result",
+        toolName: "search_ingredients",
+        status: "ok",
+      });
       return {
         answer: "A concise recipe answer.",
-        toolResults: [{ toolName: "search_ingredients", result: { status: "ok" } }],
+        toolResults: [
+          { toolName: "search_ingredients", result: { status: "ok" } },
+        ],
         usage: {
           provider: "fireworks",
           model: "accounts/fireworks/models/test",
@@ -25,10 +31,10 @@ test("adapts a recipe turn to the TanStack AG-UI event stream", async () => {
           cachedInputTokens: 0,
           requestIds: [],
           toolCalls: 1,
-          latencyMs: 10
-        }
+          latencyMs: 10,
+        },
       };
-    }
+    },
   })) {
     chunks.push(chunk);
   }
@@ -37,15 +43,15 @@ test("adapts a recipe turn to the TanStack AG-UI event stream", async () => {
   assert.deepEqual(
     chunks
       .filter((chunk) => chunk.type === EventType.CUSTOM)
-      .map((chunk) => "name" in chunk ? chunk.name : undefined),
-    ["recipe.tool", "recipe.tool", "recipe.turn"]
+      .map((chunk) => ("name" in chunk ? chunk.name : undefined)),
+    ["recipe.tool", "recipe.tool", "recipe.turn"],
   );
   assert.equal(
     chunks
       .filter((chunk) => chunk.type === EventType.TEXT_MESSAGE_CONTENT)
-      .map((chunk) => "delta" in chunk ? chunk.delta : "")
+      .map((chunk) => ("delta" in chunk ? chunk.delta : ""))
       .join(""),
-    "A concise recipe answer."
+    "A concise recipe answer.",
   );
   assert.equal(chunks.at(-1)?.type, EventType.RUN_FINISHED);
 });
@@ -58,7 +64,7 @@ test("keeps provider transport details out of a streamed chat error", async () =
     threadId: "thread-2",
     run: async () => {
       throw new ChatProviderRequestError("openai", 503);
-    }
+    },
   })) {
     chunks.push(chunk);
   }
@@ -67,6 +73,6 @@ test("keeps provider transport details out of a streamed chat error", async () =
   assert.equal(error?.type, EventType.RUN_ERROR);
   assert.equal(
     "message" in (error ?? {}) ? error.message : undefined,
-    "The recipe assistant is temporarily unavailable. Your credits were not used; please try again."
+    "The recipe assistant is temporarily unavailable. Your credits were not used; please try again.",
   );
 });

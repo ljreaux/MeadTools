@@ -27,16 +27,16 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(
       { contexts: await getChatContextOptions(access.userId) },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Unable to load chatbot context options.", {
       userId: access.userId,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
     return NextResponse.json(
       { error: "Unable to load recipe and brew context." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

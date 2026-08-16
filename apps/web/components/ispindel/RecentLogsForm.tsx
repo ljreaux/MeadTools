@@ -7,7 +7,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/daterange-picker";
@@ -18,23 +18,23 @@ const FormSchema = z
     dateRange: z.object(
       {
         from: z.date(),
-        to: z.date()
+        to: z.date(),
       },
       {
-        error: "Please select a date range"
-      }
-    )
+        error: "Please select a date range",
+      },
+    ),
   })
   .refine((data) => data.dateRange.from <= data.dateRange.to, {
     path: ["dateRange"],
-    message: "From date must be before to date"
+    message: "From date must be before to date",
   });
 
 const DEFAULT_VALUE = {
   dateRange: {
     from: new Date(Date.now() - 86400000),
-    to: new Date()
-  }
+    to: new Date(),
+  },
 };
 
 type RecentLogsFormProps = {
@@ -45,13 +45,13 @@ type RecentLogsFormProps = {
 const RecentLogsForm = ({ onRangeChange }: RecentLogsFormProps) => {
   const form = useForm<z.infer<typeof FormSchema>>({
     defaultValues: DEFAULT_VALUE,
-    resolver: zodResolver(FormSchema)
+    resolver: zodResolver(FormSchema),
   });
 
   const { t } = useTranslation();
 
   async function onSubmit({
-    dateRange: { from, to }
+    dateRange: { from, to },
   }: z.infer<typeof FormSchema>) {
     const startISO = new Date(from.setUTCHours(0, 0, 0, 0)).toISOString();
     const endISO = new Date(to.setUTCHours(23, 59, 59, 999)).toISOString();

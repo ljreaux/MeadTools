@@ -74,16 +74,16 @@ deterministic draft workflow and presents only its validated results.
 These are product and safety boundaries, not conversation rules. Keep them
 deterministic and testable.
 
-| Boundary | Required behavior |
-| --- | --- |
-| Authentication and ownership | Load only the signed-in user's explicitly selected recipe/brew context. Never let the model enumerate other account records or mutate state directly. |
-| Credits, reservations, settlement, and payment holds | Charge and reconcile independently of model prose. An insufficient or restricted balance blocks provider work. |
-| Scope safety | Directly decline clear non-mead requests. Treat ambiguous openers as clarification opportunities, not scope failures. |
-| Tool safety | Restrict wiki retrieval to approved MeadTools URLs, validate redirects/content limits, and never give the model a general web tool. |
-| Calculators and derived recipe values | Use shared MeadTools schemas/core/workflows. Never hand-calculate an exact dose, ABV, gravity, nutrient plan, or recipe payload in prose. |
-| Draft validation | Parse model tool arguments through the shared contracts; never save or render an authoritative recipe from prose. |
-| Mutations | Recipe save and any future brew action remain explicit, visible, ownership-checked confirmations outside the model loop. |
-| Source claims | Brewing process guidance uses a retrieved wiki page and a canonical citation. Distinguish that from a model's clearly labeled recommendation. |
+| Boundary                                             | Required behavior                                                                                                                                     |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication and ownership                         | Load only the signed-in user's explicitly selected recipe/brew context. Never let the model enumerate other account records or mutate state directly. |
+| Credits, reservations, settlement, and payment holds | Charge and reconcile independently of model prose. An insufficient or restricted balance blocks provider work.                                        |
+| Scope safety                                         | Directly decline clear non-mead requests. Treat ambiguous openers as clarification opportunities, not scope failures.                                 |
+| Tool safety                                          | Restrict wiki retrieval to approved MeadTools URLs, validate redirects/content limits, and never give the model a general web tool.                   |
+| Calculators and derived recipe values                | Use shared MeadTools schemas/core/workflows. Never hand-calculate an exact dose, ABV, gravity, nutrient plan, or recipe payload in prose.             |
+| Draft validation                                     | Parse model tool arguments through the shared contracts; never save or render an authoritative recipe from prose.                                     |
+| Mutations                                            | Recipe save and any future brew action remain explicit, visible, ownership-checked confirmations outside the model loop.                              |
+| Source claims                                        | Brewing process guidance uses a retrieved wiki page and a canonical citation. Distinguish that from a model's clearly labeled recommendation.         |
 
 The important rule is: **determinism validates and enforces; it should not
 micromanage the conversation.**
@@ -93,18 +93,36 @@ micromanage the conversation.**
 ### 1. Introduce an explicit conversation-planning contract
 
 Create a shared, transport-free `chat-domain` contract for the planner's
-*intent*, not for a recipe calculation. It should validate a small structured
+_intent_, not for a recipe calculation. It should validate a small structured
 response from the model such as:
 
 ```ts
 type ConversationPlan = {
-  mode: "general_help" | "recipe_exploration" | "recipe_draft" | "process" |
-    "troubleshooting" | "calculator" | "contextual_recipe" | "contextual_brew";
-  nextAction: "answer" | "ask" | "recommend" | "search_wiki" |
-    "search_catalog" | "build_draft" | "route_calculator" | "decline";
+  mode:
+    | "general_help"
+    | "recipe_exploration"
+    | "recipe_draft"
+    | "process"
+    | "troubleshooting"
+    | "calculator"
+    | "contextual_recipe"
+    | "contextual_brew";
+  nextAction:
+    | "answer"
+    | "ask"
+    | "recommend"
+    | "search_wiki"
+    | "search_catalog"
+    | "build_draft"
+    | "route_calculator"
+    | "decline";
   capturedFacts: Array<{ key: string; value: unknown; source: "user" }>;
   proposedAssumptions: Array<{ key: string; value: unknown; reason: string }>;
-  openQuestions: Array<{ key: string; question: string; priority: "now" | "later" }>;
+  openQuestions: Array<{
+    key: string;
+    question: string;
+    priority: "now" | "later";
+  }>;
   needsUserConfirmationBeforeDraft: boolean;
 };
 ```
@@ -164,7 +182,7 @@ one short follow-up.
 1. The brewer explicitly asks for a draft/calculation; or
 2. The planner has sufficient information, proposes defaults, and the brewer
    accepts the proposed direction; or
-3. The planner has enough to produce a *clearly labeled preliminary draft* and
+3. The planner has enough to produce a _clearly labeled preliminary draft_ and
    the product decides this is an allowed beta behavior.
 
 Before calling it, the server creates a complete, validated input from:
@@ -224,12 +242,12 @@ criteria with generic, invented thresholds.
 
 ### 7. Reframe scope handling into hard and soft decisions
 
-| Input type | Handling |
-| --- | --- |
-| Clearly unrelated request: finance, resumes, poems, general coding | Deterministic decline before provider use. |
-| Clearly mead-related request | Continue normally. |
-| Ambiguous opener: "What do I need to get started?" | Ask whether the brewer means getting started with making mead or using MeadTools; do not decline. |
-| Mead-adjacent but unsafe/unsupported request | Explain the supported brewing boundary and offer a nearby MeadTools capability. |
+| Input type                                                         | Handling                                                                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Clearly unrelated request: finance, resumes, poems, general coding | Deterministic decline before provider use.                                                        |
+| Clearly mead-related request                                       | Continue normally.                                                                                |
+| Ambiguous opener: "What do I need to get started?"                 | Ask whether the brewer means getting started with making mead or using MeadTools; do not decline. |
+| Mead-adjacent but unsafe/unsupported request                       | Explain the supported brewing boundary and offer a nearby MeadTools capability.                   |
 
 This retains cost and safety control while stopping the scope guard from
 punishing ordinary human conversational shorthand.
@@ -437,8 +455,8 @@ The conversational policy is ready for beta expansion only when:
 ## Manual review focus
 
 Before merge, manually review the transition with the current evaluator export
-and confirm that the system is becoming *less coercive conversationally* while
-remaining *more explicit at deterministic boundaries*. A reviewer should be
+and confirm that the system is becoming _less coercive conversationally_ while
+remaining _more explicit at deterministic boundaries_. A reviewer should be
 skeptical of any change that adds more historical regex recovery, silently
 changes a stated recipe input, turns an assumption into a fact, or lets prose
 stand in for a MeadTools calculation or wiki source.

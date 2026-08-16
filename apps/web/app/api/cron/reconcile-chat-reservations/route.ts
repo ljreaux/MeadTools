@@ -17,13 +17,16 @@ export async function GET(request: NextRequest) {
   try {
     const [creditReservations, pendingMessages] = await Promise.all([
       reverseAbandonedCreditReservations(),
-      failAbandonedPendingChatMessages()
+      failAbandonedPendingChatMessages(),
     ]);
     return NextResponse.json({ ok: true, creditReservations, pendingMessages });
   } catch (error) {
     console.error("Unable to reconcile interrupted chat turns.", {
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json({ ok: false, error: "Chat reconciliation failed" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Chat reconciliation failed" },
+      { status: 500 },
+    );
   }
 }

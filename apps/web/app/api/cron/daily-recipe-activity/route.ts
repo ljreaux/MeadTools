@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron/authorize-cron";
 import {
   deleteStaleActivityUpdates,
-  sendYesterdayRecipeActivityEmails
+  sendYesterdayRecipeActivityEmails,
 } from "@/lib/db/activityEmailUpdates";
 import { pingPreview } from "@/lib/db/pingPreviewDb";
 import { purgeExpiredChatConversations } from "@/lib/db/chat-conversations";
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (!isAuthorizedCronRequest(authHeader)) {
     return new Response("Unauthorized", {
-      status: 401
+      status: 401,
     });
   }
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     console.error("Error in daily recipe activity cron:", error);
     return NextResponse.json(
       { ok: false, error: "Cron failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

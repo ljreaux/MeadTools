@@ -4,7 +4,7 @@ import {
   type CreditFeePolicy,
   type CreditQuote,
   type ModelTokenPricing,
-  type TokenUsage
+  type TokenUsage,
 } from "@meadtools/credit-accounting";
 
 export const CHAT_THREAD_RETENTION_DAYS = 90;
@@ -23,7 +23,7 @@ export const CHAT_TITLE_RESERVATION_TOKENS = 2_000;
 export const CHAT_TURN_PREAUTHORIZATION_CREDITS = 67;
 /** A 1.5× warning band gives brewers time to top up before chat is blocked. */
 export const CHAT_TURN_CREDIT_WARNING_CREDITS = Math.floor(
-  CHAT_TURN_PREAUTHORIZATION_CREDITS * 1.5
+  CHAT_TURN_PREAUTHORIZATION_CREDITS * 1.5,
 );
 
 export const chatConversationStateSchema = z.enum(["active", "archived"]);
@@ -32,20 +32,24 @@ export const chatMessageStatusSchema = z.enum([
   "pending",
   "complete",
   "failed",
-  "cancelled"
+  "cancelled",
 ]);
 export const chatContextKindSchema = z.enum(["recipe", "brew"]);
 
-export const chatCitationSchema = z.object({
-  title: z.string().trim().min(1).max(240),
-  url: z.string().url().max(2_000)
-}).strict();
+export const chatCitationSchema = z
+  .object({
+    title: z.string().trim().min(1).max(240),
+    url: z.string().url().max(2_000),
+  })
+  .strict();
 
-export const chatContextReferenceSchema = z.object({
-  kind: chatContextKindSchema,
-  recordId: z.string().trim().min(1).max(64),
-  label: z.string().trim().min(1).max(240)
-}).strict();
+export const chatContextReferenceSchema = z
+  .object({
+    kind: chatContextKindSchema,
+    recordId: z.string().trim().min(1).max(64),
+    label: z.string().trim().min(1).max(240),
+  })
+  .strict();
 
 export type ChatConversationState = z.infer<typeof chatConversationStateSchema>;
 export type ChatMessageRole = z.infer<typeof chatMessageRoleSchema>;
@@ -63,7 +67,9 @@ export function conversationTitleFromMessage(message: string): string {
 /** Detects provider thinking/instruction text that should never be user-facing. */
 export function isUnusableConversationTitle(title: string): boolean {
   const normalized = title.trim().replace(/\s+/g, " ");
-  return /\b(we need to|create a concise title|title for (?:this|the) (?:meadtools )?chat|the user (?:says|asked|wants)|need to create)\b/i.test(normalized);
+  return /\b(we need to|create a concise title|title for (?:this|the) (?:meadtools )?chat|the user (?:says|asked|wants)|need to create)\b/i.test(
+    normalized,
+  );
 }
 
 export function conversationExpiresAt(lastActivityAt: Date): Date {
@@ -76,8 +82,10 @@ export function conversationIsAtCapacity(options: {
   messageCount: number;
   contentBytes: number;
 }): boolean {
-  return options.messageCount >= CHAT_THREAD_MAX_MESSAGES ||
-    options.contentBytes >= CHAT_THREAD_MAX_CONTENT_BYTES;
+  return (
+    options.messageCount >= CHAT_THREAD_MAX_MESSAGES ||
+    options.contentBytes >= CHAT_THREAD_MAX_CONTENT_BYTES
+  );
 }
 
 /**
@@ -92,19 +100,24 @@ export function reserveCreditsForBoundedChatTurn(options: {
   pricing: ModelTokenPricing;
   feePolicy: CreditFeePolicy;
 }): CreditQuote {
-  const titleTokens = options.includesTitleGeneration ? CHAT_TITLE_RESERVATION_TOKENS : 0;
+  const titleTokens = options.includesTitleGeneration
+    ? CHAT_TITLE_RESERVATION_TOKENS
+    : 0;
   const maximumQuote = quoteTurnCredits({
     usage: {
       inputTokens: 0,
       cachedInputTokens: 0,
-      outputTokens: options.maxProviderTokens + titleTokens
+      outputTokens: options.maxProviderTokens + titleTokens,
     },
     pricing: options.pricing,
-    feePolicy: options.feePolicy
+    feePolicy: options.feePolicy,
   });
   return {
     ...maximumQuote,
-    chargedCredits: Math.min(maximumQuote.chargedCredits, CHAT_TURN_PREAUTHORIZATION_CREDITS)
+    chargedCredits: Math.min(
+      maximumQuote.chargedCredits,
+      CHAT_TURN_PREAUTHORIZATION_CREDITS,
+    ),
   };
 }
 
@@ -115,13 +128,18 @@ export function quoteCreditsForChatUsage(options: {
   pricing: ModelTokenPricing;
   feePolicy: CreditFeePolicy;
 }): CreditQuote | undefined {
-  if (!Number.isSafeInteger(options.providerCallCount) || options.providerCallCount < 0) {
-    throw new RangeError("Provider call count must be a non-negative safe integer.");
+  if (
+    !Number.isSafeInteger(options.providerCallCount) ||
+    options.providerCallCount < 0
+  ) {
+    throw new RangeError(
+      "Provider call count must be a non-negative safe integer.",
+    );
   }
   if (options.providerCallCount === 0) return undefined;
   return quoteTurnCredits({
     usage: options.usage,
     pricing: options.pricing,
-    feePolicy: options.feePolicy
+    feePolicy: options.feePolicy,
   });
 }

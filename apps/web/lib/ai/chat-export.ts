@@ -25,7 +25,7 @@ export function formatChatSessionMarkdown(options: {
     `- Exported: ${exportedAt.toISOString()}`,
     `- Model: ${model ?? "Not reported"}`,
     "- Storage: Browser session only; this export does not create a saved chat.",
-    ""
+    "",
   ];
 
   const transcript = messages.flatMap((message) => [
@@ -45,10 +45,10 @@ export function formatChatSessionMarkdown(options: {
           `- Model: ${message.usage.model}`,
           `- Tokens: ${message.usage.totalTokens} total (${message.usage.inputTokens} input, ${message.usage.outputTokens} output, ${message.usage.cachedInputTokens} cached input)`,
           `- Tool calls: ${message.usage.toolCalls}`,
-          `- Latency: ${message.usage.latencyMs} ms`
+          `- Latency: ${message.usage.latencyMs} ms`,
         ]
       : []),
-    ""
+    "",
   ]);
 
   return [...header, ...transcript].join("\n");

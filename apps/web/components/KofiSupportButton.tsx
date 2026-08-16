@@ -18,7 +18,8 @@ const KofiButton = () => {
   if (isLoggedIn && isChatAccessLoading) return null;
   // The account chat route already renders the full workspace. Mounting the
   // popup there creates two independent assistants and ambiguous thread state.
-  if (isLoggedIn && chatAccess?.chatEnabled && pathname === "/account/chat") return null;
+  if (isLoggedIn && chatAccess?.chatEnabled && pathname === "/account/chat")
+    return null;
   if (isLoggedIn && chatAccess?.chatEnabled) return <RecipeChatLauncher />;
 
   return (

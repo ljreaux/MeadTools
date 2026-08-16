@@ -6,7 +6,12 @@ import prisma from "@/lib/prisma";
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 
-export type CreditActivityKind = "purchase" | "grant" | "usage" | "refund" | "adjustment";
+export type CreditActivityKind =
+  | "purchase"
+  | "grant"
+  | "usage"
+  | "refund"
+  | "adjustment";
 
 export type CreditActivity = {
   operationId: string;
@@ -80,9 +85,13 @@ export async function getCreditActivityPage(options: {
 
   return {
     activities: visibleRows.map(toCreditActivity),
-    nextCursor: hasNextPage && lastRow
-      ? encodeCursor({ occurredAt: lastRow.last_occurred_at, operationId: lastRow.operation_id })
-      : null
+    nextCursor:
+      hasNextPage && lastRow
+        ? encodeCursor({
+            occurredAt: lastRow.last_occurred_at,
+            operationId: lastRow.operation_id,
+          })
+        : null,
   };
 }
 
@@ -100,7 +109,9 @@ function toCreditActivity(row: CreditActivityRow): CreditActivity {
     row.credits_delta > BigInt(Number.MAX_SAFE_INTEGER) ||
     row.credits_delta < BigInt(Number.MIN_SAFE_INTEGER)
   ) {
-    throw new RangeError("The credit activity amount exceeds JavaScript's safe integer range.");
+    throw new RangeError(
+      "The credit activity amount exceeds JavaScript's safe integer range.",
+    );
   }
 
   return {
@@ -110,7 +121,7 @@ function toCreditActivity(row: CreditActivityRow): CreditActivity {
     kind: activityKindFor(row.entry_types),
     entryTypes: row.entry_types,
     paymentAmountCents: row.source_amount_cents,
-    paymentCurrency: row.source_currency
+    paymentCurrency: row.source_currency,
   };
 }
 
@@ -125,24 +136,38 @@ function activityKindFor(entryTypes: readonly string[]): CreditActivityKind {
 function normalizeLimit(limit: number | undefined): number {
   if (limit === undefined) return DEFAULT_PAGE_SIZE;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_PAGE_SIZE) {
-    throw new RangeError(`Credit history limit must be between 1 and ${MAX_PAGE_SIZE}.`);
+    throw new RangeError(
+      `Credit history limit must be between 1 and ${MAX_PAGE_SIZE}.`,
+    );
   }
   return limit;
 }
 
-function encodeCursor(cursor: { occurredAt: Date; operationId: string }): string {
-  return Buffer.from(JSON.stringify({
-    occurredAt: cursor.occurredAt.toISOString(),
-    operationId: cursor.operationId
-  })).toString("base64url");
+function encodeCursor(cursor: {
+  occurredAt: Date;
+  operationId: string;
+}): string {
+  return Buffer.from(
+    JSON.stringify({
+      occurredAt: cursor.occurredAt.toISOString(),
+      operationId: cursor.operationId,
+    }),
+  ).toString("base64url");
 }
 
-function decodeCursor(value: string): { occurredAt: Date; operationId: string } {
+function decodeCursor(value: string): {
+  occurredAt: Date;
+  operationId: string;
+} {
   try {
-    const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (!isCreditActivityCursor(parsed)) throw new InvalidCreditActivityCursorError();
+    const parsed: unknown = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    );
+    if (!isCreditActivityCursor(parsed))
+      throw new InvalidCreditActivityCursorError();
     const occurredAt = new Date(parsed.occurredAt);
-    if (Number.isNaN(occurredAt.getTime())) throw new InvalidCreditActivityCursorError();
+    if (Number.isNaN(occurredAt.getTime()))
+      throw new InvalidCreditActivityCursorError();
     return { occurredAt, operationId: parsed.operationId };
   } catch (error) {
     if (error instanceof InvalidCreditActivityCursorError) throw error;
@@ -150,13 +175,15 @@ function decodeCursor(value: string): { occurredAt: Date; operationId: string } 
   }
 }
 
-function isCreditActivityCursor(value: unknown): value is { occurredAt: string; operationId: string } {
+function isCreditActivityCursor(
+  value: unknown,
+): value is { occurredAt: string; operationId: string } {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return (
     typeof candidate.occurredAt === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      typeof candidate.operationId === "string" ? candidate.operationId : ""
+      typeof candidate.operationId === "string" ? candidate.operationId : "",
     )
   );
 }

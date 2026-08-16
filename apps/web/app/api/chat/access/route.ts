@@ -25,8 +25,10 @@ export async function GET(request: NextRequest) {
   }
 
   const status = await getChatAccessStatus(userId);
-  return NextResponse.json(chatAccessStatusResponseSchema.parse({
-    ...status,
-    chatEnabled: status.chatEnabled && Boolean(getLocalChatbotConfig())
-  }));
+  return NextResponse.json(
+    chatAccessStatusResponseSchema.parse({
+      ...status,
+      chatEnabled: status.chatEnabled && Boolean(getLocalChatbotConfig()),
+    }),
+  );
 }

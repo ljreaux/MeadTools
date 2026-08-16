@@ -39,7 +39,7 @@ export type LocalChatbotConfig = {
  * access policy, so it can be audited and managed from the admin panel.
  */
 export function getLocalChatbotConfig(
-  environment: Readonly<Record<string, string | undefined>> = process.env
+  environment: Readonly<Record<string, string | undefined>> = process.env,
 ): LocalChatbotConfig | null {
   if (environment.CHATBOT_LOCAL_TEST_ENABLED !== "true") return null;
 
@@ -49,47 +49,48 @@ export function getLocalChatbotConfig(
   return {
     provider: "openai",
     apiKey,
-    model:
-      environment.CHATBOT_OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL,
+    model: environment.CHATBOT_OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL,
     maxOutputTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_OUTPUT_TOKENS,
       DEFAULT_MAX_OUTPUT_TOKENS,
       128,
-      8_000
+      8_000,
     ),
     maxToolCalls: parseBoundedInteger(
       environment.CHATBOT_MAX_TOOL_CALLS,
       DEFAULT_MAX_TOOL_CALLS,
       1,
-      8
+      8,
     ),
     maxProviderCalls: parseBoundedInteger(
       environment.CHATBOT_MAX_PROVIDER_CALLS,
       DEFAULT_MAX_PROVIDER_CALLS,
       1,
-      12
+      12,
     ),
     maxTotalOutputTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_TOTAL_OUTPUT_TOKENS,
       DEFAULT_MAX_TOTAL_OUTPUT_TOKENS,
       256,
-      12_000
+      12_000,
     ),
     maxProviderInputCharacters: parseBoundedInteger(
       environment.CHATBOT_MAX_PROVIDER_INPUT_CHARACTERS,
       DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS,
       8_000,
-      80_000
+      80_000,
     ),
     maxTotalProviderTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_TOTAL_PROVIDER_TOKENS,
       DEFAULT_MAX_TOTAL_PROVIDER_TOKENS,
       8_000,
-      100_000
+      100_000,
     ),
     usageEnvironment: parseUsageEnvironment(
-      environment.CHATBOT_USAGE_ENVIRONMENT ?? environment.VERCEL_ENV ?? "local"
-    )
+      environment.CHATBOT_USAGE_ENVIRONMENT ??
+        environment.VERCEL_ENV ??
+        "local",
+    ),
   };
 }
 
@@ -97,7 +98,7 @@ function parseBoundedInteger(
   value: string | undefined,
   fallback: number,
   minimum: number,
-  maximum: number
+  maximum: number,
 ): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed)) return fallback;

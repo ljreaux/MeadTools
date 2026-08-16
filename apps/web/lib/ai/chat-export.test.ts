@@ -19,10 +19,10 @@ test("exports the in-memory conversation with assistant tool and usage context",
           totalTokens: 160,
           cachedInputTokens: 10,
           toolCalls: 1,
-          latencyMs: 850
-        }
-      }
-    ]
+          latencyMs: 850,
+        },
+      },
+    ],
   });
 
   assert.match(exportText, /Exported: 2026-07-22T15:30:00.000Z/);

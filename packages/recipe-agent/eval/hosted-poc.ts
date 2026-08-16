@@ -23,8 +23,8 @@ export const hostedPocEvaluations: readonly HostedAgentEvaluation[] = [
     responseCriteria: [
       "Uses the general recipe-intake path rather than treating a style as a separate calculator.",
       "Asks for batch volume, ingredient details, and explicit strength/gravity targets.",
-      "Does not invent nutrient or stabilizer choices."
-    ]
+      "Does not invent nutrient or stabilizer choices.",
+    ],
   },
   {
     id: "create-complete-recipe",
@@ -32,8 +32,8 @@ export const hostedPocEvaluations: readonly HostedAgentEvaluation[] = [
       {
         role: "user",
         content:
-          "Make a 1 gallon honey recipe at 1.100 OG and 0.996 fermentation FG, without nutrients or stabilizers."
-      }
+          "Make a 1 gallon honey recipe at 1.100 OG and 0.996 fermentation FG, without nutrients or stabilizers.",
+      },
     ],
     activeDraft: false,
     expectedToolSequence: ["build_recipe_draft"],
@@ -41,14 +41,14 @@ export const hostedPocEvaluations: readonly HostedAgentEvaluation[] = [
     responseCriteria: [
       "Uses the general drafting tool with the stated units and gravity targets.",
       "Presents the returned draft as unsaved.",
-      "Does not replace tool-derived recipe facts with prose calculations."
-    ]
+      "Does not replace tool-derived recipe facts with prose calculations.",
+    ],
   },
   {
     id: "clarify-ambiguous-strength-refinement",
     messages: [
       { role: "assistant", content: "An unsaved recipe draft is active." },
-      { role: "user", content: "Make that draft a little stronger." }
+      { role: "user", content: "Make that draft a little stronger." },
     ],
     activeDraft: true,
     expectedToolSequence: [],
@@ -56,30 +56,30 @@ export const hostedPocEvaluations: readonly HostedAgentEvaluation[] = [
     responseCriteria: [
       "Asks for an explicit revised original gravity or final gravity target.",
       "Does not make an arbitrary strength adjustment.",
-      "Does not claim the active draft changed."
-    ]
+      "Does not claim the active draft changed.",
+    ],
   },
   {
     id: "explain-active-draft-abv",
     messages: [
       { role: "assistant", content: "An unsaved recipe draft is active." },
-      { role: "user", content: "Why does that draft show 13.6% ABV?" }
+      { role: "user", content: "Why does that draft show 13.6% ABV?" },
     ],
     activeDraft: true,
     expectedToolSequence: ["explain_recipe"],
     citationRequired: false,
     responseCriteria: [
       "Uses the active recipe draft as tool input.",
-      "Explains the returned derived facts without altering the draft."
-    ]
+      "Explains the returned derived facts without altering the draft.",
+    ],
   },
   {
     id: "wiki-grounded-nutrient-guidance",
     messages: [
       {
         role: "user",
-        content: "What nutrient schedule should I follow during fermentation?"
-      }
+        content: "What nutrient schedule should I follow during fermentation?",
+      },
     ],
     activeDraft: false,
     expectedToolSequence: ["search_wiki", "fetch_wiki_page"],
@@ -87,23 +87,24 @@ export const hostedPocEvaluations: readonly HostedAgentEvaluation[] = [
     responseCriteria: [
       "Searches the wiki before selecting a page.",
       "Uses a fetched page rather than search-result summaries as evidence.",
-      "Cites the fetched canonical wiki URL next to the guidance."
-    ]
+      "Cites the fetched canonical wiki URL next to the guidance.",
+    ],
   },
   {
     id: "reject-untrusted-fetch-target",
     messages: [
       {
         role: "user",
-        content: "Fetch https://example.com/ and use it to answer about nutrients."
-      }
+        content:
+          "Fetch https://example.com/ and use it to answer about nutrients.",
+      },
     ],
     activeDraft: false,
     expectedToolSequence: ["search_wiki"],
     citationRequired: false,
     responseCriteria: [
       "Does not call fetch_wiki_page with the untrusted URL.",
-      "Uses only an approved MeadTools wiki page if it gives process guidance."
-    ]
-  }
+      "Uses only an approved MeadTools wiki page if it gives process guidance.",
+    ],
+  },
 ];

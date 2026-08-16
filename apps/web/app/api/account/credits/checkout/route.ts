@@ -4,7 +4,7 @@ import { verifyUser } from "@/lib/userAccessFunctions";
 import {
   CreditCheckoutUnavailableError,
   UnknownCreditPackError,
-  createCreditCheckout
+  createCreditCheckout,
 } from "@/lib/billing/credit-checkout";
 import { CreditPaymentRestrictedError } from "@/lib/db/credit-accounting";
 import { areCreditPurchasesAvailable } from "@/lib/billing/credit-purchase-config";
@@ -32,13 +32,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!areCreditPurchasesAvailable()) {
-    return NextResponse.json({ error: "Credit purchases are not available." }, { status: 503 });
+    return NextResponse.json(
+      { error: "Credit purchases are not available." },
+      { status: 503 },
+    );
   }
 
   const body = await request.json().catch(() => null);
   const parsed = createCreditCheckoutRequestBodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid credit pack." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid credit pack." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -46,8 +52,14 @@ export async function POST(request: NextRequest) {
     const checkout = await createCreditCheckout({
       userId,
       packId: parsed.data.packId,
-      successUrl: new URL("/account/chat?tab=credits&creditCheckout=success", origin).toString(),
-      cancelUrl: new URL("/account/chat?creditCheckout=cancelled", origin).toString()
+      successUrl: new URL(
+        "/account/chat?tab=credits&creditCheckout=success",
+        origin,
+      ).toString(),
+      cancelUrl: new URL(
+        "/account/chat?creditCheckout=cancelled",
+        origin,
+      ).toString(),
     });
     return NextResponse.json(checkout);
   } catch (error) {
@@ -62,8 +74,11 @@ export async function POST(request: NextRequest) {
     }
     console.error("Unable to create credit checkout.", {
       userId,
-      error: error instanceof Error ? error.message : "unknown"
+      error: error instanceof Error ? error.message : "unknown",
     });
-    return NextResponse.json({ error: "Unable to create credit checkout." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to create credit checkout." },
+      { status: 500 },
+    );
   }
 }

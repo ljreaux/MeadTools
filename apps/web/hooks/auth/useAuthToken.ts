@@ -9,7 +9,7 @@ export function useAuthToken() {
   // for the initial browser render so authenticated API queries do not make a
   // doomed unauthenticated request before the effect below can synchronize.
   const [token, setToken] = useState<string | null>(() =>
-    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null,
   );
 
   useEffect(() => {

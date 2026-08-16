@@ -20,12 +20,7 @@ const eslintConfig = [
       "@typescript-eslint/no-empty-object-type": "off",
     },
   },
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ];
 
 export default eslintConfig;

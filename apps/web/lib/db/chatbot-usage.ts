@@ -18,8 +18,8 @@ export async function recordChatbotUsageStart(options: {
       user_id: options.userId,
       environment: options.environment,
       model: options.model,
-      status: "reserved"
-    }
+      status: "reserved",
+    },
   });
 }
 
@@ -35,9 +35,10 @@ export async function completeChatbotUsage(options: {
   const dayStart = startOfUtcDay(now);
   const providerCalls = options.usage.requestIds.length;
   const totalTokens = normalizedTotalTokens(options.usage);
-  const providerRequestIds = options.usage.requestIds.length > 0
-    ? Prisma.sql`ARRAY[${Prisma.join(options.usage.requestIds)}]::TEXT[]`
-    : Prisma.sql`ARRAY[]::TEXT[]`;
+  const providerRequestIds =
+    options.usage.requestIds.length > 0
+      ? Prisma.sql`ARRAY[${Prisma.join(options.usage.requestIds)}]::TEXT[]`
+      : Prisma.sql`ARRAY[]::TEXT[]`;
 
   return prisma.$transaction(async (tx) => {
     const usageRows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
@@ -62,14 +63,14 @@ export async function completeChatbotUsage(options: {
     if (usageRows.length === 0) {
       const existing = await tx.chatbot_usage_events.findUnique({
         where: { request_id: options.requestId },
-        select: { id: true }
+        select: { id: true },
       });
       return existing?.id;
     }
 
     for (const window of [
       { window: "hour" as const, windowStart: hourStart },
-      { window: "day" as const, windowStart: dayStart }
+      { window: "day" as const, windowStart: dayStart },
     ]) {
       await tx.$executeRaw(Prisma.sql`
         INSERT INTO "chatbot_usage_windows" (

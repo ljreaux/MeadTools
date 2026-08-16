@@ -4,10 +4,11 @@ import type {
   ChatCompletion,
   ChatCompletionRequest,
   ChatModelClient,
-  ChatToolCall
+  ChatToolCall,
 } from "./chat-model";
 
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_CHAT_COMPLETIONS_URL =
+  "https://api.openai.com/v1/chat/completions";
 const OPENAI_REQUEST_TIMEOUT_MS = 60_000;
 
 const toolCallSchema = z.object({
@@ -15,8 +16,8 @@ const toolCallSchema = z.object({
   type: z.literal("function"),
   function: z.object({
     name: z.string().min(1),
-    arguments: z.string()
-  })
+    arguments: z.string(),
+  }),
 });
 
 const completionSchema = z.object({
@@ -29,9 +30,9 @@ const completionSchema = z.object({
         message: z.object({
           role: z.literal("assistant"),
           content: z.string().nullable().optional(),
-          tool_calls: z.array(toolCallSchema).optional()
-        })
-      })
+          tool_calls: z.array(toolCallSchema).optional(),
+        }),
+      }),
     )
     .min(1),
   usage: z
@@ -41,18 +42,20 @@ const completionSchema = z.object({
       total_tokens: z.number().int().nonnegative().optional(),
       prompt_tokens_details: z
         .object({ cached_tokens: z.number().int().nonnegative().optional() })
-        .optional()
+        .optional(),
     })
-    .optional()
+    .optional(),
 });
 
 const errorResponseSchema = z.object({
-  error: z.object({
-    message: z.string().optional(),
-    type: z.string().optional(),
-    code: z.union([z.string(), z.number()]).nullable().optional(),
-    param: z.string().nullable().optional()
-  }).optional()
+  error: z
+    .object({
+      message: z.string().optional(),
+      type: z.string().optional(),
+      code: z.union([z.string(), z.number()]).nullable().optional(),
+      param: z.string().nullable().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -68,7 +71,7 @@ export class OpenAIChatClient implements ChatModelClient {
       apiKey: string;
       model: string;
       fetcher?: typeof fetch;
-    }
+    },
   ) {}
 
   async complete(request: ChatCompletionRequest): Promise<ChatCompletion> {
@@ -78,7 +81,7 @@ export class OpenAIChatClient implements ChatModelClient {
         method: "POST",
         headers: {
           authorization: `Bearer ${this.options.apiKey}`,
-          "content-type": "application/json"
+          "content-type": "application/json",
         },
         body: JSON.stringify({
           model: this.options.model,
@@ -89,18 +92,18 @@ export class OpenAIChatClient implements ChatModelClient {
           ...(request.tools?.length
             ? {
                 tool_choice: request.toolChoice ?? "auto",
-                parallel_tool_calls: false
+                parallel_tool_calls: false,
               }
             : {}),
-          ...(openAIReasoningEffort(request.reasoningEffort)),
+          ...openAIReasoningEffort(request.reasoningEffort),
           ...(request.responseFormat
             ? { response_format: request.responseFormat }
             : {}),
           max_completion_tokens: request.maxOutputTokens,
-          store: false
+          store: false,
         }),
-        signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS)
-      }
+        signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
+      },
     );
 
     if (!response.ok) {
@@ -119,22 +122,26 @@ export class OpenAIChatClient implements ChatModelClient {
       message: {
         role: "assistant",
         content: choice.message.content ?? null,
-        tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined
+        tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined,
       },
       usage: {
         inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
         outputTokens: parsed.data.usage?.completion_tokens ?? 0,
         totalTokens: parsed.data.usage?.total_tokens ?? 0,
         cachedInputTokens:
-          parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0
+          parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
       },
-      finishReason: choice.finish_reason
+      finishReason: choice.finish_reason,
     };
   }
 }
 
-async function openAIRequestError(response: Response): Promise<ChatProviderRequestError> {
-  const parsed = errorResponseSchema.safeParse(await response.json().catch(() => undefined));
+async function openAIRequestError(
+  response: Response,
+): Promise<ChatProviderRequestError> {
+  const parsed = errorResponseSchema.safeParse(
+    await response.json().catch(() => undefined),
+  );
   const error = parsed.success ? parsed.data.error : undefined;
   return new ChatProviderRequestError("openai", response.status, {
     ...(error?.type ? { type: error.type } : {}),
@@ -142,7 +149,9 @@ async function openAIRequestError(response: Response): Promise<ChatProviderReque
       ? { code: String(error.code) }
       : {}),
     ...(error?.param ? { parameter: error.param } : {}),
-    ...(error?.message ? { message: redactProviderErrorMessage(error.message) } : {})
+    ...(error?.message
+      ? { message: redactProviderErrorMessage(error.message) }
+      : {}),
   });
 }
 
@@ -154,7 +163,7 @@ function redactProviderErrorMessage(message: string): string {
 }
 
 function openAIReasoningEffort(
-  effort: ChatCompletionRequest["reasoningEffort"]
+  effort: ChatCompletionRequest["reasoningEffort"],
 ): Record<string, "none" | "low" | "medium" | "high"> {
   if (!effort) return {};
   return { reasoning_effort: effort === "max" ? "high" : effort };

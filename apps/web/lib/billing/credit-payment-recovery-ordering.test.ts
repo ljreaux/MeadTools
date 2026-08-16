@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   paymentRecoveryCheckoutDisposition,
-  shouldReplayStoredDispute
+  shouldReplayStoredDispute,
 } from "./credit-payment-recovery-ordering";
 
 test("an early Stripe dispute is deferred until its Checkout payment is fulfilled", () => {

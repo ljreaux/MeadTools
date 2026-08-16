@@ -11,5 +11,8 @@ test("cron authorization fails closed when its secret is absent or blank", () =>
 test("cron authorization accepts only the configured bearer secret", () => {
   assert.equal(isAuthorizedCronRequest(null, "cron-secret"), false);
   assert.equal(isAuthorizedCronRequest("Bearer wrong", "cron-secret"), false);
-  assert.equal(isAuthorizedCronRequest("Bearer cron-secret", "cron-secret"), true);
+  assert.equal(
+    isAuthorizedCronRequest("Bearer cron-secret", "cron-secret"),
+    true,
+  );
 });

@@ -12,7 +12,8 @@ export default function ChatAccessGate({ children }: { children: ReactNode }) {
   const { data, isLoading } = useChatAccess();
 
   useEffect(() => {
-    if (!isLoading && data && !data.chatEnabled && !data.paymentRestricted) router.replace("/account");
+    if (!isLoading && data && !data.chatEnabled && !data.paymentRestricted)
+      router.replace("/account");
   }, [data, isLoading, router]);
 
   if (isLoading) return <Loading />;

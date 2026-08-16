@@ -81,7 +81,7 @@ export async function getIngredientCatalogForChat() {
         id: true,
         name: true,
         sugar_content: true,
-        category: true
+        category: true,
       },
       orderBy: { name: "asc" },
     });
@@ -141,7 +141,7 @@ export async function updateIngredient(
     sugar_content: number;
     water_content: number;
     category: string;
-  }>
+  }>,
 ) {
   const ingredient = await prisma.ingredients.update({
     where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer

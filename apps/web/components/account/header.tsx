@@ -3,11 +3,18 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  TooltipProvider
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Beer, Droplets, LogOut, Settings, NotebookPen, MessageCircle } from "lucide-react";
+import {
+  Beer,
+  Droplets,
+  LogOut,
+  Settings,
+  NotebookPen,
+  MessageCircle,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
@@ -17,7 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
@@ -29,13 +36,13 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "../ui/select";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
+  InputGroupInput,
 } from "../ui/input-group";
 import { Switch } from "../ui/switch";
 import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
@@ -93,7 +100,10 @@ function Header() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon">
-              <Link href="/account/hydrometer" aria-label={t("iSpindelDashboard.label")}>
+              <Link
+                href="/account/hydrometer"
+                aria-label={t("iSpindelDashboard.label")}
+              >
                 <Droplets className="h-5 w-5" />
               </Link>
             </Button>
@@ -130,7 +140,7 @@ export default Header;
 const SettingsDialog = ({
   username: public_username,
   isGoogleUser,
-  showGoogleAvatar
+  showGoogleAvatar,
 }: {
   username: string | null;
   isGoogleUser: boolean;
@@ -144,7 +154,7 @@ const SettingsDialog = ({
     useState(showGoogleAvatar);
 
   const [preferredUnits, setPreferredUnits] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {

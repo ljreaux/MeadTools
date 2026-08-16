@@ -11,7 +11,7 @@ import {
   isUnusableConversationTitle,
   type ChatCitation,
   type ChatContextReference,
-  type ChatConversationState
+  type ChatConversationState,
 } from "@meadtools/chat-domain";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -35,7 +35,9 @@ export class ChatConversationUnavailableError extends Error {
 
 export class ChatConversationCapacityError extends Error {
   constructor() {
-    super("This chat has reached its message or content limit. Start a new chat to continue.");
+    super(
+      "This chat has reached its message or content limit. Start a new chat to continue.",
+    );
     this.name = "ChatConversationCapacityError";
   }
 }
@@ -43,7 +45,9 @@ export class ChatConversationCapacityError extends Error {
 /** A conversation has an accepted turn that has not reached a terminal state. */
 export class ChatConversationTurnInFlightError extends Error {
   constructor() {
-    super("This chat is still processing its previous message. Please wait for it to finish.");
+    super(
+      "This chat is still processing its previous message. Please wait for it to finish.",
+    );
     this.name = "ChatConversationTurnInFlightError";
   }
 }
@@ -109,8 +113,8 @@ export async function createChatConversation(options: {
       user_id: options.userId,
       title: options.title?.trim().slice(0, 160) || "New chat",
       last_activity_at: now,
-      expires_at: conversationExpiresAt(now)
-    }
+      expires_at: conversationExpiresAt(now),
+    },
   });
   return toStoredConversation(conversation);
 }
@@ -122,7 +126,10 @@ export async function listChatConversations(options: {
   limit?: number;
   before?: Date;
   now?: Date;
-}): Promise<{ conversations: StoredChatConversation[]; nextBefore: string | null }> {
+}): Promise<{
+  conversations: StoredChatConversation[];
+  nextBefore: string | null;
+}> {
   const take = normalizePageSize(options.limit);
   const now = options.now ?? new Date();
   const rows = await prisma.chat_conversations.findMany({
@@ -137,11 +144,11 @@ export async function listChatConversations(options: {
               .split(/\s+/)
               .filter(Boolean)
               .map((term) => ({
-                title: { contains: term, mode: "insensitive" as const }
-              }))
+                title: { contains: term, mode: "insensitive" as const },
+              })),
           }
         : {}),
-      ...(options.before ? { last_activity_at: { lt: options.before } } : {})
+      ...(options.before ? { last_activity_at: { lt: options.before } } : {}),
     },
     orderBy: [{ last_activity_at: "desc" }, { id: "desc" }],
     take: take + 1,
@@ -150,26 +157,28 @@ export async function listChatConversations(options: {
         where: { role: "user" },
         orderBy: { sequence: "asc" },
         take: 1,
-        select: { content: true }
-      }
-    }
+        select: { content: true },
+      },
+    },
   });
   const hasNext = rows.length > take;
-  const conversations = await Promise.all(rows.slice(0, take).map(async (row) => {
-    const fallbackMessage = row.messages[0]?.content;
-    if (!fallbackMessage || !isUnusableConversationTitle(row.title)) {
-      return toStoredConversation(row);
-    }
-    const repaired = await prisma.chat_conversations.update({
-      where: { id: row.id },
-      data: { title: conversationTitleFromMessage(fallbackMessage) }
-    });
-    return toStoredConversation(repaired);
-  }));
+  const conversations = await Promise.all(
+    rows.slice(0, take).map(async (row) => {
+      const fallbackMessage = row.messages[0]?.content;
+      if (!fallbackMessage || !isUnusableConversationTitle(row.title)) {
+        return toStoredConversation(row);
+      }
+      const repaired = await prisma.chat_conversations.update({
+        where: { id: row.id },
+        data: { title: conversationTitleFromMessage(fallbackMessage) },
+      });
+      return toStoredConversation(repaired);
+    }),
+  );
   const last = conversations.at(-1);
   return {
     conversations,
-    nextBefore: hasNext && last ? last.lastActivityAt : null
+    nextBefore: hasNext && last ? last.lastActivityAt : null,
   };
 }
 
@@ -185,8 +194,8 @@ export async function getChatThread(options: {
     where: {
       id: options.conversationId,
       user_id: options.userId,
-      expires_at: { gt: now }
-    }
+      expires_at: { gt: now },
+    },
   });
   if (!conversation) throw new ChatConversationNotFoundError();
 
@@ -194,31 +203,36 @@ export async function getChatThread(options: {
   const rows = await prisma.chat_messages.findMany({
     where: {
       conversation_id: conversation.id,
-      ...(options.beforeSequence ? { sequence: { lt: options.beforeSequence } } : {})
+      ...(options.beforeSequence
+        ? { sequence: { lt: options.beforeSequence } }
+        : {}),
     },
     orderBy: { sequence: "desc" },
-    take: take + 1
+    take: take + 1,
   });
   const hasNext = rows.length > take;
   const messages = rows.slice(0, take).reverse().map(toStoredMessage);
   const latestDraft = await prisma.chat_drafts.findFirst({
     where: { conversation_id: conversation.id },
-    orderBy: { revision: "desc" }
+    orderBy: { revision: "desc" },
   });
 
   const firstUserMessage = messages.find((message) => message.role === "user");
-  const repairedConversation = firstUserMessage && isUnusableConversationTitle(conversation.title)
-    ? await prisma.chat_conversations.update({
-        where: { id: conversation.id },
-        data: { title: conversationTitleFromMessage(firstUserMessage.content) }
-      })
-    : conversation;
+  const repairedConversation =
+    firstUserMessage && isUnusableConversationTitle(conversation.title)
+      ? await prisma.chat_conversations.update({
+          where: { id: conversation.id },
+          data: {
+            title: conversationTitleFromMessage(firstUserMessage.content),
+          },
+        })
+      : conversation;
 
   return {
     conversation: toStoredConversation(repairedConversation),
     messages,
-    nextBeforeSequence: hasNext ? messages.at(0)?.sequence ?? null : null,
-    latestDraft: latestDraft ? toStoredDraft(latestDraft) : null
+    nextBeforeSequence: hasNext ? (messages.at(0)?.sequence ?? null) : null,
+    latestDraft: latestDraft ? toStoredDraft(latestDraft) : null,
   };
 }
 
@@ -232,43 +246,51 @@ export async function appendPendingChatMessage(options: {
   clientMessageId: string;
   content: string;
   now?: Date;
-}): Promise<{ message: StoredChatMessage; duplicate: boolean; isFirstMessage: boolean }> {
+}): Promise<{
+  message: StoredChatMessage;
+  duplicate: boolean;
+  isFirstMessage: boolean;
+}> {
   const now = options.now ?? new Date();
   const content = options.content.trim();
   const contentBytes = Buffer.byteLength(content, "utf8");
 
   return prisma.$transaction(async (tx) => {
-    const conversation = await lockConversation(tx, options.conversationId, options.userId);
+    const conversation = await lockConversation(
+      tx,
+      options.conversationId,
+      options.userId,
+    );
 
     const duplicate = await tx.chat_messages.findUnique({
       where: {
         conversation_id_client_message_id: {
           conversation_id: options.conversationId,
-          client_message_id: options.clientMessageId
-        }
-      }
+          client_message_id: options.clientMessageId,
+        },
+      },
     });
     if (duplicate) {
       return {
         message: toStoredMessage(duplicate),
         duplicate: true,
-        isFirstMessage: false
+        isFirstMessage: false,
       };
     }
     const inFlight = await tx.chat_messages.findFirst({
       where: {
         conversation_id: conversation.id,
         role: "user",
-        status: "pending"
+        status: "pending",
       },
-      select: { id: true }
+      select: { id: true },
     });
     if (inFlight) throw new ChatConversationTurnInFlightError();
     assertConversationCanReceiveMessage(
       conversation,
       now,
       contentBytes + CHAT_THREAD_ASSISTANT_RESERVATION_BYTES,
-      2
+      2,
     );
 
     const sequence = conversation.next_sequence;
@@ -279,8 +301,8 @@ export async function appendPendingChatMessage(options: {
         client_message_id: options.clientMessageId,
         role: "user",
         status: "pending",
-        content
-      }
+        content,
+      },
     });
     await tx.chat_conversations.update({
       where: { id: conversation.id },
@@ -288,15 +310,16 @@ export async function appendPendingChatMessage(options: {
         next_sequence: { increment: 1 },
         message_count: { increment: 1 },
         content_bytes: { increment: contentBytes },
-        ...(conversation.message_count === 0 && conversation.title === "New chat"
+        ...(conversation.message_count === 0 &&
+        conversation.title === "New chat"
           ? { title: conversationTitleFromMessage(content) }
-          : {})
-      }
+          : {}),
+      },
     });
     return {
       message: toStoredMessage(message),
       duplicate: false,
-      isFirstMessage: conversation.message_count === 0
+      isFirstMessage: conversation.message_count === 0,
     };
   });
 }
@@ -314,9 +337,9 @@ export async function getChatProviderHistory(options: {
       id: options.conversationId,
       user_id: options.userId,
       state: "active",
-      expires_at: { gt: now }
+      expires_at: { gt: now },
     },
-    select: { id: true }
+    select: { id: true },
   });
   if (!conversation) throw new ChatConversationUnavailableError();
 
@@ -325,15 +348,15 @@ export async function getChatProviderHistory(options: {
       conversation_id: conversation.id,
       OR: [
         { status: "complete" },
-        { id: options.pendingMessageId, status: "pending" }
-      ]
+        { id: options.pendingMessageId, status: "pending" },
+      ],
     },
     orderBy: { sequence: "desc" },
-    take: CHAT_PROVIDER_HISTORY_MESSAGES
+    take: CHAT_PROVIDER_HISTORY_MESSAGES,
   });
   return messages.reverse().map((message) => ({
     role: message.role,
-    content: message.content
+    content: message.content,
   }));
 }
 
@@ -349,14 +372,14 @@ export async function getLatestChatDraftForProvider(options: {
       id: options.conversationId,
       user_id: options.userId,
       state: "active",
-      expires_at: { gt: now }
+      expires_at: { gt: now },
     },
-    select: { id: true }
+    select: { id: true },
   });
   if (!conversation) throw new ChatConversationUnavailableError();
   const draft = await prisma.chat_drafts.findFirst({
     where: { conversation_id: conversation.id },
-    orderBy: { revision: "desc" }
+    orderBy: { revision: "desc" },
   });
   return draft ? toStoredDraft(draft) : null;
 }
@@ -382,21 +405,28 @@ export async function completeChatTurn(options: {
     latencyMs?: number;
   };
   now?: Date;
-}): Promise<{ assistantMessage: StoredChatMessage; draft: StoredChatDraft | null }> {
+}): Promise<{
+  assistantMessage: StoredChatMessage;
+  draft: StoredChatDraft | null;
+}> {
   const now = options.now ?? new Date();
   const answer = options.answer.trim();
   const answerBytes = Buffer.byteLength(answer, "utf8");
 
   return prisma.$transaction(async (tx) => {
-    const conversation = await lockConversation(tx, options.conversationId, options.userId);
+    const conversation = await lockConversation(
+      tx,
+      options.conversationId,
+      options.userId,
+    );
     assertConversationCanReceiveMessage(conversation, now, answerBytes);
     const pending = await tx.chat_messages.findFirst({
       where: {
         id: options.pendingMessageId,
         conversation_id: conversation.id,
         role: "user",
-        status: "pending"
-      }
+        status: "pending",
+      },
     });
     if (!pending) throw new ChatConversationUnavailableError();
 
@@ -406,28 +436,34 @@ export async function completeChatTurn(options: {
       select: {
         revision: true,
         recipe_draft_input: true,
-        recipe_data: true
-      }
+        recipe_data: true,
+      },
     });
-    const shouldStoreDraft = options.recipeDraftInput !== undefined || options.recipeData !== undefined;
+    const shouldStoreDraft =
+      options.recipeDraftInput !== undefined ||
+      options.recipeData !== undefined;
     const draft = shouldStoreDraft
       ? await tx.chat_drafts.create({
           data: {
             conversation_id: conversation.id,
             revision: (latestDraft?.revision ?? 0) + 1,
-            ...(options.recipeDraftInput !== undefined || latestDraft?.recipe_draft_input !== undefined && latestDraft.recipe_draft_input !== null
+            ...(options.recipeDraftInput !== undefined ||
+            (latestDraft?.recipe_draft_input !== undefined &&
+              latestDraft.recipe_draft_input !== null)
               ? {
-                  recipe_draft_input: (options.recipeDraftInput ?? latestDraft?.recipe_draft_input) as
-                    Prisma.InputJsonValue
+                  recipe_draft_input: (options.recipeDraftInput ??
+                    latestDraft?.recipe_draft_input) as Prisma.InputJsonValue,
                 }
               : {}),
-            ...(options.recipeData !== undefined || latestDraft?.recipe_data !== undefined && latestDraft.recipe_data !== null
+            ...(options.recipeData !== undefined ||
+            (latestDraft?.recipe_data !== undefined &&
+              latestDraft.recipe_data !== null)
               ? {
-                  recipe_data: (options.recipeData ?? latestDraft?.recipe_data) as
-                    Prisma.InputJsonValue
+                  recipe_data: (options.recipeData ??
+                    latestDraft?.recipe_data) as Prisma.InputJsonValue,
                 }
-              : {})
-          }
+              : {}),
+          },
         })
       : null;
 
@@ -442,12 +478,12 @@ export async function completeChatTurn(options: {
           ? { citations: options.citations as Prisma.InputJsonValue }
           : {}),
         ...(draft ? { draft_id: draft.id } : {}),
-        completed_at: now
-      }
+        completed_at: now,
+      },
     });
     await tx.chat_messages.update({
       where: { id: pending.id },
-      data: { status: "complete", completed_at: now }
+      data: { status: "complete", completed_at: now },
     });
     if (options.contexts?.length) {
       await tx.chat_message_contexts.createMany({
@@ -455,23 +491,25 @@ export async function completeChatTurn(options: {
           message_id: pending.id,
           kind: context.kind,
           record_id: context.recordId,
-          label: context.label
+          label: context.label,
         })),
-        skipDuplicates: true
+        skipDuplicates: true,
       });
     }
     await tx.chat_generations.create({
       data: {
         message_id: assistant.id,
-        ...(options.generation.usageEventId ? { usage_event_id: options.generation.usageEventId } : {}),
+        ...(options.generation.usageEventId
+          ? { usage_event_id: options.generation.usageEventId }
+          : {}),
         provider: options.generation.provider,
         model: options.generation.model,
         status: options.generation.status,
         ...(options.generation.latencyMs !== undefined
           ? { latency_ms: options.generation.latencyMs }
           : {}),
-        completed_at: now
-      }
+        completed_at: now,
+      },
     });
     await tx.chat_conversations.update({
       where: { id: conversation.id },
@@ -480,12 +518,12 @@ export async function completeChatTurn(options: {
         message_count: { increment: 1 },
         content_bytes: { increment: answerBytes },
         last_activity_at: now,
-        expires_at: conversationExpiresAt(now)
-      }
+        expires_at: conversationExpiresAt(now),
+      },
     });
     return {
       assistantMessage: toStoredMessage(assistant),
-      draft: draft ? toStoredDraft(draft) : null
+      draft: draft ? toStoredDraft(draft) : null,
     };
   });
 }
@@ -502,9 +540,9 @@ export async function failPendingChatMessage(options: {
       id: options.pendingMessageId,
       conversation_id: options.conversationId,
       status: "pending",
-      conversation: { user_id: options.userId }
+      conversation: { user_id: options.userId },
     },
-    data: { status: "failed", completed_at: now }
+    data: { status: "failed", completed_at: now },
   });
   if (result.count === 0) throw new ChatConversationNotFoundError();
 }
@@ -522,14 +560,15 @@ export async function failAbandonedPendingChatMessages(options?: {
   now?: Date;
 }): Promise<{ failed: number }> {
   const now = options?.now ?? new Date();
-  const olderThan = options?.olderThan ?? new Date(now.getTime() - 60 * 60 * 1000);
+  const olderThan =
+    options?.olderThan ?? new Date(now.getTime() - 60 * 60 * 1000);
   const result = await prisma.chat_messages.updateMany({
     where: {
       role: "user",
       status: "pending",
-      created_at: { lte: olderThan }
+      created_at: { lte: olderThan },
     },
-    data: { status: "failed", completed_at: now }
+    data: { status: "failed", completed_at: now },
   });
   return { failed: result.count };
 }
@@ -541,18 +580,22 @@ export async function updateChatConversationState(options: {
   title?: string;
 }): Promise<StoredChatConversation> {
   if (options.state === undefined && options.title === undefined) {
-    throw new Error("A chat conversation update must include a title or state.");
+    throw new Error(
+      "A chat conversation update must include a title or state.",
+    );
   }
   const result = await prisma.chat_conversations.updateMany({
     where: { id: options.conversationId, user_id: options.userId },
     data: {
       ...(options.state !== undefined ? { state: options.state } : {}),
-      ...(options.title !== undefined ? { title: options.title.trim().slice(0, 160) } : {})
-    }
+      ...(options.title !== undefined
+        ? { title: options.title.trim().slice(0, 160) }
+        : {}),
+    },
   });
   if (result.count === 0) throw new ChatConversationNotFoundError();
   const conversation = await prisma.chat_conversations.findUniqueOrThrow({
-    where: { id: options.conversationId }
+    where: { id: options.conversationId },
   });
   return toStoredConversation(conversation);
 }
@@ -562,14 +605,16 @@ export async function deleteChatConversation(options: {
   conversationId: string;
 }): Promise<void> {
   const result = await prisma.chat_conversations.deleteMany({
-    where: { id: options.conversationId, user_id: options.userId }
+    where: { id: options.conversationId, user_id: options.userId },
   });
   if (result.count === 0) throw new ChatConversationNotFoundError();
 }
 
-export async function purgeExpiredChatConversations(now = new Date()): Promise<number> {
+export async function purgeExpiredChatConversations(
+  now = new Date(),
+): Promise<number> {
   const result = await prisma.chat_conversations.deleteMany({
-    where: { expires_at: { lte: now } }
+    where: { expires_at: { lte: now } },
   });
   return result.count;
 }
@@ -577,7 +622,7 @@ export async function purgeExpiredChatConversations(now = new Date()): Promise<n
 async function lockConversation(
   tx: Prisma.TransactionClient,
   conversationId: string,
-  userId: number
+  userId: number,
 ): Promise<LockedConversation> {
   const rows = await tx.$queryRaw<LockedConversation[]>(Prisma.sql`
     SELECT "id", "title", "state", "next_sequence", "message_count", "content_bytes", "expires_at"
@@ -594,7 +639,7 @@ function assertConversationCanReceiveMessage(
   conversation: LockedConversation,
   now: Date,
   additionalBytes: number,
-  additionalMessageCount = 1
+  additionalMessageCount = 1,
 ) {
   if (conversation.state !== "active" || conversation.expires_at <= now) {
     throw new ChatConversationUnavailableError();
@@ -602,9 +647,10 @@ function assertConversationCanReceiveMessage(
   if (
     conversationIsAtCapacity({
       messageCount: conversation.message_count,
-      contentBytes: conversation.content_bytes
+      contentBytes: conversation.content_bytes,
     }) ||
-    conversation.message_count + additionalMessageCount > CHAT_THREAD_MAX_MESSAGES ||
+    conversation.message_count + additionalMessageCount >
+      CHAT_THREAD_MAX_MESSAGES ||
     conversation.content_bytes + additionalBytes > CHAT_THREAD_MAX_CONTENT_BYTES
   ) {
     throw new ChatConversationCapacityError();
@@ -636,7 +682,7 @@ function toStoredConversation(conversation: {
     lastActivityAt: conversation.last_activity_at.toISOString(),
     expiresAt: conversation.expires_at.toISOString(),
     createdAt: conversation.created_at.toISOString(),
-    updatedAt: conversation.updated_at.toISOString()
+    updatedAt: conversation.updated_at.toISOString(),
   };
 }
 
@@ -660,7 +706,7 @@ function toStoredMessage(message: {
     content: message.content,
     citations: citationsFromJson(message.citations),
     createdAt: message.created_at.toISOString(),
-    completedAt: message.completed_at?.toISOString() ?? null
+    completedAt: message.completed_at?.toISOString() ?? null,
   };
 }
 
@@ -678,7 +724,7 @@ function toStoredDraft(draft: {
     recipeDraftInput: draft.recipe_draft_input,
     recipeData: draft.recipe_data,
     savedRecipeId: draft.saved_recipe_id,
-    createdAt: draft.created_at.toISOString()
+    createdAt: draft.created_at.toISOString(),
   };
 }
 

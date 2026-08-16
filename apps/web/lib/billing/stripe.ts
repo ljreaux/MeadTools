@@ -11,7 +11,7 @@ export function getStripeClient(): Stripe | null {
 
   stripeClient ??= new Stripe(secretKey, {
     apiVersion: "2026-07-29.dahlia",
-    typescript: true
+    typescript: true,
   });
   return stripeClient;
 }
@@ -23,7 +23,8 @@ export function getStripeWebhookSecret(): string | null {
 
 /** A server-derived Dashboard URL avoids exposing or duplicating Stripe mode in the client. */
 export function stripeDashboardDisputeUrl(disputeId: string): string {
-  const testMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") ?? false;
+  const testMode =
+    process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") ?? false;
   const path = `disputes/${encodeURIComponent(disputeId)}`;
   return `https://dashboard.stripe.com/${testMode ? "test/" : ""}${path}`;
 }

@@ -1,39 +1,47 @@
 import { z } from "zod";
 
 const isoDateTimeSchema = z.string().datetime({ offset: true });
-export const chatConversationStateResponseSchema = z.enum(["active", "archived"]);
+export const chatConversationStateResponseSchema = z.enum([
+  "active",
+  "archived",
+]);
 export const chatContextKindResponseSchema = z.enum(["recipe", "brew"]);
 
 export const chatConversationIdPathParamsSchema = z.object({
-  conversationId: z.string().uuid()
+  conversationId: z.string().uuid(),
 });
 
 export const chatConversationListQuerySchema = z.object({
   state: chatConversationStateResponseSchema.optional(),
   query: z.string().trim().min(1).max(160).optional(),
   before: isoDateTimeSchema.optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional()
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const chatThreadQuerySchema = z.object({
   beforeSequence: z.coerce.number().int().positive().optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional()
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-export const createChatConversationRequestBodySchema = z.object({
-  title: z.string().trim().min(1).max(160).optional()
-}).strict();
+export const createChatConversationRequestBodySchema = z
+  .object({
+    title: z.string().trim().min(1).max(160).optional(),
+  })
+  .strict();
 
-export const updateChatConversationRequestBodySchema = z.object({
-  title: z.string().trim().min(1).max(160).optional(),
-  state: chatConversationStateResponseSchema.optional()
-}).strict().refine((value) => value.title !== undefined || value.state !== undefined, {
-  message: "At least one conversation field is required."
-});
+export const updateChatConversationRequestBodySchema = z
+  .object({
+    title: z.string().trim().min(1).max(160).optional(),
+    state: chatConversationStateResponseSchema.optional(),
+  })
+  .strict()
+  .refine((value) => value.title !== undefined || value.state !== undefined, {
+    message: "At least one conversation field is required.",
+  });
 
 export const chatCitationResponseSchema = z.object({
   title: z.string(),
-  url: z.string().url()
+  url: z.string().url(),
 });
 
 export const chatConversationResponseSchema = z.object({
@@ -45,7 +53,7 @@ export const chatConversationResponseSchema = z.object({
   lastActivityAt: isoDateTimeSchema,
   expiresAt: isoDateTimeSchema,
   createdAt: isoDateTimeSchema,
-  updatedAt: isoDateTimeSchema
+  updatedAt: isoDateTimeSchema,
 });
 
 export const chatMessageResponseSchema = z.object({
@@ -57,7 +65,7 @@ export const chatMessageResponseSchema = z.object({
   content: z.string(),
   citations: z.array(chatCitationResponseSchema),
   createdAt: isoDateTimeSchema,
-  completedAt: isoDateTimeSchema.nullable()
+  completedAt: isoDateTimeSchema.nullable(),
 });
 
 export const chatDraftResponseSchema = z.object({
@@ -66,37 +74,38 @@ export const chatDraftResponseSchema = z.object({
   recipeDraftInput: z.unknown().nullable(),
   recipeData: z.unknown().nullable(),
   savedRecipeId: z.number().int().nullable(),
-  createdAt: isoDateTimeSchema
+  createdAt: isoDateTimeSchema,
 });
 
 export const chatConversationsResponseSchema = z.object({
   conversations: z.array(chatConversationResponseSchema),
-  nextBefore: isoDateTimeSchema.nullable()
+  nextBefore: isoDateTimeSchema.nullable(),
 });
 
 export const chatConversationThreadResponseSchema = z.object({
   conversation: chatConversationResponseSchema,
   messages: z.array(chatMessageResponseSchema),
   nextBeforeSequence: z.number().int().positive().nullable(),
-  latestDraft: chatDraftResponseSchema.nullable()
+  latestDraft: chatDraftResponseSchema.nullable(),
 });
 
 export const createChatConversationResponseSchema = z.object({
-  conversation: chatConversationResponseSchema
+  conversation: chatConversationResponseSchema,
 });
 
-export const updateChatConversationResponseSchema = createChatConversationResponseSchema;
+export const updateChatConversationResponseSchema =
+  createChatConversationResponseSchema;
 
 export const deleteChatConversationResponseSchema = z.object({
-  deleted: z.literal(true)
+  deleted: z.literal(true),
 });
 
 export const chatConversationErrorResponseSchema = z.object({
-  error: z.string()
+  error: z.string(),
 });
 
 export const chatMessageContextResponseSchema = z.object({
   kind: chatContextKindResponseSchema,
   recordId: z.string(),
-  label: z.string()
+  label: z.string(),
 });

@@ -1,4 +1,7 @@
-import type { ModelTokenPricing, CreditFeePolicy } from "@meadtools/credit-accounting";
+import type {
+  ModelTokenPricing,
+  CreditFeePolicy,
+} from "@meadtools/credit-accounting";
 
 /**
  * Snapshot of Fireworks standard-serverless pricing checked on 2026-08-08.
@@ -12,10 +15,10 @@ export const initialFireworksDeepseekV4FlashPricing = {
   pricing: {
     uncachedInputPicousdPerMillionTokens: BigInt(140_000_000_000),
     cachedInputPicousdPerMillionTokens: BigInt(28_000_000_000),
-    outputPicousdPerMillionTokens: BigInt(280_000_000_000)
+    outputPicousdPerMillionTokens: BigInt(280_000_000_000),
   } satisfies ModelTokenPricing,
   effectiveAt: new Date("2026-08-08T00:00:00.000Z"),
-  sourceUrl: "https://docs.fireworks.ai/serverless/pricing"
+  sourceUrl: "https://docs.fireworks.ai/serverless/pricing",
 } as const;
 
 /**
@@ -29,10 +32,10 @@ export const initialOpenAIGpt54MiniPricing = {
   pricing: {
     uncachedInputPicousdPerMillionTokens: BigInt(750_000_000_000),
     cachedInputPicousdPerMillionTokens: BigInt(75_000_000_000),
-    outputPicousdPerMillionTokens: BigInt(4_500_000_000_000)
+    outputPicousdPerMillionTokens: BigInt(4_500_000_000_000),
   } satisfies ModelTokenPricing,
   effectiveAt: new Date("2026-08-14T00:00:00.000Z"),
-  sourceUrl: "https://openai.com/api/pricing/"
+  sourceUrl: "https://openai.com/api/pricing/",
 } as const;
 
 /**
@@ -44,7 +47,7 @@ export const currentCreditFeePolicy = {
   policy: {
     markupBasisPoints: 7_500,
     fixedTurnCredits: 0,
-    minimumTurnCredits: 1
+    minimumTurnCredits: 1,
   } satisfies CreditFeePolicy,
-  effectiveAt: new Date("2026-08-15T00:00:00.000Z")
+  effectiveAt: new Date("2026-08-15T00:00:00.000Z"),
 } as const;

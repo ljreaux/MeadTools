@@ -2,7 +2,7 @@ import { config } from "dotenv";
 import {
   chat_conversation_state,
   chat_message_role,
-  chat_message_status
+  chat_message_status,
 } from "@prisma/client";
 
 config({ path: "../../.env.local" });
@@ -19,7 +19,7 @@ function assertSafeLocalDatabase() {
   }
   if (process.env.ALLOW_CHAT_TEST_DATA !== "true") {
     throw new Error(
-      'Refusing to run: set ALLOW_CHAT_TEST_DATA="true" to seed local chat test data.'
+      'Refusing to run: set ALLOW_CHAT_TEST_DATA="true" to seed local chat test data.',
     );
   }
 
@@ -27,7 +27,9 @@ function assertSafeLocalDatabase() {
   if (!value) throw new Error("DATABASE_URL is not set.");
   const database = new URL(value).pathname.replace("/", "");
   if (!new Set(["meadtools_dev", "meadtools_test"]).has(database)) {
-    throw new Error("Chat test data can only be seeded into an approved local database.");
+    throw new Error(
+      "Chat test data can only be seeded into an approved local database.",
+    );
   }
 }
 
@@ -53,7 +55,7 @@ async function createDemoConversation(options: {
     role: message.role,
     status: chat_message_status.complete,
     content: message.content,
-    completed_at: options.activityAt
+    completed_at: options.activityAt,
   }));
   await prisma.chat_conversations.create({
     data: {
@@ -65,8 +67,8 @@ async function createDemoConversation(options: {
       content_bytes: textBytes(messages.map((message) => message.content)),
       last_activity_at: options.activityAt,
       expires_at: expiresAt(options.activityAt),
-      messages: { create: messages }
-    }
+      messages: { create: messages },
+    },
   });
 }
 
@@ -75,14 +77,17 @@ async function main() {
   const users = await prisma.users.findMany({
     where: { role: { in: ["admin", "user"] } },
     orderBy: { id: "asc" },
-    select: { id: true }
+    select: { id: true },
   });
   if (users.length === 0) {
     throw new Error("No local admin or user is available for chat test data.");
   }
 
   await prisma.chat_conversations.deleteMany({
-    where: { user_id: { in: users.map((user) => user.id) }, title: { startsWith: TEST_TITLE_PREFIX } }
+    where: {
+      user_id: { in: users.map((user) => user.id) },
+      title: { startsWith: TEST_TITLE_PREFIX },
+    },
   });
 
   const now = new Date();
@@ -110,7 +115,7 @@ async function main() {
     "Vanilla Bean Addition",
     "Blueberry Bochet Revision",
     "Cyser Backsweetening",
-    "Acid Blend Bench Trial"
+    "Acid Blend Bench Trial",
   ];
 
   for (const user of users) {
@@ -125,13 +130,14 @@ async function main() {
         messages: [
           {
             role: chat_message_role.user,
-            content: `Help me with ${topic.toLowerCase()}.`
+            content: `Help me with ${topic.toLowerCase()}.`,
           },
           {
             role: chat_message_role.assistant,
-            content: "This is local persistence test data. No provider call was made."
-          }
-        ]
+            content:
+              "This is local persistence test data. No provider call was made.",
+          },
+        ],
       });
     }
 
@@ -142,9 +148,12 @@ async function main() {
       title: `${TEST_TITLE_PREFIX}Long Transcript Pagination`,
       activityAt: longTranscriptActivity,
       messages: Array.from({ length: 60 }, (_, index) => ({
-        role: index % 2 === 0 ? chat_message_role.user : chat_message_role.assistant,
-        content: `Local transcript message ${index + 1} for pagination testing.`
-      }))
+        role:
+          index % 2 === 0
+            ? chat_message_role.user
+            : chat_message_role.assistant,
+        content: `Local transcript message ${index + 1} for pagination testing.`,
+      })),
     });
 
     const capacityActivity = new Date(now);
@@ -157,12 +166,14 @@ async function main() {
         message_count: 500,
         content_bytes: 0,
         last_activity_at: capacityActivity,
-        expires_at: expiresAt(capacityActivity)
-      }
+        expires_at: expiresAt(capacityActivity),
+      },
     });
   }
 
-  console.log(`Seeded ${users.length * 26} local chat threads, including transcript pagination and capacity-recovery cases.`);
+  console.log(
+    `Seeded ${users.length * 26} local chat threads, including transcript pagination and capacity-recovery cases.`,
+  );
 }
 
 main()

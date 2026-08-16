@@ -6,34 +6,37 @@ export const calculateGravityTargetInputSchema = z
   .object({
     targetAbv: z.number().finite().min(0).max(30),
     fermentationFinalGravity: z.number().finite().min(0.97).max(1.2).optional(),
-    additionalOgPoints: z.number().finite().min(0).max(100).optional()
+    additionalOgPoints: z.number().finite().min(0).max(100).optional(),
   })
   .strict();
 
 const gravityTargetBaseSchema = z.object({
   contractVersion: z.literal(1),
-  operation: z.literal("calculate_gravity_target")
+  operation: z.literal("calculate_gravity_target"),
 });
 
-export const gravityTargetCalculationResultSchema = z.discriminatedUnion("status", [
-  gravityTargetBaseSchema.extend({
-    status: z.literal("needs_input"),
-    questions: z.array(workflowQuestionSchema).min(1)
-  }),
-  gravityTargetBaseSchema.extend({
-    status: z.literal("calculation"),
-    targetAbv: z.number(),
-    fermentationFinalGravity: z.number(),
-    baseOriginalGravity: z.number(),
-    additionalOgPoints: z.number(),
-    targetOriginalGravity: z.number(),
-    calculatedAbvAtTargetOg: z.number()
-  }),
-  gravityTargetBaseSchema.extend({
-    status: z.literal("error"),
-    message: z.string()
-  })
-]);
+export const gravityTargetCalculationResultSchema = z.discriminatedUnion(
+  "status",
+  [
+    gravityTargetBaseSchema.extend({
+      status: z.literal("needs_input"),
+      questions: z.array(workflowQuestionSchema).min(1),
+    }),
+    gravityTargetBaseSchema.extend({
+      status: z.literal("calculation"),
+      targetAbv: z.number(),
+      fermentationFinalGravity: z.number(),
+      baseOriginalGravity: z.number(),
+      additionalOgPoints: z.number(),
+      targetOriginalGravity: z.number(),
+      calculatedAbvAtTargetOg: z.number(),
+    }),
+    gravityTargetBaseSchema.extend({
+      status: z.literal("error"),
+      message: z.string(),
+    }),
+  ],
+);
 
 export type GravityTargetCalculationResult = z.infer<
   typeof gravityTargetCalculationResultSchema
@@ -45,7 +48,7 @@ export type GravityTargetCalculationResult = z.infer<
  * before the user commits to a complete recipe intake.
  */
 export function calculateGravityTarget(
-  rawInput: unknown
+  rawInput: unknown,
 ): GravityTargetCalculationResult {
   const parsed = calculateGravityTargetInputSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -53,7 +56,7 @@ export function calculateGravityTarget(
       contractVersion: 1,
       operation: "calculate_gravity_target",
       status: "error",
-      message: "The gravity target calculation contains invalid values."
+      message: "The gravity target calculation contains invalid values.",
     };
   }
 
@@ -68,9 +71,9 @@ export function calculateGravityTarget(
           field: "fermentationFinalGravity",
           prompt:
             "What fermentation final gravity should MeadTools use for the target ABV calculation?",
-          answerType: "number"
-        }
-      ]
+          answerType: "number",
+        },
+      ],
     };
   }
 
@@ -78,9 +81,10 @@ export function calculateGravityTarget(
     const additionalOgPoints = parsed.data.additionalOgPoints ?? 0;
     const baseOriginalGravity = calcOG(
       parsed.data.targetAbv,
-      parsed.data.fermentationFinalGravity
+      parsed.data.fermentationFinalGravity,
     );
-    const targetOriginalGravity = baseOriginalGravity + additionalOgPoints / 1_000;
+    const targetOriginalGravity =
+      baseOriginalGravity + additionalOgPoints / 1_000;
 
     if (targetOriginalGravity > 1.2) {
       return {
@@ -88,7 +92,7 @@ export function calculateGravityTarget(
         operation: "calculate_gravity_target",
         status: "error",
         message:
-          "The calculated original gravity is above the hosted traditional-mead workflow limit of 1.200."
+          "The calculated original gravity is above the hosted traditional-mead workflow limit of 1.200.",
       };
     }
 
@@ -103,8 +107,8 @@ export function calculateGravityTarget(
       targetOriginalGravity,
       calculatedAbvAtTargetOg: calcABV(
         targetOriginalGravity,
-        parsed.data.fermentationFinalGravity
-      )
+        parsed.data.fermentationFinalGravity,
+      ),
     };
   } catch (error) {
     return {
@@ -114,7 +118,7 @@ export function calculateGravityTarget(
       message:
         error instanceof Error
           ? error.message
-          : "MeadTools could not calculate the gravity target."
+          : "MeadTools could not calculate the gravity target.",
     };
   }
 }

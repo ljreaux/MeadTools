@@ -4,7 +4,7 @@ import {
   calculateNutrientDerivedState,
   initialNutrientData,
   type NutrientData,
-  type NutrientDerivedState
+  type NutrientDerivedState,
 } from "./nutrients";
 import { parseNumber } from "./numeric";
 import {
@@ -17,7 +17,7 @@ import {
   type IngredientLineInput,
   type NormalizedIngredientLine,
   type VolumeUnit,
-  type WeightUnit
+  type WeightUnit,
 } from "./recipe";
 
 export type RecipeDerivedInput = {
@@ -91,18 +91,18 @@ export function calculateRecipeStabilizerResults(args: {
   // actionable in either the recipe builder or a chatbot draft.
   const sorbate = Math.max(
     0,
-    ((-args.abv * 25 + 400) / 0.75) * (args.totalVolumeL / 1000)
+    ((-args.abv * 25 + 400) / 0.75) * (args.totalVolumeL / 1000),
   );
   const multiplier = args.stabilizerType === "kmeta" ? 570 : 674;
   return {
     sorbate,
     sulfite: (args.totalVolumeL * ppm) / multiplier,
-    campden: (ppm / 75) * gallons
+    campden: (ppm / 75) * gallons,
   };
 }
 
 export function calculateRecipeDerivedState(
-  recipeData: RecipeDerivedInput
+  recipeData: RecipeDerivedInput,
 ): RecipeDerivedState {
   const normalized = recipeData.ingredients.map(normalizeIngredientLine);
   const primaryInputs = normalized
@@ -118,12 +118,12 @@ export function calculateRecipeDerivedState(
   const volumeFactor = L_TO_VOLUME[recipeData.unitDefaults.volume];
   const totalForAbv = calculateOriginalGravity([
     ...primaryInputs,
-    ...secondaryInputs
+    ...secondaryInputs,
   ]);
   const secondarySg = calculateOriginalGravity(secondaryInputs);
   const backsweetenedFg = calculateOriginalGravity([
     { sg: parseNumber(recipeData.fg), volumeL: primaryVolumeL },
-    { sg: secondarySg, volumeL: secondaryVolumeL }
+    { sg: secondarySg, volumeL: secondaryVolumeL },
   ]);
   const primaryAbv = calcABV(ogPrimary, parseNumber(recipeData.fg));
   const abv =
@@ -156,11 +156,10 @@ export function calculateRecipeDerivedState(
       inputs: {
         ...nutrients.inputs,
         volume: fmt(primaryVolumeL * volumeFactor),
-        volumeUnits:
-          recipeData.unitDefaults.volume === "gal" ? "gal" : "liter",
-        sg: fmt(nutrientSg)
-      }
-    }
+        volumeUnits: recipeData.unitDefaults.volume === "gal" ? "gal" : "liter",
+        sg: fmt(nutrientSg),
+      },
+    },
   };
 }
 
@@ -191,11 +190,11 @@ export type RecipeDerivedApiResponse<T extends RecipeDerivedInput> = {
 };
 
 export function calculateRecipeDerivedApiResponse<T extends RecipeDerivedInput>(
-  recipeData: T
+  recipeData: T,
 ): RecipeDerivedApiResponse<T> {
   const derived = calculateRecipeDerivedState(recipeData);
   const effectiveNutrients = calculateEffectiveNutrientData(
-    derived.nutrientValueForRecipe
+    derived.nutrientValueForRecipe,
   );
 
   return {
@@ -204,7 +203,7 @@ export function calculateRecipeDerivedApiResponse<T extends RecipeDerivedInput>(
       gravity: {
         ogPrimary: derived.ogPrimary,
         backsweetenedFg: derived.backsweetenedFg,
-        totalForAbv: derived.totalForAbv
+        totalForAbv: derived.totalForAbv,
       },
       volume: {
         unit: derived.volumeUnit,
@@ -213,20 +212,20 @@ export function calculateRecipeDerivedApiResponse<T extends RecipeDerivedInput>(
         total: derived.totalVolume,
         primaryL: derived.primaryVolumeL,
         secondaryL: derived.secondaryVolumeL,
-        totalL: derived.totalVolumeL
+        totalL: derived.totalVolumeL,
       },
       alcohol: {
         abv: derived.abv,
-        delle: derived.delle
+        delle: derived.delle,
       },
       stabilizers: calculateRecipeStabilizerResults({
         addingStabilizers: recipeData.stabilizers.adding,
         phReading: recipeData.stabilizers.phReading,
         stabilizerType: recipeData.stabilizers.type,
         totalVolumeL: derived.totalVolumeL,
-        abv: derived.abv
+        abv: derived.abv,
       }),
-      nutrients: calculateNutrientDerivedState(effectiveNutrients)
-    }
+      nutrients: calculateNutrientDerivedState(effectiveNutrients),
+    },
   };
 }

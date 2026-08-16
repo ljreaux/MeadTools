@@ -8,7 +8,7 @@ export const brewActionStages = [
   "STABILIZED",
   "BACKSWEETENED",
   "PACKAGED",
-  "COMPLETE"
+  "COMPLETE",
 ] as const;
 
 export type BrewActionStage = (typeof brewActionStages)[number];
@@ -48,14 +48,14 @@ export type BrewActionProposal = {
 
 export function createBrewActionProposal(
   target: BrewActionTarget,
-  entry: BrewActionEntryPayload
+  entry: BrewActionEntryPayload,
 ): BrewActionProposal {
   return {
     version: 1,
     kind: "create_brew_entry",
     target,
     summary: describeBrewActionEntry(entry),
-    entry
+    entry,
   };
 }
 
@@ -95,7 +95,9 @@ export function describeBrewActionEntry(entry: BrewActionEntryPayload): string {
 }
 
 function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function formatStage(stage: BrewActionStage): string {

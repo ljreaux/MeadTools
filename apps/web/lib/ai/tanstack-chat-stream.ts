@@ -29,7 +29,7 @@ async function* createStream(options: {
     runId: options.runId,
     threadId: options.threadId,
     model: options.model,
-    timestamp
+    timestamp,
   };
 
   resultPromise.finally(() => toolEvents.close()).catch(() => undefined);
@@ -41,7 +41,7 @@ async function* createStream(options: {
         name: "recipe.tool",
         value: event,
         model: options.model,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
 
@@ -52,14 +52,14 @@ async function* createStream(options: {
       name: "recipe.turn",
       value: { messageId, result },
       model: options.model,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     yield {
       type: EventType.TEXT_MESSAGE_START,
       messageId,
       role: "assistant",
       model: options.model,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     for (const delta of splitForDisplay(result.answer)) {
@@ -68,7 +68,7 @@ async function* createStream(options: {
         messageId,
         delta,
         model: options.model,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
       await new Promise((resolve) => setTimeout(resolve, 12));
     }
@@ -77,7 +77,7 @@ async function* createStream(options: {
       type: EventType.TEXT_MESSAGE_END,
       messageId,
       model: options.model,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     yield {
       type: EventType.RUN_FINISHED,
@@ -85,7 +85,7 @@ async function* createStream(options: {
       threadId: options.threadId,
       model: options.model,
       timestamp: Date.now(),
-      finishReason: "stop"
+      finishReason: "stop",
     };
   } catch (error) {
     const message = userFacingChatError(error);
@@ -96,7 +96,7 @@ async function* createStream(options: {
       model: options.model,
       timestamp: Date.now(),
       message,
-      error: { message }
+      error: { message },
     };
   }
 }

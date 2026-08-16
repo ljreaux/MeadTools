@@ -9,12 +9,15 @@ import { mermaid } from "@streamdown/mermaid";
 import { Check, Copy, ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { memo, useEffect, useState, type ComponentProps, type HTMLAttributes } from "react";
-import { useTranslation } from "react-i18next";
 import {
-  Streamdown,
-  type StreamdownProps
-} from "streamdown";
+  memo,
+  useEffect,
+  useState,
+  type ComponentProps,
+  type HTMLAttributes,
+} from "react";
+import { useTranslation } from "react-i18next";
+import { Streamdown, type StreamdownProps } from "streamdown";
 
 type ChatRole = "user" | "assistant";
 
@@ -28,7 +31,7 @@ export function Message({ className, from, ...props }: MessageProps) {
       className={cn(
         "group flex w-full max-w-[95%] flex-col gap-2",
         from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
-        className
+        className,
       )}
       {...props}
     />
@@ -48,7 +51,7 @@ export function MessageContent({
         "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
         "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
         "group-[.is-assistant]:text-foreground",
-        className
+        className,
       )}
       {...props}
     >
@@ -66,7 +69,7 @@ export const MessageResponse = memo(
     <Streamdown
       className={cn(
         "w-full min-w-0 max-w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className
+        className,
       )}
       components={{ ...components, a: ChatMarkdownLink }}
       // ChatMarkdownLink performs the app's internal-route handling and the
@@ -78,7 +81,8 @@ export const MessageResponse = memo(
     />
   ),
   (previous, next) =>
-    previous.children === next.children && previous.isAnimating === next.isAnimating
+    previous.children === next.children &&
+    previous.isAnimating === next.isAnimating,
 );
 
 MessageResponse.displayName = "MessageResponse";
@@ -94,7 +98,7 @@ function ChatMarkdownLink({
   const [isOpen, setIsOpen] = useState(false);
   const linkClassName = cn(
     "wrap-anywhere font-medium text-primary underline",
-    className
+    className,
   );
 
   if (!href) return <span className={linkClassName}>{children}</span>;
@@ -134,7 +138,7 @@ function ChatLinkSafetyModal({
   isOpen,
   onClose,
   onConfirm,
-  url
+  url,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -202,9 +206,16 @@ function ChatLinkSafetyModal({
           {url}
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button className="flex-1" onClick={() => void copyLink()} type="button" variant="outline">
+          <Button
+            className="flex-1"
+            onClick={() => void copyLink()}
+            type="button"
+            variant="outline"
+          >
             {copied ? <Check /> : <Copy />}
-            {copied ? t("chatbotTest.copiedMessage") : t("chatbotTest.copyLink")}
+            {copied
+              ? t("chatbotTest.copiedMessage")
+              : t("chatbotTest.copyLink")}
           </Button>
           <Button
             className="flex-1"
@@ -220,6 +231,6 @@ function ChatLinkSafetyModal({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

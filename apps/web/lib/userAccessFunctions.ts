@@ -20,21 +20,28 @@ export async function verifyUser(req: NextRequest) {
 
     if (token) {
       if (!ACCESS_TOKEN_SECRET) {
-        console.error("ACCESS_TOKEN_SECRET is not set in environment variables.");
+        console.error(
+          "ACCESS_TOKEN_SECRET is not set in environment variables.",
+        );
         return NextResponse.json(
           { error: "Server misconfiguration" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
       try {
-        const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as { id: number };
+        const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as {
+          id: number;
+        };
         const user = await prisma.users.findUnique({
-          where: { id: decoded.id }
+          where: { id: decoded.id },
         });
 
         if (!user) {
-          return NextResponse.json({ error: "User not found" }, { status: 404 });
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 },
+          );
         }
 
         return user.id;
@@ -48,7 +55,7 @@ export async function verifyUser(req: NextRequest) {
 
     if (session?.user?.email) {
       const user = await prisma.users.findUnique({
-        where: { email: session.user.email }
+        where: { email: session.user.email },
       });
 
       if (user) {
@@ -60,7 +67,7 @@ export async function verifyUser(req: NextRequest) {
     if (session?.user?.id) {
       const user = await prisma.users.findUnique({
         // @ts-expect-error Works fine, but throws a ts error
-        where: { google_id: session.user.id as string }
+        where: { google_id: session.user.id as string },
       });
 
       if (user) {
@@ -70,23 +77,23 @@ export async function verifyUser(req: NextRequest) {
 
     // If no valid userId, return an error
     console.error(
-      "No valid userId found. Invalid token or unauthorized access."
+      "No valid userId found. Invalid token or unauthorized access.",
     );
     return NextResponse.json(
       { error: "Invalid token or unauthorized access" },
-      { status: 401 }
+      { status: 401 },
     );
   } catch (error) {
     console.error("Error verifying user:", error);
     return NextResponse.json(
       { error: "Invalid or expired token" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 }
 
 export async function verifyAdmin(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<number | NextResponse> {
   const userIdOrResponse = await verifyUser(req);
 
@@ -103,7 +110,7 @@ export async function verifyAdmin(
     if (user.role !== "admin") {
       return NextResponse.json(
         { error: "Unauthorized access" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -111,7 +118,7 @@ export async function verifyAdmin(
   } catch {
     return NextResponse.json(
       { error: "Failed to verify admin" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

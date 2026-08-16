@@ -10,7 +10,7 @@ import type {
   BrewAdditionData,
   BrewPackagingData,
   BrewVolumeData,
-  GravityPayloadOptions
+  GravityPayloadOptions,
 } from "@/lib/utils/entryPayload";
 import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 
@@ -98,45 +98,45 @@ type BrewEntryInputCommon = {
 type BrewEntryStageTarget = BrewStage | "STABILIZED" | "BACKSWEETENED";
 
 export type CreateBrewEntryInput =
-  | {
+  | ({
       type:
         | typeof BREW_ENTRY_TYPE.NOTE
         | typeof BREW_ENTRY_TYPE.TASTING
         | typeof BREW_ENTRY_TYPE.ISSUE;
       data?: any | null;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.GRAVITY;
       gravity: number; // required for GRAVITY
       data?: GravityPayloadOptions | null;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.VOLUME;
       data: BrewVolumeData;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.TEMPERATURE;
       temperature: number; // required
       temp_units: TempUnits; // required
       data?: any | null;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.PH;
       // store the pH value in data for now, or add a column later
       data: { ph: number } & Record<string, any>;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.PACKAGING;
       data: BrewPackagingData;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.ADDITION;
       data: BrewAdditionData;
-    } & BrewEntryInputCommon
-  | {
+    } & BrewEntryInputCommon)
+  | ({
       type: typeof BREW_ENTRY_TYPE.STAGE_CHANGE;
       stage_to: BrewEntryStageTarget;
-    } & BrewEntryInputCommon;
+    } & BrewEntryInputCommon);
 
 export type PatchBrewEntryInput = {
   datetime?: string;
@@ -157,11 +157,11 @@ export function useAccountBrews() {
     queryFn: async () => {
       // GET /api/brews -> { brews: BrewListItem[] }
       const res = await fetchWithAuth<{ brews: AccountBrewListItem[] }>(
-        "/api/brews"
+        "/api/brews",
       );
       return res.brews;
     },
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -179,7 +179,7 @@ export function useAccountBrew(brewId?: string) {
     queryFn: async () => {
       return await fetchWithAuth<AccountBrew>(`/api/brews/${brewId}`);
     },
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
   });
 }
 
@@ -203,8 +203,8 @@ export function useCreateAccountBrew() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input)
-        }
+          body: JSON.stringify(input),
+        },
       );
       return res.brew;
     },
@@ -212,9 +212,9 @@ export function useCreateAccountBrew() {
       // insert into list cache (simple + predictable)
       queryClient.setQueryData<AccountBrewListItem[] | undefined>(
         accountBrewsQk.list(),
-        (old) => (old ? [brew, ...old] : [brew])
+        (old) => (old ? [brew, ...old] : [brew]),
       );
-    }
+    },
   });
 }
 
@@ -242,7 +242,7 @@ export function usePatchAccountBrewMetadata() {
   return useMutation({
     mutationFn: async ({
       brewId,
-      input
+      input,
     }: {
       brewId: string;
       input: PatchAccountBrewMetadataInput;
@@ -251,7 +251,7 @@ export function usePatchAccountBrewMetadata() {
       return await fetchWithAuth<AccountBrewListItem>(`/api/brews/${brewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input)
+        body: JSON.stringify(input),
       });
     },
 
@@ -262,21 +262,21 @@ export function usePatchAccountBrewMetadata() {
         (old) =>
           old
             ? old.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
-            : old
+            : old,
       );
 
       // also update detail cache if it exists (only metadata fields)
       queryClient.setQueryData<AccountBrew | undefined>(
         accountBrewsQk.detail(updated.id),
-        (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old)
+        (old) => (old ? ({ ...old, ...updated } as AccountBrew) : old),
       );
       queryClient.invalidateQueries({
-        queryKey: accountBrewsQk.list()
+        queryKey: accountBrewsQk.list(),
       });
       queryClient.invalidateQueries({
-        queryKey: accountBrewsQk.detail(vars.brewId)
+        queryKey: accountBrewsQk.detail(vars.brewId),
       });
-    }
+    },
   });
 }
 
@@ -295,10 +295,10 @@ export function useDeleteAccountBrew() {
     onSuccess: (brewId) => {
       queryClient.setQueryData<AccountBrewListItem[] | undefined>(
         accountBrewsQk.list(),
-        (old) => (old ? old.filter((b) => b.id !== brewId) : old)
+        (old) => (old ? old.filter((b) => b.id !== brewId) : old),
       );
       queryClient.removeQueries({ queryKey: accountBrewsQk.detail(brewId) });
-    }
+    },
   });
 }
 
@@ -316,14 +316,14 @@ export function useLinkHydrometerDeviceToAccountBrew() {
     mutationFn: async ({
       brewId,
       deviceId,
-      fromBrewId
+      fromBrewId,
     }: LinkHydrometerDeviceToAccountBrewInput) => {
       await fetchWithAuth(`/api/brews/${brewId}/attach-device`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          device_id: deviceId
-        })
+          device_id: deviceId,
+        }),
       });
 
       const adoptBody: Record<string, unknown> = { device_id: deviceId };
@@ -339,23 +339,23 @@ export function useLinkHydrometerDeviceToAccountBrew() {
       }>(`/api/brews/${brewId}/adopt-logs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(adoptBody)
+        body: JSON.stringify(adoptBody),
       });
     },
     onSuccess: (_, { brewId, deviceId }) => {
       queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
       queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
       queryClient.invalidateQueries({
-        queryKey: qk.hydrometerBrewLogs(brewId)
+        queryKey: qk.hydrometerBrewLogs(brewId),
       });
       queryClient.invalidateQueries({
-        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId),
       });
       queryClient.invalidateQueries({
-        queryKey: accountBrewsQk.detail(brewId)
+        queryKey: accountBrewsQk.detail(brewId),
       });
       queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
-    }
+    },
   });
 }
 
@@ -366,7 +366,7 @@ export function useUnlinkHydrometerDeviceFromAccountBrew() {
   return useMutation({
     mutationFn: async ({
       brewId,
-      deviceId
+      deviceId,
     }: {
       brewId: string;
       deviceId: string;
@@ -376,8 +376,8 @@ export function useUnlinkHydrometerDeviceFromAccountBrew() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           device_id: deviceId,
-          brew_id: brewId
-        })
+          brew_id: brewId,
+        }),
       });
 
       return { brew, device };
@@ -386,15 +386,15 @@ export function useUnlinkHydrometerDeviceFromAccountBrew() {
       queryClient.invalidateQueries({ queryKey: qk.hydrometerInfo });
       queryClient.invalidateQueries({ queryKey: qk.hydrometerBrews });
       queryClient.invalidateQueries({
-        queryKey: qk.hydrometerBrewLogs(brewId)
+        queryKey: qk.hydrometerBrewLogs(brewId),
       });
       queryClient.invalidateQueries({
-        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId)
+        queryKey: qk.hydrometerDeviceLogsPrefix(deviceId),
       });
       queryClient.invalidateQueries({
-        queryKey: accountBrewsQk.detail(brewId)
+        queryKey: accountBrewsQk.detail(brewId),
       });
       queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
-    }
+    },
   });
 }

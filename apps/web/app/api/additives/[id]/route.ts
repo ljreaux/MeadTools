@@ -16,18 +16,18 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function GET(
   _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const additive = await prisma.additives.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!additive) {
       return NextResponse.json(
         { error: "Additive not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function GET(
     console.error("Error fetching additive:", error);
     return NextResponse.json(
       { error: "Failed to fetch additive" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -58,7 +58,7 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const adminOrResponse = await verifyAdmin(req);
   if (adminOrResponse instanceof NextResponse) return adminOrResponse;
@@ -70,8 +70,8 @@ export async function PATCH(
     const updated = await prisma.additives.update({
       where: { id },
       data: Object.fromEntries(
-        Object.entries(data).filter(([, v]) => v !== undefined)
-      )
+        Object.entries(data).filter(([, v]) => v !== undefined),
+      ),
     });
 
     invalidateChatAdditiveCatalog();
@@ -81,7 +81,7 @@ export async function PATCH(
     console.error("Error updating additive:", error);
     return NextResponse.json(
       { error: "Failed to update additive" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,7 +102,7 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const adminOrResponse = await verifyAdmin(req);
   if (adminOrResponse instanceof NextResponse) return adminOrResponse;
@@ -111,19 +111,19 @@ export async function DELETE(
     const { id } = await params;
 
     const deleted = await prisma.additives.delete({
-      where: { id }
+      where: { id },
     });
 
     invalidateChatAdditiveCatalog();
 
     return NextResponse.json({
-      message: `${deleted.name} has been deleted`
+      message: `${deleted.name} has been deleted`,
     });
   } catch (error: any) {
     console.error("Error deleting additive:", error);
     return NextResponse.json(
       { error: "Failed to delete additive" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

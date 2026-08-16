@@ -82,11 +82,11 @@ export class ChatProviderRequestError extends Error {
       code?: string;
       parameter?: string;
       message?: string;
-    }
+    },
   ) {
     super(
       `${provider} inference failed with HTTP ${status}.` +
-      (details?.message ? ` ${details.message}` : "")
+        (details?.message ? ` ${details.message}` : ""),
     );
     this.name = "ChatProviderRequestError";
   }

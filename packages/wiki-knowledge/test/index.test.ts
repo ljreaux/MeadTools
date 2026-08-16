@@ -5,7 +5,7 @@ import {
   getWikiIndexMetadata,
   loadWikiIndex,
   normalizeWikiUrl,
-  searchWikiIndex
+  searchWikiIndex,
 } from "../src/index";
 
 test("loads the reviewed Modern Meadmaking Wiki catalog", () => {
@@ -24,13 +24,13 @@ test("exposes source metadata while preserving an absent source revision honestl
     crawlScope:
       "Main page + all first-level linked pages + second-level pages discovered within them",
     generated: "2026-07-21",
-    sourceRevision: null
+    sourceRevision: null,
   });
 });
 
 test("ranks a specific process page above broad matches", () => {
   const results = searchWikiIndex("How should I choose a nutrient schedule?", {
-    limit: 3
+    limit: 3,
   });
 
   assert.equal(results[0]?.title, "Nutrient Schedules");
@@ -38,8 +38,8 @@ test("ranks a specific process page above broad matches", () => {
     results.some(
       (result) =>
         result.url ===
-        "https://wiki.meadtools.com/en/process/nutrient_schedules"
-    )
+        "https://wiki.meadtools.com/en/process/nutrient_schedules",
+    ),
   );
 });
 
@@ -54,25 +54,26 @@ test("caps result sets at ten entries", () => {
 test("normalizes a wiki path and rejects off-host URLs", () => {
   assert.equal(
     normalizeWikiUrl("/en/process/nutrient_schedules"),
-    "https://wiki.meadtools.com/en/process/nutrient_schedules"
+    "https://wiki.meadtools.com/en/process/nutrient_schedules",
   );
   assert.throws(
     () => normalizeWikiUrl("https://example.com/"),
-    /only permits wiki\.meadtools\.com/
+    /only permits wiki\.meadtools\.com/,
   );
 });
 
 test("retrieves readable text and same-host links from an approved page", async () => {
   const result = await fetchWikiPage("/en/process/nutrient_schedules", {
-    fetcher: async () => response({
-      body: `
+    fetcher: async () =>
+      response({
+        body: `
         <html><head><title>Nutrient Schedules</title></head><body>
           <nav>Ignore navigation</nav><p>Use nutrients deliberately.</p>
           <a href="/en/ingredients/nutrients">Nutrients</a>
           <a href="https://example.com/">Off-host</a>
           <script>ignore();</script>
-        </body></html>`
-    })
+        </body></html>`,
+      }),
   });
 
   assert.equal(result.title, "Nutrient Schedules");
@@ -81,8 +82,8 @@ test("retrieves readable text and same-host links from an approved page", async 
   assert.deepEqual(result.links, [
     {
       url: "https://wiki.meadtools.com/en/ingredients/nutrients",
-      text: "Nutrients"
-    }
+      text: "Nutrients",
+    },
   ]);
 });
 
@@ -96,11 +97,11 @@ test("validates every redirect target before requesting it", async () => {
           return response({
             status: 302,
             ok: false,
-            headers: headers({ location: "https://example.com/" })
+            headers: headers({ location: "https://example.com/" }),
           });
-        }
+        },
       }),
-    /only permits wiki\.meadtools\.com/
+    /only permits wiki\.meadtools\.com/,
   );
   assert.equal(calls, 1);
 });
@@ -109,9 +110,10 @@ test("rejects non-HTML and oversized responses", async () => {
   await assert.rejects(
     () =>
       fetchWikiPage("/en/home", {
-        fetcher: async () => response({ headers: headers({ "content-type": "application/pdf" }) })
+        fetcher: async () =>
+          response({ headers: headers({ "content-type": "application/pdf" }) }),
       }),
-    /only accepts HTML/
+    /only accepts HTML/,
   );
   await assert.rejects(
     () =>
@@ -120,11 +122,11 @@ test("rejects non-HTML and oversized responses", async () => {
           response({
             headers: headers({
               "content-type": "text/html",
-              "content-length": String(2 * 1024 * 1024 + 1)
-            })
-          })
+              "content-length": String(2 * 1024 * 1024 + 1),
+            }),
+          }),
       }),
-    /size limit/
+    /size limit/,
   );
 });
 
@@ -132,23 +134,27 @@ function headers(values: Record<string, string> = {}) {
   return {
     get(name: string) {
       return values[name.toLowerCase()] ?? null;
-    }
+    },
   };
 }
 
-function response(overrides: {
-  status?: number;
-  ok?: boolean;
-  url?: string;
-  headers?: { get(name: string): string | null };
-  body?: string;
-} = {}) {
+function response(
+  overrides: {
+    status?: number;
+    ok?: boolean;
+    url?: string;
+    headers?: { get(name: string): string | null };
+    body?: string;
+  } = {},
+) {
   const status = overrides.status ?? 200;
   return {
     status,
     ok: overrides.ok ?? (status >= 200 && status < 300),
     url: overrides.url ?? "https://wiki.meadtools.com/en/home",
-    headers: overrides.headers ?? headers({ "content-type": "text/html; charset=utf-8" }),
-    text: async () => overrides.body ?? "<html><body>Content</body></html>"
+    headers:
+      overrides.headers ??
+      headers({ "content-type": "text/html; charset=utf-8" }),
+    text: async () => overrides.body ?? "<html><body>Content</body></html>",
   };
 }

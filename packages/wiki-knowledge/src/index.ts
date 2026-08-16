@@ -8,7 +8,7 @@ const wikiPageSchema = z.object({
   category: z.array(z.string().min(1)),
   summary: z.string().min(1),
   keywords: z.array(z.string().min(1)),
-  related_pages: z.array(z.string().url())
+  related_pages: z.array(z.string().url()),
 });
 
 const wikiIndexSchema = z.object({
@@ -17,7 +17,7 @@ const wikiIndexSchema = z.object({
   crawl_scope: z.string().min(1),
   generated: z.string().min(1),
   source_revision: z.string().min(1).optional(),
-  pages: z.array(wikiPageSchema).min(1)
+  pages: z.array(wikiPageSchema).min(1),
 });
 
 export type WikiPage = z.infer<typeof wikiPageSchema>;
@@ -56,7 +56,11 @@ export type WikiFetchResponse = {
 
 export type WikiFetcher = (
   url: string,
-  init: { headers: Record<string, string>; redirect: "manual"; signal: AbortSignal }
+  init: {
+    headers: Record<string, string>;
+    redirect: "manual";
+    signal: AbortSignal;
+  },
 ) => Promise<WikiFetchResponse>;
 
 export const MEADTOOLS_WIKI_HOST = "wiki.meadtools.com";
@@ -83,7 +87,7 @@ export function getWikiIndexMetadata(): WikiIndexMetadata {
     source: index.source,
     crawlScope: index.crawl_scope,
     generated: index.generated,
-    sourceRevision: index.source_revision ?? null
+    sourceRevision: index.source_revision ?? null,
   };
 }
 
@@ -94,18 +98,22 @@ export function getWikiIndexMetadata(): WikiIndexMetadata {
  */
 export function searchWikiIndex(
   query: string,
-  options: { limit?: number } = {}
+  options: { limit?: number } = {},
 ): WikiSearchResult[] {
   const tokens = queryTokens(query);
   if (tokens.length === 0) return [];
 
   const limit = Math.max(1, Math.min(options.limit ?? 5, 10));
-  return loadWikiIndex().pages
-    .map((page) => ({ page, score: scorePage(page, tokens, normalize(query)) }))
+  return loadWikiIndex()
+    .pages.map((page) => ({
+      page,
+      score: scorePage(page, tokens, normalize(query)),
+    }))
     .filter((candidate) => candidate.score > 0)
     .sort(
       (left, right) =>
-        right.score - left.score || left.page.title.localeCompare(right.page.title)
+        right.score - left.score ||
+        left.page.title.localeCompare(right.page.title),
     )
     .slice(0, limit)
     .map(({ page }) => ({
@@ -114,7 +122,7 @@ export function searchWikiIndex(
       category: page.category,
       summary: page.summary,
       keywords: page.keywords,
-      related_pages: page.related_pages
+      related_pages: page.related_pages,
     }));
 }
 
@@ -125,7 +133,7 @@ export function searchWikiIndex(
  */
 export async function fetchWikiPage(
   input: string,
-  options: { fetcher?: WikiFetcher } = {}
+  options: { fetcher?: WikiFetcher } = {},
 ): Promise<WikiPageContent> {
   let url = normalizeWikiUrl(input);
   const fetcher = options.fetcher ?? defaultWikiFetcher;
@@ -134,7 +142,7 @@ export async function fetchWikiPage(
     const response = await fetcher(url, {
       headers: { accept: "text/html" },
       redirect: "manual",
-      signal: AbortSignal.timeout(10_000)
+      signal: AbortSignal.timeout(10_000),
     });
     if (response.url && !isAllowedWikiUrl(response.url)) {
       throw new Error("Wiki retrieval redirected outside the approved host.");
@@ -143,7 +151,9 @@ export async function fetchWikiPage(
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) {
-        throw new Error("Wiki retrieval received a redirect without a location.");
+        throw new Error(
+          "Wiki retrieval received a redirect without a location.",
+        );
       }
       if (redirects === MAX_REDIRECTS) {
         throw new Error("Wiki retrieval exceeded the redirect limit.");
@@ -182,7 +192,7 @@ export function normalizeWikiUrl(input: string): string {
       ? `https://${MEADTOOLS_WIKI_HOST}${trimmed}`
       : trimmed.includes("://")
         ? trimmed
-        : `https://${trimmed}`
+        : `https://${trimmed}`,
   );
   if (!isAllowedWikiUrl(url.toString())) {
     throw new Error(`Wiki retrieval only permits ${MEADTOOLS_WIKI_HOST}.`);
@@ -201,19 +211,22 @@ function isAllowedWikiUrl(value: string): boolean {
 
 async function defaultWikiFetcher(
   url: string,
-  init: Parameters<typeof fetch>[1]
+  init: Parameters<typeof fetch>[1],
 ): Promise<WikiFetchResponse> {
   return fetch(url, init);
 }
 
 function extractWikiPage(url: string, html: string): WikiPageContent {
   const title = decodeHtml(
-    html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ""
+    html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "",
   ).trim();
   const links = extractLinks(url, html);
   const withoutNonContent = html
     .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<(script|style|nav|footer|header|aside|svg)[^>]*>[\s\S]*?<\/\1>/gi, " ");
+    .replace(
+      /<(script|style|nav|footer|header|aside|svg)[^>]*>[\s\S]*?<\/\1>/gi,
+      " ",
+    );
   const text = decodeHtml(withoutNonContent.replace(/<[^>]+>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
@@ -224,13 +237,14 @@ function extractWikiPage(url: string, html: string): WikiPageContent {
     title,
     text: truncated ? `${text.slice(0, MAX_TEXT_CHARS)}... [truncated]` : text,
     truncated,
-    links
+    links,
   };
 }
 
 function extractLinks(baseUrl: string, html: string): WikiPageLink[] {
   const links: WikiPageLink[] = [];
-  const anchorPattern = /<a\b[^>]*href\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi;
+  const anchorPattern =
+    /<a\b[^>]*href\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi;
 
   for (const match of html.matchAll(anchorPattern)) {
     if (links.length === MAX_LINKS) break;
@@ -238,7 +252,12 @@ function extractLinks(baseUrl: string, html: string): WikiPageLink[] {
     const text = decodeHtml((match[3] ?? "").replace(/<[^>]+>/g, " "))
       .replace(/\s+/g, " ")
       .trim();
-    if (!href || !text || href.startsWith("#") || /^(mailto|javascript):/i.test(href)) {
+    if (
+      !href ||
+      !text ||
+      href.startsWith("#") ||
+      /^(mailto|javascript):/i.test(href)
+    ) {
       continue;
     }
     try {
@@ -280,7 +299,13 @@ function scorePage(page: WikiPage, tokens: string[], phrase: string): number {
 }
 
 function queryTokens(query: string): string[] {
-  return [...new Set(normalize(query).split(" ").filter((token) => token.length >= 2))];
+  return [
+    ...new Set(
+      normalize(query)
+        .split(" ")
+        .filter((token) => token.length >= 2),
+    ),
+  ];
 }
 
 function normalize(value: string): string {

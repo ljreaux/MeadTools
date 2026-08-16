@@ -10,7 +10,7 @@ export const CREDIT_PACK_IDS = ["starter", "standard", "reserve"] as const;
 export const CREDIT_PACKS = [
   { id: "starter", credits: 5_000, amountCents: 500 },
   { id: "standard", credits: 10_000, amountCents: 1_000 },
-  { id: "reserve", credits: 25_000, amountCents: 2_500 }
+  { id: "reserve", credits: 25_000, amountCents: 2_500 },
 ] as const;
 
 export type CreditPackId = (typeof CREDIT_PACK_IDS)[number];
@@ -80,19 +80,31 @@ export class InsufficientCreditsError extends Error {
 /** Calculates the exact provider cost for a measured token usage record. */
 export function calculateProviderCostPicousd(
   usage: TokenUsage,
-  pricing: ModelTokenPricing
+  pricing: ModelTokenPricing,
 ): bigint {
   assertTokenUsage(usage);
-  assertNonNegativeBigInt(pricing.uncachedInputPicousdPerMillionTokens, "uncached input price");
-  assertNonNegativeBigInt(pricing.cachedInputPicousdPerMillionTokens, "cached input price");
-  assertNonNegativeBigInt(pricing.outputPicousdPerMillionTokens, "output price");
+  assertNonNegativeBigInt(
+    pricing.uncachedInputPicousdPerMillionTokens,
+    "uncached input price",
+  );
+  assertNonNegativeBigInt(
+    pricing.cachedInputPicousdPerMillionTokens,
+    "cached input price",
+  );
+  assertNonNegativeBigInt(
+    pricing.outputPicousdPerMillionTokens,
+    "output price",
+  );
 
   const uncachedInputTokens = usage.inputTokens - usage.cachedInputTokens;
   return (
-    BigInt(uncachedInputTokens) * pricing.uncachedInputPicousdPerMillionTokens +
-    BigInt(usage.cachedInputTokens) * pricing.cachedInputPicousdPerMillionTokens +
-    BigInt(usage.outputTokens) * pricing.outputPicousdPerMillionTokens
-  ) / BigInt(1_000_000);
+    (BigInt(uncachedInputTokens) *
+      pricing.uncachedInputPicousdPerMillionTokens +
+      BigInt(usage.cachedInputTokens) *
+        pricing.cachedInputPicousdPerMillionTokens +
+      BigInt(usage.outputTokens) * pricing.outputPicousdPerMillionTokens) /
+    BigInt(1_000_000)
+  );
 }
 
 /**
@@ -102,7 +114,7 @@ export function calculateProviderCostPicousd(
  */
 export function calculateCreditCharge(
   providerCostPicousd: bigint,
-  policy: CreditFeePolicy
+  policy: CreditFeePolicy,
 ): number {
   assertNonNegativeBigInt(providerCostPicousd, "provider cost");
   assertNonNegativeInteger(policy.markupBasisPoints, "markup basis points");
@@ -110,8 +122,9 @@ export function calculateCreditCharge(
   assertNonNegativeInteger(policy.minimumTurnCredits, "minimum turn credits");
 
   const markedUpCost = ceilDivide(
-    providerCostPicousd * (BASIS_POINTS_PER_WHOLE + BigInt(policy.markupBasisPoints)),
-    BASIS_POINTS_PER_WHOLE
+    providerCostPicousd *
+      (BASIS_POINTS_PER_WHOLE + BigInt(policy.markupBasisPoints)),
+    BASIS_POINTS_PER_WHOLE,
   );
   const variableCredits = ceilDivide(markedUpCost, PICOUSD_PER_CREDIT);
   const chargedCredits = variableCredits + BigInt(policy.fixedTurnCredits);
@@ -119,7 +132,9 @@ export function calculateCreditCharge(
   const result = chargedCredits > minimum ? chargedCredits : minimum;
 
   if (result > BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new RangeError("The calculated credit charge exceeds JavaScript's safe integer range.");
+    throw new RangeError(
+      "The calculated credit charge exceeds JavaScript's safe integer range.",
+    );
   }
 
   return Number(result);
@@ -130,10 +145,16 @@ export function quoteTurnCredits(options: {
   pricing: ModelTokenPricing;
   feePolicy: CreditFeePolicy;
 }): CreditQuote {
-  const providerCostPicousd = calculateProviderCostPicousd(options.usage, options.pricing);
+  const providerCostPicousd = calculateProviderCostPicousd(
+    options.usage,
+    options.pricing,
+  );
   return {
     providerCostPicousd,
-    chargedCredits: calculateCreditCharge(providerCostPicousd, options.feePolicy)
+    chargedCredits: calculateCreditCharge(
+      providerCostPicousd,
+      options.feePolicy,
+    ),
   };
 }
 
@@ -144,19 +165,26 @@ export function quoteTurnCredits(options: {
  */
 export function selectEffectiveVersion<T extends EffectiveDatedVersion>(
   versions: readonly T[],
-  at: Date
+  at: Date,
 ): T | undefined {
   const timestamp = at.getTime();
-  if (!Number.isFinite(timestamp)) throw new RangeError("The selection time must be valid.");
+  if (!Number.isFinite(timestamp))
+    throw new RangeError("The selection time must be valid.");
 
   return versions
     .filter((version) => {
       const effectiveAt = version.effectiveAt.getTime();
       const retiredAt = version.retiredAt?.getTime();
-      if (!Number.isFinite(effectiveAt) || (retiredAt !== undefined && !Number.isFinite(retiredAt))) {
+      if (
+        !Number.isFinite(effectiveAt) ||
+        (retiredAt !== undefined && !Number.isFinite(retiredAt))
+      ) {
         throw new RangeError("Billing version dates must be valid.");
       }
-      return effectiveAt <= timestamp && (retiredAt === undefined || retiredAt > timestamp);
+      return (
+        effectiveAt <= timestamp &&
+        (retiredAt === undefined || retiredAt > timestamp)
+      );
     })
     .reduce<T | undefined>((active, version) => {
       if (!active || version.effectiveAt > active.effectiveAt) return version;
@@ -165,12 +193,16 @@ export function selectEffectiveVersion<T extends EffectiveDatedVersion>(
 }
 
 /** Derives an account's available balance from immutable ledger deltas. */
-export function availableCreditsFromLedger(creditDeltas: readonly number[]): number {
+export function availableCreditsFromLedger(
+  creditDeltas: readonly number[],
+): number {
   return creditDeltas.reduce((balance, delta) => {
     assertSafeInteger(delta, "ledger credit delta");
     const next = balance + delta;
     if (!Number.isSafeInteger(next)) {
-      throw new RangeError("The derived credit balance exceeds JavaScript's safe integer range.");
+      throw new RangeError(
+        "The derived credit balance exceeds JavaScript's safe integer range.",
+      );
     }
     return next;
   }, 0);
@@ -212,8 +244,11 @@ export function settleReservedCredits(options: {
   return {
     reservationCredits: options.reservationCredits,
     chargedCredits: options.chargedCredits,
-    overageCredits: Math.max(0, options.chargedCredits - options.reservationCredits),
-    settlementCreditsDelta: options.reservationCredits - options.chargedCredits
+    overageCredits: Math.max(
+      0,
+      options.chargedCredits - options.reservationCredits,
+    ),
+    settlementCreditsDelta: options.reservationCredits - options.chargedCredits,
   };
 }
 
@@ -224,7 +259,8 @@ export function reverseReservedCredits(reservationCredits: number): number {
 }
 
 function ceilDivide(numerator: bigint, denominator: bigint): bigint {
-  if (denominator <= BigInt(0)) throw new RangeError("A division denominator must be positive.");
+  if (denominator <= BigInt(0))
+    throw new RangeError("A division denominator must be positive.");
   return numerator === BigInt(0)
     ? BigInt(0)
     : (numerator + denominator - BigInt(1)) / denominator;
@@ -235,7 +271,9 @@ function assertTokenUsage(usage: TokenUsage): void {
   assertNonNegativeInteger(usage.cachedInputTokens, "cached input tokens");
   assertNonNegativeInteger(usage.outputTokens, "output tokens");
   if (usage.cachedInputTokens > usage.inputTokens) {
-    throw new RangeError("Cached input tokens cannot exceed total input tokens.");
+    throw new RangeError(
+      "Cached input tokens cannot exceed total input tokens.",
+    );
   }
 }
 

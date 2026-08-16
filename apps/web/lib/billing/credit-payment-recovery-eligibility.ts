@@ -4,7 +4,9 @@ export function canReleasePaymentRestrictedChat(options: {
   unresolvedRecoveryCount: number;
   availableCredits: number;
 }): boolean {
-  return options.releaseRequested &&
+  return (
+    options.releaseRequested &&
     options.unresolvedRecoveryCount === 0 &&
-    options.availableCredits >= 0;
+    options.availableCredits >= 0
+  );
 }

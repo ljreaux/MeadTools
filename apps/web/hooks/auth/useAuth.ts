@@ -20,19 +20,19 @@ export function useAuth() {
     isLoading: isUserLoading,
     isFetching,
     isError,
-    error
+    error,
   } = useQuery<AuthUser | null>({
     // Credential login populates localStorage after the first client render.
     // Keep auth query results separated by credential availability without
     // putting the bearer value itself into the client query cache.
     queryKey: [
       ...qk.authMe,
-      accessToken ? "bearer" : nextAuthAccessToken ? "session" : "anonymous"
+      accessToken ? "bearer" : nextAuthAccessToken ? "session" : "anonymous",
     ] as const,
     queryFn: () => fetchAccountInfo(accessToken, nextAuthAccessToken),
     enabled,
     staleTime: 5 * 60 * 1000,
-    retry: false
+    retry: false,
   });
 
   const loading =
@@ -45,6 +45,6 @@ export function useAuth() {
     isLoggedIn,
     loading,
     isError,
-    error
+    error,
   };
 }

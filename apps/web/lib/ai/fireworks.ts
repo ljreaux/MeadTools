@@ -6,7 +6,7 @@ import type {
   ChatFunctionTool,
   ChatMessage,
   ChatResponseFormat,
-  ChatToolCall
+  ChatToolCall,
 } from "./chat-model";
 
 // Compatibility aliases keep historical test fixtures focused on Fireworks
@@ -30,8 +30,8 @@ const toolCallSchema = z.object({
   type: z.literal("function"),
   function: z.object({
     name: z.string().min(1),
-    arguments: z.string()
-  })
+    arguments: z.string(),
+  }),
 });
 
 const completionSchema = z.object({
@@ -44,9 +44,9 @@ const completionSchema = z.object({
         message: z.object({
           role: z.literal("assistant"),
           content: z.string().nullable().optional(),
-          tool_calls: z.array(toolCallSchema).optional()
-        })
-      })
+          tool_calls: z.array(toolCallSchema).optional(),
+        }),
+      }),
     )
     .min(1),
   usage: z
@@ -56,9 +56,9 @@ const completionSchema = z.object({
       total_tokens: z.number().int().nonnegative().optional(),
       prompt_tokens_details: z
         .object({ cached_tokens: z.number().int().nonnegative().optional() })
-        .optional()
+        .optional(),
     })
-    .optional()
+    .optional(),
 });
 
 /**
@@ -74,7 +74,7 @@ export class FireworksChatClient implements ChatModelClient {
       model: string;
       annotations?: { project: string; environment: string };
       fetcher?: typeof fetch;
-    }
+    },
   ) {}
 
   async complete(request: ChatCompletionRequest): Promise<ChatCompletion> {
@@ -90,9 +90,9 @@ export class FireworksChatClient implements ChatModelClient {
               "content-type": "application/json",
               ...(this.options.annotations
                 ? {
-                    "fireworks-annotations": `team=meadtools,project=${this.options.annotations.project},environment=${this.options.annotations.environment}`
+                    "fireworks-annotations": `team=meadtools,project=${this.options.annotations.project},environment=${this.options.annotations.environment}`,
                   }
-                : {})
+                : {}),
             },
             body: JSON.stringify({
               model: this.options.model,
@@ -108,19 +108,23 @@ export class FireworksChatClient implements ChatModelClient {
               parallel_tool_calls: false,
               temperature: 0.2,
               max_tokens: request.maxOutputTokens,
-              user: String(request.userId)
+              user: String(request.userId),
             }),
-            signal: AbortSignal.timeout(FIREWORKS_REQUEST_TIMEOUT_MS)
-          }
+            signal: AbortSignal.timeout(FIREWORKS_REQUEST_TIMEOUT_MS),
+          },
         );
 
         if (!response.ok) {
-          throw new Error(`Fireworks inference failed with HTTP ${response.status}.`);
+          throw new Error(
+            `Fireworks inference failed with HTTP ${response.status}.`,
+          );
         }
 
         const parsed = completionSchema.safeParse(await response.json());
         if (!parsed.success) {
-          throw new Error("Fireworks returned an unexpected chat completion shape.");
+          throw new Error(
+            "Fireworks returned an unexpected chat completion shape.",
+          );
         }
 
         const choice = parsed.data.choices[0];
@@ -130,16 +134,16 @@ export class FireworksChatClient implements ChatModelClient {
           message: {
             role: "assistant",
             content: choice.message.content ?? null,
-            tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined
+            tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined,
           },
           usage: {
             inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
             outputTokens: parsed.data.usage?.completion_tokens ?? 0,
             totalTokens: parsed.data.usage?.total_tokens ?? 0,
             cachedInputTokens:
-              parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0
+              parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
           },
-          finishReason: choice.finish_reason
+          finishReason: choice.finish_reason,
         };
       } catch (error) {
         lastError = error;

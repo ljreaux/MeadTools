@@ -6,17 +6,17 @@ import prisma from "@/lib/prisma";
 import {
   CreditPaymentRestrictedError,
   getCreditBalance,
-  recordCreditPurchaseInTransaction
+  recordCreditPurchaseInTransaction,
 } from "@/lib/db/credit-accounting";
 import { getStripeClient } from "./stripe";
 import { buildCreditCheckoutSessionParams } from "./credit-checkout-session";
 import {
   isPaidCreditCheckoutEvent,
-  isTerminalCreditCheckoutEvent
+  isTerminalCreditCheckoutEvent,
 } from "./credit-checkout-events";
 import {
   reconcileDeferredStripeDisputes,
-  reconcileDeferredStripeRefunds
+  reconcileDeferredStripeRefunds,
 } from "./credit-payment-recovery";
 import { stripeSessionMatchesCreditCheckout } from "./credit-checkout-verification";
 
@@ -61,8 +61,8 @@ export async function createCreditCheckout(options: {
       pack_id: pack.id,
       credit_amount: pack.credits,
       amount_cents: pack.amountCents,
-      currency: "usd"
-    }
+      currency: "usd",
+    },
   });
 
   try {
@@ -72,22 +72,24 @@ export async function createCreditCheckout(options: {
         pack,
         successUrl: options.successUrl,
         cancelUrl: options.cancelUrl,
-        userId: options.userId
+        userId: options.userId,
       }),
-      { idempotencyKey: `credit-checkout:${checkout.id}` }
+      { idempotencyKey: `credit-checkout:${checkout.id}` },
     );
 
     if (!session.url) throw new CreditCheckoutUnavailableError();
     await prisma.credit_checkout_sessions.update({
       where: { id: checkout.id },
-      data: { stripe_checkout_session_id: session.id }
+      data: { stripe_checkout_session_id: session.id },
     });
     return { url: session.url };
   } catch (error) {
-    await prisma.credit_checkout_sessions.update({
-      where: { id: checkout.id },
-      data: { status: "failed" }
-    }).catch(() => undefined);
+    await prisma.credit_checkout_sessions
+      .update({
+        where: { id: checkout.id },
+        data: { status: "failed" },
+      })
+      .catch(() => undefined);
     throw error;
   }
 }
@@ -97,28 +99,32 @@ export async function createCreditCheckout(options: {
  * route has verified Stripe's raw webhook signature.
  */
 export async function fulfillCreditCheckoutFromStripeEvent(
-  event: Stripe.Event
+  event: Stripe.Event,
 ): Promise<"fulfilled" | "duplicate" | "ignored"> {
   if (!isPaidCreditCheckoutEvent(event.type)) return "ignored";
 
   const session = event.data.object as Stripe.Checkout.Session;
-  if (session.mode !== "payment" || session.payment_status !== "paid") return "ignored";
+  if (session.mode !== "payment" || session.payment_status !== "paid")
+    return "ignored";
 
   const checkoutId = session.metadata?.credit_checkout_id;
-  if (!checkoutId || !isUuid(checkoutId)) throw new CreditCheckoutVerificationError();
+  if (!checkoutId || !isUuid(checkoutId))
+    throw new CreditCheckoutVerificationError();
 
   const result = await prisma.$transaction(async (tx) => {
     const inserted = await tx.credit_payment_webhook_events.createMany({
       data: {
         provider: "stripe",
         external_event_id: event.id,
-        event_type: event.type
+        event_type: event.type,
       },
-      skipDuplicates: true
+      skipDuplicates: true,
     });
     if (inserted.count === 0) return "duplicate" as const;
 
-    const checkout = await tx.credit_checkout_sessions.findUnique({ where: { id: checkoutId } });
+    const checkout = await tx.credit_checkout_sessions.findUnique({
+      where: { id: checkoutId },
+    });
     if (!checkout || !stripeSessionMatchesCreditCheckout(session, checkout)) {
       throw new CreditCheckoutVerificationError();
     }
@@ -132,7 +138,7 @@ export async function fulfillCreditCheckoutFromStripeEvent(
       sourceAmountCents: checkout.amount_cents,
       sourceCurrency: checkout.currency,
       externalReference: session.id,
-      metadata: { packId: checkout.pack_id }
+      metadata: { packId: checkout.pack_id },
     });
 
     await tx.credit_checkout_sessions.update({
@@ -141,10 +147,11 @@ export async function fulfillCreditCheckoutFromStripeEvent(
         stripe_checkout_session_id: session.id,
         stripe_payment_intent_id: stripeId(session.payment_intent),
         stripe_amount_total_cents: session.amount_total,
-        stripe_payment_currency: session.currency?.toLowerCase() ?? checkout.currency,
+        stripe_payment_currency:
+          session.currency?.toLowerCase() ?? checkout.currency,
         status: "fulfilled",
-        fulfilled_at: new Date()
-      }
+        fulfilled_at: new Date(),
+      },
     });
     return "fulfilled" as const;
   });
@@ -152,7 +159,7 @@ export async function fulfillCreditCheckoutFromStripeEvent(
   if (paymentIntentId) {
     await Promise.all([
       reconcileDeferredStripeDisputes(paymentIntentId),
-      reconcileDeferredStripeRefunds(paymentIntentId)
+      reconcileDeferredStripeRefunds(paymentIntentId),
     ]);
   }
   return result;
@@ -160,47 +167,55 @@ export async function fulfillCreditCheckoutFromStripeEvent(
 
 /** Records a verified Checkout session that can no longer be paid. */
 export async function finalizeCreditCheckoutTerminalEvent(
-  event: Stripe.Event
+  event: Stripe.Event,
 ): Promise<"failed" | "expired" | "duplicate" | "ignored"> {
   if (!isTerminalCreditCheckoutEvent(event.type)) return "ignored";
   const session = event.data.object as Stripe.Checkout.Session;
   const checkoutId = session.metadata?.credit_checkout_id;
-  if (!checkoutId || !isUuid(checkoutId)) throw new CreditCheckoutVerificationError();
-  const terminalStatus = event.type === "checkout.session.expired" ? "expired" : "failed";
+  if (!checkoutId || !isUuid(checkoutId))
+    throw new CreditCheckoutVerificationError();
+  const terminalStatus =
+    event.type === "checkout.session.expired" ? "expired" : "failed";
 
   return prisma.$transaction(async (tx) => {
     const inserted = await tx.credit_payment_webhook_events.createMany({
       data: {
         provider: "stripe",
         external_event_id: event.id,
-        event_type: event.type
+        event_type: event.type,
       },
-      skipDuplicates: true
+      skipDuplicates: true,
     });
     if (inserted.count === 0) return "duplicate" as const;
 
-    const checkout = await tx.credit_checkout_sessions.findUnique({ where: { id: checkoutId } });
+    const checkout = await tx.credit_checkout_sessions.findUnique({
+      where: { id: checkoutId },
+    });
     if (!checkout || !stripeSessionMatchesCreditCheckout(session, checkout)) {
       throw new CreditCheckoutVerificationError();
     }
-    if (checkout.status === "fulfilled" || checkout.status === "refunded") return "ignored" as const;
-    if (checkout.status === "failed" || checkout.status === "expired") return "duplicate" as const;
+    if (checkout.status === "fulfilled" || checkout.status === "refunded")
+      return "ignored" as const;
+    if (checkout.status === "failed" || checkout.status === "expired")
+      return "duplicate" as const;
 
     await tx.credit_checkout_sessions.update({
       where: { id: checkout.id },
       data: {
         stripe_checkout_session_id: session.id,
-        status: terminalStatus
-      }
+        status: terminalStatus,
+      },
     });
     return terminalStatus;
   });
 }
 
 function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 function stripeId(value: string | { id: string } | null): string | null {
-  return typeof value === "string" ? value : value?.id ?? null;
+  return typeof value === "string" ? value : (value?.id ?? null);
 }

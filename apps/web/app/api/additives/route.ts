@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     console.error("Failed to fetch additives:", err);
     return NextResponse.json(
       { error: "Failed to fetch additives" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (!name || dosage == null || !unit) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating additive:", error);
     return NextResponse.json(
       { error: "Failed to create additive" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

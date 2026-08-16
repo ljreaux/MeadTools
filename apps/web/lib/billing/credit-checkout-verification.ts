@@ -13,10 +13,11 @@ export function stripeSessionMatchesCreditCheckout(
     amount_cents: number;
     currency: string;
     stripe_checkout_session_id: string | null;
-  }
+  },
 ): boolean {
   return (
-    (!checkout.stripe_checkout_session_id || checkout.stripe_checkout_session_id === session.id) &&
+    (!checkout.stripe_checkout_session_id ||
+      checkout.stripe_checkout_session_id === session.id) &&
     session.metadata?.credit_pack_id === checkout.pack_id &&
     session.metadata?.credits === String(checkout.credit_amount) &&
     session.amount_subtotal === checkout.amount_cents &&

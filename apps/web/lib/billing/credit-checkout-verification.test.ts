@@ -8,17 +8,19 @@ const checkout = {
   credit_amount: 5_000,
   amount_cents: 500,
   currency: "usd",
-  stripe_checkout_session_id: "cs_test_123"
+  stripe_checkout_session_id: "cs_test_123",
 };
 
-function session(overrides: Partial<Stripe.Checkout.Session> = {}): Stripe.Checkout.Session {
+function session(
+  overrides: Partial<Stripe.Checkout.Session> = {},
+): Stripe.Checkout.Session {
   return {
     id: "cs_test_123",
     currency: "usd",
     amount_subtotal: 500,
     amount_total: 540,
     metadata: { credit_pack_id: "starter", credits: "5000" },
-    ...overrides
+    ...overrides,
   } as Stripe.Checkout.Session;
 }
 
@@ -28,7 +30,10 @@ test("credit fulfillment verifies the pre-tax subtotal, not the tax-inclusive to
 
 test("credit fulfillment rejects a session with a different pack subtotal", () => {
   assert.equal(
-    stripeSessionMatchesCreditCheckout(session({ amount_subtotal: 501 }), checkout),
-    false
+    stripeSessionMatchesCreditCheckout(
+      session({ amount_subtotal: 501 }),
+      checkout,
+    ),
+    false,
   );
 });

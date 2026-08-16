@@ -15,7 +15,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 import { Input } from "@/components/ui/input";
@@ -31,14 +31,14 @@ import {
   SortDesc,
   Trash2,
   Search,
-  X
+  X,
 } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
+  InputGroupInput,
 } from "@/components/ui/input-group";
 
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -70,7 +70,7 @@ function Account() {
   const searchKey = "name";
   const options = [5, 10, 20, 50].map((num) => ({
     value: num,
-    label: t("pagination.pageSizeOptions", { n: num })
+    label: t("pagination.pageSizeOptions", { n: num }),
   }));
 
   const [sortBy, setSortBy] = useState<
@@ -85,7 +85,7 @@ function Account() {
     sortField,
     setSortField,
     sortDir,
-    setSortDir
+    setSortDir,
   } = useAccountRecipeSortPrefs();
 
   const deleteRecipeMutation = useDeleteRecipe();
@@ -103,12 +103,12 @@ function Account() {
     nextPage,
     prevPage,
     goToPage,
-    totalPages
+    totalPages,
   } = useFuzzySearch({
     data: recipes,
     pageSize,
     searchKey,
-    sortBy: Object.values(sortBy)
+    sortBy: Object.values(sortBy),
   });
 
   const nameAlpha = (a: RecipeApiResponse, b: RecipeApiResponse) => {
@@ -391,7 +391,7 @@ export default Account;
 
 const RecipeCard = ({
   recipe,
-  deleteRecipe
+  deleteRecipe,
 }: {
   recipe: RecipeApiResponse;
   deleteRecipe: () => Promise<void>;
@@ -459,7 +459,7 @@ const RecipeCard = ({
 
 const CreateUsernamePopup = ({
   isDialogOpen,
-  closeDialog
+  closeDialog,
 }: {
   isDialogOpen: boolean;
   closeDialog: () => void;

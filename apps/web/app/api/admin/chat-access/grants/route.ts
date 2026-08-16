@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   chatAccessErrorResponseSchema,
   createChatAccessGrantRequestBodySchema,
-  createChatAccessGrantResponseSchema
+  createChatAccessGrantResponseSchema,
 } from "@meadtools/api-contract/admin";
 import {
   ChatAccessUserUnavailableError,
-  grantChatBetaAccess
+  grantChatBetaAccess,
 } from "@/lib/db/chat-access";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 
@@ -31,19 +31,39 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const adminId = await verifyAdmin(request);
   if (adminId instanceof NextResponse) return adminId;
-  const parsed = createChatAccessGrantRequestBodySchema.safeParse(await request.json().catch(() => null));
+  const parsed = createChatAccessGrantRequestBodySchema.safeParse(
+    await request.json().catch(() => null),
+  );
   if (!parsed.success) {
-    return NextResponse.json(chatAccessErrorResponseSchema.parse({ error: "A valid user is required." }), { status: 400 });
+    return NextResponse.json(
+      chatAccessErrorResponseSchema.parse({
+        error: "A valid user is required.",
+      }),
+      { status: 400 },
+    );
   }
 
   try {
-    const result = await grantChatBetaAccess({ userId: parsed.data.userId, grantedByUserId: adminId });
+    const result = await grantChatBetaAccess({
+      userId: parsed.data.userId,
+      grantedByUserId: adminId,
+    });
     return NextResponse.json(createChatAccessGrantResponseSchema.parse(result));
   } catch (error) {
     if (error instanceof ChatAccessUserUnavailableError) {
-      return NextResponse.json(chatAccessErrorResponseSchema.parse({ error: error.message }), { status: 400 });
+      return NextResponse.json(
+        chatAccessErrorResponseSchema.parse({ error: error.message }),
+        { status: 400 },
+      );
     }
-    console.error("Unable to grant chat beta access.", { error: error instanceof Error ? error.message : "unknown" });
-    return NextResponse.json(chatAccessErrorResponseSchema.parse({ error: "Unable to grant chat beta access." }), { status: 500 });
+    console.error("Unable to grant chat beta access.", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return NextResponse.json(
+      chatAccessErrorResponseSchema.parse({
+        error: "Unable to grant chat beta access.",
+      }),
+      { status: 500 },
+    );
   }
 }

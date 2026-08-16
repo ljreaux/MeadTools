@@ -7,7 +7,7 @@ export const workflowQuestionSchema = z.object({
   field: z.string(),
   prompt: z.string(),
   answerType: z.enum(["number", "boolean", "select", "object"]),
-  options: z.array(z.string()).optional()
+  options: z.array(z.string()).optional(),
 });
 
 export const recipeExplanationSchema = z.object({
@@ -16,9 +16,9 @@ export const recipeExplanationSchema = z.object({
   facts: z.array(
     z.object({
       label: z.string(),
-      value: z.number()
-    })
-  )
+      value: z.number(),
+    }),
+  ),
 });
 
 const workflowResultBaseSchema = z.object({
@@ -27,13 +27,13 @@ const workflowResultBaseSchema = z.object({
     "build_recipe_draft",
     "create_traditional",
     "refine_traditional",
-    "explain_recipe"
-  ])
+    "explain_recipe",
+  ]),
 });
 
 export const needsInputResultSchema = workflowResultBaseSchema.extend({
   status: z.literal("needs_input"),
-  questions: z.array(workflowQuestionSchema).min(1)
+  questions: z.array(workflowQuestionSchema).min(1),
 });
 
 export const recipeResultSchema = workflowResultBaseSchema.extend({
@@ -42,7 +42,7 @@ export const recipeResultSchema = workflowResultBaseSchema.extend({
   derived: recipeDerivedStateResponseSchema,
   assumptions: z.array(z.string()),
   warnings: z.array(z.string()),
-  explanation: recipeExplanationSchema.optional()
+  explanation: recipeExplanationSchema.optional(),
 });
 
 export const workflowErrorResultSchema = workflowResultBaseSchema.extend({
@@ -53,15 +53,15 @@ export const workflowErrorResultSchema = workflowResultBaseSchema.extend({
     .array(
       z.object({
         path: z.string(),
-        message: z.string()
-      })
+        message: z.string(),
+      }),
     )
-    .optional()
+    .optional(),
 });
 
 export const chatbotRecipeWorkflowResultSchema = z.discriminatedUnion(
   "status",
-  [needsInputResultSchema, recipeResultSchema, workflowErrorResultSchema]
+  [needsInputResultSchema, recipeResultSchema, workflowErrorResultSchema],
 );
 
 export type WorkflowQuestion = z.infer<typeof workflowQuestionSchema>;

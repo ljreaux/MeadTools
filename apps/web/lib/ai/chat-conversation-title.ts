@@ -1,6 +1,6 @@
 import {
   conversationTitleFromMessage,
-  isUnusableConversationTitle
+  isUnusableConversationTitle,
 } from "@meadtools/chat-domain";
 import type { ChatModelClient, ChatUsage } from "./chat-model";
 
@@ -37,29 +37,30 @@ export async function generateChatConversationTitle(options: {
           properties: {
             // Keep this to the strict Structured Outputs subset. Length is
             // enforced by sanitizeConversationTitle after completion.
-            title: { type: "string" }
+            title: { type: "string" },
           },
-          required: ["title"]
+          required: ["title"],
         },
-        strict: true
-      }
+        strict: true,
+      },
     },
     messages: [
       {
         role: "system",
-        content: "Create a 2-6 word, descriptive subject line for a MeadTools chat. Do not echo instructions or conversational phrasing. Return JSON only. Examples: 'Can you help draft a strawberry mead recipe?' becomes {\"title\":\"Strawberry Mead Recipe\"}; 'Lets make an avocado honey traditional' becomes {\"title\":\"Avocado Honey Traditional\"}."
+        content:
+          'Create a 2-6 word, descriptive subject line for a MeadTools chat. Do not echo instructions or conversational phrasing. Return JSON only. Examples: \'Can you help draft a strawberry mead recipe?\' becomes {"title":"Strawberry Mead Recipe"}; \'Lets make an avocado honey traditional\' becomes {"title":"Avocado Honey Traditional"}.',
       },
-      { role: "user", content: options.firstMessage }
-    ]
+      { role: "user", content: options.firstMessage },
+    ],
   });
   return {
     title: sanitizeConversationTitle(
       titleFromCompletion(completion.message.content),
-      options.firstMessage
+      options.firstMessage,
     ),
     usage: completion.usage,
     providerRequestId: completion.id,
-    model: completion.model
+    model: completion.model,
   };
 }
 
@@ -76,11 +77,16 @@ function titleFromCompletion(content: string | null): string | null {
   } catch {
     // A title is presentation-only. Accept a compact plain-text answer if a
     // provider degrades structured output rather than showing the raw opener.
-    return normalized.includes("{") || normalized.includes("}") ? null : normalized;
+    return normalized.includes("{") || normalized.includes("}")
+      ? null
+      : normalized;
   }
 }
 
-export function sanitizeConversationTitle(value: string | null, fallbackMessage: string): string {
+export function sanitizeConversationTitle(
+  value: string | null,
+  fallbackMessage: string,
+): string {
   const normalized = value
     ?.replace(/["'`*_#]/g, "")
     .replace(/\s+/g, " ")

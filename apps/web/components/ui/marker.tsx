@@ -9,12 +9,13 @@ const markerVariants = cva(
     variants: {
       variant: {
         default: "",
-        separator: "before:mr-1 before:h-px before:min-w-0 before:flex-1 before:bg-border after:ml-1 after:h-px after:min-w-0 after:flex-1 after:bg-border",
-        border: "border-b border-border pb-2"
-      }
+        separator:
+          "before:mr-1 before:h-px before:min-w-0 before:flex-1 before:bg-border after:ml-1 after:h-px after:min-w-0 after:flex-1 after:bg-border",
+        border: "border-b border-border pb-2",
+      },
     },
-    defaultVariants: { variant: "default" }
-  }
+    defaultVariants: { variant: "default" },
+  },
 );
 
 function Marker({
@@ -22,11 +23,27 @@ function Marker({
   variant = "default",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof markerVariants>) {
-  return <div className={cn(markerVariants({ variant }), className)} data-slot="marker" data-variant={variant} {...props} />;
+  return (
+    <div
+      className={cn(markerVariants({ variant }), className)}
+      data-slot="marker"
+      data-variant={variant}
+      {...props}
+    />
+  );
 }
 
 function MarkerContent({ className, ...props }: React.ComponentProps<"span">) {
-  return <span className={cn("min-w-0 break-words group-data-[variant=separator]/marker:flex-none group-data-[variant=separator]/marker:text-center", className)} data-slot="marker-content" {...props} />;
+  return (
+    <span
+      className={cn(
+        "min-w-0 break-words group-data-[variant=separator]/marker:flex-none group-data-[variant=separator]/marker:text-center",
+        className,
+      )}
+      data-slot="marker-content"
+      {...props}
+    />
+  );
 }
 
 export { Marker, MarkerContent, markerVariants };
