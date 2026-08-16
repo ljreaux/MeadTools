@@ -26,12 +26,17 @@ export async function GET(request: NextRequest) {
 
   const status = await getChatAccessStatus(userId);
   const chatbotConfig = getLocalChatbotConfig();
+  const chatbotFeatureEnabled =
+    process.env.CHATBOT_LOCAL_TEST_ENABLED === "true";
+  const openAiKeyConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
   console.info("Hosted chatbot access resolved", {
     mode: status.mode,
     accessEntitled: status.chatEnabled,
     granted: status.granted,
     paymentRestricted: status.paymentRestricted,
     providerConfigured: Boolean(chatbotConfig),
+    chatbotFeatureEnabled,
+    openAiKeyConfigured,
   });
   return NextResponse.json(
     chatAccessStatusResponseSchema.parse({
