@@ -25,10 +25,18 @@ export async function GET(request: NextRequest) {
   }
 
   const status = await getChatAccessStatus(userId);
+  const chatbotConfig = getLocalChatbotConfig();
+  console.info("Hosted chatbot access resolved", {
+    mode: status.mode,
+    accessEntitled: status.chatEnabled,
+    granted: status.granted,
+    paymentRestricted: status.paymentRestricted,
+    providerConfigured: Boolean(chatbotConfig),
+  });
   return NextResponse.json(
     chatAccessStatusResponseSchema.parse({
       ...status,
-      chatEnabled: status.chatEnabled && Boolean(getLocalChatbotConfig()),
+      chatEnabled: status.chatEnabled && Boolean(chatbotConfig),
     }),
   );
 }
