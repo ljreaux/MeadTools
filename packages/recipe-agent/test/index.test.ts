@@ -348,6 +348,16 @@ test("provider tool definitions stay aligned with the executable tool surface", 
     )?.parameters["additionalProperties"],
     false,
   );
+  const draftProperties = hostedAgentToolDefinitions.find(
+    (tool) => tool.name === "build_recipe_draft",
+  )?.parameters["properties"];
+  assert.ok(
+    !(
+      typeof draftProperties === "object" &&
+      draftProperties !== null &&
+      "deferredAdditives" in draftProperties
+    ),
+  );
   assert.ok(
     hostedAgentToolDefinitions.some(
       (tool) => tool.name === "prepare_brew_action",

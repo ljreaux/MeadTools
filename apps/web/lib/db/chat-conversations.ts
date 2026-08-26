@@ -460,6 +460,8 @@ export async function completeChatTurn(options: {
   citations?: ChatCitation[];
   recipeDraftInput?: unknown;
   recipeData?: unknown;
+  /** Persist an intentional empty revision when the brewer scraps a draft. */
+  clearRecipeDraft?: boolean;
   contexts?: ChatContextReference[];
   generation: {
     usageEventId?: string;
@@ -504,6 +506,7 @@ export async function completeChatTurn(options: {
       },
     });
     const shouldStoreDraft =
+      options.clearRecipeDraft ||
       options.recipeDraftInput !== undefined ||
       options.recipeData !== undefined;
     const draft = shouldStoreDraft
@@ -511,22 +514,29 @@ export async function completeChatTurn(options: {
           data: {
             conversation_id: conversation.id,
             revision: (latestDraft?.revision ?? 0) + 1,
-            ...(options.recipeDraftInput !== undefined ||
-            (latestDraft?.recipe_draft_input !== undefined &&
-              latestDraft.recipe_draft_input !== null)
+            ...(options.clearRecipeDraft
               ? {
-                  recipe_draft_input: (options.recipeDraftInput ??
-                    latestDraft?.recipe_draft_input) as Prisma.InputJsonValue,
+                  recipe_draft_input: Prisma.JsonNull,
+                  recipe_data: Prisma.JsonNull,
                 }
-              : {}),
-            ...(options.recipeData !== undefined ||
-            (latestDraft?.recipe_data !== undefined &&
-              latestDraft.recipe_data !== null)
-              ? {
-                  recipe_data: (options.recipeData ??
-                    latestDraft?.recipe_data) as Prisma.InputJsonValue,
-                }
-              : {}),
+              : {
+                  ...(options.recipeDraftInput !== undefined ||
+                  (latestDraft?.recipe_draft_input !== undefined &&
+                    latestDraft.recipe_draft_input !== null)
+                    ? {
+                        recipe_draft_input: (options.recipeDraftInput ??
+                          latestDraft?.recipe_draft_input) as Prisma.InputJsonValue,
+                      }
+                    : {}),
+                  ...(options.recipeData !== undefined ||
+                  (latestDraft?.recipe_data !== undefined &&
+                    latestDraft.recipe_data !== null)
+                    ? {
+                        recipe_data: (options.recipeData ??
+                          latestDraft?.recipe_data) as Prisma.InputJsonValue,
+                      }
+                    : {}),
+                }),
           },
         })
       : null;

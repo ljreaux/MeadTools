@@ -208,6 +208,9 @@ export async function POST(request: NextRequest) {
         pendingMessageId,
         answer: deterministicResult.answer,
         citations: citationsFromAnswer(deterministicResult.answer),
+        ...(deterministicResult.clearRecipeDraft
+          ? { clearRecipeDraft: true }
+          : {}),
         ...(selectedContext
           ? { contexts: [contextReferenceFrom(selectedContext)] }
           : {}),
@@ -531,6 +534,7 @@ export async function POST(request: NextRequest) {
           ...(result.recipeDraftInput
             ? { recipeDraftInput: result.recipeDraftInput }
             : {}),
+          ...(result.clearRecipeDraft ? { clearRecipeDraft: true } : {}),
           ...(recipeData ? { recipeData } : {}),
           ...(selectedContextReference
             ? { contexts: [selectedContextReference] }

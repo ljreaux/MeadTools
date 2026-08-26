@@ -7,40 +7,44 @@ import type {
   ChatToolCall,
 } from "./chat-model";
 
-const OPENAI_CHAT_COMPLETIONS_URL =
-  "https://api.openai.com/v1/chat/completions";
+const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const OPENAI_REQUEST_TIMEOUT_MS = 60_000;
 
-const toolCallSchema = z.object({
-  id: z.string().min(1),
-  type: z.literal("function"),
-  function: z.object({
+const responseOutputItemSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("message"),
+    role: z.literal("assistant"),
+    content: z.array(
+      z.object({
+        type: z.string(),
+        text: z.string().optional(),
+      }).passthrough(),
+    ),
+  }),
+  z.object({
+    type: z.literal("function_call"),
+    call_id: z.string().min(1),
     name: z.string().min(1),
     arguments: z.string(),
   }),
-});
+  z.object({ type: z.literal("reasoning") }).passthrough(),
+]);
 
-const completionSchema = z.object({
+const responseSchema = z.object({
   id: z.string().min(1),
   model: z.string().min(1),
-  choices: z
-    .array(
-      z.object({
-        finish_reason: z.string().nullable().optional(),
-        message: z.object({
-          role: z.literal("assistant"),
-          content: z.string().nullable().optional(),
-          tool_calls: z.array(toolCallSchema).optional(),
-        }),
-      }),
-    )
-    .min(1),
+  status: z.string().optional(),
+  incomplete_details: z
+    .object({ reason: z.string().nullable().optional() })
+    .nullable()
+    .optional(),
+  output: z.array(responseOutputItemSchema),
   usage: z
     .object({
-      prompt_tokens: z.number().int().nonnegative().optional(),
-      completion_tokens: z.number().int().nonnegative().optional(),
+      input_tokens: z.number().int().nonnegative().optional(),
+      output_tokens: z.number().int().nonnegative().optional(),
       total_tokens: z.number().int().nonnegative().optional(),
-      prompt_tokens_details: z
+      input_tokens_details: z
         .object({ cached_tokens: z.number().int().nonnegative().optional() })
         .optional(),
     })
@@ -59,7 +63,12 @@ const errorResponseSchema = z.object({
 });
 
 /**
- * Direct OpenAI transport for the shared, OpenAI-compatible chat/tool loop.
+ * Direct OpenAI Responses transport for the shared chat/tool loop.
+ *
+ * GPT-5.4 reasoning models support their current tool-use behavior through
+ * Responses. The shared protocol remains provider-neutral, so the workflow
+ * and credit accounting continue to receive one normalized completion per
+ * provider dispatch.
  * It deliberately does not retry a completion: a failed request is surfaced
  * to the caller so credit settlement cannot hide a duplicate model charge.
  */
@@ -76,7 +85,7 @@ export class OpenAIChatClient implements ChatModelClient {
 
   async complete(request: ChatCompletionRequest): Promise<ChatCompletion> {
     const response = await (this.options.fetcher ?? fetch)(
-      OPENAI_CHAT_COMPLETIONS_URL,
+      OPENAI_RESPONSES_URL,
       {
         method: "POST",
         headers: {
@@ -85,21 +94,24 @@ export class OpenAIChatClient implements ChatModelClient {
         },
         body: JSON.stringify({
           model: this.options.model,
-          messages: request.messages,
-          tools: request.tools,
-          // OpenAI accepts tool_choice only alongside a tools array. A title
-          // request is deliberately tool-free, so omit both fields there.
+          input: responseInputFromMessages(request.messages),
+          tools: request.tools?.map((tool) => ({
+            type: "function" as const,
+            name: tool.function.name,
+            description: tool.function.description,
+            parameters: tool.function.parameters,
+          })),
+          // Responses accepts tool_choice only alongside a tools array. A
+          // title request is deliberately tool-free, so omit both fields.
           ...(request.tools?.length
             ? {
-                tool_choice: request.toolChoice ?? "auto",
+                tool_choice: responseToolChoice(request.toolChoice),
                 parallel_tool_calls: false,
               }
             : {}),
           ...openAIReasoningEffort(request.reasoningEffort),
-          ...(request.responseFormat
-            ? { response_format: request.responseFormat }
-            : {}),
-          max_completion_tokens: request.maxOutputTokens,
+          ...(request.responseFormat ? { text: responseText(request) } : {}),
+          max_output_tokens: request.maxOutputTokens,
           store: false,
         }),
         signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
@@ -110,30 +122,130 @@ export class OpenAIChatClient implements ChatModelClient {
       throw await openAIRequestError(response);
     }
 
-    const parsed = completionSchema.safeParse(await response.json());
+    const parsed = responseSchema.safeParse(await response.json());
     if (!parsed.success) {
-      throw new Error("OpenAI returned an unexpected chat completion shape.");
+      throw new Error("OpenAI returned an unexpected Responses API shape.");
     }
 
-    const choice = parsed.data.choices[0];
+    const toolCalls = parsed.data.output.flatMap((item) =>
+      item.type === "function_call"
+        ? [
+            {
+              id: item.call_id,
+              type: "function" as const,
+              function: { name: item.name, arguments: item.arguments },
+            },
+          ]
+        : [],
+    );
+    const content = parsed.data.output
+      .filter((item) => item.type === "message")
+      .flatMap((item) => item.content)
+      .flatMap((item) =>
+        item.type === "output_text" && item.text ? [item.text] : [],
+      )
+      .join("\n")
+      .trim();
+    if (!content && toolCalls.length === 0) {
+      throw new Error("OpenAI Responses API returned no message or tool call.");
+    }
     return {
       id: parsed.data.id,
       model: parsed.data.model,
       message: {
         role: "assistant",
-        content: choice.message.content ?? null,
-        tool_calls: choice.message.tool_calls as ChatToolCall[] | undefined,
+        content: content || null,
+        tool_calls:
+          toolCalls.length > 0 ? (toolCalls as ChatToolCall[]) : undefined,
       },
       usage: {
-        inputTokens: parsed.data.usage?.prompt_tokens ?? 0,
-        outputTokens: parsed.data.usage?.completion_tokens ?? 0,
+        inputTokens: parsed.data.usage?.input_tokens ?? 0,
+        outputTokens: parsed.data.usage?.output_tokens ?? 0,
         totalTokens: parsed.data.usage?.total_tokens ?? 0,
         cachedInputTokens:
-          parsed.data.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+          parsed.data.usage?.input_tokens_details?.cached_tokens ?? 0,
       },
-      finishReason: choice.finish_reason,
+      finishReason:
+        parsed.data.status === "incomplete" &&
+        parsed.data.incomplete_details?.reason === "max_output_tokens"
+          ? "length"
+          : parsed.data.status,
     };
   }
+}
+
+type ResponseInputItem =
+  | { role: "system" | "user" | "assistant"; content: string }
+  | {
+      type: "function_call";
+      call_id: string;
+      name: string;
+      arguments: string;
+    }
+  | { type: "function_call_output"; call_id: string; output: string };
+
+function responseInputFromMessages(
+  request: ChatCompletionRequest["messages"],
+): ResponseInputItem[] {
+  const input: ResponseInputItem[] = [];
+  for (const message of request) {
+    if (message.role === "tool") {
+      input.push({
+        type: "function_call_output",
+        call_id: message.tool_call_id,
+        output: message.content,
+      });
+      continue;
+    }
+    if (message.role === "assistant" && message.tool_calls?.length) {
+      if (message.content) {
+        input.push({ role: "assistant", content: message.content });
+      }
+      for (const toolCall of message.tool_calls) {
+        input.push({
+          type: "function_call",
+          call_id: toolCall.id,
+          name: toolCall.function.name,
+          arguments: toolCall.function.arguments,
+        });
+      }
+      continue;
+    }
+    if (message.role === "assistant") {
+      if (message.content) {
+        input.push({ role: "assistant", content: message.content });
+      }
+      continue;
+    }
+    input.push({ role: message.role, content: message.content });
+  }
+  return input;
+}
+
+function responseToolChoice(request: ChatCompletionRequest["toolChoice"]) {
+  if (
+    !request ||
+    request === "auto" ||
+    request === "none" ||
+    request === "required"
+  )
+    return request ?? "auto";
+  return { type: "function" as const, name: request.function.name };
+}
+
+function responseText(request: ChatCompletionRequest) {
+  const format = request.responseFormat;
+  if (!format) return undefined;
+  return {
+    format: {
+      type: format.type,
+      name: format.json_schema.name,
+      schema: format.json_schema.schema,
+      ...(format.json_schema.strict !== undefined
+        ? { strict: format.json_schema.strict }
+        : {}),
+    },
+  };
 }
 
 async function openAIRequestError(
@@ -164,7 +276,7 @@ function redactProviderErrorMessage(message: string): string {
 
 function openAIReasoningEffort(
   effort: ChatCompletionRequest["reasoningEffort"],
-): Record<string, "none" | "low" | "medium" | "high"> {
+): Record<string, { effort: "none" | "low" | "medium" | "high" }> {
   if (!effort) return {};
-  return { reasoning_effort: effort === "max" ? "high" : effort };
+  return { reasoning: { effort: effort === "max" ? "high" : effort } };
 }

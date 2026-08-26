@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
-import { calcOG } from "@meadtools/core/gravity";
 import { recipeDataV2Schema } from "@meadtools/schemas";
-import { buildRecipeDraft } from "../src/build-recipe-draft";
+import {
+  buildRecipeDraft,
+  defaultRecipeDraftName,
+} from "../src/build-recipe-draft";
 
 const nutrientPlan = {
   enabled: true as const,
@@ -26,6 +28,136 @@ test("general recipe intake asks for recipe composition instead of assuming a st
   assert.equal(result.status, "needs_input");
   if (result.status !== "needs_input") return;
   assert.equal(result.questions[0]?.id, "recipe_ingredients");
+});
+
+test("a missing batch volume is the only initial draft question", () => {
+  const result = buildRecipeDraft({
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    // An unmeasured adjunct is valid recipe intent, but its dose cannot be
+    // meaningfully chosen until the batch volume is known.
+    additives: [{ name: "Cardamom" }],
+  });
+
+  assert.equal(result.status, "needs_input");
+  if (result.status !== "needs_input") return;
+  assert.deepEqual(
+    result.questions.map((question) => question.id),
+    ["batch_volume"],
+  );
+});
+
+test("an unmeasured flavor addition requires a dose before a draft can complete", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 3, unit: "gal" },
+    targetOriginalGravity: 1.125,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      {
+        name: "Blackberry",
+        category: "fruit",
+        brix: 10,
+        amount: { kind: "weight", value: 12, unit: "lb" },
+      },
+    ],
+    additives: [{ name: "Vanilla" }, { name: "Cardamom" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+
+  assert.equal(result.status, "needs_input");
+  if (result.status !== "needs_input") return;
+  assert.deepEqual(
+    result.questions.map((question) => question.id),
+    ["additive_0_amount", "additive_1_amount"],
+  );
+});
+
+test("a measured additive supersedes a prior deferred addition", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetAbv: 12,
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    additives: [{ name: "Vanilla bean", amount: 1, unit: "units" }],
+    deferredAdditives: [{ name: "Vanilla", secondary: true }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.deepEqual(
+    result.recipeData.additives.map((additive) => additive.name),
+    ["Vanilla bean"],
+  );
+  assert.equal(result.recipeData.notes.secondary.length, 0);
+});
+
+test("omitted stabilization defaults to disabled instead of reopening a complete draft", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetAbv: 12,
+    fermentationFinalGravity: 0.999,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan,
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.equal(result.recipeData.stabilizers.adding, false);
+});
+
+test("draft save defaults use an explicit title, fruit, or a traditional fallback", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      {
+        name: "Cherry, Tart",
+        category: "fruit",
+        brix: 12,
+        amount: { kind: "weight", value: 3, unit: "lb" },
+      },
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  assert.equal(
+    defaultRecipeDraftName({
+      recipeDraftInput: { name: "Cherry Chocolate Mead" },
+      recipeData: result.recipeData,
+    }),
+    "Cherry Chocolate Mead",
+  );
+  assert.equal(
+    defaultRecipeDraftName({ recipeData: result.recipeData }),
+    "Tart Cherry Mead",
+  );
+  assert.equal(
+    defaultRecipeDraftName({
+      recipeData: {
+        ...result.recipeData,
+        additives: [
+          {
+            lineId: "cocoa",
+            name: "Cocoa Nibs",
+            amount: "1",
+            unit: "oz",
+            amountTouched: true,
+            amountDim: "unknown",
+          },
+        ],
+      },
+    }),
+    "Tart Cherry Chocolate Mead",
+  );
+  assert.equal(defaultRecipeDraftName({}), "Traditional Mead");
 });
 
 test("backsweetening intent without a target asks for the finished gravity", () => {
@@ -200,7 +332,7 @@ test("general recipe drafting solves honey and water around explicit fruit input
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
   assert.equal(result.operation, "build_recipe_draft");
-  assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.1) < 0.00001);
+  assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.1) < 0.002);
   assert.ok(
     result.recipeData.ingredients.some(
       (ingredient) => ingredient.name === "Blackberries",
@@ -217,6 +349,47 @@ test("general recipe drafting solves honey and water around explicit fruit input
       recipeDataV2Schema.parse(result.recipeData),
     ).derived,
   );
+});
+
+test("recipe drafts round calculated ingredient amounts to practical precision", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "gal" },
+    targetOriginalGravity: 1.12,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      {
+        name: "Cherry, Tart",
+        category: "fruit",
+        brix: 12,
+        amount: { kind: "weight", value: 20, unit: "lb" },
+      },
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+
+  const honey = result.recipeData.ingredients.find(
+    (ingredient) => ingredient.name === "Honey",
+  );
+  const water = result.recipeData.ingredients.find(
+    (ingredient) => ingredient.name === "Water",
+  );
+  assert.equal(honey?.amounts.basis, "weight");
+  assert.equal(honey?.amounts.weight.value, "13.9");
+  assert.equal(water?.amounts.basis, "volume");
+  assert.equal(water?.amounts.volume.value, "1.5");
+  for (const ingredient of result.recipeData.ingredients) {
+    const measured =
+      ingredient.amounts.basis === "weight"
+        ? ingredient.amounts.weight.value
+        : ingredient.amounts.volume.value;
+    assert.match(measured, /^\d+(?:\.\d)?$/);
+  }
+  assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.12) < 0.002);
 });
 
 test("a named honey varietal can be the adjustable fermentable", () => {
@@ -483,11 +656,7 @@ test("a fixed fermentable amount explains an ABV mismatch without changing the r
       ),
     ),
   );
-  assert.ok(
-    result.assumptions.some((assumption) =>
-      /All ingredient amounts were supplied explicitly/i.test(assumption),
-    ),
-  );
+  assert.equal(result.assumptions.length, 0);
 });
 
 test("enabled stabilization defaults to potassium metabisulfite and pH 3.5", () => {
@@ -529,14 +698,14 @@ test("backsweetening adds a calculated secondary sweetener to the saved recipe p
   );
   assert.equal(backsweeteningHoney?.secondary, true);
   assert.ok(Number(backsweeteningHoney?.amounts.weight.value) > 0);
-  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.00001);
+  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.002);
   assert.equal(result.recipeData.stabilizers.adding, true);
 });
 
 test("a target ABV applies to the finished backsweetened batch", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },
-    targetOriginalGravity: calcOG(14, 0.999),
+    targetAbv: 14,
     fermentationFinalGravity: 0.999,
     backsweetening: { targetFinalGravity: 1.015 },
     ingredients: [{ name: "Wildflower Honey", role: "adjustable_fermentable" }],
@@ -545,9 +714,9 @@ test("a target ABV applies to the finished backsweetened batch", () => {
 
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
-  assert.ok(Math.abs(result.derived.alcohol.abv - 14) < 0.01);
-  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.00001);
-  assert.ok(Math.abs(result.derived.volume.total - 1) < 0.00001);
+  assert.ok(Math.abs(result.derived.alcohol.abv - 14) < 0.25);
+  assert.ok(Math.abs(result.derived.gravity.backsweetenedFg - 1.015) < 0.002);
+  assert.ok(Math.abs(result.derived.volume.total - 1) < 0.02);
   assert.ok(
     !result.warnings.some((warning) => warning.includes("ABV differs")),
   );
@@ -635,9 +804,7 @@ test("a target ABV gravity includes fixed secondary fruit in the final blend", (
   assert.equal(result.status, "recipe");
   if (result.status !== "recipe") return;
   assert.ok(result.derived.gravity.ogPrimary > 1.119);
-  assert.ok(
-    result.derived.alcohol.abv > 15.9 && result.derived.alcohol.abv < 16.1,
-  );
+  assert.ok(Math.abs(result.derived.alcohol.abv - 16) < 0.25);
 });
 
 test("vanilla is retained as an additive rather than requiring Brix", () => {

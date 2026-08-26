@@ -100,6 +100,12 @@ const additiveSchema = z.object({
   secondary: z.boolean().optional(),
 });
 
+/** Legacy input support for drafts created before additives required a dose. */
+const deferredAdditiveSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  secondary: z.boolean().optional(),
+});
+
 const backsweeteningSchema = z.object({
   targetFinalGravity: z.number().min(0.97).max(1.2),
   sweetener: z
@@ -127,10 +133,13 @@ export const buildRecipeDraftInputSchema = z
     name: z.string().trim().min(1).max(160).optional(),
     style: z.string().trim().min(1).max(80).optional(),
     batchVolume: batchVolumeSchema.optional(),
+    /** Finished-batch ABV target; normalized to an OG by the shared workflow. */
+    targetAbv: z.number().finite().min(0).max(30).optional(),
     targetOriginalGravity: z.number().min(1.001).max(1.2).optional(),
     fermentationFinalGravity: z.number().min(0.97).max(1.2).optional(),
     ingredients: z.array(draftIngredientSchema).max(30).default([]),
     additives: z.array(additiveSchema).max(20).default([]),
+    deferredAdditives: z.array(deferredAdditiveSchema).max(20).default([]),
     /** The brewer wants a backsweetened finish but has not chosen its FG yet. */
     backsweeteningIntent: z.boolean().optional(),
     backsweetening: backsweeteningSchema.optional(),
@@ -142,6 +151,58 @@ export const buildRecipeDraftInputSchema = z
   .strict();
 
 export type BuildRecipeDraftInput = z.infer<typeof buildRecipeDraftInputSchema>;
+
+/**
+ * Produce a practical save-dialog title when the conversational model did
+ * not supply one. The draft remains editable, but it should never begin as
+ * an unhelpful "Untitled Recipe" just because a structured calculation has
+ * no separate name field.
+ */
+export function defaultRecipeDraftName(input: {
+  recipeDraftInput?: Pick<BuildRecipeDraftInput, "name" | "style">;
+  recipeData?: RecipeDataV2;
+}): string {
+  const explicitName = input.recipeDraftInput?.name?.trim();
+  if (explicitName) return explicitName;
+
+  const style = input.recipeDraftInput?.style?.trim();
+  if (style) return /\bmead\b/i.test(style) ? style : `${style} Mead`;
+
+  const fruit = input.recipeData?.ingredients.find(
+    (ingredient) =>
+      ingredient.category.toLowerCase() === "fruit" &&
+      !ingredient.secondary,
+  );
+  const flavorAdditive = input.recipeData?.additives.find(
+    (additive) => !/^(?:pectic enzyme|bentonite|tannin)$/i.test(additive.name),
+  );
+  if (fruit) {
+    const fruitName = recipeNamePart(fruit.name);
+    return flavorAdditive
+      ? `${fruitName} ${recipeNamePart(flavorAdditive.name)} Mead`
+      : `${fruitName} Mead`;
+  }
+
+  const mainIngredient = input.recipeData?.ingredients.find(
+    (ingredient) =>
+      !ingredient.secondary &&
+      !/^(?:honey|water)$/i.test(ingredient.name.trim()) &&
+      !/\(backsweetening\)$/i.test(ingredient.name.trim()),
+  );
+  if (mainIngredient) return `${recipeNamePart(mainIngredient.name)} Mead`;
+
+  return "Traditional Mead";
+}
+
+function recipeNamePart(name: string): string {
+  const normalized = name.trim().replace(/\s+/g, " ");
+  if (/^cocoa\s+nibs?$/i.test(normalized)) return "Chocolate";
+  if (/^vanilla\s+beans?$/i.test(normalized)) return "Vanilla";
+  const commaParts = normalized.split(",").map((part) => part.trim());
+  return commaParts.length === 2
+    ? `${commaParts[1]} ${commaParts[0]}`
+    : normalized;
+}
 
 const resultBase = {
   contractVersion: 1 as const,
@@ -223,20 +284,7 @@ export function buildRecipeDraft(
       recipeData: authoritative.data.recipeData,
       derived: authoritative.data.derived,
       assumptions: [
-        "Calculated values use the shared MeadTools schema and calculation engine.",
         ...input.assumptions,
-        ...(input.targetOriginalGravity !== undefined &&
-        input.ingredients.some(
-          (ingredient) =>
-            ingredient.role === "adjustable_fermentable" &&
-            ingredient.amount === undefined,
-        )
-          ? [
-              "The adjustable fermentable and the selected fill liquid were solved against the requested ABV gravity target; all other ingredient amounts were kept explicit.",
-            ]
-          : [
-              "All ingredient amounts were supplied explicitly; MeadTools calculated the resulting gravity and volume.",
-            ]),
         ...(input.backsweetening
           ? recipe.ingredients.some(
               (ingredient) => ingredient.lineId === "backsweetening-sweetener",
@@ -343,13 +391,54 @@ type CompleteBuildRecipeDraftInput = Omit<
 function normalizeDraftInput(
   input: BuildRecipeDraftInput,
 ): BuildRecipeDraftInput {
+  // Recipe prompts naturally express their target as finished-batch ABV. Keep
+  // that conversion in the shared workflow so an agent never has to invent or
+  // hand-calculate an OG before it can build a draft. An explicitly supplied
+  // OG remains authoritative for backwards compatibility and expert use.
+  const withAbvTarget =
+    input.targetOriginalGravity === undefined &&
+    input.targetAbv !== undefined &&
+    input.fermentationFinalGravity !== undefined
+      ? {
+          ...input,
+          targetOriginalGravity: calcOG(
+            input.targetAbv,
+            input.fermentationFinalGravity,
+          ),
+        }
+      : input;
+  const measuredAdditives = withAbvTarget.additives.filter(
+    (additive) => additive.amount !== undefined && additive.unit !== undefined,
+  );
+  const unresolvedAdditives = deduplicateDeferredAdditives([
+    ...withAbvTarget.deferredAdditives,
+    ...withAbvTarget.additives
+      .filter((additive) => additive.amount === undefined || !additive.unit)
+      .map((additive) => ({
+        name: additive.name,
+          ...(additive.secondary ? { secondary: true } : {}),
+      })),
+  ]).filter(
+    (deferred) =>
+      !measuredAdditives.some((additive) =>
+        refersToSameAdditive(additive.name, deferred.name),
+      ),
+  );
   // Water is the implicit remaining-volume balance unless the brewer supplied
   // a concrete water amount. Models sometimes include a bare `Water` line;
   // treating it as an ingredient the brewer must quantify causes an otherwise
   // complete draft to stall on a pointless water question.
   const withoutImplicitWater = {
-    ...input,
-    ingredients: input.ingredients.filter(
+    ...withAbvTarget,
+    additives: [
+      ...measuredAdditives,
+      ...unresolvedAdditives.map((additive) => ({
+        name: additive.name,
+        ...(additive.secondary ? { secondary: true } : {}),
+      })),
+    ],
+    deferredAdditives: [],
+    ingredients: withAbvTarget.ingredients.filter(
       (ingredient) =>
         ingredient.amount !== undefined ||
         ingredient.role === "fill_liquid" ||
@@ -378,7 +467,13 @@ function normalizeDraftInput(
                 "The stabilizer calculation uses potassium metabisulfite and an assumed pH of 3.5 unless you provide different values.",
               ],
       }
-    : withoutImplicitWater;
+    : {
+        ...withoutImplicitWater,
+        // Stabilization is opt-in except when backsweetening requires it.
+        // A missing preference should not turn an otherwise calculated draft
+        // into an unnecessary intake question.
+        stabilizers: withoutImplicitWater.stabilizers ?? { enabled: false },
+      };
   // An adjustable fermentable only makes sense with a gravity target. Models
   // sometimes retain that role after a conversational turn even though the
   // user gave a concrete amount; treat it as fixed rather than saving a zero
@@ -420,6 +515,27 @@ function normalizeDraftInput(
   };
 }
 
+/**
+ * A later measured addition supersedes a placeholder from an earlier planning
+ * turn. Normalize common packaging words so “Vanilla bean” can resolve a
+ * previous “Vanilla” placeholder without making the match ingredient-specific.
+ */
+function refersToSameAdditive(left: string, right: string): boolean {
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/\b(?:bean|beans|stick|sticks|pod|pods|leaf|leaves)\b/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const normalizedLeft = normalize(left);
+  const normalizedRight = normalize(right);
+  return (
+    normalizedLeft === normalizedRight ||
+    normalizedLeft.includes(normalizedRight) ||
+    normalizedRight.includes(normalizedLeft)
+  );
+}
+
 function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
   const questions: WorkflowQuestion[] = [];
   if (!input.batchVolume?.value || !input.batchVolume.unit) {
@@ -430,6 +546,11 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
       answerType: "object",
       options: ["gal", "L"],
     });
+    // Ingredient rates, additive catalog doses, and all practical fruit-load
+    // assumptions depend on finished volume. Ask this single foundational
+    // question first rather than turning an otherwise natural conversation
+    // into a long list of downstream requirements.
+    return questions;
   }
   if (input.fermentationFinalGravity === undefined) {
     questions.push({
@@ -476,8 +597,23 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
     });
   }
 
+  if (
+    input.targetAbv !== undefined &&
+    input.targetOriginalGravity === undefined &&
+    input.fermentationFinalGravity === undefined
+  ) {
+    questions.push({
+      id: "fermentation_final_gravity",
+      field: "fermentationFinalGravity",
+      prompt:
+        "What fermentation final gravity should MeadTools use for this ABV target?",
+      answerType: "number",
+    });
+  }
+
   const honeyNeedsTarget =
     input.targetOriginalGravity === undefined &&
+    input.targetAbv === undefined &&
     input.ingredients.some(
       (ingredient) =>
         isHoneyIngredientName(ingredient.name) && !ingredient.amount,
@@ -835,7 +971,7 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
               ? `Created by the MeadTools recipe workflow: ${input.name}`
               : "Created by the MeadTools recipe workflow.",
             "",
-          ],
+          ] as [string, string],
         },
       ],
       secondary: [],
@@ -847,6 +983,25 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     recipe = addCalculatedBacksweetening(recipe, input.backsweetening);
   }
   return recipe;
+}
+
+function deduplicateDeferredAdditives(
+  additives: BuildRecipeDraftInput["deferredAdditives"],
+): BuildRecipeDraftInput["deferredAdditives"] {
+  const deduplicated: BuildRecipeDraftInput["deferredAdditives"] = [];
+  for (const additive of additives) {
+    const key = `${additive.name.trim().toLowerCase()}:${additive.secondary === true}`;
+    if (
+      !deduplicated.some(
+        (candidate) =>
+          `${candidate.name.trim().toLowerCase()}:${candidate.secondary === true}` ===
+          key,
+      )
+    ) {
+      deduplicated.push(additive);
+    }
+  }
+  return deduplicated;
 }
 
 function addCalculatedBacksweetening(
@@ -1007,6 +1162,7 @@ type SuppliedIngredient = {
   brix: number;
   sg: number;
   volumeL: number;
+  requestedAmount?: BuildRecipeDraftInput["ingredients"][number]["amount"];
   secondary: boolean;
   role: "fixed" | "adjustable_fermentable" | "fill_liquid";
 };
@@ -1057,6 +1213,7 @@ function toSuppliedIngredient(
     brix,
     sg,
     volumeL,
+    requestedAmount: ingredient.amount,
     secondary: ingredient.secondary ?? false,
     role,
   };
@@ -1094,6 +1251,21 @@ function ingredientLine(
     weightUnit: WeightUnit;
   },
 ): RecipeDataV2["ingredients"][number] {
+  const basis = ingredientMeasurementBasis(input);
+  const weight = input.volumeL * input.sg * KG_TO_WEIGHT[input.weightUnit];
+  const volume = input.volumeL * L_TO_VOLUME[input.volumeUnit];
+  const requestedWeight =
+    input.requestedAmount?.kind === "weight"
+      ? input.requestedAmount.value *
+        WEIGHT_TO_KG[input.requestedAmount.unit] *
+        KG_TO_WEIGHT[input.weightUnit]
+      : undefined;
+  const requestedVolume =
+    input.requestedAmount?.kind === "volume"
+      ? input.requestedAmount.value *
+        VOLUME_TO_L[input.requestedAmount.unit] *
+        L_TO_VOLUME[input.volumeUnit]
+      : undefined;
   return {
     lineId: input.lineId,
     name: input.name,
@@ -1106,18 +1278,40 @@ function ingredientLine(
     secondary: input.secondary,
     amounts: {
       weight: {
-        value: formatNumber(
-          input.volumeL * input.sg * KG_TO_WEIGHT[input.weightUnit],
-        ),
+        value:
+          basis === "weight"
+            ? requestedWeight !== undefined
+              ? formatNumber(requestedWeight)
+              : formatPracticalIngredientAmount(weight)
+            : formatNumber(weight),
         unit: input.weightUnit,
       },
       volume: {
-        value: formatNumber(input.volumeL * L_TO_VOLUME[input.volumeUnit]),
+        value:
+          basis === "volume"
+            ? requestedVolume !== undefined
+              ? formatNumber(requestedVolume)
+              : formatPracticalIngredientAmount(volume)
+            : formatNumber(volume),
         unit: input.volumeUnit,
       },
-      basis: "volume",
+      basis,
     },
   };
+}
+
+/**
+ * Use the unit a brewer would normally measure for the ingredient. Fruit and
+ * honey are weighed; water and other liquid fills are measured by volume.
+ */
+function ingredientMeasurementBasis(
+  ingredient: Pick<SuppliedIngredient, "name" | "category" | "role">,
+): "weight" | "volume" {
+  if (ingredient.role === "fill_liquid") return "volume";
+  if (isWaterIngredientName(ingredient.name)) return "volume";
+  return /(?:water|juice|cider|liquid)/i.test(ingredient.category)
+    ? "volume"
+    : "weight";
 }
 
 function nutrientData(input: CompleteBuildRecipeDraftInput): NutrientDataV2 {
@@ -1167,6 +1361,15 @@ function invalidInput(
 
 function formatNumber(value: number): string {
   return String(Number(value.toFixed(6)));
+}
+
+/**
+ * Recipe drafts are measurements a brewer needs to use, not a raw calculator
+ * trace. The selected measurement is rounded to a tenth; the paired conversion
+ * remains precise so MeadTools can retain its calculated gravity and volume.
+ */
+function formatPracticalIngredientAmount(value: number): string {
+  return String(Number(value.toFixed(1)));
 }
 
 function validateResult(result: unknown): ChatbotRecipeWorkflowResult {

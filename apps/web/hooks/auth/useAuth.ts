@@ -2,18 +2,26 @@
 
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { fetchAccountInfo, type AuthUser } from "@/lib/api/auth";
 import { qk } from "@/lib/db/queryKeys";
 
 export function useAuth() {
   const { data: session, status } = useSession();
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [hasHydratedCredentialState, setHasHydratedCredentialState] =
+    useState(false);
 
-  const accessToken =
-    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  useEffect(() => {
+    setAccessToken(localStorage.getItem("accessToken"));
+    setHasHydratedCredentialState(true);
+  }, []);
 
   const nextAuthAccessToken = (session as any)?.accessToken ?? null;
 
-  const enabled = !!accessToken || status === "authenticated";
+  const enabled =
+    hasHydratedCredentialState &&
+    (!!accessToken || status === "authenticated");
 
   const {
     data: user,
@@ -36,7 +44,9 @@ export function useAuth() {
   });
 
   const loading =
-    status === "loading" || (enabled && (isUserLoading || isFetching));
+    !hasHydratedCredentialState ||
+    status === "loading" ||
+    (enabled && (isUserLoading || isFetching));
 
   const isLoggedIn = !!user;
 

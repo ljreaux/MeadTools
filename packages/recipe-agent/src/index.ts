@@ -49,7 +49,7 @@ export const recipeAgentTools: readonly RecipeAgentTool[] = [
   {
     name: "build_recipe_draft",
     description:
-      "Guide intake and create an unsaved MeadTools recipe draft for any recipe shape. It returns only the high-impact missing inputs until it can construct and calculate a valid recipe payload.",
+    "Create or revise an unsaved MeadTools recipe draft using the shared calculation engine. Use it as soon as the brewer explicitly requests a draft and their details plus accepted defaults are sufficient; it returns only the high-impact missing inputs when a calculation cannot yet be completed. Every nonfermentable flavor or process addition belongs in additives, not ingredients. An additive needs an amount and a recipe-builder unit. When its dose is not supplied, first use search_additives to look for a canonical unit and standard dose. If neither the brewer nor the catalog provides a reliable dose, do not complete the draft: make a concrete plain-language suggestion and ask the brewer to confirm it.",
     inputSchema: buildRecipeDraftInputSchema,
     execute: buildRecipeDraft,
   },
@@ -80,7 +80,7 @@ const recordRecipePlanInputSchema = z
 export const recordRecipePlanAgentTool = {
   name: recordRecipePlanToolName,
   description:
-    "Record a partial MeadTools recipe plan after you recommend data-backed defaults. Use it before asking the brewer to accept a specific fruit amount, yeast, nutrient plan, sweetness strategy, or other draft assumption. This does not calculate or create a recipe; it preserves the proposed plan for a later explicit draft request.",
+    "Optionally record a partial MeadTools recipe plan while the brewer is still exploring choices. This does not calculate or create a recipe; it preserves a proposed direction for a later draft or revision. Do not use it instead of build_recipe_draft when the brewer explicitly asks for a draft and enough details are available.",
   inputSchema: recordRecipePlanInputSchema,
 };
 
@@ -342,7 +342,7 @@ export type CatalogAgentToolExecution =
 export const ingredientSearchAgentTool = {
   name: "search_ingredients" as const,
   description:
-    "Return the complete compact MeadTools ingredient catalog (under 200 entries) with canonical name, category, catalog ID, and Brix. Use it once before drafting with named ingredients other than water or honey. Choose the best semantic match yourself from the returned list, including plural, regional, or descriptive wording, and use its returned values exactly.",
+    "Return the complete compact MeadTools ingredient catalog (under 200 entries) with canonical name, category, catalog ID, and Brix. Use it once before drafting with a named fermentable ingredient other than water or honey. Do not use it for culinary or process additions such as spices, vanilla, cocoa nibs, oak, tea, tannin, enzymes, or finings. Choose the best semantic match yourself from the returned list, including plural, regional, or descriptive wording, and use its returned values exactly.",
   inputSchema: ingredientCatalogInputSchema,
 };
 
@@ -531,6 +531,13 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
           },
           name: { type: "string", maxLength: 160 },
           style: { type: "string", maxLength: 80 },
+          targetAbv: {
+            type: "number",
+            minimum: 0,
+            maximum: 30,
+            description:
+              "Requested finished-batch ABV. Use this directly when the brewer gives an ABV target; MeadTools calculates the corresponding OG.",
+          },
           targetOriginalGravity: {
             type: "number",
             minimum: 1.001,

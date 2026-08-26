@@ -68,6 +68,7 @@ import {
 import type { ChatTurnEvent } from "@/lib/ai/chat-service";
 import {
   buildRecipeDraftInputSchema,
+  defaultRecipeDraftName,
   type BuildRecipeDraftInput,
 } from "@meadtools/recipe-workflows";
 import {
@@ -140,6 +141,7 @@ type ChatTurnResult = {
   answer: string;
   toolResults: Array<{ toolName: string; result: unknown }>;
   recipeDraftInput?: BuildRecipeDraftInput;
+  clearRecipeDraft?: boolean;
   conversationTitle?: string;
   usage: ChatTurnUsage;
 };
@@ -406,8 +408,15 @@ export default function RecipeChat({
       const result = data.result;
       if (typeof messageId !== "string" || !isChatTurnResult(result)) return;
       const draft = recipeDataFrom(result.toolResults);
-      if (draft) setActiveRecipeData(draft);
-      if (result.recipeDraftInput) setRecipeDraftInput(result.recipeDraftInput);
+      if (result.clearRecipeDraft) {
+        setActiveRecipeData(undefined);
+        setRecipeDraftInput(undefined);
+        setSaveDialogOpen(false);
+        setSavedDraftName("");
+      } else {
+        if (draft) setActiveRecipeData(draft);
+        if (result.recipeDraftInput) setRecipeDraftInput(result.recipeDraftInput);
+      }
       const conversationTitle = result.conversationTitle;
       if (conversationTitle) {
         setConversations((current) =>
@@ -863,7 +872,7 @@ export default function RecipeChat({
 
   function openSaveDraft() {
     setSavedDraftName(
-      recipeDraftInput?.name?.trim() || t("chatbotTest.untitledDraft"),
+      defaultRecipeDraftName({ recipeDraftInput, recipeData: activeRecipeData }),
     );
     setSaveDialogOpen(true);
   }

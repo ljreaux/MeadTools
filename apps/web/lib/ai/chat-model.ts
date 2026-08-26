@@ -25,6 +25,7 @@ export type ChatFunctionTool = {
 
 export type ChatToolChoice =
   | "auto"
+  | "required"
   | "none"
   | { type: "function"; function: { name: string } };
 

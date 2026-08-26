@@ -156,15 +156,19 @@ is future data-retention work, not a configured retention period.
 
 ## Provider architecture and cost telemetry
 
-The active transport is direct OpenAI Chat Completions using the pinned model
+The active transport is direct OpenAI Responses API using the pinned model
 `gpt-5.4-mini-2026-03-17`. The pin is intentional: a model change requires a
 reviewed configuration/pricing change and validation, rather than
 an alias changing behavior at deployment time. The server requires the chat
 enable switch and an OpenAI API key; the model may be overridden only through
-the documented, bounded configuration path. It sends `store: false`, sets a
-60-second timeout, disables parallel tool calls, and maps provider errors to
-redacted customer-safe failures. It does not automatically retry a completion,
-so a transport failure cannot conceal a duplicate model charge.
+the documented, bounded configuration path. It sends `store: false`, keeps
+conversation state in MeadTools rather than OpenAI, sets a 60-second timeout,
+disables parallel tool calls, and maps provider errors to redacted
+customer-safe failures. Explicit calculated-draft requests force the
+`build_recipe_draft` function on their first provider dispatch; ordinary
+conversation and wiki/process requests retain automatic tool selection. It
+does not automatically retry a completion, so a transport failure cannot
+conceal a duplicate model charge.
 
 The provider-neutral `ChatModelClient` interface is what the agent and title
 generator receive. It normalizes messages, tool calls, structured-output title
