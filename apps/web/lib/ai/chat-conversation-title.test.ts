@@ -71,26 +71,29 @@ test("conversation titles accept a compact plain-text provider response", async 
   assert.equal(result.title, "Raspberry Mead Draft");
 });
 
-test("a failed title request propagates after its durable provider attempt", async () => {
+test("a failed title request keeps the deterministic title after its durable provider attempt", async () => {
   let providerAttempts = 0;
+  let reportedError: unknown;
 
-  await assert.rejects(
-    generateChatConversationTitleAfterProviderAttempt({
-      userId: 7,
-      firstMessage: "Help me create a blackberry mead recipe.",
-      recordProviderAttempt: () => {
-        providerAttempts += 1;
+  const result = await generateChatConversationTitleAfterProviderAttempt({
+    userId: 7,
+    firstMessage: "Help me create a blackberry mead recipe.",
+    recordProviderAttempt: () => {
+      providerAttempts += 1;
+    },
+    onError: (error) => {
+      reportedError = error;
+    },
+    client: {
+      async complete() {
+        throw new Error("title provider unavailable");
       },
-      client: {
-        async complete() {
-          throw new Error("title provider unavailable");
-        },
-      },
-    }),
-    /title provider unavailable/,
-  );
+    },
+  });
 
   assert.equal(providerAttempts, 1);
+  assert.equal(result, undefined);
+  assert.match(String(reportedError), /title provider unavailable/);
 });
 
 test("conversation title sanitization falls back to the first message", () => {

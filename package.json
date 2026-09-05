@@ -11,7 +11,12 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "@prisma/client": "6.19.3",
+    "lodash": "4.18.1",
+    "next-auth": "4.24.15",
+    "prisma": "6.19.3",
+    "shell-quote": "1.10.0"
   },
   "scripts": {
     "dev": "npm run dev:web",
@@ -47,11 +52,13 @@
     "check:package-boundaries": "node scripts/check-package-boundaries.mjs",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web"
+    "db:reset": "docker compose down -v && docker compose up -d && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web",
+    "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,refund.created,refund.updated,charge.dispute.created,charge.dispute.funds_withdrawn --forward-to http://localhost:3000/api/webhooks/stripe"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "prisma": "6.19.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   }

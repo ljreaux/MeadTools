@@ -374,6 +374,62 @@ test("an explicit Fermaid K-only request overrides a generic nutrient schedule i
   assert.doesNotMatch(result.answer, /Tailored Brix-Eating schedule/);
 });
 
+test("explicit no-backsweetening and Fermaid K choices override model draft defaults", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "explicit-dry-fermaid-k-guards",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                targetAbv: 12,
+                fermentationFinalGravity: 0.999,
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                nutrients: {
+                  enabled: true,
+                  yeastBrand: "Lalvin",
+                  yeastStrain: "EC-1118",
+                  nitrogenRequirement: "Low",
+                  schedule: "tbe",
+                  numberOfAdditions: 3,
+                  goFermType: "Go-Ferm",
+                },
+                backsweetening: { targetFinalGravity: 1.01 },
+                stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Build a one gallon traditional mead at 12% ABV with EC-1118, Fermaid K with Go-Ferm, and three nutrient additions. Let it ferment dry and stabilize it; I do not want to backsweeten.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.match(result.answer, /\*\*Nutrients:\*\* Fermaid K, 3 additions, Go-Ferm/);
+  assert.doesNotMatch(result.answer, /Tailored Brix-Eating schedule/);
+  assert.doesNotMatch(result.answer, /Honey \(backsweetening\)/);
+  assert.equal(result.recipeDraftInput?.backsweetening, undefined);
+  assert.equal(result.recipeDraftInput?.nutrients?.schedule, "justK");
+});
+
 test("an explicit dry backsweetened mead draft keeps agreed honey and finish defaults when the tool payload omits them", async () => {
   const client: ChatModelClient = {
     async complete() {
@@ -1795,6 +1851,65 @@ test("accepted beginner defaults move holiday spices to additives", async () => 
   assert.match(result.answer, /\| Clove \| 2 each \|/);
   assert.match(result.answer, /\| Orange Zest \| 1 each \|/);
   assert.doesNotMatch(result.answer, /Brix value/i);
+});
+
+test("accepted beginner defaults do not invent holiday flavors for a blackberry cinnamon draft", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "blackberry-cinnamon-no-holiday-extras",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                ingredients: [
+                  {
+                    name: "Blackberry",
+                    category: "fruit",
+                    brix: 8,
+                    amount: { kind: "weight", value: 3, unit: "lb" },
+                  },
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                additives: [
+                  { name: "Cinnamon Stick", amount: 1, unit: "units" },
+                  { name: "Clove", amount: 2, unit: "units" },
+                  { name: "Orange Zest", amount: 1, unit: "units" },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "I have honey, frozen blackberries, cinnamon sticks, and 71B. What beginner-friendly direction would you take this?",
+        },
+        {
+          role: "assistant",
+          content: "A blackberry cinnamon melomel would be approachable.",
+        },
+        {
+          role: "user",
+          content:
+            "That sounds good. Please build it as a 1-gallon beginner draft with sensible defaults.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /\| Cinnamon Stick \| 1 each \|/);
+  assert.doesNotMatch(result.answer, /\| Clove \|/);
+  assert.doesNotMatch(result.answer, /\| Orange Zest \|/);
 });
 
 test("accepted beginner defaults move ginger to an additive", async () => {

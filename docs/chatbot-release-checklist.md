@@ -53,8 +53,10 @@ No extra environment variables are needed to turn these on:
       model call if the user cannot cover its bounded credit reservation.
 - [x] **Abandoned-turn recovery:** the production cron settles stale
       checkpointed provider usage with its original pricing versions, reverses
-      only reservations with confirmed zero dispatches, repairs terminal usage
-      auditing, and fails stale pending messages every five minutes.
+      reservations with confirmed zero dispatches, repairs terminal usage
+      auditing, and fails stale pending messages every five minutes. An
+      uncertain dispatch remains held for at most 24 hours, then settles its
+      known checkpointed usage or reverses when no usage was checkpointed.
 
 The limit overrides above are clamped in code, so an accidental environment
 value cannot raise them beyond the reviewed maximum.
@@ -65,6 +67,9 @@ value cannot raise them beyond the reviewed maximum.
       applies the credit/chat migrations successfully.
 - [ ] Verify the five-minute reconciliation cron in Production logs. Vercel
       cron jobs do not run for Preview deployments.
+- [ ] Verify one synthetic uncertain provider attempt remains held inside the
+      24-hour safety window and reaches a terminal ledger state after the
+      window instead of locking customer credits indefinitely.
 - [ ] In admin, keep global access set to **beta allowlist**.
 - [ ] Grant chat access to each selected user, then grant their planned 1,000
       beta credits with the separate admin credit action.
@@ -109,8 +114,9 @@ ready. It is intentionally separate from beta launch.
       `https://<production-domain>/api/webhooks/stripe`, set its signing secret as
       `STRIPE_WEBHOOK_SECRET`, and subscribe to:
       `checkout.session.completed`,
-      `checkout.session.async_payment_succeeded`, `refund.created`,
-      `refund.updated`, `charge.dispute.created`, and
+      `checkout.session.async_payment_succeeded`,
+      `checkout.session.async_payment_failed`, `checkout.session.expired`,
+      `refund.created`, `refund.updated`, `charge.dispute.created`, and
       `charge.dispute.funds_withdrawn`.
 - [ ] Confirm Stripe Managed Payments/tax eligibility and the planned
       tax-exclusive USD display policy.

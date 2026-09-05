@@ -218,6 +218,10 @@ fixed fee, and a one-credit minimum for every provider-backed turn. A fully
 deterministic turn is answered before reservation and has no charge. Because
 the hold is intentionally capped, a costly bounded turn can settle to a
 negative balance; the next provider turn remains blocked until recovery.
+Conversation-title generation is best effort: once the main answer succeeds,
+an auxiliary title-provider failure is recorded and logged but cannot discard
+the answer. Any uncheckpointed cost from that failed auxiliary call is absorbed
+by the platform.
 
 Before every provider dispatch, the route atomically increments a durable
 attempt count. Failures before that increment safely reverse the reservation
@@ -229,9 +233,14 @@ the earlier calls or being guessed as zero work. When every dispatch is
 checkpointed, a later step failure settles that known usage with the original
 pricing snapshot and records the turn as failed. If a request disconnects or a
 process dies, the five-minute reconciler settles a fully checkpointed
-reservation, reverses only an explicitly unattempted reservation, repairs
-usage rows whose ledger operation is already final, and marks stale pending
-messages failed after the grace period. Settlement/reversal operations are
+reservation, reverses an explicitly unattempted reservation, repairs usage rows
+whose ledger operation is already final, and marks stale pending messages
+failed after the grace period. An uncertain dispatch remains held during a
+24-hour provider-recovery window. After that bounded window, the reconciler
+settles any earlier checkpointed calls or reverses the reservation when no
+usage was checkpointed; the platform absorbs any provider cost that could not
+be durably measured. This prevents an indeterminate provider result from
+locking a customer's balance forever. Settlement/reversal operations are
 idempotent; the maintenance route tolerates a concurrently finishing request.
 
 ## Stripe credit-purchase architecture

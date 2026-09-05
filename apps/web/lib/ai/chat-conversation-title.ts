@@ -21,10 +21,16 @@ export type ChatConversationTitleResult = {
 export async function generateChatConversationTitleAfterProviderAttempt(
   options: Parameters<typeof generateChatConversationTitle>[0] & {
     recordProviderAttempt: () => Promise<void> | void;
+    onError?: (error: unknown) => void;
   },
-): Promise<ChatConversationTitleResult> {
+): Promise<ChatConversationTitleResult | undefined> {
   await options.recordProviderAttempt();
-  return generateChatConversationTitle(options);
+  try {
+    return await generateChatConversationTitle(options);
+  } catch (error) {
+    options.onError?.(error);
+    return undefined;
+  }
 }
 
 /**

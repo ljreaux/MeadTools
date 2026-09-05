@@ -83,6 +83,8 @@ export type StoredCreditSettlement = CreditSettlement & {
   availableCredits: number;
 };
 
+const MAX_UNKNOWN_PROVIDER_ATTEMPT_HOLD_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Reverses credit holds that outlived a request by a generous margin. A
  * reservation is only reversed when no settlement or reversal exists for the
@@ -90,10 +92,15 @@ export type StoredCreditSettlement = CreditSettlement & {
  */
 export async function reverseAbandonedCreditReservations(options?: {
   olderThan?: Date;
+  releaseUnknownAttemptsOlderThan?: Date;
   limit?: number;
   now?: Date;
 }): Promise<{ reversed: number; settled: number; skipped: number }> {
-  const olderThan = options?.olderThan ?? new Date(Date.now() - 60 * 60 * 1000);
+  const now = options?.now ?? new Date();
+  const olderThan = options?.olderThan ?? new Date(now.getTime() - 60 * 60 * 1000);
+  const releaseUnknownAttemptsOlderThan =
+    options?.releaseUnknownAttemptsOlderThan ??
+    new Date(now.getTime() - MAX_UNKNOWN_PROVIDER_ATTEMPT_HOLD_MS);
   const limit = options?.limit ?? 100;
   if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
     throw new RangeError(
@@ -102,9 +109,10 @@ export async function reverseAbandonedCreditReservations(options?: {
   }
 
   const candidates = await prisma.$queryRaw<
-    Array<{ user_id: number; operation_id: string }>
+    Array<{ user_id: number; operation_id: string; created_at: Date }>
   >(Prisma.sql`
-    SELECT "accounts"."user_id", "reservations"."operation_id"::text AS "operation_id"
+    SELECT "accounts"."user_id", "reservations"."operation_id"::text AS "operation_id",
+      "reservations"."created_at"
     FROM "credit_ledger_entries" AS "reservations"
     INNER JOIN "credit_accounts" AS "accounts"
       ON "accounts"."id" = "reservations"."account_id"
@@ -136,6 +144,8 @@ export async function reverseAbandonedCreditReservations(options?: {
         providerAttemptCount: checkpoint?.providerAttemptCount ?? 0,
         checkpointedProviderCallCount:
           checkpoint?.checkpointedProviderCallCount ?? 0,
+        releaseUncheckpointedProviderAttempts:
+          candidate.created_at <= releaseUnknownAttemptsOlderThan,
       });
       if (action === "settle" && checkpoint) {
         const reservation = await prisma.credit_ledger_entries.findFirst({

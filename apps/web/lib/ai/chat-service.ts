@@ -480,7 +480,7 @@ export async function runChatTurn(options: {
         messages.push({
           role: "system",
           content:
-            "The brewer already explicitly requested a calculated recipe draft, and your last reply deferred that calculation by reopening intake. Do not ask for permission or repeat the plan. Call build_recipe_draft now using the complete conversation, accepted defaults, and explicit opt-outs. For dry fermentation followed by unspecified backsweetening, send fermentationFinalGravity 0.999 and backsweetening.targetFinalGravity 1.010. When the brewer accepts sensible beginner defaults for a spiced one-gallon draft, use modest defaults such as 1 cinnamon stick, 2 whole cloves, and 1 orange peel/zest addition instead of asking to confirm them again. For an undosed culinary flavor addition outside accepted beginner defaults, first call search_additives; use a clear catalog match's canonical unit and standard dose. If no reliable dose exists, suggest one and ask for confirmation instead of completing the draft without it. The workflow will identify any genuinely material missing field or feasibility conflict. If a named fermentable needs data, follow its returned request through the MeadTools ingredient catalog rather than asking the brewer for Brix.",
+            "The brewer already explicitly requested a calculated recipe draft, and your last reply deferred that calculation by reopening intake. Do not ask for permission or repeat the plan. Call build_recipe_draft now using the complete conversation, accepted defaults, and explicit opt-outs. For dry fermentation followed by unspecified backsweetening, send fermentationFinalGravity 0.999 and backsweetening.targetFinalGravity 1.010. When the brewer explicitly requested a holiday-style cinnamon, clove, and orange one-gallon draft and accepts sensible beginner defaults, use modest amounts such as 1 cinnamon stick, 2 whole cloves, and 1 orange peel/zest addition instead of asking to confirm them again. Do not add those holiday flavors to another spiced recipe unless the brewer named them. For an undosed culinary flavor addition outside accepted beginner defaults, first call search_additives; use a clear catalog match's canonical unit and standard dose. If no reliable dose exists, suggest one and ask for confirmation instead of completing the draft without it. The workflow will identify any genuinely material missing field or feasibility conflict. If a named fermentable needs data, follow its returned request through the MeadTools ingredient catalog rather than asking the brewer for Brix.",
         });
         continue;
       }
@@ -1892,9 +1892,10 @@ function withExplicitRecipeDefaults(input: unknown, intake: string): unknown {
     /\bdry\s+(?:traditional|mead|melomel|cyser|pyment|hydromel|bochet|braggot)\b/i.test(
       intake,
     );
+  const rejectsBacksweetening = explicitlyRejectsBacksweetening(intake);
   const requestsBacksweetening =
     /\bback[\s-]?sweeten(?:ing|ed)?\b/i.test(intake) &&
-    !/\b(?:no|not|don't|do not)\b[\s\S]{0,30}\bback[\s-]?sweeten/i.test(intake);
+    !rejectsBacksweetening;
   const rejectsStabilization =
     /\b(?:no|not|don't|do not)\b[\s\S]{0,30}\bstabili[sz]/i.test(intake);
   const result: Record<string, unknown> = { ...input };
@@ -1910,6 +1911,9 @@ function withExplicitRecipeDefaults(input: unknown, intake: string): unknown {
   }
   if (requestsBacksweetening && !isRecord(result.backsweetening)) {
     result.backsweetening = { targetFinalGravity: 1.01 };
+  }
+  if (rejectsBacksweetening) {
+    delete result.backsweetening;
   }
   if (
     (requestsBacksweetening || /\bstabili[sz]/i.test(intake)) &&
@@ -2014,7 +2018,8 @@ function withAcceptedBeginnerRecipeDefaults(
         return ingredient;
       }
       if (isWaterIngredient(ingredient.name)) {
-        const { amount: _amount, ...rest } = ingredient;
+        const rest = { ...ingredient };
+        delete rest.amount;
         return { ...rest, role: "fill_liquid" };
       }
       if (
@@ -2067,12 +2072,34 @@ function withExplicitAdditiveDefaults(input: unknown, intake: string): unknown {
     additives = upsertExplicitAdditive(additives, intake, spec);
   }
   additives = removeGenericFallbackAdditives(additives);
+  additives = removeUnrequestedBeginnerHolidayAdditives(additives, intake);
 
   return {
     ...input,
     ...(Array.isArray(input.ingredients) ? { ingredients } : {}),
     additives,
   };
+}
+
+function removeUnrequestedBeginnerHolidayAdditives(
+  additives: unknown[],
+  intake: string,
+): unknown[] {
+  if (!acceptedBeginnerDefaults(intake)) return additives;
+  const requested = {
+    cinnamon: /\bcinnamon\b/i.test(intake),
+    clove: /\bcloves?\b/i.test(intake),
+    orange: /\borange(?:\s+(?:zest|peel))?\b/i.test(intake),
+  };
+  return additives.filter((additive) => {
+    if (!isRecord(additive) || typeof additive.name !== "string") return true;
+    if (/\bcinnamon\b/i.test(additive.name)) return requested.cinnamon;
+    if (/\bcloves?\b/i.test(additive.name)) return requested.clove;
+    if (/\borange(?:\s+(?:zest|peel))?\b/i.test(additive.name)) {
+      return requested.orange;
+    }
+    return true;
+  });
 }
 
 type CulinaryAdditiveSpec = {
@@ -2705,6 +2732,12 @@ function explicitlyRejectsStabilization(intake: string): boolean {
   );
 }
 
+function explicitlyRejectsBacksweetening(intake: string): boolean {
+  return /\b(?:no|not|don't|do not|without)\b[\s\S]{0,40}\bback[\s-]?sweeten/i.test(
+    intake,
+  );
+}
+
 function isWaterIngredient(name: unknown): boolean {
   return typeof name === "string" && /^water$/i.test(name.trim());
 }
@@ -2761,7 +2794,7 @@ function inferExplicitNutrientPreferences(
   if (nitrogenRequirement) {
     inferred.nitrogenRequirement = nitrogenRequirement;
   }
-  const schedule = inferExplicitNutrientSchedule(nutrients, intake);
+  const schedule = inferExplicitNutrientSchedule(intake);
   if (schedule) inferred.schedule = schedule;
   const additions = inferExplicitNutrientAdditions(nutrients, intake);
   if (additions !== undefined) inferred.numberOfAdditions = additions;
@@ -2806,10 +2839,8 @@ function inferExplicitYeast(
 }
 
 function inferExplicitNutrientSchedule(
-  nutrients: Record<string, unknown>,
   intake: string,
 ): "tbe" | "tosna" | "justK" | "dap" | "oAndk" | "oAndDap" | "kAndDap" | "other" | undefined {
-  if (typeof nutrients.schedule === "string") return undefined;
   if (/\btbe\b/i.test(intake)) return "tbe";
   if (/\btosna\b/i.test(intake)) return "tosna";
   if (/\bo\s*(?:-|and|\+|&)\s*k\b|\bfermaid\s+o\b[\s\S]{0,40}\bfermaid\s+k\b|\bfermaid\s+k\b[\s\S]{0,40}\bfermaid\s+o\b/i.test(intake)) {

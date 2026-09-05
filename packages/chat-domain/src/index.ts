@@ -155,6 +155,7 @@ export type FailedProviderReservationAction = "settle" | "reverse" | "hold";
 export function failedProviderReservationAction(options: {
   providerAttemptCount: number;
   checkpointedProviderCallCount: number;
+  releaseUncheckpointedProviderAttempts?: boolean;
 }): FailedProviderReservationAction {
   if (
     !Number.isSafeInteger(options.providerAttemptCount) ||
@@ -167,6 +168,9 @@ export function failedProviderReservationAction(options: {
     );
   }
   if (options.providerAttemptCount > options.checkpointedProviderCallCount) {
+    if (options.releaseUncheckpointedProviderAttempts) {
+      return options.checkpointedProviderCallCount > 0 ? "settle" : "reverse";
+    }
     return "hold";
   }
   return options.checkpointedProviderCallCount > 0 ? "settle" : "reverse";

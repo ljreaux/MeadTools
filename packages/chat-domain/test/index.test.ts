@@ -174,3 +174,22 @@ test("a failed title attempt prevents settlement of only the earlier agent compl
     "hold",
   );
 });
+
+test("expired uncertain provider attempts release the bounded customer hold", () => {
+  assert.equal(
+    failedProviderReservationAction({
+      providerAttemptCount: 1,
+      checkpointedProviderCallCount: 0,
+      releaseUncheckpointedProviderAttempts: true,
+    }),
+    "reverse",
+  );
+  assert.equal(
+    failedProviderReservationAction({
+      providerAttemptCount: 2,
+      checkpointedProviderCallCount: 1,
+      releaseUncheckpointedProviderAttempts: true,
+    }),
+    "settle",
+  );
+});

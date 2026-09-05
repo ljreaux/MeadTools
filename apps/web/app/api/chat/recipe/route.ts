@@ -451,33 +451,33 @@ export async function POST(request: NextRequest) {
               firstMessage: initialMessageContent,
               recordProviderAttempt: () =>
                 recordChatbotProviderAttempt({ requestId }),
+              onError: (error) => {
+                const providerError =
+                  error instanceof ChatProviderRequestError
+                    ? {
+                        status: error.status,
+                        ...(error.details?.type
+                          ? { type: error.details.type }
+                          : {}),
+                        ...(error.details?.code
+                          ? { code: error.details.code }
+                          : {}),
+                        ...(error.details?.parameter
+                          ? { parameter: error.details.parameter }
+                          : {}),
+                      }
+                    : undefined;
+                console.warn("Hosted chatbot title generation failed.", {
+                  requestId,
+                  userId: access.userId,
+                  provider: config.provider,
+                  model: config.model,
+                  error: error instanceof Error ? error.message : "unknown",
+                  ...(providerError ? { providerError } : {}),
+                });
+              },
             },
-          ).catch((error) => {
-            const providerError =
-              error instanceof ChatProviderRequestError
-                ? {
-                    status: error.status,
-                    ...(error.details?.type
-                      ? { type: error.details.type }
-                      : {}),
-                    ...(error.details?.code
-                      ? { code: error.details.code }
-                      : {}),
-                    ...(error.details?.parameter
-                      ? { parameter: error.details.parameter }
-                      : {}),
-                  }
-                : undefined;
-            console.warn("Hosted chatbot title generation failed.", {
-              requestId,
-              userId: access.userId,
-              provider: config.provider,
-              model: config.model,
-              error: error instanceof Error ? error.message : "unknown",
-              ...(providerError ? { providerError } : {}),
-            });
-            throw error;
-          });
+          );
         }
         const usage = mergeTitleUsage(
           result.usage,

@@ -130,7 +130,8 @@ Use an isolated local/test database, a deliberately configured evaluator account
 - [ ] Test a sub-credit provider turn, a multi-call sub-credit turn, and a multi-credit turn. The wallet must equal the immutable ledger sum.
 - [ ] Confirm the UI discloses the minimum one-credit provider-backed turn and whole-turn rounding behavior.
 - [ ] Inject failure before the durable provider-attempt marker and verify the hold reverses with a failed usage event.
-- [ ] Inject failure after a provider response but before its usage checkpoint persists, including after an earlier checkpointed tool/title call; verify the hold remains for reconciliation and is never reversed or partially settled as zero work.
+- [ ] Inject failure after a provider response but before its usage checkpoint persists, including after an earlier checkpointed tool/title call; verify the hold remains during the 24-hour provider-recovery window.
+- [ ] Advance the same uncertain reservation beyond 24 hours; verify it settles any earlier checkpointed calls or reverses when no usage was checkpointed, reaches a terminal usage state, and does not leave customer credits locked indefinitely. Record that any uncheckpointed provider cost is absorbed by the platform.
 - [ ] Inject failure after settlement, after usage terminalization, and during message completion; verify reconciliation terminalizes the audit event exactly once.
 - [ ] Confirm no completed provider usage becomes a free abandoned reversal.
 - [ ] Confirm no settled answer becomes unrecoverably failed or invisible.
