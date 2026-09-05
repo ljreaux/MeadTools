@@ -1,0 +1,73 @@
+name: Synchronize release branches
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synchronize-release-branches
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    name: Fast-forward identical release branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Create branch-sync app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BRANCH_SYNC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BRANCH_SYNC_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Safely synchronize branch ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin main preview
+
+          main_sha="$(git rev-parse origin/main)"
+          preview_sha="$(git rev-parse origin/preview)"
+          main_tree="$(git rev-parse origin/main^{tree})"
+          preview_tree="$(git rev-parse origin/preview^{tree})"
+
+          if [[ "$main_sha" == "$preview_sha" ]]; then
+            echo "main and preview are already synchronized."
+            exit 0
+          fi
+
+          if [[ "$main_tree" != "$preview_tree" ]]; then
+            echo "::error::main and preview contain different files; refusing to synchronize."
+            exit 1
+          fi
+
+          if git merge-base --is-ancestor origin/preview origin/main; then
+            echo "Fast-forwarding preview to main."
+            git push origin "$main_sha:refs/heads/preview"
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor origin/main origin/preview; then
+            echo "Fast-forwarding main to preview."
+            git push origin "$preview_sha:refs/heads/main"
+            exit 0
+          fi
+
+          echo "::error::Branches have identical files but divergent ancestry; refusing to force-push."
+          exit 1
