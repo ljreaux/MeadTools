@@ -1023,7 +1023,7 @@
                 "Chefs Artikel."
             ]
         },
-        "brix": "Brix misst die Menge an gelösten Feststoffen in einer Flüssigkeit. 1 g Haushaltszucker in 100 ml Wasser sind 1 Brix; das entspricht also ungefähr dem prozentualen Zuckeranteil. Du kannst die Einheit Brix mit einem Refraktometer messen, sie durch die Nährstoffgehaltsangaben berechnen oder mit dem entsprechenden Rechner den SG-Wert zu Brix umrechnen, um sie dann hier als Zuckeranteil zu verwenden.",
+        "brix": "Brix misst die Menge an gelösten Feststoffen in einer Flüssigkeit. 1 g Haushaltszucker in 100 ml Wasser sind 1 Brix; das entspricht also ungefähr dem prozentualen Zuckeranteil. Du kannst die Einheit Brix mit einem Refraktometer messen, sie durch die Nährstoffgehaltsangaben berechnen oder mit dem entsprechenden Rechner den SG-Wert zu Brix umrechnen, um sie dann hier als Zuckeranteil zu verwenden. ",
         "campden": "Campden-Tabletten variieren etwas in der Menge an freiem SO2, die sie enthalten. MeadTools geht bei der Berechnung davon aus, dass eine Campden-Tablette 75PPM freies SO2 enthält.",
         "delleUnits": "Delle-Einheiten sind eine Maßeinheit für mikrobielle Stabilität. Je höher die Zahl, desto wahrscheinlicher ist der Met/Wein stabil, ohne weitere Zusätze oder Stabilisierungsmethoden zu benötigen. Delle-Einheiten werden anhand von Restzucker und Alkoholgehalt berechnet. 73 Delle-Einheiten werden von den meisten als stabil angesehen, aber der Wert variiert. Alkoholtoleranz wird bei der Delle-Stabilität NICHT berücksichtigt. Mehr dazu: ",
         "emailAlerts": "Dadurch werden Warnmeldungen an die E-Mail-Adresse gesendet, die du gespeichert hast, wenn sich dieser Ansatz dem 1/3 Sugar Break nähert und wenn er sich 1.000 nähert",
@@ -1053,7 +1053,7 @@
         "backsweetenedFg": "Dieser Wert wird automatisch anhand der als „In sekundärer Gärung“ markierten Zutaten berechnet. Wenn du den Wert anpasst und auf Absenden klickst, werden die Mengen dieser als „In sekundärer Gärung“ markierten Zutaten verändert, um deine Zieldichte zu erreichen."
     },
     "tiptext": {
-        "refractometerWarning": "Dieser Wert sollte nur angepasst werden, wenn du den Korrekturfaktor für dein spezifisches Refraktometer berechnet hast. Weitere Informationen findest du",
+        "refractometerWarning": "Dieser Wert sollte nur angepasst werden, wenn du den Korrekturfaktor für dein spezifisches Refraktometer berechnet hast. Weitere Informationen findest du ",
         "notify": "Wenn du dieses Kästchen aktivierst, erhältst du täglich E-Mail-Benachrichtigungen an die hinterlegte E-Mail-Adresse, wenn du neue Kommentare oder Bewertungen erhältst. "
     },
     "tomato": "Tomate",
