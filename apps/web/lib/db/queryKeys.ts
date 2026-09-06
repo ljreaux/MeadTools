@@ -13,6 +13,8 @@ export const qk = {
 
   // Full account info (user + recipes)
   accountInfo: ["auth", "account-info"] as const,
+  creditAccount: ["account", "credits"] as const,
+  chatAccess: ["chat", "access"] as const,
 
   ingredients: (category?: string) =>
     category
@@ -43,6 +45,14 @@ export const qk = {
   hydrometerBrewLogsPrefix: ["hydrometer", "logs", "brew"] as const,
 
   adminUsers: ["admin", "users"] as const,
+  adminChatUsage: (filters: Record<string, string | number | undefined>) =>
+    ["admin", "chat-usage", filters] as const,
+  adminChatAccess: ["admin", "chat-access"] as const,
+  adminChatPaymentRecoveries: [
+    "admin",
+    "chat-access",
+    "payment-recoveries",
+  ] as const,
   adminRecipes: (page: number, limit: number, query: string) =>
     ["admin", "recipes", { page, limit, query }] as const,
   adminSummary: ["admin", "summary"] as const,
@@ -53,25 +63,25 @@ export const qk = {
       limit: number,
       query: string,
       stage: string,
-      status: string
+      status: string,
     ) =>
       [
         "admin",
         "brews",
         "list",
-        { page, limit, query, stage, status }
+        { page, limit, query, stage, status },
       ] as const,
-    detail: (brewId: string) => ["admin", "brews", "detail", brewId] as const
+    detail: (brewId: string) => ["admin", "brews", "detail", brewId] as const,
   },
 
   accountBrews: {
     all: ["accountBrews"] as const,
     list: () => [...qk.accountBrews.all, "list"] as const,
     detail: (brewId: string) =>
-      [...qk.accountBrews.all, "detail", brewId] as const
+      [...qk.accountBrews.all, "detail", brewId] as const,
   },
   accountBrewEntries: {
-    list: (brewId: string) => ["accountBrews", brewId, "entries"] as const
+    list: (brewId: string) => ["accountBrews", brewId, "entries"] as const,
     // optional if you ever fetch entries separately
   },
 
@@ -79,6 +89,6 @@ export const qk = {
     list: (recipeId: string | number) =>
       ["publicRecipeBrews", String(recipeId)] as const,
     detail: (recipeId: string | number, brewId: string) =>
-      ["publicRecipeBrews", String(recipeId), brewId] as const
-  }
+      ["publicRecipeBrews", String(recipeId), brewId] as const,
+  },
 };

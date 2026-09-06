@@ -14,9 +14,14 @@ import {
   brew_entry_type,
   brew_stage,
   Prisma,
-  temp_units
+  temp_units,
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
+import {
+  currentCreditFeePolicy,
+  initialFireworksDeepseekV4FlashPricing,
+  initialOpenAIGpt54MiniPricing,
+} from "@/lib/billing/credit-pricing";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Seeding is disabled in production.");
@@ -26,6 +31,7 @@ async function main() {
   assertSeedSafe();
   // Drop and recreate tables is unnecessary; Prisma migrations handle this.
   await clearDb();
+  await seedCreditBillingDefaults();
   // Seed users
   const adminEmail = process.env.ADMIN_EMAIL || "";
   const adminPassword = process.env.ADMIN_PASSWORD
@@ -48,19 +54,31 @@ async function main() {
         password: adminPassword,
         role: "admin",
         public_username: "MeadTools Admin",
-        hydro_token: adminToken
+        hydro_token: adminToken,
       },
       {
         email: userEmail,
         password: userPassword,
         role: "user",
         public_username: "MeadTools User",
-        hydro_token: userToken
-      }
-    ]
+        hydro_token: userToken,
+      },
+    ],
   });
 
   console.log("Users seeded");
+  const localChatTestUser =
+    users.find((user) => user.role === "user") ?? users[0];
+  if (localChatTestUser) {
+    await prisma.chat_access_grants.create({
+      data: {
+        user_id: localChatTestUser.id,
+        granted_by_user_id:
+          users.find((user) => user.role === "admin")?.id ??
+          localChatTestUser.id,
+      },
+    });
+  }
   const userIds = users.map((u) => u.id);
   // Seed ingredients
   await prisma.ingredients.createMany({ data: INGREDIENTS });
@@ -84,10 +102,10 @@ async function main() {
       prisma.devices.create({
         data: {
           device_name: `${scenario} Test Hydrometer`,
-          user_id: hydrometerSeedUser.id
-        }
-      })
-    )
+          user_id: hydrometerSeedUser.id,
+        },
+      }),
+    ),
   );
 
   console.log("Devices Seeded");
@@ -97,15 +115,15 @@ async function main() {
     data: RECIPES.map((r, i) => ({
       ...r,
       user_id: userIds[i % userIds.length],
-      dataV2: JSON.parse(r.dataV2)
-    }))
+      dataV2: JSON.parse(r.dataV2),
+    })),
   });
   const recipeIds = recipes.map((r) => r.id);
   const hydrometerSeedRecipe =
     recipes.find(
       (recipe) =>
         recipe.user_id === hydrometerSeedUser.id &&
-        recipe.name === "Key Lime Pie"
+        recipe.name === "Key Lime Pie",
     ) ??
     recipes.find((recipe) => recipe.user_id === hydrometerSeedUser.id) ??
     recipes[0];
@@ -119,8 +137,8 @@ async function main() {
       recipe_id: recipeIds[i % recipeIds.length],
       created_at: new Date(c.created_at),
       updated_at: new Date(c.updated_at),
-      deleted_at: c.deleted_at?.length ? new Date(c.deleted_at) : undefined
-    }))
+      deleted_at: c.deleted_at?.length ? new Date(c.deleted_at) : undefined,
+    })),
   });
   console.log("Recipe Comments Seeded");
 
@@ -131,8 +149,8 @@ async function main() {
       user_id: userIds[i % userIds.length],
       recipe_id: recipeIds[i % recipeIds.length],
       created_at: new Date(r.created_at),
-      updated_at: new Date(r.updated_at)
-    }))
+      updated_at: new Date(r.updated_at),
+    })),
   });
   console.log("Recipe Ratings seeded.");
 
@@ -143,42 +161,42 @@ async function main() {
         const prefix =
           device.device_name?.replace(" Test Hydrometer", "") || "Active";
         return startBrew(device.id, device.user_id, `${prefix} Test Brew`);
-      })
+      }),
   );
 
   const planningBrew = await prisma.brews.findFirst({
     where: {
       user_id: hydrometerSeedUser.id,
-      name: "Planning Test Brew"
+      name: "Planning Test Brew",
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (planningBrew && hydrometerSeedRecipe) {
     await addRecipeToBrew(
       hydrometerSeedRecipe.id,
       planningBrew.id,
-      hydrometerSeedUser.id
+      hydrometerSeedUser.id,
     );
   }
 
   const completedBrew = await prisma.brews.findFirst({
     where: {
       user_id: hydrometerSeedUser.id,
-      name: "Completed Test Brew"
+      name: "Completed Test Brew",
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (completedBrew && hydrometerSeedRecipe) {
     await addRecipeToBrew(
       hydrometerSeedRecipe.id,
       completedBrew.id,
-      hydrometerSeedUser.id
+      hydrometerSeedUser.id,
     );
     await prisma.brews.update({
       where: { id: completedBrew.id },
-      data: { name: "Completed Key Lime Pie Test Brew" }
+      data: { name: "Completed Key Lime Pie Test Brew" },
     });
   }
 
@@ -187,8 +205,8 @@ async function main() {
       user_id: hydrometerSeedUser.id,
       name: "Unlinked Test Brew",
       stage: brew_stage.PRIMARY,
-      start_date: new Date()
-    }
+      start_date: new Date(),
+    },
   });
 
   console.log("Brews Seeded");
@@ -240,15 +258,15 @@ export async function generateLogs() {
     // Make re-runs stable per brew by clearing existing logs
     await prisma.logs.deleteMany({ where: { brew_id: brew.id } });
 
-    const isCompletedRecipeBrew = brew.name?.startsWith("Completed Key Lime Pie");
-    const durationDays = isCompletedRecipeBrew ? 14 : 7;
-    const logStart = new Date(
-      Date.now() - durationDays * 24 * 60 * 60 * 1000
+    const isCompletedRecipeBrew = brew.name?.startsWith(
+      "Completed Key Lime Pie",
     );
+    const durationDays = isCompletedRecipeBrew ? 14 : 7;
+    const logStart = new Date(Date.now() - durationDays * 24 * 60 * 60 * 1000);
 
     await prisma.brews.update({
       where: { id: brew.id },
-      data: { start_date: logStart }
+      data: { start_date: logStart },
     });
 
     const lastGravity = await createHydrometerLogSeries({
@@ -258,12 +276,12 @@ export async function generateLogs() {
       durationDays,
       gStart: isCompletedRecipeBrew ? 1.06 : 1.1,
       gEnd: isCompletedRecipeBrew ? 0.996 : 1,
-      tempTarget: isCompletedRecipeBrew ? 66 : 70
+      tempTarget: isCompletedRecipeBrew ? 66 : 70,
     });
 
     await prisma.brews.update({
       where: { id: brew.id },
-      data: { latest_gravity: Number(lastGravity.toFixed(4)) }
+      data: { latest_gravity: Number(lastGravity.toFixed(4)) },
     });
 
     if (brew.name?.startsWith("Completed")) {
@@ -279,7 +297,7 @@ async function createHydrometerLogSeries({
   durationDays = 7,
   gStart = 1.1,
   gEnd = 1,
-  tempTarget = 70
+  tempTarget = 70,
 }: {
   brewId: string | null;
   deviceId: string;
@@ -338,11 +356,7 @@ async function createHydrometerLogSeries({
       (tempTarget - temp) * 0.05 + // mean reversion
       randn() * 0.12; // random component
 
-    const stepLimited = clamp(
-      proposed,
-      temp - maxTempStep,
-      temp + maxTempStep
-    );
+    const stepLimited = clamp(proposed, temp - maxTempStep, temp + maxTempStep);
     temp = clamp(stepLimited, 65, 75);
 
     // Angle: correlate with gravity but with some noise
@@ -363,8 +377,8 @@ async function createHydrometerLogSeries({
         calculated_gravity: Number(gravity.toFixed(4)),
         interval: intervalMinutes * 60, // adjust if your app expects minutes
         brew_id: brewId,
-        device_id: deviceId
-      }
+        device_id: deviceId,
+      },
     });
   }
 
@@ -373,6 +387,14 @@ async function createHydrometerLogSeries({
 
 async function clearDb() {
   // Order matters because of FKs
+  await prisma.chat_access_grants.deleteMany();
+  await prisma.chat_access_settings.deleteMany();
+  await prisma.credit_payment_webhook_events.deleteMany();
+  await prisma.credit_checkout_sessions.deleteMany();
+  await prisma.credit_ledger_entries.deleteMany();
+  await prisma.credit_accounts.deleteMany();
+  await prisma.credit_pricing_versions.deleteMany();
+  await prisma.credit_fee_policy_versions.deleteMany();
   await prisma.logs.deleteMany();
   await prisma.brew_entries.deleteMany(); // <-- add this
   await prisma.devices.deleteMany();
@@ -392,6 +414,49 @@ async function clearDb() {
   await prisma.users.deleteMany();
 
   console.log("✅ Database cleared");
+}
+
+async function seedCreditBillingDefaults() {
+  for (const pricing of [
+    initialFireworksDeepseekV4FlashPricing,
+    initialOpenAIGpt54MiniPricing,
+  ]) {
+    await prisma.credit_pricing_versions.upsert({
+      where: {
+        provider_model_version: {
+          provider: pricing.provider,
+          model: pricing.model,
+          version: pricing.version,
+        },
+      },
+      create: {
+        provider: pricing.provider,
+        model: pricing.model,
+        version: pricing.version,
+        uncached_input_picousd_per_million_tokens:
+          pricing.pricing.uncachedInputPicousdPerMillionTokens,
+        cached_input_picousd_per_million_tokens:
+          pricing.pricing.cachedInputPicousdPerMillionTokens,
+        output_picousd_per_million_tokens:
+          pricing.pricing.outputPicousdPerMillionTokens,
+        effective_at: pricing.effectiveAt,
+      },
+      update: {},
+    });
+  }
+
+  await prisma.credit_fee_policy_versions.upsert({
+    where: { version: currentCreditFeePolicy.version },
+    create: {
+      version: currentCreditFeePolicy.version,
+      markup_basis_points: currentCreditFeePolicy.policy.markupBasisPoints,
+      fixed_turn_credits: currentCreditFeePolicy.policy.fixedTurnCredits,
+      minimum_turn_credits: currentCreditFeePolicy.policy.minimumTurnCredits,
+      effective_at: currentCreditFeePolicy.effectiveAt,
+    },
+    update: {},
+  });
+  console.log("Credit billing defaults seeded.");
 }
 
 function assertSafeDatabaseUrl() {
@@ -415,12 +480,12 @@ function assertSafeDatabaseUrl() {
     "pooler.supabase.com",
     "aws.neon.tech",
     "render.com",
-    "railway.app"
+    "railway.app",
   ];
 
   if (bannedHostSnippets.some((s) => host.includes(s))) {
     throw new Error(
-      `Refusing to run: DATABASE_URL points at hosted DB (${host}).`
+      `Refusing to run: DATABASE_URL points at hosted DB (${host}).`,
     );
   }
 
@@ -429,8 +494,8 @@ function assertSafeDatabaseUrl() {
   if (!allowedDbNames.includes(db)) {
     throw new Error(
       `Refusing to run: database name "${db}" is not in ${allowedDbNames.join(
-        ", "
-      )}`
+        ", ",
+      )}`,
     );
   }
 }
@@ -439,7 +504,7 @@ function assertSeedSafe() {
   // Extra explicit opt-in (prevents “oops I ran it”)
   if (process.env.ALLOW_DB_RESET !== "true") {
     throw new Error(
-      'Refusing to run: set ALLOW_DB_RESET="true" to allow seed/clear.'
+      'Refusing to run: set ALLOW_DB_RESET="true" to allow seed/clear.',
     );
   }
   assertSafeDatabaseUrl();
@@ -458,11 +523,11 @@ export async function generateBrewEntries() {
       recipes: {
         select: {
           name: true,
-          dataV2: true
-        }
+          dataV2: true,
+        },
       },
-      devices: { select: { id: true } }
-    }
+      devices: { select: { id: true } },
+    },
   });
 
   for (const brew of brews) {
@@ -474,7 +539,7 @@ export async function generateBrewEntries() {
     if (brew.name?.startsWith("Planning")) {
       await prisma.brews.update({
         where: { id: brew.id },
-        data: { stage: brew_stage.PLANNED, end_date: null }
+        data: { stage: brew_stage.PLANNED, end_date: null },
       });
       continue;
     }
@@ -497,8 +562,8 @@ export async function generateBrewEntries() {
         stage: brew.name?.startsWith("Completed")
           ? brew_stage.COMPLETE
           : brew_stage.PRIMARY,
-        ...(brew.name?.startsWith("Completed") ? {} : { end_date: null })
-      }
+        ...(brew.name?.startsWith("Completed") ? {} : { end_date: null }),
+      },
     });
 
     await prisma.brew_entries.createMany({
@@ -514,8 +579,8 @@ export async function generateBrewEntries() {
           data: {
             from: brew_stage.PLANNED,
             to: brew_stage.PRIMARY,
-            source: "seed"
-          } as Prisma.JsonObject
+            source: "seed",
+          } as Prisma.JsonObject,
         },
 
         // A note
@@ -530,8 +595,8 @@ export async function generateBrewEntries() {
           gravity: 1.1,
           data: {
             readingRole: "OG",
-            source: "measured"
-          } as Prisma.JsonObject
+            source: "measured",
+          } as Prisma.JsonObject,
         },
         {
           brew_id: brew.id,
@@ -552,9 +617,9 @@ export async function generateBrewEntries() {
               ogEntryId,
               fgEntryId: null,
               eventEntryId: ogEntryId,
-              eventType: brew_entry_type.GRAVITY
-            }
-          } as Prisma.JsonObject
+              eventType: brew_entry_type.GRAVITY,
+            },
+          } as Prisma.JsonObject,
         },
 
         {
@@ -564,7 +629,7 @@ export async function generateBrewEntries() {
           type: brew_entry_type.NOTE,
           title: "Started fermentation",
           note: "Pitched yeast and set airlock. Keeping this one simple for seed data.",
-          data: Prisma.JsonNull
+          data: Prisma.JsonNull,
         },
 
         {
@@ -577,8 +642,8 @@ export async function generateBrewEntries() {
           gravity: 1.055,
           data: {
             readingRole: "GENERAL",
-            source: "measured"
-          } as Prisma.JsonObject
+            source: "measured",
+          } as Prisma.JsonObject,
         },
 
         {
@@ -590,7 +655,7 @@ export async function generateBrewEntries() {
           note: null,
           temperature: 70,
           temp_units: temp_units.F,
-          data: Prisma.JsonNull
+          data: Prisma.JsonNull,
         },
 
         {
@@ -600,7 +665,7 @@ export async function generateBrewEntries() {
           type: brew_entry_type.PH,
           title: "pH reading",
           note: null,
-          data: { ph: 3.42 } as Prisma.JsonObject
+          data: { ph: 3.42 } as Prisma.JsonObject,
         },
 
         ...(brew.name?.startsWith("Completed")
@@ -615,12 +680,12 @@ export async function generateBrewEntries() {
                 data: {
                   from: brew_stage.PRIMARY,
                   to: brew_stage.COMPLETE,
-                  source: "seed"
-                } as Prisma.JsonObject
-              }
+                  source: "seed",
+                } as Prisma.JsonObject,
+              },
             ] as any[])
-          : [])
-      ]
+          : []),
+      ],
     });
   }
 
@@ -646,7 +711,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
   const t6 = new Date(brew.start_date.getTime() + 11 * 24 * 60 * 60 * 1000);
   const t7 = new Date(brew.start_date.getTime() + 12 * 24 * 60 * 60 * 1000);
   const t8 = new Date(brew.start_date.getTime() + 13 * 24 * 60 * 60 * 1000);
-  const completeAt = new Date(brew.start_date.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const completeAt = new Date(
+    brew.start_date.getTime() + 14 * 24 * 60 * 60 * 1000,
+  );
 
   const primaryVolumeGal = 5.0075;
   const secondaryVolumeGal = 5.54;
@@ -656,7 +723,10 @@ async function seedCompletedKeyLimePieEntries(brew: {
   const og = 1.06;
   const fg = 0.996;
   const baseAbv = Math.max(Math.round(calcABV(og, fg) * 1000) / 1000, 0);
-  const secondaryAbv = Math.max(Math.round(((baseAbv * primaryVolumeL) / secondaryVolumeL) * 1000) / 1000, 0);
+  const secondaryAbv = Math.max(
+    Math.round(((baseAbv * primaryVolumeL) / secondaryVolumeL) * 1000) / 1000,
+    0,
+  );
   const ogEntryId = uuid();
   const fgEntryId = uuid();
   const secondaryAdditionEntryId = uuid();
@@ -668,8 +738,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
       stage: brew_stage.COMPLETE,
       end_date: completeAt,
       current_volume_liters: gallonsToLiters(packagedVolumeGal),
-      latest_gravity: 0.996
-    }
+      latest_gravity: 0.996,
+    },
   });
 
   await prisma.brew_entries.createMany({
@@ -684,8 +754,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           from: brew_stage.PLANNED,
           to: brew_stage.PRIMARY,
-          source: "seed"
-        } as Prisma.JsonObject
+          source: "seed",
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -697,8 +767,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           liters: primaryVolumeL,
           displayValue: primaryVolumeGal,
-          displayUnit: "gal"
-        } as Prisma.JsonObject
+          displayUnit: "gal",
+        } as Prisma.JsonObject,
       },
       {
         id: ogEntryId,
@@ -712,8 +782,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           readingRole: "OG",
           source: "measured",
-          recipeValue: og
-        } as Prisma.JsonObject
+          recipeValue: og,
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -734,9 +804,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
             ogEntryId,
             fgEntryId: null,
             eventEntryId: ogEntryId,
-            eventType: brew_entry_type.GRAVITY
-          }
-        } as Prisma.JsonObject
+            eventType: brew_entry_type.GRAVITY,
+          },
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -747,7 +817,7 @@ async function seedCompletedKeyLimePieEntries(brew: {
         note: "D47 fermentation temperature.",
         temperature: 66,
         temp_units: temp_units.F,
-        data: Prisma.JsonNull
+        data: Prisma.JsonNull,
       },
       {
         brew_id: brew.id,
@@ -762,8 +832,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
           name: "Honey",
           amount: 8,
           unit: "lb",
-          recipeIngredientId: "8wmg6sg23q"
-        } as Prisma.JsonObject
+          recipeIngredientId: "8wmg6sg23q",
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -775,8 +845,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         gravity: 1.032,
         data: {
           readingRole: "GENERAL",
-          source: "measured"
-        } as Prisma.JsonObject
+          source: "measured",
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -785,7 +855,7 @@ async function seedCompletedKeyLimePieEntries(brew: {
         type: brew_entry_type.PH,
         title: "pH reading",
         note: "Bright acidity from lime must.",
-        data: { ph: 3.28 } as Prisma.JsonObject
+        data: { ph: 3.28 } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -797,8 +867,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         gravity: 1.006,
         data: {
           readingRole: "GENERAL",
-          source: "measured"
-        } as Prisma.JsonObject
+          source: "measured",
+        } as Prisma.JsonObject,
       },
       {
         id: fgEntryId,
@@ -812,8 +882,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           readingRole: "FG",
           source: "measured",
-          recipeValue: fg
-        } as Prisma.JsonObject
+          recipeValue: fg,
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -835,9 +905,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
             fgEntryId,
             eventEntryId: fgEntryId,
             eventType: brew_entry_type.GRAVITY,
-            currentVolumeLiters: primaryVolumeL
-          }
-        } as Prisma.JsonObject
+            currentVolumeLiters: primaryVolumeL,
+          },
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -849,8 +919,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           from: brew_stage.PRIMARY,
           to: brew_stage.SECONDARY,
-          source: "seed"
-        } as Prisma.JsonObject
+          source: "seed",
+        } as Prisma.JsonObject,
       },
       {
         id: secondaryAdditionEntryId,
@@ -867,8 +937,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
           amount: 2.0972,
           unit: "lb",
           recipeIngredientId: "gbl0yyixla",
-          meta: { stage: "SECONDARY" }
-        } as Prisma.JsonObject
+          meta: { stage: "SECONDARY" },
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -890,9 +960,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
             fgEntryId,
             eventEntryId: secondaryAdditionEntryId,
             eventType: brew_entry_type.ADDITION,
-            currentVolumeLiters: primaryVolumeL
-          }
-        } as Prisma.JsonObject
+            currentVolumeLiters: primaryVolumeL,
+          },
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -907,8 +977,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
           name: "Lactose",
           amount: 1,
           unit: "lbs",
-          recipeAdditiveId: "4oo64hlfm4"
-        } as Prisma.JsonObject
+          recipeAdditiveId: "4oo64hlfm4",
+        } as Prisma.JsonObject,
       },
       {
         id: secondaryVolumeEntryId,
@@ -922,8 +992,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
           liters: secondaryVolumeL,
           displayValue: secondaryVolumeGal,
           displayUnit: "gal",
-          startingLiters: primaryVolumeL
-        } as Prisma.JsonObject
+          startingLiters: primaryVolumeL,
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -945,9 +1015,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
             fgEntryId,
             eventEntryId: secondaryVolumeEntryId,
             eventType: brew_entry_type.VOLUME,
-            currentVolumeLiters: secondaryVolumeL
-          }
-        } as Prisma.JsonObject
+            currentVolumeLiters: secondaryVolumeL,
+          },
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -956,7 +1026,7 @@ async function seedCompletedKeyLimePieEntries(brew: {
         type: brew_entry_type.PH,
         title: "pH reading",
         note: "Post-lime addition pH.",
-        data: { ph: 3.18 } as Prisma.JsonObject
+        data: { ph: 3.18 } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -968,8 +1038,8 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           packagedVolumeLiters: gallonsToLiters(packagedVolumeGal),
           displayValue: packagedVolumeGal,
-          displayUnit: "gal"
-        } as Prisma.JsonObject
+          displayUnit: "gal",
+        } as Prisma.JsonObject,
       },
       {
         brew_id: brew.id,
@@ -981,9 +1051,9 @@ async function seedCompletedKeyLimePieEntries(brew: {
         data: {
           from: brew_stage.SECONDARY,
           to: brew_stage.COMPLETE,
-          source: "seed"
-        } as Prisma.JsonObject
-      }
-    ]
+          source: "seed",
+        } as Prisma.JsonObject,
+      },
+    ],
   });
 }

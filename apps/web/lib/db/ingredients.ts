@@ -1,6 +1,19 @@
 import prisma from "../prisma"; // Import Prisma client
 import { Prisma } from "@prisma/client";
 
+type ChatIngredientCatalogEntry = {
+  id: number;
+  name: string;
+  sugar_content: Prisma.Decimal;
+  category: string;
+};
+
+let chatIngredientCatalog: Promise<ChatIngredientCatalogEntry[]> | undefined;
+
+function invalidateChatIngredientCatalog() {
+  chatIngredientCatalog = undefined;
+}
+
 // Fetch all ingredients
 export async function getAllIngredients() {
   try {
@@ -55,6 +68,31 @@ export async function getIngredientByName(name: string) {
     throw new Error("Could not fetch ingredient by name");
   }
 }
+
+/**
+ * The chatbot catalog is deliberately cached per warm server instance. It is
+ * small enough to give the model the full list for semantic matching, and all
+ * local create/update/delete paths invalidate the cache immediately.
+ */
+export async function getIngredientCatalogForChat() {
+  try {
+    chatIngredientCatalog ??= prisma.ingredients.findMany({
+      select: {
+        id: true,
+        name: true,
+        sugar_content: true,
+        category: true,
+      },
+      orderBy: { name: "asc" },
+    });
+    return await chatIngredientCatalog;
+  } catch (error) {
+    chatIngredientCatalog = undefined;
+    console.error("Error loading ingredients for chat:", error);
+    throw new Error("Could not load ingredients");
+  }
+}
+
 export async function createIngredient(data: {
   name: string;
   sugar_content: number;
@@ -62,9 +100,11 @@ export async function createIngredient(data: {
   category: string;
 }) {
   try {
-    return await prisma.ingredients.create({
+    const ingredient = await prisma.ingredients.create({
       data,
     });
+    invalidateChatIngredientCatalog();
+    return ingredient;
   } catch (error) {
     if (!isIdUniqueConstraintError(error)) throw error;
 
@@ -76,9 +116,11 @@ export async function createIngredient(data: {
       )
     `;
 
-    return prisma.ingredients.create({
+    const ingredient = await prisma.ingredients.create({
       data,
     });
+    invalidateChatIngredientCatalog();
+    return ingredient;
   }
 }
 
@@ -99,16 +141,20 @@ export async function updateIngredient(
     sugar_content: number;
     water_content: number;
     category: string;
-  }>
+  }>,
 ) {
-  return prisma.ingredients.update({
+  const ingredient = await prisma.ingredients.update({
     where: { id: parseInt(id, 10) }, // Ensure id is converted to an integer
     data: fields,
   });
+  invalidateChatIngredientCatalog();
+  return ingredient;
 }
 
 export async function deleteIngredient(id: string) {
-  return prisma.ingredients.delete({
+  const ingredient = await prisma.ingredients.delete({
     where: { id: Number(id) },
   });
+  invalidateChatIngredientCatalog();
+  return ingredient;
 }

@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
-  oneLight
+  oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -30,14 +30,14 @@ function Spoiler({ children }: { children: React.ReactNode }) {
         "relative inline-flex items-center rounded-sm",
         revealed
           ? "bg-accent-foreground text-background"
-          : "bg-secondary text-transparent hover:bg-primary"
+          : "bg-secondary text-transparent hover:bg-primary",
       )}
     >
       <span className="absolute inset-[-2px]" />
       <span
         className={cn(
           "transition-[filter,opacity]",
-          revealed ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+          revealed ? "opacity-100 blur-0" : "opacity-0 blur-sm",
         )}
       >
         {children}
@@ -111,7 +111,10 @@ function renderSpoilerNodes(children: React.ReactNode): React.ReactNode {
   }
 
   // --- Case 3: a React element - recurse into its children (except <code>)
-  if (React.isValidElement(children) && children.props?.children) {
+  if (
+    React.isValidElement<{ children?: React.ReactNode }>(children) &&
+    children.props.children
+  ) {
     // Narrow the element so TS knows it has a `children` prop
     type WithChildren = { children?: React.ReactNode };
 
@@ -123,7 +126,7 @@ function renderSpoilerNodes(children: React.ReactNode): React.ReactNode {
     }
 
     return React.cloneElement<WithChildren>(el, {
-      children: renderSpoilerNodes(el.props.children)
+      children: renderSpoilerNodes(el.props.children),
     });
   }
 
@@ -133,7 +136,7 @@ function renderSpoilerNodes(children: React.ReactNode): React.ReactNode {
 export function MarkdownPreview({
   text,
   className,
-  minHeight = 120
+  minHeight = 120,
 }: MarkdownPreviewProps) {
   const { resolvedTheme } = useTheme();
 
@@ -175,7 +178,7 @@ export function MarkdownPreview({
               margin: 0,
               borderRadius: 8,
               fontSize: "0.85rem",
-              overflowX: "auto" // <- keep block from pushing container
+              overflowX: "auto", // <- keep block from pushing container
             }}
             {...props}
           >
@@ -201,9 +204,9 @@ export function MarkdownPreview({
             <table className="w-full">{children}</table>
           </div>
         );
-      }
+      },
     }),
-    [resolvedTheme]
+    [resolvedTheme],
   );
 
   return (
@@ -211,10 +214,10 @@ export function MarkdownPreview({
       className={cn(
         // key bits: max-w-full + overflow-x-auto stop “spilling”
         "prose prose-invert max-w-full w-full p-3 text-left overflow-x-auto",
-        className
+        className,
       )}
       style={{
-        minHeight: typeof minHeight === "number" ? `${minHeight}px` : minHeight
+        minHeight: typeof minHeight === "number" ? `${minHeight}px` : minHeight,
       }}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

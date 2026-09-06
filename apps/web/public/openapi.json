@@ -21,6 +21,136 @@
       }
     },
     "schemas": {
+      "CreateCreditCheckoutRequestBody": {
+        "type": "object",
+        "properties": {
+          "packId": {
+            "type": "string",
+            "enum": [
+              "starter",
+              "standard",
+              "reserve"
+            ]
+          }
+        },
+        "required": [
+          "packId"
+        ]
+      },
+      "CreateCreditCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "CreditAccountErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "availableCredits": {
+            "type": "integer"
+          },
+          "requiredCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "CreditActivityResponse": {
+        "type": "object",
+        "properties": {
+          "availableCredits": {
+            "type": "integer"
+          },
+          "purchasesEnabled": {
+            "type": "boolean"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "operationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "occurredAt": {
+                  "type": "string"
+                },
+                "creditsDelta": {
+                  "type": "integer"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "purchase",
+                    "grant",
+                    "usage",
+                    "refund",
+                    "adjustment"
+                  ]
+                },
+                "entryTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "paymentAmountCents": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "paymentCurrency": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 3,
+                  "nullable": true
+                }
+              },
+              "required": [
+                "operationId",
+                "occurredAt",
+                "creditsDelta",
+                "kind",
+                "entryTypes",
+                "paymentAmountCents",
+                "paymentCurrency"
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "availableCredits",
+          "purchasesEnabled",
+          "activities",
+          "nextCursor"
+        ]
+      },
+      "CreditBalanceResponse": {
+        "type": "object",
+        "properties": {
+          "availableCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "availableCredits"
+        ]
+      },
       "AdditiveByIdResponse": {
         "$ref": "#/components/schemas/AdditiveResponse"
       },
@@ -214,6 +344,362 @@
       },
       "CreateAdditiveFailureErrorResponse": {
         "$ref": "#/components/schemas/additiveAdminFailureSchema"
+      },
+      "AdminChatUsageReportResponse": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "environment": {
+                "type": "string",
+                "nullable": true
+              },
+              "model": {
+                "type": "string",
+                "nullable": true
+              },
+              "status": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/chatUsageStatusSchema"
+                  }
+                ]
+              },
+              "userId": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "nullable": true
+              },
+              "query": {
+                "type": "string",
+                "nullable": true
+              },
+              "page": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "environment",
+              "model",
+              "status",
+              "userId",
+              "query",
+              "page",
+              "limit"
+            ]
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "requestCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "completedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pendingTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unpricedCompletedTurns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "providerCalls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "inputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cachedInputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "outputTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "totalTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "chargedCredits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "providerCostPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "creditEquivalentPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "estimatedSpreadPicousd": {
+                "$ref": "#/components/schemas/picousdStringSchema"
+              },
+              "activeUsers": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "paymentRestrictedAccounts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pendingPaymentRecoveries": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "requestCount",
+              "completedTurns",
+              "failedTurns",
+              "pendingTurns",
+              "unpricedCompletedTurns",
+              "providerCalls",
+              "inputTokens",
+              "cachedInputTokens",
+              "outputTokens",
+              "totalTokens",
+              "chargedCredits",
+              "providerCostPicousd",
+              "creditEquivalentPicousd",
+              "estimatedSpreadPicousd",
+              "activeUsers",
+              "paymentRestrictedAccounts",
+              "pendingPaymentRecoveries"
+            ]
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageDailyRow"
+            }
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageModelRow"
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminChatUsageUserRow"
+            }
+          },
+          "totalUsers": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "filters",
+          "summary",
+          "daily",
+          "models",
+          "users",
+          "totalUsers"
+        ]
+      },
+      "ChatAccessErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "CreateChatCreditGrantRequestBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "creditAmount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          }
+        },
+        "required": [
+          "userId",
+          "creditAmount"
+        ]
+      },
+      "CreateChatCreditGrantResponse": {
+        "type": "object",
+        "properties": {
+          "creditsGranted": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "availableCredits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creditsGranted",
+          "availableCredits"
+        ]
+      },
+      "DeleteChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "CreateChatAccessGrantRequestBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "CreateChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "granted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "granted"
+        ]
+      },
+      "ResolveCreditPaymentRecoveryRequestBody": {
+        "type": "object",
+        "properties": {
+          "creditDelta": {
+            "type": "integer",
+            "maximum": 1000000
+          },
+          "note": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "releaseChat": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "creditDelta",
+          "note",
+          "releaseChat"
+        ]
+      },
+      "ResolveCreditPaymentRecoveryResponse": {
+        "type": "object",
+        "properties": {
+          "resolved": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "availableCredits": {
+            "type": "integer",
+            "nullable": true
+          },
+          "chatReleased": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "resolved",
+          "availableCredits",
+          "chatReleased"
+        ]
+      },
+      "CreditPaymentRecoveryAdministrationResponse": {
+        "type": "object",
+        "properties": {
+          "recoveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditPaymentRecoveryResponse"
+            }
+          }
+        },
+        "required": [
+          "recoveries"
+        ]
+      },
+      "ChatAccessAdministrationResponse": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatAccessGrantResponse"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "updatedAt",
+          "grants"
+        ]
+      },
+      "UpdateChatAccessAdministrationRequestBody": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          }
+        },
+        "required": [
+          "mode"
+        ]
       },
       "AccountInfoResponse": {
         "type": "object",
@@ -1615,6 +2101,172 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "ChatAccessStatusResponse": {
+        "type": "object",
+        "properties": {
+          "chatEnabled": {
+            "type": "boolean"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatAccessMode"
+          },
+          "granted": {
+            "type": "boolean"
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "chatEnabled",
+          "mode",
+          "granted",
+          "paymentRestricted"
+        ]
+      },
+      "ChatContextOptionsResponse": {
+        "type": "object",
+        "properties": {
+          "contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatContextOptionResponse"
+            }
+          }
+        },
+        "required": [
+          "contexts"
+        ]
+      },
+      "ChatContextErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ChatConversationThreadResponse": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ChatConversationResponse"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageResponse"
+            }
+          },
+          "nextBeforeSequence": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true
+          },
+          "latestDraft": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatDraftResponse"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversation",
+          "messages",
+          "nextBeforeSequence",
+          "latestDraft"
+        ]
+      },
+      "ChatConversationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "UpdateChatConversationRequestBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChatConversationStateResponse"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateChatConversationResponse": {
+        "$ref": "#/components/schemas/CreateChatConversationResponse"
+      },
+      "DeleteChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "deleted"
+        ]
+      },
+      "ChatConversationsResponse": {
+        "type": "object",
+        "properties": {
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatConversationResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "conversations",
+          "nextCursor"
+        ]
+      },
+      "CreateChatConversationRequestBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "CreateChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ChatConversationResponse"
+          }
+        },
+        "required": [
+          "conversation"
         ]
       },
       "UpdateRecipeCommentRequestBody": {
@@ -3022,6 +3674,20 @@
           "error"
         ]
       },
+      "StripeWebhookReceiptResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
       "YeastByIdResponse": {
         "type": "object",
         "properties": {
@@ -3234,6 +3900,18 @@
           "active"
         ]
       },
+      "picousdStringSchema": {
+        "type": "string",
+        "pattern": "^-?\\d+$"
+      },
+      "chatUsageStatusSchema": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "reserved"
+        ]
+      },
       "accountUserResponseObjectSchema": {
         "type": "object",
         "properties": {
@@ -3291,7 +3969,9 @@
       },
       "jsonObjectSchema": {
         "type": "object",
-        "additionalProperties": {}
+        "additionalProperties": {
+          "type": "string"
+        }
       },
       "brewListItemObjectSchema": {
         "type": "object",
@@ -3777,6 +4457,62 @@
           "dataV2"
         ]
       },
+      "chatContextRecipeOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recipe"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name"
+        ]
+      },
+      "chatContextBrewOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "brew"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "recipeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "stage",
+          "recipeName"
+        ]
+      },
       "nutrientAmountsByKeyNumberSchema": {
         "type": "object",
         "properties": {
@@ -3905,6 +4641,9 @@
           "low_temp",
           "high_temp"
         ]
+      },
+      "isoDateTimeSchema": {
+        "type": "string"
       },
       "hydrometerDeviceObjectSchema": {
         "type": "object",
@@ -4259,6 +4998,278 @@
           "tbsp"
         ]
       },
+      "AdminChatUsageDailyRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "day": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "day"
+        ]
+      },
+      "AdminChatUsageModelRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "provider",
+          "model"
+        ]
+      },
+      "AdminChatUsageUserRow": {
+        "type": "object",
+        "properties": {
+          "requestCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pendingTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unpricedCompletedTurns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCalls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chargedCredits": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerCostPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "creditEquivalentPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "estimatedSpreadPicousd": {
+            "$ref": "#/components/schemas/picousdStringSchema"
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "publicUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "chatEnabled": {
+            "type": "boolean"
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          },
+          "availableCredits": {
+            "type": "integer"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "requestCount",
+          "completedTurns",
+          "failedTurns",
+          "pendingTurns",
+          "unpricedCompletedTurns",
+          "providerCalls",
+          "inputTokens",
+          "cachedInputTokens",
+          "outputTokens",
+          "totalTokens",
+          "chargedCredits",
+          "providerCostPicousd",
+          "creditEquivalentPicousd",
+          "estimatedSpreadPicousd",
+          "userId",
+          "email",
+          "publicUsername",
+          "active",
+          "chatEnabled",
+          "paymentRestricted",
+          "availableCredits",
+          "lastActivityAt"
+        ]
+      },
       "AdminRecipeListItemResponse": {
         "type": "object",
         "properties": {
@@ -4535,6 +5546,328 @@
           "BACKSWEETENED",
           "PACKAGED",
           "COMPLETE"
+        ]
+      },
+      "ChatAccessGrantResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "grantedAt": {
+            "type": "string"
+          },
+          "grantedByUserId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "userId",
+          "grantedAt",
+          "grantedByUserId"
+        ]
+      },
+      "ChatAccessMode": {
+        "type": "string",
+        "enum": [
+          "beta_allowlist",
+          "all_active_users"
+        ]
+      },
+      "ChatCitationResponse": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "title",
+          "url"
+        ]
+      },
+      "ChatContextOptionResponse": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/chatContextRecipeOptionResponseSchema"
+          },
+          {
+            "$ref": "#/components/schemas/chatContextBrewOptionResponseSchema"
+          }
+        ]
+      },
+      "ChatConversationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ChatConversationStateResponse"
+          },
+          "messageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "contentBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lastActivityAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "state",
+          "messageCount",
+          "contentBytes",
+          "lastActivityAt",
+          "expiresAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ChatConversationStateResponse": {
+        "type": "string",
+        "enum": [
+          "active",
+          "archived"
+        ]
+      },
+      "ChatDraftResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "recipeDraftInput": {
+            "nullable": true
+          },
+          "recipeData": {
+            "nullable": true
+          },
+          "savedRecipeId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "recipeDraftInput",
+          "recipeData",
+          "savedRecipeId",
+          "createdAt"
+        ]
+      },
+      "ChatMessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "clientMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "complete",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatCitationResponse"
+            }
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/isoDateTimeSchema"
+          },
+          "completedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/isoDateTimeSchema"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "clientMessageId",
+          "role",
+          "status",
+          "content",
+          "citations",
+          "createdAt",
+          "completedAt"
+        ]
+      },
+      "CreditPaymentRecoveryKind": {
+        "type": "string",
+        "enum": [
+          "stripe_refund",
+          "stripe_dispute"
+        ]
+      },
+      "CreditPaymentRecoveryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CreditPaymentRecoveryKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CreditPaymentRecoveryStatus"
+          },
+          "externalReference": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "creditDelta": {
+            "type": "integer",
+            "nullable": true
+          },
+          "resolutionCreditDelta": {
+            "type": "integer",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "publicUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          },
+          "stripeDashboardUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "packId": {
+            "type": "string"
+          },
+          "packCredits": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "externalReference",
+          "amountCents",
+          "currency",
+          "creditDelta",
+          "resolutionCreditDelta",
+          "resolutionNote",
+          "createdAt",
+          "resolvedAt",
+          "userId",
+          "email",
+          "publicUsername",
+          "paymentRestricted",
+          "stripeDashboardUrl",
+          "packId",
+          "packCredits"
+        ]
+      },
+      "CreditPaymentRecoveryStatus": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "review_required",
+          "resolved"
         ]
       },
       "EndHydrometerBrewResponse": {
@@ -5510,6 +6843,54 @@
     }
   },
   "paths": {
+    "/account/credits": {
+      "get": {
+        "operationId": "get-account-credits",
+        "summary": "Return the signed-in user's available prepaid prompt credits.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditBalanceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/account-info": {
       "get": {
         "operationId": "get-auth-account-info",
@@ -5693,6 +7074,151 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateUsernameFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/credits/checkout": {
+      "post": {
+        "operationId": "post-account-credits-checkout",
+        "summary": "Create a Stripe Checkout Session for one fixed prompt-credit pack.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCreditCheckoutRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateCreditCheckoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/credits/history": {
+      "get": {
+        "operationId": "get-account-credits-history",
+        "summary": "Return grouped prepaid-credit activity for the signed-in user's wallet.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditActivityResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
                 }
               }
             }
@@ -6296,6 +7822,159 @@
         }
       }
     },
+    "/admin/chat-access": {
+      "get": {
+        "operationId": "get-admin-chat-access",
+        "summary": "Return the private-chat rollout policy and active beta invitations.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessAdministrationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-admin-chat-access",
+        "summary": "Change whether chatbot access is restricted to beta grants or available to",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatAccessAdministrationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessAdministrationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/summary": {
       "get": {
         "operationId": "get-admin-summary",
@@ -6569,6 +8248,575 @@
           },
           "500": {
             "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/admin/chat/usage": {
+      "get": {
+        "operationId": "get-admin-chat-usage",
+        "summary": "Return aggregate, non-sensitive chat operations reporting. Provider cost is",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "failed",
+                "reserved"
+              ]
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminChatUsageReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/credits": {
+      "post": {
+        "operationId": "post-admin-chat-access-credits",
+        "summary": "Add an arbitrary positive prompt-credit allocation to an active user's",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatCreditGrantRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatCreditGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/grants": {
+      "post": {
+        "operationId": "post-admin-chat-access-grants",
+        "summary": "Grant an active user private chatbot access. Credit allocations are a",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatAccessGrantRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatAccessGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/payment-recoveries": {
+      "get": {
+        "operationId": "get-admin-chat-access-payment-recoveries",
+        "summary": "Return recent payment refunds and disputes so administrators can resolve",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditPaymentRecoveryAdministrationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/grants/{userId}": {
+      "delete": {
+        "operationId": "delete-admin-chat-access-grants-{userId}",
+        "summary": "Revoke a user's explicit beta invitation. Existing ledger activity remains immutable.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteChatAccessGrantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/chat-access/payment-recoveries/{recoveryId}": {
+      "patch": {
+        "operationId": "patch-admin-chat-access-payment-recoveries-{recoveryId}",
+        "summary": "Resolve an administrator-reviewed refund or dispute. The optional immutable",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveCreditPaymentRecoveryRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveCreditPaymentRecoveryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAuthErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -6927,6 +9175,59 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyTokenFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/stripe": {
+      "post": {
+        "operationId": "post-webhooks-stripe",
+        "summary": "Verify and fulfill a Stripe payment webhook for prompt-credit purchases.",
+        "description": "",
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StripeWebhookReceiptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
                 }
               }
             }
@@ -8059,6 +10360,573 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicBrewFetchErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/access": {
+      "get": {
+        "operationId": "get-chat-access",
+        "summary": "Return whether the signed-in user can use the private recipe chatbot.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/context": {
+      "get": {
+        "operationId": "get-chat-context",
+        "summary": "Return picker-safe summaries of records owned by the authenticated local",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextOptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatContextErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/conversations": {
+      "get": {
+        "operationId": "get-chat-conversations",
+        "summary": "List private, non-expired chatbot conversation summaries for the signed-in user.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-chat-conversations",
+        "summary": "Create an empty, private chatbot conversation for the signed-in user.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatConversationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/recipe": {
+      "post": {
+        "operationId": "post-chat-recipe",
+        "summary": "An entitled user may only send a message to an owned active conversation.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "402": {
+            "description": "HTTP 402",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/chat/conversations/{conversationId}": {
+      "get": {
+        "operationId": "get-chat-conversations-{conversationId}",
+        "summary": "Load one private chatbot thread and a page of its visible transcript.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationThreadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-chat-conversations-{conversationId}",
+        "summary": "Rename, archive, or restore one private chatbot conversation.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatConversationRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-chat-conversations-{conversationId}",
+        "summary": "Permanently delete one private chatbot conversation and its retained draft snapshots.",
+        "description": "",
+        "tags": [
+          "Chat"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteChatConversationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatConversationErrorResponse"
                 }
               }
             }

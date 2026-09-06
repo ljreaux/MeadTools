@@ -8,9 +8,10 @@ import {
   convertAdditiveAmount,
   dosageToAmount,
   isEffectivelyEmptyNumericInput,
+  normalizeAdditiveUnit,
   normalizeIngredientLine,
   shouldConvertAdditiveAmount,
-  VOLUME_TO_L
+  VOLUME_TO_L,
 } from "../src/recipe";
 
 test("numeric parsing preserves supported decimal separators", () => {
@@ -24,9 +25,9 @@ test("blendValues preserves weighted blending and empty behavior", () => {
   assert.deepEqual(
     blendValues([
       [1, 3],
-      [1.1, 1]
+      [1.1, 1],
     ]),
-    { blendedValue: 1.025, totalVolume: 4 }
+    { blendedValue: 1.025, totalVolume: 4 },
   );
   assert.deepEqual(blendValues([]), { blendedValue: 0, totalVolume: 0 });
   assert.deepEqual(calculateBlend([]), { sg: 1, volumeL: 0 });
@@ -40,8 +41,8 @@ test("ingredient normalization uses kilograms and liters", () => {
     brix: "79,6",
     amounts: {
       weight: { value: "2.2046226218", unit: "lb" },
-      volume: { value: "1", unit: "gal" }
-    }
+      volume: { value: "1", unit: "gal" },
+    },
   });
 
   assert.equal(normalized.brix, 79.6);
@@ -62,29 +63,40 @@ test("additive conversions preserve dimension and formatting rules", () => {
     convertAdditiveAmount({
       amountStr: "1",
       fromUnit: "kg",
-      toUnit: "g"
+      toUnit: "g",
     }),
-    "1000.000"
+    "1000.000",
   );
   assert.equal(
     convertAdditiveAmount({
       amountStr: "1",
       fromUnit: "g",
-      toUnit: "ml"
+      toUnit: "ml",
     }),
-    "1"
+    "1",
   );
-  assert.equal(dosageToAmount({ dosage: 2, totalVolumeL: 3.785411784 }), "2.000");
+  assert.equal(
+    dosageToAmount({ dosage: 2, totalVolumeL: 3.785411784 }),
+    "2.000",
+  );
   assert.equal(
     shouldConvertAdditiveAmount({
       amountStr: "1",
       fromUnit: "g",
       toUnit: "kg",
       amountTouched: false,
-      amountDim: "weight"
+      amountDim: "weight",
     }),
-    true
+    true,
   );
+});
+
+test("additive unit normalization uses only recipe-builder unit values", () => {
+  assert.equal(normalizeAdditiveUnit("whole bean"), "units");
+  assert.equal(normalizeAdditiveUnit("bean"), "units");
+  assert.equal(normalizeAdditiveUnit("Fluid Ounces"), "fl_oz");
+  assert.equal(normalizeAdditiveUnit("pounds"), "lbs");
+  assert.equal(normalizeAdditiveUnit("unrecognized measure"), undefined);
 });
 
 test("empty numeric input detection accepts localized zero placeholders", () => {

@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./action-proposal": "./src/action-proposal.ts",
     "./entry-payload": "./src/entry-payload.ts",
     "./projection": "./src/projection.ts",
     "./scaling": "./src/scaling.ts"

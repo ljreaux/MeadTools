@@ -3,12 +3,18 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  TooltipProvider
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Beer, Droplets, LogOut, Settings, NotebookPen } from "lucide-react";
+import {
+  Beer,
+  Droplets,
+  LogOut,
+  Settings,
+  NotebookPen,
+  MessageCircle,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
@@ -18,7 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
@@ -30,21 +36,22 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "../ui/select";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
+  InputGroupInput,
 } from "../ui/input-group";
 import { Switch } from "../ui/switch";
+import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
 
 function Header() {
   const { t } = useTranslation();
-  const pathname = usePathname();
   const { logout } = useLogout();
   const { data, isLoading, isError, error } = useAccountInfo();
+  const { data: chatAccess } = useChatAccess();
   if (isLoading || !data) return <Loading />;
 
   if (isError) {
@@ -56,9 +63,6 @@ function Header() {
     );
   }
   const { user } = data;
-  const isBrewsPath =
-    pathname?.includes("/account/brews") &&
-    !pathname?.includes("/account/hydrometer");
   return (
     <div className="absolute right-4 top-4 flex items-center sm:gap-1">
       <SettingsDialog
@@ -67,63 +71,61 @@ function Header() {
         showGoogleAvatar={user.show_google_avatar}
       />
 
-      {/* Brew Tracker / Saved Recipes */}
+      {/* Saved recipes and Brew Tracker */}
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/account" aria-label={t("savedRecipes")}>
+                <NotebookPen className="h-5 w-5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("savedRecipes")}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/account/brews" aria-label={t("brews.title")}>
+                <Beer className="h-5 w-5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("brews.title")}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Hydrometer Dashboard */}
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon">
               <Link
-                href={isBrewsPath ? "/account" : "/account/brews"}
-                aria-label={isBrewsPath ? t("savedRecipes") : t("brews.title")}
+                href="/account/hydrometer"
+                aria-label={t("iSpindelDashboard.label")}
               >
-                {isBrewsPath ? (
-                  <NotebookPen className="h-5 w-5" />
-                ) : (
-                  <Beer className="h-5 w-5" />
-                )}
+                <Droplets className="h-5 w-5" />
               </Link>
             </Button>
           </TooltipTrigger>
-
-          <TooltipContent>
-            {isBrewsPath ? t("savedRecipes") : t("brews.title")}
-          </TooltipContent>
+          <TooltipContent>{t("iSpindelDashboard.label")}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
-      {/* Hydrometer Dashboard / Saved Recipes */}
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon">
-              <Link
-                href={
-                  pathname?.includes("hydrometer")
-                    ? "/account"
-                    : "/account/hydrometer"
-                }
-                aria-label={
-                  pathname?.includes("hydrometer")
-                    ? t("savedRecipes")
-                    : t("iSpindelDashboard.label")
-                }
-              >
-                {pathname?.includes("hydrometer") ? (
-                  <NotebookPen className="h-5 w-5" />
-                ) : (
-                  <Droplets className="h-5 w-5" />
-                )}
-              </Link>
-            </Button>
-          </TooltipTrigger>
-
-          <TooltipContent>
-            {pathname?.includes("hydrometer")
-              ? t("savedRecipes")
-              : t("iSpindelDashboard.label")}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {chatAccess?.chatEnabled || chatAccess?.paymentRestricted ? (
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon">
+                <Link href="/account/chat" aria-label={t("chatbotPopup.open")}>
+                  <MessageCircle className="h-5 w-5" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("chatbotPopup.open")}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : null}
 
       {/* Logout */}
       <Button onClick={logout} variant="ghost" size="icon">
@@ -138,7 +140,7 @@ export default Header;
 const SettingsDialog = ({
   username: public_username,
   isGoogleUser,
-  showGoogleAvatar
+  showGoogleAvatar,
 }: {
   username: string | null;
   isGoogleUser: boolean;
@@ -152,7 +154,7 @@ const SettingsDialog = ({
     useState(showGoogleAvatar);
 
   const [preferredUnits, setPreferredUnits] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {
