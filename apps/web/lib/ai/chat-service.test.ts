@@ -6,6 +6,7 @@ import {
   calculatorLinkForProcessMessage,
   chatRequestSchema,
   directRecipeToolAnswer,
+  removeUnsupportedSulfurInterventions,
   runChatTurn,
   runDeterministicChatTurn,
 } from "./chat-service";
@@ -241,6 +242,87 @@ test("a process answer follows the required wiki search-to-fetch path", async ()
   assert.match(result.answer, /stabilization_and_backsweetening/);
 });
 
+test("final-gravity explanations require a fetched wiki source", async () => {
+  const requests: FireworksCompletionRequest[] = [];
+  const client: ChatModelClient = {
+    async complete(request) {
+      requests.push(request);
+      if (requests.length === 1) {
+        return completion({
+          id: "wiki-search",
+          toolCalls: [
+            {
+              id: "search",
+              name: "search_wiki",
+              arguments: { query: "final gravity" },
+            },
+          ],
+        });
+      }
+      if (requests.length === 2) {
+        return completion({
+          id: "wiki-fetch",
+          toolCalls: [
+            {
+              id: "fetch",
+              name: "fetch_wiki_page",
+              arguments: {
+                url: "https://wiki.meadtools.com/en/basics/hydrometers",
+              },
+            },
+          ],
+        });
+      }
+      return completion({
+        id: "wiki-answer",
+        content:
+          "## Final gravity\n\nFinal gravity describes the mead's specific gravity after fermentation.\n\n### Sources\n- [Modern Meadmaking Wiki](https://wiki.meadtools.com/en/basics/hydrometers)",
+      });
+    },
+  };
+
+  const result = await runChatTurn({
+    client,
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        { role: "user", content: "What does final gravity mean for mead?" },
+      ],
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+    wikiFetcher,
+  });
+
+  assert.deepEqual(requests[0]?.toolChoice, {
+    type: "function",
+    function: { name: "search_wiki" },
+  });
+  assert.deepEqual(
+    result.toolResults.map((tool) => tool.toolName),
+    ["search_wiki", "fetch_wiki_page"],
+  );
+});
+
+test("sulfur guidance does not recommend generic nutrient additions as a fix", () => {
+  const answer = removeUnsupportedSulfurInterventions(
+    "The sulfur smell can mean the yeast are starved of nitrogen; this often clears when the must gets enough nitrogen, but do not add random fixes yet.",
+    chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content: "Why does my mead smell like sulfur, and what should I do?",
+        },
+      ],
+    }),
+    "https://wiki.meadtools.com/en/troubleshooting/basic-problems",
+  );
+
+  assert.doesNotMatch(answer, /gets enough nitrogen|often clears/i);
+  assert.match(answer, /yeast, original gravity, current gravity/i);
+  assert.match(answer, /basic-problems/);
+});
+
 test("an explicit calculated draft requires a provider-chosen MeadTools tool before it can answer", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const client: ChatModelClient = {
@@ -423,7 +505,10 @@ test("explicit no-backsweetening and Fermaid K choices override model draft defa
   });
 
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
-  assert.match(result.answer, /\*\*Nutrients:\*\* Fermaid K, 3 additions, Go-Ferm/);
+  assert.match(
+    result.answer,
+    /\*\*Nutrients:\*\* Fermaid K, 3 additions, Go-Ferm/,
+  );
   assert.doesNotMatch(result.answer, /Tailored Brix-Eating schedule/);
   assert.doesNotMatch(result.answer, /Honey \(backsweetening\)/);
   assert.equal(result.recipeDraftInput?.backsweetening, undefined);
@@ -479,6 +564,50 @@ test("an explicit dry backsweetened mead draft keeps agreed honey and finish def
   assert.match(result.answer, /Fermentation FG:\*\* 0\.999/);
   assert.match(result.answer, /Honey \(backsweetening\)/);
   assert.match(result.answer, /### Stabilizers/);
+});
+
+test("an explicit backsweetening gravity overrides a model-invented target", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "explicit-backsweetening-target",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                targetAbv: 12,
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                backsweetening: { targetFinalGravity: 1.005 },
+                stabilizers: { enabled: true, type: "kmeta" },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Draft a one gallon mead at 12% ABV. Ferment dry, stabilize, then backsweeten to a final gravity of 1.015.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.equal(
+    result.recipeDraftInput?.backsweetening?.targetFinalGravity,
+    1.015,
+  );
 });
 
 test("the model policy keeps culinary additions out of fermentable calculations and completes explicit drafts", async () => {
@@ -840,8 +969,8 @@ test("a malformed draft tool call is repaired by the model instead of surfacing 
     maxToolCalls: 6,
   });
 
-  assert.equal(calls, 2);
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(calls, 2);
   assert.doesNotMatch(result.answer, /Recipe intake contains invalid values/i);
 });
 
@@ -1017,7 +1146,9 @@ test("accepted beginner defaults override an unrequested no-Go-Ferm payload", as
                 batchVolume: { value: 1, unit: "gal" },
                 targetAbv: 12,
                 fermentationFinalGravity: 0.999,
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
                 nutrients: {
                   enabled: true,
                   yeastBrand: "Lalvin",
@@ -1156,6 +1287,128 @@ test("accepted beginner recommendation phrases fill target, fruit, additive, and
   assert.match(result.answer, /\*\*Nutrients:\*\* TOSNA, 3 additions, Go-Ferm/);
 });
 
+test("accepted beginner defaults normalize duplicated fruit and model-invented additive doses", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "beginner-duplicate-fruit-and-dose-guard",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                ingredients: [
+                  {
+                    name: "Strawberry",
+                    category: "fruit",
+                    brix: 7,
+                  },
+                  {
+                    name: "Strawberry",
+                    category: "fruit",
+                    brix: 7,
+                    secondary: true,
+                  },
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                additives: [
+                  { name: "Vanilla", amount: 3, unit: "units" },
+                  { name: "Lactose", amount: 1, unit: "lb" },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Can you make something like a dessert mead with vanilla, lactose, and strawberry, but keep it beginner friendly?",
+        },
+        {
+          role: "assistant",
+          content: "I can use recommended amounts in a 1-gallon draft.",
+        },
+        {
+          role: "user",
+          content: "Use your recommended amounts and build a 1-gallon draft.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /\| Strawberry \| 1\.5 lb \| Primary \|/);
+  assert.match(result.answer, /\| Strawberry \| 1\.5 lb \| Secondary \|/);
+  assert.match(result.answer, /\| Vanilla \| 1 each \|/);
+  assert.match(result.answer, /\| Lactose \| 4 oz \|/);
+});
+
+test("accepted holiday defaults convert an unrequested orange-juice fermentable to zest", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "beginner-orange-juice-guard",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                ingredients: [
+                  {
+                    name: "Orange Juice",
+                    category: "juice",
+                    brix: 11,
+                    secondary: true,
+                  },
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                additives: [
+                  { name: "Cinnamon Stick", amount: 4, unit: "units" },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Help me make a holiday-style spiced mead with cinnamon and orange.",
+        },
+        {
+          role: "assistant",
+          content: "I recommend a restrained cinnamon and orange addition.",
+        },
+        {
+          role: "user",
+          content:
+            "Please use sensible beginner defaults and build the 1-gallon draft now.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.doesNotMatch(result.answer, /\| Orange Juice \|/);
+  assert.match(result.answer, /\| Orange Zest \| 1 each \|/);
+  assert.match(result.answer, /\| Cinnamon Stick \| 1 each \|/);
+});
+
 test("accepted beginner defaults resolve named fruit Brix through the catalog", async () => {
   const requests: FireworksCompletionRequest[] = [];
   const result = await runChatTurn({
@@ -1224,8 +1477,7 @@ test("accepted beginner defaults resolve named fruit Brix through the catalog", 
         },
         {
           role: "assistant",
-          content:
-            "What finished batch volume should this recipe target?",
+          content: "What finished batch volume should this recipe target?",
         },
         {
           role: "user",
@@ -1296,7 +1548,7 @@ test("accepted beginner fruit defaults use TOSNA and user-facing secondary sweet
         {
           role: "user",
           content:
-            "Can you make a beginner recipe using wildflower honey and blackberries?",
+            "Can you make a beginner recipe using wildflower honey and blackberries in secondary?",
         },
         {
           role: "assistant",
@@ -1436,7 +1688,10 @@ test("named yeast nutrients infer nitrogen and DAP-only does not ask for Go-Ferm
   });
 
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
-  assert.match(result.answer, /\*\*Nutrients:\*\* DAP, 3 additions, no Go-Ferm/);
+  assert.match(
+    result.answer,
+    /\*\*Nutrients:\*\* DAP, 3 additions, no Go-Ferm/,
+  );
   assert.doesNotMatch(result.answer, /Go-Ferm type/i);
 });
 
@@ -1453,7 +1708,6 @@ test("named beer yeast nutrients infer nitrogen for fixed-juice drafts", async (
               arguments: {
                 batchVolume: { value: 5, unit: "gal" },
                 targetAbv: 10.5,
-                fermentationFinalGravity: 0.999,
                 ingredients: [
                   {
                     name: "Apple Juice",
@@ -1537,7 +1791,12 @@ test("explicit black tea additions are retained with a practical default dose", 
                 targetAbv: 8,
                 fermentationFinalGravity: 0.999,
                 ingredients: [
-                  { name: "Apple Juice", category: "juice", brix: 11, role: "fill_liquid" },
+                  {
+                    name: "Apple Juice",
+                    category: "juice",
+                    brix: 11,
+                    role: "fill_liquid",
+                  },
                   {
                     name: "Honey",
                     amount: { kind: "weight", value: 2.5, unit: "lb" },
@@ -1598,7 +1857,12 @@ test("explicit ingredient and additive amounts override model-adjusted values", 
                     name: "Honey",
                     amount: { kind: "weight", value: 11.5, unit: "lb" },
                   },
-                  { name: "Apple Juice", category: "juice", brix: 11, role: "fill_liquid" },
+                  {
+                    name: "Apple Juice",
+                    category: "juice",
+                    brix: 11,
+                    role: "fill_liquid",
+                  },
                 ],
                 additives: [{ name: "Oak Cubes", amount: 2.25, unit: "oz" }],
                 backsweetening: { targetFinalGravity: 1.01 },
@@ -1637,6 +1901,328 @@ test("explicit ingredient and additive amounts override model-adjusted values", 
   assert.doesNotMatch(result.answer, /\| Honey \| 11\.5 lb \|/);
 });
 
+test("a staged ingredient correction supersedes amounts from the earlier draft", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "corrected-cranberry-amounts",
+          toolCalls: [
+            {
+              id: "corrected-cranberry-draft",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 5, unit: "gal" },
+                targetAbv: 14,
+                fermentationFinalGravity: 0.999,
+                backsweetening: { targetFinalGravity: 1.005 },
+                ingredients: [
+                  {
+                    name: "Cranberry",
+                    category: "fruit",
+                    brix: 8,
+                    amount: { kind: "weight", value: 8, unit: "lb" },
+                  },
+                  {
+                    name: "Cranberry",
+                    category: "fruit",
+                    brix: 8,
+                    secondary: true,
+                    amount: { kind: "weight", value: 8, unit: "lb" },
+                  },
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                nutrients: {
+                  enabled: true,
+                  yeastBrand: "Lalvin",
+                  yeastStrain: "71B",
+                  nitrogenRequirement: "Medium",
+                  schedule: "justK",
+                  numberOfAdditions: 3,
+                  goFermType: "Go-Ferm",
+                },
+                stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Create a 5 gallon cranberry mead at 14% ABV with 8 lb of cranberry in primary. Finish dry with no backsweetening.",
+        },
+        {
+          role: "assistant",
+          content: "I created the initial cranberry draft.",
+        },
+        {
+          role: "user",
+          content:
+            "Change the cranberry to 5 lb in primary plus 5 lb in secondary, then make it suitable for backsweetening with potassium metabisulfite. I will not take a pH reading.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /\| Cranberry \| 5 lb \| Primary \|/);
+  assert.match(result.answer, /\| Cranberry \| 5 lb \| Secondary \|/);
+  assert.doesNotMatch(result.answer, /\| Cranberry \| 8 lb \|/);
+  assert.equal(
+    result.recipeDraftInput?.backsweetening?.targetFinalGravity,
+    1.01,
+  );
+  assert.equal(result.recipeDraftInput?.stabilizers?.enabled, true);
+  assert.equal(result.recipeDraftInput?.stabilizers?.phReading, undefined);
+  assert.match(result.answer, /assumed pH of 3\.5/i);
+});
+
+test("an evenly split fruit total is divided by stage and operational products stay out of Additives", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "even-fruit-split",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 5, unit: "gal" },
+                targetAbv: 16,
+                fermentationFinalGravity: 0.999,
+                ingredients: [
+                  {
+                    name: "Blueberry",
+                    category: "fruit",
+                    brix: 10,
+                    amount: { kind: "weight", value: 15, unit: "lb" },
+                  },
+                  {
+                    name: "Blueberry",
+                    category: "fruit",
+                    brix: 10,
+                    secondary: true,
+                    amount: { kind: "weight", value: 15, unit: "lb" },
+                  },
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                additives: [
+                  { name: "Go-Ferm", amount: 1, unit: "g" },
+                  { name: "Fermaid K", amount: 1, unit: "g" },
+                  {
+                    name: "Potassium metabisulfite",
+                    amount: 1,
+                    unit: "g",
+                  },
+                ],
+                nutrients: {
+                  enabled: true,
+                  yeastBrand: "Lalvin",
+                  yeastStrain: "71B",
+                  nitrogenRequirement: "Medium",
+                  schedule: "justK",
+                  numberOfAdditions: 3,
+                  goFermType: "Go-Ferm",
+                },
+                backsweetening: { targetFinalGravity: 1.01 },
+                stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Create a 5 gallon blueberry mead recipe. I want it to finish dry and backsweeten, with 15 lb of blueberry split evenly between primary and secondary. Target about 16% ABV. Use Lalvin 71B, Fermaid K only with Go-Ferm, and three nutrient additions. Use potassium metabisulfite; I am not taking a pH reading.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /\| Blueberry \| 7\.5 lb \| Primary \|/);
+  assert.match(result.answer, /\| Blueberry \| 7\.5 lb \| Secondary \|/);
+  assert.doesNotMatch(result.answer, /### Additives/);
+  assert.match(result.answer, /assumed pH of 3\.5/i);
+  assert.equal(result.recipeDraftInput?.stabilizers?.phReading, undefined);
+  assert.deepEqual(result.recipeDraftInput?.additives, []);
+});
+
+test("explicit dry ABV intent overrides an incomplete and sweetened model payload", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "dry-explicit-abv",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                ingredients: [
+                  {
+                    name: "Apple Juice",
+                    category: "juice",
+                    brix: 11,
+                    role: "fill_liquid",
+                  },
+                  { name: "Wildflower Honey" },
+                ],
+                nutrients: {
+                  enabled: true,
+                  yeastBrand: "Lalvin",
+                  yeastStrain: "D47",
+                  nitrogenRequirement: "Medium",
+                  schedule: "justK",
+                  numberOfAdditions: 2,
+                  goFermType: "Go-Ferm",
+                },
+                backsweetening: { targetFinalGravity: 1.01 },
+                stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Build a 1 gallon mead with fresh apple cider, wildflower honey, and D47. I want it dry at about 10% ABV, with Fermaid K and Go-Ferm in two additions.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(result.recipeDraftInput?.targetAbv, 10);
+  assert.equal(result.recipeDraftInput?.fermentationFinalGravity, 0.999);
+  assert.equal(result.recipeDraftInput?.backsweetening, undefined);
+  assert.equal(result.recipeDraftInput?.stabilizers?.enabled, false);
+});
+
+test("accepted beginner defaults replace a model-invented strength target", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "beginner-strength-guard",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                targetAbv: 17,
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content: "Help me make a simple beginner bochet.",
+        },
+        {
+          role: "assistant",
+          content: "What batch size and strength would you like?",
+        },
+        {
+          role: "user",
+          content:
+            "Please use sensible beginner defaults and build the 1-gallon draft now.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(result.recipeDraftInput?.targetAbv, 12);
+  assert.equal(result.recipeDraftInput?.targetOriginalGravity, undefined);
+});
+
+test("accepted beginner defaults preserve a named orange blossom honey", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        return completion({
+          id: "orange-blossom-honey-guard",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                targetAbv: 12,
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "I want a beginner orange blossom traditional mead that is semi-sweet but not too strong. Can you draft it?",
+        },
+        {
+          role: "assistant",
+          content: "What strength should I use?",
+        },
+        {
+          role: "user",
+          content:
+            "Use a sensible beginner strength and build the 1-gallon draft now.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.match(result.answer, /\| Orange Blossom Honey \|/);
+  assert.equal(
+    result.recipeDraftInput?.ingredients.find((ingredient) =>
+      /honey/i.test(ingredient.name),
+    )?.name,
+    "Orange Blossom Honey",
+  );
+});
+
 test("accepted dry beginner defaults fill strength without backsweetening", async () => {
   const result = await runChatTurn({
     client: {
@@ -1649,7 +2235,9 @@ test("accepted dry beginner defaults fill strength without backsweetening", asyn
               name: "build_recipe_draft",
               arguments: {
                 batchVolume: { value: 1, unit: "gal" },
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
               },
             },
           ],
@@ -1705,7 +2293,9 @@ test("short accepted-default draft follow-up repairs a deferred dry reply", asyn
               name: "build_recipe_draft",
               arguments: {
                 batchVolume: { value: 1, unit: "gal" },
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
               },
             },
           ],
@@ -1722,7 +2312,8 @@ test("short accepted-default draft follow-up repairs a deferred dry reply", asyn
         },
         {
           role: "assistant",
-          content: "If you want, I can build you a beginner dry-mead draft next.",
+          content:
+            "If you want, I can build you a beginner dry-mead draft next.",
         },
         {
           role: "user",
@@ -1869,6 +2460,7 @@ test("accepted beginner defaults do not invent holiday flavors for a blackberry 
                     name: "Blackberry",
                     category: "fruit",
                     brix: 8,
+                    secondary: true,
                     amount: { kind: "weight", value: 3, unit: "lb" },
                   },
                   { name: "Honey", role: "adjustable_fermentable" },
@@ -1908,6 +2500,7 @@ test("accepted beginner defaults do not invent holiday flavors for a blackberry 
   });
 
   assert.match(result.answer, /\| Cinnamon Stick \| 1 each \|/);
+  assert.match(result.answer, /\| Blackberry \| 3 lb \| Primary \|/);
   assert.doesNotMatch(result.answer, /\| Clove \|/);
   assert.doesNotMatch(result.answer, /\| Orange Zest \|/);
 });
@@ -1939,8 +2532,7 @@ test("accepted beginner defaults move ginger to an additive", async () => {
       messages: [
         {
           role: "user",
-          content:
-            "Create a first-time recipe for a simple lemon ginger mead.",
+          content: "Create a first-time recipe for a simple lemon ginger mead.",
         },
         {
           role: "assistant",
@@ -1977,7 +2569,9 @@ test("explicit additive pounds normalize to the workflow additive unit", async (
                 batchVolume: { value: 5, unit: "gal" },
                 targetAbv: 12,
                 fermentationFinalGravity: 0.999,
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
                 additives: [{ name: "Lactose", amount: 1, unit: "lb" }],
                 nutrients: {
                   enabled: true,
@@ -2000,8 +2594,7 @@ test("explicit additive pounds normalize to the workflow additive unit", async (
       messages: [
         {
           role: "user",
-          content:
-            "Build a 5 gallon mead with D47, TOSNA, and 1 lb lactose.",
+          content: "Build a 5 gallon mead with D47, TOSNA, and 1 lb lactose.",
         },
       ],
     }),
@@ -2065,7 +2658,10 @@ test("model-invented strength targets are removed when fixed amounts define the 
   });
 
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
-  assert.doesNotMatch(result.answer, /There is no room left|rather than the requested/i);
+  assert.doesNotMatch(
+    result.answer,
+    /There is no room left|rather than the requested/i,
+  );
 });
 
 test("explicit yeast and nutrient schedule text fills an omitted nutrient object", async () => {
@@ -2133,7 +2729,9 @@ test("explicit yeast text fills incomplete nutrient payloads before intake", asy
                 batchVolume: { value: 5, unit: "gal" },
                 targetAbv: 12,
                 fermentationFinalGravity: 0.999,
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
                 nutrients: {
                   enabled: true,
                   yeastStrain: "EC-1118",
@@ -2243,8 +2841,8 @@ test("detailed 'I want a mead with' requests get draft repair", async () => {
     maxToolCalls: 6,
   });
 
-  assert.equal(calls, 2);
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.equal(calls, 2);
 });
 
 test("dry named-honey drafts infer fermentation FG and named yeast nutrients", async () => {
@@ -2291,7 +2889,10 @@ test("dry named-honey drafts infer fermentation FG and named yeast nutrients", a
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
   assert.match(result.answer, /\*\*Fermentation FG:\*\* 0\.999/);
   assert.match(result.answer, /\*\*Yeast:\*\* Lalvin 71B/);
-  assert.match(result.answer, /\*\*Nutrients:\*\* Fermaid K, 3 additions, Go-Ferm/);
+  assert.match(
+    result.answer,
+    /\*\*Nutrients:\*\* Fermaid K, 3 additions, Go-Ferm/,
+  );
 });
 
 test("repeated honey amounts stay attached to their requested stages", async () => {
@@ -2357,7 +2958,7 @@ test("repeated honey amounts stay attached to their requested stages", async () 
   });
 
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
-  assert.match(result.answer, /\| Honey \| 12 lb \| Primary \|/);
+  assert.match(result.answer, /\| Wildflower Honey \| 12 lb \| Primary \|/);
   assert.match(result.answer, /\| Strawberry \| 15 lb \| Secondary \|/);
   assert.match(result.answer, /\| Honey \| 2 lb \| Secondary \|/);
 });
@@ -2444,7 +3045,9 @@ test("specific culinary additives prevent duplicate generic fallback additives",
                 batchVolume: { value: 1, unit: "gal" },
                 targetAbv: 8,
                 fermentationFinalGravity: 0.999,
-                ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
                 additives: [
                   { name: "Madagascar Vanilla", amount: 0.25, unit: "oz" },
                   { name: "Estate Tannin", amount: 1, unit: "g" },
@@ -2504,18 +3107,15 @@ test("tiny fixed-fermentable gravity warnings are hidden from recipe drafts", ()
     stabilizers: { enabled: false },
   });
   assert.equal(workflow.status, "recipe");
-  const answer = directRecipeToolAnswer(
-    "build_recipe_draft",
-    {
-      status: "ok",
-      result: {
-        ...workflow,
-        warnings: [
-          "The supplied fixed fermentables calculate to an original gravity of 1.0883 rather than the requested 1.089772.",
-        ],
-      },
+  const answer = directRecipeToolAnswer("build_recipe_draft", {
+    status: "ok",
+    result: {
+      ...workflow,
+      warnings: [
+        "The supplied fixed fermentables calculate to an original gravity of 1.0883 rather than the requested 1.089772.",
+      ],
     },
-  );
+  });
 
   assert.ok(answer);
   assert.doesNotMatch(answer, /rather than the requested/);
@@ -2579,6 +3179,92 @@ test("beginner yeast recommendations are grounded with the yeast lookup", async 
   assert.equal(result.toolResults[0]?.toolName, "search_yeasts");
   assert.match(result.answer, /Lalvin 71B/);
   assert.doesNotMatch(result.answer, /brand or strain/i);
+});
+
+test("catalog yeast tolerance reaches recipe drafts when the model omits the nutrient block", async () => {
+  let requestCount = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        requestCount += 1;
+        if (requestCount === 1) {
+          return completion({
+            id: "d47-search",
+            toolCalls: [
+              {
+                id: "d47-search-tool",
+                name: "search_yeasts",
+                arguments: { query: "D47", limit: 3 },
+              },
+            ],
+          });
+        }
+        return completion({
+          id: "d47-draft",
+          toolCalls: [
+            {
+              id: "d47-draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 2, unit: "gal" },
+                fermentationFinalGravity: 0.999,
+                backsweetening: { targetFinalGravity: 1.01 },
+                ingredients: [
+                  {
+                    name: "Honey",
+                    category: "honey",
+                    brix: 81,
+                    amount: { kind: "weight", value: 7, unit: "lb" },
+                  },
+                  {
+                    name: "Blueberry",
+                    catalogId: 42,
+                    category: "fruit",
+                    brix: 10,
+                    secondary: true,
+                    amount: { kind: "weight", value: 6, unit: "lb" },
+                  },
+                ],
+                stabilizers: {
+                  enabled: true,
+                  type: "kmeta",
+                  phReading: 3.5,
+                },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Create a 2 gallon blueberry mead with 7 lb honey in primary and 6 lb blueberries in secondary. Use D47, Go-Ferm, and TOSNA. Stabilize and backsweeten after it ferments dry.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+    yeastLookup: async () => [
+      {
+        id: 47,
+        brand: "Lalvin",
+        name: "ICV D47",
+        nitrogenRequirement: "Medium",
+        tolerance: 14,
+        lowTemperature: 59,
+        highTemperature: 68,
+      },
+    ],
+  });
+
+  assert.equal(requestCount, 2);
+  assert.match(result.answer, /catalog alcohol tolerance/i);
+  assert.match(result.answer, /Lalvin ICV D47/);
+  assert.match(result.answer, /14%/);
 });
 
 test("selected recipe adaptation guidance stays conversational unless a draft is requested", async () => {

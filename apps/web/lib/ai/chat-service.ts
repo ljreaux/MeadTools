@@ -319,14 +319,14 @@ export async function runChatTurn(options: {
                   type: "function" as const,
                   function: { name: "search_yeasts" },
                 }
-            : toolCalls === 0 && requiresInitialRecipeTool
-              ? "required"
-              : requiresWikiSource && !wikiSourceUrl(toolResults)
-                ? {
-                    type: "function" as const,
-                    function: { name: "search_wiki" },
-                  }
-                : "auto";
+              : toolCalls === 0 && requiresInitialRecipeTool
+                ? "required"
+                : requiresWikiSource && !wikiSourceUrl(toolResults)
+                  ? {
+                      type: "function" as const,
+                      function: { name: "search_wiki" },
+                    }
+                  : "auto";
     const requestedMaxOutputTokens =
       toolChoice === "auto" || toolChoice === "none"
         ? options.maxOutputTokens
@@ -980,6 +980,13 @@ function requiresWikiSourceForRequest(request: ChatRequest): boolean {
   ) {
     return true;
   }
+  if (
+    /\b(?:what\s+(?:does|is)|explain|define)\b[^?\n]{0,80}\b(?:original gravity|final gravity|specific gravity|hydrometer|airlock)\b/i.test(
+      latestMessage,
+    )
+  ) {
+    return true;
+  }
   return /\b(?:how\s+(?:should|do|can)|what\s+(?:process|should\s+i\s+do\s+next)|next\s+with\s+(?:this|my)\s+(?:batch|brew|mead)|troubleshoot(?:ing)?|stabiliz\w*|stabilis(?:e|ing|ation)\b|back\s*-?sweeten|finish(?:ing)?\s+(?:a\s+little\s+)?sweeter|rehydrat(?:e|ing)|rotten\s+eggs?|sulfur\s+aroma|sulphur\s+aroma)\b/i.test(
     latestMessage,
   );
@@ -1421,11 +1428,19 @@ export function removeUnsupportedSulfurInterventions(
     .replace(/\b(?:such as|including)\s+aeration\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  const recommendsGenericNutrientFix =
+    /\b(?:nutrient(?:-related)?\s+additions?|adding\s+(?:more\s+)?(?:nutrients?|nutrition)|add\s+(?:more\s+)?(?:nutrients?|nutrition))\b[^.?!\n]{0,50}\b(?:clear(?:s|ed|ing)?\s+it\s+up|fix(?:es|ed|ing)?|resolve(?:s|d|ing)?|treat(?:s|ed|ing)?|usually\s+help(?:s|ed|ing)?)\b/i.test(
+      withoutAeration,
+    ) ||
+    /\b(?:often|usually|may)\s+clear(?:s|ed)?\b[^.?!\n]{0,60}\b(?:gets?|receives?|has)\s+(?:enough|more|additional)\s+nitrogen\b/i.test(
+      withoutAeration,
+    );
 
   // Flash occasionally turns a broad troubleshooting source citation into a
   // detailed treatment plan. Those details need an explicit fetched source or
   // a future context-specific calculation; the topic alone is not enough.
   if (
+    !recommendsGenericNutrientFix &&
     !/\b(?:degas|aerat|copper|penn(?:y|ies)|24\s*[–-]?\s*48\s*hours?|DAP|Fermaid)\b/i.test(
       withoutAeration,
     )
@@ -1676,30 +1691,53 @@ async function executeToolCall(options: {
     mergedRecipeDraftInput = parsed.data;
   }
   if (toolName === "build_recipe_draft") {
-    const mergedCandidate = withExplicitNutrientPreferences(
-      withExplicitTargetGuard(
-        withExplicitRecipeDefaults(
-          withImplicitHoneyAdjuster(
-            withExplicitAdditiveDefaults(
-              withAcceptedBeginnerRecipeDefaults(
-                withExplicitIngredientAmounts(
-                  withCatalogIngredientData(
-                    mergeRecipeDraftInput(options.recipeDraftInput, input),
-                    options.toolResults,
-                  ),
-                  options.historicalIntake,
-                ),
-                options.historicalIntake,
-              ),
-              options.historicalIntake,
-            ),
-            options.shouldAssumeHoney,
-          ),
-          options.historicalIntake,
-        ),
-        options.historicalIntake,
-      ),
+    let mergedCandidate: unknown = mergeRecipeDraftInput(
+      options.recipeDraftInput,
+      input,
+    );
+    mergedCandidate = withCatalogIngredientData(
+      mergedCandidate,
+      options.toolResults,
+    );
+    mergedCandidate = withExplicitIngredientAmounts(
+      mergedCandidate,
       options.historicalIntake,
+    );
+    mergedCandidate = withAcceptedBeginnerRecipeDefaults(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withExplicitAdditiveDefaults(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withPreferredHoneyName(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withExplicitStrengthTarget(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withImplicitHoneyAdjuster(
+      mergedCandidate,
+      options.shouldAssumeHoney,
+    );
+    mergedCandidate = withExplicitRecipeDefaults(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withExplicitTargetGuard(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withExplicitNutrientPreferences(
+      mergedCandidate,
+      options.historicalIntake,
+    );
+    mergedCandidate = withCatalogYeastData(
+      mergedCandidate,
+      options.toolResults,
     );
     const parsed = buildRecipeDraftInputSchema.safeParse(mergedCandidate);
     if (parsed.success) {
@@ -1749,10 +1787,16 @@ function withCatalogIngredientData(
       if (!isRecord(ingredient) || typeof ingredient.name !== "string") {
         return ingredient;
       }
-      if (isWaterIngredient(ingredient.name) || isHoneyIngredientName(ingredient.name)) {
+      if (
+        isWaterIngredient(ingredient.name) ||
+        isHoneyIngredientName(ingredient.name)
+      ) {
         return ingredient;
       }
-      if (typeof ingredient.brix === "number" && ingredient.catalogId !== undefined) {
+      if (
+        typeof ingredient.brix === "number" &&
+        ingredient.catalogId !== undefined
+      ) {
         return ingredient;
       }
       const match = findCatalogIngredientMatch(ingredient.name, catalog);
@@ -1760,12 +1804,15 @@ function withCatalogIngredientData(
       return {
         ...ingredient,
         catalogId:
-          typeof ingredient.catalogId === "number" ? ingredient.catalogId : match.id,
+          typeof ingredient.catalogId === "number"
+            ? ingredient.catalogId
+            : match.id,
         category:
           typeof ingredient.category === "string"
             ? ingredient.category
             : match.category,
-        brix: typeof ingredient.brix === "number" ? ingredient.brix : match.brix,
+        brix:
+          typeof ingredient.brix === "number" ? ingredient.brix : match.brix,
       };
     }),
   };
@@ -1804,6 +1851,118 @@ function latestIngredientCatalog(
   return [];
 }
 
+function withCatalogYeastData(
+  input: unknown,
+  toolResults: ChatTurnResult["toolResults"],
+): unknown {
+  if (!isRecord(input) || !isRecord(input.nutrients)) return input;
+  const catalog = latestYeastCatalog(toolResults);
+  const match = findCatalogYeastMatch(input.nutrients, catalog);
+  if (!match) return input;
+
+  return {
+    ...input,
+    nutrients: {
+      ...input.nutrients,
+      yeastId: match.id,
+      yeastBrand: match.brand,
+      yeastStrain: match.name,
+      nitrogenRequirement: match.nitrogenRequirement,
+      ...(match.tolerance !== undefined
+        ? { alcoholTolerance: match.tolerance }
+        : {}),
+    },
+  };
+}
+
+type CatalogYeastData = {
+  id: number;
+  brand: string;
+  name: string;
+  nitrogenRequirement: "Very Low" | "Low" | "Medium" | "High" | "Very High";
+  tolerance: number | undefined;
+};
+
+function latestYeastCatalog(
+  toolResults: ChatTurnResult["toolResults"],
+): CatalogYeastData[] {
+  for (const tool of [...toolResults].reverse()) {
+    if (tool.toolName !== "search_yeasts" || !isRecord(tool.result)) continue;
+    if (tool.result.status !== "ok" || !Array.isArray(tool.result.result)) {
+      continue;
+    }
+    return tool.result.result.flatMap((candidate) => {
+      if (
+        !isRecord(candidate) ||
+        typeof candidate.id !== "number" ||
+        typeof candidate.brand !== "string" ||
+        typeof candidate.name !== "string" ||
+        !isNitrogenRequirement(candidate.nitrogenRequirement) ||
+        (candidate.tolerance !== undefined &&
+          typeof candidate.tolerance !== "number")
+      ) {
+        return [];
+      }
+      return [
+        {
+          id: candidate.id,
+          brand: candidate.brand,
+          name: candidate.name,
+          nitrogenRequirement: candidate.nitrogenRequirement,
+          tolerance: candidate.tolerance,
+        },
+      ];
+    });
+  }
+  return [];
+}
+
+function findCatalogYeastMatch(
+  nutrients: Record<string, unknown>,
+  catalog: CatalogYeastData[],
+): CatalogYeastData | undefined {
+  if (typeof nutrients.yeastId === "number") {
+    const idMatch = catalog.find(
+      (candidate) => candidate.id === nutrients.yeastId,
+    );
+    if (idMatch) return idMatch;
+  }
+  const selectedBrand = normalizeYeastCatalogName(
+    typeof nutrients.yeastBrand === "string" ? nutrients.yeastBrand : "",
+  );
+  const selectedStrain = normalizeYeastCatalogName(
+    typeof nutrients.yeastStrain === "string" ? nutrients.yeastStrain : "",
+  );
+  if (!selectedStrain) return undefined;
+  return catalog.find((candidate) => {
+    const candidateBrand = normalizeYeastCatalogName(candidate.brand);
+    const candidateStrain = normalizeYeastCatalogName(candidate.name);
+    const brandMatches =
+      !selectedBrand ||
+      candidateBrand === selectedBrand ||
+      candidateBrand.includes(selectedBrand) ||
+      selectedBrand.includes(candidateBrand);
+    return (
+      brandMatches &&
+      (candidateStrain === selectedStrain ||
+        candidateStrain.includes(selectedStrain) ||
+        selectedStrain.includes(candidateStrain))
+    );
+  });
+}
+
+function normalizeYeastCatalogName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function isNitrogenRequirement(
+  value: unknown,
+): value is CatalogYeastData["nitrogenRequirement"] {
+  return ["Very Low", "Low", "Medium", "High", "Very High"].includes(
+    value as string,
+  );
+}
+
 function findCatalogIngredientMatch(
   ingredientName: string,
   catalog: Array<{ id: number; name: string; category: string; brix: number }>,
@@ -1815,7 +1974,9 @@ function findCatalogIngredientMatch(
         normalizeIngredientCatalogName(candidate.name) === normalizedIngredient,
     ) ??
     catalog.find((candidate) => {
-      const normalizedCandidate = normalizeIngredientCatalogName(candidate.name);
+      const normalizedCandidate = normalizeIngredientCatalogName(
+        candidate.name,
+      );
       return (
         normalizedCandidate.includes(normalizedIngredient) ||
         normalizedIngredient.includes(normalizedCandidate)
@@ -1887,17 +2048,13 @@ function withImplicitHoneyAdjuster(
  */
 function withExplicitRecipeDefaults(input: unknown, intake: string): unknown {
   if (!isRecord(input)) return input;
-  const saysDry =
-    /\b(?:finish|ferment)(?:ing)?\s+(?:it\s+)?dry\b/i.test(intake) ||
-    /\bdry\s+(?:traditional|mead|melomel|cyser|pyment|hydromel|bochet|braggot)\b/i.test(
-      intake,
-    );
-  const rejectsBacksweetening = explicitlyRejectsBacksweetening(intake);
-  const requestsBacksweetening =
-    /\bback[\s-]?sweeten(?:ing|ed)?\b/i.test(intake) &&
-    !rejectsBacksweetening;
-  const rejectsStabilization =
-    /\b(?:no|not|don't|do not)\b[\s\S]{0,30}\bstabili[sz]/i.test(intake);
+  const saysDry = explicitlyRequestsDryFinish(intake);
+  const backsweeteningPreference = latestBacksweeteningPreference(intake);
+  const rejectsBacksweetening = backsweeteningPreference === "reject";
+  const requestsBacksweetening = backsweeteningPreference === "request";
+  const stabilizationPreference = latestStabilizationPreference(intake);
+  const rejectsStabilization = stabilizationPreference === "reject";
+  const requestsStabilization = stabilizationPreference === "request";
   const result: Record<string, unknown> = { ...input };
 
   if (saysDry && typeof result.fermentationFinalGravity !== "number") {
@@ -1909,20 +2066,129 @@ function withExplicitRecipeDefaults(input: unknown, intake: string): unknown {
   ) {
     result.fermentationFinalGravity = 0.999;
   }
-  if (requestsBacksweetening && !isRecord(result.backsweetening)) {
-    result.backsweetening = { targetFinalGravity: 1.01 };
+  const explicitBacksweeteningTarget = extractBacksweeteningTarget(intake);
+  if (requestsBacksweetening) {
+    result.backsweetening = {
+      ...(isRecord(result.backsweetening) ? result.backsweetening : {}),
+      targetFinalGravity: explicitBacksweeteningTarget ?? 1.01,
+    };
   }
-  if (rejectsBacksweetening) {
+  if (rejectsBacksweetening || (saysDry && !requestsBacksweetening)) {
     delete result.backsweetening;
   }
   if (
-    (requestsBacksweetening || /\bstabili[sz]/i.test(intake)) &&
+    (requestsBacksweetening || requestsStabilization) &&
     !rejectsStabilization &&
     !isRecord(result.stabilizers)
   ) {
     result.stabilizers = { enabled: true, type: "kmeta", phReading: 3.5 };
   }
+  if (
+    (rejectsStabilization ||
+      (saysDry && !requestsBacksweetening && !requestsStabilization)) &&
+    (!requestsBacksweetening || rejectsStabilization)
+  ) {
+    result.stabilizers = { enabled: false };
+  } else if (
+    isRecord(result.stabilizers) &&
+    shouldUseAssumedStabilizerPh(intake)
+  ) {
+    const stabilizers = { ...result.stabilizers };
+    delete stabilizers.phReading;
+    result.stabilizers = stabilizers;
+  }
   return result;
+}
+
+function explicitlyRequestsDryFinish(intake: string): boolean {
+  if (
+    /\b(?:not|don't|do not)\s+(?:want\s+|prefer\s+)?(?:it\s+)?dry\b/i.test(
+      intake,
+    )
+  ) {
+    return false;
+  }
+  return (
+    /\b(?:finish(?:es|ing)?|ferment(?:s|ed|ing|ation)?)\b[^.?!\n]{0,30}\bdry\b/i.test(
+      intake,
+    ) ||
+    /\b(?:want|keep|make|prefer|like)\b[^.?!\n]{0,30}\b(?:it\s+)?dry\b/i.test(
+      intake,
+    ) ||
+    /\bdry\s+finish\b/i.test(intake) ||
+    /\bdry\s+(?:traditional|mead|melomel|cyser|pyment|hydromel|bochet|braggot)\b/i.test(
+      intake,
+    )
+  );
+}
+
+function shouldUseAssumedStabilizerPh(intake: string): boolean {
+  const explicitlyAssumedPh =
+    /\bassum(?:e|ed|ing|ption)?\b[^\n.?!]{0,40}\bpH\b(?:\s+(?:of\s+)?)?(\d+(?:\.\d+)?)/i.exec(
+      intake,
+    );
+  if (explicitlyAssumedPh) {
+    return Number(explicitlyAssumedPh[1]) === 3.5;
+  }
+  return (
+    /\b(?:not|never)\s+(?:taking|take|measuring|measure|checking|check)\b[^.?!\n]{0,30}\bpH\b/i.test(
+      intake,
+    ) ||
+    /\bno\s+pH\s+(?:reading|measurement)\b/i.test(intake) ||
+    /\bpH\b[^.?!\n]{0,40}\b(?:default|estimate)/i.test(intake) ||
+    /\b(?:default|estimate)[^\n.?!]{0,40}\bpH\b/i.test(intake) ||
+    /\bassum(?:e|ed|ing|ption)?\b[^\n.?!]{0,40}\bpH\b(?!\s+(?:of\s+)?\d)/i.test(
+      intake,
+    )
+  );
+}
+
+function withExplicitStrengthTarget(input: unknown, intake: string): unknown {
+  if (!isRecord(input)) return input;
+  const explicitTarget = extractExplicitStrengthTarget(intake);
+  if (!explicitTarget) return input;
+  const result: Record<string, unknown> = { ...input };
+  if (explicitTarget.kind === "abv") {
+    result.targetAbv = explicitTarget.value;
+    delete result.targetOriginalGravity;
+  } else {
+    result.targetOriginalGravity = explicitTarget.value;
+    delete result.targetAbv;
+  }
+  return result;
+}
+
+function extractExplicitStrengthTarget(
+  intake: string,
+): { kind: "abv" | "og"; value: number } | undefined {
+  for (const line of intake.split("\n")) {
+    const percentMatch = /\b(\d+(?:\.\d+)?)\s*%\s*(?:a\.?b\.?v\.?)?/i.exec(
+      line,
+    );
+    const labelledAbvMatch =
+      /\ba\.?b\.?v\.?\b[^\d]{0,20}(\d+(?:\.\d+)?)\s*%?/i.exec(line);
+    const abvValue = Number(percentMatch?.[1] ?? labelledAbvMatch?.[1]);
+    if (Number.isFinite(abvValue) && abvValue > 0 && abvValue < 100) {
+      return { kind: "abv", value: abvValue };
+    }
+
+    const ogAfterLabel =
+      /\b(?:o\.?g\.?|original gravity|gravity target|target gravity)\b[^\d]{0,20}(0?\.\d+|1\.\d+)/i.exec(
+        line,
+      );
+    const ogBeforeLabel =
+      /\b(0?\.\d+|1\.\d+)\s*(?:o\.?g\.?|original gravity)\b/i.exec(line);
+    const labelledOgMatch =
+      ogBeforeLabel &&
+      (!ogAfterLabel || ogBeforeLabel.index < ogAfterLabel.index)
+        ? ogBeforeLabel
+        : ogAfterLabel;
+    const ogValue = Number(labelledOgMatch?.[1]);
+    if (Number.isFinite(ogValue) && ogValue >= 0.98 && ogValue <= 2) {
+      return { kind: "og", value: ogValue };
+    }
+  }
+  return undefined;
 }
 
 function withExplicitTargetGuard(input: unknown, intake: string): unknown {
@@ -1937,9 +2203,7 @@ function withExplicitTargetGuard(input: unknown, intake: string): unknown {
 }
 
 function hasExplicitStrengthTarget(intake: string): boolean {
-  return /\b(?:abv|a\.b\.v\.|og|o\.g\.|original gravity|gravity target|target gravity|aim for|around|about)\b[\s\S]{0,20}\d+(?:\.\d+)?\s*%?\b/i.test(
-    intake,
-  );
+  return extractExplicitStrengthTarget(intake) !== undefined;
 }
 
 function hasAdjustableFermentable(input: Record<string, unknown>): boolean {
@@ -1960,7 +2224,9 @@ function hasFixedFermentableAmount(input: Record<string, unknown>): boolean {
   );
 }
 
-function isFermentableDraftIngredient(ingredient: Record<string, unknown>): boolean {
+function isFermentableDraftIngredient(
+  ingredient: Record<string, unknown>,
+): boolean {
   if (ingredient.role === "fill_liquid") return false;
   if (typeof ingredient.brix === "number" && ingredient.brix > 0) return true;
   if (typeof ingredient.name !== "string") return false;
@@ -1985,6 +2251,20 @@ function withAcceptedBeginnerRecipeDefaults(
     /\b\d+(?:\.\d+)?\s*(?:gal|gallon|l|liter|litre|qt|quart|cup|ml)\b[\s\S]{0,40}\bwater\b/i.test(
       intake,
     );
+  const defaultFruitCounts = new Map<string, number>();
+  if (Array.isArray(result.ingredients)) {
+    for (const ingredient of result.ingredients) {
+      if (
+        !isRecord(ingredient) ||
+        !isBeginnerDefaultFruitIngredient(ingredient)
+      ) {
+        continue;
+      }
+      const key = normalizeIngredientCatalogName(ingredient.name as string);
+      defaultFruitCounts.set(key, (defaultFruitCounts.get(key) ?? 0) + 1);
+    }
+  }
+  const defaultFruitLoadLb = beginnerDefaultFruitLoadLb(result.batchVolume);
 
   if (
     !isRecord(result.batchVolume) &&
@@ -1992,11 +2272,9 @@ function withAcceptedBeginnerRecipeDefaults(
   ) {
     result.batchVolume = { value: 1, unit: "gal" };
   }
-  if (
-    typeof result.targetAbv !== "number" &&
-    typeof result.targetOriginalGravity !== "number"
-  ) {
+  if (!hasExplicitStrengthTarget(intake)) {
     result.targetAbv = /\b(?:low[\s-]?abv|session)\b/i.test(intake) ? 6 : 12;
+    delete result.targetOriginalGravity;
   }
   if (!userSuppliedFermentationFinalGravity(intake)) {
     result.fermentationFinalGravity = 0.999;
@@ -2022,19 +2300,72 @@ function withAcceptedBeginnerRecipeDefaults(
         delete rest.amount;
         return { ...rest, role: "fill_liquid" };
       }
-      if (
-        ingredient.amount === undefined &&
-        isBeginnerDefaultFruitIngredient(ingredient)
-      ) {
-        return {
+      if (isBeginnerDefaultFruitIngredient(ingredient)) {
+        const key = normalizeIngredientCatalogName(ingredient.name as string);
+        const splitCount = defaultFruitCounts.get(key) ?? 1;
+        const normalizedIngredient: Record<string, unknown> = {
           ...ingredient,
-          amount: { kind: "weight", value: 3, unit: "lb" },
         };
+        if (
+          splitCount === 1 &&
+          normalizedIngredient.secondary === true &&
+          !explicitlyRequestsIngredientStage(
+            intake,
+            ingredient.name as string,
+            true,
+          )
+        ) {
+          delete normalizedIngredient.secondary;
+        }
+        if (ingredient.amount === undefined) {
+          normalizedIngredient.amount = {
+            kind: "weight",
+            value: roundDraftDefault(defaultFruitLoadLb / splitCount),
+            unit: "lb",
+          };
+        }
+        return normalizedIngredient;
       }
       return ingredient;
     });
   }
   return result;
+}
+
+function beginnerDefaultFruitLoadLb(batchVolume: unknown): number {
+  if (!isRecord(batchVolume) || typeof batchVolume.value !== "number") return 3;
+  const unit = typeof batchVolume.unit === "string" ? batchVolume.unit : "gal";
+  const gallons =
+    unit === "gal"
+      ? batchVolume.value
+      : unit === "L"
+        ? batchVolume.value / 3.785411784
+        : unit === "mL"
+          ? batchVolume.value / 3785.411784
+          : unit === "qt"
+            ? batchVolume.value / 4
+            : 1;
+  return Math.max(0.1, gallons * 3);
+}
+
+function roundDraftDefault(value: number): number {
+  return Math.round(value * 1_000) / 1_000;
+}
+
+function explicitlyRequestsIngredientStage(
+  intake: string,
+  name: string,
+  secondary: boolean,
+): boolean {
+  const stagePattern = secondary ? /\bsecondary\b/i : /\bprimary\b/i;
+  const normalizedName = normalizeIngredientCatalogName(name);
+  return intake
+    .split(/[\n;,]|(?<!\d)[.?!](?!\d)/)
+    .some(
+      (segment) =>
+        stagePattern.test(segment) &&
+        normalizeIngredientCatalogName(segment).includes(normalizedName),
+    );
 }
 
 function withExplicitAdditiveDefaults(input: unknown, intake: string): unknown {
@@ -2073,12 +2404,33 @@ function withExplicitAdditiveDefaults(input: unknown, intake: string): unknown {
   }
   additives = removeGenericFallbackAdditives(additives);
   additives = removeUnrequestedBeginnerHolidayAdditives(additives, intake);
+  additives = removeOperationalProductsFromAdditives(additives);
 
   return {
     ...input,
     ...(Array.isArray(input.ingredients) ? { ingredients } : {}),
     additives,
   };
+}
+
+function removeOperationalProductsFromAdditives(
+  additives: unknown[],
+): unknown[] {
+  return additives.filter((additive) => {
+    if (!isRecord(additive) || typeof additive.name !== "string") return true;
+    return !isOperationalRecipeProductName(additive.name);
+  });
+}
+
+function isOperationalRecipeProductName(name: string): boolean {
+  const normalized = name.trim();
+  return (
+    /^go[\s-]?ferm(?:\s+(?:pe|protect(?:\s+evolution)?))?$/i.test(normalized) ||
+    /^fermaid\s+[ok]$/i.test(normalized) ||
+    /^(?:dap|diammonium phosphate)$/i.test(normalized) ||
+    /^(?:potassium|sodium) metabisulfite$/i.test(normalized) ||
+    /^potassium sorbate$/i.test(normalized)
+  );
 }
 
 function removeUnrequestedBeginnerHolidayAdditives(
@@ -2180,7 +2532,9 @@ const CULINARY_ADDITIVE_SPECS: CulinaryAdditiveSpec[] = [
   },
 ];
 
-function culinaryAdditiveSpecsForIntake(intake: string): CulinaryAdditiveSpec[] {
+function culinaryAdditiveSpecsForIntake(
+  intake: string,
+): CulinaryAdditiveSpec[] {
   return CULINARY_ADDITIVE_SPECS.filter((spec) => {
     if (spec.name === "Orange Zest" && /\borange\s+blossom\b/i.test(intake)) {
       return /\borange\s+(?:zest|peel)\b/i.test(intake);
@@ -2193,8 +2547,14 @@ function culinaryAdditiveSpecForName(
   name: string,
   intake: string,
 ): CulinaryAdditiveSpec | undefined {
-  return culinaryAdditiveSpecsForIntake(intake).find((spec) =>
-    culinaryAdditiveNameMatchesSpec(name, spec),
+  return culinaryAdditiveSpecsForIntake(intake).find(
+    (spec) =>
+      culinaryAdditiveNameMatchesSpec(name, spec) ||
+      (spec.name === "Orange Zest" &&
+        acceptedBeginnerDefaults(intake) &&
+        /\b(?:holiday(?:-style)?|spiced)\b/i.test(intake) &&
+        /^orange\s+juice$/i.test(name.trim()) &&
+        !/\borange\s+juice\b/i.test(intake)),
   );
 }
 
@@ -2226,18 +2586,28 @@ function upsertExplicitAdditive(
         normalizeIngredientCatalogName(spec.name) ||
         culinaryAdditiveNameMatchesSpec(additive.name, spec)),
   );
-  const existing = index >= 0 && isRecord(additives[index]) ? additives[index] : {};
-  const sourceAmount = source ? additiveAmountFromIngredient(source) : undefined;
-  const explicitAmount =
+  const existing =
+    index >= 0 && isRecord(additives[index]) ? additives[index] : {};
+  const sourceAmount = source
+    ? additiveAmountFromIngredient(source)
+    : undefined;
+  const userSuppliedAmount =
     explicitAdditiveAmountForNamedItem(intake, spec.name) ??
     (source && typeof source.name === "string"
       ? explicitAdditiveAmountForNamedItem(intake, source.name)
       : undefined) ??
-    explicitCountForNamedItem(intake, spec.name) ??
-    sourceAmount;
+    explicitCountForNamedItem(intake, spec.name);
   const defaultUnit = spec.defaultUnit
     ? normalizeAdditiveUnit(spec.defaultUnit)
     : undefined;
+  const acceptedDefaultAmount =
+    acceptedBeginnerDefaults(intake) &&
+    spec.defaultAmount !== undefined &&
+    defaultUnit
+      ? { value: spec.defaultAmount, unit: defaultUnit }
+      : undefined;
+  const selectedAmount =
+    userSuppliedAmount ?? acceptedDefaultAmount ?? sourceAmount;
   const next = {
     ...existing,
     name:
@@ -2245,11 +2615,11 @@ function upsertExplicitAdditive(
         ? existing.name
         : spec.name,
     ...(source?.secondary === true ? { secondary: true } : {}),
-    ...(explicitAmount
-      ? { amount: explicitAmount.value, unit: explicitAmount.unit }
+    ...(selectedAmount
+      ? { amount: selectedAmount.value, unit: selectedAmount.unit }
       : typeof existing.amount === "number" && typeof existing.unit === "string"
         ? {}
-        : spec.defaultAmount &&
+        : spec.defaultAmount !== undefined &&
             defaultUnit &&
             (!spec.defaultRequiresAcceptedBeginnerDefaults ||
               acceptedBeginnerDefaults(intake))
@@ -2325,7 +2695,11 @@ function explicitCountForNamedItem(
     if (!normalizeIngredientCatalogName(phrase).includes(normalizedName)) {
       continue;
     }
-    if (/\b(?:mead|melomel|cyser|pyment|bochet|braggot|draft|batch|recipe|gallon|gal)\b/i.test(phrase)) {
+    if (
+      /\b(?:mead|melomel|cyser|pyment|bochet|braggot|draft|batch|recipe|gallon|gal)\b/i.test(
+        phrase,
+      )
+    ) {
       continue;
     }
     const value = Number(match[1]);
@@ -2335,7 +2709,10 @@ function explicitCountForNamedItem(
   return undefined;
 }
 
-function withExplicitIngredientAmounts(input: unknown, intake: string): unknown {
+function withExplicitIngredientAmounts(
+  input: unknown,
+  intake: string,
+): unknown {
   if (!isRecord(input) || !Array.isArray(input.ingredients)) return input;
   return {
     ...input,
@@ -2351,10 +2728,10 @@ function withExplicitIngredientAmounts(input: unknown, intake: string): unknown 
             ingredient.secondary === true,
           ))
         : explicitAmountForNamedIngredient(
-          intake,
-          ingredient.name,
-          ingredient.secondary === true,
-        );
+            intake,
+            ingredient.name,
+            ingredient.secondary === true,
+          );
       if (!explicitAmount) return ingredient;
       if (explicitAmount.dimension === "unknown") return ingredient;
       return {
@@ -2391,20 +2768,65 @@ function explicitAmountForNamedIngredient(
   | { dimension: "unknown"; value: number; unit: "tsp" | "tbsp" }
   | undefined {
   const candidates = explicitAmountCandidatesForNamedItem(intake, name);
+  const evenlySplitTotal = candidates.find(
+    ({ phrase }) =>
+      /\bsplit\s+evenly\b/i.test(phrase) &&
+      ((/\bprimary\b/i.test(phrase) && /\bsecondary\b/i.test(phrase)) ||
+        /\bboth\s+primary\s+and\s+secondary\b/i.test(intake) ||
+        /\bprimary\b[\s\S]{0,120}\bsecondary\b/i.test(intake)),
+  );
+  if (evenlySplitTotal) {
+    return {
+      ...evenlySplitTotal.amount,
+      value: evenlySplitTotal.amount.value / 2,
+    };
+  }
   if (candidates.length <= 1) return candidates[0]?.amount;
   const stageMatch = candidates.find(({ phrase }) =>
-    secondary
-      ? /\bsecondary\b/i.test(phrase)
-      : /\bprimary\b/i.test(phrase),
+    secondary ? /\bsecondary\b/i.test(phrase) : /\bprimary\b/i.test(phrase),
   );
   const stageCompatibleMatch =
     stageMatch ??
     candidates.find(({ phrase }) =>
-      secondary
-        ? !/\bprimary\b/i.test(phrase)
-        : !/\bsecondary\b/i.test(phrase),
+      secondary ? !/\bprimary\b/i.test(phrase) : !/\bsecondary\b/i.test(phrase),
     );
   return stageCompatibleMatch?.amount ?? candidates[0]?.amount;
+}
+
+function withPreferredHoneyName(input: unknown, intake: string): unknown {
+  if (!isRecord(input) || !Array.isArray(input.ingredients)) return input;
+  const preferredName = preferredHoneyNameFromIntake(intake);
+  if (!preferredName) return input;
+  return {
+    ...input,
+    ingredients: input.ingredients.map((ingredient) => {
+      if (
+        !isRecord(ingredient) ||
+        ingredient.secondary === true ||
+        typeof ingredient.name !== "string" ||
+        !/^honey$/i.test(ingredient.name.trim())
+      ) {
+        return ingredient;
+      }
+      return { ...ingredient, name: preferredName };
+    }),
+  };
+}
+
+function preferredHoneyNameFromIntake(intake: string): string | undefined {
+  const varietals: Array<[RegExp, string]> = [
+    [/\borange\s+blossom\b/i, "Orange Blossom Honey"],
+    [/\bblueberry\s+blossom\b/i, "Blueberry Blossom Honey"],
+    [/\braspberry\s+blossom\b/i, "Raspberry Blossom Honey"],
+    [/\bwildflower(?:\s+honey)?\b/i, "Wildflower Honey"],
+    [/\bclover\s+honey\b/i, "Clover Honey"],
+    [/\bbuckwheat\s+honey\b/i, "Buckwheat Honey"],
+    [/\btupelo\s+honey\b/i, "Tupelo Honey"],
+    [/\bacacia\s+honey\b/i, "Acacia Honey"],
+    [/\bmesquite\s+honey\b/i, "Mesquite Honey"],
+    [/\bfireweed\s+honey\b/i, "Fireweed Honey"],
+  ];
+  return varietals.find(([pattern]) => pattern.test(intake))?.[1];
 }
 
 function explicitHoneyAmountForStage(
@@ -2448,17 +2870,13 @@ function explicitHoneyAmountForStage(
     }
   }
   const directStageMatch = directCandidates.find(({ phrase }) =>
-    secondary
-      ? /\bsecondary\b/i.test(phrase)
-      : /\bprimary\b/i.test(phrase),
+    secondary ? /\bsecondary\b/i.test(phrase) : /\bprimary\b/i.test(phrase),
   );
   if (directStageMatch) return directStageMatch.amount;
 
   const candidates = explicitAmountCandidatesForNamedItem(intake, "Honey");
   const stageMatch = candidates.find(({ phrase }) =>
-    secondary
-      ? /\bsecondary\b/i.test(phrase)
-      : /\bprimary\b/i.test(phrase),
+    secondary ? /\bsecondary\b/i.test(phrase) : /\bprimary\b/i.test(phrase),
   );
   return stageMatch?.amount;
 }
@@ -2487,34 +2905,68 @@ function explicitAmountCandidatesForNamedItem(
       | { dimension: "unknown"; value: number; unit: "tsp" | "tbsp" };
   }> = [];
   for (const segment of intake.split(/[\n;,]|(?<!\d)[.?!](?!\d)|\bthen\b/i)) {
+    const leadingNameMatch = namePattern.exec(segment);
+    pattern.lastIndex = 0;
+    const amountAppearsBeforeName = leadingNameMatch
+      ? pattern.test(segment.slice(0, leadingNameMatch.index))
+      : false;
+    if (leadingNameMatch && !amountAppearsBeforeName) {
+      const afterName = segment.slice(
+        leadingNameMatch.index + leadingNameMatch[0].length,
+      );
+      pattern.lastIndex = 0;
+      const trailingAmounts = [...afterName.matchAll(pattern)];
+      const stagedTrailingAmounts = trailingAmounts.flatMap(
+        (amountMatch, index) => {
+          const phrase = afterName.slice(
+            amountMatch.index,
+            trailingAmounts[index + 1]?.index ?? afterName.length,
+          );
+          if (!/\b(?:primary|secondary)\b/i.test(phrase)) return [];
+          const value = Number(amountMatch[1]);
+          const unit = normalizeExplicitAmountUnit(amountMatch[2] ?? "");
+          if (!unit || !Number.isFinite(value) || value <= 0) return [];
+          return [{ phrase, amount: { ...unit, value } }];
+        },
+      );
+      if (stagedTrailingAmounts.length > 0) {
+        candidates.push(...stagedTrailingAmounts);
+        continue;
+      }
+    }
+    pattern.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(segment))) {
       const phrase = segment.slice(match.index, match.index + 80);
-    if (!normalizeIngredientCatalogName(phrase).includes(normalizedName)) {
-      continue;
-    }
+      if (!normalizeIngredientCatalogName(phrase).includes(normalizedName)) {
+        continue;
+      }
       const afterUnit = phrase.slice(
         match[0].indexOf(match[2]) + match[2].length,
       );
-    const nameMatch = namePattern.exec(afterUnit);
-    if (!nameMatch) continue;
-    const beforeName = afterUnit.slice(0, nameMatch.index);
-    if (/\b\d+(?:\.\d+)?\s*(?:kg|g|lb|lbs|pound|pounds|oz|ounce|ounces|gal|gallon|gallons|l|liter|liters|litre|litres|ml|qt|quart|quarts|tsp|teaspoon|teaspoons|tbsp|tablespoon|tablespoons)\b/i.test(beforeName)) {
-      continue;
-    }
-    if (
-      normalizeExplicitAmountUnit(match[2])?.dimension === "volume" &&
-      /\b(?:mead|melomel|cyser|pyment|bochet|braggot|draft|batch|recipe)\b/i.test(
-        phrase,
-      )
-    ) {
-      continue;
-    }
-    const value = Number(match[1]);
-    if (!Number.isFinite(value) || value <= 0) continue;
-    const unit = normalizeExplicitAmountUnit(match[2]);
-    if (!unit) continue;
-    candidates.push({ phrase, amount: { ...unit, value } });
+      const nameMatch = namePattern.exec(afterUnit);
+      if (!nameMatch) continue;
+      const beforeName = afterUnit.slice(0, nameMatch.index);
+      if (
+        /\b\d+(?:\.\d+)?\s*(?:kg|g|lb|lbs|pound|pounds|oz|ounce|ounces|gal|gallon|gallons|l|liter|liters|litre|litres|ml|qt|quart|quarts|tsp|teaspoon|teaspoons|tbsp|tablespoon|tablespoons)\b/i.test(
+          beforeName,
+        )
+      ) {
+        continue;
+      }
+      if (
+        normalizeExplicitAmountUnit(match[2])?.dimension === "volume" &&
+        /\b(?:mead|melomel|cyser|pyment|bochet|braggot|draft|batch|recipe)\b/i.test(
+          phrase,
+        )
+      ) {
+        continue;
+      }
+      const value = Number(match[1]);
+      if (!Number.isFinite(value) || value <= 0) continue;
+      const unit = normalizeExplicitAmountUnit(match[2]);
+      if (!unit) continue;
+      candidates.push({ phrase, amount: { ...unit, value } });
     }
   }
   return candidates;
@@ -2527,7 +2979,9 @@ function itemNamePattern(name: string): RegExp {
     .split(/[^a-z0-9]+/i)
     .filter(Boolean)
     .map((token) =>
-      token.length > 3 && !token.endsWith("s") ? `${escapeRegExp(token)}s?` : escapeRegExp(token),
+      token.length > 3 && !token.endsWith("s")
+        ? `${escapeRegExp(token)}s?`
+        : escapeRegExp(token),
     );
   return new RegExp(`\\b${tokens.join("[^a-z0-9]+")}\\b`, "i");
 }
@@ -2658,7 +3112,7 @@ function withExplicitNutrientPreferences(
         ? { goFermType: "Go-Ferm" }
         : /\bdap\b/i.test(intake) && !/\bgo[\s-]?ferm\b/i.test(intake)
           ? { goFermType: "none" }
-        : {}),
+          : {}),
     },
   };
 }
@@ -2666,8 +3120,10 @@ function withExplicitNutrientPreferences(
 function normalizeNutrientSchedule(
   nutrients: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (nutrients.schedule === "justO") return { ...nutrients, schedule: "other" };
-  if (nutrients.schedule === "oAndK") return { ...nutrients, schedule: "oAndk" };
+  if (nutrients.schedule === "justO")
+    return { ...nutrients, schedule: "other" };
+  if (nutrients.schedule === "oAndK")
+    return { ...nutrients, schedule: "oAndk" };
   return nutrients;
 }
 
@@ -2726,16 +3182,56 @@ function userSuppliedFermentationFinalGravity(intake: string): boolean {
   );
 }
 
-function explicitlyRejectsStabilization(intake: string): boolean {
-  return /\b(?:no|not|don't|do not|without)\b[\s\S]{0,40}\bstabili[sz]/i.test(
-    intake,
-  );
+function extractBacksweeteningTarget(intake: string): number | undefined {
+  const patterns = [
+    /\bback[\s-]?sweeten(?:ed|ing)?\b[^\n.?!]{0,60}?\b(?:to|at)\s+(?:a\s+)?(?:(?:target|final)\s+)?(?:gravity|f(?:inal\s+)?g(?:ravity)?)?\s*(?:of\s+)?(0?\.\d{3}|1\.\d{3})\b/i,
+    /\bback[\s-]?sweeten(?:ed|ing)?\b[^\n.?!]{0,60}?\b(?:target(?:ing)?|(?:final\s+)?gravity|f(?:inal\s+)?g(?:ravity)?)\s*(?:of|at|to)?\s*(0?\.\d{3}|1\.\d{3})\b/i,
+  ];
+  for (const line of intake.split("\n")) {
+    for (const pattern of patterns) {
+      const value = Number(pattern.exec(line)?.[1]);
+      if (Number.isFinite(value) && value >= 0.98 && value <= 1.2) {
+        return value;
+      }
+    }
+  }
+  return undefined;
 }
 
-function explicitlyRejectsBacksweetening(intake: string): boolean {
-  return /\b(?:no|not|don't|do not|without)\b[\s\S]{0,40}\bback[\s-]?sweeten/i.test(
-    intake,
-  );
+function explicitlyRejectsStabilization(intake: string): boolean {
+  return latestStabilizationPreference(intake) === "reject";
+}
+
+function latestStabilizationPreference(
+  intake: string,
+): "request" | "reject" | undefined {
+  for (const line of intake.split("\n")) {
+    if (
+      /\b(?:no|not|don't|do not|without)\b[^\n.?!]{0,40}\bstabili[sz]/i.test(
+        line,
+      )
+    ) {
+      return "reject";
+    }
+    if (/\bstabili[sz](?:e|ed|ing|ation)?\b/i.test(line)) return "request";
+  }
+  return undefined;
+}
+
+function latestBacksweeteningPreference(
+  intake: string,
+): "request" | "reject" | undefined {
+  for (const line of intake.split("\n")) {
+    if (
+      /\b(?:no|not|don't|do not|without)\b[^\n.?!]{0,40}\bback[\s-]?sweeten/i.test(
+        line,
+      )
+    ) {
+      return "reject";
+    }
+    if (/\bback[\s-]?sweeten(?:ing|ed)?\b/i.test(line)) return "request";
+  }
+  return undefined;
 }
 
 function isWaterIngredient(name: unknown): boolean {
@@ -2815,7 +3311,10 @@ function inferExplicitYeast(
   intake: string,
 ): { brand: string; strain: string } | undefined {
   if (/\b(?:lalvin\s+)?(?:icv\s+)?d[\s-]?47\b/i.test(intake)) {
-    return { brand: "Lalvin", strain: /\bicv\b/i.test(intake) ? "ICV D47" : "D47" };
+    return {
+      brand: "Lalvin",
+      strain: /\bicv\b/i.test(intake) ? "ICV D47" : "D47",
+    };
   }
   if (/\b(?:lalvin\s+)?71b(?:-?1122)?\b/i.test(intake)) {
     return { brand: "Lalvin", strain: "71B" };
@@ -2827,7 +3326,10 @@ function inferExplicitYeast(
     return { brand: "Lalvin", strain: "DV10" };
   }
   if (/\b(?:safale\s+)?us[\s-]?05\b/i.test(intake)) {
-    return { brand: /\bsafale\b/i.test(intake) ? "SafAle" : "Fermentis", strain: "US-05" };
+    return {
+      brand: /\bsafale\b/i.test(intake) ? "SafAle" : "Fermentis",
+      strain: "US-05",
+    };
   }
   if (/\bbelle\s+saison\b/i.test(intake)) {
     return { brand: "Lallemand", strain: "Belle Saison" };
@@ -2840,10 +3342,23 @@ function inferExplicitYeast(
 
 function inferExplicitNutrientSchedule(
   intake: string,
-): "tbe" | "tosna" | "justK" | "dap" | "oAndk" | "oAndDap" | "kAndDap" | "other" | undefined {
+):
+  | "tbe"
+  | "tosna"
+  | "justK"
+  | "dap"
+  | "oAndk"
+  | "oAndDap"
+  | "kAndDap"
+  | "other"
+  | undefined {
   if (/\btbe\b/i.test(intake)) return "tbe";
   if (/\btosna\b/i.test(intake)) return "tosna";
-  if (/\bo\s*(?:-|and|\+|&)\s*k\b|\bfermaid\s+o\b[\s\S]{0,40}\bfermaid\s+k\b|\bfermaid\s+k\b[\s\S]{0,40}\bfermaid\s+o\b/i.test(intake)) {
+  if (
+    /\bo\s*(?:-|and|\+|&)\s*k\b|\bfermaid\s+o\b[\s\S]{0,40}\bfermaid\s+k\b|\bfermaid\s+k\b[\s\S]{0,40}\bfermaid\s+o\b/i.test(
+      intake,
+    )
+  ) {
     return "oAndk";
   }
   if (/\bfermaid\s+k(?:\s+only)?\b/i.test(intake)) return "justK";
@@ -2860,7 +3375,9 @@ function inferExplicitNutrientAdditions(
   const digitMatch = /\b(\d+)\s+(?:nutrient\s+)?additions?\b/i.exec(intake);
   if (digitMatch) {
     const value = Number(digitMatch[1]);
-    return Number.isInteger(value) && value > 0 && value <= 10 ? value : undefined;
+    return Number.isInteger(value) && value > 0 && value <= 10
+      ? value
+      : undefined;
   }
   const wordMatch =
     /\b(one|two|three|four|five|six|seven|eight|nine|ten)(?:-|\s)+(?:nutrient\s+)?additions?\b/i.exec(
@@ -2887,28 +3404,30 @@ function inferKnownYeastNitrogenRequirement(
   intake: string,
 ): string | undefined {
   if (typeof nutrients.nitrogenRequirement === "string") return undefined;
-  const yeastText = [
-    nutrients.yeastBrand,
-    nutrients.yeastStrain,
-    intake,
-  ]
+  const yeastText = [nutrients.yeastBrand, nutrients.yeastStrain, intake]
     .filter((value): value is string => typeof value === "string")
     .join(" ");
-  if (/\b(?:belle\s+saison|us[\s-]?05|safale\s+us[\s-]?05)\b/i.test(yeastText)) {
+  if (
+    /\b(?:belle\s+saison|us[\s-]?05|safale\s+us[\s-]?05)\b/i.test(yeastText)
+  ) {
     return "Medium";
   }
-  if (/\b(?:71b|d47|ec[\s-]?1118|dv10|m05|mangrove\s+jack\s+m05)\b/i.test(yeastText)) {
+  if (
+    /\b(?:71b|d47|ec[\s-]?1118|dv10|m05|mangrove\s+jack\s+m05)\b/i.test(
+      yeastText,
+    )
+  ) {
     return "Medium";
   }
   return undefined;
 }
 
-function unresolvedSyrupIngredientFromIntake(intake: string): string | undefined {
+function unresolvedSyrupIngredientFromIntake(
+  intake: string,
+): string | undefined {
   const syrupMatch = /\b((?:[a-z]+[\s-]+){0,3}syrup)\b/i.exec(intake);
   if (!syrupMatch) return undefined;
-  const syrup = syrupMatch[1]
-    .trim()
-    .replace(/^.*\b(?:plus|and|with)\s+/i, "");
+  const syrup = syrupMatch[1].trim().replace(/^.*\b(?:plus|and|with)\s+/i, "");
   const escaped = syrup.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const hasSugarData = new RegExp(
     `${escaped}[\\s\\S]{0,120}(?:\\d+(?:\\.\\d+)?\\s*(?:brix|%\\s*sugar)|sugar\\s+content|label|analysis|measured)`,
@@ -3259,7 +3778,9 @@ function userFacingDraftAssumption(assumption: string): string {
   if (/fixed secondary additions already provide/i.test(assumption)) {
     return "Secondary fruit already contributes enough finished sweetness for the requested target, so no extra backsweetening honey was calculated.";
   }
-  if (/Fixed secondary additions provide the backsweetening/i.test(assumption)) {
+  if (
+    /Fixed secondary additions provide the backsweetening/i.test(assumption)
+  ) {
     return "Secondary fruit provides the finished sweetness in this draft, so no extra backsweetening honey was calculated.";
   }
   return assumption;

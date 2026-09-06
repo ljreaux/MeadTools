@@ -386,4 +386,13 @@ test("hosted policy distinguishes wiki guidance from brief general context", () 
       instruction.includes("clearly labelled fruit-load assumption"),
     ),
   );
+  assert.ok(
+    hostedAgentPolicy.instructions.some(
+      (instruction) =>
+        /medium-sweet/i.test(instruction) &&
+        /stabili[sz]ation/i.test(instruction) &&
+        /backsweetening/i.test(instruction) &&
+        /stopping fermentation early/i.test(instruction),
+    ),
+  );
 });

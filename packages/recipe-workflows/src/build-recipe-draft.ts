@@ -37,6 +37,8 @@ const nutrientPreferencesSchema = z.object({
   nitrogenRequirement: z
     .enum(["Very Low", "Low", "Medium", "High", "Very High"])
     .optional(),
+  /** Authoritative catalog value carried by the host, not estimated by the model. */
+  alcoholTolerance: z.number().finite().min(0).max(30).optional(),
   schedule: z
     .enum([
       "tbe",
@@ -170,8 +172,7 @@ export function defaultRecipeDraftName(input: {
 
   const fruit = input.recipeData?.ingredients.find(
     (ingredient) =>
-      ingredient.category.toLowerCase() === "fruit" &&
-      !ingredient.secondary,
+      ingredient.category.toLowerCase() === "fruit" && !ingredient.secondary,
   );
   const flavorAdditive = input.recipeData?.additives.find(
     (additive) => !/^(?:pectic enzyme|bentonite|tannin)$/i.test(additive.name),
@@ -235,7 +236,8 @@ export function buildRecipeDraft(
   }
 
   try {
-    const recipe = buildRecipeData(input as CompleteBuildRecipeDraftInput);
+    const completeInput = input as CompleteBuildRecipeDraftInput;
+    const recipe = buildRecipeData(completeInput);
     const recipeValidation = recipeDataV2Schema.safeParse(recipe);
     if (!recipeValidation.success) {
       return invalidInput(
@@ -256,6 +258,24 @@ export function buildRecipeDraft(
     }
 
     const warnings = ["This is an unsaved recipe draft."];
+    const primaryFermentationAbv = calcABV(
+      authoritative.data.derived.gravity.ogPrimary,
+      completeInput.fermentationFinalGravity,
+    );
+    if (
+      completeInput.nutrients.alcoholTolerance !== undefined &&
+      primaryFermentationAbv > completeInput.nutrients.alcoholTolerance + 0.05
+    ) {
+      const selectedYeast = [
+        completeInput.nutrients.yeastBrand,
+        completeInput.nutrients.yeastStrain,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      warnings.push(
+        `The calculated primary fermentation is ${formatNumber(primaryFermentationAbv)}% ABV, above ${selectedYeast || "the selected yeast"}'s ${formatNumber(completeInput.nutrients.alcoholTolerance)}% catalog alcohol tolerance. MeadTools kept the stated amounts unchanged; fermenting dry to ${formatNumber(completeInput.fermentationFinalGravity)} may not be feasible without reducing the fermentable load, increasing the batch volume, or choosing a higher-tolerance yeast.`,
+      );
+    }
     if (
       input.targetOriginalGravity !== undefined &&
       !input.ingredients.some(
@@ -416,7 +436,7 @@ function normalizeDraftInput(
       .filter((additive) => additive.amount === undefined || !additive.unit)
       .map((additive) => ({
         name: additive.name,
-          ...(additive.secondary ? { secondary: true } : {}),
+        ...(additive.secondary ? { secondary: true } : {}),
       })),
   ]).filter(
     (deferred) =>

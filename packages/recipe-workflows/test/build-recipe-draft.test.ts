@@ -807,6 +807,47 @@ test("a target ABV gravity includes fixed secondary fruit in the final blend", (
   assert.ok(Math.abs(result.derived.alcohol.abv - 16) < 0.25);
 });
 
+test("a fixed draft warns when the primary must exceeds the selected yeast tolerance", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 2, unit: "gal" },
+    fermentationFinalGravity: 0.999,
+    backsweetening: { targetFinalGravity: 1.01 },
+    ingredients: [
+      {
+        name: "Honey",
+        category: "honey",
+        brix: 81,
+        amount: { kind: "weight", value: 7, unit: "lb" },
+      },
+      {
+        name: "Blueberry",
+        catalogId: 42,
+        category: "fruit",
+        brix: 10,
+        secondary: true,
+        amount: { kind: "weight", value: 6, unit: "lb" },
+      },
+    ],
+    nutrients: {
+      ...nutrientPlan,
+      yeastBrand: "Lalvin",
+      yeastStrain: "ICV D47",
+      yeastId: 47,
+      alcoholTolerance: 14,
+    },
+    stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+  });
+
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  const warning = result.warnings.find((candidate) =>
+    candidate.includes("catalog alcohol tolerance"),
+  );
+  assert.match(warning ?? "", /primary fermentation.*above.*14%/i);
+  assert.match(warning ?? "", /Lalvin ICV D47/);
+  assert.match(warning ?? "", /kept the stated amounts unchanged/i);
+});
+
 test("vanilla is retained as an additive rather than requiring Brix", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 3, unit: "gal" },
