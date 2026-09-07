@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
   KeyboardEvent,
-  useMemo
+  useMemo,
 } from "react";
 import { Search, X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
@@ -14,8 +14,13 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
+  InputGroupInput,
 } from "@/components/ui/input-group";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 type SearchableInputProps<T> = {
   items: T[];
@@ -26,9 +31,13 @@ type SearchableInputProps<T> = {
   renderItem?: (item: T) => React.ReactNode;
 
   getLabel?: (item: T) => string;
+  placeholder?: string;
 
   getValue?: (item: T) => string; // ✅ NEW (canonical id/value)
   sortItems?: (items: T[]) => T[];
+  dropdownPlacement?: "above" | "below";
+  /** Render results outside a clipping parent, such as the compact chat form. */
+  dropdownPortal?: boolean;
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -39,8 +48,11 @@ function SearchableInput<T extends Record<string, any>>({
   onSelect,
   renderItem,
   getLabel,
+  placeholder,
   getValue,
-  sortItems
+  sortItems,
+  dropdownPlacement = "below",
+  dropdownPortal = false,
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -59,7 +71,7 @@ function SearchableInput<T extends Record<string, any>>({
   // IMPORTANT: suggestions are based on what the user is currently seeing/typing
   const baseItems = useMemo(
     () => (sortItems ? sortItems(items) : items),
-    [items, sortItems]
+    [items, sortItems],
   );
 
   const { suggestions } = useSuggestions(baseItems, inputValue, keyName);
@@ -68,8 +80,8 @@ function SearchableInput<T extends Record<string, any>>({
     inputValue.trim() === ""
       ? baseItems
       : sortItems
-      ? sortItems(suggestions)
-      : suggestions;
+        ? sortItems(suggestions)
+        : suggestions;
 
   useEffect(() => {
     const match = baseItems.find((it) => valueOf(it) === query);
@@ -114,12 +126,12 @@ function SearchableInput<T extends Record<string, any>>({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlightIndex((prev) =>
-        prev < visibleSuggestions.length - 1 ? prev + 1 : 0
+        prev < visibleSuggestions.length - 1 ? prev + 1 : 0,
       );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHighlightIndex((prev) =>
-        prev > 0 ? prev - 1 : visibleSuggestions.length - 1
+        prev > 0 ? prev - 1 : visibleSuggestions.length - 1,
       );
     } else if (e.key === "Enter" && highlightIndex >= 0) {
       e.preventDefault();
@@ -144,85 +156,126 @@ function SearchableInput<T extends Record<string, any>>({
 
   const listboxId = "searchable-input-listbox";
 
+  const inputGroup = (
+    <InputGroup className="h-12">
+      <InputGroupInput
+        ref={inputRef}
+        value={inputValue}
+        onChange={(e) => {
+          const val = e.target.value;
+          setInputValue(val);
+          setQuery(val); // user typed -> treat as custom text
+          setDropdownOpen(true);
+          setHighlightIndex(-1);
+        }}
+        onFocus={(e) => {
+          e.target.select();
+          setDropdownOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={dropdownOpen}
+        aria-controls={dropdownOpen ? listboxId : undefined}
+        className="h-full text-lg relative"
+        placeholder={placeholder}
+      />
+
+      <InputGroupAddon align="inline-end">
+        {dropdownOpen || inputValue ? (
+          <InputGroupButton
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="rounded-full"
+            onClick={handleClearOrClose}
+            aria-label={inputValue ? "Clear search" : "Close suggestions"}
+          >
+            <X className="h-3 w-3" />
+          </InputGroupButton>
+        ) : (
+          <InputGroupButton
+            type="button"
+            size="icon-xs"
+            variant="ghost"
+            className="rounded-full"
+            disabled
+          >
+            <Search className="h-3 w-3" />
+          </InputGroupButton>
+        )}
+      </InputGroupAddon>
+    </InputGroup>
+  );
+
+  const suggestionsMenu = (
+    <ul
+      id={listboxId}
+      ref={dropdownRef}
+      className="max-h-60 w-full overflow-auto rounded-md border border-input bg-background text-sm shadow-sm"
+      role="listbox"
+    >
+      {visibleSuggestions.map((suggestion, index) => {
+        const isHighlighted = index === highlightIndex;
+        return (
+          <li
+            key={index}
+            role="option"
+            aria-selected={isHighlighted}
+            className={`cursor-pointer px-3 py-2 text-foreground ${
+              isHighlighted ? "bg-muted" : "hover:bg-muted"
+            }`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              commitSelect(suggestion);
+            }}
+          >
+            {renderItem ? renderItem(suggestion) : labelOf(suggestion)}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  if (dropdownPortal) {
+    return (
+      <Popover
+        onOpenChange={(open) => {
+          setDropdownOpen(open);
+          if (!open) setHighlightIndex(-1);
+        }}
+        open={dropdownOpen}
+      >
+        <PopoverAnchor asChild>
+          <div>{inputGroup}</div>
+        </PopoverAnchor>
+        {dropdownOpen && visibleSuggestions.length > 0 ? (
+          <PopoverContent
+            align="start"
+            className="z-[1100] w-[var(--radix-popper-anchor-width)] max-w-[calc(100vw-1rem)] p-0"
+            collisionPadding={8}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            side={dropdownPlacement === "above" ? "top" : "bottom"}
+          >
+            {suggestionsMenu}
+          </PopoverContent>
+        ) : null}
+      </Popover>
+    );
+  }
+
   return (
     <div className="relative">
-      <InputGroup className="h-12">
-        <InputGroupInput
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => {
-            const val = e.target.value;
-            setInputValue(val);
-            setQuery(val); // user typed -> treat as custom text
-            setDropdownOpen(true);
-            setHighlightIndex(-1);
-          }}
-          onFocus={(e) => {
-            e.target.select();
-            setDropdownOpen(true);
-          }}
-          onKeyDown={handleKeyDown}
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={dropdownOpen}
-          aria-controls={dropdownOpen ? listboxId : undefined}
-          className="h-full text-lg relative"
-        />
-
-        <InputGroupAddon align="inline-end">
-          {dropdownOpen || inputValue ? (
-            <InputGroupButton
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="rounded-full"
-              onClick={handleClearOrClose}
-              aria-label={inputValue ? "Clear search" : "Close suggestions"}
-            >
-              <X className="h-3 w-3" />
-            </InputGroupButton>
-          ) : (
-            <InputGroupButton
-              type="button"
-              size="icon-xs"
-              variant="ghost"
-              className="rounded-full"
-              disabled
-            >
-              <Search className="h-3 w-3" />
-            </InputGroupButton>
-          )}
-        </InputGroupAddon>
-      </InputGroup>
-
-      {dropdownOpen && visibleSuggestions.length > 0 && (
-        <ul
-          id={listboxId}
-          ref={dropdownRef}
-          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md border border-input bg-background text-sm shadow-sm"
-          role="listbox"
+      {inputGroup}
+      {dropdownOpen && visibleSuggestions.length > 0 ? (
+        <div
+          className={`absolute z-30 w-full ${
+            dropdownPlacement === "above" ? "bottom-full mb-1" : "mt-1"
+          }`}
         >
-          {visibleSuggestions.map((suggestion, index) => {
-            const isHighlighted = index === highlightIndex;
-            return (
-              <li
-                key={index}
-                role="option"
-                aria-selected={isHighlighted}
-                className={`cursor-pointer px-3 py-2 text-foreground ${
-                  isHighlighted ? "bg-muted" : "hover:bg-muted"
-                }`}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  commitSelect(suggestion);
-                }}
-              >
-                {renderItem ? renderItem(suggestion) : labelOf(suggestion)}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+          {suggestionsMenu}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -9,14 +9,14 @@ import {
   SelectItem,
   SelectSeparator,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "../ui/select";
 import { isValidNumber } from "@/lib/utils/validateInput";
 import lodash from "lodash";
 import {
   InputGroup,
   InputGroupInput,
-  InputGroupAddon
+  InputGroupAddon,
 } from "@/components/ui/input-group";
 import { Trash } from "lucide-react";
 import { Separator } from "../ui/separator";
@@ -31,17 +31,17 @@ const weightUnits = [
   { value: "mg", label: "MG" },
   { value: "kg", label: "KG" },
   { value: "oz", label: "OZ" },
-  { value: "lbs", label: "LBS" }
+  { value: "lbs", label: "LBS" },
 ];
 
 const volumeUnits = [
   { value: "ml", label: "ML" },
   { value: "liters", label: "LIT" },
-  { value: "fl oz", label: "FLOZ" },
+  { value: "fl_oz", label: "FLOZ" },
   { value: "quarts", label: "QUARTS" },
   { value: "gal", label: "GALS" },
   { value: "tsp", label: "TSP" },
-  { value: "tbsp", label: "TBSP" }
+  { value: "tbsp", label: "TBSP" },
 ];
 
 const countUnits = [{ value: "units", label: "UNITS" }];
@@ -51,7 +51,7 @@ export default function Additives() {
   const {
     data: { additives },
     additives: additivesApi,
-    catalog: { additiveList, loadingAdditives }
+    catalog: { additiveList, loadingAdditives },
   } = useRecipe();
 
   return (
@@ -104,7 +104,7 @@ const AdditiveLine = ({
   changeAdditive,
   changeUnit,
   changeAmount,
-  remove
+  remove,
 }: {
   additiveList: Additive[];
   add: AdditiveLine;

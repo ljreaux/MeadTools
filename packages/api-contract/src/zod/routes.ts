@@ -4,39 +4,62 @@ import { recipeDataV2Schema } from "@meadtools/schemas";
 export const contactRequestBodySchema = z.object({
   user_name: z.string(),
   user_email: z.string(),
-  message: z.string()
+  message: z.string(),
 });
 export const contactSuccessResponseSchema = z.object({
-  message: z.literal("Email sent successfully")
+  message: z.literal("Email sent successfully"),
 });
 export const contactValidationErrorResponseSchema = z.object({
-  message: z.literal("All fields are required")
+  message: z.literal("All fields are required"),
 });
 export const contactSendErrorResponseSchema = z.object({
-  message: z.literal("Failed to send email")
+  message: z.literal("Failed to send email"),
 });
+
+const chatContextRecipeOptionResponseSchema = z.object({
+  kind: z.literal("recipe"),
+  id: z.number().int().positive(),
+  name: z.string(),
+});
+const chatContextBrewOptionResponseSchema = z.object({
+  kind: z.literal("brew"),
+  id: z.string().uuid(),
+  name: z.string(),
+  stage: z.string(),
+  recipeName: z.string().nullable(),
+});
+export const chatContextOptionResponseSchema = z.discriminatedUnion("kind", [
+  chatContextRecipeOptionResponseSchema,
+  chatContextBrewOptionResponseSchema,
+]);
+export const chatContextOptionsResponseSchema = z.object({
+  contexts: z.array(chatContextOptionResponseSchema),
+});
+export const chatContextErrorResponseSchema = z.object({ error: z.string() });
 
 export const bjcpIngredientResponseSchema = z.object({
   id: z.string(),
   created_at: z.string(),
   label: z.string().nullable(),
   category: z.string().nullable(),
-  value: z.string().nullable()
+  value: z.string().nullable(),
 });
-export const bjcpIngredientsResponseSchema = z.array(bjcpIngredientResponseSchema);
+export const bjcpIngredientsResponseSchema = z.array(
+  bjcpIngredientResponseSchema,
+);
 export const bjcpIngredientsFetchErrorResponseSchema = z.object({
-  error: z.literal("Failed to fetch ingredients")
+  error: z.literal("Failed to fetch ingredients"),
 });
 
 export const publicRecipesQueryParamsSchema = z.object({
   page: z.string().optional(),
   limit: z.string().optional(),
   q: z.string().optional(),
-  query: z.string().optional()
+  query: z.string().optional(),
 });
 export const publicRecipeOwnerResponseSchema = z.object({
   public_username: z.string().nullable(),
-  active: z.boolean()
+  active: z.boolean(),
 });
 export const publicRecipeListItemResponseSchema = z.object({
   id: z.number(),
@@ -58,27 +81,27 @@ export const publicRecipeListItemResponseSchema = z.object({
   users: publicRecipeOwnerResponseSchema.nullable(),
   public_username: z.string(),
   averageRating: z.number(),
-  numberOfRatings: z.number()
+  numberOfRatings: z.number(),
 });
 export const publicRecipesPageResponseSchema = z.object({
   recipes: z.array(publicRecipeListItemResponseSchema),
   totalCount: z.number(),
   totalPages: z.number(),
   page: z.number(),
-  limit: z.number()
+  limit: z.number(),
 });
 export const publicRecipesFetchErrorResponseSchema = z.object({
-  error: z.literal("Failed to fetch recipes")
+  error: z.literal("Failed to fetch recipes"),
 });
 
 export const recipePathParamsSchema = z.object({ id: z.string() });
 export const recipeOwnerResponseSchema = z.object({
   public_username: z.string().nullable(),
-  active: z.boolean()
+  active: z.boolean(),
 });
 export const recipeRatingResponseSchema = z.object({
   rating: z.number(),
-  user_id: z.number()
+  user_id: z.number(),
 });
 export const recipeDetailResponseSchema = z.object({
   id: z.number(),
@@ -100,23 +123,23 @@ export const recipeDetailResponseSchema = z.object({
   users: recipeOwnerResponseSchema.nullable(),
   ratings: z.array(recipeRatingResponseSchema),
   public_username: z.string().nullable(),
-  averageRating: z.number().nullable()
+  averageRating: z.number().nullable(),
 });
 export const getRecipeResponseSchema = z.object({
-  recipe: recipeDetailResponseSchema
+  recipe: recipeDetailResponseSchema,
 });
 export const invalidRecipeIdErrorResponseSchema = z.object({
-  error: z.literal("Invalid recipe ID")
+  error: z.literal("Invalid recipe ID"),
 });
 export const recipeNotFoundErrorResponseSchema = z.object({
-  error: z.enum(["Recipe not found", "User not found"])
+  error: z.enum(["Recipe not found", "User not found"]),
 });
 export const recipeForbiddenErrorResponseSchema = z.object({
-  error: z.literal("You are not authorized to view this recipe")
+  error: z.literal("You are not authorized to view this recipe"),
 });
 export const recipeFetchErrorResponseSchema = z.object({
   error: z.enum([
     "An error occurred while fetching the recipe",
-    "Server misconfiguration"
-  ])
+    "Server misconfiguration",
+  ]),
 });

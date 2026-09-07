@@ -10,8 +10,8 @@ import RecipeCalculatorSideBar from "./Sidebar";
 
 import { useTutorial } from "@/hooks/useTutorial";
 import { stepCards } from "@/lib/tutorialSteps";
+import { prepareTutorialSteps } from "@/lib/utils/prepareTutorialSteps";
 import { useEffect, useState, useCallback } from "react";
-import type { Step } from "react-joyride";
 
 // recipe builder components
 import Units from "./Units";
@@ -132,35 +132,19 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
   const { t } = useTranslation();
 
-  const [currentTutorialSteps, setCurrentTutorialSteps] = useState<Step[]>([]);
+  const sourceTutorialSteps = stepCards[currentStepIndex] ?? [];
+  const hasNextTutorialCard = !!stepCards[currentStepIndex + 1];
+  const currentTutorialSteps = prepareTutorialSteps({
+    hasNextCard: hasNextTutorialCard,
+    isMobile,
+    onNextCard: next,
+    steps: sourceTutorialSteps,
+    translate: t
+  });
 
-  const transformSteps = (arr: Step[]) =>
-    arr.map((step) => ({
-      ...step,
-      placement:
-        isMobile && (step.placement === "left" || step.placement === "right")
-          ? "top"
-          : step.placement,
-      content:
-        typeof step.content === "string" ? t(step.content) : step.content,
-      hideFooter: typeof step.content !== "string" && true
-    }));
-
-  const specialCallbacks = {
-    [currentTutorialSteps.length - 1]: () => {
-      const isNextStep = !!stepCards[currentStepIndex + 1];
-      if (isNextStep) next();
-    }
-  };
-
-  useEffect(() => {
-    const currentSteps = transformSteps(stepCards[currentStepIndex]);
-    setCurrentTutorialSteps(currentSteps);
-  }, [currentStepIndex, isMobile]);
-
-  const { TutorialComponent, sidebarOpen } = useTutorial(
+  const { tutorial, sidebarOpen } = useTutorial(
     currentTutorialSteps,
-    specialCallbacks
+    currentStepIndex
   );
 
   // ✅ hook recipe  -> feed nutrients provider in controlled mode (same as RecipeBuilder)
@@ -180,7 +164,7 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
       onChange={setNutrients}
     >
       <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-        <TutorialComponent />
+        {tutorial}
 
         <RecipeCalculatorSideBar
           goTo={goTo}

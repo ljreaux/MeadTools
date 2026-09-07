@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
+import type { AdminChatUsageReportResponse } from "@meadtools/api-contract/contracts";
 import type { AdminBrewsPage, AdminSummary } from "@/lib/db/admin";
 import { qk } from "@/lib/db/queryKeys";
 import type { BrewViewDetail } from "@/types/brewView";
@@ -13,7 +14,35 @@ export function useAdminSummary() {
   return useQuery<AdminSummary>({
     queryKey: qk.adminSummary,
     queryFn: () => fetchWithAuth<AdminSummary>("/api/admin/summary"),
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAdminChatUsage(filters: {
+  from: string;
+  to: string;
+  environment?: string;
+  model?: string;
+  status?: string;
+  query?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const fetchWithAuth = useFetchWithAuth();
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== "")
+      searchParams.set(key, String(value));
+  }
+
+  return useQuery<AdminChatUsageReportResponse>({
+    queryKey: qk.adminChatUsage(filters),
+    queryFn: () =>
+      fetchWithAuth<AdminChatUsageReportResponse>(
+        `/api/admin/chat/usage?${searchParams.toString()}`,
+      ),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 }
 
@@ -22,7 +51,7 @@ export function useAdminBrews({
   limit,
   query,
   stage,
-  status
+  status,
 }: {
   page: number;
   limit: number;
@@ -33,7 +62,7 @@ export function useAdminBrews({
   const fetchWithAuth = useFetchWithAuth();
   const searchParams = new URLSearchParams({
     page: String(page),
-    limit: String(limit)
+    limit: String(limit),
   });
 
   if (query) searchParams.set("query", query);
@@ -46,14 +75,14 @@ export function useAdminBrews({
       limit,
       query ?? "",
       stage ?? "",
-      status ?? ""
+      status ?? "",
     ),
     queryFn: () =>
       fetchWithAuth<AdminBrewsPage>(
-        `/api/admin/brews?${searchParams.toString()}`
+        `/api/admin/brews?${searchParams.toString()}`,
       ),
     placeholderData: keepPreviousData,
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
   });
 }
 
@@ -64,6 +93,6 @@ export function useAdminBrew(brewId?: string) {
     queryKey: qk.adminBrews.detail(brewId ?? ""),
     enabled: Boolean(brewId),
     queryFn: () => fetchWithAuth<BrewViewDetail>(`/api/admin/brews/${brewId}`),
-    staleTime: 60 * 1000
+    staleTime: 60 * 1000,
   });
 }

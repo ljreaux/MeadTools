@@ -5,7 +5,7 @@ const cardOneSteps: Step[] = [
     target: "body",
     content: "tutorial.cardOne.step1",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-sidebar",
@@ -73,7 +73,7 @@ const cardTwoSteps: Step[] = [
     target: "body",
     content: "tutorial.cardTwo.step1",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-nutrientInputs",
@@ -98,7 +98,7 @@ const cardTwoSteps: Step[] = [
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 const cardThreeSteps: Step[] = [
@@ -106,7 +106,7 @@ const cardThreeSteps: Step[] = [
     target: "body",
     content: "tutorial.cardThree.step1",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-nutrientSwitches",
@@ -142,7 +142,7 @@ const cardThreeSteps: Step[] = [
     target: "toNextCard",
     content: "",
     placement: "top",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 const cardFourSteps: Step[] = [
@@ -150,13 +150,13 @@ const cardFourSteps: Step[] = [
     target: ".joyride-stabilizersCard",
     content: "tutorial.cardFour.step1",
     placement: "bottom",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 const cardFiveSteps: Step[] = [
@@ -164,7 +164,7 @@ const cardFiveSteps: Step[] = [
     target: "body",
     content: "tutorial.cardFive.step1",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-additiveLine",
@@ -175,7 +175,7 @@ const cardFiveSteps: Step[] = [
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 const cardSixSteps: Step[] = [
@@ -183,13 +183,13 @@ const cardSixSteps: Step[] = [
     target: ".joyride-notesCard",
     content: "tutorial.cardSix.step1",
     placement: "bottom",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 const cardSevenSteps: Step[] = [
@@ -197,13 +197,13 @@ const cardSevenSteps: Step[] = [
     target: "body",
     content: "tutorial.cardSeven.step1",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-downloadPdf",
     content: "tutorial.cardSeven.step2",
     placement: "bottom",
-    disableBeacon: true
+    skipBeacon: true
   },
   {
     target: ".joyride-saveRecipe",
@@ -212,14 +212,14 @@ const cardSevenSteps: Step[] = [
   {
     target: "body",
     placement: "center",
-    disableBeacon: true,
+    skipBeacon: true,
     content: <FinalTutorialComponent />
   },
   {
     target: "toNextCard",
     content: "",
     placement: "center",
-    disableBeacon: true
+    skipBeacon: true
   }
 ];
 

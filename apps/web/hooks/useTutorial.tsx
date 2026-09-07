@@ -1,45 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Joyride, { CallBackProps, Step } from "react-joyride";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { Joyride, type Step } from "react-joyride";
 
 import { useTranslation } from "react-i18next";
 
-type SpecialStepCallbacks = {
-  [stepIndex: number]: () => void;
-};
-
 interface UseTutorialReturn {
-  TutorialComponent: React.FC;
+  tutorial: ReactNode;
   sidebarOpen: boolean;
 }
 
+const subscribeToHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function useTutorial(
   steps: Step[],
-  specialCallbacks?: SpecialStepCallbacks
+  tourKey: string | number
 ): UseTutorialReturn {
   const { t } = useTranslation();
   const sidebarOpen = true;
-
-  const handleJoyrideCallback = (data: CallBackProps): void => {
-    const { index } = data;
-
-    if (
-      typeof index === "number" &&
-      specialCallbacks &&
-      specialCallbacks[index]
-    ) {
-      specialCallbacks[index]();
-    }
-  };
+  const mounted = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 
   const customJoyrideStyles = {
-    options: {
-      zIndex: 10000,
-      primaryColor: "hsl(var(--primary))",
-      textColor: "hsl(var(--foreground))",
-      width: 500
-    },
     tooltip: {
       backgroundColor: "hsl(var(--card))",
       border: "none",
@@ -59,7 +46,7 @@ export function useTutorial(
       border: "none",
       boxShadow: "none"
     },
-    buttonNext: {
+    buttonPrimary: {
       backgroundColor: "hsl(var(--background))",
       color: "hsl(var(--foreground))",
       border: "1px solid hsl(var(--border))",
@@ -88,34 +75,32 @@ export function useTutorial(
     }
   };
 
-  const TutorialComponent: React.FC = () => {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-      setMounted(true);
-    }, []);
-    if (!mounted) return null;
-    return (
+  return {
+    tutorial: mounted ? (
       <Joyride
+        key={tourKey}
         steps={steps}
-        run={true}
+        run
         continuous
-        scrollOffset={100}
-        callback={handleJoyrideCallback}
+        options={{
+          buttons: ["back", "primary"],
+          dismissKeyAction: false,
+          overlayClickAction: false,
+          primaryColor: "hsl(var(--primary))",
+          scrollOffset: 100,
+          skipScroll: false,
+          textColor: "hsl(var(--foreground))",
+          width: 500,
+          zIndex: 10000
+        }}
         styles={customJoyrideStyles}
-        disableCloseOnEsc
-        disableOverlayClose
         locale={{
           back: t("buttonLabels.back"),
+          last: t("buttonLabels.next"),
           next: t("buttonLabels.next")
         }}
-        hideCloseButton
-        disableScrolling={false}
       />
-    );
-  };
-
-  return {
-    TutorialComponent,
+    ) : null,
     sidebarOpen
   };
 }

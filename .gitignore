@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,6 +13,9 @@
 
 # testing
 /coverage
+
+# Private chatbot evaluator exports may contain user recipe ideas and provider usage.
+/docs/chatbot-evals/
 
 # next.js
 **/.next/
@@ -50,6 +54,8 @@ next-env.d.ts
 .mcp.json
 AGENTS.md
 CLAUDE.md
+.agents/*
+skills-lock.json
 # Sentry Config File
 .env.sentry-build-plugin
 # next-agents-md

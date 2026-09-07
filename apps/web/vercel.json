@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/daily-recipe-activity",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-chat-reservations",
+      "schedule": "*/5 * * * *"
     }
   ],
   "rewrites": [
