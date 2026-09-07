@@ -4,10 +4,12 @@ PR: [#385 — feat(chatbot): OpenAI assistant beta foundation](https://github.co
 
 ## Verdict
 
-**Hold the merge for now.** The reviewed local worktree is technically healthy
-and the approved provider-backed evaluation is complete, but these response
-fixes are not yet the commit checked by GitHub, the PR is still a draft, and
-the release-blocking manual checks remain open.
+**The PR is technically mergeable, but the private beta is not yet fully
+signed off.** Commits `691d82617` and `c3a7d131a` are pushed, the worktree is
+clean, and every GitHub/Vercel check is green on the exact code-bearing head
+`c3a7d131a`. The PR is still a draft. A second authenticated ordinary user is
+still required for the release-blocking cross-owner and grant/revoke manual
+checks.
 
 No unresolved deterministic correctness defect was found in the final local
 pass. One model-output quality gap remains in the bochet flow: the assistant
@@ -41,6 +43,13 @@ either accept that limitation for the private beta or address it before merge.
   build exhausted its heap.
 - The local Stripe listener is available as `npm run stripe:listen`, with the
   complete Checkout, refund, and dispute event set.
+- A stabilized, fermentably backsweetened bottle-conditioning request now
+  produces the requested recipe with a prominent packaging warning. It does
+  not block recipe generation or invent a priming-sugar dose.
+- Batch-volume phrases such as `1 gallon hydromel with honey` can no longer be
+  misread as one gallon of honey.
+- Exact ABV follow-ups remain deterministic and provider-free even when the
+  existing conversation contains a recipe draft.
 
 ## Verification evidence
 
@@ -59,7 +68,7 @@ either accept that limitation for the private beta or address it before merge.
 | Tutorial desktop flow                                       | Pass, all 30 visible steps reach the final screen                                                                                                                  |
 | Tutorial 390×844 flow                                       | Pass, all 30 visible steps reach the final screen                                                                                                                  |
 | Tutorial browser console                                    | No new errors after the fix                                                                                                                                        |
-| GitHub checks                                               | Green for the last pushed commit, but stale relative to local changes                                                                                              |
+| GitHub checks                                               | Pass on code-bearing head `c3a7d131a`: affected-app detection, web test/typecheck/OpenAPI, mobile typecheck/export, Vercel, and Vercel Preview Comments            |
 | Targeted provider evaluation                                | Complete: 15 scenarios, 24/24 turns returned, 321 credits used (400-credit cap), `gpt-5.4-mini-2026-03-17`                                                         |
 | Production dependency audit                                 | 25 web findings: 17 high, 7 moderate, 1 low, 0 critical                                                                                                            |
 | Knip                                                        | Existing debt remains: 22 files, 19 dependencies, 7 dev dependencies, 14 unlisted dependencies, 10 binaries, 90 exports, 97 exported types, and 1 duplicate export |
@@ -96,19 +105,38 @@ The three corrected behaviors have deterministic coverage and pass locally.
 They were not sent through additional paid model turns because the exact
 24-turn authorization had been consumed.
 
+### Final live manual checks — 2026-09-07
+
+- Saving the evaluated `Apple Cider Mead` draft created private recipe ID 9;
+  the saved recipe rendered correctly and could be selected as read-only chat
+  context.
+- A live sparkling-hydromel request returned a complete recipe draft plus the
+  required stabilization/backsweetening/bottle-conditioning pressure warning.
+  It did not calculate priming sugar. The turn settled at 17 credits.
+- Simultaneous sends from two tabs to the same thread accepted exactly one and
+  rejected the other before a second turn was created.
+- That concurrency check exposed an exact-ABV follow-up classification bug.
+  A failing deterministic regression was added first, the routing was fixed,
+  and a final browser check returned `13.262% ABV` while the wallet remained
+  unchanged at 20,783 credits.
+- Cross-owner record access and the grant/revoke/denied-user lifecycle were not
+  run because only one authenticated ordinary-user session was available.
+
 ## Merge blockers
 
-- [ ] Commit and push the reviewed local changes.
-- [ ] Mark PR #385 ready for review and rerun GitHub/Vercel checks on that exact
-      commit.
+- [x] Commit and push the reviewed response and safety changes.
+- [x] Rerun GitHub/Vercel checks on the exact current commit.
+- [ ] Mark PR #385 ready for review; it remains a draft.
 - [ ] Decide whether the bochet attribution/process-answer gap is acceptable
       for the private beta or should be fixed before merge.
 - [ ] If desired, authorize a small provider-backed smoke check of the three
       behaviors corrected after the completed run: beginner fruit staging,
       `dry finish` intent, and sulfur troubleshooting.
-- [ ] Complete the release-blocking authorization, cross-owner, concurrent
-      turn, recipe-save, selected-context, and packaging-safety manual checks
-      in `hosted-chatbot-manual-review.md`.
+- [x] Complete the concurrent-turn, recipe-save, selected-context, and
+      packaging-warning manual checks.
+- [ ] With a second ordinary-user session, complete the release-blocking
+      denied/grant/revoke and cross-owner authorization checks in
+      `hosted-chatbot-manual-review.md`.
 - [ ] Decide whether to accept the remaining dependency advisories and Knip/
       React warning debt for a private beta.
 
