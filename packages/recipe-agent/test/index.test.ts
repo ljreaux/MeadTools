@@ -395,4 +395,12 @@ test("hosted policy distinguishes wiki guidance from brief general context", () 
         /stopping fermentation early/i.test(instruction),
     ),
   );
+  assert.ok(
+    hostedAgentPolicy.instructions.some(
+      (instruction) =>
+        /bottle conditioning/i.test(instruction) &&
+        /warning/i.test(instruction) &&
+        /do not block recipe generation/i.test(instruction),
+    ),
+  );
 });

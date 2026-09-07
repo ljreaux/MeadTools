@@ -99,6 +99,40 @@ test("exact calculator requests link to MeadTools without invoking the model", a
   );
 });
 
+test("an exact ABV follow-up stays provider-free inside a recipe conversation", async () => {
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        throw new Error("The model should not run for an exact ABV follow-up.");
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content: "Draft a one gallon traditional mead.",
+        },
+        {
+          role: "assistant",
+          content: "Here is the current recipe draft.",
+        },
+        {
+          role: "user",
+          content: "Calculate exact ABV for OG 1.100 and FG 1.000.",
+        },
+      ],
+    }),
+    maxOutputTokens: 500,
+    maxToolCalls: 6,
+  });
+
+  assert.equal(result.usage.model, "deterministic-abv-calculation");
+  assert.equal(result.usage.requestIds.length, 0);
+  assert.match(result.answer, /13\.262% ABV/);
+  assert.doesNotMatch(result.answer, /recipe draft/i);
+});
+
 test("explicitly unrelated requests are rejected before the model", () => {
   const result = runDeterministicChatTurn({
     provider: "openai",
@@ -400,6 +434,65 @@ test("an explicit calculated draft requires a provider-chosen MeadTools tool bef
     /do not complete the draft/i,
   );
   assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+});
+
+test("unsafe sweet bottle conditioning remains a warning instead of blocking recipe generation", async () => {
+  let providerCalls = 0;
+  const result = await runChatTurn({
+    client: {
+      async complete() {
+        providerCalls += 1;
+        return completion({
+          id: "sparkling-safety-warning",
+          toolCalls: [
+            {
+              id: "draft-tool",
+              name: "build_recipe_draft",
+              arguments: {
+                batchVolume: { value: 1, unit: "gal" },
+                targetAbv: 6,
+                fermentationFinalGravity: 0.999,
+                ingredients: [
+                  { name: "Honey", role: "adjustable_fermentable" },
+                ],
+                nutrients: {
+                  enabled: true,
+                  yeastBrand: "Lalvin",
+                  yeastStrain: "71B",
+                  nitrogenRequirement: "Medium",
+                  schedule: "tosna",
+                  numberOfAdditions: 2,
+                  goFermType: "Go-Ferm",
+                },
+                backsweetening: { targetFinalGravity: 1.01 },
+                stabilizers: { enabled: true, type: "kmeta", phReading: 3.5 },
+              },
+            },
+          ],
+        });
+      },
+    },
+    userId: 7,
+    request: chatRequestSchema.parse({
+      messages: [
+        {
+          role: "user",
+          content:
+            "Draft a 1 gallon sparkling hydromel at 6% ABV with honey and 71B. Ferment dry, stabilize with potassium metabisulfite and sorbate, make the finished mead medium-sweet, then bottle condition it for carbonation.",
+        },
+      ],
+    }),
+    maxOutputTokens: 1_000,
+    maxToolCalls: 6,
+  });
+
+  assert.equal(providerCalls, 1);
+  assert.match(result.answer, /^## Unsaved MeadTools recipe draft/);
+  assert.match(result.answer, /### Warnings/);
+  assert.match(result.answer, /bottle conditioning/i);
+  assert.match(result.answer, /stabili[sz]/i);
+  assert.match(result.answer, /re-?ferment|pressure|force carbonat/i);
+  assert.doesNotMatch(result.answer, /Before MeadTools can calculate/i);
 });
 
 test("an explicit Fermaid K-only request overrides a generic nutrient schedule in a draft tool call", async () => {

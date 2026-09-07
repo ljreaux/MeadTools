@@ -124,13 +124,6 @@ export function runDeterministicChatTurn(options: {
   if (!isMeadScopedRequest(request)) {
     return result(outOfScopeAnswer, "deterministic-scope-check");
   }
-  const sparklingSweetnessConflict = sparklingSweetnessConflictAnswer(request);
-  if (sparklingSweetnessConflict !== undefined) {
-    return result(
-      sparklingSweetnessConflict,
-      "deterministic-sparkling-safety-check",
-    );
-  }
   const quickAbv = quickAbvCalculationForRequest(request);
   if (quickAbv !== undefined) {
     return result(
@@ -219,6 +212,16 @@ export async function runChatTurn(options: {
   if (deterministic) return deterministic;
   const requiresWikiSource = requiresWikiSourceForRequest(options.request);
   const messages = initialMessages(options.request);
+  const packagingSafetyWarning = sparklingSweetnessConflictWarning(
+    options.request,
+  );
+  if (packagingSafetyWarning) {
+    messages.push({
+      role: "system",
+      content:
+        "Continue the requested recipe draft even though the brewer's sweet bottle-conditioning plan is incompatible. Preserve their stated recipe choices and let the application render the packaging warning. Do not calculate or invent a priming-sugar dose, do not claim stabilization makes bottle conditioning reliable, and do not defer the whole recipe solely for this packaging decision.",
+    });
+  }
   const toolResults: ChatTurnResult["toolResults"] = [];
   const usage = emptyUsage();
   let model = "unknown";
@@ -450,6 +453,9 @@ export async function runChatTurn(options: {
           intakeContext,
           recipeDraftInput,
         ),
+        additionalWarnings: packagingSafetyWarning
+          ? [packagingSafetyWarning]
+          : undefined,
       });
       if (completedDraftAnswer) {
         return {
@@ -622,6 +628,9 @@ export async function runChatTurn(options: {
           intakeContext,
           recipeDraftInput,
         ),
+        additionalWarnings: packagingSafetyWarning
+          ? [packagingSafetyWarning]
+          : undefined,
       });
       const repeatedQuestionAnswer =
         directAnswer !== undefined &&
@@ -803,13 +812,12 @@ function isRecipeDraftResetRequest(request: ChatRequest): boolean {
 }
 
 /**
- * A finished-sweet, carbonated recipe needs an explicit packaging strategy.
- * MeadTools can calculate either side of that decision, but it must not make
- * a bottle-conditioning plan look safe when residual fermentable sugar is
- * intentionally present. Keep this at the shared chat boundary so every UI
- * gets the same narrow, actionable question before a draft is calculated.
+ * A finished-sweet, carbonated recipe needs an explicit packaging warning.
+ * MeadTools can still calculate the recipe, but it must not make ordinary
+ * bottle conditioning look safe when residual fermentable sugar is present.
+ * Keep this at the shared chat boundary so every UI renders the same warning.
  */
-function sparklingSweetnessConflictAnswer(
+function sparklingSweetnessConflictWarning(
   request: ChatRequest,
 ): string | undefined {
   if (!isRecipeDesignRequest(request)) return undefined;
@@ -839,7 +847,7 @@ function sparklingSweetnessConflictAnswer(
     hasPackagingStrategy
   )
     return undefined;
-  return "Before MeadTools can calculate a sweet carbonated draft, choose the packaging strategy: finish dry and bottle-condition/prime, stabilize and force-carbonate, or use a non-fermentable sweetener. A sweet bottle-conditioned draft without that choice can re-ferment.";
+  return "This draft combines fermentable backsweetening with bottle conditioning. Stabilization can make bottle conditioning unreliable, while surviving yeast can re-ferment the added honey and create dangerous package pressure. Keep this as a recipe draft, but choose a compatible packaging plan before bottling: finish dry before priming, force carbonate the stabilized sweet mead, or use a non-fermentable sweetener. Use the MeadTools priming sugar calculator only after choosing a compatible bottle-conditioning plan.";
 }
 
 function isRecipeDesignRequest(request: ChatRequest): boolean {
@@ -1184,7 +1192,7 @@ export function calculatorLinkForProcessMessage(
 function calculatorRouteForRequest(
   request: ChatRequest,
 ): ReturnType<typeof calculatorLinkForProcessMessage> {
-  if (isRecipeDesignRequest(request)) return undefined;
+  if (isStrictExplicitDraftRequest(request)) return undefined;
   const latestMessage = request.messages.at(-1)?.content ?? "";
   const asksForExactCalculation =
     /\b(?:calculate|exact|how\s+much|how\s+many|what\s+amount|dose|dosage|correction|correcting|estimate)\b/i.test(
@@ -1202,7 +1210,7 @@ function calculatorRouteForRequest(
 function quickAbvCalculationForRequest(
   request: ChatRequest,
 ): number | undefined {
-  if (isRecipeDesignRequest(request)) return undefined;
+  if (isStrictExplicitDraftRequest(request)) return undefined;
   const latestMessage = request.messages.at(-1)?.content ?? "";
   if (!/\b(?:abv|alcohol\s+by\s+volume)\b/i.test(latestMessage))
     return undefined;
@@ -2858,6 +2866,14 @@ function explicitHoneyAmountForStage(
       );
       const honeyMatch = /\bhoney\b/i.exec(afterUnit);
       if (!honeyMatch) continue;
+      if (
+        unit.dimension === "volume" &&
+        /\b(?:mead|traditional|melomel|cyser|pyment|metheglin|hydromel|bochet|braggot|draft|batch|recipe)\b/i.test(
+          phrase,
+        )
+      ) {
+        continue;
+      }
       const beforeHoney = afterUnit.slice(0, honeyMatch.index);
       if (
         /\b\d+(?:\.\d+)?\s*(?:kg|g|lb|lbs|pound|pounds|oz|ounce|ounces|gal|gallon|gallons|l|liter|liters|litre|litres|ml|qt|quart|quarts|tsp|teaspoon|teaspoons|tbsp|tablespoon|tablespoons)\b/i.test(
@@ -2956,7 +2972,7 @@ function explicitAmountCandidatesForNamedItem(
       }
       if (
         normalizeExplicitAmountUnit(match[2])?.dimension === "volume" &&
-        /\b(?:mead|melomel|cyser|pyment|bochet|braggot|draft|batch|recipe)\b/i.test(
+        /\b(?:mead|traditional|melomel|cyser|pyment|metheglin|hydromel|bochet|braggot|draft|batch|recipe)\b/i.test(
           phrase,
         )
       ) {
@@ -3646,7 +3662,10 @@ function isRepeatedQuestionAnswer(
 export function directRecipeToolAnswer(
   toolName: string,
   execution: unknown,
-  options?: { explainSecondaryFruitSweetness?: boolean },
+  options?: {
+    explainSecondaryFruitSweetness?: boolean;
+    additionalWarnings?: readonly string[];
+  },
 ): string | undefined {
   if (toolName !== "build_recipe_draft" && toolName !== "explain_recipe") {
     return undefined;
@@ -3675,7 +3694,10 @@ export function directRecipeToolAnswer(
   }
   if (workflow.data.status === "error") return workflow.data.message;
   if (toolName === "build_recipe_draft") {
-    const draft = renderCompletedRecipeDraft(workflow.data);
+    const draft = renderCompletedRecipeDraft(
+      workflow.data,
+      options?.additionalWarnings,
+    );
     return options?.explainSecondaryFruitSweetness
       ? `${draft}\n\n### Note\nMeadTools treats fruit added in secondary as unfermented, so its sugar is included in the finished-gravity calculation.`
       : draft;
@@ -3709,7 +3731,10 @@ export function directRecipeToolAnswer(
  */
 function completedRecipeDraftAnswer(
   toolResults: ChatTurnResult["toolResults"],
-  options: { explainSecondaryFruitSweetness?: boolean },
+  options: {
+    explainSecondaryFruitSweetness?: boolean;
+    additionalWarnings?: readonly string[];
+  },
 ): string | undefined {
   for (const toolResult of [...toolResults].reverse()) {
     if (toolResult.toolName !== "build_recipe_draft") continue;
@@ -3728,6 +3753,7 @@ function renderCompletedRecipeDraft(
     z.infer<typeof chatbotRecipeWorkflowResultSchema>,
     { status: "recipe" }
   >,
+  additionalWarnings: readonly string[] = [],
 ): string {
   const ingredientLines = workflow.recipeData.ingredients.map((ingredient) => {
     return `| ${ingredient.name} | ${formatDraftIngredientAmount(ingredient)} | ${ingredient.secondary ? "Secondary" : "Primary"} |`;
@@ -3751,7 +3777,7 @@ function renderCompletedRecipeDraft(
   const assumptions = workflow.assumptions
     .map((item) => `- ${userFacingDraftAssumption(item)}`)
     .join("\n");
-  const warnings = workflow.warnings
+  const warnings = [...new Set([...workflow.warnings, ...additionalWarnings])]
     .filter((item) => !isTinyFixedFermentableGravityWarning(item))
     .map((item) => `- ${item}`)
     .join("\n");
