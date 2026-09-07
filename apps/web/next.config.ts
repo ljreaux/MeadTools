@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
 import { fileURLToPath } from "node:url";
@@ -10,10 +10,14 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@meadtools/api-contract",
     "@meadtools/brew-domain",
+    "@meadtools/credit-accounting",
     "@meadtools/core",
     "@meadtools/i18n",
-    "@meadtools/schemas"
-  ]
+    "@meadtools/schemas",
+    "@meadtools/recipe-workflows",
+    "@meadtools/recipe-agent",
+    "@meadtools/wiki-knowledge",
+  ],
 };
 
 const withMDX = createMDX({
@@ -22,14 +26,14 @@ const withMDX = createMDX({
     remarkPlugins: [
       "remark-gfm",
       "remark-frontmatter",
-      ["remark-mdx-frontmatter", { name: "meta" }] // creates `export const meta = {...}`
+      ["remark-mdx-frontmatter", { name: "meta" }], // creates `export const meta = {...}`
     ],
     rehypePlugins: [
       "rehype-slugs",
       "rehype-autolink-headings",
-      "rehype-highlight"
-    ]
-  }
+      "rehype-highlight",
+    ],
+  },
 });
 
 export default withSentryConfig(withMDX(nextConfig), {
@@ -67,5 +71,5 @@ export default withSentryConfig(withMDX(nextConfig), {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
       removeDebugLogging: true,
     },
-  }
+  },
 });

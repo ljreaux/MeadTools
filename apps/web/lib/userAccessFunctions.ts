@@ -14,96 +14,86 @@ export async function requireAdmin(userId: number): Promise<boolean> {
 export async function verifyUser(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length).trim()
+      : undefined;
 
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Authorization header missing" },
-        { status: 401 }
-      );
+    if (token) {
+      if (!ACCESS_TOKEN_SECRET) {
+        console.error(
+          "ACCESS_TOKEN_SECRET is not set in environment variables.",
+        );
+        return NextResponse.json(
+          { error: "Server misconfiguration" },
+          { status: 500 },
+        );
+      }
+
+      try {
+        const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as {
+          id: number;
+        };
+        const user = await prisma.users.findUnique({
+          where: { id: decoded.id },
+        });
+
+        if (!user) {
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 },
+          );
+        }
+
+        return user.id;
+      } catch {
+        // A NextAuth session may be valid even when the optional bearer token
+        // is an external provider token rather than a MeadTools access token.
+      }
     }
 
-    const token = authHeader.split(" ")[1];
+    const session = await getServerSession(authOptions);
 
-    if (!token) {
-      console.error("Token missing");
-      return NextResponse.json({ error: "Token missing" }, { status: 401 });
-    }
-
-    if (!ACCESS_TOKEN_SECRET) {
-      console.error("ACCESS_TOKEN_SECRET is not set in environment variables.");
-      return NextResponse.json(
-        { error: "Server misconfiguration" },
-        { status: 500 }
-      );
-    }
-
-    let userId: number | string | null = null;
-    // Try verifying as a custom token
-    try {
-      const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as { id: number };
-      userId = decoded?.id;
-
-      // Fetch the user by custom ID
+    if (session?.user?.email) {
       const user = await prisma.users.findUnique({
-        where: { id: userId }
+        where: { email: session.user.email },
       });
 
-      if (!user) {
-        console.error("User not found for custom token");
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      if (user) {
+        return user.id;
       }
-
-      return user.id;
-    } catch (err) {
-      console.warn("Failed to verify custom token:", err);
     }
 
-    // If not a custom token, try getting the user from the session
-    if (!userId) {
-      const session = await getServerSession(authOptions);
+    // If Google profile.sub is stored as google_id
+    if (session?.user?.id) {
+      const user = await prisma.users.findUnique({
+        // @ts-expect-error Works fine, but throws a ts error
+        where: { google_id: session.user.id as string },
+      });
 
-      if (session?.user?.email) {
-        const user = await prisma.users.findUnique({
-          where: { email: session.user.email }
-        });
-
-        if (user) {
-          return user.id;
-        }
-      }
-
-      // If Google profile.sub is stored as google_id
-      if (session?.user?.id) {
-        const user = await prisma.users.findUnique({
-          // @ts-expect-error Works fine, but throws a ts error
-          where: { google_id: session.user.id as string } // Assuming profile.sub is mapped to google_id
-        });
-
-        if (user) {
-          return user.id;
-        }
+      if (user) {
+        return user.id;
       }
     }
 
     // If no valid userId, return an error
     console.error(
-      "No valid userId found. Invalid token or unauthorized access."
+      "No valid userId found. Invalid token or unauthorized access.",
     );
     return NextResponse.json(
       { error: "Invalid token or unauthorized access" },
-      { status: 401 }
+      { status: 401 },
     );
   } catch (error) {
     console.error("Error verifying user:", error);
     return NextResponse.json(
       { error: "Invalid or expired token" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 }
 
 export async function verifyAdmin(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<number | NextResponse> {
   const userIdOrResponse = await verifyUser(req);
 
@@ -120,7 +110,7 @@ export async function verifyAdmin(
     if (user.role !== "admin") {
       return NextResponse.json(
         { error: "Unauthorized access" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -128,7 +118,7 @@ export async function verifyAdmin(
   } catch {
     return NextResponse.json(
       { error: "Failed to verify admin" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

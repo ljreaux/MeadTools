@@ -2,35 +2,51 @@
 
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { fetchAccountInfo, type AuthUser } from "@/lib/api/auth";
 import { qk } from "@/lib/db/queryKeys";
 
 export function useAuth() {
   const { data: session, status } = useSession();
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [hasHydratedCredentialState, setHasHydratedCredentialState] =
+    useState(false);
 
-  const accessToken =
-    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  useEffect(() => {
+    setAccessToken(localStorage.getItem("accessToken"));
+    setHasHydratedCredentialState(true);
+  }, []);
 
   const nextAuthAccessToken = (session as any)?.accessToken ?? null;
 
-  const enabled = !!accessToken || status === "authenticated";
+  const enabled =
+    hasHydratedCredentialState &&
+    (!!accessToken || status === "authenticated");
 
   const {
     data: user,
     isLoading: isUserLoading,
     isFetching,
     isError,
-    error
+    error,
   } = useQuery<AuthUser | null>({
-    queryKey: qk.authMe,
+    // Credential login populates localStorage after the first client render.
+    // Keep auth query results separated by credential availability without
+    // putting the bearer value itself into the client query cache.
+    queryKey: [
+      ...qk.authMe,
+      accessToken ? "bearer" : nextAuthAccessToken ? "session" : "anonymous",
+    ] as const,
     queryFn: () => fetchAccountInfo(accessToken, nextAuthAccessToken),
     enabled,
     staleTime: 5 * 60 * 1000,
-    retry: false
+    retry: false,
   });
 
   const loading =
-    status === "loading" || (enabled && (isUserLoading || isFetching));
+    !hasHydratedCredentialState ||
+    status === "loading" ||
+    (enabled && (isUserLoading || isFetching));
 
   const isLoggedIn = !!user;
 
@@ -39,6 +55,6 @@ export function useAuth() {
     isLoggedIn,
     loading,
     isError,
-    error
+    error,
   };
 }

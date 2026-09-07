@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { invalidateChatAdditiveCatalog } from "@/lib/db/additives";
 import { verifyAdmin } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
     console.error("Failed to fetch additives:", err);
     return NextResponse.json(
       { error: "Failed to fetch additives" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (!name || dosage == null || !unit) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,12 +78,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    invalidateChatAdditiveCatalog();
+
     return NextResponse.json(additive);
   } catch (error: any) {
     console.error("Error creating additive:", error);
     return NextResponse.json(
       { error: "Failed to create additive" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

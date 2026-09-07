@@ -138,6 +138,7 @@ model recipes {
   comments       comments[]
   ratings        recipe_ratings[]
   daily_activity recipe_daily_activity[]
+  chat_drafts    chat_drafts[]
 }
 
 model users {
@@ -152,12 +153,376 @@ model users {
   show_google_avatar Boolean @default(false)
   active             Boolean @default(true)
 
-  brews        brews[]
-  brew_entries brew_entries[]
-  devices      devices[]
-  recipes      recipes[]
-  comments     comments[]
-  ratings      recipe_ratings[]
+  brews                    brews[]
+  brew_entries             brew_entries[]
+  devices                  devices[]
+  recipes                  recipes[]
+  comments                 comments[]
+  ratings                  recipe_ratings[]
+  chat_conversations       chat_conversations[]
+  chat_access_grant        chat_access_grants?
+  chat_access_changes      chat_access_settings[]     @relation("chat_access_settings_updated_by")
+  credit_account           credit_accounts?
+  credit_checkout_sessions credit_checkout_sessions[]
+  resolved_payment_recoveries credit_payment_recoveries[] @relation("credit_payment_recoveries_resolved_by")
+}
+
+/// The single rollout policy for private chatbot access. It is intentionally
+/// database-backed: access controls and beta grants need an auditable source
+/// of truth even when deployment configuration changes.
+model chat_access_settings {
+  id                 Boolean          @id @default(true)
+  mode               chat_access_mode @default(beta_allowlist)
+  updated_at         DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+  updated_by_user_id Int?
+
+  updated_by users? @relation("chat_access_settings_updated_by", fields: [updated_by_user_id], references: [id], onDelete: SetNull)
+}
+
+/// One durable opt-in record per user. Revoking beta access preserves who
+/// granted it and when instead of deleting operational history.
+model chat_access_grants {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            Int       @unique
+  granted_at         DateTime  @default(now()) @db.Timestamptz(6)
+  granted_by_user_id Int
+  revoked_at         DateTime? @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([revoked_at])
+}
+
+/// A user owns one account. Its available balance is derived from the
+/// immutable ledger; do not add a mutable spent or balance column here.
+model credit_accounts {
+  id                           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                      Int       @unique
+  payment_restricted_at        DateTime? @db.Timestamptz(6)
+  payment_restriction_reason   String?   @db.VarChar(255)
+  payment_restriction_reference String?  @db.VarChar(255)
+  created_at                   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user    users                   @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  entries credit_ledger_entries[]
+
+  @@index([payment_restricted_at])
+}
+
+/// Effective-dated provider prices used to calculate the exact cost of an AI
+/// operation. Rates are integer picodollars per one million tokens.
+model credit_pricing_versions {
+  id                                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                                  String    @db.VarChar(64)
+  model                                     String    @db.VarChar(255)
+  version                                   String    @db.VarChar(96)
+  uncached_input_picousd_per_million_tokens BigInt
+  cached_input_picousd_per_million_tokens   BigInt
+  output_picousd_per_million_tokens         BigInt
+  effective_at                              DateTime  @db.Timestamptz(6)
+  retired_at                                DateTime? @db.Timestamptz(6)
+  created_at                                DateTime  @default(now()) @db.Timestamptz(6)
+
+  ledger_entries credit_ledger_entries[]
+
+  @@unique([provider, model, version])
+  @@index([provider, model, effective_at])
+}
+
+/// Versioned customer pricing policy. This keeps provider cost, payment fees,
+/// and MeadTools' margin independently auditable and adjustable over time.
+model credit_fee_policy_versions {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  version              String    @unique @db.VarChar(96)
+  markup_basis_points  Int
+  fixed_turn_credits   Int       @default(0)
+  minimum_turn_credits Int       @default(1)
+  effective_at         DateTime  @db.Timestamptz(6)
+  retired_at           DateTime? @db.Timestamptz(6)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+
+  ledger_entries credit_ledger_entries[]
+
+  @@index([effective_at])
+}
+
+/// Append-only financial record for credit purchases, holds, settlement, and
+/// reversals. A reservation is negative; settlement returns unused credits,
+/// so the sum of immutable deltas is the final user charge.
+model credit_ledger_entries {
+  id                    String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id            String                   @db.Uuid
+  operation_id          String                   @db.Uuid
+  idempotency_key       String                   @db.VarChar(128)
+  entry_type            credit_ledger_entry_type
+  credits_delta         Int
+  pricing_version_id    String?                  @db.Uuid
+  fee_policy_version_id String?                  @db.Uuid
+  provider_cost_picousd BigInt?
+  source_amount_cents   Int?
+  source_currency       String?                  @db.VarChar(3)
+  external_reference    String?                  @db.VarChar(255)
+  metadata              Json?                    @db.JsonB
+  created_at            DateTime                 @default(now()) @db.Timestamptz(6)
+
+  account            credit_accounts             @relation(fields: [account_id], references: [id], onDelete: Restrict)
+  pricing_version    credit_pricing_versions?    @relation(fields: [pricing_version_id], references: [id], onDelete: Restrict)
+  fee_policy_version credit_fee_policy_versions? @relation(fields: [fee_policy_version_id], references: [id], onDelete: Restrict)
+
+  @@unique([account_id, idempotency_key])
+  @@unique([account_id, operation_id, entry_type])
+  @@index([account_id, created_at])
+  @@index([entry_type, created_at])
+  @@index([operation_id])
+  @@index([external_reference])
+}
+
+/// A pending or completed Stripe Checkout session. Payment is credited only
+/// after a verified webhook, never from a browser success redirect.
+model credit_checkout_sessions {
+  id                         String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                    Int
+  pack_id                    String                         @db.VarChar(64)
+  credit_amount              Int
+  amount_cents               Int
+  currency                   String                         @db.VarChar(3)
+  stripe_checkout_session_id String?                        @unique @db.VarChar(255)
+  stripe_payment_intent_id   String?                        @unique @db.VarChar(255)
+  stripe_amount_total_cents  Int?
+  stripe_payment_currency    String?                        @db.VarChar(3)
+  refunded_amount_cents      Int                            @default(0)
+  status                     credit_checkout_session_status @default(pending)
+  created_at                 DateTime                       @default(now()) @db.Timestamptz(6)
+  fulfilled_at               DateTime?                      @db.Timestamptz(6)
+  refunded_at                DateTime?                      @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  payment_recoveries credit_payment_recoveries[]
+
+  @@index([user_id, status, created_at])
+}
+
+/// A Stripe refund or dispute that affects a prepaid credit purchase. The
+/// provider amount is retained for audit; the ledger remains the source of
+/// truth for credit changes.
+model credit_payment_recoveries {
+  id                      String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  checkout_id             String                          @db.Uuid
+  recovery_kind           credit_payment_recovery_kind
+  status                  credit_payment_recovery_status
+  external_reference      String                          @unique @db.VarChar(255)
+  amount_cents            Int
+  currency                String                          @db.VarChar(3)
+  credit_delta            Int?
+  resolution_credit_delta Int?
+  resolution_note         String?                         @db.Text
+  resolved_at             DateTime?                       @db.Timestamptz(6)
+  resolved_by_user_id     Int?
+  created_at              DateTime                        @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                        @default(now()) @updatedAt @db.Timestamptz(6)
+
+  checkout         credit_checkout_sessions @relation(fields: [checkout_id], references: [id], onDelete: Restrict)
+  resolved_by_user users?                   @relation("credit_payment_recoveries_resolved_by", fields: [resolved_by_user_id], references: [id], onDelete: SetNull)
+
+  @@index([status, created_at])
+  @@index([checkout_id])
+}
+
+/// Deduplicates verified payment provider webhooks. This audit record contains
+/// event identity only; Stripe's raw event payload is intentionally not stored.
+model credit_payment_webhook_events {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider          String   @db.VarChar(32)
+  external_event_id String   @unique @db.VarChar(255)
+  event_type        String   @db.VarChar(128)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// Retains the minimal non-sensitive fields required to finish a dispute
+/// recovery that reaches us before its Checkout fulfillment webhook.
+model credit_stripe_dispute_events {
+  id                        String                              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  external_event_id         String                              @unique @db.VarChar(255)
+  event_type                String                              @db.VarChar(128)
+  stripe_dispute_id         String                              @db.VarChar(255)
+  stripe_payment_intent_id  String                              @db.VarChar(255)
+  amount_cents              Int
+  currency                  String                              @db.VarChar(3)
+  status                    credit_stripe_dispute_event_status @default(deferred)
+  created_at                DateTime                            @default(now()) @db.Timestamptz(6)
+  processed_at              DateTime?                           @db.Timestamptz(6)
+
+  @@index([stripe_payment_intent_id, status])
+  @@index([stripe_dispute_id])
+}
+
+/// Retains the minimal verified fields required to replay a succeeded refund
+/// that arrives before its Checkout fulfillment webhook.
+model credit_stripe_refund_events {
+  id                       String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  external_event_id        String                             @unique @db.VarChar(255)
+  event_type               String                             @db.VarChar(128)
+  stripe_refund_id         String                             @db.VarChar(255)
+  stripe_payment_intent_id String                             @db.VarChar(255)
+  amount_cents             Int
+  currency                 String                             @db.VarChar(3)
+  status                   credit_stripe_refund_event_status  @default(deferred)
+  created_at               DateTime                           @default(now()) @db.Timestamptz(6)
+  processed_at             DateTime?                          @db.Timestamptz(6)
+
+  @@index([stripe_payment_intent_id, status])
+  @@index([stripe_refund_id])
+}
+
+/// Retains aggregate, non-sensitive provider usage for operational auditing.
+model chatbot_usage_windows {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             Int
+  window              String   @db.VarChar(8)
+  window_start        DateTime @db.Timestamptz(6)
+  request_count       Int      @default(0)
+  provider_calls      Int      @default(0)
+  input_tokens        Int      @default(0)
+  cached_input_tokens Int      @default(0)
+  output_tokens       Int      @default(0)
+  total_tokens        Int      @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@unique([user_id, window, window_start])
+  @@index([window, window_start])
+}
+
+/// Stores request metadata and provider usage only; it intentionally never stores chat content.
+model chatbot_usage_events {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id           String    @unique @db.Uuid
+  user_id              Int
+  environment          String    @db.VarChar(32)
+  model                String    @db.VarChar(255)
+  status               String    @db.VarChar(16)
+  provider_calls       Int       @default(0)
+  input_tokens         Int       @default(0)
+  cached_input_tokens  Int       @default(0)
+  output_tokens        Int       @default(0)
+  total_tokens         Int       @default(0)
+  provider_request_ids   String[] @default([])
+  provider_attempt_count Int      @default(0)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at         DateTime? @db.Timestamptz(6)
+
+  chat_generations chat_generations[]
+
+  @@index([user_id, created_at])
+  @@index([created_at, status])
+  @@index([model, created_at])
+  @@index([environment, created_at])
+  @@index([status, created_at])
+}
+
+/// A signed-in user's private chat thread. Transcript content expires after
+/// inactivity; provider usage has a separate operational retention policy.
+model chat_conversations {
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          Int
+  title            String                  @db.VarChar(160)
+  state            chat_conversation_state @default(active)
+  next_sequence    Int                     @default(1)
+  message_count    Int                     @default(0)
+  content_bytes    Int                     @default(0)
+  last_activity_at DateTime                @default(now()) @db.Timestamptz(6)
+  expires_at       DateTime                @db.Timestamptz(6)
+  created_at       DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime                @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user     users           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages chat_messages[]
+  drafts   chat_drafts[]
+
+  @@index([user_id, state, last_activity_at])
+  @@index([expires_at])
+}
+
+/// Stores only the transcript the user can see. Provider prompts, hidden
+/// reasoning, and raw tool payloads deliberately do not belong here.
+model chat_messages {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id   String              @db.Uuid
+  sequence          Int
+  client_message_id String?             @db.VarChar(128)
+  role              chat_message_role
+  status            chat_message_status @default(pending)
+  content           String              @db.Text
+  citations         Json?               @db.JsonB
+  draft_id          String?             @db.Uuid
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  completed_at      DateTime?           @db.Timestamptz(6)
+
+  conversation chat_conversations      @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  draft        chat_drafts?            @relation("ChatDraftMessage", fields: [draft_id], references: [id], onDelete: SetNull)
+  generation   chat_generations?
+  contexts     chat_message_contexts[]
+
+  @@unique([conversation_id, sequence])
+  @@unique([conversation_id, client_message_id])
+  @@index([conversation_id, created_at])
+}
+
+/// Versioned, validated recipe state for a chat thread. This is not a saved
+/// MeadTools recipe and is retained/deleted with the conversation.
+model chat_drafts {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id    String   @db.Uuid
+  revision           Int
+  recipe_draft_input Json?
+  recipe_data        Json?
+  saved_recipe_id    Int?
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  conversation chat_conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  saved_recipe recipes?           @relation(fields: [saved_recipe_id], references: [id], onDelete: SetNull)
+  messages     chat_messages[]    @relation("ChatDraftMessage")
+
+  @@unique([conversation_id, revision])
+  @@index([conversation_id, created_at])
+}
+
+/// The generation is addressable without retaining a raw provider request.
+/// Usage lives in chatbot_usage_events and will later be priced by an
+/// effective-dated provider pricing version.
+model chat_generations {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id     String    @unique @db.Uuid
+  usage_event_id String?   @db.Uuid
+  provider       String    @db.VarChar(64)
+  model          String    @db.VarChar(255)
+  status         String    @db.VarChar(16)
+  latency_ms     Int?
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at   DateTime? @db.Timestamptz(6)
+
+  message     chat_messages         @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  usage_event chatbot_usage_events? @relation(fields: [usage_event_id], references: [id], onDelete: SetNull)
+
+  @@index([usage_event_id])
+  @@index([provider, model, created_at])
+}
+
+/// References only the user-selected record identity and display label for a
+/// turn. These references never implicitly reattach account context later.
+model chat_message_contexts {
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id String            @db.Uuid
+  kind       chat_context_kind
+  record_id  String            @db.VarChar(64)
+  label      String            @db.VarChar(240)
+  created_at DateTime          @default(now()) @db.Timestamptz(6)
+
+  message chat_messages @relation(fields: [message_id], references: [id], onDelete: Cascade)
+
+  @@unique([message_id, kind, record_id])
+  @@index([record_id, kind])
 }
 
 model User {
@@ -350,4 +715,70 @@ enum brew_stage {
   BACKSWEETENED
   PACKAGED
   COMPLETE
+}
+
+enum chat_conversation_state {
+  active
+  archived
+}
+
+enum chat_message_role {
+  user
+  assistant
+}
+
+enum chat_message_status {
+  pending
+  complete
+  failed
+  cancelled
+}
+
+enum chat_context_kind {
+  recipe
+  brew
+}
+
+enum credit_ledger_entry_type {
+  purchase
+  grant
+  reservation
+  settlement
+  reversal
+  refund
+  adjustment
+}
+
+enum credit_checkout_session_status {
+  pending
+  fulfilled
+  failed
+  expired
+  refunded
+}
+
+enum credit_payment_recovery_kind {
+  stripe_refund
+  stripe_dispute
+}
+
+enum credit_payment_recovery_status {
+  applied
+  review_required
+  resolved
+}
+
+enum credit_stripe_dispute_event_status {
+  deferred
+  processed
+}
+
+enum credit_stripe_refund_event_status {
+  deferred
+  processed
+}
+
+enum chat_access_mode {
+  beta_allowlist
+  all_active_users
 }

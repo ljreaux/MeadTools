@@ -1,9 +1,27 @@
 "use client";
 
+import RecipeChat from "@/components/chat/RecipeChat";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
 
 const KofiButton = () => {
   const { t } = useTranslation();
+  const { isLoggedIn, loading } = useAuth();
+  const { data: chatAccess, isLoading: isChatAccessLoading } = useChatAccess();
+  const pathname = usePathname();
+
+  if (loading) return null;
+  if (isLoggedIn && isChatAccessLoading) return null;
+  // The account chat route already renders the full workspace. Mounting the
+  // popup there creates two independent assistants and ambiguous thread state.
+  if (isLoggedIn && chatAccess?.chatEnabled && pathname === "/account/chat")
+    return null;
+  if (isLoggedIn && chatAccess?.chatEnabled) return <RecipeChatLauncher />;
+
   return (
     <a
       href="https://ko-fi.com/meadtools"
@@ -24,5 +42,52 @@ const KofiButton = () => {
     </a>
   );
 };
+
+function RecipeChatLauncher() {
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  function toggleAssistant() {
+    if (isOpen) setIsExpanded(false);
+    setIsOpen((open) => !open);
+  }
+
+  function closeAssistant() {
+    setIsExpanded(false);
+    setIsOpen(false);
+  }
+
+  return (
+    <>
+      <button
+        aria-expanded={isOpen}
+        aria-label={t("chatbotPopup.open")}
+        className="fixed bottom-4 left-2 z-[1001] flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow hover:ring-2 hover:ring-ring"
+        onClick={toggleAssistant}
+        title={t("chatbotPopup.open")}
+        type="button"
+      >
+        <MessageCircle className="size-5" />
+      </button>
+      {isOpen ? (
+        <div
+          className={
+            isExpanded
+              ? "fixed inset-0 z-[1001] block"
+              : "fixed inset-x-2 bottom-16 z-[1001] block h-[min(40rem,calc(100dvh-5rem))] sm:inset-x-auto sm:left-2 sm:h-auto sm:w-[calc(100vw-1rem)] sm:max-w-md"
+          }
+        >
+          <RecipeChat
+            compact={!isExpanded}
+            fullscreen={isExpanded}
+            onClose={closeAssistant}
+            onToggleFullscreen={() => setIsExpanded((expanded) => !expanded)}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}
 
 export default KofiButton;

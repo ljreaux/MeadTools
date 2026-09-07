@@ -71,7 +71,7 @@ export type RecipeWithParsedFields = RecipeApiResponse &
 
 export function getLastActivityEmailAt(
   isPrivate: boolean,
-  notify?: boolean
+  notify?: boolean,
 ): string | null {
   if (isPrivate || !notify) return null;
 
@@ -114,7 +114,7 @@ type BuildRecipePayloadArgs = {
 };
 
 export function buildRecipePayload(
-  args: BuildRecipePayloadArgs
+  args: BuildRecipePayloadArgs,
 ): BaseRecipePayload {
   const {
     name,
@@ -138,7 +138,7 @@ export function buildRecipePayload(
     yanContributions,
     otherNutrientNameValue,
     providedYan,
-    maxGpl
+    maxGpl,
   } = args;
 
   const recipeData = JSON.stringify({
@@ -154,7 +154,7 @@ export function buildRecipePayload(
     sulfite,
     campden,
     stabilizers,
-    stabilizerType
+    stabilizerType,
   });
 
   const otherNutrientName =
@@ -164,7 +164,7 @@ export function buildRecipePayload(
 
   const nutrientData = JSON.stringify({
     ...fullData,
-    otherNutrientName
+    otherNutrientName,
   });
 
   const yanContribution = JSON.stringify(yanContributions);
@@ -184,7 +184,7 @@ export function buildRecipePayload(
     primaryNotes,
     secondaryNotes,
     private: privateRecipe,
-    activityEmailsEnabled: emailNotifications // 👈 opt-in flag
+    activityEmailsEnabled: emailNotifications, // 👈 opt-in flag
   };
 }
 
@@ -205,7 +205,7 @@ async function fetchPublicRecipe(id: string): Promise<RecipeApiResponse> {
 export function useRecipeQuery(
   id: string,
   isLoggedIn: boolean,
-  authLoading = false
+  authLoading = false,
 ) {
   const fetchWithAuth = useFetchWithAuth();
   const token = useAuthToken();
@@ -236,7 +236,7 @@ export function useRecipeQuery(
           ...base,
           averageRating: base.averageRating ?? 0,
           numberOfRatings: base?.ratings?.length ?? 0,
-          emailNotifications: base.activityEmailsEnabled
+          emailNotifications: base.activityEmailsEnabled,
         } as RecipeWithParsedFields;
 
       // Parse JSON blobs into shaped data
@@ -245,11 +245,11 @@ export function useRecipeQuery(
       // Merge raw + parsed into a single object for the client
       return {
         ...base,
-        ...parsed
+        ...parsed,
       };
     },
 
-    retry: false
+    retry: false,
   });
 }
 
@@ -261,7 +261,7 @@ export function useUpdateRecipeMutation() {
   return useMutation({
     mutationFn: async ({
       id,
-      body
+      body,
     }: {
       id: string;
       body: UpdateRecipePayload;
@@ -269,15 +269,15 @@ export function useUpdateRecipeMutation() {
       return await fetchWithAuth<RecipeResponse>(`/api/recipes/${id}`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
     },
     onSuccess: (_data, variables) => {
       // refresh this specific recipe
       queryClient.invalidateQueries({ queryKey: qk.recipe(variables.id) });
-    }
+    },
   });
 }
 
@@ -293,13 +293,14 @@ export function useCreateRecipeMutation() {
         method: "POST",
         body: JSON.stringify(body),
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.recipesList });
-    }
+      queryClient.invalidateQueries({ queryKey: qk.accountInfo });
+    },
   });
 }
 
@@ -311,7 +312,7 @@ export function useRateRecipeMutation() {
     mutationKey: [...qk.recipesList, "rate"],
     mutationFn: async ({
       recipeId,
-      rating
+      rating,
     }: {
       recipeId: number;
       rating: number;
@@ -324,17 +325,17 @@ export function useRateRecipeMutation() {
           method: "POST",
           body: JSON.stringify({ rating }),
           headers: {
-            "Content-Type": "application/json"
-          }
-        }
+            "Content-Type": "application/json",
+          },
+        },
       );
     },
     onSuccess: (_data, variables) => {
       // Make sure recipe details + lists stay fresh
       queryClient.invalidateQueries({
-        queryKey: qk.recipe(String(variables.recipeId))
+        queryKey: qk.recipe(String(variables.recipeId)),
       });
       queryClient.invalidateQueries({ queryKey: qk.recipesList });
-    }
+    },
   });
 }
