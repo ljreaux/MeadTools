@@ -5,7 +5,8 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { Button } from "../ui/button";
 import { ButtonGroup } from "../ui/button-group";
-import { Plus, Minus, Download } from "lucide-react";
+import { Plus, Minus, Download, Maximize2, Minimize2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   InputGroup,
@@ -19,11 +20,13 @@ interface PrintableIframeProps {
 }
 
 const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
+  const { t } = useTranslation();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [cssContent, setCssContent] = useState<string>("");
   const [zoomFactor, setZoomFactor] = useState<number>(1);
   const [inputValue, setInputValue] = useState<number>(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,7 +140,13 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
   };
 
   return (
-    <div className="relative w-full my-4 border border-gray-300 rounded-sm h-96">
+    <div
+      className={
+        isFullscreen
+          ? "fixed inset-0 z-[1002] h-[100dvh] w-screen bg-background"
+          : "relative my-4 h-96 w-full rounded-sm border border-gray-300"
+      }
+    >
       <iframe
         ref={iframeRef}
         className="w-full h-full"
@@ -146,14 +155,15 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
       />
 
       {/* ✅ Wrap EVERYTHING (zoom + download) in a single ButtonGroup so it can’t drop below */}
-      <div className="absolute right-1 sm:right-2 top-2 md:right-10">
-        <ButtonGroup className="flex flex-nowrap items-center">
+      <div className="absolute inset-x-1 top-2 sm:right-2 sm:left-auto md:right-10">
+        <ButtonGroup className="ml-auto flex w-full flex-nowrap items-center sm:w-fit">
           {/* Nested ButtonGroup: zoom controls */}
-          <ButtonGroup className="flex flex-nowrap items-center">
+          <ButtonGroup className="flex min-w-0 flex-1 flex-nowrap items-center sm:flex-none">
             <Button
               type="button"
               onClick={handleZoomOut}
               variant="secondary"
+              className="shrink-0 max-sm:size-8 max-sm:px-0"
               aria-label="Zoom out"
             >
               <Minus className="h-4 w-4" />
@@ -162,7 +172,7 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
             {/* InputGroup in the middle, styled like secondary background */}
             <InputGroup
               className={[
-                "w-auto",
+                "h-8 min-w-0 flex-1 sm:h-9 sm:w-auto sm:flex-none",
                 "bg-background dark:bg-background",
                 "rounded-none"
               ].join(" ")}
@@ -172,9 +182,12 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
                 onChange={handleInputChange}
                 onKeyDown={handleInputKeyDown}
                 inputMode="numeric"
-                className="h-full w-[4.5rem] text-center text-sm"
+                className="h-full min-w-0 w-full text-center text-sm sm:w-[4.5rem]"
               />
-              <InputGroupAddon align="inline-end" className="pr-2">
+              <InputGroupAddon
+                align="inline-end"
+                className="pr-1 sm:pr-2"
+              >
                 <InputGroupText>%</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
@@ -183,18 +196,45 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({ content }) => {
               type="button"
               onClick={handleZoomIn}
               variant="secondary"
+              className="shrink-0 max-sm:size-8 max-sm:px-0"
               aria-label="Zoom in"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </ButtonGroup>
 
-          <ButtonGroup>
+          <ButtonGroup className="shrink-0">
+            <Button
+              type="button"
+              onClick={() => setIsFullscreen((fullscreen) => !fullscreen)}
+              variant="secondary"
+              className="max-sm:size-8 max-sm:px-0"
+              aria-label={
+                isFullscreen
+                  ? t("PDF.exitFullscreen")
+                  : t("PDF.enterFullscreen")
+              }
+              aria-pressed={isFullscreen}
+              title={
+                isFullscreen
+                  ? t("PDF.exitFullscreen")
+                  : t("PDF.enterFullscreen")
+              }
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </ButtonGroup>
+
+          <ButtonGroup className="shrink-0">
             <Button
               type="button"
               onClick={handlePrint}
               variant="secondary"
-              className="joyride-downloadPdf"
+              className="joyride-downloadPdf max-sm:size-8 max-sm:px-0"
               aria-label="Download / Print"
             >
               <Download className="h-4 w-4" />
