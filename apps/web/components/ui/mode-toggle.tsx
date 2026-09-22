@@ -25,7 +25,7 @@ export function ModeToggle() {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="z-[2000]">
+      <DropdownMenuContent>
         <DropdownMenuItem onClick={() => setTheme("light")}>
           {t("accountPage.theme.light")}
         </DropdownMenuItem>

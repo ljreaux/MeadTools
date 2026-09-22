@@ -2,20 +2,26 @@
 
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { fetchAccountInfo, type AuthUser } from "@/lib/api/auth";
+import {
+  getStoredAccessToken,
+  subscribeToStoredAccessToken,
+} from "@/lib/auth/client-token";
 import { qk } from "@/lib/db/queryKeys";
+
+const HYDRATING_ACCESS_TOKEN = "__meadtools_hydrating_access_token__";
 
 export function useAuth() {
   const { data: session, status } = useSession();
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [hasHydratedCredentialState, setHasHydratedCredentialState] =
-    useState(false);
-
-  useEffect(() => {
-    setAccessToken(localStorage.getItem("accessToken"));
-    setHasHydratedCredentialState(true);
-  }, []);
+  const accessTokenSnapshot = useSyncExternalStore(
+    subscribeToStoredAccessToken,
+    getStoredAccessToken,
+    () => HYDRATING_ACCESS_TOKEN,
+  );
+  const hasHydratedCredentialState =
+    accessTokenSnapshot !== HYDRATING_ACCESS_TOKEN;
+  const accessToken = hasHydratedCredentialState ? accessTokenSnapshot : null;
 
   const nextAuthAccessToken = (session as any)?.accessToken ?? null;
 

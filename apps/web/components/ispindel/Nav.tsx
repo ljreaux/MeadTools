@@ -87,7 +87,7 @@ const Nav = () => {
   return (
     <div className="w-full">
       {/* Mobile */}
-      <div className="sm:hidden absolute left-3 top-3 z-[51]">
+      <div className="sm:hidden absolute left-3 top-3 z-[var(--z-shell)]">
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" aria-label={t("menu", "Menu")}>
@@ -95,7 +95,7 @@ const Nav = () => {
             </Button>
           </SheetTrigger>
 
-          <SheetContent side="left" className="w-72 pt-10 z-[51]">
+          <SheetContent side="left" className="w-72 pt-10">
             <SheetHeader>
               <SheetTitle>
                 {t("iSpindelDashboard.nav.menu", "Wireless Hydrometer Menu")}

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { setStoredAccessToken } from "@/lib/auth/client-token";
 import { qk } from "@/lib/db/queryKeys";
 import { useTranslation } from "react-i18next";
 
@@ -34,9 +35,13 @@ export function useLoginWithCredentials() {
 
       const { accessToken, role, id } = await res.json();
 
+      if (!accessToken) {
+        throw new Error("Login succeeded without returning an access token.");
+      }
+
       // store token for our account-info fetch
-      if (typeof window !== "undefined" && accessToken) {
-        localStorage.setItem("accessToken", accessToken);
+      if (typeof window !== "undefined") {
+        setStoredAccessToken(accessToken);
       }
 
       return { accessToken, role, id, email };
@@ -50,6 +55,7 @@ export function useLoginWithCredentials() {
       });
 
       // Kick account-info query so useAuth picks up the new user
+      queryClient.invalidateQueries({ queryKey: qk.authMe });
       queryClient.invalidateQueries({ queryKey: qk.accountInfo });
     },
     onError: (error: any) => {

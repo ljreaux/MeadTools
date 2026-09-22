@@ -25,7 +25,7 @@ function ChartDownload({ data }: { data: any[] }) {
         <AlertDialogTrigger className={buttonVariants({ variant: "default" })}>
           {t("download")}
         </AlertDialogTrigger>
-        <AlertDialogContent className="z-[1000] w-11/12">
+        <AlertDialogContent className="w-11/12">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("iSpindelDashboard.enter")}</AlertDialogTitle>
             <AlertDialogDescription className="flex flex-col gap-2">

@@ -43,7 +43,7 @@ export default function Navbar() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="sm:h-20 h-20 fixed top-0 z-[51] flex items-center justify-between border-b-2 border-background bg-background">
+    <nav className="sm:h-20 h-20 fixed top-0 z-[var(--z-shell)] flex items-center justify-between border-b-2 border-background bg-background">
       <div className="relative w-screen h-full gap-2 text-xl text-center justify-between flex text-foreground">
         {/* LEFT: Mobile Sheet + Desktop NavigationMenu */}
         <div className="flex items-center">
@@ -59,7 +59,7 @@ export default function Navbar() {
 
               <SheetContent
                 side="left"
-                className="w-[85vw] max-w-sm p-0 top-20 z-[60]"
+                className="w-[85vw] max-w-sm p-0 top-20"
               >
                 <div className="p-4">
                   <SheetHeader className="text-left">

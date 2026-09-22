@@ -3,33 +3,41 @@
 import AuthForm from "@/components/AuthForm";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLoginWithCredentials } from "@/hooks/reactQuery/useLoginWithCredentials";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
-function Login() {
+function LoginContent() {
   const { t } = useTranslation();
   const { isLoggedIn, loading } = useAuth();
   const loginMutation = useLoginWithCredentials();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
+  const rawNext = searchParams.get("next");
+  const nextPath =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/account";
 
   // avoid hydration issues with next-themes
   useEffect(() => {
-    setIsMounted(true);
+    const frameId = window.requestAnimationFrame(() => setIsMounted(true));
+
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
   // if already logged in, bounce to account
   useEffect(() => {
     if (!loading && isLoggedIn) {
-      router.replace("/account");
+      router.replace(nextPath);
     }
-  }, [loading, isLoggedIn, router]);
+  }, [loading, isLoggedIn, nextPath, router]);
 
   if (!isMounted) {
     return null;
@@ -46,8 +54,7 @@ function Login() {
     password: string
   ): Promise<void> => {
     await loginMutation.mutateAsync({ email, password });
-    // if the mutation succeeded, account-info will refetch
-    // and the effect above will redirect to /account
+    router.replace(nextPath);
   };
 
   return (
@@ -67,7 +74,7 @@ function Login() {
         </span>
       </div>
       <button
-        onClick={() => signIn("google")}
+        onClick={() => signIn("google", { callbackUrl: nextPath })}
         className="relative w-64 h-14 overflow-hidden rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <Image
@@ -80,6 +87,14 @@ function Login() {
         />
       </button>
     </div>
+  );
+}
+
+function Login() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }
 

@@ -48,7 +48,7 @@ function DesktopDialog() {
 
   return (
     <AlertDialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-      <AlertDialogContent className="z-[1010] max-h-screen">
+      <AlertDialogContent className="max-h-screen">
         <AlertDialogHeader>
           <AlertDialogTitle>{t("desktop.dialog.title")}</AlertDialogTitle>
           <AlertDialogDescription className="flex flex-col gap-2"></AlertDialogDescription>
