@@ -236,7 +236,7 @@ function Banner({
     <div
       role="status"
       className={cn(
-        "w-full relative px-4 py-3 flex flex-col gap-2 border-y rounded-none z-[2000]",
+        "w-full relative px-4 py-3 flex flex-col gap-2 border-y rounded-none z-[var(--z-banner)]",
         variantClasses[variant],
 
         // animation

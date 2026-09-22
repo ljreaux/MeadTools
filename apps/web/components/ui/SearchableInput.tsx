@@ -252,7 +252,7 @@ function SearchableInput<T extends Record<string, any>>({
         {dropdownOpen && visibleSuggestions.length > 0 ? (
           <PopoverContent
             align="start"
-            className="z-[1100] w-[var(--radix-popper-anchor-width)] max-w-[calc(100vw-1rem)] p-0"
+            className="w-[var(--radix-popper-anchor-width)] max-w-[calc(100vw-1rem)] p-0"
             collisionPadding={8}
             onOpenAutoFocus={(event) => event.preventDefault()}
             side={dropdownPlacement === "above" ? "top" : "bottom"}

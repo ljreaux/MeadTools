@@ -236,7 +236,7 @@ function Brew() {
                 {t("iSpindelDashboard.addBrewName")}
               </AlertDialogTrigger>
 
-              <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+              <AlertDialogContent className="w-11/12 max-w-md">
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {t("iSpindelDashboard.addBrewName")}
@@ -387,7 +387,7 @@ function Brew() {
             {t("iSpindelDashboard.deleteBrew")}
           </AlertDialogTrigger>
 
-          <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+          <AlertDialogContent className="w-11/12 max-w-md">
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {t("iSpindelDashboard.confirm")}

@@ -27,7 +27,7 @@ function AccountLinks() {
           <span className="sr-only">Account Info</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="z-[2000]">
+      <DropdownMenuContent align="end">
         {user ? (
           <>
             <DropdownMenuItem onClick={() => router.push("/account")}>
