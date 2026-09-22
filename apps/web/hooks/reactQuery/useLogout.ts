@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
 import { qk } from "@/lib/db/queryKeys";
+import { clearStoredAccessToken } from "@/lib/auth/client-token";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,7 @@ export function useLogout() {
 
       // 2) clear custom credentials token
       if (typeof window !== "undefined") {
-        localStorage.removeItem("accessToken");
+        clearStoredAccessToken();
       }
 
       // nothing to return

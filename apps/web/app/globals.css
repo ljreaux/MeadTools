@@ -34,6 +34,14 @@
     --chart-3: var(--mt-web-light-chart-3);
     --chart-4: var(--mt-web-light-chart-4);
     --chart-5: var(--mt-web-light-chart-5);
+    --z-sticky: 10;
+    --z-shell: 100;
+    --z-sheet: 1200;
+    --z-banner: 2000;
+    --z-modal: 2100;
+    --z-modal-content: 2101;
+    --z-popover: 2200;
+    --z-toast: 10000;
   }
 
   .dark {
@@ -89,8 +97,8 @@
   }
 }
 
-/* Streamdown portals table fullscreen at z-50, but the site navbar sits at
- * z-[51]. Keep the complete table viewer above the application shell. */
+/* Streamdown portals table fullscreen at z-50. Keep the complete table viewer
+ * above the application shell and banners, but below modal overlays. */
 [data-streamdown="table-fullscreen"] {
   z-index: 2001;
 }

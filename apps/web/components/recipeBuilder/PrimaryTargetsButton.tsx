@@ -409,7 +409,7 @@ export default function PrimaryTargetsButton() {
                     <SelectTrigger className="mr-2 w-24 border-none p-2">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="z-[1001]">
+                    <SelectContent>
                       <SelectItem value="SG">{t("SG")}</SelectItem>
                       <SelectItem value="ABV">{t("ABV")}</SelectItem>
                     </SelectContent>

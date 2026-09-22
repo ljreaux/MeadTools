@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { setStoredAccessToken } from "@/lib/auth/client-token";
 import { qk } from "@/lib/db/queryKeys";
 import { useTranslation } from "react-i18next";
 
@@ -30,7 +31,7 @@ export function useRegister() {
 
       // save token for logged-in user
       if (typeof window !== "undefined" && data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
+        setStoredAccessToken(data.accessToken);
       }
 
       return data;

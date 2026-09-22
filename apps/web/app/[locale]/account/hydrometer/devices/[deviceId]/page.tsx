@@ -206,7 +206,7 @@ function DevicePage() {
                 {t("iSpindelDashboard.startBrew")}
               </AlertDialogTrigger>
 
-              <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+              <AlertDialogContent className="w-11/12 max-w-md">
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {t("iSpindelDashboard.addBrewName")}
@@ -464,7 +464,7 @@ function DevicePage() {
               {t("iSpindelDashboard.deleteDevice")}
             </AlertDialogTrigger>
 
-            <AlertDialogContent className="z-[1000] w-11/12 max-w-md">
+            <AlertDialogContent className="w-11/12 max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>
                   {t("iSpindelDashboard.confirm")}

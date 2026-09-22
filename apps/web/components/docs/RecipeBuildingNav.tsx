@@ -97,7 +97,7 @@ export function RecipeBuildingNav({
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="w-[88vw] max-w-sm top-20 z-[60] p-4"
+            className="w-[88vw] max-w-sm top-20 p-4"
           >
             <SheetHeader className="mb-4">
               <SheetTitle>Recipe Builder Docs</SheetTitle>

@@ -115,7 +115,7 @@ export default function TooltipHelper({
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-        <TooltipContent className="z-[1000]">{content}</TooltipContent>
+        <TooltipContent>{content}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
