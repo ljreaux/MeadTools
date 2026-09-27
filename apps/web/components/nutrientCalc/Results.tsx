@@ -29,7 +29,7 @@ function Results() {
     <div>
       <h2>{t("nuteAmounts")}</h2>
 
-      <div className="joyride-nuteResults grid grid-cols-2 gap-4">
+      <div className="joyride-nuteResults flex flex-wrap justify-between sm:grid sm:grid-cols-2 gap-4">
         {keys.map((key) => {
           const enabled = data.selected.selectedNutrients[key];
           if (!enabled) return null;
