@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 export default function useRecipeVersionGate(recipe: RecipeWithParsedFields) {
   const router = useRouter();
   const {
-    meta: { hydrate }
+    meta: { hydrate, hydratedRecipeData }
   } = useRecipe();
   const { t } = useTranslation();
 
@@ -24,5 +24,7 @@ export default function useRecipeVersionGate(recipe: RecipeWithParsedFields) {
       });
       router.push("/account");
     }
-  }, [recipe]);
+  }, [recipe, hydrate, router, t]);
+
+  return !!recipe.dataV2 && hydratedRecipeData === recipe.dataV2;
 }
