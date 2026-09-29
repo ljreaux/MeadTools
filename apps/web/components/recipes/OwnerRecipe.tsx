@@ -39,11 +39,13 @@ import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 const buildCardConfig = ({
   recipeId,
   recipeName,
-  publicUsername
+  publicUsername,
+  isRecipeHydrated
 }: {
   recipeId: number;
   recipeName: string;
   publicUsername?: string | null;
+  isRecipeHydrated: boolean;
 }) => [
   {
     key: "card-1",
@@ -95,11 +97,13 @@ const buildCardConfig = ({
     key: "card 7",
     heading: "PDF.title",
     components: [
-      <RecipePdf
-        key="pdf"
-        title={recipeName}
-        publicUsername={publicUsername ?? ""}
-      />
+      isRecipeHydrated ? (
+        <RecipePdf
+          key="pdf"
+          title={recipeName}
+          publicUsername={publicUsername ?? ""}
+        />
+      ) : null
     ]
   },
   {
@@ -116,7 +120,7 @@ function OwnerRecipe({
   pdfRedirect: boolean;
   recipe: RecipeWithParsedFields;
 }) {
-  useRecipeVersionGate(recipe);
+  const isRecipeHydrated = useRecipeVersionGate(recipe);
   const [isPrivate, setIsPrivate] = useState(recipe.private ?? false);
   const [notify, setNotify] = useState(recipe.emailNotifications ?? false);
   const [nameEditable, setNameEditable] = useState(false);
@@ -126,7 +130,8 @@ function OwnerRecipe({
   const cardConfig = buildCardConfig({
     recipeId: recipe.id,
     recipeName,
-    publicUsername: recipe.public_username
+    publicUsername: recipe.public_username,
+    isRecipeHydrated
   });
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (

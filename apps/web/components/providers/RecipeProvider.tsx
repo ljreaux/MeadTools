@@ -163,6 +163,7 @@ type RecipeContextValue = {
 
   meta: {
     isDirty: boolean;
+    hydratedRecipeData: HydratePayload | null;
     markSaved: () => void;
     markDirty: () => void;
     hydrate: (next: HydratePayload) => void;
@@ -233,6 +234,9 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
 
   // ---- Dirty tracking ----
   const [isDirty, setIsDirty] = useState(false);
+  // Saved recipe views wait for this exact payload before snapshotting a PDF.
+  const [hydratedRecipeData, setHydratedRecipeData] =
+    useState<HydratePayload | null>(null);
 
   const commit = useCallback((fn: () => void, opts?: { silent?: boolean }) => {
     fn();
@@ -258,6 +262,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
           setPhReading(next.stabilizers.phReading);
           setStabilizerType(next.stabilizers.type);
           setNutrients(next.nutrients ?? initialNutrientData());
+          setHydratedRecipeData(next);
 
           setIsDirty(false);
         },
@@ -289,6 +294,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         setStabilizerType(fresh.stabilizers.type);
 
         setNutrients(fresh.nutrients ?? initialNutrientData()); // ✅ add
+        setHydratedRecipeData(null);
 
         setIsDirty(false);
       },
@@ -1490,6 +1496,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
 
       meta: {
         isDirty,
+        hydratedRecipeData,
         markSaved,
         markDirty,
         hydrate,
@@ -1505,6 +1512,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       notes,
       fg,
       isDirty,
+      hydratedRecipeData,
       nutrients,
       additiveList,
       loadingAdditives,
