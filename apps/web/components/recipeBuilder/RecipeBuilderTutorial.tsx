@@ -51,7 +51,7 @@ type CardConfig = {
   };
 };
 
-const cardConfig: CardConfig[] = [
+const buildCardConfig = (isRecipeHydrated: boolean): CardConfig[] => [
   {
     key: "card-1",
     heading: "recipeBuilder.homeHeading",
@@ -103,12 +103,12 @@ const cardConfig: CardConfig[] = [
   {
     key: "card-7",
     heading: "PDF.title",
-    components: [<RecipePdf key="pdf" />]
+    components: [isRecipeHydrated ? <RecipePdf key="pdf" /> : null]
   }
 ];
 
 function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
-  useRecipeVersionGate(recipe);
+  const isRecipeHydrated = useRecipeVersionGate(recipe);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -122,6 +122,7 @@ function RecipeBuilderTutorial({ recipe }: { recipe: RecipeWithParsedFields }) {
     }
   }, []);
 
+  const cardConfig = buildCardConfig(isRecipeHydrated);
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
     <CardWrapper key={key}>
       <Heading text={heading} toolTipProps={tooltip} />

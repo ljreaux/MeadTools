@@ -40,7 +40,7 @@ function PublicRecipe({
   embedded?: boolean;
   backHref?: string;
 }) {
-  useRecipeVersionGate(recipe);
+  const isRecipeHydrated = useRecipeVersionGate(recipe);
 
   const { t } = useTranslation();
   const { id } = useParams();
@@ -81,10 +81,12 @@ function PublicRecipe({
           value={nutrientValueForRecipe}
           onChange={setNutrients}
         >
-          <RecipePdf
-            publicUsername={recipe.public_username ?? ""}
-            title={recipe.name}
-          />
+          {isRecipeHydrated ? (
+            <RecipePdf
+              publicUsername={recipe.public_username ?? ""}
+              title={recipe.name}
+            />
+          ) : null}
         </NutrientProvider>
         <section className="rounded-lg border border-border bg-card p-4">
           <div className="mb-3">
