@@ -2112,6 +2112,19 @@
         "sessionExpiredTitle": "Sitzung abgelaufen",
         "signInAgain": "Erneut anmelden",
         "untitled": "Unbenannter Ansatz",
-        "volume": "{{value}} L"
+        "volume": "{{value}} L",
+        "batch": "Ansatz {{number}}",
+        "currentVolume": "Aktuelles Volumen",
+        "ingredients": "Zutaten",
+        "latestGravity": "Letzte Dichte",
+        "notFoundBody": "Dieser Ansatz wurde möglicherweise entfernt oder ist in deinem Konto nicht mehr verfügbar.",
+        "notFoundTitle": "Ansatz nicht gefunden",
+        "notRecorded": "Nicht erfasst",
+        "overview": "Übersicht",
+        "recipeDetailsUnavailable": "Rezeptdetails sind für diesen Ansatz nicht verfügbar.",
+        "started": "Gestartet {{date}}",
+        "targetFg": "Ziel-Enddichte",
+        "targetOg": "Ziel-Anfangsdichte",
+        "targetVolume": "Zielvolumen"
     }
 }
