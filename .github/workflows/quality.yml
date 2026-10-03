@@ -109,10 +109,10 @@ jobs:
       - name: Test mobile runtime configuration
         run: npm test --workspace @meadtools/mobile
 
-      - name: Verify Expo can export an Android bundle
+      - name: Verify Expo can export a password-only Android preview bundle
         env:
-          # Expo evaluates every config plugin during export. This syntactically
-          # valid CI-only ID lets the iOS URL-scheme plugin load without
-          # embedding a deployable OAuth client in GitHub Actions.
-          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: 000000000000-ci.apps.googleusercontent.com
+          # EAS preview builds can omit Google OAuth IDs, so exercise that
+          # configuration instead of masking it with a CI-only client ID.
+          EAS_BUILD_PROFILE: preview
+          EXPO_NO_DOTENV: "1"
         run: npm exec --workspace @meadtools/mobile -- expo export --platform android
