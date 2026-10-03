@@ -109,6 +109,12 @@ jobs:
       - name: Test mobile runtime configuration
         run: npm test --workspace @meadtools/mobile
 
+      - name: Verify Expo SDK dependency compatibility
+        env:
+          EAS_BUILD_PROFILE: preview
+          EXPO_NO_DOTENV: "1"
+        run: npm exec --workspace @meadtools/mobile -- expo install --check
+
       - name: Verify Expo can export a password-only Android preview bundle
         env:
           # EAS preview builds can omit Google OAuth IDs, so exercise that

@@ -55,6 +55,13 @@ Run the mobile TypeScript check:
 npm run mobile:typecheck
 ```
 
+Before a native build, check that installed Expo SDK packages match the app's
+SDK version from `apps/mobile`:
+
+```sh
+EXPO_NO_DOTENV=1 EAS_BUILD_PROFILE=preview npx expo install --check
+```
+
 Expo CLI commands that affect EAS configuration or credentials should be run
 from `apps/mobile`, where `app.json`, `eas.json`, and `.eas/workflows` live.
 
