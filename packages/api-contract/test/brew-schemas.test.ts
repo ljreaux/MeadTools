@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   brewEntryIdConflictErrorResponseSchema,
   brewEntryResponseSchema,
+  brewDetailNotFoundErrorResponseSchema,
+  brewRecipeSnapshotResponseSchema,
   createBrewEntryRequestBodySchema,
   publicBrewFetchErrorResponseSchema,
   updateBrewRequestBodySchema
@@ -70,4 +72,18 @@ test("brew schemas reject invalid enums while preserving literal errors", () => 
     }).success,
     true
   );
+  assert.equal(
+    brewDetailNotFoundErrorResponseSchema.safeParse({ error: "Brew not found" }).success,
+    true
+  );
+  assert.equal(
+    brewDetailNotFoundErrorResponseSchema.safeParse({ error: "User not found" }).success,
+    true
+  );
+});
+
+test("brew snapshot contract accepts legacy fields without accepting non-objects", () => {
+  assert.equal(brewRecipeSnapshotResponseSchema.safeParse({ name: "Older recipe" }).success, true);
+  assert.equal(brewRecipeSnapshotResponseSchema.safeParse({ dataV2: { version: 1 } }).success, true);
+  assert.equal(brewRecipeSnapshotResponseSchema.safeParse("recipe").success, false);
 });

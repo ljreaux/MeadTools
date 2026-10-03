@@ -3,9 +3,13 @@ import test from "node:test";
 
 import { getGoogleIosUrlScheme } from "../app.config";
 
-test("preview builds without Google OAuth use an inert native URL scheme", () => {
+test("preview and simulator development can load without local Google OAuth", () => {
   assert.equal(
     getGoogleIosUrlScheme({ buildProfile: "preview" }),
+    "com.googleusercontent.apps.000000000000-ci"
+  );
+  assert.equal(
+    getGoogleIosUrlScheme({ buildProfile: "development-simulator" }),
     "com.googleusercontent.apps.000000000000-ci"
   );
 });

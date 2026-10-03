@@ -35,6 +35,11 @@ operation. The nutrient-preset update intentionally adds the
 additions before comparing against the pre-migration paths hash, proving all
 earlier endpoint documentation remains unchanged.
 
+The mobile brew overview update makes recipe snapshot metadata optional so
+legacy snapshots can still be read, while consumers validate `dataV2` before
+calculating targets. Authenticated `GET /brews/{brew_id}` now returns the
+documented `Brew not found` error with HTTP 404 for an unavailable brew.
+
 The persistent-chat update intentionally adds `/chat/conversations` and
 `/chat/conversations/{conversationId}`. The same path-parity check removes
 these private authenticated endpoints before comparing earlier API paths.

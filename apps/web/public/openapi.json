@@ -1812,6 +1812,21 @@
           "entries_by_stage"
         ]
       },
+      "BrewDetailNotFoundErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Brew not found",
+              "User not found"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "BrewFetchErrorResponse": {
         "type": "object",
         "properties": {
@@ -3967,6 +3982,191 @@
           "isGoogleUser"
         ]
       },
+      "recipeRecordSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "user_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "recipeData": {
+            "type": "string"
+          },
+          "yanFromSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "yanContribution": {
+            "type": "string"
+          },
+          "nutrientData": {
+            "type": "string"
+          },
+          "advanced": {
+            "type": "boolean"
+          },
+          "nuteInfo": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "secondaryNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dataV2": {
+            "type": "object"
+          },
+          "version": {
+            "type": "number"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "lastActivityEmailAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "activityEmailsEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "name",
+          "recipeData",
+          "yanFromSource",
+          "yanContribution",
+          "nutrientData",
+          "advanced",
+          "nuteInfo",
+          "primaryNotes",
+          "secondaryNotes",
+          "dataV2",
+          "version",
+          "private",
+          "lastActivityEmailAt",
+          "activityEmailsEnabled"
+        ]
+      },
+      "createRecipeRequestObjectSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dataV2": {
+            "$ref": "#/components/schemas/recipeDataV2Schema"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "activityEmailsEnabled": {
+            "type": "boolean"
+          },
+          "lastActivityEmailAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "dataV2"
+        ]
+      },
+      "chatContextRecipeOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recipe"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name"
+        ]
+      },
+      "chatContextBrewOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "brew"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "recipeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "stage",
+          "recipeName"
+        ]
+      },
+      "nutrientAmountsByKeyNumberSchema": {
+        "type": "object",
+        "properties": {
+          "fermO": {
+            "type": "number"
+          },
+          "fermK": {
+            "type": "number"
+          },
+          "dap": {
+            "type": "number"
+          },
+          "other": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fermO",
+          "fermK",
+          "dap",
+          "other"
+        ]
+      },
       "jsonObjectSchema": {
         "type": "object",
         "additionalProperties": {
@@ -4349,191 +4549,6 @@
           "latest_gravity",
           "requested_email_alerts",
           "entry_count"
-        ]
-      },
-      "recipeRecordSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "user_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "name": {
-            "type": "string"
-          },
-          "recipeData": {
-            "type": "string"
-          },
-          "yanFromSource": {
-            "type": "string",
-            "nullable": true
-          },
-          "yanContribution": {
-            "type": "string"
-          },
-          "nutrientData": {
-            "type": "string"
-          },
-          "advanced": {
-            "type": "boolean"
-          },
-          "nuteInfo": {
-            "type": "string",
-            "nullable": true
-          },
-          "primaryNotes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "secondaryNotes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "dataV2": {
-            "type": "object"
-          },
-          "version": {
-            "type": "number"
-          },
-          "private": {
-            "type": "boolean"
-          },
-          "lastActivityEmailAt": {
-            "type": "string",
-            "nullable": true
-          },
-          "activityEmailsEnabled": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "user_id",
-          "name",
-          "recipeData",
-          "yanFromSource",
-          "yanContribution",
-          "nutrientData",
-          "advanced",
-          "nuteInfo",
-          "primaryNotes",
-          "secondaryNotes",
-          "dataV2",
-          "version",
-          "private",
-          "lastActivityEmailAt",
-          "activityEmailsEnabled"
-        ]
-      },
-      "createRecipeRequestObjectSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "dataV2": {
-            "$ref": "#/components/schemas/recipeDataV2Schema"
-          },
-          "private": {
-            "type": "boolean"
-          },
-          "activityEmailsEnabled": {
-            "type": "boolean"
-          },
-          "lastActivityEmailAt": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "name",
-          "dataV2"
-        ]
-      },
-      "chatContextRecipeOptionResponseSchema": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "recipe"
-            ]
-          },
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ]
-      },
-      "chatContextBrewOptionResponseSchema": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "brew"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "stage": {
-            "type": "string"
-          },
-          "recipeName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "kind",
-          "id",
-          "name",
-          "stage",
-          "recipeName"
-        ]
-      },
-      "nutrientAmountsByKeyNumberSchema": {
-        "type": "object",
-        "properties": {
-          "fermO": {
-            "type": "number"
-          },
-          "fermK": {
-            "type": "number"
-          },
-          "dap": {
-            "type": "number"
-          },
-          "other": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "fermO",
-          "fermK",
-          "dap",
-          "other"
         ]
       },
       "createAdditiveRequestBodyObjectSchema": {
@@ -5520,20 +5535,11 @@
           "version": {
             "type": "number"
           },
-          "dataV2": {
-            "type": "object"
-          },
+          "dataV2": {},
           "snapshottedAt": {
             "type": "string"
           }
-        },
-        "required": [
-          "id",
-          "name",
-          "version",
-          "dataV2",
-          "snapshottedAt"
-        ]
+        }
       },
       "BrewStageResponse": {
         "type": "string",
@@ -9611,7 +9617,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewDetailNotFoundErrorResponse"
                 }
               }
             }

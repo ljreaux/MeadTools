@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { recipeDataV2Schema } from "@meadtools/schemas";
 
 export const brewStageResponseSchema = z.enum([
   "PLANNED",
@@ -59,11 +58,13 @@ export const brewsResponseSchema = z.object({
   brews: z.array(brewListItemResponseSchema),
 });
 export const brewRecipeSnapshotResponseSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  version: z.number(),
-  dataV2: recipeDataV2Schema.nullable(),
-  snapshottedAt: z.string(),
+  // Existing brews can contain snapshots created before these fields existed.
+  // Consumers validate dataV2 before deriving recipe targets.
+  id: z.number().optional(),
+  name: z.string().optional(),
+  version: z.number().optional(),
+  dataV2: z.unknown().optional(),
+  snapshottedAt: z.string().optional(),
 });
 const brewEntryObjectSchema = z.object({
   id: z.string(),
@@ -249,6 +250,10 @@ export const brewFetchErrorResponseSchema = errorEnum([
   "Failed to fetch brews.",
   "Failed to fetch brew.",
   "Server misconfiguration",
+]);
+export const brewDetailNotFoundErrorResponseSchema = errorEnum([
+  "Brew not found",
+  "User not found",
 ]);
 export const brewCreateErrorResponseSchema = errorEnum([
   "Failed to create brew.",
