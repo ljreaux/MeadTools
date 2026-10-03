@@ -16,6 +16,8 @@ shared by the MeadTools web application and future companion clients.
 - Construct note, reading, volume, packaging, addition, and estimated-ABV entry
   payloads with the established defaults and metadata.
 - Define read-only brew capabilities.
+- Use the API contract's brew stage and entry type unions for projected views,
+  so companion clients cannot drift from accepted API values.
 
 ## Boundaries
 

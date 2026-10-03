@@ -95,7 +95,7 @@ type BrewEntryInputCommon = {
   client_entry_id?: string;
 };
 
-type BrewEntryStageTarget = BrewStage | "STABILIZED" | "BACKSWEETENED";
+type BrewEntryStageTarget = BrewStage;
 
 export type CreateBrewEntryInput =
   | ({

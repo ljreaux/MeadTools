@@ -7,6 +7,10 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="brews" options={{ title: t("brews.label") }} />
+      <Stack.Screen
+        name="brews/[id]"
+        options={{ title: t("mobileBrews.detailTitle") }}
+      />
     </Stack>
   );
 }
