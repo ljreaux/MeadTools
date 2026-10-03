@@ -57,7 +57,8 @@ The EAS project must be connected to the `ljreaux/MeadTools` repository in its
 GitHub settings before branch pushes can start workflows automatically.
 
 - Merges into `preview` create an Android internal build and an unsigned iOS
-  Simulator build.
+  Simulator build. English translation changes defer those builds until the
+  Weblate German follow-up reaches `preview`.
 - Merges into `main` create Android and iOS production builds.
 - Production iOS builds require Apple Developer Program membership and signing
   credentials; preview Simulator builds do not.

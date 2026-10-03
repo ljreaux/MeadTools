@@ -2,6 +2,8 @@ import {
   BREW_ENTRY_TYPE,
   GRAVITY_UNITS,
   type BrewStage,
+  type BrewTrackerStage,
+  getBrewTrackerStage,
   type GravityUnit
 } from "@/lib/brewEnums";
 import {
@@ -64,7 +66,7 @@ type BrewStagePathProps = {
 };
 
 function idxOf(stage: BrewStage) {
-  const i = STAGE_FLOW.indexOf(stage);
+  const i = STAGE_FLOW.indexOf(getBrewTrackerStage(stage));
   return i === -1 ? 0 : i;
 }
 
@@ -95,13 +97,15 @@ export function BrewStagePath({
   const { t } = useTranslation();
   const router = useRouter();
   const currentIdx = idxOf(stage);
-  const [activeId, setActiveId] = useState<BrewStage>(stage);
+  const [activeId, setActiveId] = useState<BrewTrackerStage>(
+    getBrewTrackerStage(stage)
+  );
   const [recordVolumeOpen, setRecordVolumeOpen] = useState(false);
   const [recordVolumeIntent, setRecordVolumeIntent] =
     useState<RecordVolumeIntent>("current");
   const [originalGravityOpen, setOriginalGravityOpen] = useState(false);
-  const [reviewStage, setReviewStage] = useState<BrewStage | null>(null);
-  const [pendingStageMove, setPendingStageMove] = useState<BrewStage | null>(
+  const [reviewStage, setReviewStage] = useState<BrewTrackerStage | null>(null);
+  const [pendingStageMove, setPendingStageMove] = useState<BrewTrackerStage | null>(
     null
   );
 
@@ -131,14 +135,14 @@ export function BrewStagePath({
     "gal";
 
   useEffect(() => {
-    setActiveId(stage);
+    setActiveId(getBrewTrackerStage(stage));
   }, [stage]);
 
   return (
     <Path
-      currentId={stage}
+      currentId={getBrewTrackerStage(stage)}
       activeId={activeId}
-      onActiveChange={(id) => setActiveId(id as BrewStage)}
+      onActiveChange={(id) => setActiveId(id as BrewTrackerStage)}
       className="p-4"
     >
       <PathHeader>
@@ -178,7 +182,7 @@ export function BrewStagePath({
         <PathActivePanel
           className="mt-3"
           render={(activeId) => {
-            const s = activeId as BrewStage;
+            const s = activeId as BrewTrackerStage;
             const cfg = STAGE_CONFIG[s];
             const activeIdx = idxOf(s);
             const status = statusFor(activeIdx, currentIdx);
@@ -207,11 +211,12 @@ export function BrewStagePath({
             const helpers = {
               moveToStage: async (to: BrewStage, datetime?: string) => {
                 await onMoveToStage(to, datetime);
-                setActiveId(to);
+                setActiveId(getBrewTrackerStage(to));
               },
               openStageMoveReview: (to: BrewStage) => {
-                setActiveId(to);
-                setReviewStage(to);
+                const trackerStage = getBrewTrackerStage(to);
+                setActiveId(trackerStage);
+                setReviewStage(trackerStage);
               },
               openRecordVolume: () => {
                 setRecordVolumeIntent(
