@@ -35,6 +35,13 @@ The API must receive the corresponding server-side `GOOGLE_IOS_CLIENT_ID` and
 audiences. Client IDs are public identifiers; Google client secrets remain
 server-only and must never use an `EXPO_PUBLIC_` variable.
 
+EAS preview builds can run with password sign-in when the Google client IDs are
+not configured. The preview build uses an inert iOS URL scheme so the native
+plugin can load, and the Google button stays hidden. To enable Google sign-in
+in preview builds, set all three `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` variables in
+the EAS `preview` environment. Production builds still require a valid iOS
+client ID during app configuration.
+
 Open a platform directly:
 
 ```sh
