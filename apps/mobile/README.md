@@ -79,6 +79,9 @@ GitHub settings before branch pushes can start workflows automatically.
   supplied to the shared API client at request time.
 - Shared recipe and brew behavior comes from `packages/*`.
 - Network access goes through the app-level `@meadtools/api-client` instance.
+- Keep the root and mobile `expo` and `expo-router` versions in sync. Hoisted
+  Expo build packages must resolve the same app config and router modules as
+  the mobile app.
 - Prisma, database code, Next.js modules, and web UI must not be imported.
 - Generated native `ios` and `android` folders remain ignored while the app
   uses Expo Continuous Native Generation.
