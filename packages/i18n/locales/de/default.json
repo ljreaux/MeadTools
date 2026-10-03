@@ -2088,5 +2088,30 @@
         "open": "Rezeptassistent öffnen",
         "openFullPage": "Chat als Vollseite öffnen",
         "title": "MeadTools-Assistent"
+    },
+    "mobileBrews": {
+        "activeCount_one": "{{count}} aktiver Ansatz",
+        "activeCount_other": "{{count}} aktive Ansätze",
+        "detailError": "Konnte diesen Ansatz nicht laden.",
+        "detailLoading": "Ansatz wird geladen…",
+        "detailTitle": "Details zum Ansatz",
+        "emptyBody": "Starte einen Ansatz in der Web-App und aktualisiere dann diese Liste.",
+        "emptyTitle": "Keine aktiven Ansätze",
+        "entries_one": "{{count}} Eintrag",
+        "entries_other": "{{count}} Einträge",
+        "errorBody": "Bitte versuche es in einem Moment erneut.",
+        "errorTitle": "Konnte die Ansätze nicht laden.",
+        "loading": "Lade deine Ansätze…",
+        "offlineBody": "Überprüfe deine Verbindung und versuche es dann erneut.",
+        "offlineTitle": "Verbindung nicht verfügbar",
+        "openBrew": "Öffne {{name}}",
+        "recipe": "Rezept: {{name}}",
+        "refresh": "Ansätze aktualisieren",
+        "retry": "Erneut versuchen",
+        "sessionExpiredBody": "Melde dich erneut an, um deine Ansätze zu sehen.",
+        "sessionExpiredTitle": "Sitzung abgelaufen",
+        "signInAgain": "Erneut anmelden",
+        "untitled": "Unbenannter Ansatz",
+        "volume": "{{value}} L"
     }
 }
