@@ -39,6 +39,7 @@ jobs:
       - uses: eas/checkout
       - uses: eas/install_node_modules
       - run: npm run typecheck
+      - run: EXPO_NO_DOTENV=1 EAS_BUILD_PROFILE=preview npx expo install --check
 
   build_android:
     name: Build Android preview

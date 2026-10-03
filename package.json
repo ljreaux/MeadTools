@@ -10,7 +10,7 @@
   "overrides": {
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "@types/react": "^19.2.17",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
     "@prisma/client": "6.19.3",
     "lodash": "4.18.1",
@@ -56,10 +56,10 @@
     "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,refund.created,refund.updated,charge.dispute.created,charge.dispute.funds_withdrawn --forward-to http://localhost:3000/api/webhooks/stripe"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
-    "expo": "57.0.2",
-    "expo-router": "57.0.3",
+    "expo": "57.0.26",
+    "expo-router": "57.0.24",
     "prisma": "6.19.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"
