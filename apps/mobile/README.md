@@ -18,6 +18,21 @@ Start the Expo development server:
 npm run dev:mobile
 ```
 
+For repeated iOS Simulator checks, install a development client once using
+the `development-simulator` EAS profile. It uses the preview environment and
+does not require a new build for JavaScript, styles, or translation changes:
+
+```sh
+cd apps/mobile
+EAS_BUILD_PROFILE=development-simulator eas build --platform ios --profile development-simulator
+eas build:run --platform ios --profile development-simulator
+EAS_BUILD_PROFILE=development-simulator eas env:exec preview 'EXPO_NO_DOTENV=1 npx expo start --dev-client'
+```
+
+Run the final command again after switching branches. Rebuild the development
+client when native dependencies or native app configuration change. A local
+`expo run:ios` build requires Xcode 26.4 or newer for Expo SDK 57.
+
 The app uses `https://meadtools.com` by default. To point a local or preview
 build at another API, copy `apps/mobile/.env.example` to
 `apps/mobile/.env.local` and set `EXPO_PUBLIC_MEADTOOLS_API_URL` to an absolute
