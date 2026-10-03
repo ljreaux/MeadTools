@@ -11,8 +11,8 @@ export function getGoogleIosUrlScheme({
   clientId,
   buildProfile
 }: GoogleIosSchemeOptions) {
-  if (!clientId && buildProfile === "preview") {
-    // Preview can use password sign-in until Google OAuth is configured in EAS.
+  if (!clientId && (buildProfile === "preview" || buildProfile === "development-simulator")) {
+    // Preview and simulator development can use password sign-in while config loads.
     return "com.googleusercontent.apps.000000000000-ci";
   }
 
