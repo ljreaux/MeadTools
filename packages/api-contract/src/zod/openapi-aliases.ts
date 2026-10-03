@@ -49,6 +49,7 @@ import {
   bjcpIngredientsResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
+  brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
@@ -397,6 +398,7 @@ export const BjcpIngredientsFetchErrorResponse = bjcpIngredientsFetchErrorRespon
 export const BjcpIngredientsResponse = bjcpIngredientsResponseSchema;
 export const BrewCreateErrorResponse = brewCreateErrorResponseSchema;
 export const BrewDeleteErrorResponse = brewDeleteErrorResponseSchema;
+export const BrewDetailNotFoundErrorResponse = brewDetailNotFoundErrorResponseSchema;
 export const BrewDeviceActionErrorResponse = brewDeviceActionErrorResponseSchema;
 export const BrewEntriesByStageResponse = brewEntriesByStageResponseSchema;
 export const BrewEntryCreateErrorResponse = brewEntryCreateErrorResponseSchema;

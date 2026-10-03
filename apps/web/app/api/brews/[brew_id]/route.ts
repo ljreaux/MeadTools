@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
+ * @add 404:BrewDetailNotFoundErrorResponse
  * @add 500:BrewFetchErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -38,6 +38,9 @@ export async function GET(
     const brew = await getBrewForApp(userId, brew_id);
     return NextResponse.json(brew, { status: 200 });
   } catch (err) {
+    if (err instanceof Error && err.message === "Brew not found") {
+      return NextResponse.json({ error: "Brew not found" }, { status: 404 });
+    }
     console.error("Error fetching brew:", err);
     return NextResponse.json(
       { error: "Failed to fetch brew." },

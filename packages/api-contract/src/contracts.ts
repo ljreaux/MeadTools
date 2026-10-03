@@ -50,6 +50,7 @@ import {
   bjcpIngredientsResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
+  brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
@@ -398,6 +399,7 @@ export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFe
 export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
 export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
 export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSchema>;
+export type BrewDetailNotFoundErrorResponse = z.infer<typeof brewDetailNotFoundErrorResponseSchema>;
 export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionErrorResponseSchema>;
 export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
 export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
