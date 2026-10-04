@@ -60,6 +60,11 @@ The unsubscribe follow-up adds unauthenticated `POST`
 the linked page never changes consent, so email link scanners cannot opt users
 out accidentally. The parity test removes this approved path as well.
 
+The admin-only `GET` and `POST` `/admin/release-emails` endpoints show dated
+product release candidates and delivery counts, prepare opted-in recipients,
+and send a small explicit batch. The path-parity test removes this approved
+addition while preserving the earlier route set.
+
 The chat-beta access update intentionally adds `/chat/access` and the
 admin-only `/admin/chat-access` access and credit-grant endpoints. The same
 check removes these private endpoints while preserving the documented behavior

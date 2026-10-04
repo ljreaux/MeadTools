@@ -64,7 +64,7 @@ export async function sendEmail({
     auth: { user, pass }
   });
 
-  await transporter.sendMail({
+  return transporter.sendMail({
     from: { name: fromName, address: user },
     to,
     subject,

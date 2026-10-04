@@ -30,6 +30,9 @@ import {
   adminRecipesFetchErrorResponseSchema,
   adminRecipesPageResponseSchema,
   adminRecipesQueryParamsSchema,
+  adminReleaseEmailOverviewResponseSchema,
+  adminReleaseEmailRequestBodySchema,
+  adminReleaseEmailSelectionSchema,
   adminUserDeleteErrorResponseSchema,
   adminUserFetchErrorResponseSchema,
   adminUserListItemResponseSchema,
@@ -384,6 +387,9 @@ export type AdminRecipeListItemResponse = z.infer<typeof adminRecipeListItemResp
 export type AdminRecipesFetchErrorResponse = z.infer<typeof adminRecipesFetchErrorResponseSchema>;
 export type AdminRecipesPageResponse = z.infer<typeof adminRecipesPageResponseSchema>;
 export type AdminRecipesQueryParams = z.infer<typeof adminRecipesQueryParamsSchema>;
+export type AdminReleaseEmailOverviewResponse = z.infer<typeof adminReleaseEmailOverviewResponseSchema>;
+export type AdminReleaseEmailRequestBody = z.infer<typeof adminReleaseEmailRequestBodySchema>;
+export type AdminReleaseEmailSelection = z.infer<typeof adminReleaseEmailSelectionSchema>;
 export type AdminUserDeleteErrorResponse = z.infer<typeof adminUserDeleteErrorResponseSchema>;
 export type AdminUserFetchErrorResponse = z.infer<typeof adminUserFetchErrorResponseSchema>;
 export type AdminUserListItemResponse = z.infer<typeof adminUserListItemResponseSchema>;

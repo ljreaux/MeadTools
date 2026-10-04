@@ -166,6 +166,43 @@ model users {
   credit_checkout_sessions credit_checkout_sessions[]
   resolved_payment_recoveries credit_payment_recoveries[] @relation("credit_payment_recoveries_resolved_by")
   release_email_preferences release_email_preferences?
+  release_email_deliveries release_email_deliveries[]
+}
+
+enum release_email_product {
+  WEB
+  MOBILE
+  CHAT
+  API
+}
+
+enum release_email_delivery_status {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+/// Durable, per-user delivery state. A SENDING row is never retried automatically
+/// because an SMTP timeout can occur after the provider accepted a message.
+model release_email_deliveries {
+  id           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  release_date DateTime                      @db.Date
+  product      release_email_product
+  user_id      Int
+  status       release_email_delivery_status @default(PENDING)
+  prepared_at  DateTime                      @default(now()) @db.Timestamptz(6)
+  claimed_at   DateTime?                     @db.Timestamptz(6)
+  sent_at      DateTime?                     @db.Timestamptz(6)
+  message_id   String?                       @db.VarChar(255)
+  updated_at   DateTime                      @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([release_date, product, user_id])
+  @@index([release_date, product, status])
+  @@index([claimed_at])
 }
 
 /// Dedicated, opt-in release announcements; unrelated to brew or recipe alerts.

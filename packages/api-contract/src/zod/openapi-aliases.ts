@@ -29,6 +29,9 @@ import {
   adminRecipesFetchErrorResponseSchema,
   adminRecipesPageResponseSchema,
   adminRecipesQueryParamsSchema,
+  adminReleaseEmailOverviewResponseSchema,
+  adminReleaseEmailRequestBodySchema,
+  adminReleaseEmailSelectionSchema,
   adminUserDeleteErrorResponseSchema,
   adminUserFetchErrorResponseSchema,
   adminUserListItemResponseSchema,
@@ -383,6 +386,9 @@ export const AdminRecipeListItemResponse = adminRecipeListItemResponseSchema;
 export const AdminRecipesFetchErrorResponse = adminRecipesFetchErrorResponseSchema;
 export const AdminRecipesPageResponse = adminRecipesPageResponseSchema;
 export const AdminRecipesQueryParams = adminRecipesQueryParamsSchema;
+export const AdminReleaseEmailOverviewResponse = adminReleaseEmailOverviewResponseSchema;
+export const AdminReleaseEmailRequestBody = adminReleaseEmailRequestBodySchema;
+export const AdminReleaseEmailSelection = adminReleaseEmailSelectionSchema;
 export const AdminUserDeleteErrorResponse = adminUserDeleteErrorResponseSchema;
 export const AdminUserFetchErrorResponse = adminUserFetchErrorResponseSchema;
 export const AdminUserListItemResponse = adminUserListItemResponseSchema;

@@ -762,6 +762,116 @@
           "mode"
         ]
       },
+      "AdminReleaseEmailOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "products": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/releaseEmailProductSchema"
+                  }
+                }
+              },
+              "required": [
+                "date",
+                "title",
+                "products"
+              ]
+            }
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "product": {
+                  "$ref": "#/components/schemas/releaseEmailProductSchema"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "PENDING",
+                    "SENDING",
+                    "SENT",
+                    "FAILED",
+                    "SKIPPED"
+                  ]
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "date",
+                "product",
+                "status",
+                "count"
+              ]
+            }
+          },
+          "sent": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "available",
+          "counts"
+        ]
+      },
+      "AdminReleaseEmailRequestBody": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "product": {
+            "$ref": "#/components/schemas/releaseEmailProductSchema"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "prepare",
+              "send"
+            ]
+          },
+          "confirmation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "product",
+          "action",
+          "confirmation"
+        ]
+      },
       "AccountInfoResponse": {
         "type": "object",
         "properties": {
@@ -4977,6 +5087,15 @@
           "gravity"
         ]
       },
+      "releaseEmailProductSchema": {
+        "type": "string",
+        "enum": [
+          "web",
+          "mobile",
+          "chat",
+          "api"
+        ]
+      },
       "AccountRecipeOwnerResponse": {
         "type": "object",
         "properties": {
@@ -8246,6 +8365,149 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatAccessErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/release-emails": {
+      "get": {
+        "operationId": "get-admin-release-emails",
+        "summary": "Show available dated product releases and delivery counts to an administrator.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReleaseEmailOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-admin-release-emails",
+        "summary": "Explicitly prepare recipients or send the next ten messages for one product.",
+        "description": "",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReleaseEmailRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReleaseEmailOverviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
                 }
               }
             }
