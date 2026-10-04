@@ -18,6 +18,9 @@ Start the Expo development server:
 npm run dev:mobile
 ```
 
+This uses the app's default API unless you have a local override. Use the EAS
+preview environment command below when checking behavior against preview data.
+
 For repeated iOS Simulator checks, install a development client once using
 the `development-simulator` EAS profile. It uses the preview environment and
 does not require a new build for JavaScript, styles, or translation changes:
@@ -25,13 +28,27 @@ does not require a new build for JavaScript, styles, or translation changes:
 ```sh
 cd apps/mobile
 EAS_BUILD_PROFILE=development-simulator eas build --platform ios --profile development-simulator
-eas build:run --platform ios --profile development-simulator
+EAS_BUILD_PROFILE=development-simulator eas env:exec preview 'eas build:run --platform ios --profile development-simulator --latest'
 EAS_BUILD_PROFILE=development-simulator eas env:exec preview 'EXPO_NO_DOTENV=1 npx expo start --dev-client'
 ```
 
-Run the final command again after switching branches. Rebuild the development
-client when native dependencies or native app configuration change. A local
+The first command is needed only when no compatible development build exists.
+After switching branches, run the final command and press `i` in Expo CLI to
+open the project through Metro. Opening the installed app from the Simulator
+home screen can load its older embedded bundle. Rebuild the development client
+when native dependencies or native app configuration change. A local
 `expo run:ios` build requires Xcode 26.4 or newer for Expo SDK 57.
+
+To install the existing Android preview APK on an emulator without a new build:
+
+```sh
+cd apps/mobile
+EAS_BUILD_PROFILE=preview eas env:exec preview 'eas build:run --platform android --profile preview --latest'
+```
+
+If Android reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the emulator has the
+same package signed with a different key. Use a fresh emulator to preserve the
+existing app's local data.
 
 The app uses `https://meadtools.com` by default. To point a local or preview
 build at another API, copy `apps/mobile/.env.example` to
@@ -109,3 +126,5 @@ GitHub settings before branch pushes can start workflows automatically.
   uses Expo Continuous Native Generation.
 
 See [FEATURES.md](./FEATURES.md) for the planned product slices and boundaries.
+See [POC-VERIFICATION.md](./POC-VERIFICATION.md) for the read-only POC smoke test
+and current results.

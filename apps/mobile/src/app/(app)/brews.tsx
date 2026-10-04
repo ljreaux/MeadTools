@@ -51,7 +51,10 @@ export default function BrewsScreen() {
 
     if (brewsQuery.isError) {
       return (
-        <View accessibilityRole="alert" style={styles.status}>
+        <View
+          accessibilityRole="alert"
+          style={[styles.status, brews.length > 0 && styles.statusBanner]}
+        >
           <Text style={styles.statusTitle}>
             {t(
               isSessionError
@@ -146,26 +149,28 @@ export default function BrewsScreen() {
       data={brews}
       keyExtractor={(brew) => brew.id}
       ListEmptyComponent={renderStatus}
-      ListFooterComponent={brews.length > 0 && brewsQuery.isError ? renderStatus() : null}
       ListHeaderComponent={
-        <View style={styles.header}>
-          <View>
-            <Text accessibilityRole="header" style={styles.heading}>
-              {t("brews.label")}
-            </Text>
-            {!brewsQuery.isPending && !brewsQuery.isError ? (
-              <Text style={styles.count}>
-                {t("mobileBrews.activeCount", { count: brews.length })}
+        <View>
+          <View style={styles.header}>
+            <View>
+              <Text accessibilityRole="header" style={styles.heading}>
+                {t("brews.label")}
               </Text>
-            ) : null}
+              {!brewsQuery.isPending && !brewsQuery.isError ? (
+                <Text style={styles.count}>
+                  {t("mobileBrews.activeCount", { count: brews.length })}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void signOut()}
+              style={styles.signOutButton}
+            >
+              <Text style={styles.signOutText}>{t("account.logout")}</Text>
+            </Pressable>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void signOut()}
-            style={styles.signOutButton}
-          >
-            <Text style={styles.signOutText}>{t("account.logout")}</Text>
-          </Pressable>
+          {brews.length > 0 && brewsQuery.isError ? renderStatus() : null}
         </View>
       }
       onRefresh={() => void brewsQuery.refetch()}
@@ -247,6 +252,15 @@ function createStyles(colors: typeof colorThemes.light) {
       justifyContent: "center",
       gap: spacing.md,
       paddingVertical: spacing.xxl
+    },
+    statusBanner: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      flex: 0,
+      marginBottom: spacing.md,
+      padding: spacing.lg
     },
     statusTitle: {
       color: colors.text,
