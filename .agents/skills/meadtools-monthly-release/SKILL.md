@@ -1,162 +1,116 @@
 ---
 name: meadtools-monthly-release
-description: Prepare and coordinate MeadTools monthly releases, including product-specific notes, website and GitHub release drafts, opted-in email drafts, and no-change months. Use when asked to plan, draft, check, or publish a MeadTools release.
+description: Prepare and coordinate MeadTools monthly releases, including product-specific notes, reviewed main promotion, GitHub Release drafts, opted-in email batches, and no-change months. Use for a MeadTools release checkpoint or release-day follow-up.
 ---
 
 # MeadTools monthly release
 
-Work in the existing MeadTools checkout. Read applicable current AGENTS.md files
-and release documentation first; those instructions and the user's current
-directions take precedence. Track rollout in
-https://github.com/ljreaux/MeadTools/issues/413. Use the first Monday of each month
-as the release target and the preceding Friday as preparation, both at 9:00 a.m.
-America/Chicago unless the user changes the cadence. The earliest full cycle in
-issue #413 is November 2, 2026, with preparation October 30, conditional on
-readiness. A date never justifies releasing unready work.
+Work from a current MeadTools checkout and follow its AGENTS.md. The release
+target is the first Monday of each month; preparation is the preceding Friday.
+Both reminders are for 9:00 a.m. America/Chicago, and the GitHub release gate
+opens no earlier than 9:15 a.m. on that Monday. A date never justifies
+publishing unready work. Track rollout in
+[issue #413](https://github.com/ljreaux/MeadTools/issues/413).
 
-## Current capabilities and planned gates
+## Check the live controls
 
-Inspect current workflows and main ruleset before every release. This skill is
-guidance, not an enforced merge gate or a scheduler. Issue #413 tracks the dated
-note convention, required note check, timed merge gate, release subscriptions,
-email system, and Mobile build decision enforcement; do not assume they exist.
+Inspect the current `main` ruleset, repository auto-merge setting, and
+workflows before treating any gate as enforced. The repository contains a
+release-note/bug-only PR check and a timed `monthly-release-gate`, but they
+protect `main` only after both are made required and native auto-merge is
+enabled. Follow [the gate procedure](../../../docs/monthly-release-gate.md).
+Do not arm a PR or imply an automatic merge while those settings are absent.
 
-`apps/mobile/.eas/workflows/create-production-builds.yml` is dispatch-only; a
-push to main does not start production Mobile builds. The planned
-`build-mobile-production` label means **run**, and its absence means **skip**,
-but automatic label-driven dispatch is not implemented yet. For a reviewed
-Mobile release, verify the label and exact merged main SHA, then deliberately
-dispatch the EAS workflow for that SHA once and record its run URL.
-`skip-mobile-check` skips a GitHub quality job, not an EAS production build.
+The public archive is `/release-notes`; new dated entries are English source
+strings in `packages/i18n/locales/en/default.json` under
+`releaseNotes.entries`, with shipped products separated. Run
+`npm run release-notes:check`. German translations follow the repository's
+Weblate review process. `npm run release:drafts -- YYYY-MM-DD` prepares local
+GitHub Release and product email drafts from a dated entry. Drafts are not
+publication or sending. Read [the authoring guide](../../../docs/monthly-release-notes.md)
+when editing notes.
 
-Keep production deployment, EAS, email, payment, and model credentials in their
-own services/workflows, outside the general cloud coding environment. Ordinary
-checks use Node 22 and `npm ci --legacy-peer-deps`. Never run paid model
-evaluations without explicit spend approval. Follow current repository rules for
-API routes, schema, translations, and chatbot verification. For Next.js code,
-follow applicable AGENTS.md instructions and consult the relevant `.next-docs/`
-before coding; generate those docs as directed by the repository instructions
-if they are missing.
+Signed-in accounts have default-off Web, Mobile, Chat, and API release email
+choices, a one-time prompt, account controls, and a product-specific
+unsubscribe page. [The admin email procedure](../../../docs/monthly-release-emails.md)
+prepares recipient rows and sends explicit small batches from production only.
+It requires a valid configured mailing address; no-change months have no
+eligible batch. Never infer consent from brew, recipe, or chat settings.
 
-## Establish the release scope
-
-- Compare the candidate production commit with the last published production
-  release/tag. Inspect merged PRs and deployed behavior, not commit titles alone.
-  Record the exact comparison range, candidate SHA, and source PR links.
-- Record **include / defer / no-change** separately for Web, Mobile, Chat
-  assistant, and API/integrations. Any subset may release; Web is not the default.
-  Omit empty public sections and the retired desktop product.
-- Separate features, improvements, fixes, and known limitations. Verify actual
-  production availability, including staged or disabled features. Friday drafts
-  may describe candidates, but never publish them as already shipped.
-- Respect preview-to-main, docs/translation-workflow.md, and mobile store timing.
-  Track code merged, production build/deployment, and user availability separately.
-  Review the entire promoted diff, including Mobile code when its build is skipped.
-- Inspect .github/workflows/sync-release-branches.yml when planning PR/tag order:
-  it fast-forwards only when main and preview have identical trees. Do not force
-  branch synchronization or infer release availability from branch equality.
-
-## Prepare consistent artifacts
-
-- Prepare a dated, permanent website release entry and current/index update.
-  Preserve apps/web/content/release-notes.mdx and prior legacy notes when evolving
-  the format. Until the archive convention is implemented, report that gap and
-  prepare reviewable drafts rather than implying an archive exists.
-- Draft one GitHub Release from the production tag with matching product sections
-  and links to full website notes. Do not invent a tag convention; inspect prior
-  releases or obtain the missing decision. Mobile is shipped only after verified
-  store rollout.
-- Draft concise email per selected product audience, or one email with separated
-  sections if subscriptions permit it. Use dedicated release-announcement opt-in,
-  never recipe-activity or brew-alert flags. Verify provider/sender, consent,
-  unsubscribe, segmentation, test-send behavior, and duplicate-send protection
-  before any subscriber send. Missing infrastructure blocks sends, not drafts.
-- Keep an internal dated checklist with product decisions, comparison range,
-  approved SHA, PR/review/CI, Mobile build run/skip and label state, deployment,
-  smoke checks, tag, website notes, GitHub release, email audience, and outcomes.
-  Record pending, done, skipped, or failed with evidence and artifact links.
-
-## Initial full preview-to-main promotion
-
-After the release infrastructure and initial notes are ready, prepare a full
-`preview` → `main` PR, including reviewed Mobile code even though the first
-production Mobile release is not ready. Review the complete `main...preview`
-range immediately before promotion, record the exact head SHA and product scope,
-and set **Mobile production build: skip** with no `build-mobile-production` label.
-Skipping a build does not remove Mobile code from the promoted diff.
-
-Before this merge, verify the EAS production workflow is still dispatch-only:
-a skip must launch no production Mobile build, including on qualifying main
-pushes. Keep the promotion blocked until this behavior is proven. If the timed
-gate is not yet validated, keep this initial promotion manual and explicitly
-authorized, without bypassing required checks.
-
-Initial public notes may include **Mobile preview progress — no production
-Mobile release**, linked to the actual reviewed PRs. This is an explicit exception
-to omitting unshipped product sections: describe preview development separately
-from shipped Web/API/Chat changes, never as shipped Mobile features or app-store
-availability. Send no Mobile release email for that progress update. It does not
-change Mobile's production-release status or count as shipped work for the
-no-change decision.
-
-If this initial baseline promotion happens before the monthly cadence is live,
-publish authorized notes only after verifying production deployment and behavior,
-using the actual verified deployment date/time rather than a future first Monday.
-Do not repeat the announcement at the next checkpoint. If nothing further ships,
-the later first-Monday cycle may record no change and skip public notes, GitHub
-Release, and email while retaining the reminders.
+The production Mobile EAS workflow is dispatch-only. A push to `main` does
+not start it. `build-mobile-production` records a reviewed **run** decision;
+absence records **skip**. The label alone does not dispatch a build.
+`skip-mobile-check` is a separate quality CI override and cannot be on an
+armed release PR.
 
 ## Friday preparation
 
-Inventory eligible changes and prepare drafts and the checklist. Ask the
-maintainer to review scope and approve or skip readiness/arming when those
-mechanisms exist. If no product has eligible user-facing work, record an internal
-no-change decision and next target; create no armed release PR and fabricate no
-announcement. Defer products independently.
+Compare the candidate head with the last production release or verified
+baseline. Record the exact `main...preview` range, both SHAs, relevant PRs,
+and include/defer/no-change decisions for Web, Mobile, Chat, and API. Check
+deployed behavior, feature availability, migration readiness, and store status
+before describing a change as shipped. Web is not the default product.
 
-Only after issue #413's gate is implemented, tested, and required on main:
+Prepare the dated website entry, GitHub Release draft, separate email drafts
+for shipped products, and an internal checklist. Note features, improvements,
+fixes, and limitations with links to source PRs. Never publish a future or
+unverified claim. If there is no eligible shipped work, record a no-change
+month internally and create no public note, GitHub Release, email batch, or
+armed release PR.
 
-1. Verify the single preview-to-main release PR, full diff, product readiness,
-   notes, current CI and review, and exact approved head SHA.
-2. Record and review **Mobile production build: run / skip** for that SHA.
-   `build-mobile-production` means run; absence means skip. Verify the production
-   workflow remains dispatch-only and recheck the label before merge.
-3. Bind readiness to that SHA and arm native GitHub auto-merge only when the
-   required release gate is enforced. New commits revoke readiness until reviewed.
-4. The planned GitHub schedule opens the gate at **9:15 a.m. America/Chicago** on
-   the first Monday after rechecking the same SHA and every prerequisite. The
-   **9:00 a.m. reminder** is earlier and must not call a not-yet-due gate missed.
-   Never set the final gate early or bypass a failed check. A skill or reminder
-   alone does not enforce merge timing.
+For a monthly `preview` → `main` PR, review the whole diff, current CI, and
+the exact head/base SHAs. Record these lines in the PR body:
+
+```text
+Release-ready head: <full 40-character preview head SHA>
+Release-ready base: <full 40-character main base SHA>
+Mobile production build: run|skip
+```
+
+Use the `build-mobile-production` label exactly when the decision is `run`.
+After review and release authorization, add `release-ready` and arm native
+auto-merge only when the gate is required. A changed head or base requires a
+fresh diff review, updated SHA lines, and fresh approval. At 9:15 a.m. Chicago
+on the first Monday, the scheduled workflow checks readiness, exact SHAs,
+labels, CI, and auto-merge before opening the gate. A late or failed schedule
+needs the documented reviewed same-day retry; never set the status by hand.
+
+## Initial promotion and urgent fixes
+
+For the first full promotion, review all `preview` changes, including Mobile
+code. The first Mobile production build may be skipped. Label Mobile progress
+as **preview — no production Mobile release**, with no Mobile release email.
+The initial main PR can use the changed internal product-note draft with
+`initial-release-ready`, as described in the gate procedure. Confirm the
+production EAS workflow remains dispatch-only. After the reviewed initial
+gate and merge, verify production, then publish a dated public note using the
+actual deployment date. Do not repeat it at the next monthly checkpoint.
+
+An urgent bug-only PR may use `bug-fix-only` with a concrete
+`Bug-fix rationale:` and `hotfix-ready`. Mixed feature/bug PRs need dated
+product notes. Keep urgent fixes in the next monthly summary without a
+duplicate announcement. Verify required checks and bypass actors on `main`.
 
 ## Monday follow-up
 
-Check whether the gate is implemented and whether its window has opened. Before
-9:15 a.m., report pending; afterward verify whether the intended SHA merged. If
-the gate is not implemented, report that limitation rather than implying it ran.
-If the scheduled merge failed, report the blocker, leave main unchanged, and use
-only the documented authorized retry inside the release window.
+At 9:00 a.m. Chicago the 9:15 gate is still pending. After its window, verify
+the intended SHA merged. If blocked, leave `main` unchanged and report the
+specific blocker. Verify each selected deployment or store rollout before
+publishing notes or a GitHub Release. Dispatch a production Mobile build only
+for the reviewed `run` decision and exact merged SHA, and check for an existing
+run before dispatching. A skipped Mobile build makes no new Mobile
+availability claim.
 
-After a verified merge, verify the selected product builds/deployments and store
-availability. Dispatch a production Mobile build only for the reviewed run
-decision, with enforced run/skip behavior, and avoid duplicating an existing run.
-A skipped build yields no new Mobile availability claim or release email.
+Before subscriber email, review the exact product content, production sender
+configuration, opt-in audience counts, and any existing delivery rows with the
+maintainer. Prepare recipients in `/admin/release-emails`; send only when the
+user has authorized that release's message. The sender rechecks consent, but
+`FAILED` or stranded `SENDING` rows can have uncertain SMTP outcomes and must
+be reconciled manually before any retry. Record links and outcomes for website
+notes, GitHub Release, Mobile build, and each email product. If nothing shipped,
+record the no-change decision and send no announcement.
 
-Publish notes, GitHub Releases, or email only when the user's request authorizes
-those actions and the included changes are actually available. Record sent,
-published, skipped, and failed outcomes; retries must check existing artifacts
-and send records. No shipped work anywhere means no GitHub Release or email.
-Handle urgent fixes on a separately reviewed hotfix path, link them in the next
-monthly summary, and avoid duplicate announcements.
-
-## Pull request coverage
-
-For PRs into main, check dated product notes for every user-facing feature. Once
-implemented, a bug-only PR may use the reviewed bug-fix exemption with rationale.
-Mixed feature/bug PRs need notes. Report missing notes before merge; never claim
-the check blocks merge unless it is required in the main ruleset. Audit bypass
-actors and keep the machine-enforced note and timed-release checks there.
-
-For cross-device reminder migration and ready-to-paste prompts, read
-../../../docs/monthly-release-reminders.md. Keep local reminders enabled until
-cloud counterparts exist and have delivered verified test notifications.
+Cross-device reminders are coordination only; they do not execute this skill
+or authorize merge, publication, or email. See
+[reminder setup](../../../docs/monthly-release-reminders.md) when adjusting
+their schedule or delivery.
