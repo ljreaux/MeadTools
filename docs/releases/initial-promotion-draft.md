@@ -6,9 +6,9 @@ candidate SHA and product decisions, and verify production deployment and
 availability. Use the actual verified production date for the public entry
 under `releaseNotes.entries` in `packages/i18n/locales/en/default.json`.
 
-Snapshot reviewed October 4, 2026: `main` at
+Snapshot assembled October 4, 2026: `main` at
 `7ac6f8f0593547123fc0181907b65e5316c86b54`, `preview` at
-`e94eac4e98545d0efdb697589260ecbb221d7af5`. These SHAs are evidence for
+`660676679537ee421c964a7b9ab040b37cb881ac`. These SHAs are evidence for
 this draft only and will be stale after further preview merges.
 
 ## Candidate public notes
@@ -17,23 +17,28 @@ this draft only and will be stale after further preview merges.
 
 - The brew tracker now displays stabilized and backsweetened brews in the
   appropriate bulk-aging workflow while retaining their actual stage.
-  Source: the brew-stage changes in the reviewed `main...preview` diff.
+  Source: the brew-stage changes in the candidate `main...preview` diff.
 - Release notes now have a permanent archive and product-separated dated
   entries. Source: [#419](https://github.com/ljreaux/MeadTools/pull/419).
-- Signed-in users can choose which product release announcements they want by
-  email and change those choices in account settings. Announcements are off by
-  default. Source: [#422](https://github.com/ljreaux/MeadTools/pull/422).
-  Include this only after the preference migration and UI work in production.
+- Signed-in users can opt in to MeadTools product updates by email and change
+  that choice in account settings. It is off by default. Sources:
+  [#422](https://github.com/ljreaux/MeadTools/pull/422) and
+  [#427](https://github.com/ljreaux/MeadTools/pull/427). Include this only
+  after the account setting works in production; email sending stays off until
+  the verified PO Box address is configured.
+- Juice Calc is under Extra Calcs in the desktop navigation. Source:
+  [#426](https://github.com/ljreaux/MeadTools/pull/426).
 
 ### API and integrations
 
 - An unavailable brew detail now returns a documented `404` response, and
   legacy recipe snapshots remain readable by Mobile clients. Source:
   [#411](https://github.com/ljreaux/MeadTools/pull/411).
-- The release email preference endpoint supports separate Web, Mobile, Chat,
-  and API consent, with a product-specific unsubscribe flow. Sources:
+- The product-update preference endpoint supports one account-wide opt-in and
+  a signed unsubscribe flow. Sources:
   [#422](https://github.com/ljreaux/MeadTools/pull/422) and
-  [#423](https://github.com/ljreaux/MeadTools/pull/423).
+  [#423](https://github.com/ljreaux/MeadTools/pull/423), updated by
+  [#427](https://github.com/ljreaux/MeadTools/pull/427).
 
 ### Mobile preview progress — no production Mobile release
 
@@ -67,9 +72,10 @@ section from public notes unless the final reviewed diff changes that.
   the explicitly reviewed initial-promotion path documented in
   `docs/monthly-release-gate.md`. Record exact head/base SHAs and Mobile
   run/skip in the promotion PR.
-- Draft the dated site entry, matching GitHub Release, and product-specific
-  email only after the real production date is known. Do not send subscribers
-  until the sender, postal address, unsubscribe flow, and duplicate protection
-  have been verified.
+- Draft the dated site entry and matching GitHub Release only after the real
+  production date is known. The production cron will compose one combined
+  product-update email from that published entry. Do not enable subscriber
+  sending until the sender, PO Box address, unsubscribe flow, and duplicate
+  protection have been verified.
 - If the next first Monday brings no further shipped work, record a no-change
   cycle instead of repeating this initial announcement.
