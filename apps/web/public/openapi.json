@@ -151,6 +151,67 @@
           "availableCredits"
         ]
       },
+      "ReleaseEmailPreferencesResponse": {
+        "type": "object",
+        "properties": {
+          "web": {
+            "type": "boolean"
+          },
+          "mobile": {
+            "type": "boolean"
+          },
+          "chat": {
+            "type": "boolean"
+          },
+          "api": {
+            "type": "boolean"
+          },
+          "prompted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "web",
+          "mobile",
+          "chat",
+          "api",
+          "prompted"
+        ]
+      },
+      "ReleaseEmailPreferencesErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ReleaseEmailPreferencesUpdateBody": {
+        "type": "object",
+        "properties": {
+          "web": {
+            "type": "boolean"
+          },
+          "mobile": {
+            "type": "boolean"
+          },
+          "chat": {
+            "type": "boolean"
+          },
+          "api": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "web",
+          "mobile",
+          "chat",
+          "api"
+        ]
+      },
       "AdditiveByIdResponse": {
         "$ref": "#/components/schemas/AdditiveResponse"
       },
@@ -6890,6 +6951,119 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/release-emails": {
+      "get": {
+        "operationId": "get-account-release-emails",
+        "summary": "Get the signed-in user's product-specific release email preferences.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-account-release-emails",
+        "summary": "Record an explicit release email decision for each product, including a decline.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseEmailPreferencesUpdateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
                 }
               }
             }

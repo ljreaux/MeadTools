@@ -278,6 +278,9 @@ import {
   registerRequestBodySchema,
   registerSuccessResponseSchema,
   registerValidationErrorResponseSchema,
+  releaseEmailPreferencesErrorResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
   renameHydrometerBrewResponseSchema,
   requestPasswordResetBodySchema,
   requestPasswordResetSuccessResponseSchema,
@@ -627,6 +630,9 @@ export const RegisterFailureErrorResponse = registerFailureErrorResponseSchema;
 export const RegisterRequestBody = registerRequestBodySchema;
 export const RegisterSuccessResponse = registerSuccessResponseSchema;
 export const RegisterValidationErrorResponse = registerValidationErrorResponseSchema;
+export const ReleaseEmailPreferencesErrorResponse = releaseEmailPreferencesErrorResponseSchema;
+export const ReleaseEmailPreferencesResponse = releaseEmailPreferencesResponseSchema;
+export const ReleaseEmailPreferencesUpdateBody = releaseEmailPreferencesUpdateBodySchema;
 export const RenameHydrometerBrewResponse = renameHydrometerBrewResponseSchema;
 export const RequestPasswordResetBody = requestPasswordResetBodySchema;
 export const RequestPasswordResetSuccessResponse = requestPasswordResetSuccessResponseSchema;

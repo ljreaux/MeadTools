@@ -165,6 +165,20 @@ model users {
   credit_account           credit_accounts?
   credit_checkout_sessions credit_checkout_sessions[]
   resolved_payment_recoveries credit_payment_recoveries[] @relation("credit_payment_recoveries_resolved_by")
+  release_email_preferences release_email_preferences?
+}
+
+/// Dedicated, opt-in release announcements; unrelated to brew or recipe alerts.
+model release_email_preferences {
+  user_id              Int       @id
+  prompted_at          DateTime  @default(now()) @db.Timestamptz(6)
+  web_opted_in_at      DateTime? @db.Timestamptz(6)
+  mobile_opted_in_at   DateTime? @db.Timestamptz(6)
+  chat_opted_in_at     DateTime? @db.Timestamptz(6)
+  api_opted_in_at      DateTime? @db.Timestamptz(6)
+  updated_at           DateTime  @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 /// The single rollout policy for private chatbot access. It is intentionally
