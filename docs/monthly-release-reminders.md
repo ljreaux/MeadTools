@@ -58,8 +58,9 @@ https://github.com/ljreaux/MeadTools/issues/413
 Ask me to review the exact candidate diff and linked PRs, record include/defer/
 no-change for Web, Mobile, Chat assistant, and API/integrations, prepare product
 notes and reviewable website/GitHub/email drafts, and record Mobile production
-build run/skip for the exact head SHA. Warn that the current EAS main-push trigger
-does not honor a skip decision until changed and tested. Timed auto-merge and
+build run/skip for the exact head SHA. Verify the EAS production workflow remains
+dispatch-only before relying on a skipped build; the PR label does not yet
+dispatch a selected production build automatically. Timed auto-merge and
 required gates are planned; do not assume they are active. No-change products
 skip public announcements. For the initial full preview-to-main promotion,
 include reviewed Mobile code but require the EAS production-build skip to be

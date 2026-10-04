@@ -105,7 +105,19 @@ GitHub settings before branch pushes can start workflows automatically.
 - Merges into `preview` create an Android internal build and an unsigned iOS
   Simulator build. English translation changes defer those builds until the
   Weblate German follow-up reaches `preview`.
-- Merges into `main` create Android and iOS production builds.
+- Merges into `main` do not start production builds. The production workflow is
+  dispatch-only so a web/API release can promote mobile source without releasing
+  the mobile app. For a reviewed Mobile release, run the workflow against the
+  exact merged `main` commit from `apps/mobile`:
+
+  ```sh
+  eas workflow:run .eas/workflows/create-production-builds.yml --ref <main-commit-sha>
+  ```
+
+  Record the EAS run URL and verify both builds before announcing Mobile. Issue
+  [#413](https://github.com/ljreaux/MeadTools/issues/413) tracks the planned
+  `build-mobile-production` PR label and automated dispatch; until that is
+  implemented, the label alone does not launch a build.
 - Production iOS builds require Apple Developer Program membership and signing
   credentials; preview Simulator builds do not.
 
