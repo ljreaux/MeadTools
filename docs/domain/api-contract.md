@@ -55,6 +55,11 @@ The monthly-release update adds authenticated `GET` and `PATCH`
 Chat, and API announcement consent. The path-parity test removes this approved
 addition before comparing the earlier route set.
 
+The unsubscribe follow-up adds unauthenticated `POST`
+`/release-emails/unsubscribe` with an opaque token and one product. A GET of
+the linked page never changes consent, so email link scanners cannot opt users
+out accidentally. The parity test removes this approved path as well.
+
 The chat-beta access update intentionally adds `/chat/access` and the
 admin-only `/admin/chat-access` access and credit-grant endpoints. The same
 check removes these private endpoints while preserving the documented behavior
