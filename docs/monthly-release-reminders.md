@@ -61,7 +61,13 @@ notes and reviewable website/GitHub/email drafts, and record Mobile production
 build run/skip for the exact head SHA. Warn that the current EAS main-push trigger
 does not honor a skip decision until changed and tested. Timed auto-merge and
 required gates are planned; do not assume they are active. No-change products
-skip public announcements. Do not merge, deploy, publish, send email, call paid
+skip public announcements. For the initial full preview-to-main promotion,
+include reviewed Mobile code but require the EAS production-build skip to be
+implemented and verified before merge. Initial notes may separately include
+"Mobile preview progress — no production Mobile release", never shipped Mobile
+features or a Mobile release email. An early initial promotion uses the actual
+verified deployment date for notes; a later no-change cycle may skip publication.
+Do not merge, deploy, publish, send email, call paid
 models, or request production credentials. Do not claim you inspected GitHub or
 ran the Codex skill unless you actually have access and evidence.
 
@@ -86,7 +92,12 @@ SHA, gate/merge result when due, per-product deployment/store availability, and
 notes/GitHub/email outcomes. A blocked gate leaves main unchanged. Honor the
 reviewed Mobile build run/skip decision only when EAS enforcement exists; a
 skipped build is no Mobile release announcement. No-change products skip notes
-and opt-in email. Avoid duplicate builds, publications, or sends. This is a
+and opt-in email. Initial notes may include clearly labeled
+"Mobile preview progress — no production Mobile release" without treating it as
+shipped or sending a Mobile release email. If the initial full promotion already
+published notes at its actual verified deployment time and nothing further
+shipped, record a no-change cycle rather than repeating the announcement.
+Avoid duplicate builds, publications, or sends. This is a
 reminder, not authorization to merge, deploy, publish, email, or run paid models.
 Do not claim live GitHub or production verification without access and evidence.
 
