@@ -34,9 +34,9 @@ own services/workflows, outside the general cloud coding environment. Ordinary
 checks use Node 22 and `npm ci --legacy-peer-deps`. Never run paid model
 evaluations without explicit spend approval. Follow current repository rules for
 API routes, schema, translations, and chatbot verification. For Next.js code,
-read the relevant bundled `node_modules/next/dist/docs/` guidance specified by
-apps/web/AGENTS.md; use .next-docs if the current repository instructions specify
-it instead.
+follow applicable AGENTS.md instructions and consult the relevant `.next-docs/`
+before coding; generate those docs as directed by the repository instructions
+if they are missing.
 
 ## Establish the release scope
 
