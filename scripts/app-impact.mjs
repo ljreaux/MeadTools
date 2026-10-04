@@ -86,6 +86,11 @@ export function classifyAppImpact(
 
   if (
     deferForWeblate &&
+    // A PR preview may already have applied this migration to the shared
+    // preview database. Deploy matching code before waiting for Weblate.
+    !changedPaths.some((changedPath) =>
+      changedPath.startsWith("apps/web/prisma/migrations/"),
+    ) &&
     changedPaths.some((changedPath) =>
       changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
     )

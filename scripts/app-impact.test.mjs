@@ -76,6 +76,20 @@ test("a preview source change waits for Weblate when English changes", () => {
   );
 });
 
+test("a preview schema migration deploys compatible Web code before Weblate", () => {
+  assert.deepEqual(
+    classifyAppImpact(
+      [
+        "apps/web/prisma/migrations/20261004190000_consolidate_product_update_consent/migration.sql",
+        "apps/web/app/api/account/release-emails/route.ts",
+        "packages/i18n/locales/en/default.json",
+      ],
+      { deferForWeblate: true },
+    ),
+    { web: true, mobile: false, desktop: false },
+  );
+});
+
 test("a Weblate follow-up releases one complete build", () => {
   assert.deepEqual(
     classifyAppImpact(["packages/i18n/locales/de/default.json"], {
