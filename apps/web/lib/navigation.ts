@@ -70,6 +70,10 @@ export const extraLinks = [
     label: "additionalLinks.about"
   },
   {
+    path: "/release-notes",
+    label: "additionalLinks.releaseNotes"
+  },
+  {
     path: "/contact",
     label: "additionalLinks.contact"
   },
