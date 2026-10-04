@@ -51,14 +51,20 @@ of every earlier path. It also adds the documented `402` insufficient-credit
 response to the private `/chat/recipe` endpoint.
 
 The monthly-release update adds authenticated `GET` and `PATCH`
-`/account/release-emails` endpoints for separate, default-off Web, Mobile,
-Chat, and API announcement consent. The path-parity test removes this approved
-addition before comparing the earlier route set.
+`/account/release-emails` endpoints for one default-off product-update email
+choice. The response also says whether the user has answered the one-time
+prompt. The path-parity test removes this approved addition before comparing
+the earlier route set.
 
 The unsubscribe follow-up adds unauthenticated `POST`
-`/release-emails/unsubscribe` with an opaque token and one product. A GET of
+`/release-emails/unsubscribe` with a signed account token. A GET of
 the linked page never changes consent, so email link scanners cannot opt users
 out accidentally. The parity test removes this approved path as well.
+
+The automated product-update follow-up adds the internal cron-authenticated
+`GET /cron/product-updates` endpoint. It returns aggregate batch counts without
+recipient details. Cron routes are deliberately excluded from public OpenAPI
+by `apps/web/next.openapi.json`.
 
 The chat-beta access update intentionally adds `/chat/access` and the
 admin-only `/admin/chat-access` access and credit-grant endpoints. The same

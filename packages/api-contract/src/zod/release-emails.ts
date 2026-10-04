@@ -2,10 +2,7 @@ import { z } from "zod";
 
 export const releaseEmailPreferencesUpdateBodySchema = z
   .object({
-    web: z.boolean(),
-    mobile: z.boolean(),
-    chat: z.boolean(),
-    api: z.boolean(),
+    optedIn: z.boolean(),
   })
   .strict();
 
@@ -20,8 +17,7 @@ export const releaseEmailPreferencesErrorResponseSchema = z.object({
 
 export const releaseEmailUnsubscribeRequestBodySchema = z
   .object({
-    token: z.string().regex(/^[a-f0-9]{64}$/),
-    product: z.enum(["web", "mobile", "chat", "api"]),
+    token: z.string().regex(/^[1-9]\d*\.[a-f0-9]{64}$/),
   })
   .strict();
 

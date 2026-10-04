@@ -1,6 +1,6 @@
 ---
 name: meadtools-monthly-release
-description: Prepare and coordinate MeadTools monthly releases, including product-specific notes, reviewed main promotion, GitHub Release drafts, opted-in email batches, and no-change months. Use for a MeadTools release checkpoint or release-day follow-up.
+description: Prepare and coordinate MeadTools monthly releases, including product-specific notes, reviewed main promotion, GitHub Release drafts, automatic opted-in product updates, and no-change months. Use for a MeadTools release checkpoint or release-day follow-up.
 ---
 
 # MeadTools monthly release
@@ -25,17 +25,20 @@ The public archive is `/release-notes`; new dated entries are English source
 strings in `packages/i18n/locales/en/default.json` under
 `releaseNotes.entries`, with shipped products separated. Run
 `npm run release-notes:check`. German translations follow the repository's
-Weblate review process. `npm run release:drafts -- YYYY-MM-DD` prepares local
-GitHub Release and product email drafts from a dated entry. Drafts are not
-publication or sending. Read [the authoring guide](../../../docs/monthly-release-notes.md)
+Weblate review process. `npm run release:drafts -- YYYY-MM-DD` prepares a local
+GitHub Release draft from a dated entry. The production cron composes one
+product-update email from the published entry after its date, with separate
+sections for shipped products. Read [the authoring guide](../../../docs/monthly-release-notes.md)
 when editing notes.
 
-Signed-in accounts have default-off Web, Mobile, Chat, and API release email
-choices, a one-time prompt, account controls, and a product-specific
-unsubscribe page. [The admin email procedure](../../../docs/monthly-release-emails.md)
-prepares recipient rows and sends explicit small batches from production only.
-It requires a valid configured mailing address; no-change months have no
-eligible batch. Never infer consent from brew, recipe, or chat settings.
+Signed-in accounts have one default-off product-update choice, a one-time
+prompt, account control, and a signed unsubscribe link. An authenticated Vercel
+cron runs on production every five minutes, sending small batches from the
+published dated website entry. It needs a verified postal address in
+`apps/web/lib/product-update-email.ts` before sending. The cron skips a
+no-change month, future entries, and Mobile preview-only progress. It records
+only the last release date claimed on each user; do not infer consent from
+brew, recipe, or chat settings. See [the email procedure](../../../docs/monthly-release-emails.md).
 
 The production Mobile EAS workflow is dispatch-only. A push to `main` does
 not start it. `build-mobile-production` records a reviewed **run** decision;
@@ -51,8 +54,8 @@ and include/defer/no-change decisions for Web, Mobile, Chat, and API. Check
 deployed behavior, feature availability, migration readiness, and store status
 before describing a change as shipped. Web is not the default product.
 
-Prepare the dated website entry, GitHub Release draft, separate email drafts
-for shipped products, and an internal checklist. Note features, improvements,
+Prepare the dated website entry, GitHub Release draft, and an internal
+checklist. Note features, improvements,
 fixes, and limitations with links to source PRs. Never publish a future or
 unverified claim. If there is no eligible shipped work, record a no-change
 month internally and create no public note, GitHub Release, email batch, or
@@ -101,13 +104,13 @@ for the reviewed `run` decision and exact merged SHA, and check for an existing
 run before dispatching. A skipped Mobile build makes no new Mobile
 availability claim.
 
-Before subscriber email, review the exact product content, production sender
-configuration, opt-in audience counts, and any existing delivery rows with the
-maintainer. Prepare recipients in `/admin/release-emails`; send only when the
-user has authorized that release's message. The sender rechecks consent, but
-`FAILED` or stranded `SENDING` rows can have uncertain SMTP outcomes and must
-be reconciled manually before any retry. Record links and outcomes for website
-notes, GitHub Release, Mobile build, and each email product. If nothing shipped,
+Publishing a dated entry to production automatically starts the opted-in email
+batch when the postal address and existing sender configuration are present.
+Verify the entry and its product scope before it reaches production. The cron
+claims each user before SMTP so a failure is not retried automatically; inspect
+aggregate failures in logs and avoid resending to uncertain recipients. Record
+links and outcomes for website notes, GitHub Release, Mobile build, and the
+combined email. If nothing shipped,
 record the no-change decision and send no announcement.
 
 Cross-device reminders are coordination only; they do not execute this skill

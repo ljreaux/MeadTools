@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Opt out of one product's release emails using an opaque email-link token.
+ * Opt out of product-update emails using a signed email-link token.
  * A GET request never changes consent; the user confirms on the linked page.
  * @body ReleaseEmailUnsubscribeRequestBody
  * @response 200:ReleaseEmailUnsubscribeResponse

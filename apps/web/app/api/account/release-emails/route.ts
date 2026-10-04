@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Get the signed-in user's product-specific release email preferences.
+ * Get the signed-in user's one product-update email choice.
  * @response 200:ReleaseEmailPreferencesResponse
  * @responseSet none
  * @add 401:ReleaseEmailPreferencesErrorResponse
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Record an explicit release email decision for each product, including a decline.
+ * Record an explicit product-update email decision, including a decline.
  * @body ReleaseEmailPreferencesUpdateBody
  * @response 200:ReleaseEmailPreferencesResponse
  * @responseSet none
