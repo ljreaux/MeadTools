@@ -1,8 +1,8 @@
 # MeadTools Mobile
 
-Expo/React Native companion app for MeadTools. The app intentionally starts
-with a minimal shell; product flows will be added as vertical slices instead
-of carrying forward the Expo starter tutorial.
+Expo/React Native companion app for MeadTools. The current read-only flow lets
+you sign in, browse active brews, and inspect a brew's overview and timeline.
+Recording entries and offline synchronization remain planned slices.
 
 ## Local development
 

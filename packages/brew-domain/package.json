@@ -8,6 +8,7 @@
     "./action-proposal": "./src/action-proposal.ts",
     "./entry-payload": "./src/entry-payload.ts",
     "./projection": "./src/projection.ts",
+    "./timeline": "./src/timeline.ts",
     "./scaling": "./src/scaling.ts"
   },
   "scripts": {
