@@ -16,8 +16,7 @@ import {
   Pipette,
   Atom,
   Hexagon,
-  BottleWine,
-  GlassWater
+  BottleWine
 } from "lucide-react";
 import { extraCalculatorLinks } from "@/lib/navigation";
 
@@ -46,11 +45,10 @@ function ExtraCalcsSideBar() {
     <Thermometer key="thermometer" />,
     <Blend key="blend" />,
     <Hexagon key="hex" />,
-    <BottleWine key="bottle" />,
-    <GlassWater key="juice" />
+    <BottleWine key="bottle" />
   ];
 
-  const links = extraCalculatorLinks.map((link, i) => ({
+  const links = extraCalculatorLinks.filter((link) => link.path !== "/juice").map((link, i) => ({
     ...link,
     icon: icons[i],
     label: t(link.label)
