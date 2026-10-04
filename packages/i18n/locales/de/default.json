@@ -2172,20 +2172,21 @@
         }
     },
     "releaseEmails": {
-        "title": "Release-E-Mails",
-        "promptTitle": "MeadTools-Release-Updates per E-Mail erhalten?",
-        "promptDescription": "Wähle aus, über welche Produkte du informiert werden möchtest. Alle sind deaktiviert, bis du zustimmst. Du kannst diese Auswahl jederzeit in deinen Kontoeinstellungen ändern.",
-        "settingsDescription": "Wähle aus, welche Produkt-Release-Ankündigungen du per E-Mail erhalten möchtest. Dies betrifft nicht Ansatz- oder Rezept-Benachrichtigungen.",
-        "save": "Auswahl speichern",
+        "title": "Produkt-Updates per E-Mail",
+        "promptTitle": "Möchtest du Produkt-Updates von MeadTools per E-Mail erhalten?",
+        "promptDescription": "Melde dich für gelegentliche Updates zu veröffentlichten MeadTools-Produkten an. Du kannst sie jederzeit in den Kontoeinstellungen deaktivieren.",
+        "settingsDescription": "Per E-Mail benachrichtigt werden, wenn MeadTools eine neue Produktveröffentlichung herausgibt. Das wirkt sich nicht auf Benachrichtigungen zu Ansätzen oder Rezepten aus.",
+        "save": "Einstellung speichern",
         "noThanks": "Nein, danke",
-        "saved": "Einstellungen für Release-E-Mails gespeichert.",
-        "loadError": "Einstellungen für Release-E-Mails konnten nicht geladen werden.",
-        "saveError": "Einstellungen für Release-E-Mails konnten nicht gespeichert werden. Bitte versuche es erneut.",
-        "unsubscribeTitle": "Release-E-Mails abbestellen",
-        "unsubscribeDescription": "Möchtest du keine {{product}}-Release-Ankündigungen mehr erhalten? Du kannst dich jederzeit in den Kontoeinstellungen wieder dafür anmelden.",
-        "unsubscribeButton": "E-Mails von {{product}} abbestellen",
-        "unsubscribeDone": "Du wirst keine {{product}}-Release-Ankündigungen mehr erhalten.",
-        "unsubscribeError": "Dieser Link konnte nicht verwendet werden. Bitte ändere deine Auswahl für Release-E-Mails in deinen Kontoeinstellungen oder kontaktiere MeadTools.",
-        "unsubscribeInvalid": "Dieser Abmelde-Link ist ungültig. Bitte ändere deine Auswahl für Release-E-Mails in deinen Kontoeinstellungen oder kontaktiere MeadTools."
+        "saved": "Einstellung für Produkt-Updates gespeichert.",
+        "loadError": "Einstellung für Produkt-Updates konnte nicht geladen werden.",
+        "saveError": "Einstellung für Produkt-Updates konnte nicht gespeichert werden. Versuch es erneut.",
+        "unsubscribeTitle": "Von Produkt-Updates abmelden",
+        "unsubscribeDescription": "Möchtest du keine Produkt-Updates von MeadTools mehr erhalten? Du kannst sie jederzeit in den Kontoeinstellungen wieder aktivieren.",
+        "unsubscribeButton": "Abmelden",
+        "unsubscribeDone": "Du erhältst keine Produkt-Updates mehr.",
+        "unsubscribeError": "Dieser Link konnte nicht verwendet werden. Bitte ändere deine Produkt-Update-Einstellung in den Kontoeinstellungen oder kontaktiere MeadTools.",
+        "unsubscribeInvalid": "Dieser Abmelde-Link ist ungültig. Bitte ändere deine Produkt-Update-Einstellung in den Kontoeinstellungen oder kontaktiere MeadTools.",
+        "optIn": "Schicke mir Produkt-Updates per E-Mail"
     }
 }
