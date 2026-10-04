@@ -2125,6 +2125,35 @@
         "started": "Gestartet {{date}}",
         "targetFg": "Ziel-Enddichte",
         "targetOg": "Ziel-Anfangsdichte",
-        "targetVolume": "Zielvolumen"
+        "targetVolume": "Zielvolumen",
+        "timeline": {
+            "activity": "Aktivität",
+            "dateUnavailable": "Datum nicht verfügbar",
+            "empty": "Noch keine Aktivitäten im Zeitstrahl. Einträge, die du im Web hinzufügst, werden hier angezeigt.",
+            "heading": "Neueste Aktivitäten",
+            "packages_one": "{{count}} Paket",
+            "packages_other": "{{count}} Pakete",
+            "roles": {
+                "FG": "Enddichte",
+                "GENERAL": "Dichte",
+                "OG": "Anfangsdichte"
+            },
+            "types": {
+                "ADDITION": "Zugabe",
+                "BACKSWEETENING": "Nachsüßen",
+                "GRAVITY": "Dichte",
+                "ISSUE": "Problem",
+                "NOTE": "Notiz",
+                "NUTRIENT": "Nährstoff",
+                "PACKAGING": "Abfüllung",
+                "PH": "pH",
+                "RACKING": "Umfüllen",
+                "STABILIZATION": "Stabilisierung",
+                "STAGE_CHANGE": "Phasenwechsel",
+                "TASTING": "Verkostung",
+                "TEMPERATURE": "Temperatur",
+                "VOLUME": "Volumen"
+            }
+        }
     }
 }
