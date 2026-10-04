@@ -76,6 +76,37 @@ if they are missing.
   smoke checks, tag, website notes, GitHub release, email audience, and outcomes.
   Record pending, done, skipped, or failed with evidence and artifact links.
 
+## Initial full preview-to-main promotion
+
+After the release infrastructure and initial notes are ready, prepare a full
+`preview` → `main` PR, including reviewed Mobile code even though the first
+production Mobile release is not ready. Review the complete `main...preview`
+range immediately before promotion, record the exact head SHA and product scope,
+and set **Mobile production build: skip** with no `build-mobile-production` label.
+Skipping a build does not remove Mobile code from the promoted diff.
+
+Before this merge, require the EAS production-build skip to be implemented and
+verified: a skip must launch no production Mobile build, including on qualifying
+main pushes. Label absence alone is insufficient. Keep the promotion blocked
+until this behavior is proven; do not implement or bypass the workflow from this
+skill implicitly. If the timed gate is not yet validated, keep this initial
+promotion manual and explicitly authorized, without bypassing required checks.
+
+Initial public notes may include **Mobile preview progress — no production
+Mobile release**, linked to the actual reviewed PRs. This is an explicit exception
+to omitting unshipped product sections: describe preview development separately
+from shipped Web/API/Chat changes, never as shipped Mobile features or app-store
+availability. Send no Mobile release email for that progress update. It does not
+change Mobile's production-release status or count as shipped work for the
+no-change decision.
+
+If this initial baseline promotion happens before the monthly cadence is live,
+publish authorized notes only after verifying production deployment and behavior,
+using the actual verified deployment date/time rather than a future first Monday.
+Do not repeat the announcement at the next checkpoint. If nothing further ships,
+the later first-Monday cycle may record no change and skip public notes, GitHub
+Release, and email while retaining the reminders.
+
 ## Friday preparation
 
 Inventory eligible changes and prepare drafts and the checklist. Ask the
