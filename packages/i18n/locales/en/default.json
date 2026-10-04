@@ -297,7 +297,13 @@
     "noThanks": "No thanks",
     "saved": "Release email choices saved.",
     "loadError": "Release email choices could not be loaded.",
-    "saveError": "Release email choices could not be saved. Try again."
+    "saveError": "Release email choices could not be saved. Try again.",
+    "unsubscribeTitle": "Unsubscribe from release emails",
+    "unsubscribeDescription": "Stop receiving {{product}} release announcements? You can opt back in from account settings at any time.",
+    "unsubscribeButton": "Unsubscribe from {{product}} emails",
+    "unsubscribeDone": "You will no longer receive {{product}} release announcements.",
+    "unsubscribeError": "This link could not be used. Please change your release email choices in account settings or contact MeadTools.",
+    "unsubscribeInvalid": "This unsubscribe link is invalid. Please change your release email choices in account settings or contact MeadTools."
   },
   "additives": {
     "addNew": "Add New Additive",

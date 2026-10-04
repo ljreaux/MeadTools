@@ -3573,6 +3573,42 @@
           "error"
         ]
       },
+      "ReleaseEmailUnsubscribeRequestBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "web",
+              "mobile",
+              "chat",
+              "api"
+            ]
+          }
+        },
+        "required": [
+          "token",
+          "product"
+        ]
+      },
+      "ReleaseEmailUnsubscribeResponse": {
+        "type": "object",
+        "properties": {
+          "unsubscribed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "unsubscribed"
+        ]
+      },
       "AdminUserResponse": {
         "type": "object",
         "properties": {
@@ -7254,6 +7290,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateUsernameFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/release-emails/unsubscribe": {
+      "post": {
+        "operationId": "post-release-emails-unsubscribe",
+        "summary": "Opt out of one product's release emails using an opaque email-link token.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseEmailUnsubscribeRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailUnsubscribeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
                 }
               }
             }

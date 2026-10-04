@@ -282,6 +282,8 @@ import {
   releaseEmailPreferencesErrorResponseSchema,
   releaseEmailPreferencesResponseSchema,
   releaseEmailPreferencesUpdateBodySchema,
+  releaseEmailUnsubscribeRequestBodySchema,
+  releaseEmailUnsubscribeResponseSchema,
   renameHydrometerBrewResponseSchema,
   requestPasswordResetBodySchema,
   requestPasswordResetSuccessResponseSchema,
@@ -634,6 +636,8 @@ export type RegisterValidationErrorResponse = z.infer<typeof registerValidationE
 export type ReleaseEmailPreferencesErrorResponse = z.infer<typeof releaseEmailPreferencesErrorResponseSchema>;
 export type ReleaseEmailPreferencesResponse = z.infer<typeof releaseEmailPreferencesResponseSchema>;
 export type ReleaseEmailPreferencesUpdateBody = z.infer<typeof releaseEmailPreferencesUpdateBodySchema>;
+export type ReleaseEmailUnsubscribeRequestBody = z.infer<typeof releaseEmailUnsubscribeRequestBodySchema>;
+export type ReleaseEmailUnsubscribeResponse = z.infer<typeof releaseEmailUnsubscribeResponseSchema>;
 export type RenameHydrometerBrewResponse = z.infer<typeof renameHydrometerBrewResponseSchema>;
 export type RequestPasswordResetBody = z.infer<typeof requestPasswordResetBodySchema>;
 export type RequestPasswordResetSuccessResponse = z.infer<typeof requestPasswordResetSuccessResponseSchema>;
