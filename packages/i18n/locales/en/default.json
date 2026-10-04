@@ -288,6 +288,17 @@
     },
     "entries": {}
   },
+  "releaseEmails": {
+    "title": "Release emails",
+    "promptTitle": "Get MeadTools release updates by email?",
+    "promptDescription": "Choose which products you want to hear about. All are off until you opt in. You can change these choices in your account settings at any time.",
+    "settingsDescription": "Choose which product release announcements you receive by email. This does not affect brew or recipe alerts.",
+    "save": "Save choices",
+    "noThanks": "No thanks",
+    "saved": "Release email choices saved.",
+    "loadError": "Release email choices could not be loaded.",
+    "saveError": "Release email choices could not be saved. Try again."
+  },
   "additives": {
     "addNew": "Add New Additive",
     "empty": "Add some additives to continue building your recipe."

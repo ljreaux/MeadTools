@@ -279,6 +279,9 @@ import {
   registerRequestBodySchema,
   registerSuccessResponseSchema,
   registerValidationErrorResponseSchema,
+  releaseEmailPreferencesErrorResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
   renameHydrometerBrewResponseSchema,
   requestPasswordResetBodySchema,
   requestPasswordResetSuccessResponseSchema,
@@ -628,6 +631,9 @@ export type RegisterFailureErrorResponse = z.infer<typeof registerFailureErrorRe
 export type RegisterRequestBody = z.infer<typeof registerRequestBodySchema>;
 export type RegisterSuccessResponse = z.infer<typeof registerSuccessResponseSchema>;
 export type RegisterValidationErrorResponse = z.infer<typeof registerValidationErrorResponseSchema>;
+export type ReleaseEmailPreferencesErrorResponse = z.infer<typeof releaseEmailPreferencesErrorResponseSchema>;
+export type ReleaseEmailPreferencesResponse = z.infer<typeof releaseEmailPreferencesResponseSchema>;
+export type ReleaseEmailPreferencesUpdateBody = z.infer<typeof releaseEmailPreferencesUpdateBodySchema>;
 export type RenameHydrometerBrewResponse = z.infer<typeof renameHydrometerBrewResponseSchema>;
 export type RequestPasswordResetBody = z.infer<typeof requestPasswordResetBodySchema>;
 export type RequestPasswordResetSuccessResponse = z.infer<typeof requestPasswordResetSuccessResponseSchema>;

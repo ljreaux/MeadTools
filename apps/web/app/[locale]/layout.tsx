@@ -8,6 +8,7 @@ import BottomBar from "@/components/navbar/BottomBar";
 import KofiButton from "@/components/KofiSupportButton";
 import { BannerStack } from "@/components/ui/banner";
 import Dialogs from "@/components/dialogs/Dialogs";
+import ReleaseEmailOptInBanner from "@/components/account/ReleaseEmailOptInBanner";
 
 export default async function Layout({
   children,
@@ -29,6 +30,7 @@ export default async function Layout({
         <Navbar />
         <div className="fixed top-20 left-0 right-0 z-[var(--z-banner)]">
           <BannerStack max={3} />
+          <ReleaseEmailOptInBanner />
         </div>
         <Suspense fallback={<Loading />}>{children}</Suspense>
         <BottomBar />

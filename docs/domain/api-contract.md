@@ -50,6 +50,11 @@ The same check removes these endpoints while preserving the documented behavior
 of every earlier path. It also adds the documented `402` insufficient-credit
 response to the private `/chat/recipe` endpoint.
 
+The monthly-release update adds authenticated `GET` and `PATCH`
+`/account/release-emails` endpoints for separate, default-off Web, Mobile,
+Chat, and API announcement consent. The path-parity test removes this approved
+addition before comparing the earlier route set.
+
 The chat-beta access update intentionally adds `/chat/access` and the
 admin-only `/admin/chat-access` access and credit-grant endpoints. The same
 check removes these private endpoints while preserving the documented behavior
