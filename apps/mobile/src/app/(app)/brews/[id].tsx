@@ -37,6 +37,7 @@ export default function BrewScreen() {
     enabled: Boolean(session && id)
   });
   const apiError = brewQuery.error instanceof MeadToolsApiError ? brewQuery.error : null;
+  const isConnectionError = brewQuery.error instanceof TypeError;
   const hideStaleBrew =
     brewQuery.isError &&
     apiError !== null &&
@@ -130,7 +131,6 @@ export default function BrewScreen() {
       errorBody.error === "User not found";
     const isSessionError = status === 401 || status === 403 || isMissingUser;
     const isNotFound = !id || (status === 404 && !isMissingUser);
-    const isConnectionError = brewQuery.error instanceof TypeError;
     const titleKey = isSessionError
       ? "mobileBrews.sessionExpiredTitle"
       : isNotFound
@@ -189,7 +189,26 @@ export default function BrewScreen() {
       ItemSeparatorComponent={() => <View style={styles.timelineSeparator} />}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
+      onRefresh={() => void brewQuery.refetch()}
+      refreshing={brewQuery.isRefetching}
       ListHeaderComponent={<View style={styles.timelineHeader}>
+      {brewQuery.isError ? (
+        <View accessibilityRole="alert" style={styles.errorBanner}>
+          <Text style={styles.sectionHeading}>
+            {t(isConnectionError ? "mobileBrews.offlineTitle" : "mobileBrews.detailError")}
+          </Text>
+          <Text style={styles.statusBody}>
+            {t(isConnectionError ? "mobileBrews.offlineBody" : "mobileBrews.errorBody")}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void brewQuery.refetch()}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryText}>{t("mobileBrews.retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.heading}>{name}</Text>
         <Text style={styles.stage}>{t(`brewStage.${brew.stage}`)}</Text>
@@ -270,6 +289,15 @@ function createStyles(colors: typeof colorThemes.light) {
       fontWeight: typography.weight.bold
     },
     statusBody: { color: colors.textMuted, fontSize: typography.size.body, textAlign: "center" },
+    errorBanner: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      gap: spacing.md,
+      padding: spacing.lg
+    },
     stage: {
       alignSelf: "flex-start",
       color: colors.onAccent,
