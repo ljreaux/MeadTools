@@ -1,23 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  adminReleaseEmailRequestBodySchema,
   releaseEmailPreferencesUpdateBodySchema,
   releaseEmailUnsubscribeRequestBodySchema,
 } from "../src/zod/release-emails";
-
-test("admin dispatch accepts only a dated product and known action", () => {
-  const request = {
-    date: "2026-10-05",
-    product: "web",
-    action: "prepare",
-    confirmation: "PREPARE 2026-10-05 WEB",
-  };
-  assert.equal(adminReleaseEmailRequestBodySchema.safeParse(request).success, true);
-  assert.equal(adminReleaseEmailRequestBodySchema.safeParse({ ...request, product: "mobilePreview" }).success, false);
-  assert.equal(adminReleaseEmailRequestBodySchema.safeParse({ ...request, date: "tomorrow" }).success, false);
-  assert.equal(adminReleaseEmailRequestBodySchema.safeParse({ ...request, recipients: [1] }).success, false);
-});
 
 test("release email consent requires an explicit boolean for each product", () => {
   const allOff = { web: false, mobile: false, chat: false, api: false };

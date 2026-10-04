@@ -10,7 +10,6 @@ import {
   TestTube2,
   Users,
   MessageCircle,
-  Mail,
   Wheat,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -50,12 +49,6 @@ const navLinks = [
     fallback: "Chat operations",
     to: `${baseRoute}/chat`,
     icon: MessageCircle,
-  },
-  {
-    key: "releaseEmails",
-    fallback: "Release emails",
-    to: `${baseRoute}/release-emails`,
-    icon: Mail,
   },
   {
     key: "yeasts",

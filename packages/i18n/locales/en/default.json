@@ -437,32 +437,8 @@
       "maintenance": "Maintenance",
       "overview": "Overview",
       "recipes": "Recipes",
-      "releaseEmails": "Release emails",
       "users": "Users",
       "yeasts": "Yeasts"
-    },
-    "releaseEmails": {
-      "actionError": "Release email action failed.",
-      "batchResult": "Batch complete: {{sent}} sent, {{failed}} uncertain failures, {{skipped}} skipped after consent checks.",
-      "confirm": "Type {{expected}} to send the next batch",
-      "description": "Prepare opted-in recipients for each shipped product, then send up to ten at a time. Failed or interrupted sends are held for manual review.",
-      "loadError": "Could not load release email status.",
-      "loading": "Loading release email status…",
-      "noReleases": "No dated product release notes are available yet.",
-      "prepare": "Prepare recipients",
-      "prepared": "Recipients prepared. Review counts before sending.",
-      "product": "Product",
-      "release": "Release",
-      "sendBatch": "Send next batch",
-      "sendHelp": "Only production can send. Preferences are checked again immediately before each email. Refresh before repeating a batch.",
-      "status": {
-        "FAILED": "Needs review",
-        "PENDING": "Pending",
-        "SENDING": "Uncertain or sending",
-        "SENT": "Sent",
-        "SKIPPED": "Skipped"
-      },
-      "title": "Release emails"
     },
     "overview": {
       "activeBrews": "{{count}} active",
