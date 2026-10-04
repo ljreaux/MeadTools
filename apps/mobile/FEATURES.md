@@ -19,8 +19,9 @@ batch easier to monitor and update, especially when connectivity is poor.
 - Active brew list, read-only overview, and recent activity timeline with safe legacy entry handling
 
 The foundation does not yet provide synchronization, offline persistence, or
-production-ready branding. Device-level sign-in, localization, and recovery
-checks are tracked in [POC-VERIFICATION.md](./POC-VERIFICATION.md).
+production-ready branding. The read-only POC is accepted for the next slice;
+device-level evidence and remaining release-readiness checks are recorded in
+[POC-VERIFICATION.md](./POC-VERIFICATION.md).
 
 ## Planned vertical slices
 

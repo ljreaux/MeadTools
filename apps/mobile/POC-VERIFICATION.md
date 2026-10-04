@@ -50,12 +50,17 @@ for this POC decision.
 
 ## Current decision
 
-**POC sign-off is pending.** The build pipeline and the Android/iOS read-only
-happy paths have positive evidence. Android German rendering and offline retry
-passed; iOS German rendering, the remaining sign-in checks, and several
-error/recovery states still need verification. Do not close #346 or call the
-read-only POC complete until those checks are recorded.
+**Go: the product owner accepted the read-only POC on October 4, 2026.** The
+Android sign-in, session restore, list, overview, timeline, German rendering,
+and offline retry checks passed. The iOS timeline and online detail refresh
+also passed. This evidence is sufficient to proceed to the next mobile slice.
 
-The next product work would be one gravity measurement with an idempotent offline
+Pending rows above remain unverified and are tracked in [#415](https://github.com/ljreaux/MeadTools/issues/415)
+for release-readiness follow-up. German translation review is tracked in
+[#370](https://github.com/ljreaux/MeadTools/issues/370). Keep the pending rows
+pending until they are checked on device; this decision does not mark them as
+passed.
+
+The next product slice is one gravity measurement with an idempotent offline
 outbox. Timeline filtering and organizing ingredients by stage are useful later
-enhancements; neither changes the read-only POC's current result.
+enhancements.
