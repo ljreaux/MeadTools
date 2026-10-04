@@ -1540,6 +1540,35 @@
     "targetFg": "Target FG",
     "targetOg": "Target OG",
     "targetVolume": "Target volume",
+    "timeline": {
+      "activity": "Activity",
+      "dateUnavailable": "Date unavailable",
+      "empty": "No timeline activity yet. Entries you add on the web will appear here.",
+      "heading": "Recent activity",
+      "packages_one": "{{count}} package",
+      "packages_other": "{{count}} packages",
+      "roles": {
+        "FG": "FG",
+        "GENERAL": "Gravity",
+        "OG": "OG"
+      },
+      "types": {
+        "ADDITION": "Addition",
+        "BACKSWEETENING": "Backsweetening",
+        "GRAVITY": "Gravity",
+        "ISSUE": "Issue",
+        "NOTE": "Note",
+        "NUTRIENT": "Nutrient",
+        "PACKAGING": "Packaging",
+        "PH": "pH",
+        "RACKING": "Racking",
+        "STABILIZATION": "Stabilization",
+        "STAGE_CHANGE": "Stage change",
+        "TASTING": "Tasting",
+        "TEMPERATURE": "Temperature",
+        "VOLUME": "Volume"
+      }
+    },
     "untitled": "Untitled brew",
     "volume": "{{value}} L"
   },

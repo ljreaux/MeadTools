@@ -3,8 +3,8 @@ import { useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View
@@ -12,7 +12,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { MeadToolsApiError } from "@meadtools/api-client";
-import { projectBrewOverview, projectBrewView } from "@meadtools/brew-domain";
+import {
+  projectBrewOverview,
+  projectBrewTimeline,
+  projectBrewView,
+  type BrewTimelineItem
+} from "@meadtools/brew-domain";
 import { toBrix } from "@meadtools/core/gravity";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
@@ -41,7 +46,9 @@ export default function BrewScreen() {
     [brewQuery.data, hideStaleBrew]
   );
   const overview = useMemo(() => brew ? projectBrewOverview(brew) : null, [brew]);
+  const timeline = useMemo(() => brew ? projectBrewTimeline(brew) : [], [brew]);
   const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 });
+  const timelineNumber = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 2 });
 
   function formatGravity(value: number | null, unit: "SG" | "BRIX") {
     if (value === null) return t("mobileBrews.notRecorded");
@@ -57,6 +64,57 @@ export default function BrewScreen() {
       <View style={styles.metric}>
         <Text style={styles.metricLabel}>{label}</Text>
         <Text style={styles.metricValue}>{value}</Text>
+      </View>
+    );
+  }
+
+  function formatTimelineDetail(item: BrewTimelineItem): string | null {
+    const detail = item.detail;
+    if (!detail) return null;
+    switch (detail.kind) {
+      case "gravity":
+        return `${t(`mobileBrews.timeline.roles.${detail.role}`)}: ${formatGravity(detail.value, brew?.gravity_unit_preference ?? "SG")}`;
+      case "temperature":
+        return `${timelineNumber.format(detail.value)} °${detail.unit}`;
+      case "ph":
+        return `pH ${timelineNumber.format(detail.value)}`;
+      case "volume":
+        return `${timelineNumber.format(detail.value)} ${detail.unit}${detail.packages !== null
+          ? ` · ${t("mobileBrews.timeline.packages", { count: detail.packages })}` : ""}`;
+      case "addition": {
+        const amount = detail.amount === null ? null :
+          `${timelineNumber.format(detail.amount)}${detail.unit ? ` ${detail.unit}` : ""}`;
+        return [detail.name, amount].filter(Boolean).join(" · ") || null;
+      }
+      case "stage":
+        return detail.to
+          ? `${detail.from ? `${t(`brewStage.${detail.from}`)} → ` : ""}${t(`brewStage.${detail.to}`)}`
+          : null;
+    }
+  }
+
+  function renderTimelineItem({ item }: { item: BrewTimelineItem }) {
+    const date = new Date(item.datetime);
+    const timestamp = Number.isNaN(date.getTime())
+      ? t("mobileBrews.timeline.dateUnavailable")
+      : new Intl.DateTimeFormat(i18n.language, {
+          dateStyle: "medium", timeStyle: "short"
+        }).format(date);
+    const typeKey = `mobileBrews.timeline.types.${item.type}`;
+    const typeLabel = t(typeKey, { defaultValue: t("mobileBrews.timeline.activity") });
+    const detail = formatTimelineDetail(item);
+    const showTitle = item.title && !detail && item.title !== typeLabel;
+
+    return (
+      <View style={styles.timelineRow}>
+        <View style={styles.timelineTop}>
+          <Text style={styles.timelineType}>{typeLabel}</Text>
+          <Text style={styles.timelineDate}>{timestamp}</Text>
+        </View>
+        {item.stage ? <Text style={styles.timelineStage}>{t(`brewStage.${item.stage}`)}</Text> : null}
+        {detail ? <Text style={styles.timelineDetail}>{detail}</Text> : null}
+        {showTitle ? <Text style={styles.timelineDetail}>{item.title}</Text> : null}
+        {item.note ? <Text style={styles.timelineNote}>{item.note}</Text> : null}
       </View>
     );
   }
@@ -124,7 +182,14 @@ export default function BrewScreen() {
     : new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(date);
 
   return (
-    <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+    <FlatList
+      data={timeline}
+      keyExtractor={(item) => item.id}
+      renderItem={renderTimelineItem}
+      ItemSeparatorComponent={() => <View style={styles.timelineSeparator} />}
+      contentContainerStyle={styles.content}
+      contentInsetAdjustmentBehavior="automatic"
+      ListHeaderComponent={<View style={styles.timelineHeader}>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.heading}>{name}</Text>
         <Text style={styles.stage}>{t(`brewStage.${brew.stage}`)}</Text>
@@ -172,7 +237,14 @@ export default function BrewScreen() {
           <Text style={styles.muted}>{t("mobileBrews.recipeDetailsUnavailable")}</Text>
         )}
       </View>
-    </ScrollView>
+      <Text accessibilityRole="header" style={styles.sectionHeading}>{t("mobileBrews.timeline.heading")}</Text>
+      </View>}
+      ListEmptyComponent={
+        <View style={styles.card}>
+          <Text style={styles.muted}>{t("mobileBrews.timeline.empty")}</Text>
+        </View>
+      }
+    />
   );
 }
 
@@ -224,6 +296,22 @@ function createStyles(colors: typeof colorThemes.light) {
     recipeName: { color: colors.text, fontSize: typography.size.body },
     ingredientRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
     ingredientName: { color: colors.text, flex: 1, fontSize: typography.size.body },
+    timelineHeader: { gap: spacing.lg, marginBottom: spacing.lg },
+    timelineSeparator: { height: spacing.sm },
+    timelineRow: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      gap: spacing.xs,
+      padding: spacing.lg
+    },
+    timelineTop: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm },
+    timelineType: { color: colors.text, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    timelineDate: { color: colors.textMuted, fontSize: typography.size.caption },
+    timelineStage: { color: colors.textMuted, fontSize: typography.size.caption },
+    timelineDetail: { color: colors.text, fontSize: typography.size.body },
+    timelineNote: { color: colors.textMuted, fontSize: typography.size.body },
     retryButton: {
       borderRadius: radii.md,
       backgroundColor: colors.accent,

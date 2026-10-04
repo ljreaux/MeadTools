@@ -16,7 +16,7 @@ batch easier to monitor and update, especially when connectivity is poor.
 - Access to the shared MeadTools domain, schema, contract, and API packages
 - Environment-aware API client and TanStack Query providers
 - Native password and Google sign-in, protected routes, and SecureStore session restore
-- Active brew list and a read-only brew overview with recipe targets and legacy snapshot fallback
+- Active brew list, read-only overview, and recent activity timeline with safe legacy entry handling
 
 The foundation does not yet provide synchronization, offline persistence, or
 production-ready branding. Device-level sign-in verification remains in the
@@ -29,7 +29,7 @@ read-only POC review.
 - Native sign-in using the agreed API/auth contract
 - List the signed-in user's active brews
 - Open a brew and display its recipe snapshot, targets, and stage
-- Display recent timeline entries (next slice)
+- Display recent timeline entries
 - Use `@meadtools/api-client`, `@meadtools/api-contract`, and
   `@meadtools/brew-domain` rather than duplicating requests or projections
 
