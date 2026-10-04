@@ -21,13 +21,13 @@ guidance, not an enforced merge gate or a scheduler. Issue #413 tracks the dated
 note convention, required note check, timed merge gate, release subscriptions,
 email system, and Mobile build decision enforcement; do not assume they exist.
 
-`apps/mobile/.eas/workflows/create-production-builds.yml` currently triggers on
-qualifying pushes to main, independently of PR labels. The planned
+`apps/mobile/.eas/workflows/create-production-builds.yml` is dispatch-only; a
+push to main does not start production Mobile builds. The planned
 `build-mobile-production` label means **run**, and its absence means **skip**,
-but that skip is not operational until the EAS workflow is changed and tested.
+but automatic label-driven dispatch is not implemented yet. For a reviewed
+Mobile release, verify the label and exact merged main SHA, then deliberately
+dispatch the EAS workflow for that SHA once and record its run URL.
 `skip-mobile-check` skips a GitHub quality job, not an EAS production build.
-Do not promise a skipped build or merge a release relying on that promise while
-the push trigger remains active. Record the blocker instead.
 
 Keep production deployment, EAS, email, payment, and model credentials in their
 own services/workflows, outside the general cloud coding environment. Ordinary
@@ -85,12 +85,11 @@ range immediately before promotion, record the exact head SHA and product scope,
 and set **Mobile production build: skip** with no `build-mobile-production` label.
 Skipping a build does not remove Mobile code from the promoted diff.
 
-Before this merge, require the EAS production-build skip to be implemented and
-verified: a skip must launch no production Mobile build, including on qualifying
-main pushes. Label absence alone is insufficient. Keep the promotion blocked
-until this behavior is proven; do not implement or bypass the workflow from this
-skill implicitly. If the timed gate is not yet validated, keep this initial
-promotion manual and explicitly authorized, without bypassing required checks.
+Before this merge, verify the EAS production workflow is still dispatch-only:
+a skip must launch no production Mobile build, including on qualifying main
+pushes. Keep the promotion blocked until this behavior is proven. If the timed
+gate is not yet validated, keep this initial promotion manual and explicitly
+authorized, without bypassing required checks.
 
 Initial public notes may include **Mobile preview progress — no production
 Mobile release**, linked to the actual reviewed PRs. This is an explicit exception
@@ -120,8 +119,8 @@ Only after issue #413's gate is implemented, tested, and required on main:
 1. Verify the single preview-to-main release PR, full diff, product readiness,
    notes, current CI and review, and exact approved head SHA.
 2. Record and review **Mobile production build: run / skip** for that SHA.
-   `build-mobile-production` means run; absence means skip. Verify actual workflow
-   enforcement and recheck the label before merge.
+   `build-mobile-production` means run; absence means skip. Verify the production
+   workflow remains dispatch-only and recheck the label before merge.
 3. Bind readiness to that SHA and arm native GitHub auto-merge only when the
    required release gate is enforced. New commits revoke readiness until reviewed.
 4. The planned GitHub schedule opens the gate at **9:15 a.m. America/Chicago** on

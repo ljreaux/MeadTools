@@ -1,17 +1,9 @@
 name: Create Production Builds
 
 on:
+  # A main push may include unreleased Mobile work; dispatch only for an
+  # explicitly approved Mobile release.
   workflow_dispatch: {}
-  push:
-    branches:
-      - main
-    paths:
-      - apps/mobile/**
-      - packages/**
-      - scripts/**
-      - package.json
-      - package-lock.json
-      - tsconfig.base.json
 
 jobs:
   quality:
