@@ -10,8 +10,10 @@
   and review states instead of a custom translation bot.
 - Keep Git as the preferred place for German corrections while preserving the
   Weblate UI as the review queue and quick-approval path.
-- Produce exactly one preview build for an English-changing feature: after the
-  Weblate translation commit is present.
+- Normally produce one preview build for an English-changing feature after the
+  Weblate translation commit is present. A change with a Web database migration
+  builds immediately so deployed code matches a migration already applied by
+  its PR preview build; the Weblate follow-up then builds translated artifacts.
 
 ## Roles
 
@@ -55,18 +57,22 @@ style, and German-specific instructions.
 2. Normal PR validation still runs. The feature merges to `preview` even if
    German is pending.
 3. The preview deployment/build gate detects the English locale change and
-   defers the deploy rather than starting a partial build.
+   normally defers the deploy rather than starting a partial build. If the
+   change also adds a Web database migration, it builds immediately for schema
+   compatibility with the shared preview database.
 4. The GitHub webhook causes Weblate to update. Its Automatic Translation
    add-on writes German results in the **Needs editing** state and Weblate
    commits and pushes a German-only follow-up to `preview`.
-5. The marked Weblate commit releases the single build/deployment containing
-   both the feature and the generated German files.
+5. The marked Weblate commit releases the build/deployment containing the
+   generated German files. For a migration exception, this is the second
+   build; the first already put compatible code on preview.
 6. GitHub automation creates or updates the shared German review issue, pinned
    to the exact Weblate commit and, when GitHub can resolve it, the source PR.
 
-If Weblate cannot produce or push its update, the preview deployment is held.
-That is intentional: investigate Weblate's component/add-on activity before
-retrying or bypassing the gate.
+If Weblate cannot produce or push its update, the normal preview deployment is
+held. For a migration exception, compatible Web code may already be deployed,
+but its German follow-up remains pending. Investigate Weblate's component and
+add-on activity before retrying or bypassing the gate.
 
 ## German review flow
 
@@ -121,7 +127,8 @@ affected unapproved strings when useful.
 ## CI and deployment behavior
 
 - normal feature changes without English locale edits build normally;
-- a `preview` merge that changes English locale files waits for Weblate; and
+- a `preview` merge that changes English locale files waits for Weblate unless
+  it includes a Web database migration already applied by PR preview; and
 - the recognized Weblate German follow-up releases the web deployment and EAS
   preview builds; and
 - a German-only human correction also releases a fresh web deployment and EAS
@@ -139,8 +146,9 @@ same push, the gate scans the full push range for the German release batch.
 - [ ] Merge one real English source change into `preview`.
 - [ ] Confirm Weblate writes a needs-review German commit with the marker.
 - [ ] Confirm one review issue points to that commit and source PR.
-- [ ] Confirm the original preview push is deferred and the Weblate commit
-      releases exactly one web/mobile preview build.
+- [ ] Confirm an ordinary English change is deferred and the Weblate commit
+      releases one web/mobile preview build; confirm a migration exception
+      builds compatible Web code immediately and again after Weblate.
 - [ ] Test one trusted German-only PR and one no-op issue approval.
 - [ ] Confirm the latest approved migration baseline still matches Git.
 
