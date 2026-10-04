@@ -2180,6 +2180,12 @@
         "noThanks": "Nein, danke",
         "saved": "Einstellungen für Release-E-Mails gespeichert.",
         "loadError": "Einstellungen für Release-E-Mails konnten nicht geladen werden.",
-        "saveError": "Einstellungen für Release-E-Mails konnten nicht gespeichert werden. Bitte versuche es erneut."
+        "saveError": "Einstellungen für Release-E-Mails konnten nicht gespeichert werden. Bitte versuche es erneut.",
+        "unsubscribeTitle": "Release-E-Mails abbestellen",
+        "unsubscribeDescription": "Möchtest du keine {{product}}-Release-Ankündigungen mehr erhalten? Du kannst dich jederzeit in den Kontoeinstellungen wieder dafür anmelden.",
+        "unsubscribeButton": "E-Mails von {{product}} abbestellen",
+        "unsubscribeDone": "Du wirst keine {{product}}-Release-Ankündigungen mehr erhalten.",
+        "unsubscribeError": "Dieser Link konnte nicht verwendet werden. Bitte ändere deine Auswahl für Release-E-Mails in deinen Kontoeinstellungen oder kontaktiere MeadTools.",
+        "unsubscribeInvalid": "Dieser Abmelde-Link ist ungültig. Bitte ändere deine Auswahl für Release-E-Mails in deinen Kontoeinstellungen oder kontaktiere MeadTools."
     }
 }
