@@ -2170,5 +2170,16 @@
             "chat": "Chat‑Assistent",
             "api": "API und Integrationen"
         }
+    },
+    "releaseEmails": {
+        "title": "Release-E-Mails",
+        "promptTitle": "MeadTools-Release-Updates per E-Mail erhalten?",
+        "promptDescription": "Wähle aus, über welche Produkte du informiert werden möchtest. Alle sind deaktiviert, bis du zustimmst. Du kannst diese Auswahl jederzeit in deinen Kontoeinstellungen ändern.",
+        "settingsDescription": "Wähle aus, welche Produkt-Release-Ankündigungen du per E-Mail erhalten möchtest. Dies betrifft nicht Ansatz- oder Rezept-Benachrichtigungen.",
+        "save": "Auswahl speichern",
+        "noThanks": "Nein, danke",
+        "saved": "Einstellungen für Release-E-Mails gespeichert.",
+        "loadError": "Einstellungen für Release-E-Mails konnten nicht geladen werden.",
+        "saveError": "Einstellungen für Release-E-Mails konnten nicht gespeichert werden. Bitte versuche es erneut."
     }
 }
