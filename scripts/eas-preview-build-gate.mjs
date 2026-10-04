@@ -53,6 +53,15 @@ function main() {
     return;
   }
 
+  // EAS does not always expose github.event.before to custom jobs. Without
+  // the previous SHA, the diff cannot safely rule out Mobile changes, so run
+  // the preview build instead of failing the gate and skipping every job.
+  if (!/^[0-9a-f]{40}$/i.test(process.env.PUSH_BEFORE ?? "") ||
+      /^0{40}$/.test(process.env.PUSH_BEFORE ?? "")) {
+    process.stdout.write("true\n");
+    return;
+  }
+
   const changedPaths = changedPathsForPush(process.env.PUSH_BEFORE ?? "");
   process.stdout.write(`${shouldBuildMobilePreview(changedPaths)}\n`);
 }
@@ -62,6 +71,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     main();
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
+    // An unavailable diff must not suppress all downstream preview jobs.
+    process.stdout.write("true\n");
   }
 }
