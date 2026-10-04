@@ -41,25 +41,7 @@ export function renderReleaseArtifacts(
     [`# ${entry.title}`, entry.summary, ...sections, `Full notes: ${url}`].join(
       "\n\n",
     ) + "\n";
-  const emails = Object.fromEntries(
-    shipped.map((product) => [
-      product,
-      {
-        subject: `MeadTools ${labels[product]} update — ${entry.title}`,
-        text:
-          [
-            `DRAFT — review and remove this line before sending.`,
-            entry.summary,
-            `${labels[product]}:`,
-            ...entry.products[product].items.map((item) => `- ${item}`),
-            `Full release notes: ${url}`,
-            `Unsubscribe from ${labels[product]} release emails: {{unsubscribe_url}}`,
-            `MeadTools mailing address: {{postal_address}}`,
-          ].join("\n\n") + "\n",
-      },
-    ]),
-  );
-  return { github, emails, tag: `release-${date}` };
+  return { github, tag: `release-${date}` };
 }
 
 if (
@@ -84,20 +66,13 @@ if (
   const translations = JSON.parse(await readFile(source, "utf8"));
   const entry = translations.releaseNotes?.entries?.[date];
   if (!entry) throw new Error(`No published release note entry for ${date}.`);
-  const { github, emails, tag } = renderReleaseArtifacts(date, entry);
+  const { github, tag } = renderReleaseArtifacts(date, entry);
   const directory = resolve(process.argv[3] ?? `release-drafts/${date}`);
   await mkdir(directory, { recursive: true });
   await writeFile(resolve(directory, "github-release.md"), github, {
     flag: "wx",
   });
-  for (const [product, email] of Object.entries(emails)) {
-    await writeFile(
-      resolve(directory, `${product}-email.txt`),
-      `Subject: ${email.subject}\n\n${email.text}`,
-      { flag: "wx" },
-    );
-  }
   console.log(
-    `Prepared ${Object.keys(emails).length} product email drafts and GitHub Release body in ${directory}. Suggested tag: ${tag}`,
+    `Prepared GitHub Release body in ${directory}. Suggested tag: ${tag}. Product email is sent automatically from published website notes.`,
   );
 }

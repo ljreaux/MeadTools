@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderReleaseArtifacts } from "./prepare-release-artifacts.mjs";
 
-test("drafts email only for shipped products while preserving Mobile preview status in public notes", () => {
+test("GitHub draft preserves Mobile preview status in public notes", () => {
   const entry = {
     title: "October 2026",
     summary: "A verified update.",
@@ -18,8 +18,7 @@ test("drafts email only for shipped products while preserving Mobile preview sta
     artifacts.github,
     /Mobile preview progress — no production Mobile release/,
   );
-  assert.deepEqual(Object.keys(artifacts.emails), ["web"]);
-  assert.match(artifacts.emails.web.text, /\{\{unsubscribe_url\}\}/);
+  assert.match(artifacts.github, /Web improvement/);
   assert.equal(artifacts.tag, "release-2026-10-04");
 });
 

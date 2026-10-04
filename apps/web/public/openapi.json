@@ -154,16 +154,7 @@
       "ReleaseEmailPreferencesResponse": {
         "type": "object",
         "properties": {
-          "web": {
-            "type": "boolean"
-          },
-          "mobile": {
-            "type": "boolean"
-          },
-          "chat": {
-            "type": "boolean"
-          },
-          "api": {
+          "optedIn": {
             "type": "boolean"
           },
           "prompted": {
@@ -171,10 +162,7 @@
           }
         },
         "required": [
-          "web",
-          "mobile",
-          "chat",
-          "api",
+          "optedIn",
           "prompted"
         ]
       },
@@ -192,24 +180,12 @@
       "ReleaseEmailPreferencesUpdateBody": {
         "type": "object",
         "properties": {
-          "web": {
-            "type": "boolean"
-          },
-          "mobile": {
-            "type": "boolean"
-          },
-          "chat": {
-            "type": "boolean"
-          },
-          "api": {
+          "optedIn": {
             "type": "boolean"
           }
         },
         "required": [
-          "web",
-          "mobile",
-          "chat",
-          "api"
+          "optedIn"
         ]
       },
       "AdditiveByIdResponse": {
@@ -3578,21 +3554,11 @@
         "properties": {
           "token": {
             "type": "string",
-            "pattern": "^[a-f0-9]{64}$"
-          },
-          "product": {
-            "type": "string",
-            "enum": [
-              "web",
-              "mobile",
-              "chat",
-              "api"
-            ]
+            "pattern": "^[1-9]\\d*\\.[a-f0-9]{64}$"
           }
         },
         "required": [
-          "token",
-          "product"
+          "token"
         ]
       },
       "ReleaseEmailUnsubscribeResponse": {
@@ -6997,7 +6963,7 @@
     "/account/release-emails": {
       "get": {
         "operationId": "get-account-release-emails",
-        "summary": "Get the signed-in user's product-specific release email preferences.",
+        "summary": "Get the signed-in user's one product-update email choice.",
         "description": "",
         "tags": [
           "Account"
@@ -7043,7 +7009,7 @@
       },
       "patch": {
         "operationId": "patch-account-release-emails",
-        "summary": "Record an explicit release email decision for each product, including a decline.",
+        "summary": "Record an explicit product-update email decision, including a decline.",
         "description": "",
         "tags": [
           "Account"
@@ -7300,7 +7266,7 @@
     "/release-emails/unsubscribe": {
       "post": {
         "operationId": "post-release-emails-unsubscribe",
-        "summary": "Opt out of one product's release emails using an opaque email-link token.",
+        "summary": "Opt out of product-update emails using a signed email-link token.",
         "description": "",
         "tags": [
           "Account"

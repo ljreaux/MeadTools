@@ -5,14 +5,14 @@ import {
   releaseEmailUnsubscribeRequestBodySchema,
 } from "../src/zod/release-emails";
 
-test("release email consent requires an explicit boolean for each product", () => {
-  const allOff = { web: false, mobile: false, chat: false, api: false };
+test("product-update consent requires one explicit boolean", () => {
+  const allOff = { optedIn: false };
   assert.deepEqual(
     releaseEmailPreferencesUpdateBodySchema.parse(allOff),
     allOff,
   );
   assert.equal(
-    releaseEmailPreferencesUpdateBodySchema.safeParse({ ...allOff, web: "yes" })
+    releaseEmailPreferencesUpdateBodySchema.safeParse({ optedIn: "yes" })
       .success,
     false,
   );
@@ -29,25 +29,23 @@ test("release email consent requires an explicit boolean for each product", () =
   );
 });
 
-test("unsubscribe accepts only an opaque token and one release product", () => {
+test("unsubscribe accepts only a signed account token", () => {
   assert.equal(
     releaseEmailUnsubscribeRequestBodySchema.safeParse({
-      token: "a".repeat(64),
-      product: "web",
+      token: `7.${"a".repeat(64)}`,
     }).success,
     true,
   );
   assert.equal(
     releaseEmailUnsubscribeRequestBodySchema.safeParse({
-      token: "a".repeat(63),
-      product: "web",
+      token: `7.${"a".repeat(63)}`,
     }).success,
     false,
   );
   assert.equal(
     releaseEmailUnsubscribeRequestBodySchema.safeParse({
-      token: "a".repeat(64),
-      product: "brewAlerts",
+      token: `7.${"a".repeat(64)}`,
+      product: "web",
     }).success,
     false,
   );

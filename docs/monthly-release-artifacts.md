@@ -9,15 +9,16 @@ npm run release-notes:check
 npm run release:drafts -- YYYY-MM-DD
 ```
 
-The second command writes `release-drafts/YYYY-MM-DD/github-release.md` plus
-one text email draft per **shipped** product. `release-drafts/` is ignored by
-Git. It suggests the calendar tag `release-YYYY-MM-DD`, but creates no tag or
-GitHub Release and sends no email. Review the generated Markdown against the
-deployed SHA before using it for a GitHub Release draft. Email drafts include
-unsubscribe and postal-address placeholders; they cannot be sent as-is.
+The second command writes `release-drafts/YYYY-MM-DD/github-release.md`.
+`release-drafts/` is ignored by Git. It suggests the calendar tag
+`release-YYYY-MM-DD`, but creates no tag or GitHub Release and sends no email.
+Review the generated Markdown against the deployed SHA before using it for a
+GitHub Release draft. The production cron sends one combined product-update
+email from the published website entry, with a separate section for each
+shipped product and an unsubscribe link.
 
 The explicit `mobilePreview` section may describe progress in the site and
-GitHub notes, but does not generate a Mobile subscriber email. A month with no
+GitHub notes, but does not generate a Mobile email section. A month with no
 shipped product fails draft generation; record the no-change decision instead.
 For the first full preview promotion, keep the working content in
 `docs/releases/initial-promotion-draft.md` until production deployment is
