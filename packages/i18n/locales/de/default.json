@@ -132,7 +132,8 @@
         "taplist": "MeadTools Taplist",
         "tutorial": "Tutorial",
         "recipeBuilderDocs": "Rezept-Builder-Dokumentation",
-        "wiki": "Met-Wiki"
+        "wiki": "Met-Wiki",
+        "releaseNotes": "Versionshinweise"
     },
     "additives": {
         "addNew": "Neuen Zusatzstoff hinzufügen",
@@ -2154,6 +2155,20 @@
                 "TEMPERATURE": "Temperatur",
                 "VOLUME": "Volumen"
             }
+        }
+    },
+    "releaseNotes": {
+        "title": "Versionshinweise",
+        "intro": "Änderungen an MeadTools, nach Produkt und Veröffentlichungsdatum geordnet.",
+        "archive": "Frühere Versionen",
+        "archiveLanguage": "Diese früheren Hinweise sind auf Englisch verfügbar.",
+        "back": "Alle Versionshinweise",
+        "products": {
+            "web": "Web",
+            "mobile": "Mobil",
+            "mobilePreview": "Fortschritt der Mobile‑Vorschau — keine Produktionsfreigabe für Mobile.",
+            "chat": "Chat‑Assistent",
+            "api": "API und Integrationen"
         }
     }
 }
