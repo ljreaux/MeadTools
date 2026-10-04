@@ -171,6 +171,7 @@ model users {
 /// Dedicated, opt-in release announcements; unrelated to brew or recipe alerts.
 model release_email_preferences {
   user_id              Int       @id
+  unsubscribe_token    String    @unique @db.VarChar(64)
   prompted_at          DateTime  @default(now()) @db.Timestamptz(6)
   web_opted_in_at      DateTime? @db.Timestamptz(6)
   mobile_opted_in_at   DateTime? @db.Timestamptz(6)

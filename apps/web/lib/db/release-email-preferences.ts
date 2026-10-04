@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { randomBytes } from "node:crypto";
 import type { ReleaseEmailPreferencesUpdateBody } from "@meadtools/api-contract/contracts";
 import {
   consentDates,
@@ -23,7 +24,11 @@ export async function setReleaseEmailPreferences(
     const dates = consentDates(previous, requested, new Date());
     const row = await tx.release_email_preferences.upsert({
       where: { user_id: userId },
-      create: { user_id: userId, ...dates },
+      create: {
+        user_id: userId,
+        unsubscribe_token: randomBytes(32).toString("hex"),
+        ...dates,
+      },
       update: dates,
     });
     return releaseEmailResponse(row);
