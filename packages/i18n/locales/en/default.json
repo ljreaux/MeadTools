@@ -268,9 +268,25 @@
     "juice": "Juice Calc",
     "label": "Additional Links",
     "recipeBuilderDocs": "Recipe Builder Docs",
+    "releaseNotes": "Release Notes",
     "taplist": "MeadTools Taplist",
     "tutorial": "Tutorial",
     "wiki": "Mead Wiki"
+  },
+  "releaseNotes": {
+    "title": "Release notes",
+    "intro": "Updates to MeadTools, organized by product and release date.",
+    "archive": "Earlier releases",
+    "archiveLanguage": "These earlier notes are available in English.",
+    "back": "All release notes",
+    "products": {
+      "web": "Web",
+      "mobile": "Mobile",
+      "mobilePreview": "Mobile preview progress — no production Mobile release",
+      "chat": "Chat assistant",
+      "api": "API and integrations"
+    },
+    "entries": {}
   },
   "additives": {
     "addNew": "Add New Additive",

@@ -19,6 +19,7 @@
     "shell-quote": "1.10.0"
   },
   "scripts": {
+    "release-notes:check": "node scripts/check-release-note-entries.mjs",
     "dev": "npm run dev:web",
     "dev:setup": "node scripts/dev-setup.mjs",
     "dev:setup:reset": "docker compose down -v && node scripts/dev-setup.mjs",
