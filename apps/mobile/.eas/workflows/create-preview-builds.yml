@@ -20,16 +20,14 @@ jobs:
     steps:
       - uses: eas/checkout
       - id: pause_check
+        env:
+          EAS_EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before || '' }}
         run: |
-          if [ -f ../../ops/translation-migration.skip-builds ]; then
-            set-output builds_enabled "false"
-          elif git log -1 --format=%B | grep -qx 'Translation-Batch: weblate-auto'; then
-            set-output builds_enabled "true"
-          elif git diff --name-only HEAD^ HEAD 2>/dev/null | grep -q '^packages/i18n/locales/en/'; then
-            set-output builds_enabled "false"
-          else
-            set-output builds_enabled "true"
-          fi
+          set -e
+          builds_enabled=$(node ../../scripts/eas-preview-build-gate.mjs)
+          echo "Preview builds enabled: $builds_enabled"
+          set-output builds_enabled "$builds_enabled"
 
   quality:
     name: Typecheck mobile app
