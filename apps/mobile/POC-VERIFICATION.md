@@ -1,8 +1,9 @@
 # Read-only mobile POC verification
 
 Tracking issue: [#346](https://github.com/ljreaux/MeadTools/issues/346).
-This record is for the read-only companion at preview commit `49c885697`
-(PR #412). Update the result column only after an actual device check.
+This record covers the read-only companion at preview commit `49c885697`
+(PR #412), its German follow-up `f7080b0cc`, and the verification branch.
+Update the result column only after an actual device check.
 
 ## Build and install evidence — October 4, 2026
 
@@ -38,9 +39,9 @@ data, or backend responses in this document. Record **pass**, **fail**, or
 | Server error recovery | Pending | Pending | Use a controlled preview or mock backend error, then retry; do not disrupt the shared preview backend. |
 
 The verification branch moves stale-data refresh errors to the top of the brew
-list and detail screen and adds pull-to-refresh on brew detail. These changes
-still need a device check; the completed preview builds above contain the
-earlier timeline code.
+list and detail screen and adds pull-to-refresh on brew detail. Online iOS detail
+refresh passed; the new error banners still need a device check. The completed
+preview builds above contain the earlier timeline code.
 
 Google sign-in also needs device checks. The preview environment currently has
 an iOS client ID but no Android client ID, so the Android preview shows password
@@ -50,9 +51,10 @@ for this POC decision.
 ## Current decision
 
 **POC sign-off is pending.** The build pipeline and the Android/iOS read-only
-happy paths have positive evidence, but German device rendering and the
-error/recovery states have not passed the manual smoke test. Do not close #346
-or call the read-only POC complete until those checks are recorded.
+happy paths have positive evidence. Android German rendering and offline retry
+passed; iOS German rendering, the remaining sign-in checks, and several
+error/recovery states still need verification. Do not close #346 or call the
+read-only POC complete until those checks are recorded.
 
 The next product work would be one gravity measurement with an idempotent offline
 outbox. Timeline filtering and organizing ingredients by stage are useful later
