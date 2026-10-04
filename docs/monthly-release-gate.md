@@ -47,11 +47,16 @@ the blocker. No-change months have no armed PR and open no gate.
 
 For the first full `preview` promotion before the monthly cadence, add
 `initial-release-ready` as well as `release-ready` after reviewing its exact
-head/base, dated product notes, and Mobile build decision. Manually dispatch
+head/base, internal product-note draft, and Mobile build decision. The initial
+main PR note check accepts the changed internal draft under that label so a
+public date is not guessed before deployment. Manually dispatch
 `Monthly release window` with `mode=initial`, the PR number, and the exact
 reviewed head SHA. It checks CI and the same readiness fields before opening
 the gate. This exception does not imply an automatic scheduled merge; merge
-the PR only after the verified gate and explicit release approval.
+the PR only after the verified gate and explicit release approval. Publish the
+dated website entry and GitHub Release after verifying production, using the
+actual date. Keep the timed gate optional until that follow-up publication is
+complete and the end-to-end gate has been tested; then make it required.
 
 An urgent bug-only PR into `main` may use the reviewed `bug-fix-only` exemption
 and `hotfix-ready` plus `release-ready`. Its PR body needs `Bug-fix rationale:`
