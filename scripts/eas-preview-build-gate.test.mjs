@@ -58,6 +58,12 @@ test("mobile preview gate reads the full push from an EAS-style shallow checkout
       PUSH_BEFORE: beforeEnglish
     });
     assert.equal(englishGate, "false");
+    const missingBeforeGate = command(checkout, process.execPath, [gateScript], {
+      ...process.env,
+      EAS_EVENT_NAME: "push",
+      PUSH_BEFORE: ""
+    });
+    assert.equal(missingBeforeGate, "true");
 
     mkdirSync(path.join(locale, "de"), { recursive: true });
     writeFileSync(path.join(locale, "de/default.json"), "{}\n");
