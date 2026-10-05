@@ -151,6 +151,43 @@
           "availableCredits"
         ]
       },
+      "ReleaseEmailPreferencesResponse": {
+        "type": "object",
+        "properties": {
+          "optedIn": {
+            "type": "boolean"
+          },
+          "prompted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "optedIn",
+          "prompted"
+        ]
+      },
+      "ReleaseEmailPreferencesErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ReleaseEmailPreferencesUpdateBody": {
+        "type": "object",
+        "properties": {
+          "optedIn": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "optedIn"
+        ]
+      },
       "AdditiveByIdResponse": {
         "$ref": "#/components/schemas/AdditiveResponse"
       },
@@ -1810,6 +1847,21 @@
           "recipe_snapshot",
           "entries",
           "entries_by_stage"
+        ]
+      },
+      "BrewDetailNotFoundErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Brew not found",
+              "User not found"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "BrewFetchErrorResponse": {
@@ -3497,6 +3549,32 @@
           "error"
         ]
       },
+      "ReleaseEmailUnsubscribeRequestBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[1-9]\\d*\\.[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ReleaseEmailUnsubscribeResponse": {
+        "type": "object",
+        "properties": {
+          "unsubscribed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "unsubscribed"
+        ]
+      },
       "AdminUserResponse": {
         "type": "object",
         "properties": {
@@ -3967,6 +4045,191 @@
           "isGoogleUser"
         ]
       },
+      "recipeRecordSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "user_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "recipeData": {
+            "type": "string"
+          },
+          "yanFromSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "yanContribution": {
+            "type": "string"
+          },
+          "nutrientData": {
+            "type": "string"
+          },
+          "advanced": {
+            "type": "boolean"
+          },
+          "nuteInfo": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "secondaryNotes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dataV2": {
+            "type": "object"
+          },
+          "version": {
+            "type": "number"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "lastActivityEmailAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "activityEmailsEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "name",
+          "recipeData",
+          "yanFromSource",
+          "yanContribution",
+          "nutrientData",
+          "advanced",
+          "nuteInfo",
+          "primaryNotes",
+          "secondaryNotes",
+          "dataV2",
+          "version",
+          "private",
+          "lastActivityEmailAt",
+          "activityEmailsEnabled"
+        ]
+      },
+      "createRecipeRequestObjectSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dataV2": {
+            "$ref": "#/components/schemas/recipeDataV2Schema"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "activityEmailsEnabled": {
+            "type": "boolean"
+          },
+          "lastActivityEmailAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "dataV2"
+        ]
+      },
+      "chatContextRecipeOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recipe"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name"
+        ]
+      },
+      "chatContextBrewOptionResponseSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "brew"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "recipeName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "stage",
+          "recipeName"
+        ]
+      },
+      "nutrientAmountsByKeyNumberSchema": {
+        "type": "object",
+        "properties": {
+          "fermO": {
+            "type": "number"
+          },
+          "fermK": {
+            "type": "number"
+          },
+          "dap": {
+            "type": "number"
+          },
+          "other": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fermO",
+          "fermK",
+          "dap",
+          "other"
+        ]
+      },
       "jsonObjectSchema": {
         "type": "object",
         "additionalProperties": {
@@ -4349,191 +4612,6 @@
           "latest_gravity",
           "requested_email_alerts",
           "entry_count"
-        ]
-      },
-      "recipeRecordSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "user_id": {
-            "type": "number",
-            "nullable": true
-          },
-          "name": {
-            "type": "string"
-          },
-          "recipeData": {
-            "type": "string"
-          },
-          "yanFromSource": {
-            "type": "string",
-            "nullable": true
-          },
-          "yanContribution": {
-            "type": "string"
-          },
-          "nutrientData": {
-            "type": "string"
-          },
-          "advanced": {
-            "type": "boolean"
-          },
-          "nuteInfo": {
-            "type": "string",
-            "nullable": true
-          },
-          "primaryNotes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "secondaryNotes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "dataV2": {
-            "type": "object"
-          },
-          "version": {
-            "type": "number"
-          },
-          "private": {
-            "type": "boolean"
-          },
-          "lastActivityEmailAt": {
-            "type": "string",
-            "nullable": true
-          },
-          "activityEmailsEnabled": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "user_id",
-          "name",
-          "recipeData",
-          "yanFromSource",
-          "yanContribution",
-          "nutrientData",
-          "advanced",
-          "nuteInfo",
-          "primaryNotes",
-          "secondaryNotes",
-          "dataV2",
-          "version",
-          "private",
-          "lastActivityEmailAt",
-          "activityEmailsEnabled"
-        ]
-      },
-      "createRecipeRequestObjectSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "dataV2": {
-            "$ref": "#/components/schemas/recipeDataV2Schema"
-          },
-          "private": {
-            "type": "boolean"
-          },
-          "activityEmailsEnabled": {
-            "type": "boolean"
-          },
-          "lastActivityEmailAt": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "name",
-          "dataV2"
-        ]
-      },
-      "chatContextRecipeOptionResponseSchema": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "recipe"
-            ]
-          },
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "id",
-          "name"
-        ]
-      },
-      "chatContextBrewOptionResponseSchema": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "brew"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "stage": {
-            "type": "string"
-          },
-          "recipeName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "kind",
-          "id",
-          "name",
-          "stage",
-          "recipeName"
-        ]
-      },
-      "nutrientAmountsByKeyNumberSchema": {
-        "type": "object",
-        "properties": {
-          "fermO": {
-            "type": "number"
-          },
-          "fermK": {
-            "type": "number"
-          },
-          "dap": {
-            "type": "number"
-          },
-          "other": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "fermO",
-          "fermK",
-          "dap",
-          "other"
         ]
       },
       "createAdditiveRequestBodyObjectSchema": {
@@ -5520,20 +5598,11 @@
           "version": {
             "type": "number"
           },
-          "dataV2": {
-            "type": "object"
-          },
+          "dataV2": {},
           "snapshottedAt": {
             "type": "string"
           }
-        },
-        "required": [
-          "id",
-          "name",
-          "version",
-          "dataV2",
-          "snapshottedAt"
-        ]
+        }
       },
       "BrewStageResponse": {
         "type": "string",
@@ -6891,6 +6960,119 @@
         }
       }
     },
+    "/account/release-emails": {
+      "get": {
+        "operationId": "get-account-release-emails",
+        "summary": "Get the signed-in user's one product-update email choice.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-account-release-emails",
+        "summary": "Record an explicit product-update email decision, including a decline.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseEmailPreferencesUpdateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/account-info": {
       "get": {
         "operationId": "get-auth-account-info",
@@ -7074,6 +7256,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateUsernameFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/release-emails/unsubscribe": {
+      "post": {
+        "operationId": "post-release-emails-unsubscribe",
+        "summary": "Opt out of product-update emails using a signed email-link token.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseEmailUnsubscribeRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailUnsubscribeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseEmailPreferencesErrorResponse"
                 }
               }
             }
@@ -9611,7 +9855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewDetailNotFoundErrorResponse"
                 }
               }
             }

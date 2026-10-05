@@ -152,6 +152,10 @@ model users {
   google_avatar_url  String?
   show_google_avatar Boolean @default(false)
   active             Boolean @default(true)
+  /// Null means the account has not answered the one-time banner.
+  product_updates_opt_in Boolean?
+  /// Claimed before SMTP to keep automated sends at most once per release.
+  product_updates_last_emailed_date DateTime? @db.Date
 
   brews                    brews[]
   brew_entries             brew_entries[]

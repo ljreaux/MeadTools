@@ -10,7 +10,7 @@
   "overrides": {
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "@types/react": "^19.2.17",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
     "@prisma/client": "6.19.3",
     "lodash": "4.18.1",
@@ -19,6 +19,8 @@
     "shell-quote": "1.10.0"
   },
   "scripts": {
+    "release-notes:check": "node scripts/check-release-note-entries.mjs",
+    "release:drafts": "node scripts/prepare-release-artifacts.mjs",
     "dev": "npm run dev:web",
     "dev:setup": "node scripts/dev-setup.mjs",
     "dev:setup:reset": "docker compose down -v && node scripts/dev-setup.mjs",
@@ -31,7 +33,7 @@
     "vercel-build": "npm run vercel-build --workspace @meadtools/web",
     "start": "npm run start --workspace @meadtools/web",
     "test": "npm run test:workflows && npm run test:core && npm run test:schemas && npm run test:recipe-workflows && npm run test:recipe-agent && npm run test:wiki-knowledge && npm run test:api-contract && npm run test:api-client && npm run test:brew-domain && npm run test:chat-domain && npm run test:credit-accounting && npm run test:design-tokens && npm run test:i18n && npm test --workspace @meadtools/web",
-    "test:workflows": "node --test scripts/app-impact.test.mjs scripts/queue-weblate-review.test.mjs scripts/weblate-approval.test.mjs",
+    "test:workflows": "node --test scripts/app-impact.test.mjs scripts/eas-preview-build-gate.test.mjs scripts/queue-weblate-review.test.mjs scripts/weblate-approval.test.mjs",
     "typecheck": "npm run prisma:generate --workspace @meadtools/web && npm run typecheck --workspaces --if-present",
     "openapi:generate": "npm run openapi:generate --workspace @meadtools/web",
     "contracts:generate": "node scripts/generate-api-contract-types.mjs",
@@ -56,8 +58,10 @@
     "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,refund.created,refund.updated,charge.dispute.created,charge.dispute.funds_withdrawn --forward-to http://localhost:3000/api/webhooks/stripe"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
+    "expo": "57.0.26",
+    "expo-router": "57.0.24",
     "prisma": "6.19.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"

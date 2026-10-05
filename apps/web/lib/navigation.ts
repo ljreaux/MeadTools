@@ -61,6 +61,10 @@ export const extraCalculatorLinks = [
   {
     path: "/extra-calcs/bottling",
     label: "calculators.extraCalcs.bottling"
+  },
+  {
+    path: "/juice",
+    label: "additionalLinks.juice"
   }
 ];
 
@@ -68,6 +72,10 @@ export const extraLinks = [
   {
     path: "/about",
     label: "additionalLinks.about"
+  },
+  {
+    path: "/release-notes",
+    label: "additionalLinks.releaseNotes"
   },
   {
     path: "/contact",
@@ -80,10 +88,6 @@ export const extraLinks = [
   {
     path: "/yeasts",
     label: "yeasts"
-  },
-  {
-    path: "/juice",
-    label: "additionalLinks.juice"
   },
   {
     path: "/tutorial",

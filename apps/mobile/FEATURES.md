@@ -15,10 +15,13 @@ batch easier to monitor and update, especially when connectivity is poor.
 - EAS production workflow gated by mobile typechecking
 - Access to the shared MeadTools domain, schema, contract, and API packages
 - Environment-aware API client and TanStack Query providers
-- Native password sign-in, protected routes, and SecureStore session restore
+- Native password and Google sign-in, protected routes, and SecureStore session restore
+- Active brew list, read-only overview, and recent activity timeline with safe legacy entry handling
 
-The foundation does not yet claim to provide authentication, synchronization,
-offline persistence, or production-ready branding.
+The foundation does not yet provide synchronization, offline persistence, or
+production-ready branding. The read-only POC is accepted for the next slice;
+device-level evidence and remaining release-readiness checks are recorded in
+[POC-VERIFICATION.md](./POC-VERIFICATION.md).
 
 ## Planned vertical slices
 
@@ -26,8 +29,8 @@ offline persistence, or production-ready branding.
 
 - Native sign-in using the agreed API/auth contract
 - List the signed-in user's active brews
-- Open a brew and display its recipe snapshot, targets, stage, and recent
-  timeline entries
+- Open a brew and display its recipe snapshot, targets, and stage
+- Display recent timeline entries
 - Use `@meadtools/api-client`, `@meadtools/api-contract`, and
   `@meadtools/brew-domain` rather than duplicating requests or projections
 

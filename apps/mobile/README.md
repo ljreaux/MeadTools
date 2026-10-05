@@ -1,8 +1,8 @@
 # MeadTools Mobile
 
-Expo/React Native companion app for MeadTools. The app intentionally starts
-with a minimal shell; product flows will be added as vertical slices instead
-of carrying forward the Expo starter tutorial.
+Expo/React Native companion app for MeadTools. The current read-only flow lets
+you sign in, browse active brews, and inspect a brew's overview and timeline.
+Recording entries and offline synchronization remain planned slices.
 
 ## Local development
 
@@ -17,6 +17,38 @@ Start the Expo development server:
 ```sh
 npm run dev:mobile
 ```
+
+This uses the app's default API unless you have a local override. Use the EAS
+preview environment command below when checking behavior against preview data.
+
+For repeated iOS Simulator checks, install a development client once using
+the `development-simulator` EAS profile. It uses the preview environment and
+does not require a new build for JavaScript, styles, or translation changes:
+
+```sh
+cd apps/mobile
+EAS_BUILD_PROFILE=development-simulator eas build --platform ios --profile development-simulator
+EAS_BUILD_PROFILE=development-simulator eas env:exec preview 'eas build:run --platform ios --profile development-simulator --latest'
+EAS_BUILD_PROFILE=development-simulator eas env:exec preview 'EXPO_NO_DOTENV=1 npx expo start --dev-client'
+```
+
+The first command is needed only when no compatible development build exists.
+After switching branches, run the final command and press `i` in Expo CLI to
+open the project through Metro. Opening the installed app from the Simulator
+home screen can load its older embedded bundle. Rebuild the development client
+when native dependencies or native app configuration change. A local
+`expo run:ios` build requires Xcode 26.4 or newer for Expo SDK 57.
+
+To install the existing Android preview APK on an emulator without a new build:
+
+```sh
+cd apps/mobile
+EAS_BUILD_PROFILE=preview eas env:exec preview 'eas build:run --platform android --profile preview --latest'
+```
+
+If Android reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the emulator has the
+same package signed with a different key. Use a fresh emulator to preserve the
+existing app's local data.
 
 The app uses `https://meadtools.com` by default. To point a local or preview
 build at another API, copy `apps/mobile/.env.example` to
@@ -35,6 +67,13 @@ The API must receive the corresponding server-side `GOOGLE_IOS_CLIENT_ID` and
 audiences. Client IDs are public identifiers; Google client secrets remain
 server-only and must never use an `EXPO_PUBLIC_` variable.
 
+EAS preview builds can run with password sign-in when the Google client IDs are
+not configured. The preview build uses an inert iOS URL scheme so the native
+plugin can load, and the Google button stays hidden. To enable Google sign-in
+in preview builds, set all three `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` variables in
+the EAS `preview` environment. Production builds still require a valid iOS
+client ID during app configuration.
+
 Open a platform directly:
 
 ```sh
@@ -48,6 +87,13 @@ Run the mobile TypeScript check:
 npm run mobile:typecheck
 ```
 
+Before a native build, check that installed Expo SDK packages match the app's
+SDK version from `apps/mobile`:
+
+```sh
+EXPO_NO_DOTENV=1 EAS_BUILD_PROFILE=preview npx expo install --check
+```
+
 Expo CLI commands that affect EAS configuration or credentials should be run
 from `apps/mobile`, where `app.json`, `eas.json`, and `.eas/workflows` live.
 
@@ -57,8 +103,21 @@ The EAS project must be connected to the `ljreaux/MeadTools` repository in its
 GitHub settings before branch pushes can start workflows automatically.
 
 - Merges into `preview` create an Android internal build and an unsigned iOS
-  Simulator build.
-- Merges into `main` create Android and iOS production builds.
+  Simulator build. English translation changes defer those builds until the
+  Weblate German follow-up reaches `preview`.
+- Merges into `main` do not start production builds. The production workflow is
+  dispatch-only so a web/API release can promote mobile source without releasing
+  the mobile app. For a reviewed Mobile release, run the workflow against the
+  exact merged `main` commit from `apps/mobile`:
+
+  ```sh
+  eas workflow:run .eas/workflows/create-production-builds.yml --ref <main-commit-sha>
+  ```
+
+  Record the EAS run URL and verify both builds before announcing Mobile. Issue
+  [#413](https://github.com/ljreaux/MeadTools/issues/413) tracks the planned
+  `build-mobile-production` PR label and automated dispatch; until that is
+  implemented, the label alone does not launch a build.
 - Production iOS builds require Apple Developer Program membership and signing
   credentials; preview Simulator builds do not.
 
@@ -71,8 +130,13 @@ GitHub settings before branch pushes can start workflows automatically.
   supplied to the shared API client at request time.
 - Shared recipe and brew behavior comes from `packages/*`.
 - Network access goes through the app-level `@meadtools/api-client` instance.
+- Keep the root and mobile `expo` and `expo-router` versions in sync. Hoisted
+  Expo build packages must resolve the same app config and router modules as
+  the mobile app.
 - Prisma, database code, Next.js modules, and web UI must not be imported.
 - Generated native `ios` and `android` folders remain ignored while the app
   uses Expo Continuous Native Generation.
 
 See [FEATURES.md](./FEATURES.md) for the planned product slices and boundaries.
+See [POC-VERIFICATION.md](./POC-VERIFICATION.md) for the read-only POC smoke test
+and current results.

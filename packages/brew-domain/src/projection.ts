@@ -1,28 +1,16 @@
+import type {
+  BrewEntryTypeResponse,
+  BrewStageResponse
+} from "@meadtools/api-contract";
+
 export type JsonPrimitive = boolean | number | string | null;
 export type JsonValue =
   | JsonPrimitive
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-export type BrewStage =
-  | "PLANNED"
-  | "PRIMARY"
-  | "SECONDARY"
-  | "BULK_AGE"
-  | "PACKAGED"
-  | "COMPLETE";
-
-export type BrewEntryType =
-  | "NOTE"
-  | "TASTING"
-  | "ISSUE"
-  | "GRAVITY"
-  | "VOLUME"
-  | "TEMPERATURE"
-  | "PH"
-  | "STAGE_CHANGE"
-  | "PACKAGING"
-  | "ADDITION";
+export type BrewStage = BrewStageResponse;
+export type BrewEntryType = BrewEntryTypeResponse;
 
 export type GravityUnit = "SG" | "BRIX";
 export type TemperatureUnit = "C" | "F" | "K";
@@ -145,6 +133,12 @@ export const READ_ONLY_BREW_CAPABILITIES: BrewViewCapabilities = {
   canMoveStage: false,
   canManageHydrometer: false
 };
+
+export function isActiveBrew(
+  brew: Pick<BrewViewListItem, "end_date" | "stage">
+): boolean {
+  return brew.end_date === null && brew.stage !== "COMPLETE";
+}
 
 function toIso(value: DateValue) {
   return value instanceof Date ? value.toISOString() : value;

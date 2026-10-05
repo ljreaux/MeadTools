@@ -2,8 +2,19 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 import appJson from "./app.json";
 
-function getGoogleIosUrlScheme() {
-  const clientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+type GoogleIosSchemeOptions = {
+  clientId?: string;
+  buildProfile?: string;
+};
+
+export function getGoogleIosUrlScheme({
+  clientId,
+  buildProfile
+}: GoogleIosSchemeOptions) {
+  if (!clientId && (buildProfile === "preview" || buildProfile === "development-simulator")) {
+    // Preview and simulator development can use password sign-in while config loads.
+    return "com.googleusercontent.apps.000000000000-ci";
+  }
 
   if (!clientId?.endsWith(".apps.googleusercontent.com")) {
     throw new Error(
@@ -31,7 +42,10 @@ export default function mobileAppConfig({
       [
         "react-native-nitro-google-signin",
         {
-          iosUrlScheme: getGoogleIosUrlScheme()
+          iosUrlScheme: getGoogleIosUrlScheme({
+            clientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+            buildProfile: process.env.EAS_BUILD_PROFILE
+          })
         }
       ]
     ] as ExpoConfig["plugins"]

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "015ff1177fa03d301d21f4c062d02c53899f9b48e1fed795d7556b2c009c9935";
+  "40223456f81bcb07e8552cd3803c972094054d7cdd7af962b9cb3980750b8400";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -43,9 +43,22 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
     import.meta.url,
   );
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
-    paths: Record<string, { post?: { responses?: Record<string, unknown> } }>;
+    paths: Record<string, {
+      get?: { responses?: Record<string, unknown> };
+      post?: { responses?: Record<string, unknown> };
+    }>;
   };
   const pathsWithoutApprovedAdditions = structuredClone(document.paths);
+  if (pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.get?.responses) {
+    pathsWithoutApprovedAdditions["/brews/{brew_id}"].get.responses["404"] = {
+      description: "Not Found",
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/AuthenticatedRouteErrorResponse" }
+        }
+      }
+    };
+  }
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries"]?.post
     ?.responses?.["409"];
   delete pathsWithoutApprovedAdditions["/nutrient-presets"];
@@ -56,6 +69,8 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/account/credits"];
   delete pathsWithoutApprovedAdditions["/account/credits/checkout"];
   delete pathsWithoutApprovedAdditions["/account/credits/history"];
+  delete pathsWithoutApprovedAdditions["/account/release-emails"];
+  delete pathsWithoutApprovedAdditions["/release-emails/unsubscribe"];
   delete pathsWithoutApprovedAdditions["/webhooks/stripe"];
   delete pathsWithoutApprovedAdditions["/chat/access"];
   delete pathsWithoutApprovedAdditions["/admin/chat-access"];

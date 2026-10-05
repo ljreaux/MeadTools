@@ -16,6 +16,7 @@
 
 # Private chatbot evaluator exports may contain user recipe ideas and provider usage.
 /docs/chatbot-evals/
+/release-drafts/
 
 # next.js
 **/.next/

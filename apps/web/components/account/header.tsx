@@ -46,6 +46,7 @@ import {
 } from "../ui/input-group";
 import { Switch } from "../ui/switch";
 import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
+import { ReleaseEmailPreferences } from "./ReleaseEmailPreferences";
 
 function Header() {
   const { t } = useTranslation();
@@ -183,7 +184,7 @@ const SettingsDialog = ({
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("account.accountSettings")}</DialogTitle>
         </DialogHeader>
@@ -276,6 +277,7 @@ const SettingsDialog = ({
               </p>
             </div>
           ) : null}
+          <ReleaseEmailPreferences />
         </div>
       </DialogContent>
     </Dialog>

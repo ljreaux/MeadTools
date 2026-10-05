@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { projectBrewView } from "../src/projection";
+import { isActiveBrew, projectBrewView } from "../src/projection";
+
+test("active brews exclude completed and ended batches", () => {
+  assert.equal(isActiveBrew({ end_date: null, stage: "PLANNED" }), true);
+  assert.equal(isActiveBrew({ end_date: null, stage: "STABILIZED" }), true);
+  assert.equal(isActiveBrew({ end_date: null, stage: "BACKSWEETENED" }), true);
+  assert.equal(isActiveBrew({ end_date: null, stage: "COMPLETE" }), false);
+  assert.equal(
+    isActiveBrew({ end_date: "2026-01-01T00:00:00.000Z", stage: "PRIMARY" }),
+    false
+  );
+});
 
 test("projectBrewView excludes authorization, alert, and device fields", () => {
   const projected = projectBrewView({

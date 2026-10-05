@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   createMeadToolsApiClient,
+  MeadToolsApiError,
   MeadToolsContractError,
   type ApiRequestInit
 } from "../src/index";
@@ -168,6 +169,34 @@ test("standalone consumer reads recipes/brews and retries one entry safely", asy
     ),
     true
   );
+});
+
+test("mobile brew detail accepts a legacy snapshot and exposes not-found status", async () => {
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.example",
+    fetch: async (url) => url.endsWith("/brew-1")
+      ? {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...brewDetail(),
+            recipe_snapshot: { name: "Original recipe", dataV2: { version: 1 } }
+          })
+        }
+      : {
+          ok: false,
+          status: 404,
+          json: async () => ({ error: "Brew not found" })
+        }
+  });
+
+  const detail = await client.getBrew("brew-1");
+  assert.equal(detail.recipe_snapshot?.name, "Original recipe");
+  await assert.rejects(client.getBrew("missing"), (error) => {
+    assert.ok(error instanceof MeadToolsApiError);
+    assert.equal(error.status, 404);
+    return true;
+  });
 });
 
 test("client rejects an invalid client entry UUID before transport", async () => {

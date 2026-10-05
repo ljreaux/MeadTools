@@ -35,6 +35,11 @@ operation. The nutrient-preset update intentionally adds the
 additions before comparing against the pre-migration paths hash, proving all
 earlier endpoint documentation remains unchanged.
 
+The mobile brew overview update makes recipe snapshot metadata optional so
+legacy snapshots can still be read, while consumers validate `dataV2` before
+calculating targets. Authenticated `GET /brews/{brew_id}` now returns the
+documented `Brew not found` error with HTTP 404 for an unavailable brew.
+
 The persistent-chat update intentionally adds `/chat/conversations` and
 `/chat/conversations/{conversationId}`. The same path-parity check removes
 these private authenticated endpoints before comparing earlier API paths.
@@ -44,6 +49,22 @@ The credit-accounting update intentionally adds `/account/credits`,
 The same check removes these endpoints while preserving the documented behavior
 of every earlier path. It also adds the documented `402` insufficient-credit
 response to the private `/chat/recipe` endpoint.
+
+The monthly-release update adds authenticated `GET` and `PATCH`
+`/account/release-emails` endpoints for one default-off product-update email
+choice. The response also says whether the user has answered the one-time
+prompt. The path-parity test removes this approved addition before comparing
+the earlier route set.
+
+The unsubscribe follow-up adds unauthenticated `POST`
+`/release-emails/unsubscribe` with a signed account token. A GET of
+the linked page never changes consent, so email link scanners cannot opt users
+out accidentally. The parity test removes this approved path as well.
+
+The automated product-update follow-up adds the internal cron-authenticated
+`GET /cron/product-updates` endpoint. It returns aggregate batch counts without
+recipient details. Cron routes are deliberately excluded from public OpenAPI
+by `apps/web/next.openapi.json`.
 
 The chat-beta access update intentionally adds `/chat/access` and the
 admin-only `/admin/chat-access` access and credit-grant endpoints. The same

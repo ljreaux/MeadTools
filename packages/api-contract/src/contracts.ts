@@ -50,6 +50,7 @@ import {
   bjcpIngredientsResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
+  brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
@@ -278,6 +279,11 @@ import {
   registerRequestBodySchema,
   registerSuccessResponseSchema,
   registerValidationErrorResponseSchema,
+  releaseEmailPreferencesErrorResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
+  releaseEmailUnsubscribeRequestBodySchema,
+  releaseEmailUnsubscribeResponseSchema,
   renameHydrometerBrewResponseSchema,
   requestPasswordResetBodySchema,
   requestPasswordResetSuccessResponseSchema,
@@ -398,6 +404,7 @@ export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFe
 export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
 export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
 export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSchema>;
+export type BrewDetailNotFoundErrorResponse = z.infer<typeof brewDetailNotFoundErrorResponseSchema>;
 export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionErrorResponseSchema>;
 export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
 export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
@@ -626,6 +633,11 @@ export type RegisterFailureErrorResponse = z.infer<typeof registerFailureErrorRe
 export type RegisterRequestBody = z.infer<typeof registerRequestBodySchema>;
 export type RegisterSuccessResponse = z.infer<typeof registerSuccessResponseSchema>;
 export type RegisterValidationErrorResponse = z.infer<typeof registerValidationErrorResponseSchema>;
+export type ReleaseEmailPreferencesErrorResponse = z.infer<typeof releaseEmailPreferencesErrorResponseSchema>;
+export type ReleaseEmailPreferencesResponse = z.infer<typeof releaseEmailPreferencesResponseSchema>;
+export type ReleaseEmailPreferencesUpdateBody = z.infer<typeof releaseEmailPreferencesUpdateBodySchema>;
+export type ReleaseEmailUnsubscribeRequestBody = z.infer<typeof releaseEmailUnsubscribeRequestBodySchema>;
+export type ReleaseEmailUnsubscribeResponse = z.infer<typeof releaseEmailUnsubscribeResponseSchema>;
 export type RenameHydrometerBrewResponse = z.infer<typeof renameHydrometerBrewResponseSchema>;
 export type RequestPasswordResetBody = z.infer<typeof requestPasswordResetBodySchema>;
 export type RequestPasswordResetSuccessResponse = z.infer<typeof requestPasswordResetSuccessResponseSchema>;

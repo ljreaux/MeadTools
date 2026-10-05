@@ -48,7 +48,7 @@ function ExtraCalcsSideBar() {
     <BottleWine key="bottle" />
   ];
 
-  const links = extraCalculatorLinks.map((link, i) => ({
+  const links = extraCalculatorLinks.filter((link) => link.path !== "/juice").map((link, i) => ({
     ...link,
     icon: icons[i],
     label: t(link.label)

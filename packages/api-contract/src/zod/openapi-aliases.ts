@@ -49,6 +49,7 @@ import {
   bjcpIngredientsResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
+  brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
   brewEntryCreateErrorResponseSchema,
@@ -277,6 +278,11 @@ import {
   registerRequestBodySchema,
   registerSuccessResponseSchema,
   registerValidationErrorResponseSchema,
+  releaseEmailPreferencesErrorResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
+  releaseEmailUnsubscribeRequestBodySchema,
+  releaseEmailUnsubscribeResponseSchema,
   renameHydrometerBrewResponseSchema,
   requestPasswordResetBodySchema,
   requestPasswordResetSuccessResponseSchema,
@@ -397,6 +403,7 @@ export const BjcpIngredientsFetchErrorResponse = bjcpIngredientsFetchErrorRespon
 export const BjcpIngredientsResponse = bjcpIngredientsResponseSchema;
 export const BrewCreateErrorResponse = brewCreateErrorResponseSchema;
 export const BrewDeleteErrorResponse = brewDeleteErrorResponseSchema;
+export const BrewDetailNotFoundErrorResponse = brewDetailNotFoundErrorResponseSchema;
 export const BrewDeviceActionErrorResponse = brewDeviceActionErrorResponseSchema;
 export const BrewEntriesByStageResponse = brewEntriesByStageResponseSchema;
 export const BrewEntryCreateErrorResponse = brewEntryCreateErrorResponseSchema;
@@ -625,6 +632,11 @@ export const RegisterFailureErrorResponse = registerFailureErrorResponseSchema;
 export const RegisterRequestBody = registerRequestBodySchema;
 export const RegisterSuccessResponse = registerSuccessResponseSchema;
 export const RegisterValidationErrorResponse = registerValidationErrorResponseSchema;
+export const ReleaseEmailPreferencesErrorResponse = releaseEmailPreferencesErrorResponseSchema;
+export const ReleaseEmailPreferencesResponse = releaseEmailPreferencesResponseSchema;
+export const ReleaseEmailPreferencesUpdateBody = releaseEmailPreferencesUpdateBodySchema;
+export const ReleaseEmailUnsubscribeRequestBody = releaseEmailUnsubscribeRequestBodySchema;
+export const ReleaseEmailUnsubscribeResponse = releaseEmailUnsubscribeResponseSchema;
 export const RenameHydrometerBrewResponse = renameHydrometerBrewResponseSchema;
 export const RequestPasswordResetBody = requestPasswordResetBodySchema;
 export const RequestPasswordResetSuccessResponse = requestPasswordResetSuccessResponseSchema;

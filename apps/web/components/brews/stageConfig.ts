@@ -2,7 +2,9 @@
 import {
   BREW_ENTRY_TYPE,
   type BrewEntryType,
-  type BrewStage
+  type BrewStage,
+  type BrewTrackerStage,
+  getBrewTrackerStage
 } from "@/lib/brewEnums";
 import type { TFunction } from "i18next";
 import type React from "react";
@@ -156,7 +158,7 @@ export type StageWarning = {
 };
 
 export type StageConfig = {
-  id: BrewStage;
+  id: BrewTrackerStage;
   title: (t: TFunction) => string;
 
   // shown in Future
@@ -381,7 +383,7 @@ function hasPackagedVolume(ctx: BrewStageContext) {
   );
 }
 
-export const STAGE_FLOW: BrewStage[] = [
+export const STAGE_FLOW: BrewTrackerStage[] = [
   "PLANNED",
   "PRIMARY",
   "SECONDARY",
@@ -391,12 +393,13 @@ export const STAGE_FLOW: BrewStage[] = [
 ];
 
 export function getStageMoveDecision(
-  toStage: BrewStage,
+  toStage: BrewTrackerStage,
   currentStage: BrewStage,
   ctx: BrewStageContext
 ): StageMoveDecision {
+  const currentTrackerStage = getBrewTrackerStage(currentStage);
   const toIdx = STAGE_FLOW.indexOf(toStage);
-  const currentIdx = STAGE_FLOW.indexOf(currentStage);
+  const currentIdx = STAGE_FLOW.indexOf(currentTrackerStage);
   const secondaryIdx = STAGE_FLOW.indexOf("SECONDARY");
   const prereqs =
     currentIdx < secondaryIdx && toIdx >= secondaryIdx
@@ -404,7 +407,7 @@ export function getStageMoveDecision(
       : (STAGE_CONFIG[toStage]?.prereqs ?? []);
   const unmet = prereqs.filter((p) => !p.isMet(ctx));
 
-  if (toStage === currentStage) {
+  if (toStage === currentTrackerStage) {
     return {
       allowed: false,
       isNoOp: true,
@@ -430,7 +433,7 @@ export function getStageMoveDecision(
   };
 }
 
-export const STAGE_CONFIG: Record<BrewStage, StageConfig> = {
+export const STAGE_CONFIG: Record<BrewTrackerStage, StageConfig> = {
   PLANNED: {
     id: "PLANNED",
     title: (t) => t("brewStage.PLANNED"),
