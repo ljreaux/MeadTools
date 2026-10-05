@@ -3,7 +3,7 @@ name: Monthly release window
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
   schedule:
     - cron: "15 9 * * 1"
       timezone: America/Chicago

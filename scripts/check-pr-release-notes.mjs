@@ -66,12 +66,18 @@ export function evaluateNoteGate({
       reason: `Dated release notes changed: ${changed.map(([date]) => date).join(", ")}.`,
     };
   }
-  if (labels.includes("initial-release-ready") && initialDraftChanged) {
-    return {
-      ok: true,
-      reason:
-        "Initial promotion includes a reviewed internal release-note draft; publish the dated entry after production verification.",
-    };
+  if (initialDraftChanged) {
+    return labels.includes("initial-release-ready")
+      ? {
+          ok: true,
+          reason:
+            "Initial promotion includes a reviewed internal release-note draft; publish the dated entry after production verification.",
+        }
+      : {
+          ok: false,
+          reason:
+            "Initial promotion is awaiting review. Add initial-release-ready only after reviewing the exact PR diff; publish dated notes after production verification.",
+        };
   }
   if (labels.includes("bug-fix-only")) {
     const rationale = body.match(/^Bug-fix rationale:\s*(.+)$/im)?.[1]?.trim();

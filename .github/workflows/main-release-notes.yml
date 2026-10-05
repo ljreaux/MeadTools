@@ -3,7 +3,7 @@ name: Main release notes
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
@@ -11,6 +11,7 @@ permissions:
 jobs:
   notes:
     name: Release notes or reviewed bug fix
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

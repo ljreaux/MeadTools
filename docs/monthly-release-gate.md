@@ -8,6 +8,11 @@ gate closed and needs a reviewed manual retry on the same first Monday.
 
 ## Required checks and readiness
 
+Draft main PRs skip the release-note check while their release scope is still
+being reviewed. Marking a PR ready for review reruns the check; it must then
+have dated notes or the applicable reviewed exemption. The monthly release
+gate remains pending until the release window is explicitly opened.
+
 After `.github/workflows/main-release-notes.yml` and
 `.github/workflows/monthly-release-window.yml` are merged to `preview` and
 tested against a main-targeting PR, add **both** `Release notes or reviewed bug
