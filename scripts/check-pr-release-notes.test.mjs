@@ -69,7 +69,10 @@ test("allows only the reviewed initial promotion to carry an internal draft", ()
     body: "",
     initialDraftChanged: true,
   };
-  assert.equal(evaluateNoteGate({ ...args, labels: [] }).ok, false);
+  assert.match(
+    evaluateNoteGate({ ...args, labels: [] }).reason,
+    /initial-release-ready/,
+  );
   assert.equal(
     evaluateNoteGate({ ...args, labels: ["initial-release-ready"] }).ok,
     true,
