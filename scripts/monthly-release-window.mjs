@@ -87,6 +87,26 @@ function postStatus(sha, state, description) {
   api(`statuses/${sha}`, "POST", { state, context, description });
 }
 
+export function releaseChecksPassed(checks) {
+  const blocking = checks.filter(
+    (check) =>
+      check.name !== context &&
+      // Expo preview jobs can wait in a long queue even when Mobile's
+      // separate production build decision is skip.
+      !check.name.startsWith("Create Preview Builds /"),
+  );
+  return (
+    blocking.some(
+      (check) =>
+        check.name === "Release notes or reviewed bug fix" &&
+        check.bucket === "pass",
+    ) &&
+    blocking.every(
+      (check) => check.bucket === "pass" || check.bucket === "skipping",
+    )
+  );
+}
+
 function allChecksPassed(number) {
   const result = spawnSync(
     "gh",
@@ -107,19 +127,7 @@ function allChecksPassed(number) {
     throw new Error(
       `Could not read checks for PR #${number}: ${result.stderr}`,
     );
-  const checks = JSON.parse(result.stdout).filter(
-    (check) => check.name !== context,
-  );
-  return (
-    checks.some(
-      (check) =>
-        check.name === "Release notes or reviewed bug fix" &&
-        check.bucket === "pass",
-    ) &&
-    checks.every(
-      (check) => check.bucket === "pass" || check.bucket === "skipping",
-    )
-  );
+  return releaseChecksPassed(JSON.parse(result.stdout));
 }
 
 async function openGate(number, mode, expectedHead) {

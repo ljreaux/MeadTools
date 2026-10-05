@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   isFirstMondayWindow,
   releaseApproval,
+  releaseChecksPassed,
 } from "./monthly-release-window.mjs";
 
 test("opens at 9:15 Chicago on the first Monday, including across DST", () => {
@@ -50,4 +51,20 @@ test("readiness is tied to head, base, labels, build choice, and auto-merge", ()
     /auto-merge/,
   );
   assert.match(releaseApproval(pr, "initial"), /initial-release-ready/);
+});
+
+test("Expo preview queue does not hold a reviewed main release", () => {
+  const notes = { name: "Release notes or reviewed bug fix", bucket: "pass" };
+  const quality = { name: "Typecheck and export mobile", bucket: "pass" };
+  const expo = {
+    name: "Create Preview Builds / Check preview build gate (@ljreaux/mobile)",
+    bucket: "pending",
+  };
+  const gate = { name: "monthly-release-gate", bucket: "pending" };
+  assert.equal(releaseChecksPassed([notes, quality, expo, gate]), true);
+  assert.equal(
+    releaseChecksPassed([notes, { ...quality, bucket: "fail" }, expo, gate]),
+    false,
+  );
+  assert.equal(releaseChecksPassed([quality, expo, gate]), false);
 });
