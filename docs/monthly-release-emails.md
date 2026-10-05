@@ -14,11 +14,11 @@ one combined message, with separate sections for shipped products, through the
 existing SMTP sender (`EMAIL_USER` and `EMAIL_PASS`). Signed unsubscribe links
 use the existing `NEXTAUTH_SECRET`; no new environment variable is needed.
 
-Before sending can start, put a verified postal address in
-`apps/web/lib/product-update-email.ts`. Until then, the cron returns
-`postal-address-needed` and sends nothing. Confirm the sender configuration,
-public release notes, and product availability before publishing a dated entry
-to production; publication initiates the email automatically.
+The public postal address is versioned in
+`apps/web/lib/product-update-email.ts`. If it is removed, the cron returns
+`postal-address-needed` and sends nothing. Confirm the address, sender
+configuration, public release notes, and product availability before publishing
+a dated entry to production; publication initiates the email automatically.
 
 `users.product_updates_last_emailed_date` is an at-most-once claim marker. The
 cron claims each recipient before calling SMTP and rechecks consent immediately
