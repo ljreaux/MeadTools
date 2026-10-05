@@ -10,9 +10,8 @@ const labels = {
   api: "API and integrations",
 };
 
-// Add the verified MeadTools postal address here before enabling release mail.
-// It is intentionally versioned configuration, not another environment variable.
-export const productUpdateMailingAddress = "";
+// Keep the public mailing address in versioned configuration rather than an environment variable.
+export const productUpdateMailingAddress = "PO Box 820144\nVicksburg, MS 39182";
 
 export function eligibleProductUpdateRelease(
   releases: Release[],
