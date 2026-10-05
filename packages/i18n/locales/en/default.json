@@ -286,7 +286,35 @@
       "chat": "Chat assistant",
       "api": "API and integrations"
     },
-    "entries": {}
+    "entries": {
+      "2026-10-05": {
+        "title": "October 2026 initial release",
+        "summary": "This release improves brew tracking and account controls on the web, adds a release-note archive, and updates the MeadTools API.",
+        "products": {
+          "web": {
+            "items": [
+              "Stabilized and backsweetened brews appear in the bulk-aging workflow while retaining their actual stage.",
+              "Browse dated release notes organized by product.",
+              "Signed-in users can opt in to product-update emails and change their choice in Account Settings.",
+              "Juice Calc is now under Extra Calcs in the desktop navigation."
+            ]
+          },
+          "api": {
+            "items": [
+              "An unavailable brew detail now returns a documented 404 response.",
+              "Legacy recipe snapshots remain readable by Mobile clients.",
+              "Product-update preferences and signed unsubscribe requests are available through the API."
+            ]
+          },
+          "mobilePreview": {
+            "items": [
+              "Preview builds can list active brews, show a read-only brew overview, and display recent timeline activity.",
+              "Preview launch and native dependency fixes support device testing. No production Mobile build or app-store release is included."
+            ]
+          }
+        }
+      }
+    }
   },
   "releaseEmails": {
     "title": "Product updates by email",
