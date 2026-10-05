@@ -2169,6 +2169,35 @@
             "mobilePreview": "Fortschritt der Mobile‑Vorschau — keine Produktionsfreigabe für Mobile.",
             "chat": "Chat‑Assistent",
             "api": "API und Integrationen"
+        },
+        "entries": {
+            "2026-10-05": {
+                "title": "Erstveröffentlichung Oktober 2026",
+                "summary": "Dieses Release verbessert die Nachverfolgung von Ansätzen und die Kontoverwaltung im Web, fügt ein Release-Notes-Archiv hinzu und aktualisiert die MeadTools-API.",
+                "products": {
+                    "web": {
+                        "items": [
+                            "Stabilisierte und nachgesüßte Ansätze erscheinen im Bulk-Aging-Workflow und behalten dabei ihren tatsächlichen Status.",
+                            "Durchsuche datierte Release Notes, nach Produkt geordnet.",
+                            "Angemeldete Nutzer können sich für Produkt-Update-E-Mails anmelden und ihre Wahl in den Kontoeinstellungen ändern.",
+                            "Juice Calc ist jetzt unter 'Extra Calcs' in der Desktop-Navigation zu finden."
+                        ]
+                    },
+                    "api": {
+                        "items": [
+                            "Die Detailansicht eines nicht verfügbaren Ansatzes liefert jetzt eine dokumentierte 404-Antwort.",
+                            "Legacy-Rezept-Snapshots bleiben für Mobile-Clients lesbar.",
+                            "Produkt-Update-Präferenzen und signierte Abmeldeanfragen sind über die API verfügbar."
+                        ]
+                    },
+                    "mobilePreview": {
+                        "items": [
+                            "Preview-Builds können aktive Ansätze auflisten, eine schreibgeschützte Ansatzübersicht anzeigen und die jüngste Timeline-Aktivität darstellen.",
+                            "Der Preview-Start und Fehlerbehebungen an nativen Abhängigkeiten unterstützen Gerätetests. Es ist kein produktiver Mobile-Build oder App-Store-Release enthalten."
+                        ]
+                    }
+                }
+            }
         }
     },
     "releaseEmails": {
