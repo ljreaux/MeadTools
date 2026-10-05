@@ -39,6 +39,12 @@ After review and authorization, add `release-ready` and arm
 native GitHub auto-merge. A new head commit or a changed main base requires a
 fresh diff review, updated SHA lines, and fresh approval.
 
+The gate requires the release-note check and applicable GitHub and Vercel
+checks. It does not wait for the separate Expo **preview** build workflow,
+whose Free Tier queue can be long even when the production Mobile build
+decision is `skip`. GitHub Quality still checks Mobile code. A production
+Mobile build is dispatched separately only for a reviewed `run` decision.
+
 The main-targeting PR workflow sets the `monthly-release-gate` commit status to
 pending when the PR opens or its commits, body, or labels change. On the first
 Monday at or after 9:15 a.m. Chicago, the scheduled workflow checks the open
