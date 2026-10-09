@@ -821,7 +821,9 @@
       "focus": "Record packaging details and finish the brew",
       "latestPackaging": "Latest packaging",
       "recipeBottlingEstimate": "Recipe bottling estimate",
-      "measuredVolumePriority": "The calculator starts with your recorded volume. Use the recipe estimate only if its remaining loss allowance still applies; record the volume you actually package.",
+      "measuredBottlingEstimate": "Bottling estimate from recorded volume",
+      "adjustedMeasurementPrefilled": "The calculator starts with your recorded volume reduced by the {{percentage}}% secondary loss allowance. Replace it with the volume you actually package.",
+      "measurementBeforeAdditions": "No volume was recorded after all secondary additions, so the calculator starts with the unadjusted recorded volume. Use the recipe estimate if it better reflects the expected yield; record the volume you actually package.",
       "estimatePrefilled": "The calculator starts with this rough estimate. Replace it with your measured packaged volume.",
       "needsPackaging": "Needs packaging",
       "noPackageRows": "No package rows recorded.",
@@ -832,6 +834,7 @@
       "ready": "Ready",
       "savePackaging": "Save packaging",
       "useRecipeEstimate": "Use recipe estimate",
+      "useRecordedVolume": "Use recorded volume",
       "volumeEntryNote": "Packaged volume",
       "workflowHint": "Save package sizes, counts, and volume before marking the brew complete."
     },

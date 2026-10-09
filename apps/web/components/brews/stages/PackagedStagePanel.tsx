@@ -14,6 +14,10 @@ import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
+import {
+  getBottlingVolumePrefill,
+  hasCurrentPostAdditionMeasurement
+} from "@/lib/brews/bottlingLoss";
 import { entryPayload, type BrewPackagingData } from "@/lib/utils/entryPayload";
 import type { StagePanelProps } from "../stageConfig";
 import {
@@ -71,12 +75,31 @@ export function PackagedStagePanel({
     ctx.recipe.recipeData?.lossAdjustment?.secondary?.enabled
       ? ctx.recipe.derived?.volume.bottlingL
       : null;
+  const secondaryLossPercentage =
+    ctx.recipe.recipeData?.lossAdjustment?.secondary?.enabled
+      ? ctx.recipe.derived?.volume.secondaryLossPercentage ?? null
+      : null;
+  const secondaryIngredientIds = ctx.recipe.secondaryIngredients
+    .filter((line) => (line.name ?? "").trim())
+    .map((line) => String(line.lineId));
+  const hasPostAdditionMeasurement = hasCurrentPostAdditionMeasurement({
+    entries: ctx.brew.entries,
+    currentVolumeL: currentVolume,
+    secondaryIngredientIds,
+    loggedIngredientIds: ctx.recipe.actual.loggedRecipeIngredientIds
+  });
+  const prefill = getBottlingVolumePrefill({
+    currentVolumeL: currentVolume,
+    effectiveVolumeL: ctx.brew.effective_current_volume_liters,
+    recipeBottlingVolumeL: plannedBottlingVolumeL ?? null,
+    secondaryLossPercentage,
+    hasPostAdditionMeasurement
+  });
   const displayPackagedVolume = savedPackagedVolume ?? currentVolume;
   const packageCount = getPackageCount(latestPackagingData);
-  const saveVolumeLiters =
-    bottling.totalVolumeBottledL > 0
-      ? bottling.totalVolumeBottledL
-      : bottling.totalTargetVolumeL;
+  // Bottle rows describe nominal container capacity. The volume field is the
+  // amount the brewer chose to record, including when they use an estimate.
+  const saveVolumeLiters = bottling.totalTargetVolumeL;
   const displayValue =
     bottling.volumeUnits === "gallons"
       ? saveVolumeLiters / L_PER_GAL
@@ -109,10 +132,7 @@ export function PackagedStagePanel({
       return;
     }
 
-    const source =
-      hasMeasuredCurrentVolume
-        ? currentVolume
-        : plannedBottlingVolumeL ?? ctx.brew.effective_current_volume_liters;
+    const source = prefill.volumeL;
     if (typeof source !== "number" || !Number.isFinite(source) || source <= 0)
       return;
 
@@ -129,15 +149,16 @@ export function PackagedStagePanel({
     hasMeasuredCurrentVolume,
     unit,
     ctx.brew.effective_current_volume_liters,
-    plannedBottlingVolumeL
+    plannedBottlingVolumeL,
+    prefill.volumeL
   ]);
 
-  const usePlannedBottlingVolume = () => {
-    if (typeof plannedBottlingVolumeL !== "number" || plannedBottlingVolumeL <= 0)
+  const useBottlingVolume = (volumeL: number | null) => {
+    if (typeof volumeL !== "number" || volumeL <= 0)
       return;
     const value = bottling.volumeUnits === "gallons"
-      ? plannedBottlingVolumeL / L_PER_GAL
-      : plannedBottlingVolumeL;
+      ? volumeL / L_PER_GAL
+      : volumeL;
     bottling.setTotalVolume(String(Number(value.toFixed(2))));
   };
 
@@ -191,6 +212,11 @@ export function PackagedStagePanel({
         await helpers.patchBrewMetadata({
           current_volume_liters: saveVolumeLiters
         });
+      }
+      // The first packaging save records the packaged yield even if it happens
+      // to equal the previous batch volume. Later edits only log a new volume
+      // when that yield changes.
+      if (!latestPackaging || volumeChanged) {
         await helpers.addEntry(
           entryPayload.volume({
             liters: saveVolumeLiters,
@@ -292,35 +318,58 @@ export function PackagedStagePanel({
           </div>
 
           <div className="mt-4">
-            {typeof plannedBottlingVolumeL === "number" &&
+            {secondaryLossPercentage !== null &&
+            typeof plannedBottlingVolumeL === "number" &&
             plannedBottlingVolumeL > 0 &&
             !latestPackaging ? (
               <div className="mb-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span>
-                    {t("brews.packaged.recipeBottlingEstimate")}: {formatVolume(
-                      plannedBottlingVolumeL,
+                    {t(
+                      prefill.source === "adjusted_measurement"
+                        ? "brews.packaged.measuredBottlingEstimate"
+                        : "brews.packaged.recipeBottlingEstimate"
+                    )}: {formatVolume(
+                      prefill.source === "adjusted_measurement"
+                        ? prefill.volumeL
+                        : plannedBottlingVolumeL,
                       unit,
                       locale
                     )}
                   </span>
                   {hasMeasuredCurrentVolume ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      type="button"
-                      onClick={usePlannedBottlingVolume}
-                      disabled={!canEdit}
-                    >
-                      {t("brews.packaged.useRecipeEstimate")}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => useBottlingVolume(currentVolume)}
+                        disabled={!canEdit}
+                      >
+                        {t("brews.packaged.useRecordedVolume")}
+                      </Button>
+                      {typeof plannedBottlingVolumeL === "number" && plannedBottlingVolumeL > 0 ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          type="button"
+                          onClick={() => useBottlingVolume(plannedBottlingVolumeL)}
+                          disabled={!canEdit}
+                        >
+                          {t("brews.packaged.useRecipeEstimate")}
+                        </Button>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t(
-                    hasMeasuredCurrentVolume
-                      ? "brews.packaged.measuredVolumePriority"
-                      : "brews.packaged.estimatePrefilled"
+                    prefill.source === "adjusted_measurement"
+                      ? "brews.packaged.adjustedMeasurementPrefilled"
+                      : hasMeasuredCurrentVolume
+                        ? "brews.packaged.measurementBeforeAdditions"
+                        : "brews.packaged.estimatePrefilled",
+                    { percentage: secondaryLossPercentage }
                   )}
                 </p>
               </div>

@@ -67,11 +67,19 @@ volume is a measurement and takes priority in actual brew calculations; the
 estimated loss must not be subtracted from it again. Later secondary additions
 remain outside the primary loss estimate. When secondary loss is enabled, the
 tracker displays the estimated bottling yield and uses it to prefill packaging
-only when no measured current volume is available. With a measured current
-volume, the bottling calculator starts from that measurement and offers the
-recipe estimate as an explicit alternative. The user decides whether the
-remaining loss allowance still applies; no loss is silently subtracted from a
-measurement.
+when no measured current volume is available. With a measured volume recorded
+after all secondary additions, the bottling calculator starts with that volume
+reduced by the saved secondary loss percentage. When a recorded volume predates
+secondary additions, the calculator keeps that measurement unadjusted and
+offers the recipe estimate as an alternative. The tracker labels estimates and
+offers the unadjusted recorded volume as an explicit alternative. An actual
+packaging entry takes priority;
+reopening it restores the saved packaged volume instead of applying loss again.
+Saving packaging records the confirmed packaged yield as a volume entry on the
+first save, even when it equals the prior current volume. Later edits log a new
+volume entry only when that yield changes. The saved yield comes from the
+calculator's volume field; bottle rows describe nominal container capacity and
+do not replace that amount when rounding bottle counts exceeds the estimate.
 
 The primary transfer dialog starts with the planned post-transfer volume when
 primary loss is enabled. It labels the value as a recipe estimate and asks the
