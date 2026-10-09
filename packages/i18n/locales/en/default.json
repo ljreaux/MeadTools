@@ -930,6 +930,7 @@
       "required": "Required",
       "saveSecondaryVolume": "Save volume",
       "secondaryVolumePlaceholder": "Enter volume after transfer",
+      "transferVolumePrefilled": "Prefilled from the recipe estimate. Replace it with your measured volume before saving.",
       "suggestedOg": "Suggested OG",
       "suggestedOgAvailable": "Suggested OG available",
       "volumeChange": "Volume change",

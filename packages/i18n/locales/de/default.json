@@ -1378,6 +1378,7 @@
             "previousVolume": "Vorheriges Volumen",
             "saveSecondaryVolume": "Volumen speichern",
             "secondaryVolumePlaceholder": "Volumen nach Transfer eingeben",
+            "transferVolumePrefilled": "Mit der Rezeptschätzung vorausgefüllt. Ersetze sie vor dem Speichern durch das gemessene Volumen.",
             "suggestedOg": "Vorgeschlagene Anfangsdichte",
             "suggestedOgAvailable": "Vorgeschlagene Anfangsdichte verfügbar",
             "volumeChange": "Volumenänderung",

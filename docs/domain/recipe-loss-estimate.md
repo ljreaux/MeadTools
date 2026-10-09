@@ -73,6 +73,11 @@ recipe estimate as an explicit alternative. The user decides whether the
 remaining loss allowance still applies; no loss is silently subtracted from a
 measurement.
 
+The primary transfer dialog starts with the planned post-transfer volume when
+primary loss is enabled. It labels the value as a recipe estimate and asks the
+brewer to replace it with a measurement before saving. Other volume-entry
+dialogs remain blank by default.
+
 When enabled, the recipe PDF adds primary volume, estimated lost volume, and
 post-transfer volume as rows at the end of the primary ingredient table. The
 top summary keeps the planned total volume. With loss disabled, those rows are
