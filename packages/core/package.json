@@ -8,6 +8,7 @@
     "./blend": "./src/blend.ts",
     "./derived": "./src/derived.ts",
     "./gravity": "./src/gravity.ts",
+    "./loss": "./src/loss.ts",
     "./nutrients": "./src/nutrients.ts",
     "./numeric": "./src/numeric.ts",
     "./recipe": "./src/recipe.ts",

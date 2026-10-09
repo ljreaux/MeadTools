@@ -15,6 +15,7 @@ import CommentsSection from "./comments/CommentsSection";
 import RecipeCardHeader from "./RecipeCardHeader";
 import Units from "../recipeBuilder/Units";
 import Ingredients from "../recipeBuilder/Ingredients";
+import LossAdjustment from "../recipeBuilder/LossAdjustment";
 import IngredientResults from "../recipeBuilder/Results";
 import ScaleRecipeForm from "../recipeBuilder/ScaleRecipeForm";
 import VolumeInputs from "../nutrientCalc/VolumeInputs";
@@ -53,6 +54,7 @@ const buildCardConfig = ({
     components: [
       <Units key="units" />,
       <Ingredients key="ingredients" />,
+      <LossAdjustment key="lossAdjustment" />,
       <IngredientResults key="ingredientResults" />,
       <ScaleRecipeForm key="scaleIngredientsForm" />
     ]

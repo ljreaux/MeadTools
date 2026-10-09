@@ -36,7 +36,8 @@ export function useSaveRecipe({
       stabilizers,
       additives,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     },
     meta: { markSaved }
   } = useRecipe();
@@ -51,6 +52,7 @@ export function useSaveRecipe({
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       flags: { private: privateRecipe }
     }),
     [
@@ -61,6 +63,7 @@ export function useSaveRecipe({
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       privateRecipe
     ]
   );
