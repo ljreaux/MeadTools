@@ -848,7 +848,9 @@
         "retry": "Erneut versuchen",
         "zoomIn": "Vergrößern",
         "zoomOut": "Verkleinern",
-        "zoomPercent": "PDF-Zoom in %"
+        "zoomPercent": "PDF-Zoom in %",
+        "estimatedTotalVolume": "Geschätztes Gesamtvolumen",
+        "memberName": "MeadTools-Mitglied"
     },
     "peaches": "Pfirsiche",
     "pear": "Birne",
@@ -930,11 +932,37 @@
             "delle": "Delle-Einheiten:",
             "estFG": "Geschätzte FG:",
             "estOG": "Geschätzte OG:",
-            "totalPrimary": "Gesamtes Primärvolumen:",
-            "totalSecondary": "Tatsächliches Gesamtvolumen:"
+            "totalPrimary": "Primärvolumen:",
+            "totalSecondary": "Gesamtvolumen:"
         },
         "submit": "Anwenden",
-        "resetDone": "Das Rezept wurde zurückgesetzt."
+        "resetDone": "Das Rezept wurde zurückgesetzt.",
+        "loss": {
+            "title": "Verlust beim Primärtransfer",
+            "percentage": "Verlust",
+            "automatic": "Geschätzt aus den Zutaten",
+            "useEstimate": "Schätzung verwenden ({{percentage}}%)",
+            "invalid": "Gib einen Prozentsatz von 0 bis unter 100 ein.",
+            "unavailable": "Füge Primärvolumen hinzu, um eine Schätzung für die Zutat zu erhalten.",
+            "postTransfer": "Nach dem Transfer: ~{{volume}} {{unit}}",
+            "shortDisclaimer": "Nur grobe Planungsabschätzung. Verwende das Volumen, das du nach dem Umfüllen misst.",
+            "secondaryTitle": "Sekundär- und Abfüllverluste",
+            "secondaryDisclaimer": "Gib eine eigene Zulage für Flüssigkeit an, die bei Sekundärumfüllungen, Klärung und Abfüllung zurückbleibt. Der optionale Zutatenvorschlag verwendet dieselbe grobe 5% Handhabungszulage plus 60% des Volumenanteils der sekundären Obst- und Gemüsezugaben, aber wir haben keine gepaarten Messungen von Sekundär‑ zu Abfüllvorgang, um das zu validieren. Das ändert nur das geschätzte Abfüllvolumen, nicht den Alkoholgehalt oder die durch Rückzuckerung veränderte Enddichte. Trage dein tatsächliches abgefülltes Volumen in deinen Ansatz-Tracker ein.",
+            "secondaryShortDisclaimer": "Nur grobe Planungszulage. Verwende dein gemessenes abgefülltes Volumen.",
+            "useSecondaryEstimate": "Zutatenvorschlag verwenden ({{percentage}}%)",
+            "bottlingVolume": "Geschätztes Abfüllvolumen: ~{{volume}} {{unit}}",
+            "pdfPrimary": "Geschätztes Primärvolumen",
+            "pdfLoss": "Geschätzter Transferverlust ({{percentage}}%)",
+            "pdfLossValue": "-{{volume}} {{unit}}",
+            "pdfAfter": "Erwartetes Sekundärvolumen",
+            "pdfDisclaimer": "Nur grobe Planungsschätzung; der tatsächliche Ertrag variiert. Trage das gemessene Umfüllvolumen in deinen Ansatz-Tracker ein.",
+            "pdfBeforeBottling": "Geschätztes Volumen vor der Abfüllung",
+            "pdfSecondaryLoss": "Geschätzter Sekundärverlust ({{percentage}}%)",
+            "pdfBottling": "Geschätztes Abfüllvolumen",
+            "pdfBottlingEstimate": "Abfüllschätzung",
+            "pdfSecondaryDisclaimer": "Nur Planungsabschätzung; das tatsächlich abgefüllte Volumen kann variieren. Trage es in deinen Ansatz-Tracker ein.",
+            "disclaimer": "Dies ist eine grobe Planungsschätzung, basierend auf begrenzten Ansatz-Aufzeichnungen ohne verifizierte Anfangsmessungen. Fruchtvorbereitung, Pressen, Trub und Umfülltechnik können den tatsächlichen Ertrag erheblich verändern. Die Schätzung gilt vor sekundären Zugaben. Trage das gemessene Volumen in deinen Ansatz-Tracker ein; verwende diese Schätzung nicht als Messwert."
+        }
     },
     "recipeForm": {
         "login": "Anmelden um das Rezept zu speichern",
@@ -1053,8 +1081,8 @@
         "preferredSchedule": "Dieser Rechner ermöglicht es dir, eine Kombination von Fermaid O, Fermaid K und DAP anzugeben. Es steht dir frei, für welche Nährstoffsorten und -kombinationen du dich entscheidest, aber bestimmte Zusammensetzungen sind für bestimmte Situationen besser geeignet. Mehr zu Nährstoffen und Plänen findest du ",
         "remainingYan": "Wenn der verbleibende YAN (\"Yeast Assimilable Nitrogen\" = hefeverfügbarer Stickstoff) höher als 0 ist, solltest du erwägen, die Angabe im maximalen g/L-Feld anzupassen. Denke daran, dass du die Menge an Diammoniumphosphat (oft \"Hefenährsalz\") am besten unter 0,96 g/L halten solltest, um Fehlnoten zu vermeiden. Außerdem liegt das TTB-Limit für Fermaid K bei 0,5 g/L wegen der Thiamin-Grenze. Für Hobbybrauer ist das nicht relevant.",
         "stabilizers": "Kaliumsorbat und Kaliummetabisulfit werden BEIDE zusammen benötigt um eine weitere Gärung zu unterbinden. Sie können in den meisten Fällen NICHT dazu genutzt werden, um eine laufende Gärung verlässlich zu beenden. Die benötigte Menge an Sulfit wird anhand des pH-Wertes bestimmt. MeadTools geht von 50 ppm aus, wenn du keine pH-Messung durchführen kannst oder möchtest. Die Menge an Sorbat hängt vom Alkoholgehalt ab. Es hat über 16% keinen Effekt mehr. Mehr Infos dazu finden sich ",
-        "totalSecondary": "Dies ist das geschätzte Volumen des gesamten Ansatzes inklusive der vergärbaren Zutaten aus der Sekundärgärung. Die Berechnung nimmt an, dass alle Zutaten, die oben als \"in Sekundärgärung\" markiert wurden, nicht vergoren werden.",
-        "totalVolume": "Dieses Gesamtvolumen ist eine Schätzung nur unter Berücksichtigung der vergärbaren Zutaten im Ansatz während der Primärgärung. Dein tatsächliches Volumen WIRD höher sein, wenn du einen hohen Anteil an ganzen Früchten verwendest.",
+        "totalSecondary": "Das ist das geplante Volumen nach dem geschätzten Verlust beim Primärtransfer und nach sekundären Zusätzen. Der Rechner geht davon aus, dass sekundäre Zutaten nicht vergoren werden. Das tatsächliche Volumen kann deutlich abweichen; trage es in deinen Ansatz-Tracker ein.",
+        "totalVolume": "Dies ist das modellierte Volumen der primären Zutaten vor Verlusten beim Transfer. Fruchtfeststoffe und Handhabung können das tatsächliche Flüssigkeitsvolumen deutlich verändern.",
         "volumeLines": "Die ersten beiden Reihen enthalten nur flüssige Zutaten. Alle Zutatenangaben können entweder nach Volumen oder Gewicht gemacht werden.",
         "yan": "YAN (\"Yeast Assimilable Nitrogen\" = hefeverfügbarer Stickstoff) ist die Menge an Stickstoff, die deine Hefe für eine gesunde Gärung benötigt. Die benötigten Werte hängen von der verwendeten Hefe und der OG (\"Original Gravity\" = ursprüngliche Dichte) ab.",
         "yeastAmount": "Die Hefemenge in diesem Rechner basiert auf der Dichtemessung und dem Gesamtvolumen. Der Wert ist veränderbar und ich schlage vor, dass du in den meisten Fällen auf die nächsthöhere Päckchengröße aufrundest.",
@@ -1167,7 +1195,10 @@
             "savePackaging": "Abfüllung speichern",
             "workflowHint": "Speichere Gebindegrößen, -anzahlen und Volumen, bevor du den Ansatz als abgeschlossen markierst.",
             "volumeEntryNote": "Abgefülltes Volumen",
-            "focus": "Abfülldetails erfassen und den Ansatz abschließen"
+            "focus": "Abfülldetails erfassen und den Ansatz abschließen",
+            "recipeBottlingEstimate": "Rezept-Abfüllschätzung",
+            "estimatePrefilled": "Der Rechner beginnt mit dieser groben Schätzung. Ersetze sie durch dein gemessenes abgefülltes Volumen.",
+            "useRecipeEstimate": "Rezeptschätzung verwenden"
         },
         "endDate": "Enddatum",
         "actions": {
@@ -1410,7 +1441,10 @@
             "recipeOg": "Rezept-Anfangsdichte",
             "recordSecondaryVolume": "Sekundärvolumen erfassen",
             "recordSecondaryVolumeDesc": "Gib das Gesamtvolumen nach dem Umfüllen in die Sekundärgärung ein. Das wird zum Ansatzvolumen, das für Stabilisatoren und spätere Gaben verwendet wird.",
-            "required": "Erforderlich"
+            "required": "Erforderlich",
+            "lossDisclaimer": "Nur eine grobe Schätzung aus dem Rezept. Fruchthandhabung, Bodensatz und Transfers können das Ergebnis deutlich verändern. Notiere das Volumen, das du nach dem Transfer tatsächlich misst.",
+            "measuredVolumeUsed": "Dein eingetragenes Volumen wird für Ansatzberechnungen verwendet; geschätzter Verlust wird nicht erneut angewendet.",
+            "plannedTransferVolume": "Geschätztes Volumen nach Primärtransfer"
         },
         "recipe": "Rezept",
         "recipeTargetVolume": "Zielvolumen",
@@ -1469,7 +1503,9 @@
             "logIngredient": "Sekundärzutat protokollieren",
             "ready": "Bereit",
             "supplementalStabilizerNote": "Ergänzende Stabilisatorzugabe, nachdem sich die Verdünnung in der Sekundärgärung geändert hat.",
-            "workflowHint": "Erfasse Zugaben sofort und halte das Volumen vor der Bulk-Reifung aktuell."
+            "workflowHint": "Erfasse Zugaben sofort und halte das Volumen vor der Bulk-Reifung aktuell.",
+            "plannedBottlingVolume": "Geschätztes Abfüllvolumen",
+            "bottlingLossDisclaimer": "Nur als manuelle Planungsvorgabe. Notiere dein tatsächliches Abfüllvolumen; Messwerte haben Vorrang."
         },
         "stageChange": "Phasenwechsel",
         "stageDesc": {
