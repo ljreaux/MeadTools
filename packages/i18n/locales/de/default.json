@@ -1575,6 +1575,46 @@
         "sort": {
             "endDate": "Nach Enddatum sortieren",
             "startDate": "Nach Startdatum sortieren"
+        },
+        "create": {
+            "action": "Ansatz erstellen",
+            "title": "Ansatz aus diesem Rezept erstellen",
+            "saveFirst": "Dieses Rezept hat ungespeicherte Änderungen. Speichere sie, bevor du den Ansatz erstellst, damit er die Version verwendet, die du siehst.",
+            "saveAndCreate": "Rezept speichern und Ansatz erstellen",
+            "loginRequired": "Melde dich an, um einen Ansatz zu erstellen.",
+            "failed": "Der Ansatz konnte nicht erstellt werden. Bitte versuche es erneut.",
+            "withNewRecipe": "Ansatz aus diesem Rezept nach dem Speichern erstellen",
+            "brewName": "Ansatzname (optional)",
+            "savedButFailed": "Das Rezept wurde gespeichert, aber der Ansatz konnte nicht erstellt werden. Versuche es unten erneut; dabei wird kein zweites Rezept gespeichert.",
+            "recipeSaveFailed": "Das Rezept konnte nicht gespeichert werden. Überprüfe es und versuche es erneut.",
+            "openSavedRecipe": "Gespeichertes Rezept öffnen",
+            "retryBrew": "Erneut Ansatz erstellen"
+        },
+        "snapshot": {
+            "title": "Rezept-Snapshot",
+            "current": "Aktueller Snapshot: {{date}}",
+            "unknownDate": "Datum unbekannt",
+            "checking": "Überprüfe das Quellrezept auf Änderungen...",
+            "unavailable": "Das Quellrezept ist nicht mehr für Updates verfügbar. Dein Ansatz behält seinen aktuellen Snapshot.",
+            "upToDate": "Dieser Ansatz verwendet das aktuell gespeicherte Rezept.",
+            "action": "Rezept-Snapshot aktualisieren",
+            "confirmTitle": "Rezept-Snapshot dieses Ansatzes aktualisieren?",
+            "warning": "Das ersetzt den Plan, der für zukünftige Vorschläge verwendet wird. Geplante Mengen, verbleibende Zugaben und berechnete Schätzungen können sich ändern, auch wenn sich die Rezept-Artikel-IDs geändert haben.",
+            "entriesRemain": "Aufgezeichnete Ansatz-Einträge und Messwerte bleiben unverändert.",
+            "changedSections": "Geänderte Rezeptabschnitte",
+            "name": "Rezeptname",
+            "confirm": "Snapshot aktualisieren",
+            "failed": "Der Snapshot konnte nicht aktualisiert werden. Überprüfe das Rezept und versuche es erneut.",
+            "sections": {
+                "unitDefaults": "Einheiten",
+                "ingredients": "Zutaten",
+                "fg": "Ziel-Enddichte",
+                "additives": "Zusätze",
+                "notes": "Notizen",
+                "nutrients": "Nährstoffe und Hefe",
+                "stabilizers": "Stabilisatoren",
+                "lossAdjustment": "Volumenverlust-Schätzungen"
+            }
         }
     },
     "admin": {
