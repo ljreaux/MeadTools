@@ -40,6 +40,9 @@ export type BrewRecipeSnapshot = {
   dataV2: RecipeData | null;
   snapshottedAt: string;
   source?: string;
+  sourceUserId?: number | null;
+  sourceUsername?: string | null;
+  previousSnapshots?: Array<Omit<BrewRecipeSnapshot, "previousSnapshots">>;
 };
 
 export type BrewRecipeStageData = {

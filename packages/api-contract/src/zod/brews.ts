@@ -57,7 +57,7 @@ export const brewListItemResponseSchema = brewListItemObjectSchema;
 export const brewsResponseSchema = z.object({
   brews: z.array(brewListItemResponseSchema),
 });
-export const brewRecipeSnapshotResponseSchema = z.object({
+const brewRecipeSnapshotBaseResponseSchema = z.object({
   // Existing brews can contain snapshots created before these fields existed.
   // Consumers validate dataV2 before deriving recipe targets.
   id: z.number().optional(),
@@ -65,6 +65,11 @@ export const brewRecipeSnapshotResponseSchema = z.object({
   version: z.number().optional(),
   dataV2: z.unknown().optional(),
   snapshottedAt: z.string().optional(),
+  sourceUserId: z.number().nullable().optional(),
+  sourceUsername: z.string().nullable().optional(),
+});
+export const brewRecipeSnapshotResponseSchema = brewRecipeSnapshotBaseResponseSchema.extend({
+  previousSnapshots: z.array(brewRecipeSnapshotBaseResponseSchema).optional(),
 });
 const brewEntryObjectSchema = z.object({
   id: z.string(),
@@ -117,6 +122,9 @@ export const updateBrewRequestBodySchema = z.object({
   gravity_unit_preference: gravityUnitResponseSchema.optional(),
   public: z.boolean().optional(),
   end_date: z.string().nullable().optional(),
+  update_recipe_snapshot: z.boolean().optional(),
+  expected_snapshotted_at: z.string().nullable().optional(),
+  expected_recipe_content_key: z.string().optional(),
 });
 export const updateBrewResponseSchema = brewMutationResponseObjectSchema
   .omit({ entry_count: true })
@@ -245,6 +253,9 @@ export const brewValidationErrorResponseSchema = errorEnum([
   "Missing brew_id",
   "Missing entry_id",
   "Invalid client_entry_id",
+  "Invalid recipe_id",
+  "Only ongoing brews can update their recipe snapshot",
+  "Recipe snapshot not found",
 ]);
 export const brewFetchErrorResponseSchema = errorEnum([
   "Failed to fetch brews.",
@@ -258,6 +269,14 @@ export const brewDetailNotFoundErrorResponseSchema = errorEnum([
 export const brewCreateErrorResponseSchema = errorEnum([
   "Failed to create brew.",
   "Server misconfiguration",
+]);
+export const brewRecipeNotFoundErrorResponseSchema = errorEnum(["Recipe not found"]);
+export const brewSnapshotUpdateErrorResponseSchema = errorEnum([
+  "Only ongoing brews can update their recipe snapshot",
+  "Recipe snapshot not found",
+  "Recipe not available",
+  "Brew snapshot changed; review it again",
+  "Recipe changed; review it again",
 ]);
 export const brewUpdateErrorResponseSchema = errorEnum([
   "Failed to update brew.",

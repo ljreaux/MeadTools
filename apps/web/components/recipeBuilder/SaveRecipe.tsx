@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
+import { useCreateAccountBrew } from "@/hooks/reactQuery/useAccountBrews";
 
 import {
   Dialog,
@@ -42,10 +43,17 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const { isLoggedIn } = useAuth();
 
   const createRecipeMutation = useCreateRecipeMutation();
+  const createBrewMutation = useCreateAccountBrew();
 
   const [checked, setChecked] = useState(false); // private
   const [notify, setNotify] = useState(false); // activity email toggle
   const [name, setName] = useState("");
+  const [createBrew, setCreateBrew] = useState(false);
+  const [brewName, setBrewName] = useState("");
+  const [savedRecipeId, setSavedRecipeId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const inFlight = useRef(false);
 
   const {
     data: {
@@ -89,7 +97,8 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
     ]
   );
 
-  const handleCreateRecipe = () => {
+  const handleCreateRecipe = async () => {
+    if (inFlight.current) return;
     const trimmedName = name.trim();
 
     if (!trimmedName) {
@@ -101,6 +110,9 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       return;
     }
 
+    inFlight.current = true;
+    setIsSubmitting(true);
+    setError(null);
     const body = {
       name: trimmedName,
       dataV2: data, // ✅ send as object; server stores in jsonb
@@ -108,25 +120,36 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       activityEmailsEnabled: notify
     };
 
-    createRecipeMutation.mutate(body as any, {
-      onSuccess: () => {
+    try {
+      const recipeId = savedRecipeId ??
+        (await createRecipeMutation.mutateAsync(body)).recipe.id;
+      setSavedRecipeId(recipeId);
+      if (createBrew) {
+        try {
+          const brew = await createBrewMutation.mutateAsync({
+            recipe_id: recipeId,
+            name: brewName.trim() || trimmedName
+          });
+          meta.reset();
+          router.push(`/account/brews/${brew.id}`);
+        } catch (cause) {
+          setError(t("brews.create.savedButFailed"));
+          console.error("Error creating brew from saved recipe:", cause);
+        }
+      } else {
         meta.reset();
         setName("");
         toast({ description: t("recipeSuccess") });
         router.push("/account");
-      },
-      onError: (error: any) => {
-        console.error("Error creating recipe:", error?.message ?? error);
-        toast({
-          title: t("errorLabel"),
-          description: t("error.generic"),
-          variant: "destructive"
-        });
       }
-    });
+    } catch (cause) {
+      console.error("Error creating recipe:", cause);
+      setError(t("brews.create.recipeSaveFailed"));
+    } finally {
+      inFlight.current = false;
+      setIsSubmitting(false);
+    }
   };
-
-  const isSubmitting = createRecipeMutation.isPending;
 
   return (
     <Dialog>
@@ -186,6 +209,27 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
                   <Switch checked={notify} onCheckedChange={setNotify} />
                 </label>
               )}
+              <label className="grid gap-2">
+                {t("brews.create.withNewRecipe")}
+                <Switch checked={createBrew} onCheckedChange={setCreateBrew} disabled={savedRecipeId !== null} />
+              </label>
+              {createBrew ? (
+                <label className="grid gap-2">
+                  {t("brews.create.brewName")}
+                  <Input
+                    value={brewName}
+                    onChange={(event) => setBrewName(event.target.value)}
+                    placeholder={name || t("brews.newBrew.namePlaceholder")}
+                    disabled={isSubmitting}
+                  />
+                </label>
+              ) : null}
+              {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+              {savedRecipeId && error ? (
+                <Link className="text-sm underline" href={`/recipes/${savedRecipeId}`}>
+                  {t("brews.create.openSavedRecipe")}
+                </Link>
+              ) : null}
             </div>
           ) : (
             <Link
@@ -204,7 +248,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
               loading={isSubmitting}
               variant="secondary"
             >
-              {t("SUBMIT")}
+              {savedRecipeId ? t("brews.create.retryBrew") : t("SUBMIT")}
             </LoadingButton>
           </DialogFooter>
         )}

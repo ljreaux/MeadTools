@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
 import { createBrewEntryIdempotently } from "@/lib/brews/createBrewEntryIdempotently";
+import { recipeSnapshotContentKey } from "@/lib/brews/recipeSnapshot";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 import {
@@ -89,6 +90,9 @@ export type BrewForApp = {
 
 export type PatchBrewMetadataInput = {
   recipe_id?: number;
+  update_recipe_snapshot?: boolean;
+  expected_snapshotted_at?: string | null;
+  expected_recipe_content_key?: string;
   name?: string | null;
   batch_number?: number | null;
   start_date?: string | Date;
@@ -224,12 +228,12 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
   }
 
   return prisma.$transaction(async (tx) => {
-    // 1) Ownership + lock the recipe row to prevent batch_number races
+    // Lock the source recipe for a consistent snapshot and batch number.
     const lockedRecipeRows = await tx.$queryRaw<Array<{ id: number }>>(
       Prisma.sql`
         SELECT id
         FROM recipes
-        WHERE id = ${recipeId} AND user_id = ${userId}
+        WHERE id = ${recipeId} AND (user_id = ${userId} OR private = false)
         FOR UPDATE
       `
     );
@@ -237,15 +241,16 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
     if (lockedRecipeRows.length === 0) {
       throw new Error("Recipe not found");
     }
-
     // 2) Pull recipe data for snapshot (no legacy fields)
     const recipe = await tx.recipes.findFirst({
-      where: { id: recipeId, user_id: userId },
+      where: { id: recipeId, OR: [{ user_id: userId }, { private: false }] },
       select: {
         id: true,
         name: true,
         version: true,
-        dataV2: true
+        dataV2: true,
+        user_id: true,
+        users: { select: { public_username: true } }
       }
     });
 
@@ -265,6 +270,8 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
       name: recipe.name,
       version: recipe.version,
       dataV2: recipe.dataV2 as any,
+      sourceUserId: recipe.user_id,
+      sourceUsername: recipe.users?.public_username ?? null,
       snapshottedAt: new Date().toISOString()
     };
 
@@ -413,6 +420,13 @@ export async function patchBrewMetadata(
   input: PatchBrewMetadataInput
 ) {
   return prisma.$transaction(async (tx) => {
+    if (input.update_recipe_snapshot) {
+      await tx.$queryRaw(Prisma.sql`
+        SELECT id FROM brews
+        WHERE id = CAST(${brewId} AS uuid) AND user_id = ${userId}
+        FOR UPDATE
+      `);
+    }
     // 0) Get current brew (ownership check + “from stage” baseline)
     const existing = await tx.brews.findFirst({
       where: { id: brewId, user_id: userId },
@@ -423,7 +437,8 @@ export async function patchBrewMetadata(
         stage: true,
         start_date: true,
         end_date: true,
-        recipe_id: true
+        recipe_id: true,
+        recipe_snapshot: true
       }
     });
 
@@ -435,6 +450,62 @@ export async function patchBrewMetadata(
     const data: Record<string, any> = {};
     let endDateWasSet = false;
     let endDateWasCleared = false;
+
+    if (input.update_recipe_snapshot) {
+      if (existing.end_date || existing.stage === brew_stage.COMPLETE) {
+        throw new Error("Only ongoing brews can update their recipe snapshot");
+      }
+      if (!existing.recipe_id) throw new Error("Recipe not found");
+      const oldSnapshot = existing.recipe_snapshot as Record<string, any> | null;
+      if (!oldSnapshot || typeof oldSnapshot !== "object") {
+        throw new Error("Recipe snapshot not found");
+      }
+      if (
+        input.expected_snapshotted_at !== undefined &&
+        (oldSnapshot.snapshottedAt ?? null) !== input.expected_snapshotted_at
+      ) {
+        throw new Error("Brew snapshot changed; review it again");
+      }
+      const source = await tx.recipes.findFirst({
+        where: {
+          id: existing.recipe_id,
+          OR: [{ user_id: userId }, { private: false }]
+        },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          dataV2: true,
+          user_id: true,
+          users: { select: { public_username: true } }
+        }
+      });
+      if (!source) throw new Error("Recipe not available");
+      if (
+        input.expected_recipe_content_key &&
+        recipeSnapshotContentKey(source) !== input.expected_recipe_content_key
+      ) {
+        throw new Error("Recipe changed; review it again");
+      }
+      if (recipeSnapshotContentKey(oldSnapshot) !== recipeSnapshotContentKey(source)) {
+        const { previousSnapshots, ...previous } = oldSnapshot;
+        data.recipe_snapshot = {
+          id: source.id,
+          name: source.name,
+          version: source.version,
+          dataV2: source.dataV2,
+          sourceUserId: source.user_id,
+          sourceUsername: source.users?.public_username ?? null,
+          snapshottedAt: new Date().toISOString(),
+          previousSnapshots: [
+            ...(Array.isArray(previousSnapshots) ? previousSnapshots : []),
+            previous
+          ]
+        };
+      } else {
+        data.recipe_snapshot = oldSnapshot;
+      }
+    }
 
     // recipe_id
     if ("recipe_id" in input) {
@@ -548,7 +619,7 @@ export async function patchBrewMetadata(
         if (recipeId == null) throw new Error("Recipe not found");
 
         const publicRecipe = await tx.recipes.findFirst({
-          where: { id: recipeId, user_id: userId, private: false },
+          where: { id: recipeId, private: false },
           select: { id: true }
         });
         if (!publicRecipe) {

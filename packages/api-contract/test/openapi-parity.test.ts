@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "c44ff9e16558050fff07f276c8eb11471a49fcf2341fb84e7be2a9d6856d3cb2";
+  "d737a90446427a7bb99f209c35ee0febc5f7557ca99787a6eaaa01cad5317f50";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -45,7 +45,8 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
     paths: Record<string, {
       get?: { responses?: Record<string, unknown> };
-      post?: { responses?: Record<string, unknown> };
+      post?: { description?: string; responses?: Record<string, unknown> };
+      patch?: { responses?: Record<string, unknown> };
     }>;
   };
   const pathsWithoutApprovedAdditions = structuredClone(document.paths);
@@ -59,6 +60,22 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
       }
     };
   }
+  const brewCreate = pathsWithoutApprovedAdditions["/brews"]?.post;
+  if (brewCreate) {
+    brewCreate.description = "Starts a new brew from one of the authenticated user's recipes and snapshots the current recipe data.";
+    if (brewCreate.responses) {
+      brewCreate.responses["404"] = {
+        description: "Not Found",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/AuthenticatedRouteErrorResponse" }
+          }
+        }
+      };
+    }
+  }
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.patch?.responses?.["403"];
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.patch?.responses?.["409"];
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries"]?.post
     ?.responses?.["409"];
   delete pathsWithoutApprovedAdditions["/nutrient-presets"];

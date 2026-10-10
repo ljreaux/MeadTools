@@ -24,7 +24,9 @@ shared by the MeadTools web application and future companion clients.
 The package contains no React, Next.js, Prisma, database, authorization,
 storage, or platform-specific code. Inputs are structural transfer types rather
 than Prisma models. Recipe snapshots are opaque generic values: projecting a
-brew preserves the snapshot but does not interpret it. Entry payload inputs
+brew preserves the snapshot but does not interpret it. Product behavior for
+creating and refreshing snapshots is in [Brew recipe snapshots](brew-recipe-snapshots.md).
+Entry payload inputs
 use structural transfer types rather than importing React hook or calculator
 component types.
 

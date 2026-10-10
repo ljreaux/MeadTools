@@ -36,17 +36,21 @@ import { useSaveRecipe } from "@/hooks/useSaveRecipe";
 import { useAccountBrews } from "@/hooks/reactQuery/useAccountBrews";
 import { Skeleton } from "../ui/skeleton";
 import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
+import { CreateBrewButton } from "@/components/brews/CreateBrewButton";
+import type { ReactNode } from "react";
 
 const buildCardConfig = ({
   recipeId,
   recipeName,
   publicUsername,
-  isRecipeHydrated
+  isRecipeHydrated,
+  createBrewAction
 }: {
   recipeId: number;
   recipeName: string;
   publicUsername?: string | null;
   isRecipeHydrated: boolean;
+  createBrewAction: ReactNode;
 }) => [
   {
     key: "card-1",
@@ -111,7 +115,13 @@ const buildCardConfig = ({
   {
     key: "card 8",
     heading: "recipes.connectedBrews.title",
-    components: [<ConnectedBrews key="connectedBrews" recipeId={recipeId} />]
+    components: [
+      <ConnectedBrews
+        key="connectedBrews"
+        recipeId={recipeId}
+        createBrewAction={createBrewAction}
+      />
+    ]
   }
 ];
 
@@ -128,12 +138,31 @@ function OwnerRecipe({
   const [nameEditable, setNameEditable] = useState(false);
   const [recipeName, setRecipeName] = useState(recipe.name);
   const { t } = useTranslation();
+  const {
+    derived: { nutrientValueForRecipe },
+    meta: { setNutrients, isDirty, markDirty }
+  } = useRecipe();
+  const { save, saveAsync, isSaving } = useSaveRecipe({
+    name: recipeName,
+    privateRecipe: isPrivate,
+    emailNotifications: notify
+  });
+
+  const createBrewAction = (
+    <CreateBrewButton
+      recipeId={recipe.id}
+      recipeName={recipeName}
+      dirty={isDirty}
+      saveRecipe={saveAsync}
+    />
+  );
 
   const cardConfig = buildCardConfig({
     recipeId: recipe.id,
     recipeName,
     publicUsername: recipe.public_username,
-    isRecipeHydrated
+    isRecipeHydrated,
+    createBrewAction
   });
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
@@ -170,10 +199,6 @@ function OwnerRecipe({
   ));
 
   const { card, currentStepIndex, back, next, goTo } = useCards(cards);
-  const {
-    derived: { nutrientValueForRecipe },
-    meta: { setNutrients, isDirty, markDirty }
-  } = useRecipe();
 
   useEffect(() => {
     if (pdfRedirect) {
@@ -184,12 +209,6 @@ function OwnerRecipe({
 
   const { showBanner, requestDismiss } = useBanner();
   const bannerIdRef = useRef<string | null>(null);
-
-  const { save, isSaving } = useSaveRecipe({
-    name: recipeName,
-    privateRecipe: isPrivate,
-    emailNotifications: notify
-  });
 
   const saveRef = useRef(save);
   useEffect(() => {
@@ -231,7 +250,7 @@ function OwnerRecipe({
       onChange={setNutrients}
     >
       <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
+        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1} showConnectedBrews>
           <div className="py-2">
             <SaveChanges
               privateRecipe={isPrivate}
@@ -264,7 +283,13 @@ function OwnerRecipe({
   );
 }
 
-function ConnectedBrews({ recipeId }: { recipeId: number }) {
+function ConnectedBrews({
+  recipeId,
+  createBrewAction
+}: {
+  recipeId: number;
+  createBrewAction: ReactNode;
+}) {
   const { t, i18n } = useTranslation();
   const { data: brews = [], isLoading, isError } = useAccountBrews();
 
@@ -296,19 +321,22 @@ function ConnectedBrews({ recipeId }: { recipeId: number }) {
 
   return (
     <section className="space-y-4">
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">
-          {t(
-            "recipes.connectedBrews.description",
-            "Brews created from this recipe appear here."
-          )}
-        </p>
-        <p className="text-sm font-medium">
-          {t("recipes.connectedBrews.count", {
-            count: connectedBrews.length,
-            defaultValue: "Linked brews: {{count}}"
-          })}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "recipes.connectedBrews.description",
+              "Brews created from this recipe appear here."
+            )}
+          </p>
+          <p className="text-sm font-medium">
+            {t("recipes.connectedBrews.count", {
+              count: connectedBrews.length,
+              defaultValue: "Linked brews: {{count}}"
+            })}
+          </p>
+        </div>
+        {createBrewAction}
       </div>
 
       {isLoading ? (

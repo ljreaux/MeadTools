@@ -22,6 +22,7 @@ import { toast } from "@/hooks/use-toast";
 import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { BrewTimelineCharts } from "@/components/brews/BrewTimelineCharts";
+import { UpdateRecipeSnapshot } from "@/components/brews/UpdateRecipeSnapshot";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
@@ -973,9 +974,16 @@ export default function BrewPageClient() {
               {brew.recipe_id ? (
                 <span>
                   {t("brews.recipe", "Recipe")}:{" "}
-                  <Link className="text-foreground underline" href={`/recipes/${brew.recipe_id}`}>
-                    {brew.recipe_name ?? t("recipe", "Recipe")}
-                  </Link>
+                  {brew.recipe_private === false ? (
+                    <Link className="text-foreground underline" href={`/recipes/${brew.recipe_id}`}>
+                      {brew.recipe_name ?? t("recipe", "Recipe")}
+                    </Link>
+                  ) : (
+                    brew.recipe_snapshot?.name ?? brew.recipe_name ?? t("recipe", "Recipe")
+                  )}
+                  {brew.recipe_snapshot?.sourceUsername
+                    ? ` · ${t("byUser", { public_username: brew.recipe_snapshot.sourceUsername })}`
+                    : null}
                 </span>
               ) : (
                 t("noRecipe", "No recipe linked.")
@@ -1149,6 +1157,8 @@ export default function BrewPageClient() {
           </section>
         </div>
       </div>
+
+      {brew.recipe_snapshot ? <UpdateRecipeSnapshot brew={brew} /> : null}
 
       <Accordion type="single" defaultValue="stage-panel" collapsible>
         <AccordionItem value="stage-panel">
