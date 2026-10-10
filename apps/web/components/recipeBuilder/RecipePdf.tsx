@@ -12,6 +12,7 @@ import { createRecipePdfModel } from "./recipePdfModel";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { useNutrients } from "@/components/providers/NutrientProvider";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 type Props = {
   // optional metadata you likely have from the saved recipe record
@@ -49,6 +50,27 @@ function loadPdfLogo(): Promise<string> {
     });
 
   return logoDataUrlPromise;
+}
+
+/** Wait for builder auth before freezing the PDF model's author byline. */
+export function BuilderRecipePdf() {
+  const { t } = useTranslation();
+  const { user, loading } = useAuth();
+
+  if (loading && !user) {
+    return <p className="text-sm text-muted-foreground">{t("PDF.generating")}</p>;
+  }
+
+  const publicUsername = user
+    ? user.public_username?.trim() || t("PDF.memberName")
+    : undefined;
+
+  return (
+    <RecipePdf
+      key={user ? `${user.id}:${publicUsername}` : "guest"}
+      publicUsername={publicUsername}
+    />
+  );
 }
 
 export default function RecipePdf({ title, publicUsername }: Props) {

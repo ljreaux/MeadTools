@@ -40,7 +40,8 @@ function SaveRecipeCopy() {
       stabilizers,
       additives,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     }
   } = useRecipe();
 
@@ -59,6 +60,7 @@ function SaveRecipeCopy() {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       flags: {
         private: checked
       }
@@ -71,6 +73,7 @@ function SaveRecipeCopy() {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       checked
     ]
   );

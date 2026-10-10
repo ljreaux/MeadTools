@@ -139,3 +139,60 @@ test("uses a recorded post-secondary volume as the measured total for ABV", () =
   assert.ok(stageData.actual.currentAbv != null);
   assert.ok(Math.abs(stageData.actual.currentAbv - expectedAbv) < 0.000001);
 });
+
+test("planned loss changes the recipe target but never subtracts from a measured brew volume", () => {
+  const adjustedRecipe = structuredClone(backsweetenedMetricRecipeFixture) as RecipeData;
+  adjustedRecipe.lossAdjustment = {
+    enabled: true,
+    mode: "manual",
+    percentage: 50
+  };
+  const snapshot = (dataV2: RecipeData) => ({
+    id: 4,
+    name: "Measured batch",
+    version: 2,
+    dataV2,
+    snapshottedAt: "2026-01-01T00:00:00.000Z"
+  });
+  const args = {
+    currentVolumeLiters: 2.5,
+    latestGravity: null,
+    entries: []
+  };
+  const original = buildBrewRecipeStageData({ ...args, recipeSnapshot: snapshot(backsweetenedMetricRecipeFixture) });
+  const adjusted = buildBrewRecipeStageData({ ...args, recipeSnapshot: snapshot(adjustedRecipe) });
+
+  assert.equal(adjusted.derived?.volume.primaryL, 4);
+  assert.equal(adjusted.derived?.volume.postLossPrimaryL, 2);
+  assert.equal(adjusted.derived?.volume.totalL, 2.75);
+  assert.equal(adjusted.actual.currentVolumeL, 2.5);
+  assert.equal(adjusted.effective.currentVolumeL, 2.5);
+  assert.equal(adjusted.actual.currentAbv, original.actual.currentAbv);
+});
+
+test("secondary loss estimates bottling yield without replacing a measured brew volume", () => {
+  const adjustedRecipe = structuredClone(backsweetenedMetricRecipeFixture) as RecipeData;
+  adjustedRecipe.lossAdjustment = {
+    enabled: false,
+    mode: "manual",
+    percentage: 0,
+    secondary: { enabled: true, percentage: 20 }
+  };
+  const stageData = buildBrewRecipeStageData({
+    recipeSnapshot: {
+      id: 5,
+      name: "Measured batch",
+      version: 2,
+      dataV2: adjustedRecipe,
+      snapshottedAt: "2026-01-01T00:00:00.000Z"
+    },
+    currentVolumeLiters: 2.5,
+    latestGravity: null,
+    entries: []
+  });
+
+  assert.equal(stageData.derived?.volume.totalL, 4.75);
+  assert.equal(stageData.derived?.volume.bottlingL, 3.8);
+  assert.equal(stageData.actual.currentVolumeL, 2.5);
+  assert.equal(stageData.effective.currentVolumeL, 2.5);
+});

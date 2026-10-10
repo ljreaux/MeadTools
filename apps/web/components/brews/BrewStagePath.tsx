@@ -129,6 +129,9 @@ export function BrewStagePath({
     stage === "PRIMARY"
       ? (recipe.derived?.volume.primaryL ?? recipe.effective.currentVolumeL)
       : recipe.effective.currentVolumeL;
+  const suggestedTransferVolumeLiters = recipe.recipeData?.lossAdjustment?.enabled
+    ? recipe.derived?.volume.postLossPrimaryL
+    : null;
   const recipeVolumeUnit =
     recipe.recipeData?.unitDefaults.volume ??
     recipe.derived?.volume.unit ??
@@ -504,6 +507,7 @@ export function BrewStagePath({
             }
             defaultVolumeUnit={recipeVolumeUnit}
             intent={recordVolumeIntent}
+            suggestedVolumeLiters={suggestedTransferVolumeLiters}
             onSave={async (volume, meta) => {
               await patchBrewMetadata({ current_volume_liters: volume });
               await addEntry(

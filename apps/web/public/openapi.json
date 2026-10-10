@@ -6438,10 +6438,28 @@
               "primaryL": {
                 "type": "number"
               },
+              "postLossPrimaryL": {
+                "type": "number"
+              },
+              "lossL": {
+                "type": "number"
+              },
+              "lossPercentage": {
+                "type": "number"
+              },
               "secondaryL": {
                 "type": "number"
               },
               "totalL": {
+                "type": "number"
+              },
+              "secondaryLossL": {
+                "type": "number"
+              },
+              "secondaryLossPercentage": {
+                "type": "number"
+              },
+              "bottlingL": {
                 "type": "number"
               }
             },
@@ -6451,8 +6469,14 @@
               "secondary",
               "total",
               "primaryL",
+              "postLossPrimaryL",
+              "lossL",
+              "lossPercentage",
               "secondaryL",
-              "totalL"
+              "totalL",
+              "secondaryLossL",
+              "secondaryLossPercentage",
+              "bottlingL"
             ]
           },
           "alcohol": {

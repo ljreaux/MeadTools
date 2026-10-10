@@ -86,6 +86,14 @@ return chat transcripts or provider prompt payloads. The same path-parity check
 removes this endpoint while preserving the documented behavior of every earlier
 route.
 
+The optional loss update adds estimated post-transfer primary volume,
+primary loss volume and percentage, secondary loss volume and percentage, and
+estimated bottling volume to the derived recipe response's volume object.
+Existing recipe inputs may omit `lossAdjustment`, which preserves all prior
+calculation results. Secondary loss is an optional, default-off manual
+percentage and affects only bottling yield. The reviewed OpenAPI diff adds
+these required derived-volume fields.
+
 Chat contract ownership is split by concern: `zod/chat.ts` owns private thread,
 transcript, context, and conversation schemas; `zod/credits.ts` owns wallet,
 activity, Checkout, and webhook receipts; and `zod/admin.ts` owns rollout,

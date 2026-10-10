@@ -55,7 +55,8 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       stabilizers,
       additives,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     },
     meta
   } = useRecipe();
@@ -70,6 +71,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       flags: {
         private: checked
       }
@@ -82,6 +84,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       checked
     ]
   );

@@ -527,6 +527,23 @@ export function PrimaryStagePanel({
         />
       </div>
 
+      {ctx.recipe.recipeData?.lossAdjustment?.enabled && ctx.recipe.derived ? (
+        <div className="rounded-md border border-border bg-background/40 px-3 py-3 text-sm">
+          <div className="font-medium">
+            {t("brews.primary.plannedTransferVolume")}: {fmtVolume(ctx.recipe.derived.volume.postLossPrimaryL)}
+            {" · "}{ctx.recipe.derived.volume.lossPercentage}%
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("brews.primary.lossDisclaimer")}
+          </p>
+          {hasLoggedSecondaryVolume ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("brews.primary.measuredVolumeUsed")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="rounded-md border border-border bg-background/40 px-3 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">

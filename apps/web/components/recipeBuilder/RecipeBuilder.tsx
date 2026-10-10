@@ -10,6 +10,7 @@ import Ingredients from "./Ingredients";
 import { ReactNode, useCallback } from "react";
 import Units from "./Units";
 import IngredientResults from "./Results";
+import LossAdjustment from "./LossAdjustment";
 import DesiredBatchDetails from "./DesiredBatchDetails";
 import ScaleRecipeForm from "./ScaleRecipeForm";
 import Stabilizers from "./Stabilizers";
@@ -25,7 +26,7 @@ import NutrientSelector from "../nutrientCalc/NutrientSelector";
 import Results from "../nutrientCalc/Results";
 import AdditionalDetails from "../nutrientCalc/AdditionalDetails";
 import { NutrientProvider } from "@/components/providers/NutrientProvider";
-import RecipePdf from "./RecipePdf";
+import { BuilderRecipePdf } from "./RecipePdf";
 import SaveRecipe from "./SaveRecipe";
 
 type CardConfig = {
@@ -46,6 +47,7 @@ const cardConfig: CardConfig[] = [
       <Units key="units" />,
       <DesiredBatchDetails key="DesiredBatchDetails" />,
       <Ingredients key="ingredients" />,
+      <LossAdjustment key="lossAdjustment" />,
       <IngredientResults key="ingredientResults" />,
       <ScaleRecipeForm key="scaleIngredientsForm" />
     ]
@@ -89,7 +91,7 @@ const cardConfig: CardConfig[] = [
   {
     key: "card 7",
     heading: "PDF.title",
-    components: [<RecipePdf key="pdf" />]
+    components: [<BuilderRecipePdf key="pdf" />]
   }
 ];
 

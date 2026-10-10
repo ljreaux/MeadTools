@@ -1151,6 +1151,10 @@
     "yes": "Ja",
     "brews": {
         "packaged": {
+            "measuredBottlingEstimate": "Abfüllschätzung aus erfasstem Volumen",
+            "adjustedMeasurementPrefilled": "Der Rechner beginnt mit dem erfassten Volumen abzüglich {{percentage}} % Verlust in der Nachgärung. Ersetze es durch das tatsächlich abgefüllte Volumen.",
+            "measurementBeforeAdditions": "Nach allen Zugaben in der Nachgärung wurde kein Volumen erfasst. Der Rechner beginnt daher mit dem unveränderten erfassten Volumen. Verwende bei Bedarf die Rezeptschätzung und erfasse das tatsächlich abgefüllte Volumen.",
+            "useRecordedVolume": "Erfasstes Volumen verwenden",
             "packageCount": "Anzahl Gebinde",
             "packaging": "Abfüllung",
             "completion": "Fertigstellung",
@@ -1378,6 +1382,7 @@
             "previousVolume": "Vorheriges Volumen",
             "saveSecondaryVolume": "Volumen speichern",
             "secondaryVolumePlaceholder": "Volumen nach Transfer eingeben",
+            "transferVolumePrefilled": "Mit der Rezeptschätzung vorausgefüllt. Ersetze sie vor dem Speichern durch das gemessene Volumen.",
             "suggestedOg": "Vorgeschlagene Anfangsdichte",
             "suggestedOgAvailable": "Vorgeschlagene Anfangsdichte verfügbar",
             "volumeChange": "Volumenänderung",
