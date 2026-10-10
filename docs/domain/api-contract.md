@@ -40,6 +40,11 @@ legacy snapshots can still be read, while consumers validate `dataV2` before
 calculating targets. Authenticated `GET /brews/{brew_id}` now returns the
 documented `Brew not found` error with HTTP 404 for an unavailable brew.
 
+The direct-brew update permits creating a brew from an owned or currently public
+recipe and adds an explicit snapshot refresh to brew metadata updates. Snapshot responses retain
+source attribution and prior snapshots. The parity test normalizes the approved
+brew route descriptions and status additions before checking older paths.
+
 The persistent-chat update intentionally adds `/chat/conversations` and
 `/chat/conversations/{conversationId}`. The same path-parity check removes
 these private authenticated endpoints before comparing earlier API paths.

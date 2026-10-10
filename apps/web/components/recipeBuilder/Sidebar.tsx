@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
   ChevronUp,
+  Beer,
   CookingPot,
   SmartphoneCharging,
   Pipette,
@@ -25,12 +26,14 @@ function RecipeCalculatorSideBar({
   goTo,
   children,
   cardNumber,
-  forceOpen
+  forceOpen,
+  showConnectedBrews = false
 }: {
   goTo: (pageNum: number) => void;
   children: JSX.Element;
   cardNumber: number;
   forceOpen?: boolean;
+  showConnectedBrews?: boolean;
 }) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(forceOpen || false);
@@ -71,7 +74,14 @@ function RecipeCalculatorSideBar({
       label: t("PDF.title"),
       pageNumber: 7,
       icon: <FileText />
-    }
+    },
+    ...(showConnectedBrews
+      ? [{
+          label: t("recipes.connectedBrews.title"),
+          pageNumber: 8,
+          icon: <Beer />
+        }]
+      : [])
   ];
 
   return (

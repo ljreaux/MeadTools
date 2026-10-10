@@ -804,6 +804,20 @@
       }
     },
     "label": "Brews",
+    "create": {
+      "action": "Create brew",
+      "title": "Create a brew from this recipe",
+      "saveFirst": "This recipe has unsaved changes. Save them before creating the brew so it uses the version you see.",
+      "saveAndCreate": "Save recipe and create brew",
+      "loginRequired": "Log in to create a brew.",
+      "failed": "The brew could not be created. Please try again.",
+      "withNewRecipe": "Create a brew from this recipe after saving",
+      "brewName": "Brew name (optional)",
+      "savedButFailed": "The recipe was saved, but the brew could not be created. Retry below; this will not save a second recipe.",
+      "recipeSaveFailed": "The recipe could not be saved. Review it and try again.",
+      "openSavedRecipe": "Open the saved recipe",
+      "retryBrew": "Retry creating brew"
+    },
     "moveBack": "Move back to this stage",
     "moveToSecondary": "Move to Secondary",
     "moveToStage": "Move to this stage",
@@ -1023,6 +1037,32 @@
     },
     "stagePathHint": "Click a stage to see actions.",
     "startDate": "Start Date",
+    "snapshot": {
+      "title": "Recipe snapshot",
+      "current": "Current snapshot: {{date}}",
+      "unknownDate": "date unknown",
+      "checking": "Checking the source recipe for changes...",
+      "unavailable": "The source recipe is no longer available for updates. Your brew keeps its current snapshot.",
+      "upToDate": "This brew uses the current saved recipe.",
+      "action": "Update recipe snapshot",
+      "confirmTitle": "Update this brew's recipe snapshot?",
+      "warning": "This replaces the plan used for future suggestions. Planned amounts, remaining additions, and calculated estimates may change, including when recipe item IDs have changed.",
+      "entriesRemain": "Recorded brew entries and measurements will not be changed.",
+      "changedSections": "Changed recipe sections",
+      "name": "Recipe name",
+      "confirm": "Update snapshot",
+      "failed": "The snapshot could not be updated. Review the recipe and try again.",
+      "sections": {
+        "unitDefaults": "Units",
+        "ingredients": "Ingredients",
+        "fg": "Final gravity target",
+        "additives": "Additives",
+        "notes": "Notes",
+        "nutrients": "Nutrients and yeast",
+        "stabilizers": "Stabilizers",
+        "lossAdjustment": "Volume loss estimates"
+      }
+    },
     "stayHere": "You are here",
     "title": "Brew Tracker",
     "visibility": {

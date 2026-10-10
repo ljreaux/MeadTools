@@ -64,8 +64,10 @@ import {
   brewFetchErrorResponseSchema,
   brewListItemResponseSchema,
   brewPathParamsSchema,
+  brewRecipeNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
   brewResponseSchema,
+  brewSnapshotUpdateErrorResponseSchema,
   brewStageResponseSchema,
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
@@ -418,8 +420,10 @@ export type BrewEntryWithBrewIdResponse = z.infer<typeof brewEntryWithBrewIdResp
 export type BrewFetchErrorResponse = z.infer<typeof brewFetchErrorResponseSchema>;
 export type BrewListItemResponse = z.infer<typeof brewListItemResponseSchema>;
 export type BrewPathParams = z.infer<typeof brewPathParamsSchema>;
+export type BrewRecipeNotFoundErrorResponse = z.infer<typeof brewRecipeNotFoundErrorResponseSchema>;
 export type BrewRecipeSnapshotResponse = z.infer<typeof brewRecipeSnapshotResponseSchema>;
 export type BrewResponse = z.infer<typeof brewResponseSchema>;
+export type BrewSnapshotUpdateErrorResponse = z.infer<typeof brewSnapshotUpdateErrorResponseSchema>;
 export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
 export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
 export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;

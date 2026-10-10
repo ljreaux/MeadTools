@@ -1605,7 +1605,10 @@
               "Missing recipe_id",
               "Missing brew_id",
               "Missing entry_id",
-              "Invalid client_entry_id"
+              "Invalid client_entry_id",
+              "Invalid recipe_id",
+              "Only ongoing brews can update their recipe snapshot",
+              "Recipe snapshot not found"
             ]
           }
         },
@@ -1914,6 +1917,16 @@
           "end_date": {
             "type": "string",
             "nullable": true
+          },
+          "update_recipe_snapshot": {
+            "type": "boolean"
+          },
+          "expected_snapshotted_at": {
+            "type": "string",
+            "nullable": true
+          },
+          "expected_recipe_content_key": {
+            "type": "string"
           }
         }
       },
@@ -1987,6 +2000,24 @@
           "recipe_private",
           "latest_gravity",
           "requested_email_alerts"
+        ]
+      },
+      "BrewSnapshotUpdateErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Only ongoing brews can update their recipe snapshot",
+              "Recipe snapshot not found",
+              "Recipe not available",
+              "Brew snapshot changed; review it again",
+              "Recipe changed; review it again"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "BrewUpdateErrorResponse": {
@@ -2075,6 +2106,20 @@
         },
         "required": [
           "brew"
+        ]
+      },
+      "BrewRecipeNotFoundErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Recipe not found"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "BrewCreateErrorResponse": {
@@ -4311,6 +4356,32 @@
           "latest_gravity"
         ]
       },
+      "brewRecipeSnapshotBaseResponseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "dataV2": {},
+          "snapshottedAt": {
+            "type": "string"
+          },
+          "sourceUserId": {
+            "type": "number",
+            "nullable": true
+          },
+          "sourceUsername": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "brewEntryObjectSchema": {
         "type": "object",
         "properties": {
@@ -5601,6 +5672,20 @@
           "dataV2": {},
           "snapshottedAt": {
             "type": "string"
+          },
+          "sourceUserId": {
+            "type": "number",
+            "nullable": true
+          },
+          "sourceUsername": {
+            "type": "string",
+            "nullable": true
+          },
+          "previousSnapshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/brewRecipeSnapshotBaseResponseSchema"
+            }
           }
         }
       },
@@ -9671,7 +9756,7 @@
       "post": {
         "operationId": "post-brews",
         "summary": "Create brew",
-        "description": "Starts a new brew from one of the authenticated user's recipes and snapshots the current recipe data.",
+        "description": "Starts a private brew from an owned or public recipe and snapshots its current data.",
         "tags": [
           "Brews"
         ],
@@ -9726,7 +9811,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewRecipeNotFoundErrorResponse"
                 }
               }
             }
@@ -9959,12 +10044,32 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewSnapshotUpdateErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewSnapshotUpdateErrorResponse"
                 }
               }
             }

@@ -59,6 +59,8 @@ export async function GET(
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
  * @add 404:AuthenticatedRouteErrorResponse
+ * @add 403:BrewSnapshotUpdateErrorResponse
+ * @add 409:BrewSnapshotUpdateErrorResponse
  * @add 500:BrewUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -84,6 +86,23 @@ export async function PATCH(
     const updated = await patchBrewMetadata(userId, brew_id, body);
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === "Recipe not available") {
+        return NextResponse.json({ error: err.message }, { status: 403 });
+      }
+      if (
+        err.message === "Brew snapshot changed; review it again" ||
+        err.message === "Recipe changed; review it again"
+      ) {
+        return NextResponse.json({ error: err.message }, { status: 409 });
+      }
+      if (
+        err.message === "Only ongoing brews can update their recipe snapshot" ||
+        err.message === "Recipe snapshot not found"
+      ) {
+        return NextResponse.json({ error: err.message }, { status: 400 });
+      }
+    }
     console.error("Error updating brew:", err);
     return NextResponse.json(
       { error: "Failed to update brew." },

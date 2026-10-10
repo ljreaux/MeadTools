@@ -223,6 +223,9 @@ export function useCreateAccountBrew() {
  */
 export type PatchAccountBrewMetadataInput = {
   recipe_id?: number;
+  update_recipe_snapshot?: boolean;
+  expected_snapshotted_at?: string | null;
+  expected_recipe_content_key?: string;
   name?: string | null;
   batch_number?: number | null;
   start_date?: string;

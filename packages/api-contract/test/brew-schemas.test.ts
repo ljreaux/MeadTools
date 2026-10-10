@@ -46,6 +46,14 @@ test("brew update schema preserves partial and nullable fields", () => {
     }).success,
     true
   );
+  assert.equal(
+    updateBrewRequestBodySchema.safeParse({
+      update_recipe_snapshot: true,
+      expected_snapshotted_at: "2026-10-09T00:00:00.000Z",
+      expected_recipe_content_key: "plan-key"
+    }).success,
+    true
+  );
 });
 
 test("brew schemas reject invalid enums while preserving literal errors", () => {
@@ -86,4 +94,10 @@ test("brew snapshot contract accepts legacy fields without accepting non-objects
   assert.equal(brewRecipeSnapshotResponseSchema.safeParse({ name: "Older recipe" }).success, true);
   assert.equal(brewRecipeSnapshotResponseSchema.safeParse({ dataV2: { version: 1 } }).success, true);
   assert.equal(brewRecipeSnapshotResponseSchema.safeParse("recipe").success, false);
+  assert.equal(brewRecipeSnapshotResponseSchema.safeParse({
+    name: "Current",
+    sourceUserId: 2,
+    sourceUsername: "maker",
+    previousSnapshots: [{ name: "Earlier", dataV2: { version: 2 } }]
+  }).success, true);
 });

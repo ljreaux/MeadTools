@@ -68,14 +68,9 @@ export function useSaveRecipe({
     ]
   );
 
-  const save = useCallback(() => {
+  const saveAsync = useCallback(async () => {
     if (!recipeId) {
-      toast({
-        title: t("errorLabel"),
-        description: t("error.generic"),
-        variant: "destructive"
-      });
-      return;
+      throw new Error(t("error.generic"));
     }
 
     const body: UpdateRecipePayload = {
@@ -85,23 +80,9 @@ export function useSaveRecipe({
       dataV2
     };
 
-    updateRecipeMutation.mutate(
-      { id: recipeId, body },
-      {
-        onSuccess: () => {
-          toast({ description: t("recipeUpdate") });
-          markSaved();
-        },
-        onError: (error: any) => {
-          console.error("Error updating recipe:", error);
-          toast({
-            title: t("errorLabel"),
-            description: t("error.generic"),
-            variant: "destructive"
-          });
-        }
-      }
-    );
+    await updateRecipeMutation.mutateAsync({ id: recipeId, body });
+    toast({ description: t("recipeUpdate") });
+    markSaved();
   }, [
     recipeId,
     toast,
@@ -114,8 +95,20 @@ export function useSaveRecipe({
     markSaved
   ]);
 
+  const save = useCallback(() => {
+    void saveAsync().catch((error) => {
+      console.error("Error updating recipe:", error);
+      toast({
+        title: t("errorLabel"),
+        description: t("error.generic"),
+        variant: "destructive"
+      });
+    });
+  }, [saveAsync, toast, t]);
+
   return {
     save,
+    saveAsync,
     isSaving: updateRecipeMutation.isPending
   };
 }

@@ -63,8 +63,10 @@ import {
   brewFetchErrorResponseSchema,
   brewListItemResponseSchema,
   brewPathParamsSchema,
+  brewRecipeNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
   brewResponseSchema,
+  brewSnapshotUpdateErrorResponseSchema,
   brewStageResponseSchema,
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
@@ -417,8 +419,10 @@ export const BrewEntryWithBrewIdResponse = brewEntryWithBrewIdResponseSchema;
 export const BrewFetchErrorResponse = brewFetchErrorResponseSchema;
 export const BrewListItemResponse = brewListItemResponseSchema;
 export const BrewPathParams = brewPathParamsSchema;
+export const BrewRecipeNotFoundErrorResponse = brewRecipeNotFoundErrorResponseSchema;
 export const BrewRecipeSnapshotResponse = brewRecipeSnapshotResponseSchema;
 export const BrewResponse = brewResponseSchema;
+export const BrewSnapshotUpdateErrorResponse = brewSnapshotUpdateErrorResponseSchema;
 export const BrewsResponse = brewsResponseSchema;
 export const BrewStageResponse = brewStageResponseSchema;
 export const BrewUpdateErrorResponse = brewUpdateErrorResponseSchema;
