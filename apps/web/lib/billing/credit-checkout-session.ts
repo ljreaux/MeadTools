@@ -15,26 +15,29 @@ export function buildCreditCheckoutSessionParams(options: {
   successUrl: string;
   cancelUrl: string;
   userId: number;
+  priceId?: string;
 }): Stripe.Checkout.SessionCreateParams {
-  const { checkoutId, pack, successUrl, cancelUrl, userId } = options;
+  const { checkoutId, pack, successUrl, cancelUrl, userId, priceId } = options;
   return {
     mode: "payment",
     managed_payments: { enabled: true },
     client_reference_id: String(userId),
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "usd",
-          unit_amount: pack.amountCents,
-          tax_behavior: "exclusive",
-          product_data: {
-            name: `${pack.credits.toLocaleString("en-US")} MeadTools prompt credits`,
-            tax_code: MEADTOOLS_PROMPT_CREDITS_TAX_CODE,
+    line_items: priceId
+      ? [{ quantity: 1, price: priceId }]
+      : [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "usd",
+              unit_amount: pack.amountCents,
+              tax_behavior: "exclusive",
+              product_data: {
+                name: `${pack.credits.toLocaleString("en-US")} MeadTools prompt credits`,
+                tax_code: MEADTOOLS_PROMPT_CREDITS_TAX_CODE,
+              },
+            },
           },
-        },
-      },
-    ],
+        ],
     metadata: {
       credit_checkout_id: checkoutId,
       credit_pack_id: pack.id,

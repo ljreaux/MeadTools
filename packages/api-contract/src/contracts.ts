@@ -199,6 +199,11 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  kofiLinkClaimRequestBodySchema,
+  kofiLinkClaimResponseSchema,
+  kofiLinkRequestBodySchema,
+  kofiLinkRequestResponseSchema,
+  kofiWebhookReceiptResponseSchema,
   linkRecipeToHydrometerBrewRequestBodySchema,
   linkRecipeToHydrometerBrewResponseSchema,
   loginFailureErrorResponseSchema,
@@ -206,6 +211,12 @@ import {
   loginMissingCredentialsErrorResponseSchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
+  mcpErrorResponseSchema,
+  mcpTokenCreateBodySchema,
+  mcpTokenCreateResponseSchema,
+  mcpTokenListResponseSchema,
+  mcpTokenRevokeResponseSchema,
+  mcpTokenSchema,
   nitrogenRequirementSchema,
   noteLineResponseSchema,
   notesResponseSchema,
@@ -220,6 +231,10 @@ import {
   nutrientSelectedResponseSchema,
   nutrientSettingsResponseSchema,
   nutrientVolumeUnitSchema,
+  premiumAccessResponseSchema,
+  premiumCheckoutResponseSchema,
+  premiumErrorResponseSchema,
+  premiumPortalResponseSchema,
   publicBrewDetailResponseSchema,
   publicBrewEntriesByStageResponseSchema,
   publicBrewEntryResponseSchema,
@@ -555,6 +570,11 @@ export type IngredientResponse = z.infer<typeof ingredientResponseSchema>;
 export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchErrorResponseSchema>;
 export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
 export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
+export type KofiLinkClaimRequestBody = z.infer<typeof kofiLinkClaimRequestBodySchema>;
+export type KofiLinkClaimResponse = z.infer<typeof kofiLinkClaimResponseSchema>;
+export type KofiLinkRequestBody = z.infer<typeof kofiLinkRequestBodySchema>;
+export type KofiLinkRequestResponse = z.infer<typeof kofiLinkRequestResponseSchema>;
+export type KofiWebhookReceiptResponse = z.infer<typeof kofiWebhookReceiptResponseSchema>;
 export type LinkRecipeToHydrometerBrewRequestBody = z.infer<typeof linkRecipeToHydrometerBrewRequestBodySchema>;
 export type LinkRecipeToHydrometerBrewResponse = z.infer<typeof linkRecipeToHydrometerBrewResponseSchema>;
 export type LoginFailureErrorResponse = z.infer<typeof loginFailureErrorResponseSchema>;
@@ -562,6 +582,12 @@ export type LoginInvalidCredentialsErrorResponse = z.infer<typeof loginInvalidCr
 export type LoginMissingCredentialsErrorResponse = z.infer<typeof loginMissingCredentialsErrorResponseSchema>;
 export type LoginRequestBody = z.infer<typeof loginRequestBodySchema>;
 export type LoginSuccessResponse = z.infer<typeof loginSuccessResponseSchema>;
+export type McpErrorResponse = z.infer<typeof mcpErrorResponseSchema>;
+export type McpToken = z.infer<typeof mcpTokenSchema>;
+export type McpTokenCreateBody = z.infer<typeof mcpTokenCreateBodySchema>;
+export type McpTokenCreateResponse = z.infer<typeof mcpTokenCreateResponseSchema>;
+export type McpTokenListResponse = z.infer<typeof mcpTokenListResponseSchema>;
+export type McpTokenRevokeResponse = z.infer<typeof mcpTokenRevokeResponseSchema>;
 export type NitrogenRequirement = z.infer<typeof nitrogenRequirementSchema>;
 export type NoteLineResponse = z.infer<typeof noteLineResponseSchema>;
 export type NotesResponse = z.infer<typeof notesResponseSchema>;
@@ -576,6 +602,10 @@ export type NutrientScheduleType = z.infer<typeof nutrientScheduleTypeSchema>;
 export type NutrientSelectedResponse = z.infer<typeof nutrientSelectedResponseSchema>;
 export type NutrientSettingsResponse = z.infer<typeof nutrientSettingsResponseSchema>;
 export type NutrientVolumeUnit = z.infer<typeof nutrientVolumeUnitSchema>;
+export type PremiumAccessResponse = z.infer<typeof premiumAccessResponseSchema>;
+export type PremiumCheckoutResponse = z.infer<typeof premiumCheckoutResponseSchema>;
+export type PremiumErrorResponse = z.infer<typeof premiumErrorResponseSchema>;
+export type PremiumPortalResponse = z.infer<typeof premiumPortalResponseSchema>;
 export type PublicBrewDetailResponse = z.infer<typeof publicBrewDetailResponseSchema>;
 export type PublicBrewEntriesByStageResponse = z.infer<typeof publicBrewEntriesByStageResponseSchema>;
 export type PublicBrewEntryResponse = z.infer<typeof publicBrewEntryResponseSchema>;

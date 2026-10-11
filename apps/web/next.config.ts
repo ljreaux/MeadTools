@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     "@meadtools/schemas",
     "@meadtools/recipe-workflows",
     "@meadtools/recipe-agent",
+    "@meadtools/premium-domain",
     "@meadtools/wiki-knowledge",
   ],
 };

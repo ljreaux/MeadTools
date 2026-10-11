@@ -151,6 +151,251 @@
           "availableCredits"
         ]
       },
+      "KofiLinkClaimRequestBody": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 40,
+            "maxLength": 60
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "KofiLinkClaimResponse": {
+        "type": "object",
+        "properties": {
+          "linked": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "activePaymentFound": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "linked",
+          "activePaymentFound"
+        ]
+      },
+      "PremiumErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "KofiLinkRequestBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "KofiLinkRequestResponse": {
+        "type": "object",
+        "properties": {
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "expiresAt"
+        ]
+      },
+      "McpTokenRevokeResponse": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "revoked"
+        ]
+      },
+      "McpErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "McpTokenListResponse": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/McpToken"
+            }
+          }
+        },
+        "required": [
+          "endpoint",
+          "tokens"
+        ]
+      },
+      "McpTokenCreateBody": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "label"
+        ]
+      },
+      "McpTokenCreateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "token",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "PremiumAccessResponse": {
+        "type": "object",
+        "properties": {
+          "entitled": {
+            "type": "boolean"
+          },
+          "premiumEnabled": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "kofi",
+              "stripe",
+              "manual"
+            ],
+            "nullable": true
+          },
+          "paidThrough": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentRestricted": {
+            "type": "boolean"
+          },
+          "kofiLinked": {
+            "type": "boolean"
+          },
+          "stripeLinked": {
+            "type": "boolean"
+          },
+          "monthlyPriceCents": {
+            "type": "number",
+            "enum": [
+              500
+            ]
+          },
+          "monthlyChatCredits": {
+            "type": "number",
+            "enum": [
+              1000
+            ]
+          },
+          "subscriptionsEnabled": {
+            "type": "boolean"
+          },
+          "kofiJoinUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "mcpEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entitled",
+          "premiumEnabled",
+          "source",
+          "paidThrough",
+          "paymentRestricted",
+          "kofiLinked",
+          "stripeLinked",
+          "monthlyPriceCents",
+          "monthlyChatCredits",
+          "subscriptionsEnabled",
+          "kofiJoinUrl",
+          "mcpEnabled"
+        ]
+      },
+      "PremiumCheckoutResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "PremiumPortalResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
       "ReleaseEmailPreferencesResponse": {
         "type": "object",
         "properties": {
@@ -3797,6 +4042,20 @@
           "error"
         ]
       },
+      "KofiWebhookReceiptResponse": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "received"
+        ]
+      },
       "StripeWebhookReceiptResponse": {
         "type": "object",
         "properties": {
@@ -6080,6 +6339,35 @@
       "LinkRecipeToHydrometerBrewResponse": {
         "$ref": "#/components/schemas/HydrometerBrewResponse"
       },
+      "McpToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "createdAt",
+          "expiresAt",
+          "lastUsedAt"
+        ]
+      },
       "PublicBrewDetailResponse": {
         "type": "object",
         "properties": {
@@ -7069,6 +7357,44 @@
         }
       }
     },
+    "/account/premium": {
+      "get": {
+        "operationId": "get-account-premium",
+        "summary": "Return account premium status and the planned bundle details.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumAccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/account/release-emails": {
       "get": {
         "operationId": "get-account-release-emails",
@@ -7572,6 +7898,507 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreditAccountErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/kofi/claim": {
+      "post": {
+        "operationId": "post-account-premium-kofi-claim",
+        "summary": "Claim a Ko-fi email proof for the signed-in MeadTools account.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KofiLinkClaimRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KofiLinkClaimResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/kofi/link": {
+      "post": {
+        "operationId": "post-account-premium-kofi-link",
+        "summary": "Email a one-time account-link proof to the Ko-fi payer address.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KofiLinkRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KofiLinkRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/mcp/tokens": {
+      "get": {
+        "operationId": "get-account-premium-mcp-tokens",
+        "summary": "List the signed-in account's revocable MCP credentials.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpTokenListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-account-premium-mcp-tokens",
+        "summary": "Create a 90-day MCP bearer credential, displayed once.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpTokenCreateBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpTokenCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/stripe/checkout": {
+      "post": {
+        "operationId": "post-account-premium-stripe-checkout",
+        "summary": "Create a monthly premium Stripe Checkout Session when sales are enabled.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumCheckoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/stripe/portal": {
+      "post": {
+        "operationId": "post-account-premium-stripe-portal",
+        "summary": "Open Stripe Billing Portal for an account's linked premium subscription.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumPortalResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/mcp/tokens/{id}": {
+      "delete": {
+        "operationId": "delete-account-premium-mcp-tokens-{id}",
+        "summary": "Revoke one owned MCP credential immediately.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpTokenRevokeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpErrorResponse"
                 }
               }
             }
@@ -14032,6 +14859,89 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RecipeCommentsFetchErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/kofi": {
+      "post": {
+        "operationId": "post-webhooks-kofi",
+        "summary": "Receive and deduplicate verified Ko-fi recurring payment notifications.",
+        "description": "",
+        "tags": [
+          "Webhooks"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KofiWebhookReceiptResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "HTTP 415",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
                 }
               }
             }

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "d737a90446427a7bb99f209c35ee0febc5f7557ca99787a6eaaa01cad5317f50";
+  "b201bd5a45f7eea8d221dd6f5e5588a5c0230371c55ae132ab048ba3e03b6f6e";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -86,9 +86,17 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/account/credits"];
   delete pathsWithoutApprovedAdditions["/account/credits/checkout"];
   delete pathsWithoutApprovedAdditions["/account/credits/history"];
+  delete pathsWithoutApprovedAdditions["/account/premium"];
+  delete pathsWithoutApprovedAdditions["/account/premium/kofi/link"];
+  delete pathsWithoutApprovedAdditions["/account/premium/kofi/claim"];
+  delete pathsWithoutApprovedAdditions["/account/premium/mcp/tokens"];
+  delete pathsWithoutApprovedAdditions["/account/premium/mcp/tokens/{id}"];
+  delete pathsWithoutApprovedAdditions["/account/premium/stripe/checkout"];
+  delete pathsWithoutApprovedAdditions["/account/premium/stripe/portal"];
   delete pathsWithoutApprovedAdditions["/account/release-emails"];
   delete pathsWithoutApprovedAdditions["/release-emails/unsubscribe"];
   delete pathsWithoutApprovedAdditions["/webhooks/stripe"];
+  delete pathsWithoutApprovedAdditions["/webhooks/kofi"];
   delete pathsWithoutApprovedAdditions["/chat/access"];
   delete pathsWithoutApprovedAdditions["/admin/chat-access"];
   delete pathsWithoutApprovedAdditions["/admin/chat-access/grants"];

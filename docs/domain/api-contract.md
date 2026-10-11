@@ -99,6 +99,24 @@ calculation results. Secondary loss is an optional, default-off manual
 percentage and affects only bottling yield. The reviewed OpenAPI diff adds
 these required derived-volume fields.
 
+The premium groundwork adds authenticated `GET /account/premium` and Ko-fi
+account-link `POST` routes, plus `POST /webhooks/kofi` for verified recurring
+payment receipts. Local premium testing also adds authenticated Stripe
+subscription Checkout and Billing Portal `POST` routes and processes signed
+subscription events on the existing Stripe webhook route. New subscription
+Checkout remains behind `PREMIUM_SUBSCRIPTIONS_ENABLED`, which is unset in
+production. Remote MCP access remains disabled until its launch gates are
+complete. The path-parity test removes these additions before comparing the
+pre-Zod endpoint baseline.
+
+The MCP follow-up adds authenticated `GET` and `POST`
+`/account/premium/mcp/tokens` and `DELETE`
+`/account/premium/mcp/tokens/{id}` for account-owned connection credentials.
+The generated OpenAPI document includes only these account API routes; the
+Streamable HTTP `/mcp` resource and OAuth discovery/authorization endpoints
+live outside `app/api` and follow their respective protocols. The parity test
+removes the new account paths before comparing the earlier endpoint baseline.
+
 Chat contract ownership is split by concern: `zod/chat.ts` owns private thread,
 transcript, context, and conversation schemas; `zod/credits.ts` owns wallet,
 activity, Checkout, and webhook receipts; and `zod/admin.ts` owns rollout,

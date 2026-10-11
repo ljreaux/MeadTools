@@ -169,6 +169,210 @@ model users {
   credit_account           credit_accounts?
   credit_checkout_sessions credit_checkout_sessions[]
   resolved_payment_recoveries credit_payment_recoveries[] @relation("credit_payment_recoveries_resolved_by")
+  premium_memberships      premium_memberships[]
+  kofi_link                premium_kofi_links?
+  kofi_link_challenges     premium_kofi_link_challenges[]
+  premium_stripe_subscription premium_stripe_subscriptions?
+  premium_stripe_invoices  premium_stripe_invoices[]
+  mcp_access_tokens       mcp_access_tokens[]
+  mcp_oauth_codes         mcp_oauth_codes[]
+  mcp_oauth_sessions      mcp_oauth_sessions[]
+  mcp_rate_buckets        mcp_rate_buckets?
+  mcp_tool_leases         mcp_tool_leases[]
+  mcp_tool_usage          mcp_tool_usage[]
+}
+
+/// Account-scoped premium access from a paid period or an operator grant.
+/// Source records remain separate so Ko-fi, Stripe, and manual grants can
+/// expire or be revoked independently.
+model premium_memberships {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            Int
+  source             String    @db.VarChar(32)
+  external_reference String?   @db.VarChar(255)
+  paid_through       DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@unique([user_id, source])
+  @@unique([source, external_reference])
+  @@index([user_id, paid_through])
+}
+
+/// A verified account link to the Ko-fi payer email. The email itself is not
+/// persisted; a keyed digest prevents a database leak from listing supporters.
+model premium_kofi_links {
+  user_id       Int      @id
+  email_digest  String   @unique @db.VarChar(64)
+  grandfathered Boolean @default(true)
+  verified_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// One-time proof sent to the payer email before it can claim Ko-fi payments.
+model premium_kofi_link_challenges {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     Int
+  email_digest String  @db.VarChar(64)
+  token_hash  String    @unique @db.VarChar(64)
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// One verified Ko-fi recurring payment. The message and transaction IDs
+/// deduplicate retries; no raw webhook payload or payer email is retained.
+model premium_kofi_payments {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id     String    @unique @db.VarChar(128)
+  transaction_id String    @unique @db.VarChar(128)
+  email_digest   String    @db.VarChar(64)
+  paid_at        DateTime  @db.Timestamptz(6)
+  amount_cents   Int
+  currency       String    @db.VarChar(3)
+  applied_user_id Int?
+  applied_at     DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email_digest, paid_at])
+}
+
+/// Stripe customer and subscription identity for account billing management.
+model premium_stripe_subscriptions {
+  user_id              Int      @id
+  customer_id          String   @unique @db.VarChar(255)
+  subscription_id      String   @unique @db.VarChar(255)
+  status               String   @db.VarChar(32)
+  cancel_at_period_end Boolean  @default(false)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// One paid Stripe invoice per premium allowance. The invoice ID makes
+/// webhook retries and out-of-order delivery safe to replay.
+model premium_stripe_invoices {
+  invoice_id        String   @id @db.VarChar(255)
+  user_id           Int
+  subscription_id   String   @db.VarChar(255)
+  paid_at           DateTime @db.Timestamptz(6)
+  paid_through      DateTime @db.Timestamptz(6)
+  amount_paid_cents Int
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, paid_at])
+  @@index([subscription_id, paid_at])
+}
+
+/// Revocable account-scoped MCP credentials. Only a SHA-256 digest is stored.
+model mcp_access_tokens {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      Int
+  label        String    @db.VarChar(80)
+  token_hash   String    @unique @db.VarChar(64)
+  expires_at   DateTime  @db.Timestamptz(6)
+  revoked_at   DateTime? @db.Timestamptz(6)
+  last_used_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, revoked_at])
+}
+
+/// Public OAuth clients registered by supported remote MCP clients.
+model mcp_oauth_clients {
+  client_id     String   @id @db.VarChar(128)
+  client_name   String   @db.VarChar(100)
+  redirect_uris String[]
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// Single-use authorization codes, bound to a user, client, resource and PKCE challenge.
+model mcp_oauth_codes {
+  code_hash      String    @id @db.VarChar(64)
+  consent_hash   String    @unique @db.VarChar(64)
+  user_id        Int
+  client_id      String    @db.VarChar(128)
+  redirect_uri   String    @db.VarChar(2048)
+  code_challenge String    @db.VarChar(128)
+  resource       String    @db.VarChar(512)
+  scope          String    @db.VarChar(128)
+  expires_at     DateTime  @db.Timestamptz(6)
+  consumed_at    DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// Revocable OAuth connection; access tokens expire quickly and refresh tokens rotate.
+model mcp_oauth_sessions {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            Int
+  client_id          String    @db.VarChar(128)
+  label              String    @db.VarChar(100)
+  access_token_hash  String    @unique @db.VarChar(64)
+  refresh_token_hash String    @unique @db.VarChar(64)
+  resource           String    @db.VarChar(512)
+  scope              String    @db.VarChar(128)
+  access_expires_at  DateTime  @db.Timestamptz(6)
+  refresh_expires_at DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  last_used_at       DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, revoked_at])
+}
+
+/// One rolling minute counter per account; no tool arguments are stored.
+model mcp_rate_buckets {
+  user_id      Int      @id
+  window_start DateTime @db.Timestamptz(6)
+  call_count   Int
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// Expiring concurrency slots survive serverless instances and crashes.
+model mcp_tool_leases {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    Int
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// Metadata only: never store tool arguments, results or credentials here.
+model mcp_tool_usage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      Int
+  tool_name    String   @db.VarChar(80)
+  result_class String   @db.VarChar(40)
+  duration_ms  Int
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, created_at])
 }
 
 /// The single rollout policy for private chatbot access. It is intentionally

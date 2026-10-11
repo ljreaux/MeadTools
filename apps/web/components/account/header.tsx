@@ -14,6 +14,7 @@ import {
   Settings,
   NotebookPen,
   MessageCircle,
+  Crown,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
@@ -127,6 +128,19 @@ function Header() {
           </Tooltip>
         </TooltipProvider>
       ) : null}
+
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/account/premium" aria-label={t("premium.title")}>
+                <Crown className="h-5 w-5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("premium.title")}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Logout */}
       <Button onClick={logout} variant="ghost" size="icon">

@@ -13,6 +13,8 @@
     "./catalog": "./src/zod/catalog.ts",
     "./chat": "./src/zod/chat.ts",
     "./credits": "./src/zod/credits.ts",
+    "./premium": "./src/zod/premium.ts",
+    "./mcp": "./src/zod/mcp.ts",
     "./release-emails": "./src/zod/release-emails.ts",
     "./recipes": "./src/zod/recipes.ts",
     "./routes": "./src/zod/routes.ts",
