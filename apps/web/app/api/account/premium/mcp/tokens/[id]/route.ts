@@ -20,7 +20,7 @@ export const runtime = "nodejs";
  */
 export async function DELETE(
   request: NextRequest,
-  context: RouteContext<"/api/account/premium/mcp/tokens/[id]">,
+  context: { params: Promise<{ id: string }> },
 ) {
   const userId = await verifyUser(request);
   if (userId instanceof NextResponse || typeof userId !== "number") {
