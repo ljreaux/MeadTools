@@ -157,6 +157,9 @@ async function applyKofiPayment(
   ) {
     return Boolean(payment.applied_user_id);
   }
+  // Use the same account lock as Stripe before reading membership state. A
+  // delayed overlapping payment must not overwrite a newer paid-through date.
+  await tx.$queryRaw`SELECT id FROM users WHERE id = ${link.user_id} FOR UPDATE`;
   const user = await tx.users.findUnique({
     where: { id: link.user_id },
     select: { active: true }

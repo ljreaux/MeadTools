@@ -10,6 +10,7 @@ import {
   verifyConsentRequest,
 } from "@/lib/mcp/oauth";
 import { mcpOrigin } from "@/lib/mcp/metadata";
+import { MAX_MCP_CONSENT_BYTES } from "@/lib/mcp/consent-signature";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,9 +51,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse(null, { status: 403 });
   }
   const length = Number(request.headers.get("content-length"));
-  if (Number.isFinite(length) && length > 4_096) return new NextResponse(null, { status: 413 });
+  if (Number.isFinite(length) && length > MAX_MCP_CONSENT_BYTES) return new NextResponse(null, { status: 413 });
   const body = await request.text();
-  if (Buffer.byteLength(body, "utf8") > 4_096) return new NextResponse(null, { status: 413 });
+  if (Buffer.byteLength(body, "utf8") > MAX_MCP_CONSENT_BYTES) return new NextResponse(null, { status: 413 });
   const form = new URLSearchParams(body);
   const userId = await verifyUser(request);
   if (userId instanceof NextResponse || typeof userId !== "number") {
