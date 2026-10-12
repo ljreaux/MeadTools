@@ -12,5 +12,5 @@ export function mcpResource() {
 }
 
 export function protectedResourceMetadataUrl() {
-  return `${mcpOrigin()}/.well-known/oauth-protected-resource`;
+  return `${mcpOrigin()}/.well-known/oauth-protected-resource/mcp`;
 }

@@ -45,10 +45,25 @@ try {
       redirect_uris: ["http://example.invalid/callback"] }),
   })).status, 400, "Non-loopback HTTP callbacks must be rejected");
 
-  const protectedMetadata = await (await fetch(`${baseUrl}/.well-known/oauth-protected-resource`)).json() as { resource: string };
-  const authorizationMetadata = await (await fetch(`${baseUrl}/.well-known/oauth-authorization-server`)).json() as { code_challenge_methods_supported: string[] };
+  const protectedMetadataResponse = await fetch(`${baseUrl}/.well-known/oauth-protected-resource/mcp`);
+  assert.match(protectedMetadataResponse.headers.get("content-type") ?? "", /application\/json/);
+  const protectedMetadata = await protectedMetadataResponse.json() as { resource: string };
+  const authorizationMetadataResponse = await fetch(`${baseUrl}/.well-known/oauth-authorization-server/mcp`);
+  assert.match(authorizationMetadataResponse.headers.get("content-type") ?? "", /application\/json/);
+  const authorizationMetadata = await authorizationMetadataResponse.json() as { code_challenge_methods_supported: string[] };
   assert.equal(protectedMetadata.resource, resource);
   assert.deepEqual(authorizationMetadata.code_challenge_methods_supported, ["S256"]);
+  assert.equal((await fetch(`${baseUrl}/.well-known/oauth-protected-resource`)).status, 200,
+    "The origin-level metadata alias must remain available to existing clients");
+  const unauthenticatedMcp = await fetch(resource, { method: "POST",
+    headers: { Accept: "application/json, text/event-stream", "Content-Type": "application/json",
+      "MCP-Protocol-Version": "2025-11-25" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+  });
+  assert.equal(unauthenticatedMcp.status, 401);
+  assert.ok(unauthenticatedMcp.headers.get("www-authenticate")?.includes(
+    `resource_metadata="${baseUrl}/.well-known/oauth-protected-resource/mcp"`,
+  ), "The MCP challenge must advertise the path-specific metadata URL");
 
   const verifier = randomBytes(32).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
