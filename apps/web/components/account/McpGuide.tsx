@@ -69,7 +69,9 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
   const [tokenCopied, setTokenCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const signedIn = Boolean(token) || sessionStatus === "authenticated";
+  // The origin store stays empty for SSR and the first hydration render.
+  // Wait for its browser snapshot before rendering localStorage-backed auth UI.
+  const signedIn = Boolean(origin) && (Boolean(token) || sessionStatus === "authenticated");
 
   const headers = useCallback(
     () => ({
@@ -103,7 +105,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
       if (!response.ok) throw new Error("MCP connections request failed");
       return mcpTokenListResponseSchema.parse(await response.json());
     },
-    enabled: Boolean(premiumQuery.data?.mcpEnabled),
+    enabled: signedIn && Boolean(premiumQuery.data?.mcpEnabled),
     retry: false
   });
 

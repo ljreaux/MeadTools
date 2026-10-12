@@ -172,6 +172,7 @@ model users {
   premium_memberships      premium_memberships[]
   kofi_link                premium_kofi_links?
   kofi_link_challenges     premium_kofi_link_challenges[]
+  premium_stripe_checkout premium_stripe_checkouts?
   premium_stripe_subscription premium_stripe_subscriptions?
   premium_stripe_invoices  premium_stripe_invoices[]
   mcp_access_tokens       mcp_access_tokens[]
@@ -243,6 +244,17 @@ model premium_kofi_payments {
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([email_digest, paid_at])
+}
+
+/// Durable Checkout reservation; Stripe requests reuse the persisted attempt and parameters.
+model premium_stripe_checkouts {
+  user_id Int @id
+  attempt_id String @unique @db.Uuid
+  params Json
+  session_id String? @unique @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
 }
 
 /// Stripe customer and subscription identity for account billing management.

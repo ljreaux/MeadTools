@@ -1,4 +1,5 @@
 import "server-only";
+import { verifiedConsentPayload } from "./consent-signature";
 
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import prisma from "@/lib/prisma";
@@ -102,15 +103,8 @@ export function signConsentRequest(request: AuthorizationRequest) {
 }
 
 export function verifyConsentRequest(value: string, userId: number): AuthorizationRequest {
-  if (value.length > 4_096) throw new OAuthRequestError("invalid_request");
-  const [payload, signature] = value.split(".");
-  if (!payload || !signature || !HASH_PATTERN.test(signature)) {
-    throw new OAuthRequestError("invalid_request");
-  }
-  const expected = hmac(payload);
-  if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-    throw new OAuthRequestError("invalid_request");
-  }
+  const payload = verifiedConsentPayload(value, signingSecret());
+  if (!payload) throw new OAuthRequestError("invalid_request");
   let parsed: AuthorizationRequest & { expiresAt: number };
   try { parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")); }
   catch { throw new OAuthRequestError("invalid_request"); }

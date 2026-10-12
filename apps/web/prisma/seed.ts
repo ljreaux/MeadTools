@@ -394,6 +394,7 @@ async function clearDb() {
   await prisma.mcp_oauth_codes.deleteMany();
   await prisma.mcp_oauth_clients.deleteMany();
   await prisma.mcp_access_tokens.deleteMany();
+  await prisma.premium_stripe_checkouts.deleteMany();
   await prisma.premium_stripe_invoices.deleteMany();
   await prisma.premium_stripe_subscriptions.deleteMany();
   await prisma.premium_kofi_link_challenges.deleteMany();

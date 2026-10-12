@@ -222,3 +222,28 @@ The client requirements above were checked against the
 [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization),
 [Claude remote connector instructions](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp),
 and [ChatGPT MCP authentication guidance](https://developers.openai.com/plugins/build/auth).
+
+### Durable Stripe checkout recovery
+
+Apply migration `20261012000000_premium_checkout_reservation` before deploying the
+checkout reservation code. It adds one durable attempt per account. Requests
+reuse its frozen parameters and Stripe idempotency key; sessions expire after
+one hour. Only a Stripe-confirmed expired session, or a completed session whose
+subscription is now canceled/incomplete-expired, permits an atomic replacement.
+A completed checkout awaiting its webhook must not produce another checkout.
+
+A missing session ID with an ambiguous request older than 23 hours fails closed,
+before Stripe's guaranteed idempotency retention ends. A frozen expiry rejected
+by Stripe also requires reconciliation. Billing support must inspect the attempt
+ID/idempotency key (`premium-checkout:<attempt_id>`) and account in Stripe, persist
+the matching session ID if found, and resolve its payment/subscription state.
+Do not delete/rotate the reservation merely because the customer reports a
+failure: establish that no payable or paid session remains first. The same check
+is needed for accounts with untracked sessions created before this migration.
+This release does not automatically reconcile old ambiguous attempts.
+
+Webhook membership and identity updates serialize on the account row. They
+re-read current Stripe subscription state under that lock, with a 30-second
+transaction timeout; provider failures/timeouts roll back and Stripe can retry.
+A paid invoice grants only the matching recurring line's service period, never
+the current subscription's potentially unpaid later period.

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type Stripe from "stripe";
 import { PREMIUM_MONTHLY_CHAT_CREDITS } from "@meadtools/premium-domain";
 import { Prisma } from "@prisma/client";
@@ -8,6 +8,8 @@ import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 import { recordCreditGrantInTransaction } from "@/lib/db/credit-accounting";
 import { getStripeClient } from "./stripe";
+import { resumePremiumCheckout, PremiumCheckoutStateError, type CheckoutAttempt } from "./premium-checkout-reservation";
+import { premiumInvoicePaidThrough, laterPaidThrough, currentSubscriptionState } from "./premium-invoice-period";
 import { buildPremiumCheckoutSessionParams } from "./premium-checkout-session";
 import {
   arePremiumSubscriptionsAvailable,
@@ -68,21 +70,56 @@ export async function createPremiumStripeCheckout(options: {
     prisma.users.findUnique({ where: { id: options.userId }, select: { email: true } }),
     prisma.premium_stripe_subscriptions.findUnique({ where: { user_id: options.userId } }),
   ]);
-  if (existing && ["active", "trialing", "past_due"].includes(existing.status)) {
+  if (existing && !["canceled", "incomplete_expired"].includes(existing.status)) {
     throw new PremiumSubscriptionConflictError("A Stripe subscription already exists.");
   }
-  const session = await stripe.checkout.sessions.create(
-    buildPremiumCheckoutSessionParams({
-      userId: options.userId,
-      priceId,
-      customerId: existing?.customer_id,
-      email: user?.email ?? undefined,
-      successUrl: options.successUrl,
-      cancelUrl: options.cancelUrl,
-    }),
-  );
-  if (!session.url) throw new PremiumSubscriptionUnavailableError("Stripe Checkout is unavailable.");
-  return { url: session.url };
+  const newAttempt = () => ({
+    attempt_id: randomUUID(),
+    params: { ...buildPremiumCheckoutSessionParams({
+      userId: options.userId, priceId, customerId: existing?.customer_id,
+      email: user?.email ?? undefined, successUrl: options.successUrl, cancelUrl: options.cancelUrl,
+    }), expires_at: Math.floor(Date.now() / 1_000) + 60 * 60 } as unknown as Prisma.InputJsonValue,
+    session_id: null,
+    created_at: new Date(),
+  });
+  try {
+    return await resumePremiumCheckout({
+      reserve: async () => {
+        // createMany ON CONFLICT handles simultaneous first requests; the winner's
+        // exact params (including random integration identifier) are always reused.
+        await prisma.premium_stripe_checkouts.createMany({
+          data: { user_id: options.userId, ...newAttempt() }, skipDuplicates: true,
+        });
+        const attempt = await prisma.premium_stripe_checkouts.findUniqueOrThrow({ where: { user_id: options.userId } });
+        return { ...attempt, params: attempt.params as unknown as CheckoutAttempt["params"] };
+      },
+      replace: async (attemptId) => {
+        await prisma.premium_stripe_checkouts.updateMany({
+          where: { user_id: options.userId, attempt_id: attemptId }, data: newAttempt(),
+        });
+      },
+      save: async (attemptId, sessionId) => {
+        await prisma.premium_stripe_checkouts.updateMany({
+          where: { user_id: options.userId, attempt_id: attemptId }, data: { session_id: sessionId },
+        });
+      },
+      create: (params, idempotencyKey) => stripe.checkout.sessions.create(params, { idempotencyKey }),
+      retrieve: (id) => stripe.checkout.sessions.retrieve(id),
+      completedSubscriptionCanBeReplaced: async (id) => {
+        const subscription = await stripe.subscriptions.retrieve(id);
+        if (userIdFromSubscription(subscription) !== options.userId) {
+          throw new PremiumStripeVerificationError("Checkout subscription account did not match.");
+        }
+        return ["canceled", "incomplete_expired"].includes(subscription.status);
+      },
+    });
+  } catch (error) {
+    if (error instanceof PremiumCheckoutStateError) {
+      if (error.kind === "conflict") throw new PremiumSubscriptionConflictError(error.message);
+      throw new PremiumSubscriptionUnavailableError(error.message);
+    }
+    throw error;
+  }
 }
 
 export async function createPremiumStripePortal(options: {
@@ -110,7 +147,6 @@ async function verifiedSubscription(subscriptionId: string): Promise<{
   subscription: Stripe.Subscription;
   userId: number;
   customerId: string;
-  paidThrough: Date;
 }> {
   const stripe = getStripeClient();
   const priceId = getPremiumStripePriceId();
@@ -125,7 +161,6 @@ async function verifiedSubscription(subscriptionId: string): Promise<{
     subscription,
     userId: userIdFromSubscription(subscription),
     customerId,
-    paidThrough: new Date(item.current_period_end * 1_000),
   };
 }
 
@@ -165,14 +200,17 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
   if (!invoice.parent?.subscription_details?.metadata?.meadtools_user_id) return;
   const subscriptionId = stripeId(invoice.parent?.subscription_details?.subscription);
   if (!subscriptionId) return;
-  const { subscription, userId, customerId, paidThrough } = await verifiedSubscription(subscriptionId);
-  if (!["active", "trialing"].includes(subscription.status)) return;
-  if (stripeId(invoice.customer) !== customerId) {
-    throw new PremiumStripeVerificationError("Invoice customer did not match.");
-  }
+  const { userId } = await verifiedSubscription(subscriptionId);
   const paidAtSeconds = invoice.status_transitions?.paid_at ?? invoice.created;
   const paidAt = new Date(paidAtSeconds * 1_000);
   await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+    const { subscription, customerId, userId: currentUserId } = await verifiedSubscription(subscriptionId);
+    if (currentUserId !== userId) throw new PremiumStripeVerificationError("Subscription owner changed.");
+    // Historical paid invoices are valid even if the current renewal is past due.
+    // Terminal subscriptions must not be revived by a delayed invoice event.
+    if (["canceled", "unpaid", "incomplete_expired"].includes(subscription.status)) return;
+    const paidThrough = premiumInvoicePaidThrough(invoice, subscription, getPremiumStripePriceId()!, PREMIUM_STRIPE_MINIMUM_PAID_CENTS);
     const inserted = await tx.premium_stripe_invoices.createMany({
       data: {
         invoice_id: invoice.id,
@@ -205,7 +243,7 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
       },
       update: {
         external_reference: subscription.id,
-        paid_through: current && current.paid_through > paidThrough ? current.paid_through : paidThrough,
+        paid_through: laterPaidThrough(current?.paid_through, paidThrough),
         revoked_at: null,
       },
     });
@@ -217,7 +255,7 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
       metadata: { source: "stripe-premium", invoiceId: invoice.id },
       now: paidAt,
     });
-  });
+  }, { timeout: 30_000 });
 }
 
 async function processCheckout(session: Stripe.Checkout.Session): Promise<void> {
@@ -231,11 +269,19 @@ async function processCheckout(session: Stripe.Checkout.Session): Promise<void> 
       stripeId(session.customer) !== customerId) {
     throw new PremiumStripeVerificationError("Checkout account did not match.");
   }
-  await prisma.$transaction((tx) => upsertStripeIdentity(tx, {
-    userId, customerId, subscriptionId: subscription.id,
-    status: subscription.status,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-  }));
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+    const current = await verifiedSubscription(subscriptionId);
+    if (current.userId !== userId || current.customerId !== customerId) {
+      throw new PremiumStripeVerificationError("Checkout account changed.");
+    }
+    if (["canceled", "incomplete_expired"].includes(current.subscription.status)) return;
+    await upsertStripeIdentity(tx, {
+      userId, customerId, subscriptionId: subscription.id,
+      status: current.subscription.status,
+      cancelAtPeriodEnd: current.subscription.cancel_at_period_end,
+    });
+  }, { timeout: 30_000 });
 }
 
 async function processSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
@@ -243,22 +289,27 @@ async function processSubscriptionChange(subscription: Stripe.Subscription): Pro
     where: { subscription_id: subscription.id },
   });
   if (!linked || userIdFromSubscription(subscription) !== linked.user_id) return;
-  const shouldRevoke = ["canceled", "unpaid", "incomplete_expired"].includes(subscription.status);
+  const stripe = getStripeClient();
+  if (!stripe) throw new PremiumSubscriptionUnavailableError("Stripe premium is unavailable.");
   await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${linked.user_id} FOR UPDATE`;
+    const currentLink = await tx.premium_stripe_subscriptions.findUnique({ where: { user_id: linked.user_id } });
+    if (currentLink?.subscription_id !== subscription.id) return;
+    const current = await currentSubscriptionState(subscription.id, (id) => stripe.subscriptions.retrieve(id));
+    if (userIdFromSubscription(current.subscription) !== linked.user_id || stripeId(current.subscription.customer) !== currentLink.customer_id) {
+      throw new PremiumStripeVerificationError("Subscription account did not match.");
+    }
     await tx.premium_stripe_subscriptions.update({
       where: { user_id: linked.user_id },
-      data: {
-        status: subscription.status,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      },
+      data: { status: current.subscription.status, cancel_at_period_end: current.subscription.cancel_at_period_end },
     });
-    if (shouldRevoke) {
+    if (current.shouldRevoke) {
       await tx.premium_memberships.updateMany({
         where: { user_id: linked.user_id, source: "stripe", external_reference: subscription.id },
         data: { revoked_at: new Date() },
       });
     }
-  });
+  }, { timeout: 30_000 });
 }
 
 /** Called only after the route verifies Stripe's raw webhook signature. */
