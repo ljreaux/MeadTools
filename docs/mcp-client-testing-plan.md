@@ -144,10 +144,16 @@ uses the [experimental extension schema](https://github.com/modelcontextprotocol
 so this is a compatibility trial, not evidence that Gemini requires a card.
 The local response validates against the extension's JSON Schema.
 
-Deploy that change once and retry Gemini. If it still fails, capture the
-failing registration request's **status and safe error code** from Gemini's
-browser Network panel if visible. If the request occurs only on Google's
-backend, use one narrowly scoped Preview diagnostic deployment that records
-the DCR outcome and metadata field names, never credentials or full callback
-URLs. Gemini is not a verified MeadTools client until it can sign in and invoke
-a tool.
+The card deployed and returned JSON on Preview, but Gemini still showed the
+same registration error. A more direct incompatibility emerged from a
+[Gemini Spark integration report](https://discuss.ai.google.dev/t/gemini-app-spark-custom-apps-mcp-oauth-never-exchanges-the-code-cannot-complete-request-on-oauth-redirect-googleusercontent-com/186405):
+Gemini submitted **six** redirect URIs and later used an OAuth `state` around
+1,400 characters. MeadTools previously rejected more than five redirect URIs
+and any state longer than 256 characters. The six-URI request returns HTTP
+400 `invalid_client_metadata` on deployed Preview and HTTP 201 after the local
+fix. The local parser and long-state regression tests pass. Deploy these two
+bounded-limit changes together, then retry Gemini once. This evidence supports
+the registration fix; it does not establish that Gemini's later token exchange
+will work. If the next attempt fails, identify the first new stage before
+changing code again. Gemini is not a verified MeadTools client until it can
+sign in and invoke a tool.

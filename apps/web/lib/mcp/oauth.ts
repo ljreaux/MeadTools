@@ -6,6 +6,8 @@ import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 import { isMcpRolloutEnabled } from "@/lib/mcp/access";
 import { MCP_SCOPE, mcpOrigin, mcpResource } from "@/lib/mcp/metadata";
 import { isAllowedMcpRedirect } from "@/lib/mcp/redirect-uri";
+import { parseMcpClientRegistration } from "@/lib/mcp/client-registration";
+import { isAllowedMcpOAuthState } from "@/lib/mcp/oauth-state";
 
 const ACCESS_LIFETIME_MS = 60 * 60_000;
 const REFRESH_LIFETIME_MS = 30 * 24 * 60 * 60_000;
@@ -37,29 +39,15 @@ function hmac(value: string) {
 
 export async function registerMcpOAuthClient(input: unknown) {
   if (!isMcpRolloutEnabled()) throw new OAuthRequestError("temporarily_unavailable");
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    throw new OAuthRequestError("invalid_client_metadata");
-  }
-  const metadata = input as Record<string, unknown>;
-  const name = typeof metadata.client_name === "string"
-    ? metadata.client_name.trim() : "MCP client";
-  const uris = metadata.redirect_uris;
-  if (
-    name.length < 1 || name.length > 100 ||
-    !Array.isArray(uris) || uris.length < 1 || uris.length > 5 ||
-    !uris.every((uri) => typeof uri === "string" && isAllowedMcpRedirect(uri))
-  ) throw new OAuthRequestError("invalid_client_metadata");
-  if (
-    metadata.token_endpoint_auth_method !== undefined && metadata.token_endpoint_auth_method !== "none"
-  ) throw new OAuthRequestError("invalid_client_metadata");
-  if (
-    metadata.grant_types !== undefined &&
-    (!Array.isArray(metadata.grant_types) ||
-      metadata.grant_types.some((grant) => grant !== "authorization_code" && grant !== "refresh_token"))
-  ) throw new OAuthRequestError("invalid_client_metadata");
+  const registration = parseMcpClientRegistration(input);
+  if (!registration) throw new OAuthRequestError("invalid_client_metadata");
   const clientId = randomToken("mtmcp_client_");
   const client = await prisma.mcp_oauth_clients.create({
-    data: { client_id: clientId, client_name: name, redirect_uris: uris as string[] },
+    data: {
+      client_id: clientId,
+      client_name: registration.name,
+      redirect_uris: registration.uris,
+    },
   });
   return {
     client_id: client.client_id,
@@ -95,7 +83,7 @@ export async function validateAuthorizationRequest(params: URLSearchParams, user
     params.get("code_challenge_method") !== "S256" ||
     !HASH_PATTERN.test(codeChallenge) ||
     resource !== mcpResource() || scope !== MCP_SCOPE ||
-    state.length < 8 || state.length > 256
+    !isAllowedMcpOAuthState(state)
   ) throw new OAuthRequestError("invalid_request");
   const client = await prisma.mcp_oauth_clients.findUnique({ where: { client_id: clientId } });
   if (!client || !client.redirect_uris.includes(redirectUri)) {
