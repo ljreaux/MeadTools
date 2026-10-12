@@ -15,6 +15,7 @@ import {
   NotebookPen,
   MessageCircle,
   Crown,
+  Plug,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
@@ -139,6 +140,19 @@ function Header() {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t("premium.title")}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/integrations/mcp" aria-label={t("mcpGuide.title")}>
+                <Plug className="h-5 w-5" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("mcpGuide.title")}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 

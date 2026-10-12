@@ -52,13 +52,19 @@ at `/.well-known/oauth-protected-resource` and
 The authorization-code flow uses S256 PKCE, explicit account consent, a
 single-use code, resource-bound one-hour access tokens, rotating 30-day refresh
 tokens, and revocation. An account may also create up to five 90-day personal
-bearer tokens at `/account/premium`, where both token types can be revoked.
+bearer tokens on `/integrations/mcp`, where both token types can be revoked.
 Only hashes of credentials are stored. A request checks active premium status,
 payment restriction, and `PREMIUM_MCP_ENABLED` before tool execution.
-On a Vercel PR Preview, MCP uses that deployment's `VERCEL_URL` as its OAuth
-origin. Production continues to use `NEXT_PUBLIC_BASE_URL`. This keeps OAuth
-metadata bound to the PR deployment without changing the permanent `preview`
-branch domain or Production configuration.
+On a Vercel PR Preview, MCP and Ko-fi account-link emails use the stable
+`VERCEL_BRANCH_URL` as their public origin; they fall back to `VERCEL_URL` only
+when no branch URL is available. OAuth issuer, MCP resource, authorization
+links, and the setup guide must all advertise that same origin. The Ko-fi
+webhook can use the branch URL with `/api/webhooks/kofi`, so new deployments
+do not require changing its destination. Set `PREVIEW_PUBLIC_ORIGIN` to an HTTPS
+origin on the permanent `preview` branch when ready to use
+`https://preview.meadtools.com`; production and local development continue to
+use `NEXT_PUBLIC_BASE_URL`. Connections bound to a previous deployment URL
+must be reconnected after changing the OAuth origin.
 
 The first tool allowlist is `search_ingredients`, `search_additives`,
 `search_yeasts`, `search_wiki`, `fetch_wiki_page`,
@@ -99,9 +105,10 @@ idempotently for each eligible paid period after account linking.
 1. Import and reconcile older Ko-fi membership payments after the Members CSV
    is available. Local webhook, linking, expiry, and idempotent grants have
    been exercised, but the historical import remains a launch dependency.
-2. Verify Claude Desktop and ChatGPT against a temporary public HTTPS test
-   endpoint. The local OAuth and MCP protocol fixtures pass; localhost alone
-   cannot validate the two cloud client connection flows.
+2. Reconnect Claude Desktop and ChatGPT using the PR branch URL and verify
+   discovery, invocation, and revocation after the OAuth origin changes.
+   Both clients connected to an earlier deployment URL; the local OAuth and
+   MCP protocol fixtures also pass.
 3. Review account UI, connection and revocation, tool examples, usage limits,
    and troubleshooting with a premium test account.
 4. Finish full denial, retry, concurrency, hosted/MCP parity, purchase, renewal,
@@ -165,9 +172,12 @@ webhooks do not create a real Ko-fi subscription. Do not advertise a Ko-fi
 premium tier or enable production Stripe Checkout before the bundle is ready.
 
 The premium fixture does not validate email delivery, the Ko-fi live webhook,
-historical CSV backfill, or a real external MCP client connection. They remain
-launch gates. The premium account endpoint reports MCP available only while
-the account is eligible and `PREMIUM_MCP_ENABLED=true`.
+or historical CSV backfill. A real external MCP client connected on the
+earlier PR deployment URL; repeat that test on the stable branch URL. If real
+Ko-fi payments are received by the separate Preview database, reconcile them
+from a fresh private export before switching the webhook to production. The
+premium account endpoint reports MCP available only while the account is
+eligible and `PREMIUM_MCP_ENABLED=true`.
 
 ### Local MCP verification
 
@@ -191,19 +201,18 @@ calculation, anonymous denial, premium entitlement, token revocation,
 concurrency, and the minute limit. The second verifies metadata, dynamic client
 registration, browser consent, PKCE, single-use consent and code, refresh
 rotation, and revocation. A signed-in premium account can also open
-`http://localhost:3000/account/premium` to create, copy once, and revoke a
+`http://localhost:3000/integrations/mcp` to create, copy once, and revoke a
 personal connection token. The endpoint shown locally is
 `http://localhost:3000/mcp`.
 
 For Claude Desktop and ChatGPT, add a custom remote MCP connector using the
-eventual public HTTPS `/mcp` URL and approve the MeadTools OAuth consent
-screen in the browser. Password and Google MeadTools sign-in both pass through
-`/{locale}/oauth/connect` before the client callback. Test that each client
-discovers the seven allowlisted tools, runs a read-only calculation, and loses
-access when its connection is revoked or premium expires. Localhost fixtures
-cannot prove these client-specific flows; use a short-lived HTTPS tunnel or a
-protected preview deployment, then disable that test endpoint. The Ko-fi
-tunnel used during payment setup is no longer running and is unrelated to MCP.
+PR branch URL shown on `/integrations/mcp` and approve the MeadTools OAuth
+consent screen in the browser. Password and Google MeadTools sign-in both pass
+through `/{locale}/oauth/connect` before the client callback. Test that each
+client discovers the seven allowlisted tools, runs a read-only calculation,
+and loses access when its connection is revoked or premium expires. Localhost
+fixtures cannot prove these client-specific flows. The Ko-fi tunnel used
+during payment setup is no longer running and is unrelated to MCP.
 
 The client requirements above were checked against the
 [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization),

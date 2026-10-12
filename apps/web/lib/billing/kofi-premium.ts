@@ -19,6 +19,7 @@ import {
 } from "@/lib/db/credit-accounting";
 import { escapeHtml, sendEmail } from "@/lib/db/emailHelpers";
 import prisma from "@/lib/prisma";
+import { publicAppOrigin } from "@/lib/public-origin";
 
 export class KofiPremiumUnavailableError extends Error {}
 export class KofiLinkConflictError extends Error {}
@@ -219,8 +220,10 @@ export async function requestKofiAccountLink(options: {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
     throw new KofiLinkInvalidError("Enter a valid Ko-fi payer email.");
   }
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim();
-  if (!baseUrl || !URL.canParse(baseUrl)) {
+  let baseUrl: string;
+  try {
+    baseUrl = publicAppOrigin();
+  } catch {
     throw new KofiPremiumUnavailableError(
       "Account-link email is not configured."
     );

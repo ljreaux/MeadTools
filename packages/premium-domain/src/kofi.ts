@@ -29,7 +29,6 @@ export function parseKofiSubscriptionPayment(
   now = new Date()
 ): KofiSubscriptionPayment | null {
   const parsed = kofiPaymentSchema.safeParse(value);
-  console.log(parsed);
   if (!parsed.success) return null;
   const data = parsed.data;
   if (data.type !== "Subscription" || !data.is_subscription_payment) {

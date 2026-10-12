@@ -10,7 +10,7 @@ export function GET() {
       resource: mcpResource(),
       authorization_servers: [mcpOrigin()],
       scopes_supported: [MCP_SCOPE],
-      resource_documentation: `${mcpOrigin()}/account/premium`,
+      resource_documentation: `${mcpOrigin()}/integrations/mcp`,
     },
     { headers: { "Cache-Control": "public, max-age=300" } },
   );

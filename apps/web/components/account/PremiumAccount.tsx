@@ -1,16 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import type { PremiumAccessResponse } from "@meadtools/api-contract/contracts";
-import {
-  mcpTokenCreateResponseSchema,
-  mcpTokenListResponseSchema,
-} from "@meadtools/api-contract/mcp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -23,8 +20,6 @@ export function PremiumAccount() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [mcpTokenName, setMcpTokenName] = useState("");
-  const [createdMcpToken, setCreatedMcpToken] = useState("");
   const claimed = useRef(false);
 
   const headers = useCallback(
@@ -52,60 +47,6 @@ export function PremiumAccount() {
   });
   const status = premiumQuery.data ?? null;
   const { refetch } = premiumQuery;
-  const mcpQuery = useQuery({
-    queryKey: ["premium-mcp-tokens", token ? "bearer" : "session"],
-    queryFn: async () => {
-      const response = await fetch("/api/account/premium/mcp/tokens", {
-        headers: headers(),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("MCP connections request failed");
-      return mcpTokenListResponseSchema.parse(await response.json());
-    },
-    enabled: Boolean(status?.mcpEnabled),
-    retry: false,
-  });
-
-  const createMcpToken = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setCreatedMcpToken("");
-    try {
-      const response = await fetch("/api/account/premium/mcp/tokens", {
-        method: "POST",
-        headers: { ...headers(), "Content-Type": "application/json" },
-        body: JSON.stringify({ label: mcpTokenName }),
-      });
-      if (!response.ok) throw new Error("MCP connection creation failed");
-      const created = mcpTokenCreateResponseSchema.parse(await response.json());
-      setCreatedMcpToken(created.token);
-      setMcpTokenName("");
-      await mcpQuery.refetch();
-    } catch {
-      setError(t("premium.mcpFailed"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const revokeMcpToken = async (id: string) => {
-    setBusy(true);
-    setError("");
-    try {
-      const response = await fetch(`/api/account/premium/mcp/tokens/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        headers: headers(),
-      });
-      if (!response.ok) throw new Error("MCP connection revocation failed");
-      setCreatedMcpToken("");
-      await mcpQuery.refetch();
-    } catch {
-      setError(t("premium.mcpFailed"));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   useEffect(() => {
     const claim = searchParams.get("claim");
@@ -269,58 +210,9 @@ export function PremiumAccount() {
           </Button>
         </form>
       ) : null}
-      {status?.mcpEnabled && (
-        <section className="space-y-3" aria-labelledby="mcp-connections-title">
-          <h2 id="mcp-connections-title" className="text-xl font-semibold">
-            {t("premium.mcpTitle")}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t("premium.mcpHelp")}</p>
-          {mcpQuery.data && (
-            <p className="text-sm">
-              {t("premium.mcpEndpoint")}: <code>{mcpQuery.data.endpoint}</code>
-            </p>
-          )}
-          <form onSubmit={createMcpToken} className="space-y-2">
-            <label htmlFor="mcp-token-name" className="block text-sm font-medium">
-              {t("premium.mcpTokenName")}
-            </label>
-            <Input
-              id="mcp-token-name"
-              required
-              maxLength={80}
-              value={mcpTokenName}
-              onChange={(event) => setMcpTokenName(event.target.value)}
-            />
-            <Button type="submit" disabled={busy}>{t("premium.mcpCreate")}</Button>
-          </form>
-          {createdMcpToken && (
-            <div role="status" className="space-y-1">
-              <p>{t("premium.mcpTokenOnce")}</p>
-              <Input readOnly value={createdMcpToken} aria-label={t("premium.mcpTokenOnce")} />
-            </div>
-          )}
-          {mcpQuery.data?.tokens.length === 0 && <p>{t("premium.mcpEmpty")}</p>}
-          {mcpQuery.data?.tokens.map((connection) => (
-            <div key={connection.id} className="flex items-center justify-between gap-3">
-              <div>
-                <p>{connection.label}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t("premium.mcpTokenExpires", {
-                    date: new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-                      dateStyle: "medium",
-                    }).format(new Date(connection.expiresAt)),
-                  })}
-                </p>
-              </div>
-              <Button type="button" variant="outline" disabled={busy}
-                onClick={() => void revokeMcpToken(connection.id)}>
-                {t("premium.mcpRevoke")}
-              </Button>
-            </div>
-          ))}
-          {mcpQuery.isError && <p role="alert">{t("premium.mcpFailed")}</p>}
-        </section>
-      )}
+      <Link className="text-primary underline" href="/integrations/mcp">
+        {t("premium.mcpGuideLink")}
+      </Link>
       {premiumQuery.isError && (
         <p role="alert" className="text-destructive">
           {t("premium.loadFailed")}
