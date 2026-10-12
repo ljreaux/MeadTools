@@ -135,10 +135,19 @@ does not make a card mandatory for OAuth registration. Do not implement a
 confidential-client path or speculative server-card response solely to satisfy
 the generic Gemini error.
 
-Next, capture the failing registration request's **status and safe error code**
-from Gemini's browser Network panel if visible. If the request occurs only on
-Google's backend, use one narrowly scoped Preview diagnostic deployment that
-records the DCR outcome and metadata field names, never credentials or full
-callback URLs. Reproduce once, then fix the observed incompatibility and run
-the local OAuth fixture before the next deployment. Gemini is not a verified
-MeadTools client until it can sign in and invoke a tool.
+After the path-specific OAuth metadata deployed, Gemini requested
+`/.well-known/mcp/server-card/mcp`. The existing Preview deployment answers
+that request with HTTP 200 and an HTML page, which is invalid for a
+machine-readable Server Card. A local change now returns a JSON Server Card at
+that exact path and the extension's recommended `/mcp/server-card` path. It
+uses the [experimental extension schema](https://github.com/modelcontextprotocol/ext-server-card),
+so this is a compatibility trial, not evidence that Gemini requires a card.
+The local response validates against the extension's JSON Schema.
+
+Deploy that change once and retry Gemini. If it still fails, capture the
+failing registration request's **status and safe error code** from Gemini's
+browser Network panel if visible. If the request occurs only on Google's
+backend, use one narrowly scoped Preview diagnostic deployment that records
+the DCR outcome and metadata field names, never credentials or full callback
+URLs. Gemini is not a verified MeadTools client until it can sign in and invoke
+a tool.
