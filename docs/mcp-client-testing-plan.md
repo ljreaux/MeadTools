@@ -26,7 +26,7 @@ demand may change the order.
 | Baseline | ChatGPT custom app | OAuth custom MCP app | Existing first-release target. Codex desktop availability is a separate check. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Baseline | Claude Desktop / web | OAuth custom connector | Existing first-release target. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Next chat test | [Grok web custom connector](https://docs.x.ai/grok/connectors) | OAuth | `grok.com/connectors` accepts a public custom MCP URL. | User reports it works on PR Preview; tool trace, revocation, and reconnection still need recording. |
-| Blocked | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google lists US, age 18+, personal account, Keep Activity on, and English requirements. Its guide does not state a paid-plan requirement. | User reached the Custom apps form, but automatic registration still failed after the path-specific OAuth discovery fix deployed. Defer client-specific changes until the rejection can be identified. |
+| Investigating | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google lists US, age 18+, personal account, Keep Activity on, and English requirements. Its guide does not state a paid-plan requirement. | User reached the Custom apps form, but automatic registration still failed after the path-specific OAuth discovery fix deployed. Identify the failed step before another server deployment. |
 | Paid plan required | [Perplexity custom remote connector](https://www.perplexity.ai/help-center/en/articles/13915507-adding-custom-remote-connectors) | Try OAuth; fall back to personal token if offered | Perplexity says custom remote connectors require Pro, Max, or Enterprise. On an eligible account: Account settings → Connectors → + Custom connector → Remote. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | User cannot find the Custom connector control; account plan is unconfirmed. |
 | Opportunistic chat test | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Potential general-chat use, but requires an organization administrator. | User reports it works on PR Preview; tool trace, revocation, and reconnection still need recording. |
 | Developer smoke test | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
@@ -108,3 +108,33 @@ still needs an eligible paid account before testing. Add other
 provider-specific instructions only after their manual results are observed.
 Publishing a connector in a vendor catalog or making a one-click install link
 is separate follow-up work.
+
+## Gemini Spark investigation before another deployment
+
+Google's [custom app instructions](https://support.google.com/gemini/answer/17209137)
+say the web app uses Dynamic Client Registration (DCR), with manual client
+credentials as a fallback. MeadTools advertises a registration endpoint and
+accepts public OAuth clients with HTTPS callbacks. A Preview DCR probe using
+the callback URI copied from Gemini's form returned HTTP 201. The path-specific
+protected-resource and authorization-server metadata endpoints also return
+JSON on Preview. Gemini still shows its generic registration error. Those
+checks rule out the tested callback and missing path-specific metadata; they
+do **not** establish what Gemini actually sent or which response it rejected.
+
+There is no documented Gemini Spark requirement for a client secret or MCP
+Server Card. Independent operators have reported the
+[same DCR fallback](https://github.com/firecrawl/firecrawl-mcp-server/issues/345)
+and [failures later in the OAuth flow](https://discuss.ai.google.dev/t/gemini-spark-custom-mcp-oauth-stops-after-302-callback-and-never-calls-token/177327).
+These reports are diagnostic leads, not proof of MeadTools' cause. The
+[MCP Server Card discovery extension](https://github.com/modelcontextprotocol/ext-server-card/blob/main/docs/discovery.md)
+does not make a card mandatory for OAuth registration. Do not implement a
+confidential-client path or speculative server-card response solely to satisfy
+the generic Gemini error.
+
+Next, capture the failing registration request's **status and safe error code**
+from Gemini's browser Network panel if visible. If the request occurs only on
+Google's backend, use one narrowly scoped Preview diagnostic deployment that
+records the DCR outcome and metadata field names, never credentials or full
+callback URLs. Reproduce once, then fix the observed incompatibility and run
+the local OAuth fixture before the next deployment. Gemini is not a verified
+MeadTools client until it can sign in and invoke a tool.
