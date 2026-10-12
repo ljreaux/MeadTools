@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       clientName: authorization.clientName,
       redirectHost: new URL(authorization.redirectUri).hostname,
+      redirectUri: authorization.redirectUri,
       signedRequest: consent,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

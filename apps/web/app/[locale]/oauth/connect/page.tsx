@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import { Button } from "@/components/ui/button";
 
-type Consent = { clientName: string; redirectHost: string; signedRequest: string };
+type Consent = { clientName: string; redirectHost: string; redirectUri: string; signedRequest: string };
 
 function ConnectContent() {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ function ConnectContent() {
         }
         if (!response.ok) throw new Error("Authorization request failed");
         const result = await response.json() as Consent;
-        if (!result.clientName || !result.redirectHost || !result.signedRequest) {
+        if (!result.clientName || !result.redirectHost || !result.redirectUri || !result.signedRequest) {
           throw new Error("Invalid authorization request");
         }
         setConsent(result);
@@ -86,6 +86,9 @@ function ConnectContent() {
         <p>{t("premium.mcpConsentRequest", {
           client: consent.clientName, host: consent.redirectHost,
         })}</p>
+        <p className="break-all rounded-md border bg-muted p-3 text-sm">
+          {t("premium.mcpConsentCallback", { url: consent.redirectUri })}
+        </p>
         <p className="text-sm text-muted-foreground">{t("premium.mcpConsentLimits")}</p>
         <div className="flex gap-3">
           <Button disabled={busy} onClick={() => void decide("approve")}>

@@ -1,0 +1,97 @@
+# MCP client compatibility plan (issue #438)
+
+This is a **Preview-only** manual test plan for PR #447. The stable PR branch
+URL, followed later by `preview.meadtools.com`, is the MCP endpoint under test.
+Premium sales and production MCP access remain off. Passing a protocol fixture
+does not establish that a particular AI client can finish OAuth or invoke a
+tool.
+
+## Client shortlist
+
+Status means an observed MeadTools result, not a vendor's general MCP claim.
+Use a separate named MeadTools connection for each client so revocation is
+unambiguous. Do not use an API model test or automated evaluation without
+explicit approval for the provider spend, model, and expected number of turns.
+
+| Priority | Client | First authentication path | Access or compatibility note | MeadTools status |
+| --- | --- | --- | --- | --- |
+| Baseline | ChatGPT custom app | OAuth custom MCP app | Existing first-release target. Codex desktop availability is a separate check. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
+| Baseline | Claude Desktop / web | OAuth custom connector | Existing first-release target. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
+| Baseline | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
+| P1 | [Grok web custom connector](https://docs.x.ai/grok/connectors) | Try OAuth; if unavailable, personal token | `grok.com/connectors` accepts a public custom MCP URL. Check which auth choices the UI actually offers. | Not tested. |
+| P1 | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google's custom-app rollout requires an eligible personal account, US location, English, and Keep Activity on. This is separate from the retired individual Gemini CLI sign-in. | Not tested. |
+| P1 | [Perplexity custom remote connector](https://www.perplexity.ai/changelog/what-we-shipped---march-13-2026) | Try OAuth; fall back to personal token if offered | Custom connectors require an eligible plan. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | Not tested. |
+| P1 | [VS Code with GitHub Copilot Chat](https://code.visualstudio.com/api/extension-guides/ai/mcp) | OAuth dynamic client registration | VS Code documents DCR and loopback / `vscode.dev` callbacks, which the new MeadTools redirect policy accepts. This is the desktop IDE client, not the Copilot cloud agent. | Not tested. |
+| P2 | [Grok Build CLI](https://docs.x.ai/build/features/mcp-servers) | OAuth, then personal token if needed | The CLI documents remote HTTP OAuth and static-header paths, plus `grok mcp doctor`. | Not tested. |
+| P2 | [Cursor](https://cursor.com/docs/sdk/typescript) | Try OAuth; personal token fallback | Cursor supports remote HTTP MCP and OAuth, but callback behavior has varied by client and version. An app-specific URI scheme is outside MeadTools' current redirect policy. | Not tested. |
+| P2 | [Replit Agent](https://docs.replit.com/features/mcp/overview) | OAuth dynamic client registration | Replit documents custom remote MCP servers and automatic DCR. | Not tested. |
+| P2 | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Requires an organization administrator. Studio connectors are a separate developer-facing option. | Not tested. |
+| Later | [Microsoft 365 Copilot custom connector](https://learn.microsoft.com/microsoft-365/copilot/connectors/set-up-custom-federated-connectors) | Organizational OAuth/SSO setup | Requires tenant administration and a connector package; not a simple personal URL paste. | Not tested. |
+
+Poe, DeepSeek's consumer chat, and Meta AI are not scheduled until they publish
+a first-party way for a user to add an arbitrary authenticated remote MCP
+server. Self-hosted clients such as Open WebUI or LibreChat can be added after
+the mainstream hosted-client matrix is stable.
+
+## Preflight for every hosted client
+
+1. Deploy the OAuth and setup-page changes on the PR branch before attempting
+   any new client's OAuth flow. Deployments built before this change have the
+   original ChatGPT/Claude callback allowlist.
+2. Open `/integrations/mcp` on that deployment as the premium test account and
+   copy the displayed HTTPS `/mcp` URL. Check that the deployment is publicly
+   reachable and `PREMIUM_MCP_ENABLED` is on only for the test environment.
+3. Confirm the OAuth discovery URLs advertise that same origin. Reconnect any
+   client configured against an earlier deployment URL; OAuth tokens are bound
+   to the resource URL.
+4. Start with OAuth when the client offers it. Check the exact callback URL on
+   MeadTools' consent screen before approving. MeadTools accepts HTTPS and
+   local loopback callbacks, requires S256 PKCE, and matches the registered
+   callback exactly. A client requiring an app-specific callback scheme or a
+   confidential client secret needs separate implementation review.
+5. Use a personal token only if the client has a secure bearer-header path.
+   Copy it once from the advanced section; never paste it into a prompt, issue,
+   screenshot, shell history, or test report. Revoke disposable test tokens.
+
+## Manual check for each client
+
+Record pass, fail, or blocked for each item, with the client version and auth
+method. Keep model use to one short prompt per client unless a failure needs a
+specific retry. No automated model batches are part of this plan.
+
+1. **Connect:** Add the Preview `/mcp` URL. Complete MeadTools sign-in and
+   explicit consent, or use the personal-token path. Record the callback host
+   or the first safe error code, without recording credentials.
+2. **Discover:** Confirm the client lists MeadTools tools, ideally all seven:
+   `search_ingredients`, `search_additives`, `search_yeasts`, `search_wiki`,
+   `fetch_wiki_page`, `calculate_gravity_target`, and `build_recipe_draft`.
+3. **Invoke:** Ask: “Use MeadTools `search_ingredients` to search for raspberry.
+   Show the matches and name the tool you called.” Confirm the trace shows the
+   MeadTools tool, not a web search or invented answer.
+4. **Revoke:** Revoke that client's connection on `/integrations/mcp`, then
+   repeat the prompt in a new conversation. It must lose MeadTools access.
+5. **Reconnect:** Reauthorize or create a new personal token and repeat the
+   ingredient search. The client must regain access without reviving the old
+   connection.
+
+For the first passing client in each distinct OAuth implementation, also let
+the connection expire naturally and verify refresh. Test an expired premium
+account and the MCP kill switch with the local fixture or one selected Preview
+client; repeating those server-side denial cases for every provider adds no
+client-specific coverage. Provider model usage is billed by that provider;
+MeadTools MCP calls do not spend hosted-chat prompt credits.
+
+## Reporting and release decision
+
+For each client, record: date, client/version, Preview URL hostname (not a
+token), auth mode, callback scheme/host, seven-tool discovery result, exact
+tool invoked, revocation result, reconnection result, and a short sanitized
+error if blocked. Mark a client **supported** in user-facing instructions only
+after connect, invocation, revocation, and reconnection all pass. A client
+whose OAuth fails but personal-token path passes should be documented as
+token-supported, with the extra setup steps it actually requires.
+
+Keep the existing ChatGPT and Claude guide tabs as confirmed paths. Add Grok,
+Gemini, Perplexity, or other provider-specific instructions only after their
+manual results are observed. Publishing a connector in a vendor catalog or
+making a one-click install link is separate follow-up work.

@@ -3,7 +3,7 @@ import { OAuthRequestError, registerMcpOAuthClient } from "@/lib/mcp/oauth";
 
 export const runtime = "nodejs";
 
-/** Public dynamic client registration for approved MCP client callbacks. */
+/** Public dynamic client registration for HTTPS and loopback MCP clients. */
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {

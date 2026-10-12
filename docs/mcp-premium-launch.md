@@ -102,13 +102,17 @@ idempotently for each eligible paid period after account linking.
 
 ## Launch gates
 
+The [MCP client compatibility plan](mcp-client-testing-plan.md) tracks the
+confirmed clients and the next Preview tests, including Grok, Gemini, and
+Perplexity. Provider-specific setup instructions should follow observed
+connect, tool-call, revoke, and reconnect results.
+
 1. Import and reconcile older Ko-fi membership payments after the Members CSV
    is available. Local webhook, linking, expiry, and idempotent grants have
    been exercised, but the historical import remains a launch dependency.
-2. Reconnect Claude Desktop and ChatGPT using the PR branch URL and verify
-   discovery, invocation, and revocation after the OAuth origin changes.
-   Both clients connected to an earlier deployment URL; the local OAuth and
-   MCP protocol fixtures also pass.
+2. Keep the confirmed Claude and ChatGPT connection, invocation, revocation,
+   and reauthorization results as the baseline. Repeat these checks after any
+   OAuth origin change or when switching to `preview.meadtools.com`.
 3. Review account UI, connection and revocation, tool examples, usage limits,
    and troubleshooting with a premium test account.
 4. Finish full denial, retry, concurrency, hosted/MCP parity, purchase, renewal,

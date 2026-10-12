@@ -14,6 +14,7 @@ if (
 
 let userId: number | null = null;
 let clientId: string | null = null;
+let otherClientId: string | null = null;
 try {
   const user = await prisma.users.create({ data: { email: `mcp-oauth-${randomUUID()}@example.invalid` } });
   userId = user.id;
@@ -31,11 +32,18 @@ try {
   assert.equal(registration.status, 201, "OAuth client registration must succeed");
   const registered = await registration.json() as { client_id: string };
   clientId = registered.client_id;
+  const otherRegistration = await fetch(`${baseUrl}/oauth/register`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_name: "Other MCP client",
+      redirect_uris: ["https://assistant.example:8443/oauth/callback?source=mcp"] }),
+  });
+  assert.equal(otherRegistration.status, 201, "Other HTTPS MCP clients must be able to register");
+  otherClientId = (await otherRegistration.json() as { client_id: string }).client_id;
   assert.equal((await fetch(`${baseUrl}/oauth/register`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ client_name: "Untrusted callback",
-      redirect_uris: ["https://example.invalid/callback"] }),
-  })).status, 400, "Unapproved OAuth callbacks must be rejected");
+    body: JSON.stringify({ client_name: "Insecure callback",
+      redirect_uris: ["http://example.invalid/callback"] }),
+  })).status, 400, "Non-loopback HTTP callbacks must be rejected");
 
   const protectedMetadata = await (await fetch(`${baseUrl}/.well-known/oauth-protected-resource`)).json() as { resource: string };
   const authorizationMetadata = await (await fetch(`${baseUrl}/.well-known/oauth-authorization-server`)).json() as { code_challenge_methods_supported: string[] };
@@ -59,8 +67,11 @@ try {
   assert.equal((await fetch(authorizeUrl, { headers: { Accept: "application/json" } })).status,
     401, "Consent details must require an account");
   assert.equal(authorize.status, 200, "Consent details must load for the signed-in user");
-  const { signedRequest } = await authorize.json() as { signedRequest: string };
+  const { signedRequest, redirectUri: consentRedirectUri } = await authorize.json() as {
+    signedRequest: string; redirectUri: string;
+  };
   assert.ok(signedRequest, "Consent details must contain a signed request");
+  assert.equal(consentRedirectUri, redirectUri, "Consent must show the exact callback URL");
 
   const approval = await fetch(`${baseUrl}/oauth/authorize`, {
     method: "POST", redirect: "manual",
@@ -140,5 +151,6 @@ try {
     await prisma.users.delete({ where: { id: userId } });
   }
   if (clientId) await prisma.mcp_oauth_clients.deleteMany({ where: { client_id: clientId } });
+  if (otherClientId) await prisma.mcp_oauth_clients.deleteMany({ where: { client_id: otherClientId } });
   await prisma.$disconnect();
 }

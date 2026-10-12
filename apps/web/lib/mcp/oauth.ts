@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 import { isMcpRolloutEnabled } from "@/lib/mcp/access";
 import { MCP_SCOPE, mcpOrigin, mcpResource } from "@/lib/mcp/metadata";
+import { isAllowedMcpRedirect } from "@/lib/mcp/redirect-uri";
 
 const ACCESS_LIFETIME_MS = 60 * 60_000;
 const REFRESH_LIFETIME_MS = 30 * 24 * 60 * 60_000;
@@ -32,23 +33,6 @@ function signingSecret() {
 
 function hmac(value: string) {
   return createHmac("sha256", signingSecret()).update(value).digest("base64url");
-}
-
-export function isAllowedMcpRedirect(uri: string) {
-  if (uri.length > 2048 || !URL.canParse(uri)) return false;
-  const url = new URL(uri);
-  if (url.hash || url.username || url.password || url.search) return false;
-  if (url.protocol === "http:" && process.env.NODE_ENV !== "production") {
-    return ["localhost", "127.0.0.1"].includes(url.hostname) && url.pathname === "/callback";
-  }
-  if (url.protocol !== "https:" || url.port) return false;
-  if (url.hostname === "claude.ai") return url.pathname === "/api/mcp/auth_callback";
-  if (url.hostname === "claude.com") return url.pathname === "/api/mcp/auth_callback";
-  if (url.hostname === "chatgpt.com") {
-    return url.pathname === "/connector_platform_oauth_redirect" ||
-      /^\/connector\/oauth\/[A-Za-z0-9_-]+$/.test(url.pathname);
-  }
-  return false;
 }
 
 export async function registerMcpOAuthClient(input: unknown) {

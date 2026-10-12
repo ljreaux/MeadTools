@@ -28,6 +28,7 @@ import {
   InputGroupText
 } from "@/components/ui/input-group";
 import { Copy, CopyCheck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function Steps({ items }: { items: string[] }) {
   return (
@@ -53,6 +54,7 @@ function serverOrigin() {
 
 export function McpGuide({ endpoint }: { endpoint: string }) {
   const { t, i18n } = useTranslation();
+  const { toast } = useToast();
   const token = useAuthToken();
   const { status: sessionStatus } = useSession();
   const origin = useSyncExternalStore(
@@ -64,6 +66,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
   const [tokenName, setTokenName] = useState("");
   const [createdToken, setCreatedToken] = useState("");
   const [copied, setCopied] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const signedIn = Boolean(token) || sessionStatus === "authenticated";
@@ -109,6 +112,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
     setBusy(true);
     setError("");
     setCreatedToken("");
+    setTokenCopied(false);
     try {
       const response = await fetch("/api/account/premium/mcp/tokens", {
         method: "POST",
@@ -140,6 +144,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
       );
       if (!response.ok) throw new Error("MCP connection revocation failed");
       setCreatedToken("");
+      setTokenCopied(false);
       await connectionsQuery.refetch();
     } catch {
       setError(t("mcpGuide.failed"));
@@ -156,6 +161,18 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
       setCopied(true);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const copyPersonalToken = async () => {
+    if (!createdToken) return;
+    try {
+      await navigator.clipboard.writeText(createdToken);
+      setTokenCopied(true);
+      toast({ description: t("mcpGuide.copiedToken") });
+      setTimeout(() => setTokenCopied(false), 1_500);
+    } catch {
+      toast({ description: t("mcpGuide.copyFailed"), variant: "destructive" });
     }
   };
 
@@ -392,11 +409,29 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
                 {createdToken && (
                   <div role="status" className="space-y-2">
                     <p>{t("mcpGuide.tokenOnce")}</p>
-                    <Input
-                      readOnly
-                      value={createdToken}
-                      aria-label={t("mcpGuide.tokenOnce")}
-                    />
+                    <InputGroup className="h-12 w-full max-w-2xl">
+                      <InputGroupAddon>
+                        <InputGroupText>{t("mcpGuide.tokenLabel")}</InputGroupText>
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        readOnly
+                        value={createdToken}
+                        aria-label={t("mcpGuide.tokenLabel")}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          type="button"
+                          onClick={() => void copyPersonalToken()}
+                          aria-label={t(tokenCopied ? "mcpGuide.copiedToken" : "mcpGuide.copyToken")}
+                        >
+                          {tokenCopied ? (
+                            <CopyCheck className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
                   </div>
                 )}
               </AccordionContent>
