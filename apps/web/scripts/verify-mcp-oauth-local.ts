@@ -142,8 +142,16 @@ try {
     where: { user_id_source: { user_id: user.id, source: "manual" } },
     data: { revoked_at: new Date() },
   });
-  assert.equal((await mcpCall(second.access_token)).status, 401,
+  const noPremium = await mcpCall(second.access_token);
+  assert.equal(noPremium.status, 403,
     "Losing premium must immediately block MCP access");
+  const premiumError = await noPremium.json() as {
+    error: string; message: string; help_url: string;
+  };
+  assert.equal(premiumError.error, "premium_required",
+    "A valid connection must explain why premium access was denied");
+  assert.match(premiumError.message, /Premium access is required/);
+  assert.equal(premiumError.help_url, `${baseUrl}/account/premium`);
   assert.equal((await tokenRequest({ grant_type: "refresh_token", client_id: clientId,
     refresh_token: second.refresh_token, resource })).status, 400,
   "Losing premium must block OAuth refresh");

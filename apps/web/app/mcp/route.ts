@@ -19,6 +19,17 @@ function unauthorized() {
   });
 }
 
+function premiumRequired() {
+  return NextResponse.json({
+    error: "premium_required",
+    message: "Premium access is required to use MeadTools MCP. Check your membership in MeadTools.",
+    help_url: `${mcpOrigin()}/account/premium`,
+  }, {
+    status: 403,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
 async function handle(request: NextRequest) {
   if (!isMcpRolloutEnabled()) return new NextResponse(null, { status: 404 });
   const origin = request.headers.get("origin");
@@ -26,7 +37,8 @@ async function handle(request: NextRequest) {
     return new NextResponse(null, { status: 403 });
   }
   const access = await authenticateMcpAccessToken(request.headers.get("authorization"));
-  if (!access) return unauthorized();
+  if (access.kind === "unauthorized") return unauthorized();
+  if (access.kind === "premium_required") return premiumRequired();
 
   let parsedBody: unknown;
   if (request.method === "POST") {

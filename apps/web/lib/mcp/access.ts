@@ -79,11 +79,16 @@ export async function revokeMcpOAuthSession(userId: number, sessionId: string) {
   return result.count === 1;
 }
 
-export async function authenticateMcpAccessToken(header: string | null) {
-  if (!isMcpRolloutEnabled()) return null;
+type McpAccessResult =
+  | { kind: "authorized"; userId: number; tokenId: string }
+  | { kind: "premium_required" }
+  | { kind: "unauthorized" };
+
+export async function authenticateMcpAccessToken(header: string | null): Promise<McpAccessResult> {
+  if (!isMcpRolloutEnabled()) return { kind: "unauthorized" };
   const match = /^Bearer (\S+)$/i.exec(header ?? "");
   const token = match?.[1];
-  if (!token || !TOKEN_PATTERN.test(token)) return null;
+  if (!token || !TOKEN_PATTERN.test(token)) return { kind: "unauthorized" };
   const now = new Date();
   const record = await prisma.mcp_access_tokens.findUnique({
     where: { token_hash: tokenHash(token) },
@@ -100,11 +105,12 @@ export async function authenticateMcpAccessToken(header: string | null) {
     (!record && !oauth) || record?.revoked_at ||
     (record && record.expires_at <= now) || oauth?.revoked_at ||
     (oauth && (oauth.access_expires_at <= now || oauth.resource !== mcpResource() || oauth.scope !== MCP_SCOPE))
-  ) return null;
+  ) return { kind: "unauthorized" };
   const userId = record?.user_id ?? oauth?.user_id;
-  if (!userId) return null;
+  if (!userId) return { kind: "unauthorized" };
   const access = await getPremiumAccessStatus(userId, now);
-  if (!access.premiumEnabled || !access.activeUser || access.paymentRestricted) return null;
+  if (!access.activeUser || access.paymentRestricted) return { kind: "unauthorized" };
+  if (!access.premiumEnabled) return { kind: "premium_required" };
   if (record) {
     await prisma.mcp_access_tokens.update({
       where: { id: record.id },
@@ -116,5 +122,5 @@ export async function authenticateMcpAccessToken(header: string | null) {
       data: { last_used_at: now },
     });
   }
-  return { userId, tokenId: record?.id ?? oauth!.id };
+  return { kind: "authorized", userId, tokenId: record?.id ?? oauth!.id };
 }
