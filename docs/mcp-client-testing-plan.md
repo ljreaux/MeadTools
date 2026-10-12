@@ -25,9 +25,9 @@ demand may change the order.
 | --- | --- | --- | --- | --- |
 | Baseline | ChatGPT custom app | OAuth custom MCP app | Existing first-release target. Codex desktop availability is a separate check. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Baseline | Claude Desktop / web | OAuth custom connector | Existing first-release target. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
-| Next chat test | [Grok web custom connector](https://docs.x.ai/grok/connectors) | Try OAuth; if unavailable, personal token | `grok.com/connectors` accepts a public custom MCP URL. Check which auth choices the UI actually offers. | Not tested. |
-| Next chat test | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google's custom-app rollout requires an eligible personal account, US location, English, and Keep Activity on. This is separate from the retired individual Gemini CLI sign-in. | Not tested. |
-| Next chat test | [Perplexity custom remote connector](https://www.perplexity.ai/changelog/what-we-shipped---march-13-2026) | Try OAuth; fall back to personal token if offered | Custom connectors require an eligible plan. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | Not tested. |
+| Next chat test | [Grok web custom connector](https://docs.x.ai/grok/connectors) | OAuth | `grok.com/connectors` accepts a public custom MCP URL. | User reports it works on PR Preview; tool trace, revocation, and reconnection still need recording. |
+| UI unavailable | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google lists US, age 18+, personal account, Keep Activity on, and English requirements. Its guide does not state a paid-plan requirement. Look under Gemini web Settings → Connected Apps (possibly under Personal Intelligence) → Custom apps. | User cannot find the Custom apps control; account eligibility or rollout is unresolved. |
+| Paid plan required | [Perplexity custom remote connector](https://www.perplexity.ai/help-center/en/articles/13915507-adding-custom-remote-connectors) | Try OAuth; fall back to personal token if offered | Perplexity says custom remote connectors require Pro, Max, or Enterprise. On an eligible account: Account settings → Connectors → + Custom connector → Remote. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | User cannot find the Custom connector control; account plan is unconfirmed. |
 | Opportunistic chat test | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Potential general-chat use, but requires an organization administrator. | Not tested. |
 | Developer smoke test | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
 | Developer smoke test | [VS Code with GitHub Copilot Chat](https://code.visualstudio.com/api/extension-guides/ai/mcp) | OAuth dynamic client registration | VS Code documents DCR and loopback / `vscode.dev` callbacks. Test only if readily available; recipe use is secondary. | Not tested. |
@@ -100,7 +100,10 @@ after connect, invocation, revocation, and reconnection all pass. A client
 whose OAuth fails but personal-token path passes should be documented as
 token-supported, with the extra setup steps it actually requires.
 
-Keep the existing ChatGPT and Claude guide tabs as confirmed paths. Add Grok,
-Gemini, Perplexity, or other provider-specific instructions only after their
-manual results are observed. Publishing a connector in a vendor catalog or
-making a one-click install link is separate follow-up work.
+Keep the existing ChatGPT and Claude guide tabs as confirmed paths. Grok's
+connection has been reported working; record tool use, revocation, and
+reconnection before publishing a Grok setup guide. Leave Gemini and
+Perplexity as blocked until the account UI exposes custom connectors. Add
+other provider-specific instructions only after their manual results are
+observed. Publishing a connector in a vendor catalog or making a one-click
+install link is separate follow-up work.

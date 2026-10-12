@@ -170,7 +170,7 @@
     "mcpGuideLink": "MCP setup guide and connections",
     "mcpConsentTitle": "Connect to MeadTools",
     "mcpConsentRequest": "{{client}} ({{host}}) requests access to MeadTools' read-only recipe, catalog, wiki, and calculation tools.",
-    "mcpConsentCallback": "The sign-in result will be sent to {{url}}. Continue only if you recognize this address.",
+    "mcpConsentCallback": "The sign-in result will be sent to this address. Continue only if you recognize it:",
     "mcpConsentLimits": "This connection cannot save recipes or change your brews. You can revoke it later from the MCP setup page.",
     "mcpConsentAllow": "Allow connection",
     "mcpConsentDeny": "Deny",

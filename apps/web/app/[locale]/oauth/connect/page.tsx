@@ -86,9 +86,12 @@ function ConnectContent() {
         <p>{t("premium.mcpConsentRequest", {
           client: consent.clientName, host: consent.redirectHost,
         })}</p>
-        <p className="break-all rounded-md border bg-muted p-3 text-sm">
-          {t("premium.mcpConsentCallback", { url: consent.redirectUri })}
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{t("premium.mcpConsentCallback")}</p>
+          <code className="block break-all rounded-md border border-border bg-background p-3 text-sm text-foreground">
+            {consent.redirectUri}
+          </code>
+        </div>
         <p className="text-sm text-muted-foreground">{t("premium.mcpConsentLimits")}</p>
         <div className="flex gap-3">
           <Button disabled={busy} onClick={() => void decide("approve")}>
