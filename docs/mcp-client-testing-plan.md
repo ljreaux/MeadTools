@@ -122,10 +122,14 @@ checks rule out the tested callback and missing path-specific metadata; they
 do **not** establish what Gemini actually sent or which response it rejected.
 
 There is no documented Gemini Spark requirement for a client secret or MCP
-Server Card. Independent operators have reported the
-[same DCR fallback](https://github.com/firecrawl/firecrawl-mcp-server/issues/345)
-and [failures later in the OAuth flow](https://discuss.ai.google.dev/t/gemini-spark-custom-mcp-oauth-stops-after-302-callback-and-never-calls-token/177327).
-These reports are diagnostic leads, not proof of MeadTools' cause. The
+Server Card. A Firecrawl user reported the
+[same DCR fallback](https://github.com/firecrawl/firecrawl-mcp-server/issues/345),
+then closed the issue after Gemini started working three days later without a
+reported server change. A suggested Google redirect-domain allowlist was not
+confirmed as the fix. Other operators have reported
+[failures later in the OAuth flow](https://discuss.ai.google.dev/t/gemini-spark-custom-mcp-oauth-stops-after-302-callback-and-never-calls-token/177327).
+These reports show the generic error can be transient or occur at different
+steps; they do not identify MeadTools' cause. The
 [MCP Server Card discovery extension](https://github.com/modelcontextprotocol/ext-server-card/blob/main/docs/discovery.md)
 does not make a card mandatory for OAuth registration. Do not implement a
 confidential-client path or speculative server-card response solely to satisfy
