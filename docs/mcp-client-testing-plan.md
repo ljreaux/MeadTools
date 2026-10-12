@@ -26,7 +26,7 @@ demand may change the order.
 | Baseline | ChatGPT custom app | OAuth custom MCP app | Existing first-release target. Codex desktop availability is a separate check. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Baseline | Claude Desktop / web | OAuth custom connector | Existing first-release target. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Next chat test | [Grok web custom connector](https://docs.x.ai/grok/connectors) | OAuth | `grok.com/connectors` accepts a public custom MCP URL. | User reports it works on PR Preview; tool trace, revocation, and reconnection still need recording. |
-| Investigating | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google lists US, age 18+, personal account, Keep Activity on, and English requirements. Its guide does not state a paid-plan requirement. | User reached the Custom apps form, but automatic registration still failed after the path-specific OAuth discovery fix deployed. Identify the failed step before another server deployment. |
+| Verified chat client | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google lists US, age 18+, personal account, Keep Activity on, and English requirements. Its guide does not state a paid-plan requirement. | On 2026-10-11, user completed OAuth and invoked `search_ingredients` on PR Preview. MeadTools revocation blocked access; disconnecting and reconnecting in Gemini Connected Apps restored tool use. |
 | Paid plan required | [Perplexity custom remote connector](https://www.perplexity.ai/help-center/en/articles/13915507-adding-custom-remote-connectors) | Try OAuth; fall back to personal token if offered | Perplexity says custom remote connectors require Pro, Max, or Enterprise. On an eligible account: Account settings → Connectors → + Custom connector → Remote. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | User cannot find the Custom connector control; account plan is unconfirmed. |
 | Opportunistic chat test | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Potential general-chat use, but requires an organization administrator. | User reports it works on PR Preview; tool trace, revocation, and reconnection still need recording. |
 | Developer smoke test | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
@@ -102,14 +102,16 @@ token-supported, with the extra setup steps it actually requires.
 
 Keep the existing ChatGPT and Claude guide tabs as confirmed paths. Grok's
 connection has been reported working; record tool use, revocation, and
-reconnection before publishing a Grok setup guide. Gemini remains blocked at
-automatic registration after the path-specific OAuth discovery fix. Perplexity
-still needs an eligible paid account before testing. Add other
+reconnection before publishing a Grok setup guide. Gemini passed OAuth, tool
+invocation, revocation, and reconnection on PR Preview. After MeadTools
+revocation, Gemini required a manual disconnect and reconnect in Connected Apps;
+its agent did not explain that recovery step. Perplexity still needs an eligible
+paid account before testing. Add other
 provider-specific instructions only after their manual results are observed.
 Publishing a connector in a vendor catalog or making a one-click install link
 is separate follow-up work.
 
-## Gemini Spark investigation before another deployment
+## Gemini Spark registration investigation
 
 Google's [custom app instructions](https://support.google.com/gemini/answer/17209137)
 say the web app uses Dynamic Client Registration (DCR), with manual client
@@ -149,11 +151,11 @@ same registration error. A more direct incompatibility emerged from a
 [Gemini Spark integration report](https://discuss.ai.google.dev/t/gemini-app-spark-custom-apps-mcp-oauth-never-exchanges-the-code-cannot-complete-request-on-oauth-redirect-googleusercontent-com/186405):
 Gemini submitted **six** redirect URIs and later used an OAuth `state` around
 1,400 characters. MeadTools previously rejected more than five redirect URIs
-and any state longer than 256 characters. The six-URI request returns HTTP
-400 `invalid_client_metadata` on deployed Preview and HTTP 201 after the local
-fix. The local parser and long-state regression tests pass. Deploy these two
-bounded-limit changes together, then retry Gemini once. This evidence supports
-the registration fix; it does not establish that Gemini's later token exchange
-will work. If the next attempt fails, identify the first new stage before
-changing code again. Gemini is not a verified MeadTools client until it can
-sign in and invoke a tool.
+and any state longer than 256 characters. The six-URI request returned HTTP
+400 `invalid_client_metadata` on the previous Preview deployment and HTTP 201
+after the bounded-limit fix deployed. The parser and long-state regression tests
+pass. On 2026-10-11, the user retried the stable PR Preview branch URL,
+completed MeadTools sign-in and consent, and received results from
+`search_ingredients` in Gemini. MeadTools revocation then blocked access, and a
+manual disconnect and reconnect in Gemini Connected Apps restored the tool.
+The Gemini agent did not clearly explain the recovery step.

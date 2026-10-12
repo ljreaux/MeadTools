@@ -210,7 +210,7 @@
     "claudeDocs": "Claude's custom connector guide",
     "otherTitle": "Other MCP clients",
     "otherBody": "Other remote MCP clients that support dynamic OAuth registration can use the same server URL. Check the callback address on MeadTools' consent screen before allowing a new client. Clients that accept an Authorization bearer header can use a personal token below.",
-    "otherLimit": "Connected through OAuth on Preview: Grok and Mistral Work. Tool use, revocation, and reconnection still need to be recorded for both. Antigravity CLI called a MeadTools tool using a personal token and local bridge. Gemini web is under investigation; Perplexity is untested. Clients requiring an app-specific callback scheme may need a personal token.",
+    "otherLimit": "Connected through OAuth on Preview: Grok, Mistral Work, and Gemini web. Gemini passed tool use, revocation, and reconnection; after revoking it in MeadTools, disconnect and reconnect MeadTools in Gemini Connected Apps to restore access. Tool use, revocation, and reconnection still need to be recorded for Grok and Mistral Work. Antigravity CLI called a MeadTools tool using a personal token and local bridge. Perplexity is untested. Clients requiring an app-specific callback scheme may need a personal token.",
     "connectionsTitle": "Your connections",
     "signIn": "Sign in to view and manage your MeadTools connections.",
     "unavailable": "MCP connections are unavailable for this account right now. Check your premium access and try again when MCP access is enabled.",
