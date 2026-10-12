@@ -13,27 +13,33 @@ Use a separate named MeadTools connection for each client so revocation is
 unambiguous. Do not use an API model test or automated evaluation without
 explicit approval for the provider spend, model, and expected number of turns.
 
+Prioritize **recipe use**, not the number of clients that can technically speak
+MCP. The seven tools search ingredients, additives, yeast, and wiki content or
+calculate and draft recipes. They fit general chat and research conversations.
+Coding assistants are useful for a protocol smoke test or a developer building
+a MeadTools integration, but are not a launch requirement or a reason to add
+provider-specific setup pages. This is a product-fit judgment; actual user
+demand may change the order.
+
 | Priority | Client | First authentication path | Access or compatibility note | MeadTools status |
 | --- | --- | --- | --- | --- |
 | Baseline | ChatGPT custom app | OAuth custom MCP app | Existing first-release target. Codex desktop availability is a separate check. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
 | Baseline | Claude Desktop / web | OAuth custom connector | Existing first-release target. | Connected, tool use, revocation, and reauthorization observed on PR Preview. |
-| Baseline | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
-| P1 | [Grok web custom connector](https://docs.x.ai/grok/connectors) | Try OAuth; if unavailable, personal token | `grok.com/connectors` accepts a public custom MCP URL. Check which auth choices the UI actually offers. | Not tested. |
-| P1 | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google's custom-app rollout requires an eligible personal account, US location, English, and Keep Activity on. This is separate from the retired individual Gemini CLI sign-in. | Not tested. |
-| P1 | [Perplexity custom remote connector](https://www.perplexity.ai/changelog/what-we-shipped---march-13-2026) | Try OAuth; fall back to personal token if offered | Custom connectors require an eligible plan. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | Not tested. |
-| P1 | [VS Code with GitHub Copilot Chat](https://code.visualstudio.com/api/extension-guides/ai/mcp) | OAuth dynamic client registration | VS Code documents DCR and loopback / `vscode.dev` callbacks, which the new MeadTools redirect policy accepts. This is the desktop IDE client, not the Copilot cloud agent. | Not tested. |
-| P2 | [Grok Build CLI](https://docs.x.ai/build/features/mcp-servers) | OAuth, then personal token if needed | The CLI documents remote HTTP OAuth and static-header paths, plus `grok mcp doctor`. | Not tested. |
-| P2 | [Cursor](https://cursor.com/docs/sdk/typescript) | Try OAuth; personal token fallback | Cursor supports remote HTTP MCP and OAuth, but callback behavior has varied by client and version. An app-specific URI scheme is outside MeadTools' current redirect policy. | Not tested. |
-| P2 | [Replit Agent](https://docs.replit.com/features/mcp/overview) | OAuth dynamic client registration | Replit documents custom remote MCP servers and automatic DCR. | Not tested. |
-| P2 | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Requires an organization administrator. Studio connectors are a separate developer-facing option. | Not tested. |
-| Later | [Microsoft 365 Copilot custom connector](https://learn.microsoft.com/microsoft-365/copilot/connectors/set-up-custom-federated-connectors) | Organizational OAuth/SSO setup | Requires tenant administration and a connector package; not a simple personal URL paste. | Not tested. |
+| Next chat test | [Grok web custom connector](https://docs.x.ai/grok/connectors) | Try OAuth; if unavailable, personal token | `grok.com/connectors` accepts a public custom MCP URL. Check which auth choices the UI actually offers. | Not tested. |
+| Next chat test | [Gemini web custom app](https://support.google.com/gemini/answer/17209137) | OAuth dynamic client registration | Google's custom-app rollout requires an eligible personal account, US location, English, and Keep Activity on. This is separate from the retired individual Gemini CLI sign-in. | Not tested. |
+| Next chat test | [Perplexity custom remote connector](https://www.perplexity.ai/changelog/what-we-shipped---march-13-2026) | Try OAuth; fall back to personal token if offered | Custom connectors require an eligible plan. Watch for the [reported public-client registration error](https://community.perplexity.ai/t/custom-mcp-connector-fails-with-did-not-return-a-client-secret-for-rfc-7591-compliant-public-client-registrations/5172); do not add a fake OAuth client secret to MeadTools. | Not tested. |
+| Opportunistic chat test | [Mistral Work custom connector](https://docs.mistral.ai/vibe/work/connectors/mcp-connectors) | OAuth dynamic client registration | Potential general-chat use, but requires an organization administrator. | Not tested. |
+| Developer smoke test | Antigravity CLI | Personal token through local stdio bridge | Direct remote Authorization headers failed in the tested CLI; the bridge worked. OAuth remains untested. | `search_ingredients` invoked successfully with a token. |
+| Developer smoke test | [VS Code with GitHub Copilot Chat](https://code.visualstudio.com/api/extension-guides/ai/mcp) | OAuth dynamic client registration | VS Code documents DCR and loopback / `vscode.dev` callbacks. Test only if readily available; recipe use is secondary. | Not tested. |
+| Defer | [Grok Build CLI](https://docs.x.ai/build/features/mcp-servers), [Cursor](https://cursor.com/docs/sdk/typescript), [Replit Agent](https://docs.replit.com/features/mcp/overview) | OAuth or personal token | Coding-oriented clients. Revisit for user demand or a concrete integration workflow. | Not tested. |
+| Defer | [Microsoft 365 Copilot custom connector](https://learn.microsoft.com/microsoft-365/copilot/connectors/set-up-custom-federated-connectors) | Organizational OAuth/SSO setup | Tenant administration and a connector package make this a poor early test. | Not tested. |
 
 Poe, DeepSeek's consumer chat, and Meta AI are not scheduled until they publish
 a first-party way for a user to add an arbitrary authenticated remote MCP
 server. Self-hosted clients such as Open WebUI or LibreChat can be added after
 the mainstream hosted-client matrix is stable.
 
-## Preflight for every hosted client
+## Preflight for each client tested
 
 1. Deploy the OAuth and setup-page changes on the PR branch before attempting
    any new client's OAuth flow. Deployments built before this change have the
@@ -53,7 +59,7 @@ the mainstream hosted-client matrix is stable.
    Copy it once from the advanced section; never paste it into a prompt, issue,
    screenshot, shell history, or test report. Revoke disposable test tokens.
 
-## Manual check for each client
+## Manual check for chat clients
 
 Record pass, fail, or blocked for each item, with the client version and auth
 method. Keep model use to one short prompt per client unless a failure needs a
@@ -79,7 +85,10 @@ the connection expire naturally and verify refresh. Test an expired premium
 account and the MCP kill switch with the local fixture or one selected Preview
 client; repeating those server-side denial cases for every provider adds no
 client-specific coverage. Provider model usage is billed by that provider;
-MeadTools MCP calls do not spend hosted-chat prompt credits.
+MeadTools MCP calls do not spend hosted-chat prompt credits. For an optional
+developer client, one connect, discover, and invoke smoke test is enough to
+establish basic compatibility; a full release-support claim still requires the
+revocation and reconnection checks above.
 
 ## Reporting and release decision
 
