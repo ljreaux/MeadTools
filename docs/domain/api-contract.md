@@ -132,6 +132,12 @@ grant, recovery, and usage-report schemas. The streaming `/chat/recipe` route
 uses the TanStack chat transport plus the documented insufficient-credit `402`
 response; its durable thread state is loaded through the conversation routes.
 
+Credit activity operation IDs accept canonical PostgreSQL UUID strings,
+including the deterministic hash-derived IDs used for Stripe and Ko-fi Premium
+allowances. These existing IDs do not require RFC UUID version/variant bits.
+Wallet responses and pagination cursors use the same validation, preserving
+ledger identity and grant idempotency without rewriting historical entries.
+
 Run:
 
 ```sh

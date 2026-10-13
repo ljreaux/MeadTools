@@ -2,6 +2,12 @@ import "server-only";
 
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import {
+  decodeCreditActivityCursor,
+  encodeCreditActivityCursor,
+} from "@/lib/credit-history-cursor";
+
+export { InvalidCreditActivityCursorError } from "@/lib/credit-history-cursor";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
@@ -28,13 +34,6 @@ export type CreditActivityPage = {
   nextCursor: string | null;
 };
 
-export class InvalidCreditActivityCursorError extends Error {
-  constructor() {
-    super("The credit history cursor is invalid.");
-    this.name = "InvalidCreditActivityCursorError";
-  }
-}
-
 /**
  * Pages wallet activity by operation rather than individual ledger rows. A
  * completed chat turn, for example, has a reservation and settlement but is
@@ -46,7 +45,9 @@ export async function getCreditActivityPage(options: {
   limit?: number;
 }): Promise<CreditActivityPage> {
   const limit = normalizeLimit(options.limit);
-  const cursor = options.cursor ? decodeCursor(options.cursor) : undefined;
+  const cursor = options.cursor
+    ? decodeCreditActivityCursor(options.cursor)
+    : undefined;
   const cursorCondition = cursor
     ? Prisma.sql`WHERE ("last_occurred_at", "operation_id") < (${cursor.occurredAt}, ${cursor.operationId}::uuid)`
     : Prisma.empty;
@@ -87,7 +88,7 @@ export async function getCreditActivityPage(options: {
     activities: visibleRows.map(toCreditActivity),
     nextCursor:
       hasNextPage && lastRow
-        ? encodeCursor({
+        ? encodeCreditActivityCursor({
             occurredAt: lastRow.last_occurred_at,
             operationId: lastRow.operation_id,
           })
@@ -141,49 +142,4 @@ function normalizeLimit(limit: number | undefined): number {
     );
   }
   return limit;
-}
-
-function encodeCursor(cursor: {
-  occurredAt: Date;
-  operationId: string;
-}): string {
-  return Buffer.from(
-    JSON.stringify({
-      occurredAt: cursor.occurredAt.toISOString(),
-      operationId: cursor.operationId,
-    }),
-  ).toString("base64url");
-}
-
-function decodeCursor(value: string): {
-  occurredAt: Date;
-  operationId: string;
-} {
-  try {
-    const parsed: unknown = JSON.parse(
-      Buffer.from(value, "base64url").toString("utf8"),
-    );
-    if (!isCreditActivityCursor(parsed))
-      throw new InvalidCreditActivityCursorError();
-    const occurredAt = new Date(parsed.occurredAt);
-    if (Number.isNaN(occurredAt.getTime()))
-      throw new InvalidCreditActivityCursorError();
-    return { occurredAt, operationId: parsed.operationId };
-  } catch (error) {
-    if (error instanceof InvalidCreditActivityCursorError) throw error;
-    throw new InvalidCreditActivityCursorError();
-  }
-}
-
-function isCreditActivityCursor(
-  value: unknown,
-): value is { occurredAt: string; operationId: string } {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.occurredAt === "string" &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      typeof candidate.operationId === "string" ? candidate.operationId : "",
-    )
-  );
 }
