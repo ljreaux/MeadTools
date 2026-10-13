@@ -387,14 +387,18 @@ async function createHydrometerLogSeries({
 
 async function clearDb() {
   // Order matters because of FKs
+  await prisma.credit_payment_recoveries.deleteMany();
   await prisma.mcp_tool_usage.deleteMany();
   await prisma.mcp_tool_leases.deleteMany();
   await prisma.mcp_rate_buckets.deleteMany();
+  await prisma.mcp_oauth_consumed_refresh_tokens.deleteMany();
+  await prisma.mcp_registration_budget.deleteMany();
   await prisma.mcp_oauth_sessions.deleteMany();
   await prisma.mcp_oauth_codes.deleteMany();
   await prisma.mcp_oauth_clients.deleteMany();
   await prisma.mcp_access_tokens.deleteMany();
   await prisma.premium_stripe_checkouts.deleteMany();
+  await prisma.premium_stripe_payments.deleteMany();
   await prisma.premium_stripe_invoices.deleteMany();
   await prisma.premium_stripe_subscriptions.deleteMany();
   await prisma.premium_kofi_link_challenges.deleteMany();

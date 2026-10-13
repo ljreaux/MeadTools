@@ -47,6 +47,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: fixture
+          POSTGRES_PASSWORD: fixture
+          POSTGRES_DB: meadtools_premium_foundation_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fixture -d meadtools_premium_foundation_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -74,6 +89,15 @@ jobs:
 
       - name: Run test suites
         run: npm test
+
+      - name: Verify migrations and premium concurrency on disposable PostgreSQL
+        env:
+          DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/meadtools_premium_foundation_test
+          DATABASE_DIRECT_URL: postgresql://fixture:fixture@127.0.0.1:5432/meadtools_premium_foundation_test
+        working-directory: apps/web
+        run: |
+          npx prisma migrate deploy --config prisma.test.config.ts
+          npm run test:premium-foundation
 
       - name: Regenerate OpenAPI document
         run: npm run openapi:generate

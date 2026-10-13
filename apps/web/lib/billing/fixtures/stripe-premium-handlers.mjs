@@ -6,6 +6,8 @@ import { handlePremiumStripeEvent } from "../stripe-premium.ts";
 // This process has only dummy credentials. All DB/Stripe operations below are
 // replaced before invoking production handlers; the transaction proxy fails
 // immediately if a new, unmocked DB operation is introduced.
+getStripeClient()._requestSender.request = () => { throw new Error("Unmocked Stripe request in offline fixture"); };
+getStripeClient().invoicePayments.list = async () => ({ data: [], has_more: false });
 let locked = false;
 let currentLink = { user_id: 42, subscription_id: "sub_1", customer_id: "cus_1", status: "active" };
 let subscription = {

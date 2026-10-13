@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof OAuthRequestError) {
-      return NextResponse.json({ error: error.code }, { status: 400 });
+      return NextResponse.json({ error: error.code }, {
+        status: error.code === "registration_rate_limited" ? 429 : 400,
+        headers: error.code === "registration_rate_limited" ? { "Retry-After": "3600", "Cache-Control": "no-store" } : {},
+      });
     }
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }

@@ -25,23 +25,27 @@ export async function createMcpAccessToken(userId: number, label: string) {
     throw new Error("Enter a token name of up to 80 characters.");
   }
   const now = new Date();
-  const activeCount = await prisma.mcp_access_tokens.count({
-    where: { user_id: userId, revoked_at: null, expires_at: { gt: now } },
-  });
-  if (activeCount >= 5) throw new Error("Revoke an existing connection first.");
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+    const activeCount = await tx.mcp_access_tokens.count({
+      where: { user_id: userId, revoked_at: null, expires_at: { gt: now } },
+    });
+    if (activeCount >= 5)
+      throw new Error("Revoke an existing connection first.");
 
-  const token = `mtmcp_${randomBytes(32).toString("base64url")}`;
-  const expiresAt = new Date(now.getTime() + TOKEN_LIFETIME_MS);
-  const record = await prisma.mcp_access_tokens.create({
-    data: {
-      user_id: userId,
-      label: normalizedLabel,
-      token_hash: tokenHash(token),
-      expires_at: expiresAt,
-    },
-    select: { id: true, label: true, created_at: true, expires_at: true },
+    const token = `mtmcp_${randomBytes(32).toString("base64url")}`;
+    const expiresAt = new Date(now.getTime() + TOKEN_LIFETIME_MS);
+    const record = await tx.mcp_access_tokens.create({
+      data: {
+        user_id: userId,
+        label: normalizedLabel,
+        token_hash: tokenHash(token),
+        expires_at: expiresAt,
+      },
+      select: { id: true, label: true, created_at: true, expires_at: true },
+    });
+    return { token, ...record };
   });
-  return { token, ...record };
 }
 
 export async function listMcpAccessTokens(userId: number) {

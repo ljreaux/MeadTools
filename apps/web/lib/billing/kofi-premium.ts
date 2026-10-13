@@ -80,6 +80,7 @@ export async function recordKofiSubscriptionPayment(
   }
   try {
     return await prisma.$transaction(async (tx) => {
+      await lockKofiPayer(tx, digest);
       const stored = await tx.premium_kofi_payments.create({
         data: {
           message_id: payment.messageId,
@@ -132,6 +133,7 @@ type StoredKofiLink = Awaited<
 async function applyStoredKofiPayment(payment: StoredKofiPayment, now: Date) {
   if (payment.applied_user_id) return { duplicate: true, linked: true };
   return prisma.$transaction(async (tx) => {
+    await lockKofiPayer(tx, payment.email_digest);
     const link = await tx.premium_kofi_links.findUnique({
       where: { email_digest: payment.email_digest }
     });
@@ -298,6 +300,7 @@ export async function claimKofiAccountLink(options: {
       ) {
         throw new KofiLinkInvalidError("This link is invalid or expired.");
       }
+      await lockKofiPayer(tx, challenge.email_digest);
       const claimed = await tx.premium_kofi_link_challenges.updateMany({
         where: { id: challenge.id, consumed_at: null, expires_at: { gt: now } },
         data: { consumed_at: now }
@@ -353,4 +356,9 @@ export async function claimKofiAccountLink(options: {
     }
     throw error;
   }
+}
+
+/** Lock the payer before either path inserts records or searches for its counterpart. */
+async function lockKofiPayer(tx: Prisma.TransactionClient, digest: string) {
+  await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${`kofi:${digest}`}, 0))`;
 }

@@ -8,6 +8,7 @@ import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 import { recordCreditGrantInTransaction } from "@/lib/db/credit-accounting";
 import { getStripeClient } from "./stripe";
+import { reconcileDeferredStripeDisputes, reconcileDeferredStripeRefunds } from "./credit-payment-recovery";
 import { resumePremiumCheckout, PremiumCheckoutStateError, type CheckoutAttempt } from "./premium-checkout-reservation";
 import { premiumInvoicePaidThrough, laterPaidThrough, currentSubscriptionState } from "./premium-invoice-period";
 import { buildPremiumCheckoutSessionParams } from "./premium-checkout-session";
@@ -201,6 +202,13 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
   const subscriptionId = stripeId(invoice.parent?.subscription_details?.subscription);
   if (!subscriptionId) return;
   const { userId } = await verifiedSubscription(subscriptionId);
+  const stripe = getStripeClient()!;
+  const payments = await stripe.invoicePayments.list({ invoice: invoice.id, status: "paid", limit: 100 });
+  if (payments.has_more) throw new PremiumStripeVerificationError("Invoice payment list is incomplete.");
+  const paymentIds = payments.data.flatMap((payment) => {
+    const paymentId = stripeId(payment.payment.payment_intent);
+    return payment.payment.type === "payment_intent" && paymentId ? [paymentId] : [];
+  });
   const paidAtSeconds = invoice.status_transitions?.paid_at ?? invoice.created;
   const paidAt = new Date(paidAtSeconds * 1_000);
   await prisma.$transaction(async (tx) => {
@@ -220,6 +228,10 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
         paid_through: paidThrough,
         amount_paid_cents: invoice.amount_paid,
       },
+      skipDuplicates: true,
+    });
+    if (paymentIds.length) await tx.premium_stripe_payments.createMany({
+      data: paymentIds.map((paymentId) => ({ payment_intent_id: paymentId, invoice_id: invoice.id })),
       skipDuplicates: true,
     });
     if (inserted.count === 0) return;
@@ -256,6 +268,10 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
       now: paidAt,
     });
   }, { timeout: 30_000 });
+  for (const paymentId of paymentIds) {
+    await reconcileDeferredStripeRefunds(paymentId);
+    await reconcileDeferredStripeDisputes(paymentId);
+  }
 }
 
 async function processCheckout(session: Stripe.Checkout.Session): Promise<void> {

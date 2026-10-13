@@ -22,6 +22,7 @@ export const dynamic = "force-dynamic";
  * @response 200:McpTokenListResponse
  * @responseSet none
  * @add 401:McpErrorResponse
+ * @add 500:McpErrorResponse
  * @auth BearerAuth
  * @tag Account
  * @openapi
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
  * @add 403:McpErrorResponse
  * @add 413:McpErrorResponse
  * @add 503:McpErrorResponse
+ * @add 500:McpErrorResponse
  * @auth BearerAuth
  * @tag Account
  * @openapi

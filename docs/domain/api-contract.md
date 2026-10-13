@@ -117,6 +117,14 @@ Streamable HTTP `/mcp` resource and OAuth discovery/authorization endpoints
 live outside `app/api` and follow their respective protocols. The parity test
 removes the new account paths before comparing the earlier endpoint baseline.
 
+The premium/MCP lifecycle follow-up documents the existing explicit HTTP 500
+responses on Ko-fi linking/claiming and webhooks, MCP connection listing/creation,
+and Stripe subscription Checkout/Portal routes. Recovery administration also
+supports premium invoices: its existing `packId` identifies these sources as
+`premium:<invoice_id>`, with the included allowance in `packCredits`. Response
+shapes remain unchanged. The regenerated OpenAPI baseline includes only those
+additional error statuses.
+
 Chat contract ownership is split by concern: `zod/chat.ts` owns private thread,
 transcript, context, and conversation schemas; `zod/credits.ts` owns wallet,
 activity, Checkout, and webhook receipts; and `zod/admin.ts` owns rollout,

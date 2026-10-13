@@ -24,6 +24,7 @@ export const runtime = "nodejs";
  * @add 409:PremiumErrorResponse
  * @add 413:PremiumErrorResponse
  * @add 503:PremiumErrorResponse
+ * @add 500:PremiumErrorResponse
  * @auth BearerAuth
  * @tag Account
  * @openapi

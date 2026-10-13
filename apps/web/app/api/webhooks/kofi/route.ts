@@ -19,6 +19,7 @@ export const runtime = "nodejs";
  * @add 409:PremiumErrorResponse
  * @add 413:PremiumErrorResponse
  * @add 415:PremiumErrorResponse
+ * @add 500:PremiumErrorResponse
  * @add 503:PremiumErrorResponse
  * @tag Webhooks
  * @openapi

@@ -247,3 +247,53 @@ re-read current Stripe subscription state under that lock, with a 30-second
 transaction timeout; provider failures/timeouts roll back and Stripe can retry.
 A paid invoice grants only the matching recurring line's service period, never
 the current subscription's potentially unpaid later period.
+
+### Connection safety and registration limits
+
+Consent and authentication pages deny framing with CSP `frame-ancestors 'none'`
+and `X-Frame-Options: DENY`. Refresh rotation retains consumed hashes until the
+connection is removed. Reusing a consumed refresh token atomically revokes that
+connection, including its replacement tokens. Clients must serialize refreshes;
+a simultaneous second refresh is treated as reuse and requires reconnecting.
+Signed-in users can list and revoke connections after entitlement expires or a
+rollout switch is disabled. Creating personal tokens serializes on the account
+so concurrent requests cannot exceed five active tokens.
+
+Anonymous client registration has a database-backed global budget of 60 per
+hour and a maximum of 1,000 stored clients. It returns HTTP 429 with a
+`Retry-After` header when either limit is reached. Registration removes clients
+older than 30 days that have no live refresh grant or outstanding authorization
+code; live connections survive cleanup. These conservative limits can be
+revisited after observing Preview use.
+
+### Subscription payment recovery
+
+Migration `20261013010000_complete_premium_mcp_lifecycle` adds consumed refresh
+hashes, the registration budget, invoice/payment-intent mappings, and premium
+invoice sources in the existing payment recovery queue. Stripe invoice payments
+are mapped when an invoice is processed; a later refund or dispute can also
+repair a mapping for an older stored invoice. Receipts arriving before the
+invoice are retained and replayed after fulfillment. Failed mapping lookups
+remain retryable, including redelivery of the same event ID.
+
+Succeeded subscription refunds reverse the proportional share of the invoice's
+1,000 included credits using immutable ledger entries. A fully refunded invoice
+removes its paid period, preserving any later unrefunded Stripe period and
+other entitlement sources. Partial refunds retain the paid period. Ambiguous
+refunds and refunds exceeding the available credit balance restrict access and
+enter administrator review. Disputes restrict chat and MCP pending an operator
+decision; they do not automatically erase an entitlement that a favorable
+outcome could restore. The existing payment recovery administration lists these
+cases with `premium:<invoice_id>` as their source. Resolving a case can append a
+credit correction; access stays restricted while any credit-pack or premium
+case remains open or the available balance is negative. For an adverse dispute
+outcome, retain the restriction until the affected paid period has expired or
+been manually revoked and the credit correction has been recorded.
+
+`npm run test:premium-foundation --workspace @meadtools/web` exercises real
+PostgreSQL transaction interleavings and payment recovery with synthetic users
+and mocked Stripe responses. It only accepts a localhost database named
+`meadtools_premium_foundation_test` and clears its fixture rows. CI provisions
+that disposable database, applies all reviewed migrations, and runs the checks.
+It does not load application environment files, send email, or call a model or
+payment provider. Real provider compatibility is verified separately on Preview.

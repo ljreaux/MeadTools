@@ -115,7 +115,7 @@ try {
     where: { user_id_source: { user_id: user.id, source: "manual" } },
     data: { revoked_at: new Date() },
   });
-  assert.equal((await call({ jsonrpc: "2.0", id: 5, method: "tools/list" })).status, 401);
+  assert.equal((await call({ jsonrpc: "2.0", id: 5, method: "tools/list" })).status, 403);
   assert.equal(await revokeMcpAccessToken(user.id, issued.id), true);
   assert.equal((await call({ jsonrpc: "2.0", id: 6, method: "tools/list" })).status, 401);
   console.log("Local MCP HTTP, entitlement, and revocation verification passed.");

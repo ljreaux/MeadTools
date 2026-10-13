@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
  * @add 403:PremiumErrorResponse
  * @add 409:PremiumErrorResponse
  * @add 503:PremiumErrorResponse
+ * @add 500:PremiumErrorResponse
  * @auth BearerAuth
  * @tag Account
  * @openapi

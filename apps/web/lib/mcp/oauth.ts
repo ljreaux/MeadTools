@@ -39,16 +39,44 @@ function hmac(value: string) {
 }
 
 export async function registerMcpOAuthClient(input: unknown) {
-  if (!isMcpRolloutEnabled()) throw new OAuthRequestError("temporarily_unavailable");
+  if (!isMcpRolloutEnabled())
+    throw new OAuthRequestError("temporarily_unavailable");
   const registration = parseMcpClientRegistration(input);
   if (!registration) throw new OAuthRequestError("invalid_client_metadata");
   const clientId = randomToken("mtmcp_client_");
-  const client = await prisma.mcp_oauth_clients.create({
-    data: {
-      client_id: clientId,
-      client_name: registration.name,
-      redirect_uris: registration.uris,
-    },
+  const client = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(439, 0)`;
+    // Retain active grants and outstanding codes; only unused old clients expire.
+    await tx.$executeRaw`DELETE FROM mcp_oauth_clients c
+      WHERE c.created_at < CURRENT_TIMESTAMP - INTERVAL '30 days'
+      AND NOT EXISTS (SELECT 1 FROM mcp_oauth_sessions s WHERE s.client_id = c.client_id AND s.revoked_at IS NULL AND s.refresh_expires_at > CURRENT_TIMESTAMP)
+      AND NOT EXISTS (SELECT 1 FROM mcp_oauth_codes a WHERE a.client_id = c.client_id AND a.consumed_at IS NULL AND a.expires_at > CURRENT_TIMESTAMP)`;
+    const now = new Date();
+    const budget = await tx.mcp_registration_budget.findUnique({
+      where: { id: true },
+    });
+    const reset =
+      !budget || budget.window_start.getTime() <= now.getTime() - 60 * 60_000;
+    if (
+      (!reset && budget.call_count >= 60) ||
+      (await tx.mcp_oauth_clients.count()) >= 1_000
+    ) {
+      throw new OAuthRequestError("registration_rate_limited");
+    }
+    await tx.mcp_registration_budget.upsert({
+      where: { id: true },
+      create: { id: true, window_start: now, call_count: 1 },
+      update: reset
+        ? { window_start: now, call_count: 1 }
+        : { call_count: { increment: 1 } },
+    });
+    return tx.mcp_oauth_clients.create({
+      data: {
+        client_id: clientId,
+        client_name: registration.name,
+        redirect_uris: registration.uris,
+      },
+    });
   });
   return {
     client_id: client.client_id,
@@ -205,38 +233,70 @@ function tokenResponse(accessToken: string, refreshToken: string, scope: string)
 }
 
 export async function exchangeRefreshToken(input: {
-  refreshToken: string; clientId: string; resource: string; scope?: string;
+  refreshToken: string;
+  clientId: string;
+  resource: string;
+  scope?: string;
 }) {
-  if (!isMcpRolloutEnabled()) throw new OAuthRequestError("temporarily_unavailable");
+  if (!isMcpRolloutEnabled())
+    throw new OAuthRequestError("temporarily_unavailable");
   if (input.resource !== mcpResource() || input.refreshToken.length > 100) {
     throw new OAuthRequestError("invalid_grant");
   }
   const now = new Date();
-  const session = await prisma.mcp_oauth_sessions.findUnique({
-    where: { refresh_token_hash: oauthHash(input.refreshToken) },
+  const digest = oauthHash(input.refreshToken);
+  const result = await prisma.$transaction(async (tx) => {
+    const active = await tx.mcp_oauth_sessions.findUnique({
+      where: { refresh_token_hash: digest },
+    });
+    const consumed = active
+      ? null
+      : await tx.mcp_oauth_consumed_refresh_tokens.findUnique({
+          where: { token_hash: digest },
+        });
+    const sessionId = active?.id ?? consumed?.session_id;
+    if (!sessionId) return null;
+    await tx.$queryRaw`SELECT id FROM mcp_oauth_sessions WHERE id = ${sessionId}::uuid FOR UPDATE`;
+    const session = await tx.mcp_oauth_sessions.findUnique({
+      where: { id: sessionId },
+    });
+    if (
+      !session ||
+      session.revoked_at ||
+      session.refresh_expires_at <= now ||
+      session.client_id !== input.clientId ||
+      session.resource !== input.resource ||
+      (input.scope && input.scope !== session.scope)
+    )
+      return null;
+    if (session.refresh_token_hash !== digest) {
+      // Commit revocation before returning invalid_grant, including a concurrent loser.
+      await tx.mcp_oauth_sessions.update({
+        where: { id: session.id },
+        data: { revoked_at: now },
+      });
+      return null;
+    }
+    const access = await getPremiumAccessStatus(session.user_id, now);
+    if (!access.premiumEnabled) throw new OAuthRequestError("access_denied");
+    const accessToken = randomToken("mtmcp_");
+    const refreshToken = randomToken("mtmcp_refresh_");
+    await tx.mcp_oauth_consumed_refresh_tokens.create({
+      data: { token_hash: digest, session_id: session.id },
+    });
+    await tx.mcp_oauth_sessions.update({
+      where: { id: session.id },
+      data: {
+        access_token_hash: oauthHash(accessToken),
+        refresh_token_hash: oauthHash(refreshToken),
+        access_expires_at: new Date(now.getTime() + ACCESS_LIFETIME_MS),
+        refresh_expires_at: new Date(now.getTime() + REFRESH_LIFETIME_MS),
+      },
+    });
+    return tokenResponse(accessToken, refreshToken, session.scope);
   });
-  if (
-    !session || session.revoked_at || session.refresh_expires_at <= now ||
-    session.client_id !== input.clientId || session.resource !== input.resource ||
-    (input.scope && input.scope !== session.scope)
-  ) throw new OAuthRequestError("invalid_grant");
-  const access = await getPremiumAccessStatus(session.user_id, now);
-  if (!access.premiumEnabled) throw new OAuthRequestError("access_denied");
-  const accessToken = randomToken("mtmcp_");
-  const refreshToken = randomToken("mtmcp_refresh_");
-  const update = await prisma.mcp_oauth_sessions.updateMany({
-    where: {
-      id: session.id, refresh_token_hash: oauthHash(input.refreshToken),
-      revoked_at: null, refresh_expires_at: { gt: now },
-    },
-    data: {
-      access_token_hash: oauthHash(accessToken), refresh_token_hash: oauthHash(refreshToken),
-      access_expires_at: new Date(now.getTime() + ACCESS_LIFETIME_MS),
-      refresh_expires_at: new Date(now.getTime() + REFRESH_LIFETIME_MS),
-    },
-  });
-  if (update.count !== 1) throw new OAuthRequestError("invalid_grant");
-  return tokenResponse(accessToken, refreshToken, session.scope);
+  if (!result) throw new OAuthRequestError("invalid_grant");
+  return result;
 }
 
 export async function revokeOAuthToken(clientId: string, token: string) {

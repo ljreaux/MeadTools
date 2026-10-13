@@ -21,6 +21,7 @@ prisma.$transaction = async (execute) => {
   const tx = new Proxy({
     $queryRaw: async (query) => {
       const sql = Array.isArray(query) ? query.join("") : query.sql;
+      if (sql.includes("pg_advisory_xact_lock")) return [{ locked: 1 }];
       if (sql.includes("FROM users") && sql.includes("FOR UPDATE")) {
         const previous = accountLock;
         accountLock = new Promise((resolve) => { unlock = resolve; });

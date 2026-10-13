@@ -105,7 +105,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
       if (!response.ok) throw new Error("MCP connections request failed");
       return mcpTokenListResponseSchema.parse(await response.json());
     },
-    enabled: signedIn && Boolean(premiumQuery.data?.mcpEnabled),
+    enabled: signedIn,
     retry: false
   });
 
