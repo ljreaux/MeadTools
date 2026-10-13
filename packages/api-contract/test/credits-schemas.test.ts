@@ -40,6 +40,14 @@ test("credit history still rejects malformed operation IDs", () => {
     assert.equal(operationIdSchema.safeParse(operationId).success, false);
 });
 
+test("credit history grant source is optional and limited to public grant categories", () => {
+  const source = creditActivityResponseSchema.shape.activities.element.shape.grantSource;
+  for (const value of [undefined, null, "premium", "beta"])
+    assert.equal(source.safeParse(value).success, true);
+  for (const value of ["stripe-premium", "kofi-premium", "unknown", 1])
+    assert.equal(source.safeParse(value).success, false);
+});
+
 test("credit balances use whole integer prompt credits", () => {
   assert.deepEqual(
     creditBalanceResponseSchema.parse({ availableCredits: 1_250 }),

@@ -138,6 +138,12 @@ allowances. These existing IDs do not require RFC UUID version/variant bits.
 Wallet responses and pagination cursors use the same validation, preserving
 ledger identity and grant idempotency without rewriting historical entries.
 
+Credit activity includes optional nullable `grantSource` (`premium` or `beta`).
+The server derives Premium allowances from existing Stripe/Ko-fi grant metadata;
+legacy grants without a recognized Premium source retain the beta category.
+Non-grant activity returns null. The optional field preserves compatibility
+with earlier responses and does not expose ledger metadata or provider IDs.
+
 Run:
 
 ```sh

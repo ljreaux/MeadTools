@@ -28,6 +28,7 @@ export const creditActivityResponseSchema = z.object({
       occurredAt: z.string().datetime(),
       creditsDelta: z.number().int(),
       kind: z.enum(["purchase", "grant", "usage", "refund", "adjustment"]),
+      grantSource: z.enum(["premium", "beta"]).nullable().optional(),
       entryTypes: z.array(z.string()),
       paymentAmountCents: z.number().int().nullable(),
       paymentCurrency: z.string().length(3).nullable(),
