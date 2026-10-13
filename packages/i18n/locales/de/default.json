@@ -2055,7 +2055,8 @@
         "purchasePack": "{{credits}} Credits — {{price}}",
         "purchaseProcessing": "Sicheren Checkout wird geöffnet…",
         "refresh": "Aktualisieren",
-        "title": "Prompt-Guthaben"
+        "title": "Prompt-Guthaben",
+        "activityPremiumGrant": "Monatliche Premium-Gutschriften"
     },
     "chatbotTest": {
         "activeDraft": "Aktiver ungespeicherter Entwurf verfügbar",
