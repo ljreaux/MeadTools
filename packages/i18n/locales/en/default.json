@@ -125,6 +125,7 @@
     "activity": "Credit activity",
     "activityAdjustment": "Credit adjustment",
     "activityGrant": "Beta credit grant",
+    "activityPremiumGrant": "Premium monthly credits",
     "activityPurchase": "Credits added",
     "activityRefund": "Credit refund",
     "activityUsage": "Chat usage",

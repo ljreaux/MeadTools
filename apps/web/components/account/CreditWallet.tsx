@@ -268,7 +268,9 @@ function CreditActivityRow({ activity }: { activity: WalletActivity }) {
       : activity.kind === "purchase"
         ? t("credits.activityPurchase")
         : activity.kind === "grant"
-          ? t("credits.activityGrant")
+          ? activity.grantSource === "premium"
+            ? t("credits.activityPremiumGrant")
+            : t("credits.activityGrant")
           : activity.kind === "refund"
             ? t("credits.activityRefund")
             : t("credits.activityAdjustment");

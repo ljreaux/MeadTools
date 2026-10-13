@@ -24,6 +24,7 @@ export type CreditActivity = {
   occurredAt: Date;
   creditsDelta: number;
   kind: CreditActivityKind;
+  grantSource: "premium" | "beta" | null;
   entryTypes: string[];
   paymentAmountCents: number | null;
   paymentCurrency: string | null;
@@ -59,6 +60,8 @@ export async function getCreditActivityPage(options: {
         MAX("entries"."created_at") AS "last_occurred_at",
         SUM("entries"."credits_delta")::bigint AS "credits_delta",
         ARRAY_AGG(DISTINCT "entries"."entry_type"::text ORDER BY "entries"."entry_type"::text) AS "entry_types",
+        ARRAY_AGG(DISTINCT "entries"."metadata" ->> 'source')
+          FILTER (WHERE "entries"."entry_type" = 'grant') AS "grant_sources",
         MAX("entries"."source_amount_cents") AS "source_amount_cents",
         MAX("entries"."source_currency") AS "source_currency"
       FROM "credit_ledger_entries" AS "entries"
@@ -72,6 +75,7 @@ export async function getCreditActivityPage(options: {
       "last_occurred_at",
       "credits_delta",
       "entry_types",
+      "grant_sources",
       "source_amount_cents",
       "source_currency"
     FROM "grouped_credit_activity"
@@ -101,6 +105,7 @@ type CreditActivityRow = {
   last_occurred_at: Date;
   credits_delta: bigint;
   entry_types: string[];
+  grant_sources: (string | null)[] | null;
   source_amount_cents: number | null;
   source_currency: string | null;
 };
@@ -115,11 +120,16 @@ function toCreditActivity(row: CreditActivityRow): CreditActivity {
     );
   }
 
+  const kind = activityKindFor(row.entry_types);
+  const premiumGrant = row.grant_sources?.some(
+    (source) => source === "stripe-premium" || source === "kofi-premium",
+  );
   return {
     operationId: row.operation_id,
     occurredAt: row.last_occurred_at,
     creditsDelta: Number(row.credits_delta),
-    kind: activityKindFor(row.entry_types),
+    kind,
+    grantSource: kind === "grant" ? (premiumGrant ? "premium" : "beta") : null,
     entryTypes: row.entry_types,
     paymentAmountCents: row.source_amount_cents,
     paymentCurrency: row.source_currency,

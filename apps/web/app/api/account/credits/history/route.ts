@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Return grouped prepaid-credit activity for the signed-in user's wallet.
+ * Grants identify Premium monthly allowances separately from beta allocations.
  * @params CreditActivityQuery
  * @response 200:CreditActivityResponse
  * @responseSet none
