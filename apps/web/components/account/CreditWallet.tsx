@@ -149,6 +149,8 @@ export default function CreditWallet({
           </div>
           {wallet.isLoading ? (
             <Skeleton className="h-10 w-36" />
+          ) : !wallet.data ? (
+            <CardTitle className="text-4xl text-muted-foreground">—</CardTitle>
           ) : (
             <CardTitle
               className={cn(
