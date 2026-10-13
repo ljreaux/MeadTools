@@ -807,6 +807,40 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
     },
   ];
 
+/** The first remote MCP release exposes only stateless, read-only operations. */
+export const mcpAgentToolNames = [
+  "search_ingredients",
+  "search_additives",
+  "search_yeasts",
+  "search_wiki",
+  "fetch_wiki_page",
+  "calculate_gravity_target",
+  "build_recipe_draft",
+] as const;
+
+export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
+
+export const mcpAgentToolDefinitions = hostedAgentToolDefinitions.filter(
+  (definition): definition is HostedAgentToolDefinition & {
+    name: McpAgentToolName;
+  } => mcpAgentToolNames.some((name) => name === definition.name),
+);
+
+/** Keep MCP execution on the same validated domain path as hosted chat. */
+export async function executeMcpAgentTool(
+  toolName: string,
+  input: unknown,
+  options: Pick<
+    NonNullable<Parameters<typeof executeHostedAgentTool>[2]>,
+    "fetcher" | "ingredientLookup" | "additiveLookup" | "yeastLookup"
+  > = {},
+): Promise<HostedAgentToolExecution> {
+  if (!mcpAgentToolNames.some((name) => name === toolName)) {
+    return { status: "unknown_tool", toolName };
+  }
+  return executeHostedAgentTool(toolName, input, options);
+}
+
 export type HostedAgentToolExecution =
   | RecipeAgentToolExecution
   | RecordRecipePlanAgentToolExecution

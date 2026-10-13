@@ -9,7 +9,8 @@
     "build": "npm run prisma:generate && node --max-old-space-size=8192 ../../scripts/run-next.mjs build --webpack",
     "vercel-build": "npx prisma migrate deploy && npm run prisma:generate && node --max-old-space-size=8192 ../../scripts/run-next.mjs build --webpack",
     "start": "next start",
-    "test": "node --import tsx --test lib/ai/*.test.ts lib/billing/*.test.ts lib/brews/*.test.ts lib/utils/*.test.ts",
+    "test": "node --import tsx --test lib/*.test.ts lib/ai/*.test.ts lib/billing/*.test.ts lib/brews/*.test.ts lib/mcp/*.test.ts lib/utils/*.test.ts",
+    "test:premium-foundation": "node --conditions=react-server --import tsx scripts/verify-premium-foundation.mjs",
     "brew:rebuild-abv": "tsx scripts/rebuildEstimatedAbv.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "openapi:generate": "next-openapi-gen generate && node ../../scripts/normalize-zod-openapi.mjs",
@@ -18,7 +19,8 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:sync-credit-pricing": "node --env-file-if-exists=.env.local --import tsx scripts/sync-credit-pricing.ts",
-    "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts"
+    "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts",
+    "premium:kofi:test": "node --env-file=.env.local --import tsx scripts/send-kofi-local-test.ts"
   },
   "type": "module",
   "dependencies": {
@@ -35,10 +37,12 @@
     "@meadtools/credit-accounting": "*",
     "@meadtools/design-tokens": "*",
     "@meadtools/i18n": "*",
+    "@meadtools/premium-domain": "*",
     "@meadtools/recipe-agent": "*",
     "@meadtools/recipe-workflows": "*",
     "@meadtools/schemas": "*",
     "@meadtools/wiki-knowledge": "*",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@next/mdx": "^16.3.4",
     "@opentelemetry/core": "2.11.0",

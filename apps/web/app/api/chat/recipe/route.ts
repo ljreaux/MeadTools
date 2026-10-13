@@ -27,9 +27,7 @@ import { ChatProviderRequestError } from "@/lib/ai/chat-model";
 import { requireChatbotUser } from "@/lib/ai/chat-access";
 import { OpenAIChatClient } from "@/lib/ai/openai";
 import { streamRecipeChatTurn } from "@/lib/ai/tanstack-chat-stream";
-import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
-import { getAdditiveCatalogForChat } from "@/lib/db/additives";
-import { searchYeastsForChat } from "@/lib/db/yeasts";
+import { agentCatalogLookups } from "@/lib/ai/agent-catalog-lookups";
 import {
   chatContextSelectionSchema,
   getSelectedChatContext,
@@ -382,62 +380,7 @@ export async function POST(request: NextRequest) {
           maxTotalOutputTokens: config.maxTotalOutputTokens,
           maxProviderInputCharacters: config.maxProviderInputCharacters,
           maxTotalProviderTokens: config.maxTotalProviderTokens,
-          ingredientLookup: async () => {
-            const ingredients = await getIngredientCatalogForChat();
-            return ingredients.flatMap((ingredient) => {
-              const brix = Number(ingredient.sugar_content);
-              if (!Number.isFinite(brix) || brix < 0 || brix > 100) return [];
-              return [
-                {
-                  id: ingredient.id,
-                  name: ingredient.name,
-                  category: ingredient.category,
-                  brix,
-                },
-              ];
-            });
-          },
-          additiveLookup: async () => {
-            const additives = await getAdditiveCatalogForChat();
-            return additives.flatMap((additive) => {
-              if (!Number.isFinite(additive.dosage) || additive.dosage <= 0)
-                return [];
-              return [
-                {
-                  id: additive.id,
-                  name: additive.name,
-                  dosagePerGallon: additive.dosage,
-                  unit: additive.unit,
-                },
-              ];
-            });
-          },
-          yeastLookup: async (query, limit) => {
-            const yeasts = await searchYeastsForChat(query);
-            return yeasts.slice(0, limit).flatMap((yeast) => {
-              const nitrogenRequirement = yeast.nitrogen_requirement;
-              if (
-                nitrogenRequirement !== "Very Low" &&
-                nitrogenRequirement !== "Low" &&
-                nitrogenRequirement !== "Medium" &&
-                nitrogenRequirement !== "High" &&
-                nitrogenRequirement !== "Very High"
-              ) {
-                return [];
-              }
-              return [
-                {
-                  id: yeast.id,
-                  brand: yeast.brand,
-                  name: yeast.name,
-                  nitrogenRequirement,
-                  tolerance: numberOrUndefined(yeast.tolerance),
-                  lowTemperature: numberOrUndefined(yeast.low_temp),
-                  highTemperature: numberOrUndefined(yeast.high_temp),
-                },
-              ];
-            });
-          },
+          ...agentCatalogLookups,
           onEvent,
           onProviderAttempt: () => recordChatbotProviderAttempt({ requestId }),
           onUsage: (usage) => recordChatbotUsageProgress({ requestId, usage }),
@@ -836,15 +779,6 @@ function recipeDataFromToolResults(
     }
   }
   return undefined;
-}
-
-function numberOrUndefined(
-  value: string | number | null | { toString(): string },
-): number | undefined {
-  const parsed = Number(
-    typeof value === "object" && value !== null ? value.toString() : value,
-  );
-  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function chatMessagesFromTanStack(

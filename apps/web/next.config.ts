@@ -4,7 +4,17 @@ import createMDX from "@next/mdx";
 import { fileURLToPath } from "node:url";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      },
+    ];
+  },
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   pageExtensions: ["md", "mdx", "ts", "tsx"],
   transpilePackages: [
@@ -16,6 +26,7 @@ const nextConfig: NextConfig = {
     "@meadtools/schemas",
     "@meadtools/recipe-workflows",
     "@meadtools/recipe-agent",
+    "@meadtools/premium-domain",
     "@meadtools/wiki-knowledge",
   ],
 };

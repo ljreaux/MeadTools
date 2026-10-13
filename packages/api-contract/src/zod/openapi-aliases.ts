@@ -198,6 +198,11 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  kofiLinkClaimRequestBodySchema,
+  kofiLinkClaimResponseSchema,
+  kofiLinkRequestBodySchema,
+  kofiLinkRequestResponseSchema,
+  kofiWebhookReceiptResponseSchema,
   linkRecipeToHydrometerBrewRequestBodySchema,
   linkRecipeToHydrometerBrewResponseSchema,
   loginFailureErrorResponseSchema,
@@ -205,6 +210,12 @@ import {
   loginMissingCredentialsErrorResponseSchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
+  mcpErrorResponseSchema,
+  mcpTokenCreateBodySchema,
+  mcpTokenCreateResponseSchema,
+  mcpTokenListResponseSchema,
+  mcpTokenRevokeResponseSchema,
+  mcpTokenSchema,
   nitrogenRequirementSchema,
   noteLineResponseSchema,
   notesResponseSchema,
@@ -219,6 +230,10 @@ import {
   nutrientSelectedResponseSchema,
   nutrientSettingsResponseSchema,
   nutrientVolumeUnitSchema,
+  premiumAccessResponseSchema,
+  premiumCheckoutResponseSchema,
+  premiumErrorResponseSchema,
+  premiumPortalResponseSchema,
   publicBrewDetailResponseSchema,
   publicBrewEntriesByStageResponseSchema,
   publicBrewEntryResponseSchema,
@@ -554,6 +569,11 @@ export const IngredientResponse = ingredientResponseSchema;
 export const IngredientsFetchErrorResponse = ingredientsFetchErrorResponseSchema;
 export const IngredientsResponse = ingredientsResponseSchema;
 export const InvalidRecipeIdErrorResponse = invalidRecipeIdErrorResponseSchema;
+export const KofiLinkClaimRequestBody = kofiLinkClaimRequestBodySchema;
+export const KofiLinkClaimResponse = kofiLinkClaimResponseSchema;
+export const KofiLinkRequestBody = kofiLinkRequestBodySchema;
+export const KofiLinkRequestResponse = kofiLinkRequestResponseSchema;
+export const KofiWebhookReceiptResponse = kofiWebhookReceiptResponseSchema;
 export const LinkRecipeToHydrometerBrewRequestBody = linkRecipeToHydrometerBrewRequestBodySchema;
 export const LinkRecipeToHydrometerBrewResponse = linkRecipeToHydrometerBrewResponseSchema;
 export const LoginFailureErrorResponse = loginFailureErrorResponseSchema;
@@ -561,6 +581,12 @@ export const LoginInvalidCredentialsErrorResponse = loginInvalidCredentialsError
 export const LoginMissingCredentialsErrorResponse = loginMissingCredentialsErrorResponseSchema;
 export const LoginRequestBody = loginRequestBodySchema;
 export const LoginSuccessResponse = loginSuccessResponseSchema;
+export const McpErrorResponse = mcpErrorResponseSchema;
+export const McpToken = mcpTokenSchema;
+export const McpTokenCreateBody = mcpTokenCreateBodySchema;
+export const McpTokenCreateResponse = mcpTokenCreateResponseSchema;
+export const McpTokenListResponse = mcpTokenListResponseSchema;
+export const McpTokenRevokeResponse = mcpTokenRevokeResponseSchema;
 export const NitrogenRequirement = nitrogenRequirementSchema;
 export const NoteLineResponse = noteLineResponseSchema;
 export const NotesResponse = notesResponseSchema;
@@ -575,6 +601,10 @@ export const NutrientScheduleType = nutrientScheduleTypeSchema;
 export const NutrientSelectedResponse = nutrientSelectedResponseSchema;
 export const NutrientSettingsResponse = nutrientSettingsResponseSchema;
 export const NutrientVolumeUnit = nutrientVolumeUnitSchema;
+export const PremiumAccessResponse = premiumAccessResponseSchema;
+export const PremiumCheckoutResponse = premiumCheckoutResponseSchema;
+export const PremiumErrorResponse = premiumErrorResponseSchema;
+export const PremiumPortalResponse = premiumPortalResponseSchema;
 export const PublicBrewDetailResponse = publicBrewDetailResponseSchema;
 export const PublicBrewEntriesByStageResponse = publicBrewEntriesByStageResponseSchema;
 export const PublicBrewEntryResponse = publicBrewEntryResponseSchema;

@@ -2,6 +2,8 @@ export { nutrientDataV2Schema, recipeDataV2Schema } from "@meadtools/schemas";
 export * from "./catalog";
 export * from "./chat";
 export * from "./credits";
+export * from "./premium";
+export * from "./mcp";
 export * from "./auth";
 export * from "./recipes";
 export * from "./brews";

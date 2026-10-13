@@ -103,10 +103,13 @@ High-risk regressions to validate before inviting beta users:
 - [ ] Recipe-builder chat must resolve optional stages, including no secondary
       fruit, without repeatedly demanding a zero-value confirmation.
 
-## Paid credits: later, after beta
+## Paid credits: production smoke test before beta
 
-Leave this entire section unchecked until beta access and output quality are
-ready. It is intentionally separate from beta launch.
+Configure live Stripe and verify one real credit-pack payment before beta
+release. Keep public credit-pack sales disabled until beta access and output
+quality are ready. `CHAT_CREDIT_PURCHASES_ENABLED=true` makes Checkout available
+to eligible signed-in users, so enable it only for the supervised payment test
+and turn it off again immediately afterward.
 
 - [ ] Create a restricted live Stripe key and set `STRIPE_SECRET_KEY` in
       Production only.
@@ -118,12 +121,20 @@ ready. It is intentionally separate from beta launch.
       `checkout.session.async_payment_failed`, `checkout.session.expired`,
       `refund.created`, `refund.updated`, `charge.dispute.created`, and
       `charge.dispute.funds_withdrawn`.
+- [ ] Configure the three Production catalog price IDs as
+      `STRIPE_CREDIT_PRICE_STARTER`, `STRIPE_CREDIT_PRICE_STANDARD`, and
+      `STRIPE_CREDIT_PRICE_RESERVE`. Each product uses the eligible AIaaS
+      personal-use tax code and a tax-exclusive USD price.
 - [ ] Confirm Stripe Managed Payments/tax eligibility and the planned
       tax-exclusive USD display policy.
 - [ ] Set `CHAT_CREDIT_PURCHASES_ENABLED=true` only after the live webhook
-      test succeeds. Keys alone do not enable Checkout.
-- [ ] Complete one small live purchase and verify webhook-only fulfillment,
-      wallet activity, and the admin recovery flow.
+      test succeeds. Keys alone do not enable Checkout; redeploy after changing
+      this Production environment variable.
+- [ ] Complete one $5 Starter pack live purchase and verify webhook-only
+      fulfillment, wallet activity, and the admin recovery flow. Set
+      `CHAT_CREDIT_PURCHASES_ENABLED=false` and redeploy after the smoke test.
+- [ ] Re-enable credit-pack sales only when beta access and output quality are
+      ready for paying customers.
 - [ ] Exercise Checkout terminal events (`checkout.session.expired` and
       `checkout.session.async_payment_failed`) and the complete documented
       refund/dispute event set before relying on paid purchases.
