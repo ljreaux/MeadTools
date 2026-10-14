@@ -2331,7 +2331,13 @@
         "mcpConsentAllow": "Verbindung erlauben",
         "mcpConsentDeny": "Ablehnen",
         "mcpConsentLoading": "Prüfe deine Verbindungsanfrage…",
-        "mcpConsentFailed": "Diese Verbindung konnte nicht hergestellt werden. Kehre zu deinem KI-Client zurück und versuche es erneut."
+        "mcpConsentFailed": "Diese Verbindung konnte nicht hergestellt werden. Kehre zu deinem KI-Client zurück und versuche es erneut.",
+        "mcpConsentAccessTitle": "Zugriffsrechte wählen",
+        "mcpConsentBasicLabel": "Nur Basis-Tools",
+        "mcpConsentBasicChoice": "Kataloge, Wiki, Berechnungen und nicht gespeicherte Rezeptentwürfe verwenden.",
+        "mcpConsentAccountChoice": "Basis-Tools plus Lesezugriff auf privates Konto",
+        "mcpConsentBasicOnly": "Dieser Client hat nur Basis-Tools angefordert. Um hier Lesezugriff auf das private Konto auszuwählen, muss der Client diese Berechtigung auch beim erneuten Verbinden anfordern.",
+        "mcpConsentAccountRead": "Erlaube Lesezugriff auf deine eigenen Ansätze, die Ansatz-Historie und Notizen sowie gespeicherte Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten, wenn er diese Tools nutzt."
     },
     "mcpGuide": {
         "title": "MeadTools mit einem KI-Assistenten verbinden",
@@ -2391,6 +2397,10 @@
         "helpPremiumTitle": "Zugriff verweigert",
         "helpPremium": "Wenn der Zugriff verweigert wird, prüfe, ob Premium- und MCP-Zugriff für dein MeadTools-Konto aktiviert sind.",
         "helpRefreshTitle": "Der Client zeigt veraltete Tools an",
-        "helpRefresh": "Wenn der Client weiterhin veraltete Tools oder eine veraltete Verbindung anzeigt, aktualisiere sein Plugin oder den Connector und starte eine neue Unterhaltung. Du kannst die alte Verbindung hier widerrufen."
+        "helpRefresh": "Wenn der Client weiterhin veraltete Tools oder eine veraltete Verbindung anzeigt, aktualisiere sein Plugin oder den Connector und starte eine neue Unterhaltung. Du kannst die alte Verbindung hier widerrufen.",
+        "accountReadEnabled": "Tools und Lesezugriff auf privates Konto",
+        "publicToolsOnly": "Nur sieben öffentliche/zustandslose Tools",
+        "accountReadChoice": "Erlaube das Lesen deiner eigenen Ansätze, deiner Historie und Notizen sowie gespeicherter Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten.",
+        "accountReadHelp": "Lesezugriff auf private Kontodaten erfordert eine separate Berechtigung. Bestehende Verbindungen behalten ihre sieben Tools. Um teilzunehmen, verbinde dich erneut über OAuth und wähle auf der Zustimmungsseite den Lesezugriff auf das private Konto aus, oder erstelle ein neues persönliches Token mit ausgewählten Konto-Leserechten. Widerrufe hier eine Verbindung, um ihren Zugriff zu entfernen. Konto-Tools werden verfügbar, wenn die Einführung des Konto-Lesezugriffs aktiviert ist."
     }
 }
