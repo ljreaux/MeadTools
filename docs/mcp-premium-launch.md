@@ -297,3 +297,51 @@ and mocked Stripe responses. It only accepts a localhost database named
 that disposable database, applies all reviewed migrations, and runs the checks.
 It does not load application environment files, send email, or call a model or
 payment provider. Real provider compatibility is verified separately on Preview.
+
+## Private account authorization groundwork (issue #452, 2026-10-14)
+
+`mcp:tools` continues to grant only the existing seven public/stateless tools.
+`mcp:account:read` is an additional capability, requested alongside `mcp:tools`,
+for `list_brews`, `get_brew`, `get_brew_timeline`, `list_recipes`, and
+`get_recipe`. It permits owned brew details, history/notes, and saved recipes,
+including private recipes, to be returned to the connected AI service. No write
+capability or hosted-chat integration is added.
+
+The initial MCP authentication challenge advertises resource discovery without
+a scope override, allowing clients to use both supported scopes from metadata.
+This avoids requiring users to open Advanced OAuth settings to make private
+reads selectable. OAuth requests without a scope still default to `mcp:tools`;
+explicit basic-only requests and existing grants remain basic-only. Consent offers basic tools only (selected by default) or basic tools plus
+private account reads when the client requested that capability. It explains
+the private data before the user opts in. The signed request binds the maximum
+requested scopes; authorization codes and tokens carry only the user's chosen
+subset. The consent POST accepts `account_read=true` or `false`; omission means
+basic tools only. Malformed choices and attempts to exceed the signed request
+are rejected, and the same signed request cannot issue a second code with a
+different selection. Refresh may preserve or reduce a grant, never
+upgrade it. To opt in, the owner must complete a new authorization requesting
+both scopes. Clients that only request `mcp:tools` continue to receive the legacy
+inventory. Unsupported scopes and malformed grants are rejected.
+
+Personal-token creation accepts optional `accountRead: true`; omitted/false
+keeps legacy access. The additive Prisma migration gives all existing tokens
+`scope = 'mcp:tools'`. Connection listing/creation reports `accountRead`, and
+the setup page displays permissions and provides revocation for both credential
+types. Revoke and replace a credential to change its capabilities. Migration
+review and deployment remain required; local development uses schema push only
+when explicitly needed.
+
+Authentication still enforces expiry, revocation, active account, premium,
+payment restrictions, OAuth resource binding, and the existing MCP kill switch.
+Discovery filters account tools and direct calls without permission receive a
+403 OAuth insufficient-scope challenge, with a second gate inside the server.
+Usage bookkeeping, metadata-only logs, and prompt-credit behavior are unchanged.
+
+**Dependency boundary:** issue #451's account-read executors are absent from
+this checkout. Neither permission grants nor documentation make those tools
+available before they are implemented. The actual inventory remains seven
+until #451 registers its tools through the gated server. Ownership, paginated
+query boundaries, output bounds, and account-tool rate/concurrency verification
+must be completed against those executors before rollout. Preview verification
+is tracked in `mcp-client-testing-plan.md`; prior seven-tool client results do
+not verify private account access.

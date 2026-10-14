@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeMcpScope, refreshMcpScope, selectMcpConsentScope } from "@meadtools/recipe-agent";
 import { verifiedConsentPayload } from "./consent-signature";
 
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
@@ -105,13 +106,13 @@ export async function validateAuthorizationRequest(params: URLSearchParams, user
   const redirectUri = params.get("redirect_uri") ?? "";
   const codeChallenge = params.get("code_challenge") ?? "";
   const resource = params.get("resource") ?? "";
-  const scope = params.get("scope") || MCP_SCOPE;
+  const scope = normalizeMcpScope(params.get("scope") ?? MCP_SCOPE);
   const state = params.get("state") ?? "";
   if (
     params.get("response_type") !== "code" ||
     params.get("code_challenge_method") !== "S256" ||
     !HASH_PATTERN.test(codeChallenge) ||
-    resource !== mcpResource() || scope !== MCP_SCOPE ||
+    resource !== mcpResource() || !scope ||
     !isAllowedMcpOAuthState(state)
   ) throw new OAuthRequestError("invalid_request");
   const client = await prisma.mcp_oauth_clients.findUnique({ where: { client_id: clientId } });
@@ -138,7 +139,7 @@ export function verifyConsentRequest(value: string, userId: number): Authorizati
   catch { throw new OAuthRequestError("invalid_request"); }
   if (
     parsed.userId !== userId || parsed.expiresAt <= Date.now() ||
-    parsed.resource !== mcpResource() || parsed.scope !== MCP_SCOPE ||
+    parsed.resource !== mcpResource() || !normalizeMcpScope(parsed.scope) ||
     !HASH_PATTERN.test(parsed.codeChallenge) || !isAllowedMcpRedirect(parsed.redirectUri)
   ) throw new OAuthRequestError("invalid_request");
   return parsed;
@@ -153,7 +154,9 @@ export function oauthRedirect(request: AuthorizationRequest, value: { code?: str
   return url;
 }
 
-export async function issueAuthorizationCode(request: AuthorizationRequest, signedConsent: string) {
+export async function issueAuthorizationCode(request: AuthorizationRequest, signedConsent: string, accountRead = false) {
+  const scope = selectMcpConsentScope(request.scope, accountRead);
+  if (!scope) throw new OAuthRequestError("invalid_scope");
   if (!isMcpRolloutEnabled()) throw new OAuthRequestError("temporarily_unavailable");
   const access = await getPremiumAccessStatus(request.userId);
   if (!access.premiumEnabled) throw new OAuthRequestError("access_denied");
@@ -163,7 +166,7 @@ export async function issueAuthorizationCode(request: AuthorizationRequest, sign
       code_hash: oauthHash(code), consent_hash: oauthHash(signedConsent),
       user_id: request.userId, client_id: request.clientId,
       redirect_uri: request.redirectUri, code_challenge: request.codeChallenge,
-      resource: request.resource, scope: request.scope,
+      resource: request.resource, scope,
       expires_at: new Date(Date.now() + CODE_LIFETIME_MS),
     } });
   } catch (error) {
@@ -189,7 +192,7 @@ export async function exchangeAuthorizationCode(input: {
   if (
     !code || code.consumed_at || code.expires_at <= now ||
     code.client_id !== input.clientId || code.redirect_uri !== input.redirectUri ||
-    code.resource !== input.resource
+    code.resource !== input.resource || !normalizeMcpScope(code.scope)
   ) throw new OAuthRequestError("invalid_grant");
   const challenge = createHash("sha256").update(input.verifier).digest("base64url");
   if (!timingSafeEqual(Buffer.from(challenge), Buffer.from(code.code_challenge))) {
@@ -266,7 +269,7 @@ export async function exchangeRefreshToken(input: {
       session.refresh_expires_at <= now ||
       session.client_id !== input.clientId ||
       session.resource !== input.resource ||
-      (input.scope && input.scope !== session.scope)
+      !refreshMcpScope(session.scope, input.scope)
     )
       return null;
     if (session.refresh_token_hash !== digest) {
@@ -287,13 +290,14 @@ export async function exchangeRefreshToken(input: {
     await tx.mcp_oauth_sessions.update({
       where: { id: session.id },
       data: {
+        scope: refreshMcpScope(session.scope, input.scope)!,
         access_token_hash: oauthHash(accessToken),
         refresh_token_hash: oauthHash(refreshToken),
         access_expires_at: new Date(now.getTime() + ACCESS_LIFETIME_MS),
         refresh_expires_at: new Date(now.getTime() + REFRESH_LIFETIME_MS),
       },
     });
-    return tokenResponse(accessToken, refreshToken, session.scope);
+    return tokenResponse(accessToken, refreshToken, refreshMcpScope(session.scope, input.scope)!);
   });
   if (!result) throw new OAuthRequestError("invalid_grant");
   return result;

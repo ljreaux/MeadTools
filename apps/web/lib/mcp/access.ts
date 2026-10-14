@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeMcpScope, MCP_ACCOUNT_READ_SCOPE } from "@meadtools/recipe-agent";
 
 import { createHash, randomBytes } from "node:crypto";
 import prisma from "@/lib/prisma";
@@ -16,7 +17,7 @@ export function isMcpRolloutEnabled() {
   return process.env.PREMIUM_MCP_ENABLED === "true";
 }
 
-export async function createMcpAccessToken(userId: number, label: string) {
+export async function createMcpAccessToken(userId: number, label: string, accountRead = false) {
   if (!isMcpRolloutEnabled()) throw new Error("MCP access is unavailable.");
   const access = await getPremiumAccessStatus(userId);
   if (!access.premiumEnabled) throw new Error("Premium access is required.");
@@ -39,10 +40,11 @@ export async function createMcpAccessToken(userId: number, label: string) {
       data: {
         user_id: userId,
         label: normalizedLabel,
+        scope: accountRead ? `${MCP_SCOPE} ${MCP_ACCOUNT_READ_SCOPE}` : MCP_SCOPE,
         token_hash: tokenHash(token),
         expires_at: expiresAt,
       },
-      select: { id: true, label: true, created_at: true, expires_at: true },
+      select: { scope: true, id: true, label: true, created_at: true, expires_at: true },
     });
     return { token, ...record };
   });
@@ -51,7 +53,7 @@ export async function createMcpAccessToken(userId: number, label: string) {
 export async function listMcpAccessTokens(userId: number) {
   return prisma.mcp_access_tokens.findMany({
     where: { user_id: userId, revoked_at: null },
-    select: { id: true, label: true, created_at: true, expires_at: true, last_used_at: true },
+    select: { scope: true, id: true, label: true, created_at: true, expires_at: true, last_used_at: true },
     orderBy: { created_at: "desc" },
   });
 }
@@ -60,7 +62,7 @@ export async function listMcpOAuthSessions(userId: number) {
   return prisma.mcp_oauth_sessions.findMany({
     where: { user_id: userId, revoked_at: null, refresh_expires_at: { gt: new Date() } },
     select: {
-      id: true, label: true, created_at: true,
+      scope: true, id: true, label: true, created_at: true,
       refresh_expires_at: true, last_used_at: true,
     },
     orderBy: { created_at: "desc" },
@@ -84,7 +86,7 @@ export async function revokeMcpOAuthSession(userId: number, sessionId: string) {
 }
 
 type McpAccessResult =
-  | { kind: "authorized"; userId: number; tokenId: string }
+  | { kind: "authorized"; userId: number; tokenId: string; scope: string }
   | { kind: "premium_required" }
   | { kind: "unauthorized" };
 
@@ -96,7 +98,7 @@ export async function authenticateMcpAccessToken(header: string | null): Promise
   const now = new Date();
   const record = await prisma.mcp_access_tokens.findUnique({
     where: { token_hash: tokenHash(token) },
-    select: { id: true, user_id: true, revoked_at: true, expires_at: true },
+    select: { id: true, user_id: true, revoked_at: true, expires_at: true, scope: true },
   });
   const oauth = record ? null : await prisma.mcp_oauth_sessions.findUnique({
     where: { access_token_hash: tokenHash(token) },
@@ -106,9 +108,9 @@ export async function authenticateMcpAccessToken(header: string | null): Promise
     },
   });
   if (
-    (!record && !oauth) || record?.revoked_at ||
+    (!record && !oauth) || (record && !normalizeMcpScope(record.scope)) || record?.revoked_at ||
     (record && record.expires_at <= now) || oauth?.revoked_at ||
-    (oauth && (oauth.access_expires_at <= now || oauth.resource !== mcpResource() || oauth.scope !== MCP_SCOPE))
+    (oauth && (oauth.access_expires_at <= now || oauth.resource !== mcpResource() || !normalizeMcpScope(oauth.scope)))
   ) return { kind: "unauthorized" };
   const userId = record?.user_id ?? oauth?.user_id;
   if (!userId) return { kind: "unauthorized" };
@@ -126,5 +128,5 @@ export async function authenticateMcpAccessToken(header: string | null): Promise
       data: { last_used_at: now },
     });
   }
-  return { kind: "authorized", userId, tokenId: record?.id ?? oauth!.id };
+  return { kind: "authorized", userId, tokenId: record?.id ?? oauth!.id, scope: normalizeMcpScope(record?.scope ?? oauth!.scope)! };
 }

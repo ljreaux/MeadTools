@@ -4,6 +4,11 @@ import createMDX from "@next/mdx";
 import { fileURLToPath } from "node:url";
 
 const nextConfig: NextConfig = {
+  // OAuth testing through a tunnel loads dev assets from the public app host.
+  allowedDevOrigins:
+    process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_BASE_URL
+      ? [new URL(process.env.NEXT_PUBLIC_BASE_URL).hostname]
+      : undefined,
   async headers() {
     return [
       {

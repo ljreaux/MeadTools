@@ -1,3 +1,4 @@
+import { canReadMcpAccount } from "@meadtools/recipe-agent";
 import { NextRequest, NextResponse } from "next/server";
 import {
   mcpTokenCreateBodySchema,
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
       ...tokens.map((token) => ({
       id: token.id,
       label: token.label,
+      accountRead: canReadMcpAccount(token.scope),
       createdAt: token.created_at.toISOString(),
       expiresAt: token.expires_at.toISOString(),
       lastUsedAt: token.last_used_at?.toISOString() ?? null,
@@ -49,6 +51,7 @@ export async function GET(request: NextRequest) {
       ...oauthSessions.map((session) => ({
         id: session.id,
         label: session.label,
+        accountRead: canReadMcpAccount(session.scope),
         createdAt: session.created_at.toISOString(),
         expiresAt: session.refresh_expires_at.toISOString(),
         lastUsedAt: session.last_used_at?.toISOString() ?? null,
@@ -99,13 +102,14 @@ export async function POST(request: NextRequest) {
   }
   const parsed = mcpTokenCreateBodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid token name" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid token name or permissions" }, { status: 400 });
   }
   try {
-    const token = await createMcpAccessToken(userId, parsed.data.label);
+    const token = await createMcpAccessToken(userId, parsed.data.label, parsed.data.accountRead);
     return NextResponse.json(mcpTokenCreateResponseSchema.parse({
       id: token.id,
       label: token.label,
+      accountRead: canReadMcpAccount(token.scope),
       token: token.token,
       createdAt: token.created_at.toISOString(),
       expiresAt: token.expires_at.toISOString(),

@@ -1,3 +1,4 @@
+import { canReadMcpAccount } from "@meadtools/recipe-agent";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { isMcpRolloutEnabled } from "@/lib/mcp/access";
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
     const consent = signConsentRequest(authorization);
     return NextResponse.json({
       clientName: authorization.clientName,
+      accountRead: canReadMcpAccount(authorization.scope),
       redirectHost: new URL(authorization.redirectUri).hostname,
       redirectUri: authorization.redirectUri,
       signedRequest: consent,
@@ -71,8 +73,12 @@ export async function POST(request: NextRequest) {
       return finish(oauthRedirect(authorization, { error: "access_denied" }));
     }
     if (decision !== "approve") return new NextResponse(null, { status: 400 });
+    const accountRead = form.get("account_read");
+    if (accountRead !== null && accountRead !== "true" && accountRead !== "false") {
+      return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+    }
     try {
-      const code = await issueAuthorizationCode(authorization, signedConsent);
+      const code = await issueAuthorizationCode(authorization, signedConsent, accountRead === "true");
       return finish(oauthRedirect(authorization, { code }));
     } catch (error) {
       if (error instanceof OAuthRequestError && error.code === "access_denied") {

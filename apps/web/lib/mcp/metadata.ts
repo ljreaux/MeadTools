@@ -1,7 +1,7 @@
 import "server-only";
 import { publicAppOrigin } from "@/lib/public-origin";
 
-export const MCP_SCOPE = "mcp:tools";
+export { MCP_SCOPE, MCP_ACCOUNT_READ_SCOPE, MCP_SCOPES } from "@meadtools/recipe-agent";
 
 export function mcpOrigin() {
   return publicAppOrigin();

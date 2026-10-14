@@ -300,6 +300,7 @@ model premium_stripe_payments {
 
 /// Revocable account-scoped MCP credentials. Only a SHA-256 digest is stored.
 model mcp_access_tokens {
+  scope        String    @default("mcp:tools") @db.VarChar(128)
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id      Int
   label        String    @db.VarChar(80)

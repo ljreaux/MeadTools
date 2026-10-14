@@ -976,3 +976,5 @@ function descriptionFor(
     throw new Error(`Missing hosted agent tool definition for ${toolName}.`);
   return tool.description;
 }
+
+export * from "./mcp-permissions";

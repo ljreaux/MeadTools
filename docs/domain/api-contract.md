@@ -182,3 +182,10 @@ Do not edit `src/contracts.ts` or `src/zod/openapi-aliases.ts` by hand; both are
 generated. The package's domain subpaths export the runtime schemas directly,
 while `@meadtools/api-contract/contracts` retains the existing TypeScript type
 surface for consumers.
+
+The private-MCP authorization groundwork adds optional boolean `accountRead`
+to personal-token creation (omission means false), and reports it on credential
+listing and creation responses. This is a permission disclosure, not an
+account-data REST API. Existing credentials default to seven-tool access; only
+an explicit new grant enables the private-read capability. The reviewed
+OpenAPI diff is limited to these MCP credential schema properties.
