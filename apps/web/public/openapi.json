@@ -276,6 +276,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "accountRead": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -292,6 +295,10 @@
           "label": {
             "type": "string"
           },
+          "accountRead": {
+            "type": "boolean",
+            "default": false
+          },
           "token": {
             "type": "string"
           },
@@ -305,6 +312,7 @@
         "required": [
           "id",
           "label",
+          "accountRead",
           "token",
           "createdAt",
           "expiresAt"
@@ -6357,6 +6365,10 @@
           "label": {
             "type": "string"
           },
+          "accountRead": {
+            "type": "boolean",
+            "default": false
+          },
           "createdAt": {
             "type": "string"
           },
@@ -6371,6 +6383,7 @@
         "required": [
           "id",
           "label",
+          "accountRead",
           "createdAt",
           "expiresAt",
           "lastUsedAt"

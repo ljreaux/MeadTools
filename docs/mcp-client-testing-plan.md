@@ -159,3 +159,67 @@ completed MeadTools sign-in and consent, and received results from
 `search_ingredients` in Gemini. MeadTools revocation then blocked access, and a
 manual disconnect and reconnect in Gemini Connected Apps restored the tool.
 The Gemini agent did not clearly explain the recovery step.
+
+## Private account permission follow-up (#452)
+
+Development checkpoint: **2026-10-14**. Local tests use dummy credentials,
+mocked persistence and a real SDK in-memory protocol exchange; no model provider
+or live client is called. Run:
+
+```sh
+node --import tsx --test apps/web/lib/mcp/*.test.ts
+npm run test:recipe-agent
+npm run test:api-contract
+```
+
+These cover scope validation/canonicalization, explicit personal-token opt-in,
+OAuth consent selection (default basic, opt-in private, no expansion), code/token scope binding, single-use consent across different choices, refresh preservation/reduction and rejection
+of escalation, legacy discovery, all five unauthorized direct tool calls,
+HTTP insufficient-scope challenges, expired/revoked credentials, premium loss,
+payment restrictions, inactive users, resource binding, and the kill switch.
+Account tools are not advertised while issue #451's executors are absent. These
+checks do not establish ownership, pagination, or successful account reads.
+
+Protocol/client sources checked on 2026-10-14:
+
+- [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization): resource-bound tokens, least privilege and HTTP 403 insufficient-scope challenges for step-up authorization. Metadata advertises both supported scopes; the initial 401 challenge omits a scope override so clients discover both. The consent page still defaults the granted access to basic tools only.
+- [Claude remote connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp): publicly reachable HTTPS service, OAuth and automatically registered clients. Use Register automatically for this server's existing DCR support; published client identities are a separate compatibility capability.
+- [OpenAI plugin quickstart](https://developers.openai.com/plugins/quickstart): custom remote MCP setup and OAuth installation. Documentation availability does not prove that a particular installed client can request or step up to the additional scope.
+
+After #451 is integrated and a reviewed Preview deployment is available, record
+actual date, client version (or web build if shown), and pass/fail with redacted
+operational evidence for each client. Do not capture credentials or account
+content in logs. Prior results above apply only to the seven public tools.
+
+| Check | Claude | ChatGPT |
+| --- | --- | --- |
+| Client version/date | Pending | Pending |
+| Existing connection: seven public tools; direct private call denied | Pending | Pending |
+| New plugin without opening Advanced settings: both scopes discovered; basic tools selected by default; choose private reads or keep basic; deny also works | Pending | Pending |
+| Client requests basic only: no private choice; forged opt-in denied | Pending | Pending |
+| Token and refresh retain the consent selection even when client requested both scopes | Pending | Pending |
+| Discovery: seven tools for legacy; twelve for account-read grant | Pending #451 | Pending #451 |
+| Owned brew detail and history; foreign/missing ID denied | Pending #451 | Pending #451 |
+| Owned saved recipe including private recipe; foreign ID denied | Pending #451 | Pending #451 |
+| Pagination across multiple brew/recipe/history pages; bounded results | Pending #451 | Pending #451 |
+| Request/argument/output limits; account rate and concurrency limits | Pending #451 | Pending #451 |
+| Refresh preserves permissions; no silent legacy upgrade | Pending | Pending |
+| Revocation immediately denies; reconnect requires fresh explicit consent | Pending | Pending |
+| Expiry, premium loss, payment restriction and kill switch deny | Pending | Pending |
+
+Do not mark the private-read launch gate passed while any required row is
+pending. Real-model batches require separate approval naming model and turns.
+
+### Local user smoke-check checkpoint — 2026-10-14
+
+The user confirmed the local custom-plugin connection, OAuth sign-in and
+consent selection worked in Codex desktop through a Cloudflare HTTPS tunnel.
+The installed client version was not recorded. Server-side checks also verified
+that the public issuer and registration endpoint matched the tunnel origin,
+dynamic registration returned HTTP 201, and the initial authentication challenge
+allowed discovery of both supported scopes. The consent controls now use the
+app's shadcn Radio Group component.
+
+This is local development evidence, not a completed Preview compatibility
+matrix. Record client versions and verify Claude/ChatGPT Preview behavior,
+including successful account reads and pagination after #451, before rollout.

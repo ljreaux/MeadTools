@@ -28,3 +28,12 @@ test("MCP connection listing requires a valid endpoint and dates", () => {
     ...response.tokens[0], expiresAt: "tomorrow",
   }] }).success, false);
 });
+
+
+test("MCP account reads require an explicit boolean opt-in", () => {
+  assert.equal(mcpTokenCreateBodySchema.parse({ label: "Legacy" }).accountRead ?? false, false);
+  assert.equal(mcpTokenCreateBodySchema.parse({ label: "Private", accountRead: true }).accountRead, true);
+  for (const accountRead of ["true", 1, null, {}, []]) {
+    assert.equal(mcpTokenCreateBodySchema.safeParse({ label: "Client", accountRead }).success, false);
+  }
+});

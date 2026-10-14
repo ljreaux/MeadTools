@@ -63,6 +63,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
     serverOrigin
   );
   const isVercelPreview = new URL(endpoint).hostname.endsWith(".vercel.app");
+  const [accountRead, setAccountRead] = useState(false);
   const [tokenName, setTokenName] = useState("");
   const [createdToken, setCreatedToken] = useState("");
   const [copied, setCopied] = useState(false);
@@ -119,12 +120,13 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
       const response = await fetch("/api/account/premium/mcp/tokens", {
         method: "POST",
         headers: { ...headers(), "Content-Type": "application/json" },
-        body: JSON.stringify({ label: tokenName })
+        body: JSON.stringify({ label: tokenName, accountRead })
       });
       if (!response.ok) throw new Error("MCP token creation failed");
       const created = mcpTokenCreateResponseSchema.parse(await response.json());
       setCreatedToken(created.token);
       setTokenName("");
+      setAccountRead(false);
       await connectionsQuery.refetch();
     } catch {
       setError(t("mcpGuide.failed"));
@@ -196,6 +198,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
           <div className="max-w-3xl space-y-3">
             <p>{t("mcpGuide.beforeBody")}</p>
             <p>{t("mcpGuide.readOnly")}</p>
+            <p>{t("mcpGuide.accountReadHelp")}</p>
             <p className="text-sm text-muted-foreground">
               {t("mcpGuide.credits")}
             </p>
@@ -355,6 +358,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
             >
               <div>
                 <p>{connection.label}</p>
+                <p className="text-sm text-muted-foreground">{t(connection.accountRead ? "mcpGuide.accountReadEnabled" : "mcpGuide.publicToolsOnly")}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("mcpGuide.expires", {
                     date: new Intl.DateTimeFormat(i18n.resolvedLanguage, {
@@ -404,6 +408,11 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
                     value={tokenName}
                     onChange={(event) => setTokenName(event.target.value)}
                   />
+                  <label className="flex items-start gap-2">
+                    <input type="checkbox" checked={accountRead} disabled={busy}
+                      onChange={event => setAccountRead(event.target.checked)} />
+                    <span>{t("mcpGuide.accountReadChoice")}</span>
+                  </label>
                   <Button type="submit" disabled={busy}>
                     {t("mcpGuide.create")}
                   </Button>

@@ -169,6 +169,12 @@
     "loadFailed": "Could not load premium status.",
     "requestFailed": "Could not send a link email. Try again later.",
     "mcpGuideLink": "MCP setup guide and connections",
+    "mcpConsentAccessTitle": "Choose connection access",
+    "mcpConsentBasicLabel": "Basic tools only",
+    "mcpConsentBasicChoice": "Use catalogs, wiki, calculations, and unsaved recipe drafts.",
+    "mcpConsentAccountChoice": "Basic tools plus private account reads",
+    "mcpConsentBasicOnly": "This client requested basic tools only. To choose private account reads here, the client must also request that permission when reconnecting.",
+    "mcpConsentAccountRead": "Allow read access to your owned brews, brew history and notes, and saved recipes, including private recipes. The connected AI service can receive this data when it uses these tools.",
     "mcpConsentTitle": "Connect to MeadTools",
     "mcpConsentRequest": "{{client}} ({{host}}) requests access to MeadTools' read-only recipe, catalog, wiki, and calculation tools.",
     "mcpConsentCallback": "The sign-in result will be sent to this address. Continue only if you recognize it:",
@@ -179,6 +185,10 @@
     "mcpConsentFailed": "Could not complete this connection. Return to your AI client and try again."
   },
   "mcpGuide": {
+    "accountReadEnabled": "Tools and private account reads",
+    "publicToolsOnly": "Seven public/stateless tools only",
+    "accountReadChoice": "Allow reading my owned brews, history and notes, and saved recipes, including private recipes. The connected AI service can receive this data.",
+    "accountReadHelp": "Private account reads require a separate permission. Existing connections keep their seven tools. To opt in, reconnect with OAuth, then choose private account reads on the consent page, or create a new personal token with account reads selected. Revoke a connection here to remove its access. Account tools become available when the account-read rollout is enabled.",
     "title": "Connect MeadTools to an AI assistant",
     "intro": "Use MeadTools' read-only recipe, ingredient, yeast, wiki, and calculation tools in an AI app that supports remote MCP. Connect once with your MeadTools account, then ask your assistant to use MeadTools.",
     "beforeTitle": "Before you start",

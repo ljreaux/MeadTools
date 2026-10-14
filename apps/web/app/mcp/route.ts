@@ -1,3 +1,4 @@
+import { canReadMcpAccount, isMcpAccountReadTool, MCP_ACCOUNT_READ_SCOPE } from "@meadtools/recipe-agent";
 import { NextRequest, NextResponse } from "next/server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { authenticateMcpAccessToken, isMcpRolloutEnabled } from "@/lib/mcp/access";
@@ -13,7 +14,9 @@ function unauthorized() {
   return new NextResponse(null, {
     status: 401,
     headers: {
-      "WWW-Authenticate": `Bearer resource_metadata="${protectedResourceMetadataUrl()}", scope="${MCP_SCOPE}"`,
+      // Without a scope override, clients discover both supported capabilities
+      // and the owner selects the granted subset on the consent screen.
+      "WWW-Authenticate": `Bearer resource_metadata="${protectedResourceMetadataUrl()}"`,
       "Cache-Control": "no-store",
     },
   });
@@ -57,7 +60,22 @@ async function handle(request: NextRequest) {
     }
   }
 
-  const server = createMeadToolsMcpServer(access.userId);
+  // Protocol-level challenge supports clients that implement OAuth step-up.
+  if (parsedBody && typeof parsedBody === "object" && "method" in parsedBody &&
+    parsedBody.method === "tools/call" && "params" in parsedBody &&
+    parsedBody.params && typeof parsedBody.params === "object" &&
+    "name" in parsedBody.params && typeof parsedBody.params.name === "string" &&
+    isMcpAccountReadTool(parsedBody.params.name) && !canReadMcpAccount(access.scope)) {
+    return NextResponse.json({ error: "insufficient_scope", message: "Reconnect and explicitly allow private account reads." }, {
+      status: 403,
+      headers: {
+        "WWW-Authenticate": `Bearer error="insufficient_scope", resource_metadata="${protectedResourceMetadataUrl()}", scope="${MCP_SCOPE} ${MCP_ACCOUNT_READ_SCOPE}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const server = createMeadToolsMcpServer(access.userId, access.scope);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

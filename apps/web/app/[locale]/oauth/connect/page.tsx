@@ -6,8 +6,10 @@ import { useSession } from "next-auth/react";
 import { useTranslation } from "react-i18next";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type Consent = { clientName: string; redirectHost: string; redirectUri: string; signedRequest: string };
+type Consent = { accountRead: boolean; clientName: string; redirectHost: string; redirectUri: string; signedRequest: string };
 
 function ConnectContent() {
   const { t } = useTranslation();
@@ -17,6 +19,7 @@ function ConnectContent() {
   const token = useAuthToken();
   const { status } = useSession();
   const [consent, setConsent] = useState<Consent | null>(null);
+  const [accountRead, setAccountRead] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
 
@@ -43,6 +46,7 @@ function ConnectContent() {
         if (!result.clientName || !result.redirectHost || !result.redirectUri || !result.signedRequest) {
           throw new Error("Invalid authorization request");
         }
+        setAccountRead(false);
         setConsent(result);
       } catch {
         if (!controller.signal.aborted) setError(true);
@@ -66,6 +70,7 @@ function ConnectContent() {
         body: new URLSearchParams({
           authorization_request: consent.signedRequest,
           decision,
+          account_read: String(accountRead),
         }),
         cache: "no-store",
       });
@@ -91,6 +96,30 @@ function ConnectContent() {
           <code className="block break-all rounded-md border border-border bg-background p-3 text-sm text-foreground">
             {consent.redirectUri}
           </code>
+        </div>
+        <div className="space-y-3 rounded-md border p-4">
+          <p id="mcp-consent-access-title" className="text-sm font-medium">{t("premium.mcpConsentAccessTitle")}</p>
+          <RadioGroup value={accountRead ? "account" : "basic"} disabled={busy}
+            aria-labelledby="mcp-consent-access-title" className="gap-4"
+            onValueChange={value => setAccountRead(value === "account")}>
+            <div className="flex items-start gap-3">
+              <RadioGroupItem value="basic" id="mcp-access-basic" className="mt-1"
+                aria-describedby="mcp-access-basic-description" />
+              <div className="space-y-1">
+                <Label htmlFor="mcp-access-basic" className="block leading-normal">{t("premium.mcpConsentBasicLabel")}</Label>
+                <p id="mcp-access-basic-description" className="text-sm text-muted-foreground">{t("premium.mcpConsentBasicChoice")}</p>
+              </div>
+            </div>
+            {consent.accountRead && <div className="flex items-start gap-3">
+              <RadioGroupItem value="account" id="mcp-access-account" className="mt-1"
+                aria-describedby="mcp-access-account-description" />
+              <div className="space-y-1">
+                <Label htmlFor="mcp-access-account" className="block leading-normal">{t("premium.mcpConsentAccountChoice")}</Label>
+                <p id="mcp-access-account-description" className="text-sm text-muted-foreground">{t("premium.mcpConsentAccountRead")}</p>
+              </div>
+            </div>}
+          </RadioGroup>
+          {!consent.accountRead && <p className="text-sm text-muted-foreground">{t("premium.mcpConsentBasicOnly")}</p>}
         </div>
         <p className="text-sm text-muted-foreground">{t("premium.mcpConsentLimits")}</p>
         <div className="flex gap-3">
