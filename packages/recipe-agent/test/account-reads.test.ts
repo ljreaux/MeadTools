@@ -112,10 +112,69 @@ test("empty lists, missing/foreign records and legacy data have explicit results
   );
   assert.match(JSON.stringify(result), /unsupported/);
   assert.match(JSON.stringify(result), /private/);
+  const saved = accountReadOutputSchemas.get_recipe.parse(result);
+  assert.ok(saved.status === "ok");
+  assert.equal(
+    saved.result.recipe.appUrl,
+    null,
+    "Do not guess an origin for a generic adapter"
+  );
   assert.deepEqual(
     projectAccountRecipe({ version: 1, secret: "DO_NOT_LEAK" }).inputs,
     null
   );
+});
+
+test("application links survive shared list/detail projections without using record text", async () => {
+  const appRecipe = {
+    ...recipe,
+    appUrl: "https://preview.meadtools.com/recipes/1",
+    name: "https://untrusted.invalid/share"
+  };
+  const appBrew = {
+    ...brew,
+    appUrl: `https://preview.meadtools.com/account/brews/${brew.id}`,
+    recipe_snapshot: { appUrl: "https://untrusted.invalid/share" },
+    latestReadings: []
+  };
+  const source = adapter({
+    getRecipe: async () => appRecipe,
+    listRecipes: async () => ({ rows: [appRecipe], hasMore: false }),
+    getBrew: async () => appBrew,
+    listBrews: async () => ({ rows: [appBrew], hasMore: false })
+  });
+  for (const name of [
+    "list_recipes",
+    "get_recipe",
+    "list_brews",
+    "get_brew"
+  ] as const) {
+    const result = await run(
+      name,
+      {
+        ...(!name.startsWith("list")
+          ? { id: name === "get_recipe" ? recipe.id : brew.id }
+          : {})
+      },
+      source
+    );
+    assert.equal(result.status, "ok");
+    if (result.status !== "ok") continue;
+    const summary =
+      "recipe" in result.result
+        ? result.result.recipe
+        : "brew" in result.result
+          ? result.result.brew
+          : "items" in result.result
+            ? result.result.items[0]
+            : null;
+    assert.ok(summary && "appUrl" in summary);
+    assert.equal(
+      summary.appUrl,
+      name.includes("recipe") ? appRecipe.appUrl : appBrew.appUrl
+    );
+    assert.ok(accountReadOutputSchemas[name].safeParse(result).success);
+  }
 });
 
 test("duplicate names retain IDs; continuation forwards to the query adapter", async () => {

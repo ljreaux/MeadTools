@@ -226,3 +226,37 @@ app's shadcn Radio Group component.
 This is local development evidence, not a completed Preview compatibility
 matrix. Record client versions and verify Claude/ChatGPT Preview behavior,
 including successful account reads and pagination after #451, before rollout.
+
+### Parent review checkpoint — 2026-10-14
+
+During the #450 closure review, the user reported Preview testing with Claude
+using **Sonnet 5.5**, with all tools working well. This is user-reported manual
+tool-use evidence. The client version/build, deployment revision, individual
+records/scenarios, and traces were not supplied. Sonnet 5.5 identifies the model,
+not the client version. Do not infer separate passes for private visibility,
+foreign IDs, multi-page pagination, default consent/legacy grants, refresh,
+revocation/reconnect, entitlement loss, or the kill switch from that aggregate
+report. Those case-specific matrix entries remain to be recorded. No current
+ChatGPT private-read Preview result was provided.
+
+The closure review adds `appUrl` links to owned recipe/brew list and detail
+results and checks them deterministically through the MCP SDK on local,
+Preview and production configurations. After the reviewed link change reaches
+Preview, reconnect/refresh the client tool schemas, request recipe/brew links,
+and check navigation as the owner and access denial without authorization for
+private records. No Preview result for these new links is claimed here.
+
+See [#450 closure review](mcp-450-closure-review.md) for severity, acceptance
+criteria, deterministic/PostgreSQL evidence, and the remaining close-out gate.
+
+### User-confirmed Preview follow-up — 2026-10-15
+
+The user explicitly confirmed that the remaining Preview checks work after
+being presented with the outstanding ChatGPT/Claude account-read, consent,
+legacy-grant, pagination, revocation/reconnect and denial finding. This is
+manual user confirmation for both clients, superseding the pending client-flow
+statuses in the earlier matrix. The previously reported Claude model is Sonnet
+5.5. Client builds, ChatGPT model, deployment revision and individual traces
+were not supplied and are not inferred. No automated real-model evaluation was
+performed. The new canonical-link changes still need PR review and their own
+Preview navigation/private-access smoke check after deployment.
