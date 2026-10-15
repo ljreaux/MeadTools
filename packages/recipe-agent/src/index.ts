@@ -1,4 +1,14 @@
 import {
+  accountReadToolDefinitions,
+  executeAccountReadTool,
+  type AccountReadAdapter,
+  type AccountReadName
+} from "./account-reads";
+import {
+  isMcpAccountReadTool,
+  mcpAccountReadToolNames
+} from "./mcp-permissions";
+import {
   buildRecipeDraft,
   buildRecipeDraftInputSchema,
   calculateGravityTarget,
@@ -6,7 +16,7 @@ import {
   explainRecipe,
   explainRecipeInputSchema,
   type BuildRecipeDraftInput,
-  type ChatbotRecipeWorkflowResult,
+  type ChatbotRecipeWorkflowResult
 } from "@meadtools/recipe-workflows";
 import {
   fetchWikiPage,
@@ -14,13 +24,13 @@ import {
   searchWikiIndex,
   type WikiFetcher,
   type WikiPageContent,
-  type WikiSearchResult,
+  type WikiSearchResult
 } from "@meadtools/wiki-knowledge";
 import {
   brewActionStages,
   createBrewActionProposal,
   type BrewActionProposal,
-  type BrewActionTarget,
+  type BrewActionTarget
 } from "@meadtools/brew-domain/action-proposal";
 import { z } from "zod";
 
@@ -49,17 +59,17 @@ export const recipeAgentTools: readonly RecipeAgentTool[] = [
   {
     name: "build_recipe_draft",
     description:
-    "Create or revise an unsaved MeadTools recipe draft using the shared calculation engine. Use it as soon as the brewer explicitly requests a draft and their details plus accepted defaults are sufficient; it returns only the high-impact missing inputs when a calculation cannot yet be completed. Every nonfermentable flavor or process addition belongs in additives, not ingredients. An additive needs an amount and a recipe-builder unit. When its dose is not supplied, first use search_additives to look for a canonical unit and standard dose. If neither the brewer nor the catalog provides a reliable dose, do not complete the draft: make a concrete plain-language suggestion and ask the brewer to confirm it.",
+      "Create or revise an unsaved MeadTools recipe draft using the shared calculation engine. Use it as soon as the brewer explicitly requests a draft and their details plus accepted defaults are sufficient; it returns only the high-impact missing inputs when a calculation cannot yet be completed. Every nonfermentable flavor or process addition belongs in additives, not ingredients. An additive needs an amount and a recipe-builder unit. When its dose is not supplied, first use search_additives to look for a canonical unit and standard dose. If neither the brewer nor the catalog provides a reliable dose, do not complete the draft: make a concrete plain-language suggestion and ask the brewer to confirm it.",
     inputSchema: buildRecipeDraftInputSchema,
-    execute: buildRecipeDraft,
+    execute: buildRecipeDraft
   },
   {
     name: "explain_recipe",
     description:
       "Return fresh calculation-engine facts that explain one aspect of an active recipe draft without modifying it.",
     inputSchema: explainRecipeInputSchema,
-    execute: explainRecipe,
-  },
+    execute: explainRecipe
+  }
 ];
 
 const gravityTargetToolName = "calculate_gravity_target" as const;
@@ -68,7 +78,7 @@ const recordRecipePlanToolName = "record_recipe_plan" as const;
 
 const recordRecipePlanInputSchema = z
   .object({
-    plan: buildRecipeDraftInputSchema,
+    plan: buildRecipeDraftInputSchema
   })
   .strict();
 
@@ -81,7 +91,7 @@ export const recordRecipePlanAgentTool = {
   name: recordRecipePlanToolName,
   description:
     "Optionally record a partial MeadTools recipe plan while the brewer is still exploring choices. This does not calculate or create a recipe; it preserves a proposed direction for a later draft or revision. Do not use it instead of build_recipe_draft when the brewer explicitly asks for a draft and enough details are available.",
-  inputSchema: recordRecipePlanInputSchema,
+  inputSchema: recordRecipePlanInputSchema
 };
 
 export type GravityTargetAgentTool = {
@@ -98,26 +108,26 @@ export const gravityTargetAgentTool: GravityTargetAgentTool = {
   description:
     "Use MeadTools' shared calculation engine to find an original-gravity target from an ABV target and planned final gravity, with an optional extra OG-point offset.",
   inputSchema: calculateGravityTargetInputSchema,
-  execute: calculateGravityTarget,
+  execute: calculateGravityTarget
 };
 
 export function executeGravityTargetAgentTool(input: unknown) {
   return {
     status: "ok" as const,
-    result: gravityTargetAgentTool.execute(input),
+    result: gravityTargetAgentTool.execute(input)
   };
 }
 
 const actionEntryBaseSchema = z.object({
   datetime: z.string().datetime().optional(),
   title: z.string().trim().min(1).max(160).optional(),
-  note: z.string().trim().min(1).max(2_000).optional(),
+  note: z.string().trim().min(1).max(2_000).optional()
 });
 
 const brewActionEntryInputSchema = z.discriminatedUnion("type", [
   actionEntryBaseSchema.extend({
     type: z.enum(["NOTE", "TASTING", "ISSUE"]),
-    note: z.string().trim().min(1).max(2_000),
+    note: z.string().trim().min(1).max(2_000)
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("ADDITION"),
@@ -125,8 +135,8 @@ const brewActionEntryInputSchema = z.discriminatedUnion("type", [
       kind: z.enum(["INGREDIENT", "NUTRIENT", "YEAST", "OTHER"]),
       name: z.string().trim().min(1).max(160),
       amount: z.number().positive().optional(),
-      unit: z.string().trim().min(1).max(30).optional(),
-    }),
+      unit: z.string().trim().min(1).max(30).optional()
+    })
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("GRAVITY"),
@@ -134,18 +144,18 @@ const brewActionEntryInputSchema = z.discriminatedUnion("type", [
     data: z
       .object({
         readingRole: z.enum(["OG", "FG", "GENERAL"]).optional(),
-        source: z.literal("measured").optional(),
+        source: z.literal("measured").optional()
       })
-      .optional(),
+      .optional()
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("TEMPERATURE"),
     temperature: z.number().min(-50).max(150),
-    temp_units: z.enum(["C", "F"]),
+    temp_units: z.enum(["C", "F"])
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("PH"),
-    data: z.object({ ph: z.number().min(0).max(14) }),
+    data: z.object({ ph: z.number().min(0).max(14) })
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("VOLUME"),
@@ -153,13 +163,13 @@ const brewActionEntryInputSchema = z.discriminatedUnion("type", [
       liters: z.number().positive(),
       displayValue: z.number().positive().optional(),
       displayUnit: z.string().trim().min(1).max(30).optional(),
-      startingLiters: z.number().positive().optional(),
-    }),
+      startingLiters: z.number().positive().optional()
+    })
   }),
   actionEntryBaseSchema.extend({
     type: z.literal("STAGE_CHANGE"),
-    stage_to: z.enum(brewActionStages),
-  }),
+    stage_to: z.enum(brewActionStages)
+  })
 ]);
 
 export type BrewActionAgentTool = {
@@ -176,7 +186,7 @@ export const prepareBrewActionAgentTool: BrewActionAgentTool = {
   name: prepareBrewActionToolName,
   description:
     "Prepare a reviewable action for the explicitly selected brew. Use only after get_selected_account_context returned a brew and only when the user asks to log or make a specific brew change. It creates no entry and changes nothing. Provide the exact entry payload for a note, addition, measurement, volume reading, or stage change; use the documented uppercase type values. Do not include a brew ID, client ID, recipe ID, or device action.",
-  inputSchema: brewActionEntryInputSchema,
+  inputSchema: brewActionEntryInputSchema
 };
 
 export type BrewActionAgentToolExecution =
@@ -186,22 +196,22 @@ export type BrewActionAgentToolExecution =
 
 export function executePrepareBrewActionTool(
   input: unknown,
-  target: BrewActionTarget | undefined,
+  target: BrewActionTarget | undefined
 ): BrewActionAgentToolExecution {
   const parsed = brewActionEntryInputSchema.safeParse(
-    normalizeBrewActionInput(input),
+    normalizeBrewActionInput(input)
   );
   if (!parsed.success) return invalidInput(parsed.error.issues);
   if (!target) {
     return {
       status: "error",
       message:
-        "Select a brew and retrieve its context before preparing an action.",
+        "Select a brew and retrieve its context before preparing an action."
     };
   }
   return {
     status: "ok",
-    result: createBrewActionProposal(target, parsed.data),
+    result: createBrewActionProposal(target, parsed.data)
   };
 }
 
@@ -235,7 +245,7 @@ function normalizeBrewActionInput(input: unknown): unknown {
       type: type
         .trim()
         .toUpperCase()
-        .replace(/[\s-]+/g, "_"),
+        .replace(/[\s-]+/g, "_")
     };
   }
   // A note has no ambiguous numeric or nested payload shape. This only
@@ -256,10 +266,10 @@ export type RecordRecipePlanAgentToolExecution =
 
 export function executeRecipeAgentTool(
   toolName: string,
-  input: unknown,
+  input: unknown
 ): RecipeAgentToolExecution {
   const tool = recipeAgentTools.find(
-    (candidate) => candidate.name === toolName,
+    (candidate) => candidate.name === toolName
   );
   if (!tool) return { status: "unknown_tool", toolName };
 
@@ -267,7 +277,7 @@ export function executeRecipeAgentTool(
 }
 
 export function executeRecordRecipePlanAgentTool(
-  input: unknown,
+  input: unknown
 ): RecordRecipePlanAgentToolExecution {
   const parsed = recordRecipePlanInputSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error.issues);
@@ -276,11 +286,11 @@ export function executeRecordRecipePlanAgentTool(
 
 const wikiSearchInputSchema = z.object({
   query: z.string().trim().min(2).max(500),
-  limit: z.number().int().min(1).max(10).optional(),
+  limit: z.number().int().min(1).max(10).optional()
 });
 
 const wikiFetchInputSchema = z.object({
-  url: z.string().trim().min(1).max(2_000),
+  url: z.string().trim().min(1).max(2_000)
 });
 
 // Accept legacy query fields but intentionally ignore them: the model now
@@ -289,7 +299,7 @@ const ingredientCatalogInputSchema = z.object({}).passthrough();
 
 const yeastSearchInputSchema = z.object({
   query: z.string().trim().min(2).max(160),
-  limit: z.number().int().min(1).max(10).optional(),
+  limit: z.number().int().min(1).max(10).optional()
 });
 
 export type CatalogIngredient = {
@@ -325,7 +335,7 @@ export type CatalogYeast = {
 
 export type YeastLookup = (
   query: string,
-  limit: number,
+  limit: number
 ) => Promise<CatalogYeast[]>;
 export type CatalogAgentToolName =
   | "search_ingredients"
@@ -343,21 +353,21 @@ export const ingredientSearchAgentTool = {
   name: "search_ingredients" as const,
   description:
     "Return the complete compact MeadTools ingredient catalog (under 200 entries) with canonical name, category, catalog ID, and Brix. Use it once before drafting with a named fermentable ingredient other than water or honey. Do not use it for culinary or process additions such as spices, vanilla, cocoa nibs, oak, tea, tannin, enzymes, or finings. Choose the best semantic match yourself from the returned list, including plural, regional, or descriptive wording, and use its returned values exactly.",
-  inputSchema: ingredientCatalogInputSchema,
+  inputSchema: ingredientCatalogInputSchema
 };
 
 export const yeastSearchAgentTool = {
   name: "search_yeasts" as const,
   description:
     "Search the MeadTools yeast catalog by brand or strain. Returns the exact catalog yeast identity plus authoritative nitrogen requirement, alcohol tolerance, and temperature range. Use it before asking a user to supply a catalog yeast's nutrient requirement.",
-  inputSchema: yeastSearchInputSchema,
+  inputSchema: yeastSearchInputSchema
 };
 
 export const additiveSearchAgentTool = {
   name: "search_additives" as const,
   description:
     "Return the complete MeadTools additive catalog with each additive's canonical unit and standard dosage per US gallon. Use it before drafting with a named catalog additive when the user did not supply both an amount and unit. Select the best semantic match, preserve its canonical unit, and multiply its dosage per gallon by the requested batch volume. Do not invent an additive unit or dose.",
-  inputSchema: ingredientCatalogInputSchema,
+  inputSchema: ingredientCatalogInputSchema
 };
 
 export type WikiAgentToolName = "search_wiki" | "fetch_wiki_page";
@@ -380,7 +390,7 @@ export function createWikiAgentTools(
   options: {
     fetcher?: WikiFetcher;
     allowedWikiFetchUrls?: readonly string[];
-  } = {},
+  } = {}
 ): readonly WikiAgentTool[] {
   return [
     {
@@ -395,10 +405,10 @@ export function createWikiAgentTools(
         return {
           status: "ok",
           result: searchWikiIndex(parsed.data.query, {
-            limit: parsed.data.limit,
-          }),
+            limit: parsed.data.limit
+          })
         };
-      },
+      }
     },
     {
       name: "fetch_wiki_page",
@@ -419,19 +429,19 @@ export function createWikiAgentTools(
               issues: [
                 error instanceof Error
                   ? error.message
-                  : "The wiki URL is invalid.",
-              ],
+                  : "The wiki URL is invalid."
+              ]
             };
           }
           const allowedUrls = new Set(
-            options.allowedWikiFetchUrls.map((url) => normalizeWikiUrl(url)),
+            options.allowedWikiFetchUrls.map((url) => normalizeWikiUrl(url))
           );
           if (!allowedUrls.has(requestedUrl)) {
             return {
               status: "invalid_input",
               issues: [
-                "Select a non-recipe page returned by the current wiki search before fetching it.",
-              ],
+                "Select a non-recipe page returned by the current wiki search before fetching it."
+              ]
             };
           }
         }
@@ -439,17 +449,17 @@ export function createWikiAgentTools(
         try {
           return {
             status: "ok",
-            result: await fetchWikiPage(parsed.data.url, options),
+            result: await fetchWikiPage(parsed.data.url, options)
           };
         } catch (error) {
           return {
             status: "error",
             message:
-              error instanceof Error ? error.message : "Wiki retrieval failed.",
+              error instanceof Error ? error.message : "Wiki retrieval failed."
           };
         }
-      },
-    },
+      }
+    }
   ];
 }
 
@@ -477,7 +487,7 @@ export const hostedAgentTools: readonly HostedAgentTool[] = [
   ingredientSearchAgentTool,
   additiveSearchAgentTool,
   yeastSearchAgentTool,
-  ...wikiAgentTools,
+  ...wikiAgentTools
 ];
 
 export type HostedAgentToolDefinition = {
@@ -508,12 +518,12 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
             type: "object",
             description:
               "A partial BuildRecipeDraftInput containing only the specific, data-backed defaults you just proposed.",
-            additionalProperties: true,
-          },
+            additionalProperties: true
+          }
         },
         required: ["plan"],
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "build_recipe_draft",
@@ -525,9 +535,9 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
             type: "object",
             properties: {
               value: { type: "number", minimum: 0.001 },
-              unit: { type: "string", enum: ["gal", "L"] },
+              unit: { type: "string", enum: ["gal", "L"] }
             },
-            additionalProperties: false,
+            additionalProperties: false
           },
           name: { type: "string", maxLength: 160 },
           style: { type: "string", maxLength: 80 },
@@ -536,17 +546,17 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
             minimum: 0,
             maximum: 30,
             description:
-              "Requested finished-batch ABV. Use this directly when the brewer gives an ABV target; MeadTools calculates the corresponding OG.",
+              "Requested finished-batch ABV. Use this directly when the brewer gives an ABV target; MeadTools calculates the corresponding OG."
           },
           targetOriginalGravity: {
             type: "number",
             minimum: 1.001,
-            maximum: 1.2,
+            maximum: 1.2
           },
           fermentationFinalGravity: {
             type: "number",
             minimum: 0.97,
-            maximum: 1.2,
+            maximum: 1.2
           },
           backsweetening: {
             type: "object",
@@ -554,7 +564,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
               targetFinalGravity: {
                 type: "number",
                 minimum: 0.97,
-                maximum: 1.2,
+                maximum: 1.2
               },
               sweetener: {
                 type: "object",
@@ -562,14 +572,14 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
                   name: { type: "string", minLength: 1, maxLength: 160 },
                   catalogId: { type: "integer", minimum: 1 },
                   category: { type: "string", minLength: 1, maxLength: 80 },
-                  brix: { type: "number", minimum: 0, maximum: 100 },
+                  brix: { type: "number", minimum: 0, maximum: 100 }
                 },
                 required: ["name"],
-                additionalProperties: false,
-              },
+                additionalProperties: false
+              }
             },
             required: ["targetFinalGravity"],
-            additionalProperties: false,
+            additionalProperties: false
           },
           ingredients: {
             type: "array",
@@ -584,7 +594,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
                 secondary: { type: "boolean" },
                 role: {
                   type: "string",
-                  enum: ["fixed", "adjustable_fermentable", "fill_liquid"],
+                  enum: ["fixed", "adjustable_fermentable", "fill_liquid"]
                 },
                 amount: {
                   type: "object",
@@ -607,17 +617,17 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
                         "imp_gal",
                         "imp_qt",
                         "imp_pt",
-                        "imp_fl_oz",
-                      ],
-                    },
+                        "imp_fl_oz"
+                      ]
+                    }
                   },
                   required: ["kind", "value", "unit"],
-                  additionalProperties: false,
-                },
+                  additionalProperties: false
+                }
               },
               required: ["name"],
-              additionalProperties: false,
-            },
+              additionalProperties: false
+            }
           },
           additives: {
             type: "array",
@@ -627,11 +637,11 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
               properties: {
                 name: { type: "string", minLength: 1, maxLength: 160 },
                 amount: { type: "number", minimum: 0.000001 },
-                unit: { type: "string", minLength: 1, maxLength: 30 },
+                unit: { type: "string", minLength: 1, maxLength: 30 }
               },
               required: ["name", "amount", "unit"],
-              additionalProperties: false,
-            },
+              additionalProperties: false
+            }
           },
           nutrients: {
             type: "object",
@@ -642,7 +652,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
               yeastId: { type: "integer", minimum: 1 },
               nitrogenRequirement: {
                 type: "string",
-                enum: ["Very Low", "Low", "Medium", "High", "Very High"],
+                enum: ["Very Low", "Low", "Medium", "High", "Very High"]
               },
               schedule: {
                 type: "string",
@@ -654,31 +664,31 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
                   "oAndk",
                   "oAndDap",
                   "kAndDap",
-                  "other",
-                ],
+                  "other"
+                ]
               },
               numberOfAdditions: { type: "integer", minimum: 1, maximum: 10 },
               goFermType: {
                 type: "string",
-                enum: ["Go-Ferm", "protect", "sterol-flash", "none"],
-              },
+                enum: ["Go-Ferm", "protect", "sterol-flash", "none"]
+              }
             },
             required: ["enabled"],
-            additionalProperties: false,
+            additionalProperties: false
           },
           stabilizers: {
             type: "object",
             properties: {
               enabled: { type: "boolean" },
               type: { type: "string", enum: ["kmeta", "nameta"] },
-              phReading: { type: "number", minimum: 2, maximum: 5 },
+              phReading: { type: "number", minimum: 2, maximum: 5 }
             },
             required: ["enabled"],
-            additionalProperties: false,
-          },
+            additionalProperties: false
+          }
         },
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "explain_recipe",
@@ -688,11 +698,11 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
         properties: {
           topic: {
             type: "string",
-            enum: ["abv", "gravity", "volume", "nutrients", "stabilizers"],
-          },
+            enum: ["abv", "gravity", "volume", "nutrients", "stabilizers"]
+          }
         },
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: gravityTargetToolName,
@@ -704,13 +714,13 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
           fermentationFinalGravity: {
             type: "number",
             minimum: 0.97,
-            maximum: 1.2,
+            maximum: 1.2
           },
-          additionalOgPoints: { type: "number", minimum: 0, maximum: 100 },
+          additionalOgPoints: { type: "number", minimum: 0, maximum: 100 }
         },
         required: ["targetAbv"],
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: prepareBrewActionToolName,
@@ -729,9 +739,9 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
               "TEMPERATURE",
               "PH",
               "VOLUME",
-              "STAGE_CHANGE",
+              "STAGE_CHANGE"
             ],
-            description: "Required uppercase action type.",
+            description: "Required uppercase action type."
           },
           title: { type: "string", minLength: 1, maxLength: 160 },
           note: { type: "string", minLength: 1, maxLength: 2000 },
@@ -740,16 +750,16 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
             type: "object",
             description:
               "Use for additions ({kind, name, amount?, unit?}), pH ({ph}), or volume ({liters, displayValue?, displayUnit?, startingLiters?}).",
-            additionalProperties: true,
+            additionalProperties: true
           },
           gravity: { type: "number", minimum: 0.9, maximum: 1.3 },
           temperature: { type: "number", minimum: -50, maximum: 150 },
           temp_units: { type: "string", enum: ["C", "F"] },
-          stage_to: { type: "string", enum: [...brewActionStages] },
+          stage_to: { type: "string", enum: [...brewActionStages] }
         },
         required: ["type"],
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "search_ingredients",
@@ -757,8 +767,8 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
       parameters: {
         type: "object",
         properties: {},
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "search_additives",
@@ -766,8 +776,8 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
       parameters: {
         type: "object",
         properties: {},
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "search_yeasts",
@@ -776,11 +786,11 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
         type: "object",
         properties: {
           query: { type: "string", minLength: 2, maxLength: 160 },
-          limit: { type: "integer", minimum: 1, maximum: 10 },
+          limit: { type: "integer", minimum: 1, maximum: 10 }
         },
         required: ["query"],
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "search_wiki",
@@ -789,11 +799,11 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
         type: "object",
         properties: {
           query: { type: "string", minLength: 2, maxLength: 500 },
-          limit: { type: "integer", minimum: 1, maximum: 10 },
+          limit: { type: "integer", minimum: 1, maximum: 10 }
         },
         required: ["query"],
-        additionalProperties: false,
-      },
+        additionalProperties: false
+      }
     },
     {
       name: "fetch_wiki_page",
@@ -802,29 +812,35 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
         type: "object",
         properties: { url: { type: "string", minLength: 1, maxLength: 2_000 } },
         required: ["url"],
-        additionalProperties: false,
-      },
-    },
+        additionalProperties: false
+      }
+    }
   ];
 
-/** The first remote MCP release exposes only stateless, read-only operations. */
+/** Reviewed remote MCP allowlist; private reads require an authenticated adapter. */
 export const mcpAgentToolNames = [
+  ...mcpAccountReadToolNames,
   "search_ingredients",
   "search_additives",
   "search_yeasts",
   "search_wiki",
   "fetch_wiki_page",
   "calculate_gravity_target",
-  "build_recipe_draft",
+  "build_recipe_draft"
 ] as const;
 
 export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
 
-export const mcpAgentToolDefinitions = hostedAgentToolDefinitions.filter(
-  (definition): definition is HostedAgentToolDefinition & {
-    name: McpAgentToolName;
-  } => mcpAgentToolNames.some((name) => name === definition.name),
-);
+export const mcpAgentToolDefinitions = [
+  ...accountReadToolDefinitions,
+  ...hostedAgentToolDefinitions.filter(
+    (
+      definition
+    ): definition is HostedAgentToolDefinition & {
+      name: Extract<McpAgentToolName, HostedAgentToolDefinition["name"]>;
+    } => mcpAgentToolNames.some((name) => name === definition.name)
+  )
+];
 
 /** Keep MCP execution on the same validated domain path as hosted chat. */
 export async function executeMcpAgentTool(
@@ -833,11 +849,19 @@ export async function executeMcpAgentTool(
   options: Pick<
     NonNullable<Parameters<typeof executeHostedAgentTool>[2]>,
     "fetcher" | "ingredientLookup" | "additiveLookup" | "yeastLookup"
-  > = {},
-): Promise<HostedAgentToolExecution> {
+  > & { accountReadAdapter?: AccountReadAdapter } = {}
+): Promise<
+  HostedAgentToolExecution | Awaited<ReturnType<typeof executeAccountReadTool>>
+> {
   if (!mcpAgentToolNames.some((name) => name === toolName)) {
     return { status: "unknown_tool", toolName };
   }
+  if (isMcpAccountReadTool(toolName))
+    return executeAccountReadTool(
+      toolName as AccountReadName,
+      input,
+      options.accountReadAdapter
+    );
   return executeHostedAgentTool(toolName, input, options);
 }
 
@@ -859,7 +883,7 @@ export async function executeHostedAgentTool(
     additiveLookup?: AdditiveLookup;
     yeastLookup?: YeastLookup;
     brewActionTarget?: BrewActionTarget;
-  } = {},
+  } = {}
 ): Promise<HostedAgentToolExecution> {
   if (toolName === recordRecipePlanToolName) {
     return executeRecordRecipePlanAgentTool(input);
@@ -879,19 +903,19 @@ export async function executeHostedAgentTool(
     if (!options.ingredientLookup) {
       return {
         status: "error",
-        message: "Ingredient lookup is not configured for this chat.",
+        message: "Ingredient lookup is not configured for this chat."
       };
     }
     try {
       return {
         status: "ok",
-        result: await options.ingredientLookup(),
+        result: await options.ingredientLookup()
       };
     } catch (error) {
       return {
         status: "error",
         message:
-          error instanceof Error ? error.message : "Ingredient lookup failed.",
+          error instanceof Error ? error.message : "Ingredient lookup failed."
       };
     }
   }
@@ -901,7 +925,7 @@ export async function executeHostedAgentTool(
     if (!options.yeastLookup) {
       return {
         status: "error",
-        message: "Yeast lookup is not configured for this chat.",
+        message: "Yeast lookup is not configured for this chat."
       };
     }
     try {
@@ -909,14 +933,13 @@ export async function executeHostedAgentTool(
         status: "ok",
         result: await options.yeastLookup(
           parsed.data.query,
-          parsed.data.limit ?? 5,
-        ),
+          parsed.data.limit ?? 5
+        )
       };
     } catch (error) {
       return {
         status: "error",
-        message:
-          error instanceof Error ? error.message : "Yeast lookup failed.",
+        message: error instanceof Error ? error.message : "Yeast lookup failed."
       };
     }
   }
@@ -926,7 +949,7 @@ export async function executeHostedAgentTool(
     if (!options.additiveLookup) {
       return {
         status: "error",
-        message: "Additive lookup is not configured for this chat.",
+        message: "Additive lookup is not configured for this chat."
       };
     }
     try {
@@ -935,13 +958,13 @@ export async function executeHostedAgentTool(
       return {
         status: "error",
         message:
-          error instanceof Error ? error.message : "Additive lookup failed.",
+          error instanceof Error ? error.message : "Additive lookup failed."
       };
     }
   }
 
   const tool = createWikiAgentTools(options).find(
-    (candidate) => candidate.name === toolName,
+    (candidate) => candidate.name === toolName
   );
   if (!tool) return { status: "unknown_tool", toolName };
 
@@ -949,15 +972,15 @@ export async function executeHostedAgentTool(
 }
 
 function invalidInput(
-  issues: Array<{ path: Array<PropertyKey>; message: string }>,
+  issues: Array<{ path: Array<PropertyKey>; message: string }>
 ): { status: "invalid_input"; issues: string[] } {
   return {
     status: "invalid_input",
     issues: issues.map((issue) =>
       issue.path.length > 0
         ? `${issue.path.map(String).join(".")}: ${issue.message}`
-        : issue.message,
-    ),
+        : issue.message
+    )
   };
 }
 
@@ -967,10 +990,10 @@ function descriptionFor(
     | WikiAgentToolName
     | CatalogAgentToolName
     | typeof gravityTargetToolName
-    | typeof prepareBrewActionToolName,
+    | typeof prepareBrewActionToolName
 ): string {
   const tool = hostedAgentTools.find(
-    (candidate) => candidate.name === toolName,
+    (candidate) => candidate.name === toolName
   );
   if (!tool)
     throw new Error(`Missing hosted agent tool definition for ${toolName}.`);
@@ -978,3 +1001,7 @@ function descriptionFor(
 }
 
 export * from "./mcp-permissions";
+
+export * from "./account-reads";
+
+export * from "./mcp-guidance";

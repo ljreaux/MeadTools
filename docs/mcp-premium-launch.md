@@ -337,11 +337,10 @@ Discovery filters account tools and direct calls without permission receive a
 403 OAuth insufficient-scope challenge, with a second gate inside the server.
 Usage bookkeeping, metadata-only logs, and prompt-credit behavior are unchanged.
 
-**Dependency boundary:** issue #451's account-read executors are absent from
-this checkout. Neither permission grants nor documentation make those tools
-available before they are implemented. The actual inventory remains seven
-until #451 registers its tools through the gated server. Ownership, paginated
-query boundaries, output bounds, and account-tool rate/concurrency verification
-must be completed against those executors before rollout. Preview verification
-is tracked in `mcp-client-testing-plan.md`; prior seven-tool client results do
-not verify private account access.
+**Account read tools:** connections with explicit `mcp:account:read` permission
+advertise twelve tools: the seven existing tools plus `list_brews`, `get_brew`,
+`get_brew_timeline`, `list_recipes`, and `get_recipe`. Legacy connections still
+advertise seven. See [account-read contracts](mcp-account-reads.md) for inputs,
+output limits, ownership, provenance, legacy handling and deterministic checks.
+Preview client verification remains tracked in `mcp-client-testing-plan.md`;
+prior seven-tool client results do not verify private account access.
