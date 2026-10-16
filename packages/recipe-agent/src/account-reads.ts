@@ -141,6 +141,13 @@ const pageSchema = z.strictObject({
 });
 const brewSummarySchema = z.strictObject({
   id: z.string().uuid(),
+  appUrl: z
+    .url()
+    .max(2000)
+    .nullable()
+    .describe(
+      "Canonical application link supplied by the authenticated application. Requires owner sign-in; this is not a public share link or authorization grant. Null when the adapter does not supply links."
+    ),
   untrustedName: name,
   nameTruncated: z.boolean(),
   stage,
@@ -150,6 +157,13 @@ const brewSummarySchema = z.strictObject({
 });
 const recipeSummarySchema = z.strictObject({
   id: z.number().int().positive(),
+  appUrl: z
+    .url()
+    .max(2000)
+    .nullable()
+    .describe(
+      "Canonical application link supplied by the authenticated application. Application visibility rules still apply; private recipes require authorized sign-in. This link grants no access. Null when the adapter does not supply links."
+    ),
   untrustedName: name,
   nameTruncated: z.boolean(),
   visibility: z.enum(["private", "public"])
@@ -468,6 +482,8 @@ export const accountReadOutputSchemas = {
 
 export type AccountBrewRecord = {
   id: string;
+  /** Application-authored navigation only; never taken from saved content. */
+  appUrl?: string;
   name: string | null;
   stage: string;
   start_date: Date | string;
@@ -477,6 +493,8 @@ export type AccountBrewRecord = {
 };
 export type AccountRecipeRecord = {
   id: number;
+  /** Application-authored navigation only; never taken from saved content. */
+  appUrl?: string;
   name: string;
   private: boolean;
   dataV2?: unknown;
@@ -530,6 +548,7 @@ function brewSummary(row: AccountBrewRecord) {
   const name = bounded(row.name);
   return {
     id: row.id,
+    appUrl: row.appUrl ?? null,
     untrustedName: name.value,
     nameTruncated: name.truncated,
     stage: row.stage,
@@ -542,6 +561,7 @@ function recipeSummary(row: AccountRecipeRecord) {
   const name = bounded(row.name);
   return {
     id: row.id,
+    appUrl: row.appUrl ?? null,
     untrustedName: name.value,
     nameTruncated: name.truncated,
     visibility: row.private ? "private" : "public"

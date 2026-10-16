@@ -8,6 +8,7 @@ import {
   type AccountEntryRecord
 } from "@meadtools/recipe-agent";
 import prisma from "@/lib/prisma";
+import { publicAppOrigin } from "@/lib/public-origin";
 
 const brewSelect = {
   id: true,
@@ -30,6 +31,17 @@ export function createAccountReadAdapter(
 ): AccountReadAdapter {
   if (!Number.isSafeInteger(userId) || userId <= 0)
     throw new Error("Authenticated account required");
+  // Use the same configured origin as OAuth, never a request Host or saved text.
+  // Locale-free application routes resolve through the application's i18n router.
+  const origin = publicAppOrigin();
+  const withBrewLink = <T extends { id: string }>(row: T) => ({
+    ...row,
+    appUrl: `${origin}/account/brews/${encodeURIComponent(row.id)}`
+  });
+  const withRecipeLink = <T extends { id: number }>(row: T) => ({
+    ...row,
+    appUrl: `${origin}/recipes/${row.id}`
+  });
 
   async function entries(input: AccountReadInput<"get_brew_timeline">) {
     const position = decodeAccountCursor(input.cursor);
@@ -81,7 +93,7 @@ export function createAccountReadAdapter(
         orderBy: { id: "desc" },
         take: input.limit + 1
       });
-      return page(rows, input.limit);
+      return page(rows.map(withBrewLink), input.limit);
     },
     async getBrew(id) {
       const row = await db.brews.findFirst({
@@ -106,7 +118,7 @@ export function createAccountReadAdapter(
         }
       });
       return {
-        ...row,
+        ...withBrewLink(row),
         latestHydrometerReading,
         latestReadings: readings.flatMap((rows) => rows.slice(0, 1))
       };
@@ -133,13 +145,14 @@ export function createAccountReadAdapter(
         orderBy: { id: "desc" },
         take: input.limit + 1
       });
-      return page(rows, input.limit);
+      return page(rows.map(withRecipeLink), input.limit);
     },
     async getRecipe(id) {
-      return db.recipes.findFirst({
+      const row = await db.recipes.findFirst({
         where: { id, user_id: userId },
         select: { ...recipeSelect, dataV2: true }
       });
+      return row ? withRecipeLink(row) : null;
     }
   };
 }

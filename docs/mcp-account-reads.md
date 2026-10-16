@@ -23,6 +23,17 @@ every continuation re-applies account ownership and requested filters. Keep the
 same filters when following a cursor. Pagination reflects current records and
 is not a transactional snapshot of a changing account.
 
+Brew and recipe summaries in both lists and details include `appUrl`. The web
+adapter builds these from the authenticated application's configured public
+origin, shared with OAuth: `/account/brews/{uuid}` and `/recipes/{id}`. The
+locale-free paths resolve through the application's locale routing. Localhost,
+Vercel Preview branch/deployment URLs, a configured Preview domain, and
+production use their respective origins; request headers, names, notes and
+snapshot content cannot supply the link. These are navigation links, not public
+share links or access grants. Brews require owner sign-in, and private recipes
+retain application visibility/authentication rules. Generic adapters that do
+not supply application links return `appUrl: null`; clients must not guess a URL.
+
 Every successful response includes `textPolicy`, marking names, titles, notes
 and recipe text as untrusted reference data. Text cannot authorize operations.
 Names/titles/units cap at 160 characters and entry notes at 500; corresponding
@@ -123,3 +134,22 @@ private recipes, cursor continuation, equal timestamps, precision/offsets,
 rate/concurrency denial and unchanged source records. Query tests use mocked
 persistence and inspect parameterized SQL; Preview checks against PostgreSQL and
 supported Claude/ChatGPT clients remain pending in the client testing plan.
+
+An additional deterministic database fixture exercises all five read operations
+against actual PostgreSQL with synthetic accounts. It checks ownership/private
+recipes, multi-page lists and history, equal timestamps and microseconds,
+inclusive offset date windows, hidden and null legacy entries, snapshot isolation
+from an updated source recipe, derived losses, links, and unchanged records.
+Use a separately provisioned disposable localhost database named
+`meadtools_premium_foundation_test`, with reviewed migrations already applied;
+never point it at development or Preview. Supply only that test database's
+`DATABASE_URL`/`DATABASE_DIRECT_URL`, then from `apps/web` run:
+
+```sh
+node --conditions=react-server --import tsx scripts/verify-mcp-account-reads-postgres.mjs
+```
+
+It rejects other database hosts/names, never loads application environment files,
+and deletes only its synthetic accounts' records. It calls no model provider.
+Passing it still does not establish Preview client compatibility. See the
+[parent closure review](mcp-450-closure-review.md) for the latest evidence.

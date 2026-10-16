@@ -10,6 +10,8 @@ import {
 } from "@meadtools/recipe-agent";
 import prisma from "../../prisma.ts";
 
+const expectedOrigin = process.env.FIXTURE_EXPECTED_ORIGIN;
+assert.ok(expectedOrigin);
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const drafted = executeRecipeAgentTool("build_recipe_draft", {
   batchVolume: { value: 1, unit: "gal" },
@@ -238,6 +240,19 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
     if (scope.includes("account")) {
       assert.equal(result.isError, false, JSON.stringify(result));
       assert.equal(result.structuredContent.status, "ok");
+      const output = result.structuredContent.result;
+      if (name === "list_brews" || name === "get_brew") {
+        const summary = name === "get_brew" ? output.brew : output.items[0];
+        assert.equal(
+          summary.appUrl,
+          `${expectedOrigin}/account/brews/${brew.id}`
+        );
+      }
+      if (name === "list_recipes" || name === "get_recipe") {
+        const summary = name === "get_recipe" ? output.recipe : output.items[0];
+        assert.equal(summary.appUrl, `${expectedOrigin}/recipes/${recipe.id}`);
+        assert.equal(summary.visibility, "private");
+      }
       if (["get_recipe", "get_brew", "get_brew_timeline"].includes(name)) {
         const guidance = result.structuredContent.result.relatedGuidance;
         assert.equal(
@@ -257,6 +272,19 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
     }
   }
   if (scope.includes("account")) {
+    for (const [name, missingId] of [
+      ["get_brew", id(99)],
+      ["get_brew_timeline", id(99)],
+      ["get_recipe", 99]
+    ]) {
+      const result = await client.callTool({
+        name,
+        arguments: { id: missingId }
+      });
+      assert.equal(result.isError, true);
+      assert.deepEqual(result.structuredContent, { status: "not_found" });
+      assert.doesNotMatch(JSON.stringify(result), /appUrl|Owned|Private/);
+    }
     for (const [count, field, pattern] of [
       [2, "concurrent", /concurrent/],
       [60, "rate", /call limit/]
@@ -278,6 +306,6 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
   await client.close();
   await server.close();
 }
-assert.equal(usage.length, 5);
+assert.equal(usage.length, 8);
 assert.deepEqual({ brew, recipe, rows }, before);
 await prisma.$disconnect();
