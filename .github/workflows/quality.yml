@@ -137,6 +137,9 @@ jobs:
         env:
           EAS_BUILD_PROFILE: preview
           EXPO_NO_DOTENV: "1"
+          # Use the locked SDK's bundled map instead of moving upstream patch
+          # recommendations that can block unrelated production hotfixes.
+          EXPO_OFFLINE: "1"
         run: npm exec --workspace @meadtools/mobile -- expo install --check
 
       - name: Verify Expo can export a password-only Android preview bundle
