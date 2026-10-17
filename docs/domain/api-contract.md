@@ -189,3 +189,8 @@ listing and creation responses. This is a permission disclosure, not an
 account-data REST API. Existing credentials default to seven-tool access; only
 an explicit new grant enables the private-read capability. The reviewed
 OpenAPI diff is limited to these MCP credential schema properties.
+
+The RAPT Brew Stream compatibility update adds optional query-token authentication
+to `/hydrometer/rapt-pill/cloud` and accepts nested telemetry envelopes alongside
+legacy flat payloads. Its 400 response also covers invalid payloads. The parity
+test normalizes these approved route changes before comparing earlier paths.
