@@ -2040,16 +2040,22 @@
   "raisins": "Raisins",
   "rapt": {
     "cloud": {
-      "description": "MeadTools has support for the RAPT Pill through the RAPT Cloud Custom Web Hooks.",
-      "importantNote": "IMPORTANT NOTE: You MUST have a unique (to you) device name set for your device. This allows you to reuse this webhook for all your RAPT Pill devices.",
+      "notice": {
+        "title": "Update your RAPT Cloud Pill integration",
+        "description": "RAPT has changed its cloud integrations. If you use any cloud-connected RAPT Pills with MeadTools, update each stream using the new setup instructions to keep readings flowing.",
+        "setupLink": "Update setup",
+        "dontShowAgain": "Don't show again"
+      },
+      "description": "Connect your RAPT Pill using a Custom data stream in RAPT Brew.",
+      "importantNote": "Give each of your devices a unique name. The Cloud URL includes your private hydrometer token; keep it secret.",
       "payloadTitle": "Payload",
       "portalLinkText": "RAPT Portal",
       "steps": {
-        "step1": "Go to Web Hooks under My Account in the RAPT Portal.",
-        "step2": "Click the Create New Web Hook button at the top.",
-        "step3": "Name and Description are optional (but recommended) values. Copy the Cloud URL below and set the Method to Post.",
-        "step4": "Set your temperature units, make sure your token is generated, and copy the payload below into the payload tab.",
-        "step5": "Add your device in the Devices tab."
+        "step1": "Open <a>My Integrations in RAPT Brew</a> and find RAPT Brew Data Stream.",
+        "step2": "Create a Custom stream and select your RAPT Pill.",
+        "step3": "Generate your MeadTools token below, then copy the complete Cloud URL into the stream URL field. The method is POST.",
+        "step4": "Use the default telemetry payload. No custom payload or extra headers are needed.",
+        "step5": "Save the stream before clicking Send a test. A successful delivery appears in your MeadTools hydrometer dashboard. RAPT may send sample readings when the device has no data yet."
       }
     },
     "credits": "This app was made in partnership with TooL and would not have been possible without his work on decoding the RAPT Pill's Bluetooth signal. The repository can be found <a>here</a>.",

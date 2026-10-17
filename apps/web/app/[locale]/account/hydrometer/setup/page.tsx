@@ -13,15 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from "@/components/ui/accordion";
-import CopyableCodeBlock from "@/components/CodeBlock";
 import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import {
   InputGroup,
   InputGroupAddon,
@@ -41,7 +33,6 @@ function Setup() {
   const hydrometerToken = data?.hydro_token;
 
   const { currentButton, otherButtons } = useOS();
-  const [tempUnits, setTempUnits] = useState("F");
 
   // NEW: control tab so title can reflect selection
   const [tab, setTab] = useState<"iSpindel" | "tilt" | "pill">("iSpindel");
@@ -49,16 +40,9 @@ function Setup() {
   const tabLabel =
     tab === "iSpindel" ? "iSpindel" : tab === "tilt" ? "Tilt" : "RAPT Pill";
 
-  const pillCloudUrl = `${displayUrl}/api/hydrometer/rapt-pill/cloud`;
-
-  const pillPayload = `{
-    "token": "${hydrometerToken ?? "Please generate a token"}",
-    "name": "@device_name",
-    "gravity": @gravity,
-    "temperature": @temperature,
-    "temp_units": "${tempUnits}",
-    "battery": @battery
-  }`;
+  const pillCloudUrl = hydrometerToken
+    ? `${displayUrl}/api/hydrometer/rapt-pill/cloud?token=${encodeURIComponent(hydrometerToken)}`
+    : "";
 
   return (
     <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
@@ -237,7 +221,7 @@ function Setup() {
                             components={{
                               a: (
                                 <a
-                                  href="https://app.rapt.io/integration/webhooks/list"
+                                  href="https://brew.rapt.io/my-integrations"
                                   target="_blank"
                                   className="underline"
                                   rel="noopener noreferrer"
@@ -269,33 +253,6 @@ function Setup() {
                         }}
                       />
                       <TokenGen />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <h3 className="text-lg font-medium">
-                          {t("rapt.cloud.payloadTitle")}
-                        </h3>
-
-                        <label className="flex items-center gap-2 text-sm">
-                          {t("rapt.tempUnitsLabel")}
-                          <Select
-                            name="deg"
-                            onValueChange={setTempUnits}
-                            value={tempUnits}
-                          >
-                            <SelectTrigger className="w-[120px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="F">{t("FAR")}</SelectItem>
-                              <SelectItem value="C">{t("CEL")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </label>
-                      </div>
-
-                      <CopyableCodeBlock text={pillPayload} />
                     </div>
                   </div>
                 </AccordionContent>

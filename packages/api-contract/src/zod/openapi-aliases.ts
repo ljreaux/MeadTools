@@ -252,6 +252,7 @@ import {
   publicRecipesFetchErrorResponseSchema,
   publicRecipesPageResponseSchema,
   publicRecipesQueryParamsSchema,
+  raptPillCloudErrorResponseSchema,
   raptPillCloudIngestRequestBodySchema,
   raptPillRegisterErrorResponseSchema,
   raptPillRegisterRequestBodySchema,
@@ -623,6 +624,7 @@ export const PublicRecipeOwnerResponse = publicRecipeOwnerResponseSchema;
 export const PublicRecipesFetchErrorResponse = publicRecipesFetchErrorResponseSchema;
 export const PublicRecipesPageResponse = publicRecipesPageResponseSchema;
 export const PublicRecipesQueryParams = publicRecipesQueryParamsSchema;
+export const RaptPillCloudErrorResponse = raptPillCloudErrorResponseSchema;
 export const RaptPillCloudIngestRequestBody = raptPillCloudIngestRequestBodySchema;
 export const RaptPillRegisterErrorResponse = raptPillRegisterErrorResponseSchema;
 export const RaptPillRegisterRequestBody = raptPillRegisterRequestBodySchema;

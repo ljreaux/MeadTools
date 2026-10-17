@@ -107,10 +107,12 @@ jobs:
 
   mobile:
     name: Typecheck and export mobile
+    # Reviewed bug-only hotfix PRs do not release Mobile. Normal PRs and pushes
+    # retain Mobile validation; Web/API checks still run for hotfix PRs.
     needs: impact
     # Add the skip-mobile-check label to bypass this one job for a PR. Pushes
     # to preview/main intentionally ignore PR-only overrides.
-    if: needs.impact.outputs.mobile == 'true' && !contains(github.event.pull_request.labels.*.name, 'skip-mobile-check')
+    if: needs.impact.outputs.mobile == 'true' && !contains(github.event.pull_request.labels.*.name, 'skip-mobile-check') && !(contains(github.event.pull_request.labels.*.name, 'bug-fix-only') && contains(github.event.pull_request.labels.*.name, 'hotfix-ready') && !contains(github.event.pull_request.labels.*.name, 'build-mobile-production'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
