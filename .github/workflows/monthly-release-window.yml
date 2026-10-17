@@ -3,16 +3,32 @@ name: Monthly release window
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
+    types:
+      [
+        opened,
+        synchronize,
+        reopened,
+        edited,
+        labeled,
+        unlabeled,
+        ready_for_review,
+        converted_to_draft,
+      ]
+  pull_request_review:
+    types: [submitted, dismissed]
+  push:
+    branches: [main]
   schedule:
     - cron: "15 9 * * 1"
+      timezone: America/Chicago
+    - cron: "0 12 * * 1"
       timezone: America/Chicago
   workflow_dispatch:
     inputs:
       mode:
-        description: "monthly retry, initial promotion, or hotfix"
+        description: "monthly retry, close expired gate, initial promotion, or hotfix"
         type: choice
-        options: [monthly, initial, hotfix]
+        options: [monthly, close, initial, hotfix]
         required: true
       pr_number:
         description: "PR number for initial promotion or hotfix"
@@ -35,11 +51,17 @@ jobs:
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ github.token }}
+      RELEASE_SCHEDULE: ${{ github.event.schedule }}
       RELEASE_MODE: ${{ inputs.mode || 'monthly' }}
       RELEASE_PR_NUMBER: ${{ inputs.pr_number }}
       RELEASE_EXPECTED_SHA: ${{ inputs.expected_head_sha }}
+    concurrency:
+      group: main-release-gate
+      cancel-in-progress: false
     steps:
       - name: Check out trusted workflow source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - name: Hold or open gate
         run: node scripts/monthly-release-window.mjs
