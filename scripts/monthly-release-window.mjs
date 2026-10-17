@@ -20,6 +20,7 @@ export function isFirstMondayWindow(date) {
   return (
     parts.weekday === "Mon" &&
     Number(parts.day) <= 7 &&
+    Number(parts.hour) < 12 &&
     (Number(parts.hour) > 9 ||
       (Number(parts.hour) === 9 && Number(parts.minute) >= 15))
   );
@@ -91,6 +92,7 @@ export function releaseChecksPassed(checks) {
   const blocking = checks.filter(
     (check) =>
       check.name !== context &&
+      check.name !== "Hold or open monthly release gate" &&
       // Expo preview jobs can wait in a long queue even when Mobile's
       // separate production build decision is skip.
       !check.name.startsWith("Create Preview Builds /"),
@@ -130,49 +132,164 @@ function allChecksPassed(number) {
   return releaseChecksPassed(JSON.parse(result.stdout));
 }
 
-async function openGate(number, mode, expectedHead) {
-  const pr = api(`pulls/${number}`);
-  const reason = releaseApproval(pr, mode, expectedHead);
-  if (reason) {
-    console.log(`PR #${number}: ${reason}`);
-    return;
+export function releaseReviewPassed(decision) {
+  // Empty means GitHub requires no review; the maintainer's SHA-bound
+  // release-ready authorization is still mandatory. Unknown is not approval.
+  return decision === "APPROVED" || decision === "";
+}
+
+function reviewPassed(number) {
+  const decision = execFileSync(
+    "gh",
+    [
+      "pr",
+      "view",
+      String(number),
+      "--repo",
+      repository(),
+      "--json",
+      "reviewDecision",
+      "--jq",
+      ".reviewDecision",
+    ],
+    { encoding: "utf8" },
+  ).trim();
+  return releaseReviewPassed(decision);
+}
+
+function openMainPRs() {
+  const result = [];
+  for (let page = 1; ; page++) {
+    const prs = api(`pulls?state=open&base=main&per_page=100&page=${page}`);
+    result.push(...prs);
+    if (prs.length < 100) return result;
   }
-  if (!allChecksPassed(number)) {
-    console.log(
-      `PR #${number}: CI or release-note checks are not all complete and passing.`,
-    );
-    return;
-  }
-  const latest = api(`pulls/${number}`);
+}
+
+function gateStatus(sha) {
+  const result = api(`commits/${sha}/status`);
+  return result.statuses.find((status) => status.context === context);
+}
+
+const live = {
+  listPRs: openMainPRs,
+  getPR: (number) => api(`pulls/${number}`),
+  checksPassed: allChecksPassed,
+  reviewPassed,
+  getStatus: gateStatus,
+  postStatus,
+  log: console.log,
+};
+
+async function holdMonthlyGate(pr, description, io) {
+  const status = await io.getStatus(pr.head.sha);
+  // Do not revoke an independently approved initial promotion or hotfix.
   if (
-    latest.head.sha !== pr.head.sha ||
-    latest.base.sha !== pr.base.sha ||
-    latest.body !== pr.body ||
-    JSON.stringify(latest.labels.map(({ name }) => name).sort()) !==
-      JSON.stringify(pr.labels.map(({ name }) => name).sort())
+    status?.state === "success" &&
+    status.description?.startsWith("monthly release approved")
   ) {
-    console.log(
-      `PR #${number}: PR changed while checks were evaluated; gate remains closed.`,
-    );
-    return;
+    await io.postStatus(pr.head.sha, "pending", description);
   }
+}
+
+export async function openGate(
+  number,
+  mode,
+  expectedHead,
+  io = live,
+  now = () => new Date(),
+) {
+  const pr = await io.getPR(number);
+  const hold = async (reason) => {
+    if (mode === "monthly") await holdMonthlyGate(pr, reason, io);
+    io.log(`PR #${number}: ${reason}`);
+    return false;
+  };
+  const reason = releaseApproval(pr, mode, expectedHead);
+  if (reason) return hold(reason);
+  if (!(await io.checksPassed(number)) || !(await io.reviewPassed(number))) {
+    return hold("CI, release notes, or required review is not passing.");
+  }
+  const latest = await io.getPR(number);
+  if (!sameApproval(pr, latest))
+    return hold("PR changed while checks were evaluated; gate remains closed.");
   const changed = releaseApproval(latest, mode, expectedHead);
-  if (changed) {
-    console.log(`PR #${number}: approval changed during the check: ${changed}`);
-    return;
+  if (changed) return hold(changed);
+  if (mode === "monthly") {
+    // Recheck after network calls: a slow check must not open an expired window.
+    if (!isFirstMondayWindow(now()))
+      return hold("Monthly release window is closed.");
+    const candidates = (await io.listPRs()).filter(isMonthlyCandidate);
+    if (candidates.length !== 1 || candidates[0].number !== number) {
+      return hold("Expected exactly one armed monthly release PR.");
+    }
   }
-  postStatus(
-    latest.head.sha,
-    "success",
-    `${mode} release approved for the exact reviewed commit`,
+  if (!(await io.reviewPassed(number)))
+    return hold("Required review changed during gate evaluation.");
+  if (mode === "monthly" && !isFirstMondayWindow(now()))
+    return hold("Monthly release window is closed.");
+  const status = await io.getStatus(latest.head.sha);
+  const confirmed = await io.getPR(number);
+  if (
+    !sameApproval(latest, confirmed) ||
+    releaseApproval(confirmed, mode, expectedHead)
+  )
+    return hold("PR authorization changed before the status write.");
+  if (mode === "monthly" && !isFirstMondayWindow(now()))
+    return hold("Monthly release window is closed.");
+  const description = `${mode} release approved for the exact reviewed commit`;
+  if (status?.state !== "success" || status.description !== description) {
+    await io.postStatus(latest.head.sha, "success", description);
+  }
+  io.log(`PR #${number}: opened ${context} for ${latest.head.sha}.`);
+  return true;
+}
+
+function sameApproval(before, after) {
+  return (
+    before.head.sha === after.head.sha &&
+    before.base.sha === after.base.sha &&
+    before.body === after.body &&
+    JSON.stringify(before.labels.map(({ name }) => name).sort()) ===
+      JSON.stringify(after.labels.map(({ name }) => name).sort())
   );
-  console.log(`PR #${number}: opened ${context} for ${latest.head.sha}.`);
+}
+
+function isMonthlyCandidate(pr) {
+  return (
+    pr.head.ref === "preview" &&
+    pr.head.repo?.full_name === repository() &&
+    pr.labels.some(({ name }) => name === "release-ready")
+  );
+}
+
+export async function runMonthlyGate(
+  io = live,
+  now = () => new Date(),
+  closeOnly = false,
+) {
+  const prs = await io.listPRs();
+  const candidates = prs.filter(isMonthlyCandidate);
+  if (closeOnly || !isFirstMondayWindow(now()) || candidates.length !== 1) {
+    const reason =
+      candidates.length > 1
+        ? "Multiple armed monthly release PRs; gate closed."
+        : "Monthly release window is closed or no release is armed.";
+    for (const pr of prs) await holdMonthlyGate(pr, reason, io);
+    io.log(reason);
+    return false;
+  }
+  return openGate(candidates[0].number, "monthly", undefined, io, now);
 }
 
 async function main() {
   if (!repository() || !process.env.GH_TOKEN)
     throw new Error("GitHub repository and token are required.");
-  if (process.env.GITHUB_EVENT_NAME === "pull_request") {
+  if (
+    ["pull_request", "pull_request_review"].includes(
+      process.env.GITHUB_EVENT_NAME,
+    )
+  ) {
     const event = JSON.parse(
       await (
         await import("node:fs/promises")
@@ -188,34 +305,38 @@ async function main() {
     return;
   }
 
-  const mode = process.env.RELEASE_MODE || "monthly";
-  if (mode === "monthly" && !isFirstMondayWindow(new Date())) {
-    console.log("Outside the first-Monday release window; no gate opened.");
-    return;
-  }
-  if (mode !== "monthly" && mode !== "initial" && mode !== "hotfix") {
+  const mode =
+    process.env.GITHUB_EVENT_NAME === "push"
+      ? "close"
+      : process.env.GITHUB_EVENT_NAME === "schedule" &&
+          process.env.RELEASE_SCHEDULE === "0 12 * * 1"
+        ? "close"
+        : process.env.RELEASE_MODE || "monthly";
+  if (
+    mode !== "monthly" &&
+    mode !== "initial" &&
+    mode !== "hotfix" &&
+    mode !== "close"
+  ) {
     throw new Error("Unknown release mode.");
   }
   if (
     mode !== "monthly" &&
+    mode !== "close" &&
     !/^[a-f0-9]{40}$/.test(process.env.RELEASE_EXPECTED_SHA ?? "")
   ) {
     throw new Error("Manual release requires the exact expected head SHA.");
   }
   const number = Number(process.env.RELEASE_PR_NUMBER);
-  if (mode !== "monthly" && (!Number.isSafeInteger(number) || number <= 0)) {
+  if (
+    mode !== "monthly" &&
+    mode !== "close" &&
+    (!Number.isSafeInteger(number) || number <= 0)
+  ) {
     throw new Error("Manual release requires a PR number.");
   }
-  if (mode === "monthly") {
-    for (let page = 1; ; page++) {
-      const prs = api(`pulls?state=open&base=main&per_page=100&page=${page}`);
-      for (const pr of prs) {
-        if (pr.labels.some((label) => label.name === "release-ready")) {
-          await openGate(pr.number, mode);
-        }
-      }
-      if (prs.length < 100) break;
-    }
+  if (mode === "monthly" || mode === "close") {
+    await runMonthlyGate(live, () => new Date(), mode === "close");
   } else {
     await openGate(number, mode, process.env.RELEASE_EXPECTED_SHA);
   }

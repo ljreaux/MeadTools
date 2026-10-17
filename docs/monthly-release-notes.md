@@ -38,3 +38,24 @@ record no change internally and add no dated entry, GitHub Release, or email.
 For the initial full `preview` to `main` promotion, verify its production date
 and shipped product scope before publishing the dated notes. Review the complete
 diff even when the Mobile production build is skipped.
+
+## Reviewed monthly internal drafts
+
+During preparation, write `docs/releases/YYYY-MM.json` with the same `title`,
+`summary`, and `products` structure as a public entry, without a date-key wrapper.
+Keep planned wording explicit about beta and unreleased Mobile. Include at least
+one actual release product; Mobile-preview-only progress is no release.
+This file has no public route and cannot trigger subscriber email.
+
+Merge this draft into `preview` through a reviewed PR. In the monthly
+`preview` → `main` PR, record `Release-note draft: docs/releases/YYYY-MM.json`.
+The note check accepts only a changed, valid draft from that same-repository
+promotion after the exact release has been reviewed and labeled `release-ready`.
+Normal feature/hotfix PRs cannot claim this exception. Draft status is not
+release approval. Final approval must follow all preparation/Weblate commits.
+
+After production verification and publication approval, copy only verified
+items into the actual dated public entry. Put the publication through a
+reviewed PR and the monthly gate before noon; if the window or a prerequisite
+is missed, leave the public draft unpublished and report the blocker. A public
+entry starts automatic email, so do not use it as a Friday placeholder.
