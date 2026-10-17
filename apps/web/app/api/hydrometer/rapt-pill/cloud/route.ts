@@ -5,48 +5,52 @@ import {
   updateBrewGravity,
   verifyToken,
 } from "@/lib/db/iSpindel";
-import { toFahrenheit } from "@meadtools/core/temperature";
-import { parseNumber } from "@/lib/utils/validateInput";
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeRaptCloudPayload } from "@/lib/rapt-cloud";
 
 /**
  * RAPT Pill cloud log
- * @description Intended for RAPT Pill cloud integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Celsius temperatures are converted to Fahrenheit before storage.
+ * @description Accepts RAPT Brew Stream telemetry envelopes and legacy flat payloads. Authenticate with the token query parameter or a legacy body token. Brew Stream temperatures default to Celsius; legacy temperatures default to Fahrenheit. Values are stored with their temperature units.
  * @body RaptPillCloudIngestRequestBody
  * @response 200:HydrometerLogResponse
  * @responseSet none
- * @add 400:HydrometerAuthErrorResponse
+ * @add 400:RaptPillCloudErrorResponse
  * @add 404:HydrometerAuthErrorResponse
  * @add 500:HydrometerLogErrorResponse
  * @tag Hydrometer Logging
  * @openapi
  */
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-
-  if (!body || !body.token) {
-    return NextResponse.json({ error: "Missing token" }, { status: 400 });
-  }
+  let rawBody: unknown;
   try {
-    const userId = await verifyToken(body.token);
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+  const normalized = normalizeRaptCloudPayload(
+    rawBody,
+    req.nextUrl.searchParams.get("token"),
+  );
+  if (!normalized.success) {
+    return NextResponse.json({ error: normalized.error }, { status: 400 });
+  }
+  const { token, name, ...reading } = normalized.data;
+  try {
+    const userId = await verifyToken(token);
     if (userId instanceof NextResponse) {
       return userId;
     }
 
-    const newDevice = { userId, device_name: body.name };
+    const newDevice = { userId, device_name: name };
     const device = await registerDevice(newDevice);
     const { brew_id } = device;
 
-    const gravity = body.gravity;
+    const gravity = reading.gravity;
 
     if (!!brew_id) await updateBrewGravity(brew_id, gravity);
 
     const data: LogType = {
-      ...body,
-      temperature:
-        body.temp_units === "C"
-          ? parseNumber(body.temperature)
-          : toFahrenheit(parseNumber(body.temperature)),
+      ...reading,
       calculated_gravity: null,
       brew_id,
       device_id: device.id,

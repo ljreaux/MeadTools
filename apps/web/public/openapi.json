@@ -2696,7 +2696,97 @@
         ]
       },
       "RaptPillCloudIngestRequestBody": {
-        "$ref": "#/components/schemas/hydrometerIngestObjectSchema"
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "angle": {
+                "type": "number"
+              },
+              "temperature": {
+                "type": "number"
+              },
+              "temp_units": {
+                "type": "string",
+                "enum": [
+                  "F",
+                  "C"
+                ]
+              },
+              "battery": {
+                "type": "number"
+              },
+              "gravity": {
+                "type": "number"
+              },
+              "interval": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "temperature",
+              "gravity"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "enum": [
+                  "telemetry"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "token": {
+                "type": "string"
+              },
+              "deviceId": {
+                "type": "string"
+              },
+              "deviceType": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/raptCloudTelemetrySchema"
+              }
+            },
+            "required": [
+              "event",
+              "name",
+              "data"
+            ]
+          }
+        ]
+      },
+      "RaptPillCloudErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Missing token",
+              "Invalid token",
+              "Invalid payload"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
       },
       "HydrometerAuthErrorResponse": {
         "type": "object",
@@ -4939,6 +5029,37 @@
         "required": [
           "token",
           "name",
+          "temperature",
+          "gravity"
+        ]
+      },
+      "raptCloudTelemetrySchema": {
+        "type": "object",
+        "properties": {
+          "angle": {
+            "type": "number"
+          },
+          "temperature": {
+            "type": "number"
+          },
+          "temp_units": {
+            "type": "string",
+            "enum": [
+              "F",
+              "C"
+            ]
+          },
+          "battery": {
+            "type": "number"
+          },
+          "gravity": {
+            "type": "number"
+          },
+          "interval": {
+            "type": "number"
+          }
+        },
+        "required": [
           "temperature",
           "gravity"
         ]
@@ -12465,11 +12586,21 @@
       "post": {
         "operationId": "post-hydrometer-rapt-pill-cloud",
         "summary": "RAPT Pill cloud log",
-        "description": "Intended for RAPT Pill cloud integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Celsius temperatures are converted to Fahrenheit before storage.",
+        "description": "Accepts RAPT Brew Stream telemetry envelopes and legacy flat payloads. Authenticate with the token query parameter or a legacy body token. Brew Stream temperatures default to Celsius; legacy temperatures default to Fahrenheit. Values are stored with their temperature units.",
         "tags": [
           "Hydrometer Logging"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "description": "Hydrometer token; required unless supplied in the body."
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -12495,7 +12626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HydrometerAuthErrorResponse"
+                  "$ref": "#/components/schemas/RaptPillCloudErrorResponse"
                 }
               }
             }

@@ -73,7 +73,10 @@ An urgent bug-only PR into `main` may use the reviewed `bug-fix-only` exemption
 and `hotfix-ready` plus `release-ready`. Its PR body needs `Bug-fix rationale:`
 with a concrete explanation, exact head/base lines, and a Mobile build decision.
 Dispatch with `mode=hotfix`, PR number, and exact head SHA. Feature changes do
-not qualify. Record the hotfix in the next monthly summary without duplicate
+not qualify. The `bug-fix-only` and `hotfix-ready` combination skips the Mobile
+quality job for an urgent fix that does not release Mobile; Web/API quality and
+Vercel checks remain required. Do not add `skip-web-check` or `skip-mobile-check`
+to an armed hotfix. Record the hotfix in the next monthly summary without duplicate
 email or GitHub announcements.
 
 The release skill is a coordinator. It does not bypass required status checks,

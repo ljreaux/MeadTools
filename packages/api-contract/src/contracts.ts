@@ -236,6 +236,7 @@ import {
   publicRecipesFetchErrorResponseSchema,
   publicRecipesPageResponseSchema,
   publicRecipesQueryParamsSchema,
+  raptPillCloudErrorResponseSchema,
   raptPillCloudIngestRequestBodySchema,
   raptPillRegisterErrorResponseSchema,
   raptPillRegisterRequestBodySchema,
@@ -590,6 +591,7 @@ export type PublicRecipeOwnerResponse = z.infer<typeof publicRecipeOwnerResponse
 export type PublicRecipesFetchErrorResponse = z.infer<typeof publicRecipesFetchErrorResponseSchema>;
 export type PublicRecipesPageResponse = z.infer<typeof publicRecipesPageResponseSchema>;
 export type PublicRecipesQueryParams = z.infer<typeof publicRecipesQueryParamsSchema>;
+export type RaptPillCloudErrorResponse = z.infer<typeof raptPillCloudErrorResponseSchema>;
 export type RaptPillCloudIngestRequestBody = z.infer<typeof raptPillCloudIngestRequestBodySchema>;
 export type RaptPillRegisterErrorResponse = z.infer<typeof raptPillRegisterErrorResponseSchema>;
 export type RaptPillRegisterRequestBody = z.infer<typeof raptPillRegisterRequestBodySchema>;

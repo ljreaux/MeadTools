@@ -892,16 +892,22 @@
         "macos_note": "Wenn du macOS verwendest, kannst du <a>dieser Anleitung</a> folgen, um nicht signierte Apps zuzulassen.",
         "warning": "Die MeadTools Pill App steht unten zum Download bereit. Sie ist nicht signiert, daher wird dein System dich beim ersten Öffnen warnen.",
         "cloud": {
-            "description": "MeadTools unterstützt die RAPT Pill über die RAPT Cloud Custom Web Hooks.",
-            "importantNote": "WICHTIGER HINWEIS: Du MUSST für dein Gerät einen eindeutigen (für dich) Gerätenamen vergeben. Damit kannst du diesen Webhook für alle deine RAPT Pill-Geräte wiederverwenden.",
+            "description": "Verbinde deine RAPT Pill über einen Custom-Datenstream in RAPT Brew.",
+            "importantNote": "Gib jedem deiner Geräte einen eindeutigen Namen. Die Cloud-URL enthält deinen privaten Hydrometer-Token; halte ihn geheim.",
             "payloadTitle": "Nutzlast",
             "portalLinkText": "RAPT Portal",
             "steps": {
-                "step1": "Gehe im RAPT Portal zu My Account → Web Hooks.",
-                "step2": "Klicke oben auf die Schaltfläche 'Create New Web Hook'.",
-                "step3": "Name und Description sind optionale (aber empfohlene) Angaben. Kopiere die untenstehende Cloud-URL und setze die Methode auf POST.",
-                "step4": "Stelle deine Temperatureinheiten ein, vergewissere dich, dass dein Token erzeugt wurde, und kopiere die untenstehende Payload in den Tab 'Payload'.",
-                "step5": "Füge dein Gerät im Tab 'Devices' hinzu."
+                "step1": "Öffne <a>Meine Integrationen in RAPT Brew</a> und finde RAPT Brew Data Stream.",
+                "step2": "Erstelle einen Custom-Stream und wähle deine RAPT Pill aus.",
+                "step3": "Erstelle deinen MeadTools-Token unten und kopiere dann die vollständige Cloud-URL in das Feld für die Stream-URL. Die Methode ist POST.",
+                "step4": "Verwende die Standard-Telemetrie-Payload. Eine eigene Payload oder zusätzliche Header sind nicht nötig.",
+                "step5": "Speichere den Stream, bevor du auf 'Test senden' klickst. Eine erfolgreiche Zustellung erscheint in deinem MeadTools Hydrometer-Dashboard. RAPT kann Beispielmesswerte senden, wenn das Gerät noch keine Daten hat."
+            },
+            "notice": {
+                "title": "Aktualisiere deine RAPT Cloud Pill-Integration",
+                "description": "RAPT hat seine Cloud-Integrationen geändert. Wenn du RAPT Pills mit Cloud-Anbindung in MeadTools verwendest, aktualisiere jeden Stream mit den neuen Einrichtungsschritten, damit die Messwerte weiterfließen.",
+                "setupLink": "Einrichtung aktualisieren",
+                "dontShowAgain": "Nicht mehr anzeigen"
             }
         },
         "tabs": {
