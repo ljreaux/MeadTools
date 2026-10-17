@@ -158,8 +158,36 @@ const hydrometerIngestObjectSchema = z.object({
   interval: z.number().optional(),
 });
 export const hydrometerIngestRequestBodySchema = hydrometerIngestObjectSchema;
-export const raptPillCloudIngestRequestBodySchema =
-  hydrometerIngestObjectSchema;
+const raptCloudTelemetrySchema = hydrometerIngestObjectSchema.omit({
+  token: true,
+  name: true,
+});
+export const raptPillCloudIngestRequestBodySchema = z.union([
+  z.object({
+    token: z.string().optional(),
+    name: z.string(),
+    angle: z.number().optional(),
+    temperature: z.number(),
+    temp_units: z.enum(["F", "C"]).optional(),
+    battery: z.number().optional(),
+    gravity: z.number(),
+    interval: z.number().optional(),
+  }),
+  z.object({
+    event: z.literal("telemetry"),
+    name: z.string().min(1),
+    token: z.string().optional(),
+    deviceId: z.string().optional(),
+    deviceType: z.string().optional(),
+    timestamp: z.string().optional(),
+    data: raptCloudTelemetrySchema,
+  }),
+]);
+export const raptPillCloudErrorResponseSchema = errorEnum([
+  "Missing token",
+  "Invalid token",
+  "Invalid payload",
+]);
 export const raptPillRegisterRequestBodySchema = z.object({
   token: z.string(),
   name: z.string(),

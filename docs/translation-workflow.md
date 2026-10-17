@@ -74,6 +74,26 @@ held. For a migration exception, compatible Web code may already be deployed,
 but its German follow-up remains pending. Investigate Weblate's component and
 add-on activity before retrying or bypassing the gate.
 
+## Isolated production hotfixes
+
+When an urgent fix must ship from `main` without pending `preview` features,
+keep the production branch based on `main`. Bring only the fix's English
+source and code changes into `preview` through a separate PR so the existing
+Weblate webhook and translation add-on run normally. The preview build still
+waits for its German follow-up.
+
+After Weblate pushes that follow-up, transfer only the German keys changed by
+the hotfix into the main-based hotfix branch, recording the source Weblate
+commit. Do not copy the whole preview locale or merge preview into main. These
+are generated suggestions; leave their Weblate review state unchanged and use
+the normal German review queue. Human corrections still use a German-only PR
+to `preview`. Carry any later corrections for the shipped hotfix into `main`
+through another isolated, reviewed PR.
+
+The normal release gate and bug-only hotfix procedure still apply. Do not
+reconfigure Weblate to track `main`, bypass translation build deferral, or
+rewrite unrelated approved German strings for a hotfix.
+
 ## German review flow
 
 The queue issue links to a saved Weblate filter for all German strings below

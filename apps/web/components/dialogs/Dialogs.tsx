@@ -2,6 +2,7 @@ import SupportDialog from "./SupportDialog";
 import TutorialDialog from "./TutorialDialog";
 import TaplistReleaseBanner from "./TaplistDialog";
 import BrewTrackerDialog from "./BrewTrackerDialog";
+import RaptCloudUpdateBanner from "./RaptCloudUpdateBanner";
 
 function Dialogs() {
   return (
@@ -10,6 +11,7 @@ function Dialogs() {
       <TaplistReleaseBanner />
       <TutorialDialog />
       <BrewTrackerDialog />
+      <RaptCloudUpdateBanner />
     </>
   );
 }

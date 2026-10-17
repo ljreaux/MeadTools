@@ -131,3 +131,8 @@ Do not edit `src/contracts.ts` or `src/zod/openapi-aliases.ts` by hand; both are
 generated. The package's domain subpaths export the runtime schemas directly,
 while `@meadtools/api-contract/contracts` retains the existing TypeScript type
 surface for consumers.
+
+The RAPT Brew Stream compatibility update adds optional query-token authentication
+to `/hydrometer/rapt-pill/cloud` and accepts nested telemetry envelopes alongside
+legacy flat payloads. Its 400 response also covers invalid payloads. The parity
+test normalizes these approved route changes before comparing earlier paths.

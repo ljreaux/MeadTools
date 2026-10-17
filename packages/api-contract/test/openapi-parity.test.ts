@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "40223456f81bcb07e8552cd3803c972094054d7cdd7af962b9cb3980750b8400";
+  "405a8c47a44863f74045a4d3eddab7e42000a65b4b3c49e78b0c4a39d2a5dc4b";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -45,10 +45,22 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
     paths: Record<string, {
       get?: { responses?: Record<string, unknown> };
-      post?: { responses?: Record<string, unknown> };
+      post?: { description?: string; parameters?: unknown[]; responses?: Record<string, unknown> };
     }>;
   };
   const pathsWithoutApprovedAdditions = structuredClone(document.paths);
+  // Brew Streams add query authentication and envelope validation to this route.
+  const raptCloud = pathsWithoutApprovedAdditions["/hydrometer/rapt-pill/cloud"]?.post;
+  if (raptCloud) {
+    raptCloud.description = "Intended for RAPT Pill cloud integrations to post readings to MeadTools. Writes a hydrometer log using the user's hydrometer token. Celsius temperatures are converted to Fahrenheit before storage.";
+    raptCloud.parameters = [];
+    if (raptCloud.responses) {
+      raptCloud.responses["400"] = {
+        description: "Bad Request",
+        content: { "application/json": { schema: { $ref: "#/components/schemas/HydrometerAuthErrorResponse" } } },
+      };
+    }
+  }
   if (pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.get?.responses) {
     pathsWithoutApprovedAdditions["/brews/{brew_id}"].get.responses["404"] = {
       description: "Not Found",

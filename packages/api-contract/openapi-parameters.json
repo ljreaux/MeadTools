@@ -786,5 +786,16 @@
       "required": true,
       "example": "123"
     }
+  ],
+  "POST /hydrometer/rapt-pill/cloud": [
+    {
+      "in": "query",
+      "name": "token",
+      "schema": {
+        "type": "string"
+      },
+      "required": false,
+      "description": "Hydrometer token; required unless supplied in the body."
+    }
   ]
 }
