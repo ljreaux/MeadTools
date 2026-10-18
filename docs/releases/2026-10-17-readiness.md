@@ -36,6 +36,12 @@ cloud-job instructions, and per-month record template agree on the flow.
 These repository changes take effect after their reviewed PR merges to preview.
 No production gate was opened or release PR armed during preflight.
 
+The first PR CI run exposed SDK 57 patch drift in the existing Mobile
+compatibility check. The three requested Expo/UI/Router patch versions and
+corresponding root versions/lockfile were aligned. Local dependency validation,
+Mobile typecheck, 12 Mobile runtime tests, and Android preview export pass;
+no EAS or production Mobile build was dispatched.
+
 ## Evidence to collect during the first monthly cycle
 
 - October 30: create/update notes and record; review the final head/base after
