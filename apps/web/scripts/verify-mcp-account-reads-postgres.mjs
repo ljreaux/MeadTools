@@ -12,7 +12,7 @@ Object.assign(process.env, {
 });
 const { default: prisma } = await import("../lib/prisma.ts");
 const { createAccountReadAdapter } =
-  await import("../lib/mcp/account-read-adapter.ts");
+  await import("../lib/account-read-adapter.ts");
 const { executeMcpAgentTool, executeRecipeAgentTool } =
   await import("@meadtools/recipe-agent");
 
@@ -101,6 +101,17 @@ try {
             : null;
     await prisma.$executeRaw`INSERT INTO brew_entries (id, brew_id, user_id, datetime, type, note, data) VALUES (${id}::uuid, ${brew.id}::uuid, ${owner.id}, ${at}::timestamptz, 'NOTE', 'Offline note', ${JSON.stringify(data)}::jsonb)`;
   }
+  const sensorIds = Array.from({ length: 4 }, () => randomUUID()).sort();
+  for (const [n, sensorId] of sensorIds.entries()) {
+    const at = n < 2 ? "2026-10-14T00:00:00.123455Z" : "2026-10-14T00:00:00.123456Z";
+    await prisma.$executeRaw`INSERT INTO logs (id, brew_id, datetime, angle, temperature, temp_units, battery, gravity, interval, calculated_gravity) VALUES (${sensorId}::uuid, ${brew.id}::uuid, ${at}::timestamptz, 45, 20, 'C', 80, 1.01, 900, 1.012)`;
+  }
+  for (const [at, measured, derived] of [
+    ["2026-10-12T00:00:00Z", "NaN", null],
+    ["2026-10-15T00:00:00Z", "Infinity", "NaN"]
+  ]) {
+    await prisma.$executeRaw`INSERT INTO logs (id, brew_id, datetime, angle, temperature, temp_units, battery, gravity, interval, calculated_gravity) VALUES (${randomUUID()}::uuid, ${brew.id}::uuid, ${at}::timestamptz, 45, 20, 'C', 80, ${measured}::real, 900, ${derived}::real)`;
+  }
   const read = async (name, input, account = owner) =>
     executeMcpAgentTool(name, input, {
       accountReadAdapter: createAccountReadAdapter(account.id)
@@ -137,6 +148,22 @@ try {
     entries:
       await prisma.$queryRaw`SELECT id, datetime::text, data, note FROM brew_entries WHERE brew_id = ${brew.id}::uuid ORDER BY id`
   });
+  const sensors = await collect("get_brew_sensor_history", { id: brew.id,
+    from: "2026-10-13T19:00:00.123455-05:00", to: "2026-10-14T00:00:00.123456Z" });
+  assert.deepEqual(sensors.map(sample => sample.id), [...sensorIds].reverse());
+  assert.equal(sensors[0].datetime, "2026-10-14T00:00:00.123456Z");
+  assert.equal(sensors[2].datetime, "2026-10-14T00:00:00.123455Z");
+  assert.doesNotMatch(JSON.stringify(sensors), /device_id|battery|angle/);
+  const compact = await read("summarize_brew_sensor_history", { id: brew.id });
+  assert.equal(compact.status, "ok");
+  assert.equal(compact.result.sampleCount, 6);
+  assert.equal(compact.result.measured.validCount, 4);
+  assert.equal(compact.result.deviceCalculated.validCount, 4);
+  assert.equal(compact.result.repeatedTimestamps, 2);
+  assert.equal(compact.result.gapsOverOneHour, 2);
+  assert.equal(compact.result.firstSampleAt, "2026-10-12T00:00:00.000000Z");
+  assert.equal(compact.result.measured.firstAt, "2026-10-14T00:00:00.123455Z");
+  assert.ok(JSON.stringify(compact).length < 1500);
   const before = await recordState();
   assert.deepEqual(
     (await collect("list_recipes", { query: "Duplicate" })).map((r) => r.id),
@@ -170,15 +197,31 @@ try {
   for (const [name, id] of [
     ["get_brew", brews[3].id],
     ["get_brew_timeline", brews[3].id],
+    ["get_brew_sensor_history", brews[3].id],
+    ["summarize_brew_sensor_history", brews[3].id],
     ["get_recipe", recipes[3].id],
     ["get_brew", randomUUID()],
     ["get_recipe", 2147483647]
-  ])
-    assert.deepEqual(await read(name, { id }), { status: "not_found" });
+  ]) {
+    const result = await read(name, { id });
+    assert.equal(result.status, "not_found");
+    assert.equal(result.dataAvailability, "unknown");
+    assert.deepEqual(result.requestedRecord, {
+      kind: name === "get_recipe" ? "recipe" : "brew", id
+    });
+  }
   const saved = await read("get_recipe", { id: recipes[0].id });
   const batch = await read("get_brew", { id: brew.id });
   assert.equal(saved.status, "ok");
   assert.equal(batch.status, "ok");
+  assert.equal(batch.result.latestHydrometerReading.measuredGravitySg, null);
+  assert.equal(batch.result.latestHydrometerReading.derivedGravitySg, null);
+  assert.equal(batch.result.latestHydrometerReading.datetime, "2026-10-15T00:00:00.000000Z");
+  const allSensors = await collect("get_brew_sensor_history", { id: brew.id });
+  assert.equal(allSensors.length, 6);
+  assert.equal(allSensors.filter(sample => sample.measuredGravitySg === null).length, 2);
+  assert.equal(allSensors.filter(sample => sample.derivedGravitySg === null).length, 2);
+
   assert.equal(saved.result.recipe.visibility, "private");
   assert.equal(
     saved.result.recipe.appUrl,
@@ -203,11 +246,12 @@ try {
     "Account reads must leave all stored records unchanged"
   );
   console.log(
-    "PostgreSQL MCP account reads passed: ownership, private recipes, all five tools, multi-page lists/history, microseconds, offsets, hidden/null legacy entries, snapshot isolation, derived results, links, unchanged records."
+    "PostgreSQL MCP account reads passed: ownership, private recipes, all seven tools, multi-page lists/history, microseconds, offsets, hidden/null legacy entries, snapshot isolation, derived results, links, unchanged records."
   );
 } finally {
   // Delete only the synthetic accounts' fixtures, even if an assertion fails.
   const userIds = users.map((user) => user.id);
+  await prisma.logs.deleteMany({ where: { brews: { user_id: { in: userIds } } } });
   await prisma.brews.deleteMany({ where: { user_id: { in: userIds } } });
   await prisma.recipes.deleteMany({ where: { user_id: { in: userIds } } });
   await prisma.users.deleteMany({ where: { id: { in: userIds } } });

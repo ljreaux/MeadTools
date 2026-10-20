@@ -9,7 +9,7 @@ test("account reads require the separate known capability", () => {
   for (const invalid of ["", "mcp:account:read", "mcp:tools mcp:write", "mcp:tools mcp:tools", "mcp:tools ", null]) {
     assert.equal(normalizeMcpScope(invalid), null);
   }
-  assert.equal(mcpAccountReadToolNames.length, 5);
+  assert.equal(mcpAccountReadToolNames.length, 7);
   for (const name of mcpAccountReadToolNames) assert.equal(isMcpAccountReadTool(name), true);
   assert.equal(isMcpAccountReadTool("search_ingredients"), false);
 });

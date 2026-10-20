@@ -1,7 +1,7 @@
 # Hosted chatbot architecture
 
 > **Canonical current-state document.** This document describes the hosted
-> chatbot implemented on `feat/chatbot-provider-pivot`. Code, Prisma schema,
+> chatbot in this repository. Code, Prisma schema,
 > and committed migrations remain the source of truth when this document and
 > implementation differ. Historical plans, reviews, and validation exports are
 > evidence of decisions or test runs, not alternative architecture documents.
@@ -11,8 +11,9 @@
 MeadTools provides a private, authenticated recipe assistant for mead-focused
 work. It can help draft and refine recipes, discuss mead-brewing process and
 troubleshooting questions, retrieve MeadTools wiki guidance, route exact work
-to MeadTools calculators, and work from one explicitly selected recipe or
-brew. It is not a general-purpose assistant: clear non-mead requests are
+to MeadTools calculators, and find and read owned recipes and brews through
+shared account tools. It is not a general-purpose assistant: clear non-mead
+requests are
 rejected before a provider call.
 
 The feature is a controlled beta. A user must be active, the server-side chat
@@ -52,17 +53,19 @@ home of mead domain behavior.
 The server receives only the new client message. It reloads the bounded,
 owned transcript and latest structured draft from the selected thread, so a
 browser cannot replace history or draft state. Deterministic fast paths handle
-capability questions, off-topic refusal, the sparkling/stabilized/
-backsweetened safety conflict, a simple ABV calculation, and exact calculator
-routing without provider cost.
+capability questions, explicit off-topic refusal and draft reset without provider
+cost. Brewing calculations and calculator guidance stay in the model-led tool
+loop. Packaging conflicts add a warning while allowing a requested recipe draft
+to continue.
 
 For provider-backed work, the shared agent can use validated tools to:
 
 - build or explain a recipe draft and calculate a gravity target;
 - search MeadTools ingredient, additive, and yeast catalog data;
+- find/read owned recipes and brews and page through recorded brew history;
 - search the bundled wiki index and fetch a selected canonical wiki page; and
-- prepare, but never itself commit, a brew-entry proposal for the selected
-  owned brew.
+- prepare, but never itself commit, a brew-entry proposal for an
+  owned brew retrieved during the current turn.
 
 Recipe results are produced and validated by the shared workflow, not by
 model prose. User-supplied values take precedence over catalog defaults.
@@ -72,6 +75,18 @@ stabilization choice. Drafts can contain labelled assumptions/defaults, but a
 workflow returns focused missing-input or conflict information rather than
 silently changing fixed constraints. The system preserves the distinction
 between an explicit original-gravity target and an ABV-derived target.
+
+Incomplete and failed draft results return to the bounded model loop so catalog
+lookups or corrected arguments can resolve them. The model writes the final answer
+from tool results; there is no deterministic draft-answer renderer, forced tool
+sequence or argument rewrite. A successful draft replaces the active calculation
+snapshot immediately within that turn, so a later explanation uses the revised
+recipe. An incomplete or failed revision keeps the last successfully calculated
+snapshot available. Genuine fixed-amount conflicts require a user
+choice rather than an application rewrite of the amounts. The shared workflow
+accepts fully fixed compositions within a 1 mL display-volume tolerance, preserves
+explicit measurement bases, and retains six-decimal solved quantities. Practical
+display rounding does not alter the recipe used for calculation.
 
 The model may recommend a practical next step or ask a focused question, but
 it does not have a general web tool and cannot invoke arbitrary calculations.
@@ -86,8 +101,8 @@ notes as untrusted reference data rather than instructions.
 Known constraints are intentional: the assistant cannot guarantee that a
 generative answer is exhaustive; it may ask for necessary data rather than
 invent it; and exact calculations and packaging-safety decisions remain in the
-deterministic workflows/calculators. The hard sparkling + stabilization +
-fermentable-backsweetening conflict is answered before the provider. There is
+deterministic workflows/calculators. The sparkling + stabilization +
+fermentable-backsweetening conflict remains a prominent packaging warning. There is
 no public-recipe search or arbitrary public-record access tool. Prompts that
 say a draft is “inspired by” a public recipe are product-validation inputs, not
 authorization to fetch that recipe or expose its private data.
@@ -108,15 +123,25 @@ UI does not claim that drafting itself saved a recipe. The chat draft and the
 created recipe are separate at present; `chat_drafts.saved_recipe_id` is not
 written by the current save flow.
 
-For an attached recipe or brew, the picker first returns only safe ownership-
-scoped summaries. On a turn, the server re-authorizes the selected identifier
-and loads its full current state. A recipe supplies validated recipe data. A
-brew can supply stage, dates, volume, gravity, related recipe snapshot, and a
-bounded set of recent entries; free-form entry notes are marked untrusted.
-The selection applies to that user turn only and is recorded as a lightweight
-message-context reference, never silently reattached to later turns. A brew
-action is a reviewable proposal; the browser displays its payload and sends an
-existing ownership-checked brew-entry mutation only after the brewer confirms.
+Hosted chat and MCP advertise the same seven shared account-read tools. Hosted
+chat binds the database adapter to its authenticated chat user independently
+of MCP scope authorization. Every lookup and timeline page is owner-scoped;
+private recipes are included, with no arbitrary public-record browsing. Reads
+return shared validated inputs, complete derived estimates, calculation units,
+assumptions, and recorded reading/addition provenance. Missing/unsupported data
+is explicit; bounded history is not proof of stability or of absent additions.
+Saved advanced nutrient settings are readable but not editable through drafting.
+
+The picker remains an optional shortcut. It returns safe summaries, rechecks
+the selected ID's ownership, and supplies a minimal ID hint through the ordinary
+read tools. Its reference is recorded for that user turn only. There is no
+separate selected-context tool or forced attachment-first dispatch.
+
+A successful owned get_brew result binds the existing brew-action proposal for
+the current turn. A failed subsequent read clears that target; a prior turn,
+list result or picker hint cannot supply it. Proposals never save an entry. The
+browser shows the exact target/payload and invokes the existing ownership-checked
+mutation only after the brewer confirms.
 
 ## Private conversation persistence
 
@@ -156,17 +181,31 @@ is future data-retention work, not a configured retention period.
 
 ## Provider architecture and cost telemetry
 
-The active transport is direct OpenAI Responses API using the pinned model
-`gpt-5.4-mini-2026-03-17`. The pin is intentional: a model change requires a
-reviewed configuration/pricing change and validation, rather than
-an alias changing behavior at deployment time. The server requires the chat
+The active transport is direct OpenAI Responses API, defaulting to the tested
+`gpt-5.6-luna` model at medium reasoning. Luna currently exposes an undated
+identifier; this does not pin its behavior or lock its price. A monthly review
+checks official pricing and model notices against the immutable billing snapshot.
+Changing the configured model still requires reviewed pricing and validation.
+The server requires the chat
 enable switch and an OpenAI API key; the model may be overridden only through
-the documented, bounded configuration path. It sends `store: false`, keeps
+the documented, bounded configuration path. `CHATBOT_OPENAI_MODEL` selects the
+model, and `CHATBOT_REASONING_EFFORT` accepts `low` or `medium` (the default)
+for tool-bearing turns; titles remain tool-free with no reasoning. The Luna
+profile uses a separate immutable `gpt-5.6-luna` pricing version, included
+in the pricing sync and seed. Model overrides require matching active pricing
+and an approved evaluation. The historical mini price version remains available
+for an explicitly configured rollback.
+It sends `store: false`, keeps
 conversation state in MeadTools rather than OpenAI, sets a 60-second timeout,
 disables parallel tool calls, and maps provider errors to redacted
-customer-safe failures. Explicit calculated-draft requests force the
-`build_recipe_draft` function on their first provider dispatch; ordinary
-conversation and wiki/process requests retain automatic tool selection. It
+customer-safe failures. Recipe and yeast requests use automatic first-tool
+selection. A model answer is not followed by an application-injected prompt
+forcing a draft or adding recipe defaults. The shared policy requires fetched wiki evidence for process advice; the model
+chooses the search/fetch calls rather than application-injected routing. A
+saved-calculation walkthrough uses returned calculator facts and does not require
+extra wiki research merely because it mentions stabilizers. Hosted and MCP draft-tool schemas
+are generated from the shared workflow input, including finished-volume and
+fixed-versus-fill amount guidance. It
 does not automatically retry a completion, so a transport failure cannot
 conceal a duplicate model charge.
 
@@ -180,9 +219,11 @@ chat provider.
 
 Each turn is bounded by validated request size, provider input characters,
 tool calls, provider calls, per-completion output, combined output, and
-combined provider tokens. Defaults are 4,000 output tokens, seven tool calls,
-ten provider calls, 8,000 combined output tokens, 60,000 provider-input
-characters, and 60,000 combined provider tokens; overrides are clamped. A
+combined provider tokens. Defaults are 4,000 output tokens, twelve tool calls,
+fourteen provider calls, 8,000 combined output tokens, 60,000 provider-input
+characters, and 100,000 combined provider tokens; overrides are clamped. The
+cumulative token check runs between completions, so a final completion can cross
+that threshold. A
 first-thread title call is included in the turn’s measured provider usage.
 
 `chatbot_usage_events` records request id, user id, environment label, model,
@@ -339,6 +380,11 @@ historical runs. They may name Fireworks, browser-only persistence, or a model
 that is no longer active, so they cannot override this document or current
 code.
 
+The [#454 orchestration audit](hosted-chatbot-orchestration-audit.md) records
+retained layers, policy consolidation, selected-context completeness, scenario
+coverage and the limits of before/after evidence. No response-quality or
+real-model evaluation success is implied by deterministic checks.
+
 ## Explicit future work
 
 The following are not implemented and must not be presented as current
@@ -360,3 +406,27 @@ behavior:
 Future work must preserve the reusable domain boundary, server-side ownership
 checks, explicit mutation confirmation, provider-cost attribution, and
 versioned financial records described above.
+
+### Default minimal orchestration
+
+The model-led loop is the only hosted execution path following the approved
+provider comparisons. Guided orchestration and its configuration switch have
+been removed; stale `CHATBOT_ORCHESTRATION` values have no effect. The loop uses
+the same shared tools and server limits, passes tool arguments without hosted inference/merging,
+returns tool results to the model, and preserves its final answer. Authentication,
+owner-bound reads, schema/calculation validation, credits and confirmation remain
+in force. See [comparison results](chatbot-minimal-hosted-results.md),
+[multi-step tests](chatbot-multistep-evaluation.md), and
+[broader evaluation](chatbot-broader-evaluation.md) for evidence and limitations.
+Deployment defaults and remaining environment checks are recorded in
+[deployment configuration](chatbot-deployment-configuration.md).
+
+### Shared sensor history
+
+Both clients now advertise compact `summarize_brew_sensor_history` plus raw
+`get_brew_sensor_history`, separate from the manual
+`get_brew_timeline`. It reads owner-bound, paginated automatic samples with inclusive
+date windows. Measured versus device-derived gravity and partial coverage remain
+explicit. See [account reads](mcp-account-reads.md#automatic-sensor-history) for
+bounds, index migration, ownership and verification. Provider-led stability and
+comparison behavior still needs a separately approved live retest.

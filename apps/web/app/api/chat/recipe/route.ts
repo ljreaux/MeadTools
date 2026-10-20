@@ -18,6 +18,7 @@ import {
   runChatTurn,
   type ChatRequest,
 } from "@/lib/ai/chat-service";
+import { createAccountReadAdapter } from "@/lib/account-read-adapter";
 import { getChatbotConfig } from "@/lib/ai/chat-config";
 import {
   generateChatConversationTitleAfterProviderAttempt,
@@ -376,11 +377,13 @@ export async function POST(request: NextRequest) {
           request: chatRequest,
           maxOutputTokens: config.maxOutputTokens,
           maxToolCalls: config.maxToolCalls,
+          reasoningEffort: config.reasoningEffort,
           maxProviderCalls: config.maxProviderCalls,
           maxTotalOutputTokens: config.maxTotalOutputTokens,
           maxProviderInputCharacters: config.maxProviderInputCharacters,
           maxTotalProviderTokens: config.maxTotalProviderTokens,
           ...agentCatalogLookups,
+          accountReadAdapter: createAccountReadAdapter(access.userId),
           onEvent,
           onProviderAttempt: () => recordChatbotProviderAttempt({ requestId }),
           onUsage: (usage) => recordChatbotUsageProgress({ requestId, usage }),

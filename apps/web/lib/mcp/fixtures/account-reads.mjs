@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createAccountReadAdapter } from "../account-read-adapter.ts";
+import { createAccountReadAdapter } from "../../account-read-adapter.ts";
 import { createMeadToolsMcpServer } from "../server.ts";
 import {
   accountReadInputSchemas,
@@ -111,9 +111,50 @@ prisma.logs.findFirst = async ({ where, select }) => {
     temp_units: "C"
   };
 };
+const sensorRows = [
+  { id: id(42), datetime: "2026-10-14T00:00:00.123456Z", gravity: 1.009, calculated_gravity: 1.011, temperature: 20, temp_units: "C" },
+  { id: id(41), datetime: "2026-10-14T00:00:00.123456Z", gravity: 1.01, calculated_gravity: 1.012, temperature: 20, temp_units: "C" },
+  { id: id(40), datetime: "2026-10-14T00:00:00.123455Z", gravity: 1.02, calculated_gravity: 1.022, temperature: 20, temp_units: "C" },
+  { id: id(39), datetime: "2026-10-13T00:00:00.000000Z", gravity: 1.03, calculated_gravity: null, temperature: 19, temp_units: "C" },
+];
 prisma.$queryRaw = async (query) => {
   if (Array.isArray(query) || query.sql.includes("pg_advisory")) return [];
   reads++;
+  if (query.sql.includes("WITH latest AS")) {
+    assert.match(query.sql, /b.user_id = \? AND b.id = \?::uuid/);
+    assert.ok(query.values.includes(42));
+    assert.ok(query.values.includes(brew.id));
+    assert.match(query.sql, /INTERVAL '72 hours'/);
+    assert.doesNotMatch(query.sql, /device_id|battery|coefficients/);
+    const stats = { validCount: 0, minimum: null, maximum: null, first: null, last: null, firstAt: null, lastAt: null, range: null, netChange: null };
+    return [{ summary: { window: { from: null, to: null, basis: "latest_recorded_72_hours" },
+      coverage: "all_samples_in_window", sampleCount: 0, firstSampleAt: null, lastSampleAt: null, gravityUnit: "SG",
+      measured: stats, deviceCalculated: stats, maxGapSeconds: null, gapsOverOneHour: 0, repeatedTimestamps: 0,
+      correctionProvenance: "stored_device_calculation", stabilityAssessment: "not_assessed" } }];
+  }
+  if (query.sql.includes("FROM logs l")) {
+    assert.match(query.sql, /JOIN brews b ON b.id = l.brew_id/);
+    assert.match(query.sql, /b.user_id = \? AND b.id = \?::uuid/);
+    assert.equal(query.values[0], 42);
+    assert.equal(query.values[1], brew.id);
+    assert.match(query.sql, /ORDER BY l.datetime DESC, l.id DESC LIMIT/);
+    for (const column of ["gravity", "calculated_gravity", "temperature"])
+      assert.ok(query.sql.includes(`CASE WHEN l.${column} > '-Infinity'`));
+    assert.match(query.sql, /HH24:MI:SS.US/);
+    assert.doesNotMatch(query.sql, /device_id|battery|coefficients/);
+    const limit = query.values.at(-1);
+    assert.ok(limit <= 21);
+    let selected = sensorRows;
+    if (query.sql.includes("l.datetime >=")) {
+      const from = query.values[2];
+      selected = selected.filter(row => Date.parse(row.datetime) >= Date.parse(from));
+    }
+    if (query.sql.includes("(l.datetime, l.id) <")) {
+      const at = query.values.at(-3), key = query.values.at(-2);
+      selected = selected.filter(row => row.datetime < at || row.datetime === at && row.id < key);
+    }
+    return selected.slice(0, limit);
+  }
   assert.match(query.sql, /JOIN brews b ON b.id = e.brew_id/);
   assert.match(query.sql, /b.user_id = \? AND b.id = \?::uuid/);
   assert.equal(query.values[0], 42);
@@ -212,6 +253,17 @@ assert.equal(await adapter.getBrew(id(99)), null);
 assert.equal(await adapter.getRecipe(99), null);
 assert.equal(await adapter.getBrewTimeline({ id: id(99), limit: 2 }), null);
 
+const sensorFirst = await adapter.getBrewSensorHistory({ id: brew.id, limit: 1 });
+assert.deepEqual(sensorFirst.rows, sensorRows.slice(0, 1));
+assert.equal(sensorFirst.hasMore, true);
+const sensorSecond = await adapter.getBrewSensorHistory({ id: brew.id, limit: 3,
+  cursor: encodeAccountCursor({ id: sensorRows[0].id, at: sensorRows[0].datetime }) });
+assert.deepEqual(sensorSecond.rows, sensorRows.slice(1));
+assert.equal(sensorSecond.hasMore, false);
+const sensorWindow = await adapter.getBrewSensorHistory({ id: brew.id, limit: 3, from: "2026-10-14T00:00:00Z" });
+assert.equal(sensorWindow.rows.length, 3);
+assert.equal(await adapter.getBrewSensorHistory({ id: id(99), limit: 2 }), null);
+
 for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
   const server = createMeadToolsMcpServer(42, scope);
   const client = new Client({ name: "offline-account-reads", version: "1" });
@@ -224,12 +276,14 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
 
   assert.equal(
     (await client.listTools()).tools.length,
-    scope.includes("account") ? 12 : 7
+    scope.includes("account") ? 14 : 7
   );
   for (const [name, args] of [
     ["list_brews", {}],
     ["get_brew", { id: brew.id }],
     ["get_brew_timeline", { id: brew.id, limit: 2 }],
+    ["get_brew_sensor_history", { id: brew.id, limit: 2 }],
+    ["summarize_brew_sensor_history", { id: brew.id }],
     ["list_recipes", { limit: 2 }],
     ["get_recipe", { id: recipe.id }]
   ]) {
@@ -253,7 +307,10 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
         assert.equal(summary.appUrl, `${expectedOrigin}/recipes/${recipe.id}`);
         assert.equal(summary.visibility, "private");
       }
-      if (["get_recipe", "get_brew", "get_brew_timeline"].includes(name)) {
+      if (["get_brew_timeline", "get_brew_sensor_history", "summarize_brew_sensor_history"].includes(name)) {
+        assert.equal(result.structuredContent.result.brewId, brew.id);
+      }
+      if (["get_recipe", "get_brew", "get_brew_timeline", "get_brew_sensor_history"].includes(name)) {
         const guidance = result.structuredContent.result.relatedGuidance;
         assert.equal(
           guidance.referenceStatus,
@@ -262,7 +319,8 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
         assert.ok(
           guidance.references.length > 0 && guidance.references.length <= 5
         );
-        assert.match(guidance.adviceWorkflow, /fetch_wiki_page/);
+        assert.equal("adviceWorkflow" in guidance, false);
+        assert.equal("recommendedTools" in guidance, false);
       }
 
       assert.ok(reads > previousReads);
@@ -275,6 +333,8 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
     for (const [name, missingId] of [
       ["get_brew", id(99)],
       ["get_brew_timeline", id(99)],
+      ["get_brew_sensor_history", id(99)],
+      ["summarize_brew_sensor_history", id(99)],
       ["get_recipe", 99]
     ]) {
       const result = await client.callTool({
@@ -282,7 +342,10 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
         arguments: { id: missingId }
       });
       assert.equal(result.isError, true);
-      assert.deepEqual(result.structuredContent, { status: "not_found" });
+      assert.equal(result.structuredContent.status, "not_found");
+      assert.equal(result.structuredContent.dataAvailability, "unknown");
+      assert.deepEqual(result.structuredContent.requestedRecord, { kind: name === "get_recipe" ? "recipe" : "brew", id: missingId });
+      assert.match(result.structuredContent.message, /does not establish an empty history/);
       assert.doesNotMatch(JSON.stringify(result), /appUrl|Owned|Private/);
     }
     for (const [count, field, pattern] of [
@@ -306,6 +369,6 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
   await client.close();
   await server.close();
 }
-assert.equal(usage.length, 8);
+assert.equal(usage.length, 12);
 assert.deepEqual({ brew, recipe, rows }, before);
 await prisma.$disconnect();

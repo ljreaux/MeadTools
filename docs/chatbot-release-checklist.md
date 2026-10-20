@@ -30,6 +30,7 @@ These chatbot-limit variables are already active through safe code defaults;
 they are optional overrides, not a setup requirement:
 
 - `CHATBOT_OPENAI_MODEL`
+- `CHATBOT_REASONING_EFFORT`
 - `CHATBOT_MAX_OUTPUT_TOKENS`
 - `CHATBOT_MAX_TOOL_CALLS`
 - `CHATBOT_MAX_PROVIDER_CALLS`
@@ -39,6 +40,14 @@ they are optional overrides, not a setup requirement:
 
 Only add an override when we have a deliberate policy change to make. Record
 the chosen value and reason in the release note/operations log.
+
+The tested default profile is Luna (`gpt-5.6-luna`), medium reasoning and minimal
+orchestration. Before promotion, verify the Luna price migration succeeded and
+review model/reasoning overrides in Production, Preview and branch-specific
+settings. Unset overrides use the code defaults; an existing mini model override
+continues to take precedence. Guided orchestration is removed and obsolete
+`CHATBOT_ORCHESTRATION` settings have no effect; remove them during routine cleanup.
+See [deployment configuration](chatbot-deployment-configuration.md).
 
 ## Safeguards already in the request path
 

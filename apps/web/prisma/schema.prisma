@@ -107,6 +107,8 @@ model logs {
   // leaving logs alone if a brew is deleted:
   brews   brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   devices devices? @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([brew_id, datetime, id])
 }
 
 model recipes {

@@ -14,7 +14,7 @@ test("MCP instructions and detail tools direct advice through fetched, cited wik
     mcpServerInstructions,
     ...mcpAgentToolDefinitions
       .filter((tool) =>
-        ["get_recipe", "get_brew", "get_brew_timeline"].includes(tool.name)
+        ["get_recipe", "get_brew", "get_brew_timeline", "get_brew_sensor_history", "summarize_brew_sensor_history"].includes(tool.name)
       )
       .map((tool) => tool.description)
   ]) {
@@ -89,4 +89,32 @@ test("returned stabilization reference can be fetched through the existing MCP w
   assert.deepEqual(fetched, [reference.url]);
   if (execution.status === "ok" && "url" in execution.result)
     assert.equal(execution.result.url, reference.url);
+});
+
+test("readiness assessments share the fetched-evidence rule with hosted and MCP", async () => {
+  const { hostedAgentPolicy, brewingProcessEvidenceInstruction } = await import("../src/index");
+  assert.equal(typeof brewingProcessEvidenceInstruction, "string");
+  assert.match(brewingProcessEvidenceInstruction, /readiness to rack/);
+  assert.match(brewingProcessEvidenceInstruction, /not confirmed/);
+  assert.match(brewingProcessEvidenceInstruction, /cite.*canonical URL/);
+  assert.ok(hostedAgentPolicy.instructions.some(text => text.includes(brewingProcessEvidenceInstruction)));
+  assert.ok(mcpServerInstructions.includes(brewingProcessEvidenceInstruction));
+});
+
+
+test("hosted and MCP distinguish dated gravity change from current fermentation activity", async () => {
+  const { hostedAgentPolicy, brewingObservationInstruction } = await import("../src/index");
+  assert.match(brewingObservationInstruction, /not ongoing fermentation at the last reading or now/);
+  assert.ok(hostedAgentPolicy.instructions.some(text => text.includes(brewingObservationInstruction)));
+  assert.ok(mcpServerInstructions.includes(brewingObservationInstruction));
+});
+
+test("failed-lookup recovery and plain-language presentation are shared without adding hosted instruction entries", async () => {
+  const { hostedAgentPolicy, accountReadPresentationInstruction } = await import("../src/index");
+  assert.match(accountReadPresentationInstruction, /check requestedRecord against the exact IDs/);
+  assert.match(accountReadPresentationInstruction, /I could not retrieve the brew details/);
+  assert.match(accountReadPresentationInstruction, /keep internal tool names, IDs and scratchwork out/);
+  assert.ok(hostedAgentPolicy.instructions.some(text => text.includes(accountReadPresentationInstruction)));
+  assert.ok(mcpServerInstructions.includes(accountReadPresentationInstruction));
+  assert.equal(hostedAgentPolicy.instructions.length, 6);
 });

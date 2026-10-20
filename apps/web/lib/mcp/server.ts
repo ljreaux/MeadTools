@@ -14,7 +14,7 @@ import {
   mcpAgentToolNames,
   mcpServerInstructions
 } from "@meadtools/recipe-agent";
-import { createAccountReadAdapter } from "@/lib/mcp/account-read-adapter";
+import { createAccountReadAdapter } from "@/lib/account-read-adapter";
 import { agentCatalogLookups } from "@/lib/ai/agent-catalog-lookups";
 import { executeLimitedMcpTool, McpToolLimitError } from "@/lib/mcp/usage";
 
