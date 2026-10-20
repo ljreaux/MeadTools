@@ -153,7 +153,7 @@ export function PackagedStagePanel({
     prefill.volumeL
   ]);
 
-  const useBottlingVolume = (volumeL: number | null) => {
+  const applyBottlingVolume = (volumeL: number | null) => {
     if (typeof volumeL !== "number" || volumeL <= 0)
       return;
     const value = bottling.volumeUnits === "gallons"
@@ -343,7 +343,7 @@ export function PackagedStagePanel({
                         size="sm"
                         variant="outline"
                         type="button"
-                        onClick={() => useBottlingVolume(currentVolume)}
+                        onClick={() => applyBottlingVolume(currentVolume)}
                         disabled={!canEdit}
                       >
                         {t("brews.packaged.useRecordedVolume")}
@@ -353,7 +353,7 @@ export function PackagedStagePanel({
                           size="sm"
                           variant="outline"
                           type="button"
-                          onClick={() => useBottlingVolume(plannedBottlingVolumeL)}
+                          onClick={() => applyBottlingVolume(plannedBottlingVolumeL)}
                           disabled={!canEdit}
                         >
                           {t("brews.packaged.useRecipeEstimate")}

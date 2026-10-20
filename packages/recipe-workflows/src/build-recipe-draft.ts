@@ -90,9 +90,13 @@ const draftIngredientSchema = z.object({
   catalogId: z.number().int().positive().optional(),
   category: z.string().trim().min(1).max(80).optional(),
   brix: z.number().min(0).max(100).optional(),
-  amount: ingredientAmountSchema.optional(),
+  amount: ingredientAmountSchema.optional().describe(
+    "Supply an amount for a fixed ingredient. Omit it when the calculator should solve the quantity. An explicit fill_liquid amount is a fixed constraint; it is not the batch volume. Use role fixed to preserve a supplied amount.",
+  ),
   secondary: z.boolean().optional(),
-  role: z.enum(["fixed", "adjustable_fermentable", "fill_liquid"]).optional(),
+  role: z.enum(["fixed", "adjustable_fermentable", "fill_liquid"]).optional().describe(
+    "fixed preserves the supplied amount. adjustable_fermentable solves one primary fermentable for the gravity/ABV target; omit its amount. fill_liquid fills the remaining volume; omit its amount. For example, one gallon finished means batchVolume 1 gal, not one gallon of Water plus other ingredients.",
+  ),
 });
 
 const additiveSchema = z.object({
@@ -134,11 +138,15 @@ export const buildRecipeDraftInputSchema = z
   .object({
     name: z.string().trim().min(1).max(160).optional(),
     style: z.string().trim().min(1).max(80).optional(),
-    batchVolume: batchVolumeSchema.optional(),
+    batchVolume: batchVolumeSchema.optional().describe(
+      "Requested finished batch volume, including secondary fruit, sugar and calculated backsweetening. When adapting a saved recipe, use its total finished volume rather than primary volume. Do not also assign this volume as a fixed water amount.",
+    ),
     /** Finished-batch ABV target; normalized to an OG by the shared workflow. */
     targetAbv: z.number().finite().min(0).max(30).optional(),
     targetOriginalGravity: z.number().min(1.001).max(1.2).optional(),
-    fermentationFinalGravity: z.number().min(0.97).max(1.2).optional(),
+    fermentationFinalGravity: z.number().min(0.97).max(1.2).optional().describe(
+      "Fermentation FG before secondary additions or backsweetening. Finished sweetness belongs in backsweetening.targetFinalGravity.",
+    ),
     ingredients: z.array(draftIngredientSchema).max(30).default([]),
     additives: z.array(additiveSchema).max(20).default([]),
     deferredAdditives: z.array(deferredAdditiveSchema).max(20).default([]),
@@ -367,12 +375,20 @@ function fixedIngredientVolumeConflict(
     );
     const requestedVolumeL =
       input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
-    if (fixedVolumeL < requestedVolumeL - 0.000001) return undefined;
+    // A fully specified recipe needs validation, not space for a solver.
+    // Allow 1 mL for displayed metric totals such as 4.219 L; never change a
+    // supplied ingredient amount to reconcile that display rounding.
+    if (fixedVolumeL <= requestedVolumeL + 0.001) return undefined;
     const names = input.ingredients
       .map((ingredient) => ingredient.name)
       .join(", ");
+    const fillConflict = explicitFillAmountConflict(input);
+    if (fillConflict) return fillConflict;
     const fruitMass = input.ingredients.filter(isSolidFruitMassIngredient);
-    if (fruitMass.length > 0) {
+    const fruitVolumeL = fruitMass.reduce(
+      (total, ingredient) => total + toSuppliedIngredient(ingredient).volumeL, 0,
+    );
+    if (fruitVolumeL >= requestedVolumeL) {
       return `The stated fruit load (${fruitMass.map((ingredient) => ingredient.name).join(", ")}) contributes enough expected juice volume to fill the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its juice still affects finished volume and gravity. Reduce the fruit load or choose a larger finished batch volume before calculating the remaining fermentables.`;
     }
     return `The fixed ingredient${input.ingredients.length === 1 ? "" : "s"} (${names}) already use the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left to reconcile the supplied fermentables with the requested gravity target. Reduce a fixed liquid or fermentable amount, or choose a larger finished batch volume.`;
@@ -380,6 +396,14 @@ function fixedIngredientVolumeConflict(
     // Missing catalog data is handled by the normal intake questions.
     return undefined;
   }
+}
+
+function explicitFillAmountConflict(input: Pick<BuildRecipeDraftInput, "ingredients">): string | undefined {
+  const explicitFill = input.ingredients.filter(
+    ingredient => ingredient.role === "fill_liquid" && ingredient.amount,
+  );
+  if (explicitFill.length === 0) return undefined;
+  return `${explicitFill.map(ingredient => ingredient.name).join(", ")} has an explicit amount, so it is fixed rather than an adjustable top-up. That fixed amount leaves insufficient room for the other ingredients and the requested gravity in the finished batch. If this was intended as a calculated top-up, omit its amount so MeadTools can fill the remaining volume. Preserve any amount specified by the brewer; ask whether that amount may change or a larger finished batch volume is acceptable.`;
 }
 
 type CompleteBuildRecipeDraftInput = Omit<
@@ -614,20 +638,6 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
       prompt:
         "Which fermentables and ingredient additions should the draft include, and which ones belong in primary versus secondary?",
       answerType: "object",
-    });
-  }
-
-  if (
-    input.targetAbv !== undefined &&
-    input.targetOriginalGravity === undefined &&
-    input.fermentationFinalGravity === undefined
-  ) {
-    questions.push({
-      id: "fermentation_final_gravity",
-      field: "fermentationFinalGravity",
-      prompt:
-        "What fermentation final gravity should MeadTools use for this ABV target?",
-      answerType: "number",
     });
   }
 
@@ -872,6 +882,8 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       );
     }
     if (fillVolumeL < 0) {
+      const fillConflict = explicitFillAmountConflict(input);
+      if (fillConflict) throw new Error(fillConflict);
       const fixedPrimaryNames = fixedPrimary
         .filter((ingredient) => ingredient.volumeL > 0)
         .map((ingredient) => ingredient.name)
@@ -879,13 +891,24 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       const fixedPrimaryFruit = fixedPrimary.filter(
         isSolidFruitMassSuppliedIngredient,
       );
-      if (fixedPrimaryFruit.length > 0) {
+      if (
+        fixedPrimaryFruit.length > 0 &&
+        (fixedPrimaryFruit.length === fixedPrimary.length ||
+          fixedPrimaryFruit.reduce(
+            (total, ingredient) => total + ingredient.volumeL, 0,
+          ) >= desiredPrimaryVolumeL)
+      ) {
         throw new Error(
           `The stated primary fruit load (${fixedPrimaryFruit.map((ingredient) => ingredient.name).join(", ")}) leaves no liquid room in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its expected juice volume still contributes to the batch. Reduce the primary fruit load or choose a larger finished batch volume.`,
         );
       }
+      if (fixedPrimaryVolumeL >= desiredPrimaryVolumeL) {
+        throw new Error(
+          `The fixed primary ingredients (${fixedPrimaryNames || "provided liquid"}) leave no room for ${adjustable.name} and ${fillLiquid?.name ?? "water"} in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch after secondary additions. Reduce a fixed liquid ingredient or choose a larger finished batch volume; lowering the ABV target alone cannot resolve this volume conflict.`,
+        );
+      }
       throw new Error(
-        `The fixed primary ingredient${fixedPrimaryNames.includes(",") ? "s" : ""} (${fixedPrimaryNames || "provided liquid"}) already use${fixedPrimaryNames.includes(",") ? "" : "s"} the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. Reduce a fixed liquid ingredient or choose a larger batch; lowering the ABV target alone cannot resolve this volume conflict.`,
+        `The fixed primary ingredients (${fixedPrimaryNames || "provided liquid"}) plus the ${adjustable.name} needed for the gravity target do not fit in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch after secondary additions. Preserve the fixed amounts unless the brewer agrees to change them; choose which ingredient amount, gravity target or finished batch volume may change.`,
       );
     }
     ingredientLines.push(
@@ -1209,14 +1232,9 @@ function toSuppliedIngredient(
   if (brix === undefined)
     throw new Error(`A Brix value is required for ${ingredient.name}.`);
   const sg = toSG(brix);
-  // `fill_liquid` means this ingredient is intentionally left adjustable to
-  // fill the remaining batch volume. A stated amount is a user constraint,
-  // however, and must never be expanded or reduced just because a model also
-  // marked the liquid as a fill liquid.
-  const role =
-    ingredient.role === "fill_liquid" && ingredient.amount
-      ? "fixed"
-      : (ingredient.role ?? "fixed");
+  // An explicit amount is fixed even if a model retains an adjustable role.
+  // Solved quantities must be omitted so weight and volume stay consistent.
+  const role = ingredient.amount ? "fixed" : (ingredient.role ?? "fixed");
   let volumeL = 0;
   if (role === "fixed") {
     if (!ingredient.amount)
@@ -1271,7 +1289,9 @@ function ingredientLine(
     weightUnit: WeightUnit;
   },
 ): RecipeDataV2["ingredients"][number] {
-  const basis = ingredientMeasurementBasis(input);
+  // Explicit measurements remain authoritative even when a legacy catalog
+  // category suggests a different practical basis (for example honey/water).
+  const basis = input.requestedAmount?.kind ?? ingredientMeasurementBasis(input);
   const weight = input.volumeL * input.sg * KG_TO_WEIGHT[input.weightUnit];
   const volume = input.volumeL * L_TO_VOLUME[input.volumeUnit];
   const requestedWeight =
@@ -1302,7 +1322,7 @@ function ingredientLine(
           basis === "weight"
             ? requestedWeight !== undefined
               ? formatNumber(requestedWeight)
-              : formatPracticalIngredientAmount(weight)
+              : formatNumber(weight)
             : formatNumber(weight),
         unit: input.weightUnit,
       },
@@ -1311,7 +1331,7 @@ function ingredientLine(
           basis === "volume"
             ? requestedVolume !== undefined
               ? formatNumber(requestedVolume)
-              : formatPracticalIngredientAmount(volume)
+              : formatNumber(volume)
             : formatNumber(volume),
         unit: input.volumeUnit,
       },
@@ -1379,17 +1399,10 @@ function invalidInput(
   });
 }
 
+// Calculation payloads retain six-decimal amounts. Practical display rounding
+// belongs to consumers and must not change the recipe used by the shared engine.
 function formatNumber(value: number): string {
   return String(Number(value.toFixed(6)));
-}
-
-/**
- * Recipe drafts are measurements a brewer needs to use, not a raw calculator
- * trace. The selected measurement is rounded to a tenth; the paired conversion
- * remains precise so MeadTools can retain its calculated gravity and volume.
- */
-function formatPracticalIngredientAmount(value: number): string {
-  return String(Number(value.toFixed(1)));
 }
 
 function validateResult(result: unknown): ChatbotRecipeWorkflowResult {

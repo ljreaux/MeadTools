@@ -315,7 +315,7 @@ for (const scope of [base, expanded]) {
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   const inventory = await client.listTools();
-  assert.equal(inventory.tools.length, scope === base ? 7 : 12);
+  assert.equal(inventory.tools.length, scope === base ? 7 : 14);
   for (const tool of inventory.tools)
     assert.equal(tool.annotations.readOnlyHint, true);
   for (const name of mcpAccountReadToolNames) {

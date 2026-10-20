@@ -3,7 +3,7 @@ export const MCP_SCOPE = "mcp:tools";
 export const MCP_ACCOUNT_READ_SCOPE = "mcp:account:read";
 export const MCP_SCOPES = [MCP_SCOPE, MCP_ACCOUNT_READ_SCOPE] as const;
 export const mcpAccountReadToolNames = [
-  "list_brews", "get_brew", "get_brew_timeline", "list_recipes", "get_recipe",
+  "list_brews", "get_brew", "get_brew_timeline", "get_brew_sensor_history", "summarize_brew_sensor_history", "list_recipes", "get_recipe",
 ] as const;
 
 /** Canonicalize known scopes; reject empty, unknown, duplicate or incomplete grants. */

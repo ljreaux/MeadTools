@@ -10,6 +10,12 @@ operations architecture, see
 [Hosted chatbot architecture](../hosted-chatbot-architecture.md). This document
 defines the contract process and endpoint compatibility, not chatbot behavior.
 
+The hosted orchestration comparison originally added a server-controlled setting.
+The selected model-led loop is now the only implementation; guided orchestration
+and `CHATBOT_ORCHESTRATION` have been removed. This does not add client request
+fields or change chat response shapes, statuses or confirmation contracts.
+Contract/OpenAPI generation and API-contract checks verify the route wiring.
+
 ## OpenAPI compatibility
 
 Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
@@ -194,3 +200,21 @@ The RAPT Brew Stream compatibility update adds optional query-token authenticati
 to `/hydrometer/rapt-pill/cloud` and accepts nested telemetry envelopes alongside
 legacy flat payloads. Its 400 response also covers invalid payloads. The parity
 test normalizes these approved route changes before comparing earlier paths.
+
+### Live answer previews
+
+The chat SSE transport now also emits the optional custom event `recipe.answer`.
+Its shared `@meadtools/chat-domain` schema accepts `{type:"answer_delta",delta}`
+and `{type:"answer_reset"}`. These are transient display updates, not persisted
+messages or permission to save a draft. A reset discards an intermediate tool-step
+preamble. `recipe.turn` and the final TanStack text message remain authoritative
+and are emitted after persistence/accounting. Clients may ignore preview events.
+Errors, cancellation or the next turn discard previews. Existing request/response
+schemas, statuses, durable messages and confirmation contracts are unchanged.
+
+The existing `recipe.tool` SSE events may also include optional `detail`, validated
+by `chatToolProgressDetailSchema`. This allowlisted object contains a bounded
+subject, item count, cached-result flag, safe issue category, optional HTTP status
+or missing-field categories. It never contains raw arguments, record IDs, source
+bodies or exception messages. Old clients can ignore it. These details describe
+a tool step, not a terminal request failure or permission to mutate records.

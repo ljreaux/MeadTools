@@ -98,6 +98,7 @@ jobs:
         run: |
           npx prisma migrate deploy --config prisma.test.config.ts
           npm run test:premium-foundation
+          npm run test:mcp-account-reads-postgres
 
       - name: Regenerate OpenAPI document
         run: npm run openapi:generate

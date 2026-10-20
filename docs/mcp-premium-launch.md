@@ -338,8 +338,8 @@ Discovery filters account tools and direct calls without permission receive a
 Usage bookkeeping, metadata-only logs, and prompt-credit behavior are unchanged.
 
 **Account read tools:** connections with explicit `mcp:account:read` permission
-advertise twelve tools: the seven existing tools plus `list_brews`, `get_brew`,
-`get_brew_timeline`, `list_recipes`, and `get_recipe`. Legacy connections still
+advertise fourteen tools: the seven existing tools plus `list_brews`, `get_brew`,
+`get_brew_timeline`, `get_brew_sensor_history`, `summarize_brew_sensor_history`, `list_recipes`, and `get_recipe`. Legacy connections still
 advertise seven. See [account-read contracts](mcp-account-reads.md) for inputs,
 output limits, ownership, provenance, legacy handling and deterministic checks.
 Preview client verification remains tracked in `mcp-client-testing-plan.md`;

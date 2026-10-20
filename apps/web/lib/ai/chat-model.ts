@@ -61,6 +61,9 @@ export type ChatCompletionRequest = {
   responseFormat?: ChatResponseFormat;
   maxOutputTokens: number;
   userId: number;
+  /** Public answer preview only; final completion remains authoritative. */
+  onTextDelta?: (delta: string) => void;
+  onTextReset?: () => void;
 };
 
 /**
