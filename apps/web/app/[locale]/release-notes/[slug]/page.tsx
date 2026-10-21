@@ -7,6 +7,7 @@ import {
 import LegacyFour from "@/content/release-notes.mdx";
 import LegacyThreeFive from "@/content/legacy/release-notes-3.5.mdx";
 import Link from "next/link";
+import { PagePanel } from "@/components/PagePanel";
 import { notFound } from "next/navigation";
 
 const legacyContent = { "v4-0": LegacyFour, "v3-5": LegacyThreeFive };
@@ -25,7 +26,7 @@ export default async function ReleaseNote({
 
   return (
     <main className="mx-auto w-11/12 max-w-[900px] pb-28 pt-32">
-      <article data-slot="page-panel" className="rounded-xl bg-background p-8 md:p-12">
+      <PagePanel as="article" className="p-8 md:p-12">
         <Link className="underline hover:text-secondary" href="/release-notes">
           {t("releaseNotes.back")}
         </Link>
@@ -71,7 +72,7 @@ export default async function ReleaseNote({
               })}
           </>
         )}
-      </article>
+      </PagePanel>
     </main>
   );
 }

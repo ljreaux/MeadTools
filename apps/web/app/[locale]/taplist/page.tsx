@@ -4,11 +4,12 @@ import Link from "next/link";
 import CopyableCodeBlock from "@/components/CodeBlock";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { PagePanel } from "@/components/PagePanel";
 
 export default function TaplistOsAnnouncement() {
   return (
     <div className="w-full flex justify-center items-center sm:py-24 py-[6rem] relative">
-      <div data-slot="page-panel" className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]">
+      <PagePanel className="flex flex-col md:p-12 p-8 gap-4 w-11/12 max-w-[1200px]">
         <h1 className="text-2xl font-bold">MeadTools Taplist OS v1.0</h1>
 
         <p className="text-sm text-muted-foreground">
@@ -133,7 +134,7 @@ export default function TaplistOsAnnouncement() {
             </Link>
           </div>
         </div>
-      </div>
+      </PagePanel>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import useRecipeVersionGate from "@/hooks/useRecipeVersionGate";
 import { useRecipe } from "../providers/RecipeProvider";
 import SaveRecipeCopy from "./SaveRecipeCopy";
 import { cn } from "@/lib/utils";
+import { PagePanel } from "@/components/PagePanel";
 import { usePublicRecipeBrews } from "@/hooks/reactQuery/usePublicRecipeBrews";
 import { CreateBrewButton } from "@/components/brews/CreateBrewButton";
 
@@ -59,11 +60,11 @@ function PublicRecipe({
         !embedded && "flex flex-col items-center justify-center py-[6rem]"
       )}
     >
-      <div
-        data-slot={embedded ? undefined : "page-panel"}
+      <PagePanel
+        bare={embedded}
         className={cn(
           "relative flex w-full max-w-[1000px] flex-col gap-4",
-          !embedded && "w-11/12 rounded-xl bg-background p-8 sm:p-12"
+          !embedded && "w-11/12 p-8 sm:p-12"
         )}
       >
         <div className="flex flex-wrap justify-end gap-2">
@@ -161,7 +162,7 @@ function PublicRecipe({
             ? t("admin.recipes.back", "Back to recipes")
             : t("backToList")}
         </Link>
-      </div>
+      </PagePanel>
     </div>
   );
 }

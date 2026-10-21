@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { qk } from "@/lib/db/queryKeys";
+import { PagePanel } from "@/components/PagePanel";
 
 type ChatWorkspaceTab = "assistant" | "credits";
 
@@ -69,7 +70,7 @@ export default function ChatWorkspace({
   }
 
   return (
-    <div data-slot="page-panel" className="relative w-11/12 max-w-[1200px] rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
+    <PagePanel className="relative w-11/12 max-w-[1200px] px-4 py-6 sm:px-12 sm:py-8">
       <Header />
       {paymentRestricted ? (
         <div className="mt-10 space-y-6">
@@ -100,6 +101,6 @@ export default function ChatWorkspace({
           </TabsContent>
         </Tabs>
       )}
-    </div>
+    </PagePanel>
   );
 }

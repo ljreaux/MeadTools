@@ -1,5 +1,6 @@
 import initTranslations from "@/lib/i18n";
 import ReleaseEmailUnsubscribeForm from "@/components/account/ReleaseEmailUnsubscribeForm";
+import { PagePanel } from "@/components/PagePanel";
 
 export default async function ReleaseEmailUnsubscribePage({
   params,
@@ -18,7 +19,7 @@ export default async function ReleaseEmailUnsubscribePage({
 
   return (
     <main className="mx-auto w-11/12 max-w-[700px] pb-28 pt-32">
-      <div data-slot="page-panel" className="rounded-xl bg-background p-8 md:p-12">
+      <PagePanel className="p-8 md:p-12">
         <h1 className="mb-4 text-3xl font-bold">
           {t("releaseEmails.unsubscribeTitle")}
         </h1>
@@ -27,7 +28,7 @@ export default async function ReleaseEmailUnsubscribePage({
         ) : (
           <p role="alert">{t("releaseEmails.unsubscribeInvalid")}</p>
         )}
-      </div>
+      </PagePanel>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import RecipeList from "./RecipeList";
 import initTranslations from "@/lib/i18n";
 import { getPublicRecipesPage } from "@/lib/db/recipes";
+import { PagePanel } from "@/components/PagePanel";
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALLOWED_PAGE_SIZES = Array.from({ length: 5 }, (_, i) => (i + 1) * 10);
@@ -42,7 +43,7 @@ export default async function PublicRecipes({
     });
 
     return (
-      <div data-slot="page-panel" className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+      <PagePanel className="flex flex-col p-12 py-8 gap-4 w-11/12 max-w-[1000px]">
         <h1 className="text-2xl font-bold text-foreground mb-4">
           {t("publicRecipes.title")}
         </h1>
@@ -55,14 +56,14 @@ export default async function PublicRecipes({
           pageSize={pageSize}
           allowedPageSizes={ALLOWED_PAGE_SIZES}
         />
-      </div>
+      </PagePanel>
     );
   } catch (error) {
     console.error("Error loading recipes:", error);
     return (
-      <div data-slot="page-panel" className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+      <PagePanel className="flex flex-col p-12 py-8 gap-4 w-11/12 max-w-[1000px]">
         <p className="text-destructive-foreground">{t("publicRecipes.fail")}</p>
-      </div>
+      </PagePanel>
     );
   }
 }

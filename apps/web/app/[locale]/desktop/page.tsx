@@ -11,6 +11,7 @@ import { WindowsIcon } from "@/components/osIcons/WindowsIcon";
 import { UbuntuIcon } from "@/components/osIcons/UbuntuIcon";
 import { AppleIcon } from "@/components/osIcons/AppleIcon";
 import Link from "next/link";
+import { PagePanel } from "@/components/PagePanel";
 
 const legacyDownloads = [
   {
@@ -45,7 +46,7 @@ function DesktopDownload() {
 
   return (
     <section className="w-full flex justify-center items-center sm:py-24 py-[6rem] relative">
-      <div data-slot="page-panel" className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-5 w-11/12 max-w-[1000px]">
+      <PagePanel className="flex flex-col md:p-12 p-8 gap-5 w-11/12 max-w-[1000px]">
         {/* Deprecation banner */}
         <div
           role="alert"
@@ -163,7 +164,7 @@ function DesktopDownload() {
             />
           </div>
         </div>
-      </div>
+      </PagePanel>
     </section>
   );
 }

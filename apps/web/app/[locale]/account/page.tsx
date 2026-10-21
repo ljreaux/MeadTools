@@ -57,6 +57,7 @@ import {
 import { ButtonGroup } from "@/components/ui/button-group";
 import { useAccountRecipeSortPrefs } from "@/hooks/useAccountRecipeSortPrefs";
 import Header from "@/components/account/header";
+import { PagePanel } from "@/components/PagePanel";
 
 type SortType = "asc" | "dec" | "clear";
 
@@ -194,16 +195,16 @@ function Account() {
   if (isError) {
     console.error("Error loading account info:", error);
     return (
-      <div data-slot="page-panel" className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
+      <PagePanel className="p-12 py-8 w-11/12 max-w-[1000px]">
         <p className="text-destructive text-center">{t("accountPage.error")}</p>
-      </div>
+      </PagePanel>
     );
   }
 
   const { user } = data;
 
   return (
-    <div data-slot="page-panel" className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
+    <PagePanel className="p-8 sm:p-12 py-8 w-11/12 max-w-[1200px] relative">
       <Header />
       <h1 className="text-3xl text-center sm:mt-6 mt-12">
         {t("accountPage.title")}
@@ -383,7 +384,7 @@ function Account() {
           </div>
         </PagedResults>
       </div>
-    </div>
+    </PagePanel>
   );
 }
 

@@ -1,6 +1,7 @@
 import initTranslations from "@/lib/i18n";
 import { getDatedReleases, legacyReleases } from "@/lib/release-notes";
 import Link from "next/link";
+import { PagePanel } from "@/components/PagePanel";
 
 export default async function ReleaseNotesIndex({
   params,
@@ -13,7 +14,7 @@ export default async function ReleaseNotesIndex({
 
   return (
     <main className="mx-auto w-11/12 max-w-[900px] pb-28 pt-32">
-      <div data-slot="page-panel" className="rounded-xl bg-background p-8 md:p-12">
+      <PagePanel className="p-8 md:p-12">
         <h1 className="text-3xl font-bold">{t("releaseNotes.title")}</h1>
         <p className="mt-3 text-muted-foreground">{t("releaseNotes.intro")}</p>
         {releases.length > 0 && (
@@ -61,7 +62,7 @@ export default async function ReleaseNotesIndex({
             </li>
           ))}
         </ul>
-      </div>
+      </PagePanel>
     </main>
   );
 }

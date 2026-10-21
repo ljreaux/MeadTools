@@ -6,12 +6,13 @@ import {
   PaginationContent,
   PaginationItem
 } from "@/components/ui/pagination";
+import { PagePanel } from "@/components/PagePanel";
 
 const CARD_SKELETON_COUNT = 5;
 
 export default function LoadingPublicRecipes() {
   return (
-    <div data-slot="page-panel" className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+    <PagePanel className="flex flex-col p-12 py-8 gap-4 w-11/12 max-w-[1000px]">
       {/* Title */}
       <Skeleton className="h-7 w-40" />
 
@@ -90,6 +91,6 @@ export default function LoadingPublicRecipes() {
           <Skeleton className="h-3 w-28" />
         </div>
       </div>
-    </div>
+    </PagePanel>
   );
 }

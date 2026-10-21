@@ -371,7 +371,7 @@ html[data-design="neon"] [data-slot="social-link"]:hover {
    4. Surfaces: page panels, cards, glass
    -------------------------------------------------------------------------- */
 
-/* Main page panels (CardWrapper and friends: rounded-xl bg-background) */
+/* Main page panels (PagePanel) */
 html[data-design="neon"] [data-slot="page-panel"] {
   position: relative;
   background:

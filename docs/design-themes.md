@@ -49,7 +49,7 @@ names, because Tailwind class lists change often. The shadcn components in
 
 | Slot | Used on |
 | --- | --- |
-| `page-panel` | The main rounded content panel of each page |
+| `page-panel` | The main rounded content panel of each page (set by `PagePanel`) |
 | `navbar`, `navbar-logo`, `nav-link` | Top navigation |
 | `bottom-bar`, `social-link` | Footer |
 | `calc-sidebar` | Recipe builder and extra calculator sidebars |
@@ -57,8 +57,13 @@ names, because Tailwind class lists change often. The shadcn components in
 
 Renaming or removing a `data-slot` does not break the build, but it silently
 drops that theme styling. Search `apps/web/app/themes` for the slot before
-changing it. Give new page containers `data-slot="page-panel"` so themes style
-them like the other pages.
+changing it.
+
+Wrap page content in `PagePanel` (`components/PagePanel.tsx`) rather than a
+hand-written `rounded-xl bg-background` div. It renders the panel surface and the
+`page-panel` slot; pass layout classes through `className`, the element through
+`as` (for example `as="form"`), and `bare` when the content is embedded and
+should not look like a page.
 
 ## Adding a theme
 

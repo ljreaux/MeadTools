@@ -49,6 +49,7 @@ import {
 import { Switch } from "../ui/switch";
 import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
 import { ReleaseEmailPreferences } from "./ReleaseEmailPreferences";
+import { PagePanel } from "@/components/PagePanel";
 
 function Header() {
   const { t } = useTranslation();
@@ -60,9 +61,9 @@ function Header() {
   if (isError) {
     console.error("Error loading account info:", error);
     return (
-      <div data-slot="page-panel" className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
+      <PagePanel className="p-12 py-8 w-11/12 max-w-[1000px]">
         <p className="text-destructive text-center">{t("accountPage.error")}</p>
-      </div>
+      </PagePanel>
     );
   }
   const { user } = data;
