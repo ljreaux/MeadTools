@@ -86,6 +86,7 @@ function RecipeCalculatorSideBar({
 
   return (
     <div
+      data-slot="calc-sidebar"
       className={`joyride-sidebar fixed top-28 right-0 transition-transform duration-500 bg-background border border-foreground z-50 px-2 rounded-md ${
         isOpen ? "translate-y-0" : "-translate-y-full"
       }`}
@@ -150,6 +151,7 @@ function NavItem({
           variant="outline"
           onClick={clickFn}
           aria-label={label}
+          data-active={isActive}
           className={`${tutorialClassName} flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12 ${
             isActive ? "bg-foreground text-background" : ""
           }`}

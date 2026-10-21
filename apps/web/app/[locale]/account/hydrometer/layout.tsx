@@ -13,7 +13,7 @@ async function Layout({
   const i18nNamespaces = ["default", "YeastTable"];
   const { t } = await initTranslations(locale, i18nNamespaces);
   return (
-    <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
+    <div data-slot="page-panel" className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
       <Header />
       <h1 className="text-3xl text-center my-2 sm:mt-6 mt-12">
         {t("iSpindelDashboard.label")}

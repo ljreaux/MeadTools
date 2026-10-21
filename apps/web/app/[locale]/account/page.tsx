@@ -194,7 +194,7 @@ function Account() {
   if (isError) {
     console.error("Error loading account info:", error);
     return (
-      <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
+      <div data-slot="page-panel" className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
         <p className="text-destructive text-center">{t("accountPage.error")}</p>
       </div>
     );
@@ -203,7 +203,7 @@ function Account() {
   const { user } = data;
 
   return (
-    <div className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
+    <div data-slot="page-panel" className="p-8 sm:p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1200px] relative">
       <Header />
       <h1 className="text-3xl text-center sm:mt-6 mt-12">
         {t("accountPage.title")}

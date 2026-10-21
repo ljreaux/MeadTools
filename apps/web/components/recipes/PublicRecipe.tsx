@@ -60,6 +60,7 @@ function PublicRecipe({
       )}
     >
       <div
+        data-slot={embedded ? undefined : "page-panel"}
         className={cn(
           "relative flex w-full max-w-[1000px] flex-col gap-4",
           !embedded && "w-11/12 rounded-xl bg-background p-8 sm:p-12"

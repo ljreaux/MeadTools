@@ -89,6 +89,7 @@ export default function ResetPasswordPage() {
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
       <form
         onSubmit={handleSubmit}
+        data-slot="page-panel"
         className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem] rounded-xl bg-background"
       >
         <h1 className="col-span-3 text-center text-2xl">

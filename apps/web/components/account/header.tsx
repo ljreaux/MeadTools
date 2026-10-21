@@ -60,7 +60,7 @@ function Header() {
   if (isError) {
     console.error("Error loading account info:", error);
     return (
-      <div className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
+      <div data-slot="page-panel" className="p-12 py-8 rounded-xl bg-background w-11/12 max-w-[1000px]">
         <p className="text-destructive text-center">{t("accountPage.error")}</p>
       </div>
     );

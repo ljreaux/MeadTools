@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { ModeToggle } from "../ui/mode-toggle";
 import LanguageSwitcher from "../ui/language-switcher";
+import { DesignThemeSwitcher } from "../ui/design-theme-switcher";
 import AccountLinks from "./AccountLinks";
 
 import {
@@ -43,7 +44,10 @@ export default function Navbar() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="sm:h-20 h-20 fixed top-0 z-[var(--z-shell)] flex items-center justify-between border-b-2 border-background bg-background">
+    <nav
+      data-slot="navbar"
+      className="sm:h-20 h-20 fixed top-0 z-[var(--z-shell)] flex items-center justify-between border-b-2 border-background bg-background"
+    >
       <div className="relative w-screen h-full gap-2 text-xl text-center justify-between flex text-foreground">
         {/* LEFT: Mobile Sheet + Desktop NavigationMenu */}
         <div className="flex items-center">
@@ -211,12 +215,14 @@ export default function Navbar() {
           <div className="flex gap-4 ml-4 mr-4 items-center justify-center">
             <div className="flex gap-4 items-center">
               <LanguageSwitcher />
+              <DesignThemeSwitcher />
               <ModeToggle />
               <AccountLinks />
             </div>
           </div>
 
           <Link
+            data-slot="navbar-logo"
             className="bg-background w-[3rem] sm:flex sm:w-24 md:w-52 h-full left-0 border-[1px] border-sidebar hover:opacity-80 transition-all"
             href="/"
           >

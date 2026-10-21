@@ -50,6 +50,7 @@ function AuthForm({
 
   return (
     <form
+      data-slot="page-panel"
       className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]"
       onSubmit={handleSubmit}
     >

@@ -25,7 +25,7 @@ export default async function ReleaseNote({
 
   return (
     <main className="mx-auto w-11/12 max-w-[900px] pb-28 pt-32">
-      <article className="rounded-xl bg-background p-8 md:p-12">
+      <article data-slot="page-panel" className="rounded-xl bg-background p-8 md:p-12">
         <Link className="underline hover:text-secondary" href="/release-notes">
           {t("releaseNotes.back")}
         </Link>

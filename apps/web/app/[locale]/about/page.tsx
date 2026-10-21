@@ -96,7 +96,7 @@ async function About({ params }: { params: Promise<{ locale: string }> }) {
 
   return (
     <section className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-      <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]">
+      <div data-slot="page-panel" className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]">
         <h1 className="sm:text-3xl text-xl text-center">{t("about.label")} </h1>
         <article className="sm:px-12 px-4">
           {[

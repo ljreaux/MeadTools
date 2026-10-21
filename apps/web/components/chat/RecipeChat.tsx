@@ -998,6 +998,9 @@ export default function RecipeChat({
 
   return (
     <main
+      data-slot={
+        fullscreen || compact || embedded ? undefined : "page-panel"
+      }
       className={
         fullscreen
           ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 pb-20 sm:p-6 sm:pt-24 sm:pb-20"

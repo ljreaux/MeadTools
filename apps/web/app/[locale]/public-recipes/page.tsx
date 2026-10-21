@@ -42,7 +42,7 @@ export default async function PublicRecipes({
     });
 
     return (
-      <div className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+      <div data-slot="page-panel" className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
         <h1 className="text-2xl font-bold text-foreground mb-4">
           {t("publicRecipes.title")}
         </h1>
@@ -60,7 +60,7 @@ export default async function PublicRecipes({
   } catch (error) {
     console.error("Error loading recipes:", error);
     return (
-      <div className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
+      <div data-slot="page-panel" className="flex flex-col p-12 py-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1000px]">
         <p className="text-destructive-foreground">{t("publicRecipes.fail")}</p>
       </div>
     );

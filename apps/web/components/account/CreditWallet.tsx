@@ -117,6 +117,7 @@ export default function CreditWallet({
 
   return (
     <main
+      data-slot={embedded ? undefined : "page-panel"}
       className={
         embedded
           ? "w-full"

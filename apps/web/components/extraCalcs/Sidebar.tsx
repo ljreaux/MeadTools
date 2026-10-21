@@ -60,6 +60,7 @@ function ExtraCalcsSideBar() {
 
   return (
     <div
+      data-slot="calc-sidebar"
       className={`fixed top-28 right-0 transition-transform duration-500 bg-background border border-foreground z-50 px-2 rounded-md ${
         isOpen ? "translate-y-0" : "-translate-y-full"
       }`}
@@ -119,6 +120,7 @@ function NavItem({
           size="icon"
           variant="outline"
           aria-current={active ? "page" : undefined}
+          data-active={active}
           className={`
             flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-full
             border transition-colors

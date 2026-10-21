@@ -1,6 +1,12 @@
 @import "@meadtools/design-tokens/css";
 @import "streamdown/styles.css";
 
+/* Design themes (see lib/design-themes.ts). Plain CSS only: no @apply/@layer. */
+@import "./themes/nordic.css";
+@import "./themes/neon.css";
+@import "./themes/hive.css";
+@import "./themes/catppuccin.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
