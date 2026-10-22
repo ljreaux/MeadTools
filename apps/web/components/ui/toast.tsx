@@ -48,6 +48,7 @@ const Toast = React.forwardRef<
   return (
     <ToastPrimitives.Root
       ref={ref}
+      data-slot="toast"
       className={cn(toastVariants({ variant }), className)}
       {...props}
     />
@@ -94,6 +95,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
+    data-slot="toast-title"
     className={cn("text-sm font-semibold [&+div]:text-xs", className)}
     {...props}
   />

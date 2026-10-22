@@ -25,6 +25,8 @@ export default function SortableItem({
   return (
     <div
       ref={setNodeRef}
+      data-slot="sortable-item"
+      data-dragging={isDragging}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -37,6 +39,7 @@ export default function SortableItem({
       <div
         {...attributes}
         {...listeners}
+        data-slot="drag-handle"
         className="grid items-center justify-center bg-secondary hover:bg-secondary mr-2 rounded-l-sm cursor-grab active:cursor-grabbing"
         style={{ touchAction: "none" }}
         tabIndex={0}

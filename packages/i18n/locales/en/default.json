@@ -88,6 +88,15 @@
       "register": "Don't have any account? Register now."
     },
     "deleteRecipe": "Delete Recipe",
+    "designTheme": {
+      "catppuccin": "Catppuccin",
+      "classic": "Classic",
+      "hive": "Hive",
+      "neon": "Neon Fermentation",
+      "nordic": "Nordic Mead Hall",
+      "title": "Design",
+      "toggle": "Change design"
+    },
     "email": "Email",
     "error": "Error loading account information.",
     "googleAvatar": {

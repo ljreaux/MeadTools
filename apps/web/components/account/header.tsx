@@ -31,7 +31,7 @@ import {
 import { useEffect, useState } from "react";
 import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
 import { useUpdateShowGoogleAvatar } from "@/hooks/reactQuery/useUpdateShowGoogleAvatar";
-import { ModeToggle } from "../ui/mode-toggle";
+import { DesignThemeSwitcher } from "../ui/design-theme-switcher";
 import LanguageSwitcher from "../ui/language-switcher";
 import {
   Select,
@@ -67,7 +67,7 @@ function Header() {
   }
   const { user } = data;
   return (
-    <div className="absolute right-4 top-4 flex items-center sm:gap-1">
+    <div className="relative mb-4 flex w-full min-w-0 flex-wrap items-center justify-end gap-1 sm:absolute sm:right-4 sm:top-4 sm:mb-0 sm:w-auto sm:flex-nowrap">
       <SettingsDialog
         username={user.public_username}
         isGoogleUser={user.isGoogleUser}
@@ -207,7 +207,11 @@ const SettingsDialog = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("account.accountSettings")}
+        >
           <Settings />
         </Button>
       </DialogTrigger>
@@ -220,7 +224,7 @@ const SettingsDialog = ({
         <div className="w-full grid gap-4">
           <label className="w-full flex gap-4 items-center p-1">
             {t("accountPage.theme.title")}
-            <ModeToggle />
+            <DesignThemeSwitcher />
           </label>
 
           <label className="w-full p-1">

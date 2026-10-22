@@ -1,6 +1,12 @@
 @import "@meadtools/design-tokens/css";
 @import "streamdown/styles.css";
 
+/* Palettes extend the same shadcn/Tailwind variables as Classic. */
+@import "./themes/nordic.css";
+@import "./themes/neon.css";
+@import "./themes/hive.css";
+@import "./themes/catppuccin.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -29,6 +35,15 @@
     --input: var(--mt-web-light-input);
     --ring: var(--mt-web-light-ring);
     --radius: var(--mt-web-radius);
+    --font-body: var(--font-ubuntu-mono), ui-monospace, monospace;
+    --font-heading: var(--font-body);
+    --page: var(--secondary);
+    --page-image: none;
+    --page-image-size: auto;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --chart-1: var(--mt-web-light-chart-1);
     --chart-2: var(--mt-web-light-chart-2);
     --chart-3: var(--mt-web-light-chart-3);
@@ -108,8 +123,16 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: "Libre Baskerville", serif;
+    @apply bg-page text-foreground font-sans;
+    background-image: var(--page-image);
+    background-size: var(--page-image-size);
+    background-attachment: fixed;
+  }
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
   }
 }
 

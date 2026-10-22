@@ -85,11 +85,7 @@ function RecipeCalculatorSideBar({
   ];
 
   return (
-    <div
-      className={`joyride-sidebar fixed top-28 right-0 transition-transform duration-500 bg-background border border-foreground z-50 px-2 rounded-md ${
-        isOpen ? "translate-y-0" : "-translate-y-full"
-      }`}
-    >
+    <div className="joyride-sidebar fixed top-28 right-0 z-50 w-14 sm:w-[4.5rem]">
       {/* Toggle Button (match ExtraCalcsSideBar) */}
       <Button
         type="button"
@@ -98,6 +94,7 @@ function RecipeCalculatorSideBar({
         onClick={toggleSidebar}
         className="absolute -top-5 right-0 z-50 flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground"
         aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
+        aria-expanded={isOpen}
       >
         {isOpen ? (
           <ChevronUp className="h-5 w-5" />
@@ -108,7 +105,8 @@ function RecipeCalculatorSideBar({
 
       {/* Sidebar Content */}
       <nav
-        className={`flex flex-col items-center gap-4 py-4 ${
+        data-slot="calc-sidebar"
+        className={`flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto rounded-md border border-foreground bg-background px-2 py-4 ${
           isOpen ? "" : "hidden"
         }`}
       >
@@ -150,6 +148,7 @@ function NavItem({
           variant="outline"
           onClick={clickFn}
           aria-label={label}
+          data-active={isActive}
           className={`${tutorialClassName} flex h-8 w-8 items-center justify-center rounded-full border border-foreground bg-background text-foreground hover:bg-foreground hover:text-background sm:h-12 sm:w-12 ${
             isActive ? "bg-foreground text-background" : ""
           }`}
