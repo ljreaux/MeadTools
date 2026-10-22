@@ -25,6 +25,19 @@ Follow-up TypeScript and all five tests pass. Targeted ESLint reports no errors
 and three existing effect/state warnings in the account settings and recipe
 sidebar logic, which this layout change does not modify.
 
+## Fullscreen PDF regression follow-up
+
+Independent review found that Neon's surface backdrop blur anchored the fixed
+fullscreen PDF viewer to its recipe panel, leaving Download offscreen. Fullscreen
+now renders through a portal directly under `document.body`; the embedded viewer
+continues to render inside the panel.
+
+Verified locally in an isolated browser across all five designs and both modes
+at 1280 × 720 and 320 × 800 (20 cases). Fullscreen starts at (0, 0), matches the
+viewport dimensions, and keeps Exit and Download within the viewport. Enter/exit
+preserves a 150% zoom selection. A download from Neon fullscreen produced a valid
+PDF. TypeScript, the five theme/startup tests, and targeted viewer ESLint pass.
+
 ## Coverage
 
 Five designs (Classic, Nordic Mead Hall, Neon Fermentation, Hive, Catppuccin), each in light and dark mode. Completed 50 route/query combinations at 320 × 800, four additional recipe-builder states at that width, and six representative states at 1280 × 900: **600 distinct completed theme/mode/viewport/state checks**. The tutorial opening was checked in Classic only and is excluded from that total.

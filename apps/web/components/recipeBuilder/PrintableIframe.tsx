@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Download,
   LoaderCircle,
@@ -50,7 +51,7 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
     setZoomInput(bounded);
   };
 
-  return (
+  const viewer = (
     <div
       className={
         isFullscreen
@@ -186,6 +187,10 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
       </div>
     </div>
   );
+
+  // Theme surfaces can establish containing blocks for fixed descendants.
+  // Fullscreen must be anchored to the viewport, outside those surfaces.
+  return isFullscreen ? createPortal(viewer, document.body) : viewer;
 };
 
 export default PrintableIframe;
