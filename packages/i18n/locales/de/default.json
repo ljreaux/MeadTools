@@ -119,7 +119,16 @@
         },
         "reset": "Link zum Zurücksetzen senden",
         "resetPassword": "Passwort zurücksetzen",
-        "error": "Fehler beim Laden der Kontoinformationen."
+        "error": "Fehler beim Laden der Kontoinformationen.",
+        "designTheme": {
+            "catppuccin": "Catppuccin",
+            "classic": "Klassisch",
+            "hive": "Hive",
+            "neon": "Neon Gärung",
+            "nordic": "Nordische Met-Halle",
+            "title": "Design",
+            "toggle": "Design ändern"
+        }
     },
     "accountSettings": "Kontoeinstellungen",
     "adding": "Fügst du Stabilisatoren hinzu?",
