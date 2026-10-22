@@ -8,7 +8,6 @@ import { LoadingButton } from "./ui/LoadingButton";
 import Tooltip from "./Tooltips";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { PagePanel } from "@/components/PagePanel";
 
 function AuthForm({
   formText,
@@ -50,9 +49,8 @@ function AuthForm({
   };
 
   return (
-    <PagePanel
-      as="form"
-      className="flex flex-col md:p-12 p-8 gap-4 w-11/12 max-w-[1200px]"
+    <form
+      className="flex flex-col md:p-12 p-8 rounded-xl bg-background gap-4 w-11/12 max-w-[1200px]"
       onSubmit={handleSubmit}
     >
       <h1 className="col-span-3 text-center text-2xl">{formText}</h1>
@@ -117,7 +115,7 @@ function AuthForm({
           {t("accountPage.buttonMessage.forgotPassword")}
         </Button>
       )}
-    </PagePanel>
+    </form>
   );
 }
 

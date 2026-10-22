@@ -60,7 +60,6 @@ import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
 import { useCreditAccount } from "@/hooks/reactQuery/useCreditAccount";
 import { qk } from "@/lib/db/queryKeys";
 import { cn } from "@/lib/utils";
-import { PagePanel } from "@/components/PagePanel";
 import { isRecipeData } from "@/types/recipeData";
 import {
   formatChatSessionMarkdown,
@@ -998,9 +997,7 @@ export default function RecipeChat({
   }
 
   return (
-    <PagePanel
-      as="main"
-      bare={fullscreen || compact || embedded}
+    <main
       className={
         fullscreen
           ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 pb-20 sm:p-6 sm:pt-24 sm:pb-20"
@@ -1008,7 +1005,7 @@ export default function RecipeChat({
             ? "flex h-[min(40rem,calc(100vh-6rem))] w-full min-w-0 flex-col rounded-xl bg-card p-3"
             : embedded
               ? "w-full"
-              : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl p-6 pt-16 sm:p-10 sm:pt-20"
+              : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 pt-16 sm:p-10 sm:pt-20"
       }
     >
       {!compact && !fullscreen ? <Header /> : null}
@@ -1687,7 +1684,7 @@ export default function RecipeChat({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PagePanel>
+    </main>
   );
 }
 

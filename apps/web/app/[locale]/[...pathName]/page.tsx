@@ -4,7 +4,6 @@ import {
   RecipeBuildingNav,
   RecipeBuildingPager
 } from "@/components/docs/RecipeBuildingNav";
-import { PagePanel } from "@/components/PagePanel";
 
 async function tryImport(path: string) {
   try {
@@ -81,9 +80,9 @@ export default async function Page({
 
     return (
       <section className="w-full flex justify-center items-center sm:pt-24 py-[6rem]">
-        <PagePanel className="flex flex-col md:p-12 p-8 w-11/12 max-w-[1200px] prose dark:prose-invert prose-a:text-blue-500 gap-0">
+        <div className="flex flex-col md:p-12 p-8 rounded-xl bg-background w-11/12 max-w-[1200px] prose dark:prose-invert prose-a:text-blue-500 gap-0">
           <Post />
-        </PagePanel>
+        </div>
       </section>
     );
   } catch (err) {

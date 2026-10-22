@@ -10,7 +10,10 @@ const Table = React.forwardRef<
     <table
       ref={ref}
       data-slot="table"
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn(
+        "w-full caption-bottom text-sm [&_.mt-button]:whitespace-nowrap [&_.mt-button]:[overflow-wrap:normal] [&_.mt-button]:shrink-0",
+        className
+      )}
       {...props}
     />
   </div>

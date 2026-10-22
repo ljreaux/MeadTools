@@ -16,7 +16,6 @@ import {
   type CreditActivityPage,
 } from "@/hooks/reactQuery/useCreditAccount";
 import { cn } from "@/lib/utils";
-import { PagePanel } from "@/components/PagePanel";
 import { CREDIT_PACKS, type CreditPack } from "@meadtools/credit-accounting";
 import {
   CHAT_TURN_CREDIT_WARNING_CREDITS,
@@ -117,13 +116,11 @@ export default function CreditWallet({
   }
 
   return (
-    <PagePanel
-      as="main"
-      bare={embedded}
+    <main
       className={
         embedded
           ? "w-full"
-          : "relative mx-auto mt-24 mb-24 w-11/12 max-w-4xl p-6 pt-16 sm:p-10 sm:pt-20"
+          : "relative mx-auto mt-24 mb-24 w-11/12 max-w-4xl rounded-xl bg-background p-6 pt-16 sm:p-10 sm:pt-20"
       }
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -259,7 +256,7 @@ export default function CreditWallet({
           </Button>
         ) : null}
       </section>
-    </PagePanel>
+    </main>
   );
 }
 

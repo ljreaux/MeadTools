@@ -7,7 +7,6 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { PagePanel } from "@/components/PagePanel";
 
 async function requestPasswordReset(email: string) {
   const res = await fetch("/api/auth/request-reset", {
@@ -60,10 +59,9 @@ export default function ResetRequestPage() {
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
-      <PagePanel
-        as="form"
+      <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem]"
+        className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem] rounded-xl bg-background"
       >
         <h1 className="col-span-3 text-center text-2xl">
           {t("accountPage.buttonMessage.forgotPassword")}
@@ -88,7 +86,7 @@ export default function ResetRequestPage() {
         >
           {t("accountPage.reset")}
         </LoadingButton>
-      </PagePanel>
+      </form>
     </div>
   );
 }

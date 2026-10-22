@@ -36,7 +36,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { PagedResults } from "@/components/ui/paged-results";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { PagePanel } from "@/components/PagePanel";
 
 type RecipeRow = { id: number; name: string };
 
@@ -307,7 +306,7 @@ function RecipeStartCard({
 
 function NewBrewSkeleton() {
   return (
-    <PagePanel className="w-11/12 max-w-[1200px] relative px-4 py-6 sm:px-12 sm:py-8">
+    <div className="w-11/12 max-w-[1200px] relative rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
       <div className="my-6 space-y-4">
         <Skeleton className="h-8 w-[220px]" />
         <Skeleton className="h-4 w-full max-w-[520px]" />
@@ -331,6 +330,6 @@ function NewBrewSkeleton() {
           ))}
         </div>
       </div>
-    </PagePanel>
+    </div>
   );
 }

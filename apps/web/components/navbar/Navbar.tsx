@@ -6,7 +6,6 @@ import { Text } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
-import { ModeToggle } from "../ui/mode-toggle";
 import LanguageSwitcher from "../ui/language-switcher";
 import { DesignThemeSwitcher } from "../ui/design-theme-switcher";
 import AccountLinks from "./AccountLinks";
@@ -212,11 +211,10 @@ export default function Navbar() {
 
         {/* RIGHT: Utilities + Logo */}
         <div className="flex items-center justify-center h-full">
-          <div className="flex gap-4 ml-4 mr-4 items-center justify-center">
-            <div className="flex gap-4 items-center">
+          <div className="flex mx-1.5 sm:mx-4 items-center justify-center">
+            <div className="flex gap-1.5 sm:gap-4 items-center">
               <LanguageSwitcher />
               <DesignThemeSwitcher />
-              <ModeToggle />
               <AccountLinks />
             </div>
           </div>

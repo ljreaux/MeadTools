@@ -156,21 +156,23 @@ export function PaginatedTable<T>({
             : `${start + 1}–${Math.min(end, filteredData.length)} of ${filteredData.length}`}
         </span>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button
+            className="shrink-0"
             variant="outline"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
           >
             {t("previous", "Previous")}
           </Button>
-          <span>
+          <span className="order-first w-full text-center sm:order-none sm:w-auto">
             {t("pageOf", "Page {{page}} of {{total}}", {
               page: totalPages ? page + 1 : 1,
               total: totalPages || 1
             })}
           </span>
           <Button
+            className="shrink-0"
             variant="outline"
             disabled={page >= totalPages - 1}
             onClick={() => setPage((p) => p + 1)}

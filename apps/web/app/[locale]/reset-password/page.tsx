@@ -8,7 +8,6 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useTranslation } from "react-i18next";
-import { PagePanel } from "@/components/PagePanel";
 
 type ResetPayload = {
   token: string;
@@ -88,10 +87,9 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="h-screen flex items-center pt-24 flex-col space-y-4">
-      <PagePanel
-        as="form"
+      <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem]"
+        className="grid grid-cols-3 items-center justify-center gap-4 p-8 my-8 w-11/12 max-w-[50rem] rounded-xl bg-background"
       >
         <h1 className="col-span-3 text-center text-2xl">
           {t("accountPage.reset", "Reset Your Password")}
@@ -127,7 +125,7 @@ export default function ResetPasswordPage() {
         >
           {t("accountPage.resetPassword", "Reset Password")}
         </LoadingButton>
-      </PagePanel>
+      </form>
     </div>
   );
 }

@@ -12,9 +12,16 @@ import {
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { designThemeInitScript } from "@/lib/design-themes";
+import {
+  DEFAULT_DESIGN_THEME,
+  designThemeInitScript,
+} from "@/lib/design-themes";
 
-const ubuntuMono = Ubuntu_Mono({ weight: ["400", "700"], subsets: ["latin"] });
+const ubuntuMono = Ubuntu_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-ubuntu-mono",
+});
 
 // Fonts for the design themes in app/themes/*.css, exposed as CSS variables.
 const jetbrainsMono = JetBrains_Mono({
@@ -55,6 +62,7 @@ const nunito = Nunito({
   preload: false,
 });
 const designFontVariables = [
+  ubuntuMono,
   jetbrainsMono,
   fraunces,
   inter,
@@ -91,11 +99,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={designFontVariables} suppressHydrationWarning>
+    <html
+      lang="en"
+      data-design={DEFAULT_DESIGN_THEME}
+      className={designFontVariables}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: designThemeInitScript }} />
       </head>
-      <body className={`${ubuntuMono.className} bg-secondary h-screen`}>
+      <body className="h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

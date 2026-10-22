@@ -16,7 +16,7 @@ import {
   Pipette,
   Atom,
   Hexagon,
-  BottleWine
+  BottleWine,
 } from "lucide-react";
 import { extraCalculatorLinks } from "@/lib/navigation";
 
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePathname } from "next/navigation";
 
@@ -45,26 +45,23 @@ function ExtraCalcsSideBar() {
     <Thermometer key="thermometer" />,
     <Blend key="blend" />,
     <Hexagon key="hex" />,
-    <BottleWine key="bottle" />
+    <BottleWine key="bottle" />,
   ];
 
-  const links = extraCalculatorLinks.filter((link) => link.path !== "/juice").map((link, i) => ({
-    ...link,
-    icon: icons[i],
-    label: t(link.label)
-  }));
+  const links = extraCalculatorLinks
+    .filter((link) => link.path !== "/juice")
+    .map((link, i) => ({
+      ...link,
+      icon: icons[i],
+      label: t(link.label),
+    }));
 
   const pathname = usePathname();
 
   const isActive = (href: string) => pathname === href;
 
   return (
-    <div
-      data-slot="calc-sidebar"
-      className={`fixed top-28 right-0 transition-transform duration-500 bg-background border border-foreground z-50 px-2 rounded-md ${
-        isOpen ? "translate-y-0" : "-translate-y-full"
-      }`}
-    >
+    <div className="fixed top-28 right-0 z-50 w-14 sm:w-[4.5rem]">
       {/* Toggle Button */}
       <Button
         type="button"
@@ -73,6 +70,7 @@ function ExtraCalcsSideBar() {
         onClick={toggleSidebar}
         className="absolute -top-5 right-0 z-50 flex h-8 w-8 items-center justify-center rounded-md bg-background text-foreground"
         aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
+        aria-expanded={isOpen}
       >
         {isOpen ? (
           <ChevronUp className="h-5 w-5" />
@@ -81,22 +79,24 @@ function ExtraCalcsSideBar() {
         )}
       </Button>
 
-      {/* Sidebar Content */}
-      <nav
-        className={`flex flex-col items-center gap-4 py-4 ${
-          isOpen ? "" : "hidden"
-        }`}
+      {/* The toggle stays in a fixed-width shell when the content is hidden. */}
+      <div
+        data-slot="calc-sidebar"
+        hidden={!isOpen}
+        className="rounded-md border border-foreground bg-background px-2"
       >
-        {links.map((link, idx) => (
-          <NavItem
-            key={link.path ?? idx}
-            link={link.path}
-            icon={link.icon}
-            label={link.label}
-            active={isActive(link.path)}
-          />
-        ))}
-      </nav>
+        <nav className="flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto py-4">
+          {links.map((link, idx) => (
+            <NavItem
+              key={link.path ?? idx}
+              link={link.path}
+              icon={link.icon}
+              label={link.label}
+              active={isActive(link.path)}
+            />
+          ))}
+        </nav>
+      </div>
     </div>
   );
 }
@@ -105,7 +105,7 @@ function NavItem({
   link,
   icon,
   label,
-  active
+  active,
 }: {
   link: string;
   icon: JSX.Element;

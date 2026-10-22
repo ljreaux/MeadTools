@@ -311,3 +311,28 @@ function Banner({
     </div>
   );
 }
+
+/** Keep fixed announcement banners from obscuring page content. */
+export function BannerRegion({ children }: { children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [height, setHeight] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setHeight(Math.ceil(element.getBoundingClientRect().height));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div ref={ref} className="fixed inset-x-0 top-20 z-[var(--z-banner)]">
+        {children}
+      </div>
+      <div aria-hidden="true" style={{ height }} />
+    </>
+  );
+}
