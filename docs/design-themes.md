@@ -1,81 +1,85 @@
 # Design themes
 
-Design themes are full visual redesigns of the web app (colors, fonts, radii,
-shadows, component styling). They are independent of light/dark mode: every
-theme has a light and a dark variant, and the existing mode toggle still picks
-between them.
+Themes combine the existing shadcn/Tailwind color variables with the
+contributor's decorative component styles. `next-themes` controls light/dark/
+system through the `dark` class; `data-design` on `html` selects the design.
+These are independent preferences.
 
-Users pick a design from the palette button in the navbar. `?design=<id>` in
-any URL also selects (and remembers) a design, which is handy for sharing a
-preview.
+Use the navbar palette menu to select and remember a design and its light/dark/
+system mode. The separate mode toggle is removed; account settings use the same
+menu. Classic uses the shared design tokens. The server renders Classic by
+default. A minimal script only reads and validates the saved design before paint;
+blocked storage or unknown ids leave Classic unchanged. It does not parse URLs,
+write preferences, or manage mode. `next-themes` continues to own mode.
 
-## How it works
+## Where integration belongs
 
-| Piece | Location | Role |
-| --- | --- | --- |
-| Registry | `apps/web/lib/design-themes.ts` | Theme ids, default, storage key, pre-hydration script |
-| Init script | `apps/web/app/layout.tsx` | Sets `html[data-design]` from `?design=` or `localStorage` before hydration, so there is no flash |
-| Hook | `apps/web/hooks/useDesignTheme.ts` | Reads and changes the active design; the `data-design` attribute is the source of truth |
-| Switcher | `apps/web/components/ui/design-theme-switcher.tsx` | Navbar dropdown |
-| Styles | `apps/web/app/themes/<id>.css` | One file per theme, imported from `app/globals.css` |
-| Labels | `packages/i18n/locales/en/default.json` | `accountPage.designTheme.<id>` |
+- Theme colors, fonts, radii, shadows, and page canvases use CSS variables.
+  `app/globals.css` supplies Classic defaults and `tailwind.config.ts` exposes
+  them through normal semantic utilities.
+- Distinctive artwork lives in `app/themes/<id>.css`: gradients, glow, textures,
+  decorative borders, hexagonal icon surfaces, and interaction effects.
+- Shared UI primitives expose stable `data-slot` hooks. The hooks belong in the
+  primitives, not in every component or page that uses them. A new screen built
+  from `Button`, `Card`, `Input`, etc. inherits their complete styling.
+- The shared navbar, footer, and calculator sidebars expose their own hooks.
+- Page surfaces already use `bg-background` with `rounded-xl` or `rounded-2xl`.
+  Theme selectors use `:where(.bg-background:is(.rounded-xl, .rounded-2xl))`
+  for those surfaces. No `PagePanel` wrapper
+  or page-specific data attributes are required. Keep that pairing on a surface
+  that should receive the page-panel treatment.
 
-`classic` is the default and has no CSS file: it is the existing Tailwind and
-shadcn styling. An unknown stored or requested id falls back to `classic`, so
-removing a theme is safe for users who had it selected.
+An entirely new primitive inherits semantic colors and tokens immediately.
+Only a deliberately bespoke treatment requires adding a shared hook and theme
+rules. Do not add hooks to arbitrary feature components or annotate their
+individual uses.
 
-## Theme CSS
+Buttons use the classes emitted by `buttonVariants()`: `mt-button`,
+`mt-button--<variant>`, and `mt-button-size--<size>`. This also gives links styled
+with the helper the same artwork as `Button`, without adding attributes at each
+call site. Keep variant and size markers separate.
 
-Each theme file is plain CSS (no `@apply` or `@layer`) and scopes every rule
-to its id:
+## Keep layout shared
 
-- `html[data-design="<id>"]` overrides the shadcn HSL variables
-  (`--background`, `--primary`, `--radius`, …) for light mode.
-- `html.dark[data-design="<id>"]` does the same for dark mode.
-- Component rules target `data-slot` attributes, for example
-  `html[data-design="<id>"] [data-slot="button"][data-variant="outline"]`.
+Theme rules may change appearance, but not content padding, margins, gaps,
+widths, heights, font sizes, line heights, or letter spacing. Those stay in the
+shared component/page classes so that switching themes does not select a
+different density or responsive layout. Keep focus indicators visible.
 
-Fonts come from `next/font/google` in `app/layout.tsx` and are exposed as CSS
-variables such as `--font-fraunces` on `<html>`. They are not preloaded, so a
-theme's fonts load only when that theme uses them.
+Pseudo-elements may have their own geometry to draw the contributor's artwork;
+that geometry must not resize the content container. Font families and weights
+can still change wrapping, so check narrow screens and long labels. Avoid tying
+theme selectors to spacing classes such as `p-8` or `md:p-12`.
 
-## `data-slot` hooks
+Shared button groups own joined corners and borders. Their children suppress
+individual shadows and transforms so theme interaction effects do not separate
+segments. Hive keeps its hexagonal treatment on standalone icon buttons.
+Text buttons can grow vertically and wrap long labels; icon buttons retain their
+fixed size. Dense tables keep button labels on one line inside their scrolling
+container. Cards use `min-w-0` so those containers also shrink inside grids.
+Tabs wrap, PDF toolbar groups can stack, and the shared banner region reserves
+its measured height above page content.
 
-Theme CSS styles components through `data-slot` (and `data-variant`,
-`data-size`, `data-active`, `data-dragging` where relevant) instead of class
-names, because Tailwind class lists change often. The shadcn components in
-`components/ui` carry a slot per part (`card`, `card-header`, `dialog-content`,
-…). App-level containers use shared slots:
+Calculator sidebar toggles live in fixed-width shells outside the collapsible
+surface, so hiding the navigation cannot shrink the toggle. Keep fixed sidebars
+outside decorated page panels: Neon backdrop blur creates a containing block
+that would otherwise anchor fixed descendants to the panel. Account action
+headers wrap in normal document flow on mobile and remain positioned on desktop.
 
-| Slot | Used on |
-| --- | --- |
-| `page-panel` | The main rounded content panel of each page (set by `PagePanel`) |
-| `navbar`, `navbar-logo`, `nav-link` | Top navigation |
-| `bottom-bar`, `social-link` | Footer |
-| `calc-sidebar` | Recipe builder and extra calculator sidebars |
-| `kofi-button` | Ko-fi support button |
+See [the theme audit](theme-audit.md) for browser coverage and remaining limits.
 
-Renaming or removing a `data-slot` does not break the build, but it silently
-drops that theme styling. Search `apps/web/app/themes` for the slot before
-changing it.
+## Adding or editing a design
 
-Wrap page content in `PagePanel` (`components/PagePanel.tsx`) rather than a
-hand-written `rounded-xl bg-background` div. It renders the panel surface and the
-`page-panel` slot; pass layout classes through `className`, the element through
-`as` (for example `as="form"`), and `bare` when the content is embedded and
-should not look like a page.
+1. Define light and dark semantic colors in `app/themes/<id>.css`. Prefer
+   variables and the existing shared hooks; add custom art only where needed.
+2. Import the CSS from `app/globals.css`. Keep imported files as plain CSS
+   without `@layer`: Turbopack processes them separately with Tailwind v3.
+3. Register the id in `lib/design-themes.ts` and add its English label under
+   `accountPage.designTheme` in `packages/i18n/locales/en/default.json`.
+   Weblate supplies German separately; follow [the translation workflow](translation-workflow.md).
+4. Expose any new fonts through `next/font` variables in `app/layout.tsx` with
+   `preload: false` for additional theme fonts.
+5. Run the theme contract tests, and compare both modes with Classic at narrow
+   and desktop widths. New screens using existing primitives need no theme work.
 
-## Adding a theme
-
-1. Create `apps/web/app/themes/<id>.css`, scoped as described above, with
-   both light and dark tokens.
-2. Import it from `apps/web/app/globals.css`.
-3. Add `{ id: "<id>" }` to `DESIGN_THEMES` in `apps/web/lib/design-themes.ts`.
-4. Add `accountPage.designTheme.<id>` to
-   `packages/i18n/locales/en/default.json`. Weblate supplies the other
-   locales (see [translation workflow](translation-workflow.md)).
-5. Load any new fonts in `apps/web/app/layout.tsx` with a `variable` and
-   `preload: false`, and add them to `designFontVariables`.
-
-To remove a theme, reverse those steps, including fonts that no other theme
-uses.
+To remove a design, reverse those steps and remove fonts no other theme uses.
