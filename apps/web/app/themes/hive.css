@@ -349,7 +349,7 @@ html[data-design="hive"] [data-slot="banner"] {
   box-shadow: inset 4px 0 0 hsl(var(--hive-honey));
 }
 
-html[data-design="hive"] [data-slot="banner"]:is([data-variant="default"], .mt-button--default) {
+html[data-design="hive"] [data-slot="banner"][data-variant="default"] {
   background: linear-gradient(90deg, hsl(var(--hive-wax)), hsl(var(--card)) 60%);
 }
 
@@ -404,7 +404,7 @@ html[data-design="hive"] [data-slot="calc-sidebar"] > .mt-button {
   background: hsl(var(--card));
 }
 
-html[data-design="hive"] [data-slot="calc-sidebar"] nav .mt-button {
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button {
   border: 0;
   clip-path: var(--hive-hex-v);
   background: linear-gradient(160deg, hsl(var(--hive-wax)), hsl(var(--secondary)));
@@ -412,8 +412,8 @@ html[data-design="hive"] [data-slot="calc-sidebar"] nav .mt-button {
   transition: background 0.2s ease, color 0.2s ease, transform 0.25s var(--hive-ease);
 }
 
-html[data-design="hive"] [data-slot="calc-sidebar"] nav .mt-button:hover,
-html[data-design="hive"] [data-slot="calc-sidebar"] nav .mt-button:focus-visible {
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:hover,
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:focus-visible {
   background: linear-gradient(160deg, hsl(var(--hive-honey)), hsl(var(--hive-honey-deep)));
   color: hsl(var(--primary-foreground));
   transform: scale(1.06);
@@ -446,7 +446,7 @@ html[data-design="hive"] .mt-button:focus-visible {
 }
 
 /* Primary: poured honey */
-html[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--default) {
+html[data-design="hive"] .mt-button.mt-button--default {
   color: hsl(var(--primary-foreground));
   background-color: hsl(var(--primary));
   background-image: linear-gradient(170deg, hsl(46 98% 66%) 0%, hsl(38 92% 54%) 45%, hsl(31 88% 46%) 100%);
@@ -459,7 +459,7 @@ html[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--def
     0 4px 12px -4px hsl(32 90% 35% / 0.5);
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--default):hover {
+html[data-design="hive"] .mt-button.mt-button--default:hover {
   background-position: 0 100%;
   box-shadow:
     inset 0 1px 0 hsl(50 100% 88% / 0.8),
@@ -467,21 +467,21 @@ html[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--def
     0 8px 18px -6px hsl(32 90% 35% / 0.6);
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--default) {
+html.dark[data-design="hive"] .mt-button.mt-button--default {
   border-color: hsl(42 90% 62% / 0.6);
   box-shadow:
     inset 0 1px 0 hsl(50 100% 85% / 0.7),
     0 0 18px -4px hsl(40 95% 55% / 0.55);
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="default"], .mt-button--default):hover {
+html.dark[data-design="hive"] .mt-button.mt-button--default:hover {
   box-shadow:
     inset 0 1px 0 hsl(50 100% 85% / 0.7),
     0 0 26px -2px hsl(40 95% 55% / 0.7);
 }
 
 /* Emphasis: deeper amber with cream lettering */
-html[data-design="hive"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis) {
+html[data-design="hive"] .mt-button.mt-button--emphasis {
   color: hsl(44 90% 96%);
   background-color: hsl(26 70% 30%);
   background-image: linear-gradient(170deg, hsl(32 82% 42%), hsl(24 72% 28%));
@@ -489,17 +489,17 @@ html[data-design="hive"] .mt-button:is([data-variant="emphasis"], .mt-button--em
   box-shadow: inset 0 1px 0 hsl(40 90% 70% / 0.45), 0 5px 14px -6px hsl(24 80% 20% / 0.7);
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis):hover {
+html[data-design="hive"] .mt-button.mt-button--emphasis:hover {
   background-image: linear-gradient(170deg, hsl(34 86% 46%), hsl(26 74% 32%));
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis) {
+html.dark[data-design="hive"] .mt-button.mt-button--emphasis {
   border-color: hsl(36 80% 50% / 0.6);
   box-shadow: inset 0 1px 0 hsl(40 90% 70% / 0.35), 0 0 18px -6px hsl(36 95% 55% / 0.5);
 }
 
 /* Destructive: propolis red */
-html[data-design="hive"] .mt-button:is([data-variant="destructive"], .mt-button--destructive) {
+html[data-design="hive"] .mt-button.mt-button--destructive {
   color: hsl(var(--destructive-foreground));
   background-color: hsl(var(--destructive));
   background-image: linear-gradient(170deg, hsl(8 74% 54%), hsl(2 70% 40%));
@@ -507,89 +507,89 @@ html[data-design="hive"] .mt-button:is([data-variant="destructive"], .mt-button-
   box-shadow: inset 0 1px 0 hsl(10 100% 80% / 0.4), 0 4px 12px -6px hsl(2 80% 30% / 0.6);
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="destructive"], .mt-button--destructive):hover {
+html[data-design="hive"] .mt-button.mt-button--destructive:hover {
   background-image: linear-gradient(170deg, hsl(8 80% 58%), hsl(2 74% 44%));
 }
 
 /* Secondary: waxy outlined pill that fills with honey on hover */
-html[data-design="hive"] .mt-button:is([data-variant="secondary"], .mt-button--secondary) {
+html[data-design="hive"] .mt-button.mt-button--secondary {
   color: hsl(var(--foreground));
   background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax)));
   border: 1.5px solid hsl(var(--hive-honey-deep) / 0.55);
   box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.6), 0 3px 10px -6px hsl(var(--hive-shadow) / 0.5);
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="secondary"], .mt-button--secondary):hover {
+html[data-design="hive"] .mt-button.mt-button--secondary:hover {
   color: hsl(var(--primary-foreground));
   border-color: hsl(var(--hive-honey-deep));
   background: linear-gradient(170deg, hsl(46 98% 68%), hsl(36 90% 52%));
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="secondary"], .mt-button--secondary) {
+html.dark[data-design="hive"] .mt-button.mt-button--secondary {
   box-shadow: inset 0 1px 0 hsl(var(--hive-honey) / 0.1);
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="secondary"], .mt-button--secondary):hover {
+html.dark[data-design="hive"] .mt-button.mt-button--secondary:hover {
   box-shadow: 0 0 18px -6px hsl(var(--hive-honey) / 0.6);
 }
 
 /* Outline */
-html[data-design="hive"] .mt-button:is([data-variant="outline"], .mt-button--outline) {
+html[data-design="hive"] .mt-button.mt-button--outline {
   color: hsl(var(--foreground));
   background-color: hsl(var(--card) / 0.7);
   border: 1.5px solid hsl(var(--input));
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="outline"], .mt-button--outline):hover {
+html[data-design="hive"] .mt-button.mt-button--outline:hover {
   background-color: hsl(var(--accent));
   border-color: hsl(var(--hive-honey-deep) / 0.7);
   color: hsl(var(--accent-foreground));
 }
 
 /* Ghost */
-html[data-design="hive"] .mt-button:is([data-variant="ghost"], .mt-button--ghost) {
+html[data-design="hive"] .mt-button.mt-button--ghost {
   color: hsl(var(--foreground));
 }
 
-html[data-design="hive"] .mt-button:is([data-variant="ghost"], .mt-button--ghost):hover {
+html[data-design="hive"] .mt-button.mt-button--ghost:hover {
   background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
 }
 
 /* Link */
-html[data-design="hive"] .mt-button:is([data-variant="link"], .mt-button--link) {
+html[data-design="hive"] .mt-button.mt-button--link {
   color: hsl(30 85% 32%);
   text-decoration-color: hsl(var(--hive-honey));
   text-decoration-thickness: 2px;
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-variant="link"], .mt-button--link) {
+html.dark[data-design="hive"] .mt-button.mt-button--link {
   color: hsl(var(--primary));
 }
 
 /* Icon buttons become hexagonal cells. The hex is drawn on ::before so the
  * focus outline stays visible. */
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)),
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)) {
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)),
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)) {
   isolation: isolate;
   border-radius: 0.75rem;
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.absolute):not(.fixed):not(.sticky) {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.absolute):not(.fixed):not(.sticky) {
   position: relative;
 }
 
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link)),
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link)) {
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link),
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link) {
   background: transparent;
   border-color: transparent;
   box-shadow: none;
 }
 
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::before,
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::before,
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::after,
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::after {
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after {
   content: "";
   position: absolute;
   z-index: -1;
@@ -598,51 +598,51 @@ html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--i
 }
 
 /* ::before = rim, ::after = fill */
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::before,
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::before {
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before {
   inset: -1px -2px;
   background: hsl(var(--hive-honey-deep) / 0.7);
 }
 
-html[data-design="hive"] .mt-button:is([data-size="icon"], .mt-button-size--icon):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::after,
-html[data-design="hive"] .mt-button:is([data-size="icon-xs"], .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::after {
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after {
   inset: 1px 0;
   background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax)));
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):is([data-variant="default"], .mt-button--default)::after {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--default::after {
   background: linear-gradient(170deg, hsl(46 98% 66%), hsl(34 90% 50%)) !important;
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):is([data-variant="destructive"], .mt-button--destructive)::before {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--destructive::before {
   background: hsl(2 70% 32%) !important;
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):is([data-variant="destructive"], .mt-button--destructive)::after {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--destructive::after {
   background: linear-gradient(170deg, hsl(8 74% 54%), hsl(2 70% 42%)) !important;
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):is([data-variant="emphasis"], .mt-button--emphasis)::after {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--emphasis::after {
   background: linear-gradient(170deg, hsl(32 82% 42%), hsl(24 72% 28%)) !important;
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link)):not(:is([data-variant="destructive"], .mt-button--destructive)):not(:is([data-variant="emphasis"], .mt-button--emphasis)):not(:is([data-variant="default"], .mt-button--default)):hover {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):not(.mt-button--destructive):not(.mt-button--emphasis):not(.mt-button--default):hover {
   color: hsl(var(--primary-foreground));
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link)):not(:is([data-variant="destructive"], .mt-button--destructive)):not(:is([data-variant="emphasis"], .mt-button--emphasis)):not(:is([data-variant="default"], .mt-button--default)):hover::after {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):not(.mt-button--destructive):not(.mt-button--emphasis):not(.mt-button--default):hover::after {
   background: linear-gradient(170deg, hsl(46 98% 68%), hsl(36 90% 52%));
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link)):hover::before {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):hover::before {
   transform: rotate(0deg) scale(1.04);
 }
 
-html.dark[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(:is([data-variant="ghost"], .mt-button--ghost)):not(:is([data-variant="link"], .mt-button--link))::before {
+html.dark[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before {
   background: hsl(var(--hive-honey) / 0.55);
 }
 
-html[data-design="hive"] .mt-button:is([data-size^="icon"], .mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):focus-visible {
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):focus-visible {
   box-shadow: none;
   border-radius: 0.6rem;
 }
@@ -1068,7 +1068,7 @@ html[data-design="hive"] [data-slot="toast"] {
 }
 
 html[data-design="hive"] [data-slot="toast"].destructive,
-html[data-design="hive"] [data-slot="toast"]:is([data-variant="destructive"], .mt-button--destructive) {
+html[data-design="hive"] [data-slot="toast"][data-variant="destructive"] {
   background-color: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
   box-shadow: inset 5px 0 0 hsl(2 70% 30%), 0 16px 40px -16px hsl(2 70% 20% / 0.55);
@@ -1105,7 +1105,7 @@ html[data-design="hive"] [data-slot="table-head"] .uppercase {
     animation-iteration-count: 1 !important;
   }
   html[data-design="hive"] .mt-button:active:not(:disabled),
-  html[data-design="hive"] [data-slot="calc-sidebar"] nav .mt-button:hover {
+  html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:hover {
     transform: none;
   }
 }

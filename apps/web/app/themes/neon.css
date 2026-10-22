@@ -327,17 +327,17 @@ html[data-design="neon"] [data-slot="banner"] .font-medium {
   color: hsl(var(--neon-pink));
 }
 
-html[data-design="neon"] [data-slot="banner"]:is([data-variant="destructive"], .mt-button--destructive) {
+html[data-design="neon"] [data-slot="banner"][data-variant="destructive"] {
   background: hsl(var(--destructive) / 0.9);
 }
-html[data-design="neon"] [data-slot="banner"]:is([data-variant="destructive"], .mt-button--destructive) .font-medium {
+html[data-design="neon"] [data-slot="banner"][data-variant="destructive"] .font-medium {
   color: hsl(var(--destructive-foreground));
 }
-html[data-design="neon"] [data-slot="banner"]:is([data-variant="warning"], .mt-button--warning) {
+html[data-design="neon"] [data-slot="banner"][data-variant="warning"] {
   background: hsl(var(--warning) / 0.92);
   color: hsl(var(--warning-foreground));
 }
-html[data-design="neon"] [data-slot="banner"]:is([data-variant="warning"], .mt-button--warning) .font-medium {
+html[data-design="neon"] [data-slot="banner"][data-variant="warning"] .font-medium {
   color: hsl(var(--warning-foreground));
 }
 
@@ -485,7 +485,7 @@ html[data-design="neon"] .mt-button:focus-visible {
 }
 
 /* default: magenta tube */
-html[data-design="neon"] .mt-button:is([data-variant="default"], .mt-button--default) {
+html[data-design="neon"] .mt-button.mt-button--default {
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   border: 1px solid hsl(var(--neon-pink));
@@ -494,7 +494,7 @@ html[data-design="neon"] .mt-button:is([data-variant="default"], .mt-button--def
     0 0 12px hsl(var(--neon-glow-pink) / 0.55),
     0 0 28px -6px hsl(var(--neon-glow-pink) / 0.5);
 }
-html[data-design="neon"] .mt-button:is([data-variant="default"], .mt-button--default):hover {
+html[data-design="neon"] .mt-button.mt-button--default:hover {
   background: hsl(var(--primary));
   filter: brightness(1.08);
   box-shadow:
@@ -504,7 +504,7 @@ html[data-design="neon"] .mt-button:is([data-variant="default"], .mt-button--def
 }
 
 /* emphasis: cyan tube */
-html[data-design="neon"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis) {
+html[data-design="neon"] .mt-button.mt-button--emphasis {
   background: hsl(var(--neon-cyan));
   color: hsl(var(--primary-foreground));
   border: 1px solid hsl(var(--neon-cyan));
@@ -513,10 +513,10 @@ html[data-design="neon"] .mt-button:is([data-variant="emphasis"], .mt-button--em
     0 0 12px hsl(var(--neon-glow-cyan) / 0.55),
     0 0 28px -6px hsl(var(--neon-glow-cyan) / 0.5);
 }
-html:not(.dark)[data-design="neon"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis) {
+html:not(.dark)[data-design="neon"] .mt-button.mt-button--emphasis {
   color: hsl(0 0% 100%);
 }
-html[data-design="neon"] .mt-button:is([data-variant="emphasis"], .mt-button--emphasis):hover {
+html[data-design="neon"] .mt-button.mt-button--emphasis:hover {
   background: hsl(var(--neon-cyan));
   filter: brightness(1.08);
   box-shadow:
@@ -526,57 +526,57 @@ html[data-design="neon"] .mt-button:is([data-variant="emphasis"], .mt-button--em
 }
 
 /* destructive: hot red tube */
-html[data-design="neon"] .mt-button:is([data-variant="destructive"], .mt-button--destructive) {
+html[data-design="neon"] .mt-button.mt-button--destructive {
   background: hsl(var(--destructive) / 0.14);
   color: hsl(var(--destructive));
   border: 1px solid hsl(var(--destructive) / 0.85);
   box-shadow: 0 0 10px hsl(var(--destructive) / 0.35), 0 0 8px hsl(var(--destructive) / 0.25) inset;
 }
-html.dark[data-design="neon"] .mt-button:is([data-variant="destructive"], .mt-button--destructive) {
+html.dark[data-design="neon"] .mt-button.mt-button--destructive {
   color: hsl(350 100% 76%);
 }
-html[data-design="neon"] .mt-button:is([data-variant="destructive"], .mt-button--destructive):hover {
+html[data-design="neon"] .mt-button.mt-button--destructive:hover {
   background: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
   box-shadow: 0 0 16px hsl(var(--destructive) / 0.7), 0 0 34px -4px hsl(var(--destructive) / 0.5);
 }
 
 /* outline + secondary: unlit tube that ignites on hover */
-html[data-design="neon"] .mt-button:is([data-variant="outline"], .mt-button--outline),
-html[data-design="neon"] .mt-button:is([data-variant="secondary"], .mt-button--secondary) {
+html[data-design="neon"] .mt-button.mt-button--outline,
+html[data-design="neon"] .mt-button.mt-button--secondary {
   background: hsl(var(--neon-glass) / 0.45);
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--neon-cyan) / 0.65);
   box-shadow: 0 0 0 1px hsl(var(--neon-cyan) / 0.08) inset, 0 0 8px -2px hsl(var(--neon-glow-cyan) / 0.35);
 }
-html[data-design="neon"] .mt-button:is([data-variant="secondary"], .mt-button--secondary) {
+html[data-design="neon"] .mt-button.mt-button--secondary {
   border-color: hsl(var(--neon-pink) / 0.7);
   box-shadow: 0 0 0 1px hsl(var(--neon-pink) / 0.08) inset, 0 0 8px -2px hsl(var(--neon-glow-pink) / 0.4);
 }
-html[data-design="neon"] .mt-button:is([data-variant="outline"], .mt-button--outline):hover {
+html[data-design="neon"] .mt-button.mt-button--outline:hover {
   background: hsl(var(--neon-cyan) / 0.14);
   color: hsl(var(--neon-cyan));
   border-color: hsl(var(--neon-cyan));
   box-shadow: 0 0 14px hsl(var(--neon-glow-cyan) / 0.55), 0 0 10px hsl(var(--neon-glow-cyan) / 0.18) inset;
 }
-html[data-design="neon"] .mt-button:is([data-variant="secondary"], .mt-button--secondary):hover {
+html[data-design="neon"] .mt-button.mt-button--secondary:hover {
   background: hsl(var(--neon-pink) / 0.14);
   color: hsl(var(--neon-pink));
   border-color: hsl(var(--neon-pink));
   box-shadow: 0 0 14px hsl(var(--neon-glow-pink) / 0.55), 0 0 10px hsl(var(--neon-glow-pink) / 0.18) inset;
 }
-html.dark[data-design="neon"] .mt-button:is([data-variant="outline"], .mt-button--outline):hover,
-html.dark[data-design="neon"] .mt-button:is([data-variant="secondary"], .mt-button--secondary):hover {
+html.dark[data-design="neon"] .mt-button.mt-button--outline:hover,
+html.dark[data-design="neon"] .mt-button.mt-button--secondary:hover {
   text-shadow: 0 0 8px currentColor;
 }
 
 /* ghost */
-html[data-design="neon"] .mt-button:is([data-variant="ghost"], .mt-button--ghost) {
+html[data-design="neon"] .mt-button.mt-button--ghost {
   background: transparent;
   color: hsl(var(--foreground));
   border: 1px solid transparent;
 }
-html[data-design="neon"] .mt-button:is([data-variant="ghost"], .mt-button--ghost):hover {
+html[data-design="neon"] .mt-button.mt-button--ghost:hover {
   background: hsl(var(--neon-cyan) / 0.12);
   color: hsl(var(--neon-cyan));
   border-color: hsl(var(--neon-cyan) / 0.4);
@@ -584,18 +584,18 @@ html[data-design="neon"] .mt-button:is([data-variant="ghost"], .mt-button--ghost
 }
 
 /* link */
-html[data-design="neon"] .mt-button:is([data-variant="link"], .mt-button--link) {
+html[data-design="neon"] .mt-button.mt-button--link {
   color: hsl(var(--neon-cyan));
   font-family: var(--neon-font-mono);
   text-transform: none;
 }
-html[data-design="neon"] .mt-button:is([data-variant="link"], .mt-button--link):hover {
+html[data-design="neon"] .mt-button.mt-button--link:hover {
   color: hsl(var(--neon-pink));
 }
 
 /* Navbar utility buttons (lang / theme / mode / account) */
-html[data-design="neon"] [data-slot="navbar"] .mt-button:is([data-variant="outline"], .mt-button--outline),
-html[data-design="neon"] [data-slot="navbar"] .mt-button:is([data-variant="ghost"], .mt-button--ghost) {
+html[data-design="neon"] [data-slot="navbar"] .mt-button.mt-button--outline,
+html[data-design="neon"] [data-slot="navbar"] .mt-button.mt-button--ghost {
   border-radius: 999px;
 }
 

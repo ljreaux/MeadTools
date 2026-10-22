@@ -16,7 +16,7 @@ import {
   Pipette,
   Atom,
   Hexagon,
-  BottleWine,
+  BottleWine
 } from "lucide-react";
 import { extraCalculatorLinks } from "@/lib/navigation";
 
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
+  TooltipTrigger
 } from "@/components/ui/tooltip";
 import { usePathname } from "next/navigation";
 
@@ -45,16 +45,14 @@ function ExtraCalcsSideBar() {
     <Thermometer key="thermometer" />,
     <Blend key="blend" />,
     <Hexagon key="hex" />,
-    <BottleWine key="bottle" />,
+    <BottleWine key="bottle" />
   ];
 
-  const links = extraCalculatorLinks
-    .filter((link) => link.path !== "/juice")
-    .map((link, i) => ({
-      ...link,
-      icon: icons[i],
-      label: t(link.label),
-    }));
+  const links = extraCalculatorLinks.filter((link) => link.path !== "/juice").map((link, i) => ({
+    ...link,
+    icon: icons[i],
+    label: t(link.label)
+  }));
 
   const pathname = usePathname();
 
@@ -79,24 +77,23 @@ function ExtraCalcsSideBar() {
         )}
       </Button>
 
-      {/* The toggle stays in a fixed-width shell when the content is hidden. */}
-      <div
+      {/* Sidebar Content */}
+      <nav
         data-slot="calc-sidebar"
-        hidden={!isOpen}
-        className="rounded-md border border-foreground bg-background px-2"
+        className={`flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto rounded-md border border-foreground bg-background px-2 py-4 ${
+          isOpen ? "" : "hidden"
+        }`}
       >
-        <nav className="flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto py-4">
-          {links.map((link, idx) => (
-            <NavItem
-              key={link.path ?? idx}
-              link={link.path}
-              icon={link.icon}
-              label={link.label}
-              active={isActive(link.path)}
-            />
-          ))}
-        </nav>
-      </div>
+        {links.map((link, idx) => (
+          <NavItem
+            key={link.path ?? idx}
+            link={link.path}
+            icon={link.icon}
+            label={link.label}
+            active={isActive(link.path)}
+          />
+        ))}
+      </nav>
     </div>
   );
 }
@@ -105,7 +102,7 @@ function NavItem({
   link,
   icon,
   label,
-  active,
+  active
 }: {
   link: string;
   icon: JSX.Element;

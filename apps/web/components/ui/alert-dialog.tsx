@@ -52,7 +52,6 @@ const AlertDialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    data-slot="alert-dialog-header"
     className={cn(
       "flex flex-col space-y-2 text-center sm:text-left",
       className
@@ -67,7 +66,6 @@ const AlertDialogFooter = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    data-slot="alert-dialog-footer"
     className={cn(
       "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
       className
@@ -110,7 +108,6 @@ const AlertDialogAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Action
     ref={ref}
-    data-slot="alert-dialog-action"
     className={cn(buttonVariants(), className)}
     {...props}
   />

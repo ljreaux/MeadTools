@@ -11,7 +11,6 @@ const NavigationMenu = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <NavigationMenuPrimitive.Root
     ref={ref}
-    data-slot="navigation-menu"
     className={cn(
       "relative z-10 flex max-w-max flex-1 items-center justify-center",
       className
@@ -30,7 +29,6 @@ const NavigationMenuList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.List
     ref={ref}
-    data-slot="navigation-menu-list"
     className={cn(
       "group flex flex-1 list-none items-center justify-center space-x-1",
       className
@@ -108,7 +106,6 @@ const NavigationMenuIndicator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.Indicator
     ref={ref}
-    data-slot="navigation-menu-indicator"
     className={cn(
       "top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in",
       className

@@ -52,7 +52,6 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    data-slot="table-footer"
     className={cn(
       "border-t bg-muted/30 font-medium [&>tr]:last:border-b-0",
       className
@@ -116,7 +115,6 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    data-slot="table-caption"
     className={cn("mt-4 text-sm text-muted-foreground", className)}
     {...props}
   />

@@ -66,8 +66,6 @@ outside decorated page panels: Neon backdrop blur creates a containing block
 that would otherwise anchor fixed descendants to the panel. Account action
 headers wrap in normal document flow on mobile and remain positioned on desktop.
 
-See [the theme audit](theme-audit.md) for browser coverage and remaining limits.
-
 ## Adding or editing a design
 
 1. Define light and dark semantic colors in `app/themes/<id>.css`. Prefer

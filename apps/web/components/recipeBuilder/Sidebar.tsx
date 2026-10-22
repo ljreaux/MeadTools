@@ -11,7 +11,7 @@ import {
   Pipette,
   Scale,
   NotebookPen,
-  FileText,
+  FileText
 } from "lucide-react";
 import lodash from "lodash";
 
@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
+  TooltipTrigger
 } from "@/components/ui/tooltip";
 
 function RecipeCalculatorSideBar({
@@ -27,7 +27,7 @@ function RecipeCalculatorSideBar({
   children,
   cardNumber,
   forceOpen,
-  showConnectedBrews = false,
+  showConnectedBrews = false
 }: {
   goTo: (pageNum: number) => void;
   children: JSX.Element;
@@ -48,42 +48,40 @@ function RecipeCalculatorSideBar({
     {
       label: t("recipeBuilder.homeHeading"),
       pageNumber: 1,
-      icon: <CookingPot />,
+      icon: <CookingPot />
     },
     {
       label: t("nutesHeading"),
       pageNumber: 2,
-      icon: <SmartphoneCharging />,
+      icon: <SmartphoneCharging />
     },
     {
       label: t("stabilizersHeading"),
       pageNumber: 4,
-      icon: <Pipette />,
+      icon: <Pipette />
     },
     {
       label: t("additivesHeading"),
       pageNumber: 5,
-      icon: <Scale />,
+      icon: <Scale />
     },
     {
       label: t("notes.title"),
       pageNumber: 6,
-      icon: <NotebookPen />,
+      icon: <NotebookPen />
     },
     {
       label: t("PDF.title"),
       pageNumber: 7,
-      icon: <FileText />,
+      icon: <FileText />
     },
     ...(showConnectedBrews
-      ? [
-          {
-            label: t("recipes.connectedBrews.title"),
-            pageNumber: 8,
-            icon: <Beer />,
-          },
-        ]
-      : []),
+      ? [{
+          label: t("recipes.connectedBrews.title"),
+          pageNumber: 8,
+          icon: <Beer />
+        }]
+      : [])
   ];
 
   return (
@@ -105,26 +103,25 @@ function RecipeCalculatorSideBar({
         )}
       </Button>
 
-      {/* The toggle stays in a fixed-width shell when the content is hidden. */}
-      <div
+      {/* Sidebar Content */}
+      <nav
         data-slot="calc-sidebar"
-        hidden={!isOpen}
-        className="rounded-md border border-foreground bg-background px-2"
+        className={`flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto rounded-md border border-foreground bg-background px-2 py-4 ${
+          isOpen ? "" : "hidden"
+        }`}
       >
-        <nav className="flex max-h-[calc(100dvh-7rem)] flex-col items-center gap-4 overflow-y-auto py-4">
-          {links.map((link, idx) => (
-            <NavItem
-              key={`${link.pageNumber}-${idx}`}
-              icon={link.icon}
-              label={link.label}
-              isActive={link.pageNumber === cardNumber}
-              clickFn={() => goTo(link.pageNumber - 1)}
-              tutorialClassName={`joyride-${lodash.camelCase(link.label)}`}
-            />
-          ))}
-          {children}
-        </nav>
-      </div>
+        {links.map((link, idx) => (
+          <NavItem
+            key={`${link.pageNumber}-${idx}`}
+            icon={link.icon}
+            label={link.label}
+            isActive={link.pageNumber === cardNumber}
+            clickFn={() => goTo(link.pageNumber - 1)}
+            tutorialClassName={`joyride-${lodash.camelCase(link.label)}`}
+          />
+        ))}
+        {children}
+      </nav>
     </div>
   );
 }
@@ -134,7 +131,7 @@ function NavItem({
   icon,
   label,
   isActive,
-  tutorialClassName,
+  tutorialClassName
 }: {
   clickFn: () => void;
   icon: JSX.Element;
