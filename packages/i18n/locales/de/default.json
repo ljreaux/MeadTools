@@ -2451,5 +2451,10 @@
         "publicToolsOnly": "Nur sieben öffentliche/zustandslose Tools",
         "accountReadChoice": "Erlaube das Lesen deiner eigenen Ansätze, deiner Historie und Notizen sowie gespeicherter Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten.",
         "accountReadHelp": "Lesezugriff auf private Kontodaten erfordert eine separate Berechtigung. Bestehende Verbindungen behalten ihre sieben Tools. Um teilzunehmen, verbinde dich erneut über OAuth und wähle auf der Zustimmungsseite den Lesezugriff auf das private Konto aus, oder erstelle ein neues persönliches Token mit ausgewählten Konto-Leserechten. Widerrufe hier eine Verbindung, um ihren Zugriff zu entfernen. Konto-Tools werden verfügbar, wenn die Einführung des Konto-Lesezugriffs aktiviert ist."
+    },
+    "draftHandoff": {
+        "title": "Rezeptentwurf",
+        "unsaved": "Dieses Rezept ist nicht gespeichert. Überprüfe und bearbeite es unten, und speichere es dann in deinem Konto. Dieser Browser behält deinen Entwurf auch während der Anmeldung.",
+        "invalid": "Dieser Entwurfslink ist ungültig, nicht unterstützt, zu groß oder in diesem Browser nicht mehr verfügbar. Fordere einen neuen Entwurfslink an. Erlaube dem Browser, deine Änderungen auch während der Anmeldung zu speichern."
     }
 }
