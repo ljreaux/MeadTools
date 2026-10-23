@@ -30,13 +30,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Test impact and workflow regression rules
+        run: node --test scripts/app-impact.test.mjs scripts/quality-impact.test.mjs
+
       - name: Classify changed paths
         id: impact
         env:
           APP_IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           APP_IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           APP_IMPACT_DEFER_FOR_WEBLATE: ${{ github.ref == 'refs/heads/preview' }}
-        run: node scripts/app-impact.mjs --github-output
+        run: node scripts/app-impact.mjs --quality --github-output
 
   test:
     name: Typecheck, test, and verify OpenAPI
@@ -108,8 +111,7 @@ jobs:
 
   mobile:
     name: Typecheck and export mobile
-    # Reviewed bug-only hotfix PRs do not release Mobile. Normal PRs and pushes
-    # retain Mobile validation; Web/API checks still run for hotfix PRs.
+    # Validate only changes consumed by Mobile; release builds use a separate gate.
     needs: impact
     # Add the skip-mobile-check label to bypass this one job for a PR. Pushes
     # to preview/main intentionally ignore PR-only overrides.
