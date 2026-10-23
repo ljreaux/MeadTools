@@ -18,6 +18,9 @@ import { createAccountReadAdapter } from "@/lib/account-read-adapter";
 import { agentCatalogLookups } from "@/lib/ai/agent-catalog-lookups";
 import { executeLimitedMcpTool, McpToolLimitError } from "@/lib/mcp/usage";
 
+import { encodeDraftHandoff, defaultRecipeDraftName } from "@meadtools/recipe-workflows";
+import { publicAppOrigin } from "@/lib/public-origin";
+
 const MAX_RESULT_BYTES = 64 * 1024;
 
 /** One stateless MCP server per HTTP request. No account state lives in it. */
@@ -96,6 +99,29 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
             ? error.message
             : "MCP tool execution failed."
       };
+    }
+    if (execution.status === "ok" && "result" in execution && execution.result &&
+        typeof execution.result === "object" && "status" in execution.result &&
+        execution.result.status === "recipe" && "recipeData" in execution.result) {
+      const result = execution.result;
+      try {
+        const token = encodeDraftHandoff({
+          version: 1,
+          name: defaultRecipeDraftName({
+            recipeData: result.recipeData,
+            recipeDraftInput: {
+              name: typeof request.params.arguments?.name === "string" ? request.params.arguments.name : undefined,
+              style: typeof request.params.arguments?.style === "string" ? request.params.arguments.style : undefined,
+            },
+          }),
+          recipeData: result.recipeData,
+          warnings: result.warnings,
+          assumptions: result.assumptions,
+        });
+        execution = { ...execution, result: { ...result, builderUrl: `${publicAppOrigin()}/recipe-draft#${token}` } };
+      } catch {
+        execution = { ...execution, result: { ...result, builderLinkError: "This draft cannot be opened by link. Reduce the draft size and try again." } };
+      }
     }
     const response = {
       isError: execution.status !== "ok",

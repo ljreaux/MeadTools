@@ -26,6 +26,7 @@ export const mcpServerInstructions = [
   accountReadPresentationInstruction,
   "MeadTools provides read-only account tools, unsaved recipe drafting, catalog lookups, and reviewed wiki retrieval. Use only tools available to this connection; account reads require explicit permission.",
   "When asked for a saved recipe or brew link, use its returned appUrl. These application links grant no access: private recipes require authorized sign-in and brews require owner sign-in. Never invent a public share link or infer public visibility from a URL. If appUrl is null, state that the application did not supply a link.",
+  "When a successful recipe draft returns builderUrl, present that exact URL as a clickable link so the brewer can edit it in MeadTools and explicitly save. Do not shorten, reconstruct, or omit its fragment. A draft is not saved until the brewer confirms in the application. If builderLinkError is present, explain it instead of inventing a URL.",
   mcpAdviceToolGuidance,
   ...brewingEvidenceInstructions
 ].join("\n\n");
