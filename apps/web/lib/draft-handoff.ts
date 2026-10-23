@@ -1,3 +1,4 @@
+import { initialNutrientData } from "@meadtools/core/nutrients";
 import {
   decodeDraftHandoff,
   draftHandoffSchema
@@ -28,6 +29,20 @@ export function openDraftHandoff(
     );
     if (!storage.getItem(`meadtools:handoff:${id}:recipe`))
       throw new Error("Missing recipe");
+  }
+  // RecipeDataV2 permits missing nutrients, but the local builder hydration
+  // gate expects a nutrient object. Normalize only that optional field so
+  // opening/resuming a handoff never discards its recipe or existing edits.
+  const recipeKey = `meadtools:handoff:${id}:recipe`;
+  const storedRecipe = JSON.parse(storage.getItem(recipeKey)!);
+  if (storedRecipe.nutrients === undefined) {
+    storage.setItem(
+      recipeKey,
+      JSON.stringify({
+        ...storedRecipe,
+        nutrients: initialNutrientData()
+      })
+    );
   }
   return {
     handoff,

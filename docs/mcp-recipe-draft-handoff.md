@@ -54,6 +54,9 @@ No save was submitted during this check.
 
 The Codex native MCP connection successfully drafted a blueberry mead and returned
 a localhost builder link for user testing. The separate MeadTools Local plugin
-connection returned internal errors. Completed sign-in and save submission still
-need end-to-end verification; no account write was submitted by the agent. The
-draft details use the existing card wrapper with a 24px gap above the builder.
+connection returned internal errors. The user verified completed sign-in and save
+submission locally; no account write was submitted by the agent. The draft details use the existing card wrapper with a 24px gap above the builder.
+
+Valid handoffs without optional nutrient data are given the shared nutrient
+defaults before builder hydration, including when resuming an older pending
+handoff. A regression test checks that ingredients and edits remain intact.

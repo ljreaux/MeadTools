@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildRecipeDraft } from "@meadtools/recipe-workflows";
+import { buildRecipeDraft, createTraditionalMead } from "@meadtools/recipe-workflows";
 import { encodeDraftHandoff } from "@meadtools/recipe-workflows/draft-handoff";
 import { openDraftHandoff } from "./draft-handoff";
 
@@ -60,4 +60,40 @@ test("sign-in return preserves edited draft and leaves home/source recipes alone
   assert.equal(JSON.parse(storage.getItem(returned.key)!).fg, "1.005");
   assert.equal(storage.getItem("meadtools:recipe::draft"), "home draft");
   assert.equal(storage.getItem("saved-recipe:42"), "original");
+});
+
+
+test("nutrient-less handoffs hydrate their recipe and preserve edits when resumed", () => {
+  const result = createTraditionalMead({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.1,
+    fermentationFinalGravity: 0.996,
+    nutrients: { enabled: false },
+    stabilizers: { enabled: false }
+  });
+  if (result.status !== "recipe") throw new Error("Invalid fixture");
+  assert.equal(result.recipeData.nutrients, undefined);
+  const token = encodeDraftHandoff({ version: 1, name: "No nutrients", recipeData: result.recipeData, warnings: result.warnings, assumptions: result.assumptions });
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); }
+  };
+  const opened = openDraftHandoff(`https://meadtools.com/recipe-draft#${token}`, storage, () => "00000000-0000-4000-8000-000000000000");
+  const recipe = JSON.parse(storage.getItem(opened.key)!);
+  assert.deepEqual(recipe.ingredients, result.recipeData.ingredients);
+  assert.equal(recipe.fg, "0.996");
+  assert.equal(recipe.nutrients.version, 2);
+  assert.equal(typeof recipe.nutrients.inputs.sg, "string");
+  assert.equal(typeof recipe.nutrients.inputs.offsetPpm, "string");
+  // Simulate an older pending handoff with edits and no nutrient object.
+  delete recipe.nutrients;
+  recipe.fg = "1.005";
+  storage.setItem(opened.key, JSON.stringify(recipe));
+  openDraftHandoff(`https://meadtools.com${opened.returnPath}`, storage, () => { throw new Error("Must resume"); });
+  const resumed = JSON.parse(storage.getItem(opened.key)!);
+  assert.deepEqual(resumed.ingredients, result.recipeData.ingredients);
+  assert.equal(resumed.fg, "1.005");
+  assert.equal(resumed.nutrients.version, 2);
+  assert.equal(result.recipeData.nutrients, undefined);
 });
