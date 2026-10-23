@@ -36,7 +36,7 @@ import { Save } from "lucide-react";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { RecipeData } from "@/types/recipeData";
 
-function SaveRecipe({ bottom }: { bottom?: boolean }) {
+function SaveRecipe({ bottom, initialName = "", initialPrivate = false, initialAdvanced, returnPath }: { bottom?: boolean; initialName?: string; initialPrivate?: boolean; initialAdvanced?: boolean; returnPath?: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useToast();
@@ -45,9 +45,9 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
   const createRecipeMutation = useCreateRecipeMutation();
   const createBrewMutation = useCreateAccountBrew();
 
-  const [checked, setChecked] = useState(false); // private
+  const [checked, setChecked] = useState(initialPrivate); // private
   const [notify, setNotify] = useState(false); // activity email toggle
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [createBrew, setCreateBrew] = useState(false);
   const [brewName, setBrewName] = useState("");
   const [savedRecipeId, setSavedRecipeId] = useState<number | null>(null);
@@ -81,7 +81,8 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       nutrients,
       lossAdjustment,
       flags: {
-        private: checked
+        private: checked,
+        ...(initialAdvanced === undefined ? {} : { advanced: initialAdvanced })
       }
     }),
     [
@@ -93,7 +94,8 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
       notes,
       nutrients,
       lossAdjustment,
-      checked
+      checked,
+      initialAdvanced
     ]
   );
 
@@ -233,7 +235,7 @@ function SaveRecipe({ bottom }: { bottom?: boolean }) {
             </div>
           ) : (
             <Link
-              href={"/login"}
+              href={returnPath ? `/login?next=${encodeURIComponent(returnPath)}` : "/login"}
               className="flex items-center justify-center gap-4 px-8 py-2 my-4 text-lg border border-solid rounded-lg bg-background text-foreground hover:bg-foreground hover:border-background hover:text-background sm:gap-8 group"
             >
               {t("recipeForm.login")}

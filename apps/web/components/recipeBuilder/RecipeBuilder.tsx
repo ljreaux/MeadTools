@@ -97,8 +97,20 @@ const cardConfig: CardConfig[] = [
 
 const DRAFT_KEY = "meadtools:recipe::draft";
 
-export default function RecipeBuilder() {
-  const { didInit, didHydrate } = useLocalRecipeStorage({ key: DRAFT_KEY });
+export default function RecipeBuilder({
+  storageKey = DRAFT_KEY,
+  draftName,
+  draftAdvanced,
+  returnPath,
+  compactTop = false
+}: {
+  storageKey?: string;
+  draftName?: string;
+  draftAdvanced?: boolean;
+  returnPath?: string;
+  compactTop?: boolean;
+}) {
+  const { didInit, didHydrate } = useLocalRecipeStorage({ key: storageKey });
   useAccountUnitDefaults({ didInit, didHydrate });
   const {
     derived: { nutrientValueForRecipe },
@@ -125,10 +137,15 @@ export default function RecipeBuilder() {
       value={nutrientValueForRecipe}
       onChange={setNutrients}
     >
-      <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
+      <div className={`w-full flex flex-col justify-center items-center pb-[6rem] relative ${compactTop ? "pt-6" : "pt-[6rem]"}`}>
         <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1}>
           <div className="py-2">
-            <SaveRecipe />
+            <SaveRecipe
+              initialName={draftName}
+              initialAdvanced={draftAdvanced}
+              initialPrivate={!!draftName}
+              returnPath={returnPath}
+            />
             <ResetButton resetFlow={resetFlow} />
           </div>
         </RecipeCalculatorSideBar>
@@ -143,7 +160,13 @@ export default function RecipeBuilder() {
           )}
 
           {currentStepIndex === cards.length - 1 ? (
-            <SaveRecipe bottom />
+            <SaveRecipe
+              bottom
+              initialName={draftName}
+              initialAdvanced={draftAdvanced}
+              initialPrivate={!!draftName}
+              returnPath={returnPath}
+            />
           ) : (
             <Button className="w-full" variant={"secondary"} onClick={next}>
               {t("buttonLabels.next")}

@@ -2447,5 +2447,10 @@
   "yeasts": "Yeast Table",
   "yeastSearch": "Selecting an yeast from the list will autofill the information for you. If you select a yeast that isn't of the brand you selected, it will update the brand for you. You can also input custom yeasts, but will need to adjust the other values yourself.",
   "yeastStrain": "Yeast Strain",
-  "yes": "Yes"
+  "yes": "Yes",
+  "draftHandoff": {
+    "title": "Recipe draft",
+    "unsaved": "This recipe is unsaved. Review and edit it below, then save it to your account. This browser keeps your pending draft through sign-in.",
+    "invalid": "This draft link is invalid, unsupported, too large, or no longer available in this browser. Ask for a new draft link. Allow browser storage to keep edits through sign-in."
+  }
 }
