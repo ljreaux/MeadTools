@@ -13,7 +13,10 @@ import {
   exchangeAuthorizationCode
 } from "../oauth.ts";
 import { createMeadToolsMcpServer } from "../server.ts";
-import { mcpAccountReadToolNames } from "@meadtools/recipe-agent";
+import {
+  mcpAccountReadToolNames,
+  calculatorToolNames
+} from "@meadtools/recipe-agent";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
@@ -77,8 +80,9 @@ assert.doesNotMatch(
   /(?:^|[, ])scope=/,
   "Initial discovery must not override the supported scopes with basic-only access"
 );
-const { GET: getResourceMetadata } =
-  await import("../../../app/.well-known/oauth-protected-resource/route.ts");
+const { GET: getResourceMetadata } = await import(
+  "../../../app/.well-known/oauth-protected-resource/route.ts"
+);
 const discovered = await getResourceMetadata().json();
 assert.deepEqual(discovered.scopes_supported, [base, "mcp:account:read"]);
 const header = `Bearer mtmcp_${"a".repeat(43)}`;
@@ -144,8 +148,9 @@ const hooks = registerHooks({
     return nextResolve(specifier, context);
   }
 });
-const tokenRoute =
-  await import("../../../app/api/account/premium/mcp/tokens/route.ts");
+const tokenRoute = await import(
+  "../../../app/api/account/premium/mcp/tokens/route.ts"
+);
 const authorizeRoute = await import("../../../app/oauth/authorize/route.ts");
 hooks.deregister();
 prisma.mcp_access_tokens.create = async ({ data }) => ({
@@ -306,6 +311,20 @@ for (const [scope, requested, expected] of [
   assert.equal(session.scope, expected);
 }
 
+// Keep the protocol exercise offline while retaining lease and usage admission.
+const calculatorUsage = [];
+prisma.mcp_tool_leases.deleteMany = async () => ({ count: 0 });
+prisma.mcp_tool_leases.count = async () => 0;
+prisma.mcp_tool_leases.create = async () => ({
+  id: "calculator-fixture-lease"
+});
+prisma.mcp_rate_buckets.findUnique = async () => null;
+prisma.mcp_rate_buckets.upsert = async () => ({});
+prisma.mcp_tool_usage.create = async ({ data }) => {
+  calculatorUsage.push(data.tool_name);
+  return {};
+};
+
 // Real SDK protocol exchange, no network, database or model provider.
 for (const scope of [base, expanded]) {
   const server = createMeadToolsMcpServer(42, scope);
@@ -315,9 +334,56 @@ for (const scope of [base, expanded]) {
   await server.connect(serverTransport);
   await client.connect(clientTransport);
   const inventory = await client.listTools();
-  assert.equal(inventory.tools.length, scope === base ? 7 : 14);
+  assert.equal(
+    inventory.tools.length,
+    scope === base
+      ? 7 + calculatorToolNames.length
+      : 14 + calculatorToolNames.length
+  );
   for (const tool of inventory.tools)
     assert.equal(tool.annotations.readOnlyHint, true);
+  const calculatorSamples = {
+    calculate_juice_sugar: { sugar: 24, servingSize: 240 },
+    calculate_abv: { originalGravity: 1.1, finalGravity: 1 },
+    convert_brix_gravity: { reading: 24, unit: "Brix" },
+    estimate_original_gravity: { hydrometerFg: 1, refractometerFgBrix: 5 },
+    calculate_sulfite: { volume: 1 },
+    calculate_sorbate: { volume: 1, abvPercent: 12 },
+    correct_refractometer: { originalReading: 1.1, finalBrix: 8.5 },
+    correct_hydrometer_temperature: {
+      specificGravity: 1.1,
+      measuredTemperature: 68
+    },
+    calculate_blend: {
+      rows: [
+        { value: 1, volume: 1 },
+        { value: 2, volume: 1 }
+      ],
+      valueUnit: "SG",
+      volumeUnit: "L"
+    },
+    calculate_priming_sugar: { volume: 1 },
+    calculate_bottling: { volume: 1, rows: [{ size: "750ml", quantity: 5 }] },
+    calculate_bench_trial: {
+      stockVolumeMl: 1,
+      concentrationPercent: 10,
+      sampleMl: 100,
+      batchSize: 1
+    }
+  };
+  for (const name of calculatorToolNames) {
+    assert.ok(inventory.tools.find((tool) => tool.name === name)?.outputSchema);
+    const result = await client.callTool({
+      name,
+      arguments: calculatorSamples[name]
+    });
+    assert.equal(result.isError, false, JSON.stringify(result));
+    assert.equal(result.structuredContent.status, "ok");
+    assert.deepEqual(
+      result.structuredContent,
+      JSON.parse(result.content[0].text)
+    );
+  }
   for (const name of mcpAccountReadToolNames) {
     const result = await client.callTool({ name, arguments: {} });
     assert.equal(result.isError, true);
@@ -330,4 +396,6 @@ for (const scope of [base, expanded]) {
   await client.close();
   await server.close();
 }
+for (const name of calculatorToolNames)
+  assert.equal(calculatorUsage.filter((tool) => tool === name).length, 2);
 await prisma.$disconnect();

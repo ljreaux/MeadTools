@@ -1,3 +1,4 @@
+import { calculatorToolNames } from "@meadtools/recipe-agent";
 /** Disposable local HTTP verification. No external model provider is called. */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -55,9 +56,9 @@ try {
   assert.equal(listed.status, 200, "MCP tool discovery must succeed");
   const listing = await listed.json() as { result?: { tools?: Array<{ name: string }> } };
   assert.deepEqual(listing.result?.tools?.map((tool) => tool.name).sort(), [
-    "build_recipe_draft", "calculate_gravity_target", "fetch_wiki_page",
+    ...calculatorToolNames, "build_recipe_draft", "calculate_gravity_target", "fetch_wiki_page",
     "search_additives", "search_ingredients", "search_wiki", "search_yeasts",
-  ]);
+  ].sort());
 
   const calculated = await call({
     jsonrpc: "2.0", id: 3, method: "tools/call",

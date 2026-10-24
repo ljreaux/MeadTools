@@ -66,6 +66,9 @@ origin on the permanent `preview` branch when ready to use
 use `NEXT_PUBLIC_BASE_URL`. Connections bound to a previous deployment URL
 must be reconnected after changing the OAuth origin.
 
+For the current standalone calculator inventory, shared implementation, access
+controls, schemas and validation limits, see [MCP calculators](mcp-calculators.md).
+
 The first tool allowlist is `search_ingredients`, `search_additives`,
 `search_yeasts`, `search_wiki`, `fetch_wiki_page`,
 `calculate_gravity_target`, and `build_recipe_draft`. These call the same

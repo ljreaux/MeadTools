@@ -10,6 +10,7 @@ import {
   MCP_SCOPE,
   canReadMcpAccount,
   isMcpAccountReadTool,
+  isCalculatorTool,
   mcpAgentToolDefinitions,
   mcpAgentToolNames,
   mcpServerInstructions
@@ -18,7 +19,10 @@ import { createAccountReadAdapter } from "@/lib/account-read-adapter";
 import { agentCatalogLookups } from "@/lib/ai/agent-catalog-lookups";
 import { executeLimitedMcpTool, McpToolLimitError } from "@/lib/mcp/usage";
 
-import { encodeDraftHandoff, defaultRecipeDraftName } from "@meadtools/recipe-workflows";
+import {
+  encodeDraftHandoff,
+  defaultRecipeDraftName
+} from "@meadtools/recipe-workflows";
 import { publicAppOrigin } from "@/lib/public-origin";
 
 const MAX_RESULT_BYTES = 64 * 1024;
@@ -126,14 +130,18 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
     const response = {
       isError: execution.status !== "ok",
       content: [{ type: "text" as const, text: JSON.stringify(execution) }],
-      ...(isMcpAccountReadTool(request.params.name)
+      ...(isMcpAccountReadTool(request.params.name) ||
+      (isCalculatorTool(request.params.name) && execution.status === "ok")
         ? { structuredContent: execution }
         : {})
     };
-    // Account responses include both structured content and compatibility text.
+    // Account and calculator responses include structured content and compatibility text.
     const size = Buffer.byteLength(
       JSON.stringify(
-        isMcpAccountReadTool(request.params.name) ? response : execution
+        isMcpAccountReadTool(request.params.name) ||
+          isCalculatorTool(request.params.name)
+          ? response
+          : execution
       ),
       "utf8"
     );

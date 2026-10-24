@@ -7,6 +7,7 @@ import AbvLine from "@/components/extraCalcs/AbvLine";
 import Tooltip from "@/components/Tooltips";
 import { Separator } from "@/components/ui/separator";
 
+import { estimatedOriginalGravity } from "@meadtools/core/extra-calculators";
 import { toBrix } from "@meadtools/core/gravity";
 import {
   isValidNumber,
@@ -25,13 +26,10 @@ function EstimatedOG() {
     fgr: "5" // refractometer FG (Brix)
   });
 
-  const estOG =
-    Math.round(
-      (-1.728 * parseNumber(gravity.fgh) +
-        0.01085 * parseNumber(gravity.fgr) +
-        2.728) *
-        1000
-    ) / 1000;
+  const estOG = estimatedOriginalGravity(
+    parseNumber(gravity.fgh),
+    parseNumber(gravity.fgr)
+  );
 
   const abv = useAbv(estOG.toString(), gravity.fgh.toString());
 

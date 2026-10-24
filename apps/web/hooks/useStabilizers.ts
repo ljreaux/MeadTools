@@ -1,3 +1,8 @@
+import {
+  sulfiteAddition,
+  sorbateAddition,
+  sulfitePpmForPh
+} from "@meadtools/core/extra-calculators";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
@@ -42,42 +47,18 @@ const useStabilizers = () => {
 
   // main calculations
   useEffect(() => {
-    const ph = roundTo(phNum, 1);
+    setSorbate(sorbateAddition(volumeNum, volumeUnits, abvNum));
 
-    // NOTE: your original code converts to cubic meters (m^3)
-    // gal -> m^3 via * 0.003785..., liters -> m^3 via / 1000
-    const volM3 =
-      volumeUnits === "gal" ? volumeNum * 0.003785411784 : volumeNum / 1000;
+    const ppm = sulfitePpmForPh(phNum);
 
-    const sorbateG = ((-abvNum * 25 + 400) / 0.75) * volM3;
-    setSorbate(sorbateG);
-
-    let ppm = 50;
-    if (ph <= 2.9) ppm = 11;
-    if (ph === 3) ppm = 13;
-    if (ph === 3.1) ppm = 16;
-    if (ph === 3.2) ppm = 21;
-    if (ph === 3.3) ppm = 26;
-    if (ph === 3.4) ppm = 32;
-    if (ph === 3.5) ppm = 39;
-    if (ph === 3.6) ppm = 50;
-    if (ph === 3.7) ppm = 63;
-    if (ph === 3.8) ppm = 98;
-    if (ph >= 3.9) ppm = 123;
-
-    const multiplier = stabilizerType === "kMeta" ? 570 : 674;
-
-    const sulfiteG =
-      volumeUnits === "gal"
-        ? (volumeNum * 3.785 * ppm) / multiplier
-        : (volumeNum * ppm) / multiplier;
-    setSulfite(sulfiteG);
-
-    const campdenTabs =
-      volumeUnits !== "gal"
-        ? (ppm / 75) * (volumeNum / 3.785)
-        : (ppm / 75) * volumeNum;
-    setCampden(campdenTabs);
+    const additions = sulfiteAddition(
+      volumeNum,
+      volumeUnits,
+      ppm,
+      stabilizerType
+    );
+    setSulfite(additions.sulfiteGrams);
+    setCampden(additions.campdenTablets);
   }, [abvNum, volumeNum, phNum, stabilizerType, volumeUnits]);
 
   // convert the *string* volume when units change (skip first run)

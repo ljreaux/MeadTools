@@ -1,4 +1,13 @@
 import {
+  calculatorTools,
+  calculatorToolDefinitions,
+  calculatorToolNames,
+  isCalculatorTool,
+  executeCalculatorTool,
+  type CalculatorToolName
+} from "./calculator-tools";
+export * from "./calculator-tools";
+import {
   accountReadToolDefinitions,
   accountReadAgentTools,
   executeAccountReadTool,
@@ -206,8 +215,7 @@ export function executePrepareBrewActionTool(
   if (!target) {
     return {
       status: "error",
-      message:
-        "Read the owned brew with get_brew before preparing an action."
+      message: "Read the owned brew with get_brew before preparing an action."
     };
   }
   return {
@@ -472,6 +480,7 @@ export function createWikiAgentTools(
 export const wikiAgentTools = createWikiAgentTools();
 
 export type HostedAgentTool =
+  | (typeof calculatorTools)[number]
   | RecipeAgentTool
   | GravityTargetAgentTool
   | BrewActionAgentTool
@@ -482,6 +491,7 @@ export type HostedAgentTool =
   | typeof recordRecipePlanAgentTool
   | (typeof accountReadAgentTools)[number];
 export const hostedAgentTools: readonly HostedAgentTool[] = [
+  ...calculatorTools,
   ...accountReadAgentTools,
   recordRecipePlanAgentTool,
   ...recipeAgentTools,
@@ -495,6 +505,7 @@ export const hostedAgentTools: readonly HostedAgentTool[] = [
 
 export type HostedAgentToolDefinition = {
   name:
+    | CalculatorToolName
     | AccountReadName
     | RecipeAgentToolName
     | WikiAgentToolName
@@ -512,6 +523,7 @@ export type HostedAgentToolDefinition = {
  */
 export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
   [
+    ...calculatorToolDefinitions,
     ...accountReadToolDefinitions,
     {
       name: recordRecipePlanToolName,
@@ -537,8 +549,10 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
         buildRecipeDraftInputSchema.omit({ deferredAdditives: true }).extend({
           // Catalog tolerance is attached by the host, never requested from
           // the model. Legacy undosed additives are not a new-draft option.
-          nutrients: buildRecipeDraftInputSchema.shape.nutrients.unwrap()
-            .omit({ alcoholTolerance: true }).optional()
+          nutrients: buildRecipeDraftInputSchema.shape.nutrients
+            .unwrap()
+            .omit({ alcoholTolerance: true })
+            .optional()
         }),
         { target: "draft-7", io: "input" }
       )
@@ -672,6 +686,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
 
 /** Reviewed remote MCP allowlist; private reads require an authenticated adapter. */
 export const mcpAgentToolNames = [
+  ...calculatorToolNames,
   ...mcpAccountReadToolNames,
   "search_ingredients",
   "search_additives",
@@ -685,12 +700,15 @@ export const mcpAgentToolNames = [
 export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
 
 export const mcpAgentToolDefinitions = [
+  ...calculatorToolDefinitions,
   ...hostedAgentToolDefinitions.filter(
     (
       definition
     ): definition is HostedAgentToolDefinition & {
       name: Extract<McpAgentToolName, HostedAgentToolDefinition["name"]>;
-    } => mcpAgentToolNames.some((name) => name === definition.name)
+    } =>
+      !isCalculatorTool(definition.name) &&
+      mcpAgentToolNames.some((name) => name === definition.name)
   )
 ];
 
@@ -702,9 +720,7 @@ export async function executeMcpAgentTool(
     NonNullable<Parameters<typeof executeHostedAgentTool>[2]>,
     "fetcher" | "ingredientLookup" | "additiveLookup" | "yeastLookup"
   > & { accountReadAdapter?: AccountReadAdapter } = {}
-): Promise<
-  HostedAgentToolExecution
-> {
+): Promise<HostedAgentToolExecution> {
   if (!mcpAgentToolNames.some((name) => name === toolName)) {
     return { status: "unknown_tool", toolName };
   }
@@ -712,6 +728,7 @@ export async function executeMcpAgentTool(
 }
 
 export type HostedAgentToolExecution =
+  | ReturnType<typeof executeCalculatorTool>
   | RecipeAgentToolExecution
   | RecordRecipePlanAgentToolExecution
   | ReturnType<typeof executeGravityTargetAgentTool>
@@ -733,6 +750,7 @@ export async function executeHostedAgentTool(
     accountReadAdapter?: AccountReadAdapter;
   } = {}
 ): Promise<HostedAgentToolExecution> {
+  if (isCalculatorTool(toolName)) return executeCalculatorTool(toolName, input);
   if (isMcpAccountReadTool(toolName)) {
     return executeAccountReadTool(
       toolName as AccountReadName,
