@@ -1850,31 +1850,113 @@
                 "$ref": "#/components/schemas/BrewEntryWithBrewIdResponse"
               }
             ]
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventoryOutcome"
+              }
+            ]
           }
         },
         "required": [
           "entry"
         ]
       },
-      "BrewValidationErrorResponse": {
+      "BrewEntryBadRequestErrorResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BrewValidationErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+          }
+        ]
+      },
+      "BrewInventoryErrorResponse": {
         "type": "object",
         "properties": {
           "error": {
+            "type": "string"
+          },
+          "code": {
             "type": "string",
             "enum": [
-              "Invalid JSON body",
-              "Missing recipe_id",
-              "Missing brew_id",
-              "Missing entry_id",
-              "Invalid client_entry_id",
-              "Invalid recipe_id",
-              "Only ongoing brews can update their recipe snapshot",
-              "Recipe snapshot not found"
+              "INCOMPATIBLE_UNITS",
+              "QUANTITY_PRECISION",
+              "INVALID_QUANTITY",
+              "INSUFFICIENT_STOCK",
+              "NOT_FOUND",
+              "LINK_MISMATCH",
+              "PREMIUM_REQUIRED",
+              "OPERATION_CONFLICT",
+              "STALE_USAGE",
+              "USAGE_REMOVED",
+              "ENTRY_MISMATCH",
+              "STOCK_ARCHIVED",
+              "STALE_STOCK",
+              "SELECTION_REQUIRED",
+              "INVALID_INVENTORY_REQUEST",
+              "RECONCILIATION_REQUIRED"
+            ]
+          },
+          "shortage": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "g",
+              "mg",
+              "lb",
+              "oz",
+              "L",
+              "mL",
+              "gal",
+              "qt",
+              "pt",
+              "fl_oz",
+              "imp_gal",
+              "imp_qt",
+              "imp_pt",
+              "imp_fl_oz",
+              "tsp",
+              "tbsp",
+              "units"
             ]
           }
         },
         "required": [
-          "error"
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "BrewEntryNotFoundErrorResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string",
+                "enum": [
+                  "Brew not found",
+                  "Entry not found"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ]
+          }
         ]
       },
       "BrewEntryUpdateErrorResponse": {
@@ -1892,6 +1974,18 @@
           "error"
         ]
       },
+      "DeleteBrewEntryRequestBody": {
+        "type": "object",
+        "properties": {
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventorySelection"
+              }
+            ]
+          }
+        }
+      },
       "DeleteBrewEntrySuccessResponse": {
         "type": "object",
         "properties": {
@@ -1899,6 +1993,13 @@
             "type": "string",
             "enum": [
               "Entry deleted successfully."
+            ]
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventoryOutcome"
+              }
             ]
           }
         },
@@ -1957,6 +2058,13 @@
               }
             ]
           },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventorySelection"
+              }
+            ]
+          },
           "type": {
             "$ref": "#/components/schemas/BrewEntryTypeResponse"
           },
@@ -1981,24 +2089,27 @@
         "properties": {
           "brew": {
             "$ref": "#/components/schemas/BrewResponse"
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventoryOutcome"
+              }
+            ]
           }
         },
         "required": [
           "brew"
         ]
       },
-      "BrewEntryIdConflictErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Entry ID is already in use"
-            ]
+      "BrewEntryConflictErrorResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BrewEntryIdConflictErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/BrewInventoryErrorResponse"
           }
-        },
-        "required": [
-          "error"
         ]
       },
       "BrewEntryCreateErrorResponse": {
@@ -2111,6 +2222,28 @@
           "recipe_snapshot",
           "entries",
           "entries_by_stage"
+        ]
+      },
+      "BrewValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Invalid JSON body",
+              "Missing recipe_id",
+              "Missing brew_id",
+              "Missing entry_id",
+              "Invalid client_entry_id",
+              "Invalid entry request",
+              "Invalid recipe_id",
+              "Only ongoing brews can update their recipe snapshot",
+              "Recipe snapshot not found"
+            ]
+          }
+        },
+        "required": [
+          "error"
         ]
       },
       "BrewDetailNotFoundErrorResponse": {
@@ -4842,6 +4975,13 @@
                 "$ref": "#/components/schemas/jsonObjectSchema"
               }
             ]
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventorySelection"
+              }
+            ]
           }
         }
       },
@@ -5964,6 +6104,20 @@
           "entries"
         ]
       },
+      "BrewEntryIdConflictErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Entry ID is already in use"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "BrewEntryResponse": {
         "$ref": "#/components/schemas/brewEntryObjectSchema"
       },
@@ -6048,6 +6202,181 @@
           "data",
           "user_id",
           "brew_id"
+        ]
+      },
+      "BrewInventoryOutcome": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "untracked",
+              "deducted",
+              "premium_unavailable",
+              "reconciliation_required"
+            ]
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stock_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "quantity": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "g",
+                        "mg",
+                        "lb",
+                        "oz",
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp",
+                        "units"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "stock_id",
+                "quantity"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "BrewInventorySelection": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "deduct"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "stock_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "expected": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "stock_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "deducted": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "kg",
+                          "g",
+                          "mg",
+                          "lb",
+                          "oz",
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz",
+                          "tsp",
+                          "tbsp",
+                          "units"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "stock_id",
+                  "deducted"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "mode",
+              "operation_id",
+              "stock_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "untracked"
+                ]
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "additionalProperties": false
+          }
         ]
       },
       "BrewListItemResponse": {
@@ -11415,7 +11744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewValidationErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryBadRequestErrorResponse"
                 }
               }
             }
@@ -11430,12 +11759,22 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryNotFoundErrorResponse"
                 }
               }
             }
@@ -11445,7 +11784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewEntryIdConflictErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryConflictErrorResponse"
                 }
               }
             }
@@ -11574,7 +11913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewValidationErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryBadRequestErrorResponse"
                 }
               }
             }
@@ -11589,12 +11928,32 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
                 }
               }
             }
@@ -11659,7 +12018,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewValidationErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryBadRequestErrorResponse"
                 }
               }
             }
@@ -11674,12 +12033,32 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
                 }
               }
             }
@@ -11691,6 +12070,16 @@
                 "schema": {
                   "$ref": "#/components/schemas/BrewEntryDeleteErrorResponse"
                 }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteBrewEntryRequestBody"
               }
             }
           }

@@ -1,5 +1,7 @@
 import { createBrewEntryForApp } from "@/lib/db/brews";
 import { BrewEntryIdConflictError } from "@/lib/brews/createBrewEntryIdempotently";
+import { entryMutationError } from "@/lib/brews/entryMutationError";
+import type { CreateBrewEntryInput } from "@/lib/db/brews";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { createBrewEntryRequestBodySchema } from "@meadtools/api-contract/brews";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,10 +13,11 @@ import { NextRequest, NextResponse } from "next/server";
  * @body CreateBrewEntryRequestBody
  * @response 201:CreateBrewEntryResponse
  * @responseSet none
- * @add 400:BrewValidationErrorResponse
+ * @add 400:BrewEntryBadRequestErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
- * @add 409:BrewEntryIdConflictErrorResponse
+ * @add 403:BrewInventoryErrorResponse
+ * @add 404:BrewEntryNotFoundErrorResponse
+ * @add 409:BrewEntryConflictErrorResponse
  * @add 500:BrewEntryCreateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -49,9 +52,11 @@ export async function POST(
     );
   }
 
+  const parsed = createBrewEntryRequestBodySchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid entry request" }, { status: 400 });
   try {
-    const brew = await createBrewEntryForApp(userId, brew_id, body);
-    return NextResponse.json({ brew }, { status: 201 });
+    const result = await createBrewEntryForApp(userId, brew_id, parsed.data as CreateBrewEntryInput);
+    return NextResponse.json(result, { status: 201 });
   } catch (err) {
     if (err instanceof BrewEntryIdConflictError) {
       return NextResponse.json(
@@ -59,6 +64,8 @@ export async function POST(
         { status: 409 }
       );
     }
+    const response = entryMutationError(err);
+    if (response) return response;
     console.error("Error creating entry:", err);
     return NextResponse.json(
       { error: "Failed to create entry." },

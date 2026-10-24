@@ -1,4 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
+import {
+  brewInventorySelectionSchema, brewInventoryOutcomeSchema, brewInventoryErrorResponseSchema,
+} from "../packages/api-contract/src/zod/brews.ts";
 
 const documentUrl = new URL("../apps/web/public/openapi.json", import.meta.url);
 const aliasesUrl = new URL(
@@ -48,7 +51,18 @@ for (const [schemaName, publicName] of schemaToPublicName) {
     schemas[publicName] = rewriteReferences(schemas[schemaName]);
   }
 }
+// The static generator cannot resolve imported shared quantity schemas. Use
+// their actual runtime definitions rather than emitting dangling/object refs.
+schemas.BrewInventorySelection = brewInventorySelectionSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
+schemas.BrewInventoryOutcome = brewInventoryOutcomeSchema.toJSONSchema({ target: "openapi-3.0" });
+schemas.BrewInventoryErrorResponse = brewInventoryErrorResponseSchema.toJSONSchema({ target: "openapi-3.0" });
 const rewrittenDocument = rewriteReferences(document);
+// DELETE remains compatible with existing clients that send no request body.
+const deleteBrewEntry = rewrittenDocument.paths?.["/brews/{brew_id}/entries/{entry_id}"]?.delete;
+if (deleteBrewEntry) deleteBrewEntry.requestBody = {
+  required: false,
+  content: { "application/json": { schema: { $ref: "#/components/schemas/DeleteBrewEntryRequestBody" } } },
+};
 const rewrittenSchemas = rewrittenDocument.components?.schemas ?? {};
 const referenced = new Set();
 

@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@meadtools/credit-accounting": "*",
+    "@meadtools/inventory-domain": "*",
     "@meadtools/schemas": "*",
     "zod": "^4.0.0"
   },

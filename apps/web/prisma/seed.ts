@@ -68,6 +68,27 @@ async function main() {
   });
 
   console.log("Users seeded");
+
+  // Grant both local test accounts one calendar month of premium on each seed.
+  const premiumPaidThrough = new Date();
+  const seedDay = premiumPaidThrough.getUTCDate();
+  premiumPaidThrough.setUTCDate(1);
+  premiumPaidThrough.setUTCMonth(premiumPaidThrough.getUTCMonth() + 1);
+  const lastDayOfMonth = new Date(Date.UTC(
+    premiumPaidThrough.getUTCFullYear(),
+    premiumPaidThrough.getUTCMonth() + 1,
+    0,
+  )).getUTCDate();
+  premiumPaidThrough.setUTCDate(Math.min(seedDay, lastDayOfMonth));
+  await prisma.premium_memberships.createMany({
+    data: users.map((user) => ({
+      user_id: user.id,
+      source: "manual",
+      paid_through: premiumPaidThrough,
+    })),
+  });
+  console.log("One month of premium seeded for both test users");
+
   const localChatTestUser =
     users.find((user) => user.role === "user") ?? users[0];
   if (localChatTestUser) {
@@ -388,6 +409,12 @@ async function createHydrometerLogSeries({
 
 async function clearDb() {
   // Order matters because of FKs
+  await prisma.equipment_assignment_events.deleteMany();
+  await prisma.equipment.deleteMany();
+  await prisma.inventory_adjustments.deleteMany();
+  await prisma.inventory_consumptions.deleteMany();
+  await prisma.inventory_operations.deleteMany();
+  await prisma.inventory_stock.deleteMany();
   await prisma.credit_payment_recoveries.deleteMany();
   await prisma.mcp_tool_usage.deleteMany();
   await prisma.mcp_tool_leases.deleteMany();

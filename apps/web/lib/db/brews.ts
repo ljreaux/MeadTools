@@ -1,4 +1,8 @@
 import prisma from "@/lib/prisma";
+import { randomUUID } from "node:crypto";
+import type { BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import { mutateBrewEntryWithInventory } from "@/lib/brews/inventoryMutation";
+import { InventoryWriteError } from "@/lib/db/inventory";
 import {
   Prisma,
   brew_stage,
@@ -108,6 +112,7 @@ export type PatchBrewMetadataInput = {
 export type CreateBrewEntryInput = {
   type: brew_entry_type;
   client_entry_id?: string;
+  inventory?: BrewInventorySelection;
 
   datetime?: string | Date;
   title?: string | null;
@@ -124,6 +129,7 @@ export type CreateBrewEntryInput = {
 };
 
 export type PatchBrewEntryInput = {
+  inventory?: BrewInventorySelection;
   datetime?: string | Date;
   title?: string | null;
   note?: string | null;
@@ -1240,7 +1246,10 @@ export async function createBrewEntryForApp(
   userId: number,
   brewId: string,
   input: CreateBrewEntryInput
-): Promise<BrewForApp> {
+): Promise<{ brew: BrewForApp; inventory: BrewInventoryOutcome }> {
+  if (input.inventory?.mode === "deduct" && (!input.client_entry_id || input.type !== "ADDITION")) {
+    throw new InventoryWriteError("ENTRY_MISMATCH");
+  }
   // ownership check
   const brew = await prisma.brews.findFirst({
     where: { id: brewId, user_id: userId },
@@ -1257,7 +1266,7 @@ export async function createBrewEntryForApp(
     await patchBrewMetadata(userId, brewId, { stage: to });
 
     // consistent return
-    return getBrewForApp(userId, brewId);
+    return { brew: await getBrewForApp(userId, brewId), inventory: { status: "untracked" } };
   }
 
   const dtRaw = input.datetime;
@@ -1269,7 +1278,11 @@ export async function createBrewEntryForApp(
         : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
-  await prisma.$transaction(async (tx) => {
+  const entryId = input.client_entry_id ?? randomUUID();
+  const inventory = await mutateBrewEntryWithInventory(userId, {
+    brewId, entryId, kind: "create", selection: input.inventory,
+    entryMutation: JSON.parse(JSON.stringify(input)),
+  }, async (tx) => {
     const entryData = {
       brew_id: brewId,
       user_id: userId,
@@ -1286,7 +1299,7 @@ export async function createBrewEntryForApp(
     await createBrewEntryIdempotently({
       brewId,
       userId,
-      clientEntryId: input.client_entry_id,
+      clientEntryId: entryId,
       create: async (clientEntryId) => {
         const select = {
           id: true,
@@ -1324,7 +1337,7 @@ export async function createBrewEntryForApp(
   });
 
   // consistent return
-  return getBrewForApp(userId, brewId);
+  return { brew: await getBrewForApp(userId, brewId), inventory };
 }
 export async function patchBrewEntryForApp(
   userId: number,
@@ -1332,7 +1345,10 @@ export async function patchBrewEntryForApp(
   entryId: string,
   input: PatchBrewEntryInput
 ) {
-  return prisma.$transaction(async (tx) => {
+  const inventory = await mutateBrewEntryWithInventory(userId, {
+    brewId, entryId, kind: "edit", selection: input.inventory,
+    entryMutation: JSON.parse(JSON.stringify(input)),
+  }, async (tx) => {
     // 1) ownership check (entry must belong to brew, brew must belong to user)
     const entry = await tx.brew_entries.findFirst({
       where: {
@@ -1430,60 +1446,39 @@ export async function patchBrewEntryForApp(
       await syncCurrentVolume(tx, brewId);
     }
 
-    // 4) return the updated entry (consistent shape)
-    return tx.brew_entries.findUnique({
-      where: { id: entryId },
-      select: {
-        id: true,
-        brew_id: true,
-        user_id: true,
-        datetime: true,
-        type: true,
-        title: true,
-        note: true,
-        gravity: true,
-        temperature: true,
-        temp_units: true,
-        data: true
-      }
-    });
   });
+  const entry = await prisma.brew_entries.findFirst({
+    where: { id: entryId, brew_id: brewId, brews: { user_id: userId } },
+    select: {
+      id: true, brew_id: true, user_id: true, datetime: true, type: true,
+      title: true, note: true, gravity: true, temperature: true, temp_units: true, data: true,
+    },
+  });
+  return { entry, inventory };
 }
 
 export async function deleteBrewEntryForApp(
   userId: number,
   brewId: string,
-  entryId: string
+  entryId: string,
+  input: { inventory?: BrewInventorySelection } = {},
 ) {
-  // Same ownership + stage-change rule
-  const entry = await prisma.brew_entries.findFirst({
-    where: {
-      id: entryId,
-      brew_id: brewId,
-      brews: { user_id: userId }
-    },
-    select: { id: true, type: true, data: true }
-  });
-
-  if (!entry) throw new Error("Entry not found");
-
-  // Option B: don’t allow deleting stage changes via this endpoint
-  if (entry.type === brew_entry_type.STAGE_CHANGE) {
-    throw new Error("Cannot delete stage change entry");
-  }
-
-  await prisma.$transaction(async (tx) => {
+  const inventory = await mutateBrewEntryWithInventory(userId, {
+    brewId, entryId, kind: "remove", selection: input.inventory,
+    entryMutation: JSON.parse(JSON.stringify(input)),
+  }, async (tx) => {
+    const entry = await tx.brew_entries.findFirst({
+      where: { id: entryId, brew_id: brewId, brews: { user_id: userId } },
+      select: { id: true, type: true, data: true },
+    });
+    if (!entry) throw new Error("Entry not found");
+    if (entry.type === brew_entry_type.STAGE_CHANGE) throw new Error("Cannot delete stage change entry");
     await tx.brew_entries.delete({ where: { id: entryId } });
     await syncLatestGravity(tx, brewId);
-    if (shouldSyncEstimatedAbvForEntry(entry)) {
-      await syncEstimatedAbvEntry(tx, brewId, userId);
-    }
-    if (entry.type === brew_entry_type.VOLUME) {
-      await syncCurrentVolume(tx, brewId);
-    }
+    if (shouldSyncEstimatedAbvForEntry(entry)) await syncEstimatedAbvEntry(tx, brewId, userId);
+    if (entry.type === brew_entry_type.VOLUME) await syncCurrentVolume(tx, brewId);
   });
-
-  return { message: "Entry deleted successfully." };
+  return { message: "Entry deleted successfully." as const, inventory };
 }
 
 // brews.ts (additions)

@@ -163,6 +163,19 @@ the baseline.
 
 ## Generator inputs
 
+The inventory brew-entry integration adds optional `inventory` selections to
+POST/PATCH and an optional DELETE body on brew entries. Deduct mode requires a
+stable operation UUID and stock UUID; corrections/removal include the prior
+deducted stock quantity. Existing untracked requests remain valid, and mutation
+responses add an optional inventory outcome beside the existing result. No stock
+identities are added to public brew entry data. The three entry operations now
+document typed 400/403/404/409 failures, including stock shortages and stale
+deductions. The path parity check normalizes these reviewed entry changes before
+comparing the earlier routes. DELETE's optional body is restored by the OpenAPI
+normalizer because the generator omits DELETE bodies. Imported inventory quantity
+definitions are rendered from the runtime Zod schemas so unit enums and numeric
+limits cannot degrade into unresolved references or generic object schemas.
+
 The OpenAPI generator uses Zod schema mode. It scans:
 
 - `apps/web/app/api` for Route Handlers and their OpenAPI annotations.

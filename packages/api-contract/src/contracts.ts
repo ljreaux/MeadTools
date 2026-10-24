@@ -53,15 +53,21 @@ import {
   brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
+  brewEntryBadRequestErrorResponseSchema,
+  brewEntryConflictErrorResponseSchema,
   brewEntryCreateErrorResponseSchema,
   brewEntryDeleteErrorResponseSchema,
   brewEntryIdConflictErrorResponseSchema,
+  brewEntryNotFoundErrorResponseSchema,
   brewEntryPathParamsSchema,
   brewEntryResponseSchema,
   brewEntryTypeResponseSchema,
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewInventoryErrorResponseSchema,
+  brewInventoryOutcomeSchema,
+  brewInventorySelectionSchema,
   brewListItemResponseSchema,
   brewPathParamsSchema,
   brewRecipeNotFoundErrorResponseSchema,
@@ -144,6 +150,7 @@ import {
   deleteAdditiveFailureErrorResponseSchema,
   deleteAdditiveSuccessResponseSchema,
   deleteAdminUserSuccessResponseSchema,
+  deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   deleteChatAccessGrantResponseSchema,
@@ -425,15 +432,21 @@ export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSche
 export type BrewDetailNotFoundErrorResponse = z.infer<typeof brewDetailNotFoundErrorResponseSchema>;
 export type BrewDeviceActionErrorResponse = z.infer<typeof brewDeviceActionErrorResponseSchema>;
 export type BrewEntriesByStageResponse = z.infer<typeof brewEntriesByStageResponseSchema>;
+export type BrewEntryBadRequestErrorResponse = z.infer<typeof brewEntryBadRequestErrorResponseSchema>;
+export type BrewEntryConflictErrorResponse = z.infer<typeof brewEntryConflictErrorResponseSchema>;
 export type BrewEntryCreateErrorResponse = z.infer<typeof brewEntryCreateErrorResponseSchema>;
 export type BrewEntryDeleteErrorResponse = z.infer<typeof brewEntryDeleteErrorResponseSchema>;
 export type BrewEntryIdConflictErrorResponse = z.infer<typeof brewEntryIdConflictErrorResponseSchema>;
+export type BrewEntryNotFoundErrorResponse = z.infer<typeof brewEntryNotFoundErrorResponseSchema>;
 export type BrewEntryPathParams = z.infer<typeof brewEntryPathParamsSchema>;
 export type BrewEntryResponse = z.infer<typeof brewEntryResponseSchema>;
 export type BrewEntryTypeResponse = z.infer<typeof brewEntryTypeResponseSchema>;
 export type BrewEntryUpdateErrorResponse = z.infer<typeof brewEntryUpdateErrorResponseSchema>;
 export type BrewEntryWithBrewIdResponse = z.infer<typeof brewEntryWithBrewIdResponseSchema>;
 export type BrewFetchErrorResponse = z.infer<typeof brewFetchErrorResponseSchema>;
+export type BrewInventoryErrorResponse = z.infer<typeof brewInventoryErrorResponseSchema>;
+export type BrewInventoryOutcome = z.infer<typeof brewInventoryOutcomeSchema>;
+export type BrewInventorySelection = z.infer<typeof brewInventorySelectionSchema>;
 export type BrewListItemResponse = z.infer<typeof brewListItemResponseSchema>;
 export type BrewPathParams = z.infer<typeof brewPathParamsSchema>;
 export type BrewRecipeNotFoundErrorResponse = z.infer<typeof brewRecipeNotFoundErrorResponseSchema>;
@@ -516,6 +529,7 @@ export type CreditPaymentRecoveryStatus = z.infer<typeof creditPaymentRecoverySt
 export type DeleteAdditiveFailureErrorResponse = z.infer<typeof deleteAdditiveFailureErrorResponseSchema>;
 export type DeleteAdditiveSuccessResponse = z.infer<typeof deleteAdditiveSuccessResponseSchema>;
 export type DeleteAdminUserSuccessResponse = z.infer<typeof deleteAdminUserSuccessResponseSchema>;
+export type DeleteBrewEntryRequestBody = z.infer<typeof deleteBrewEntryRequestBodySchema>;
 export type DeleteBrewEntrySuccessResponse = z.infer<typeof deleteBrewEntrySuccessResponseSchema>;
 export type DeleteBrewSuccessResponse = z.infer<typeof deleteBrewSuccessResponseSchema>;
 export type DeleteChatAccessGrantResponse = z.infer<typeof deleteChatAccessGrantResponseSchema>;

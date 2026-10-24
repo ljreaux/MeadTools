@@ -52,15 +52,21 @@ import {
   brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
+  brewEntryBadRequestErrorResponseSchema,
+  brewEntryConflictErrorResponseSchema,
   brewEntryCreateErrorResponseSchema,
   brewEntryDeleteErrorResponseSchema,
   brewEntryIdConflictErrorResponseSchema,
+  brewEntryNotFoundErrorResponseSchema,
   brewEntryPathParamsSchema,
   brewEntryResponseSchema,
   brewEntryTypeResponseSchema,
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewInventoryErrorResponseSchema,
+  brewInventoryOutcomeSchema,
+  brewInventorySelectionSchema,
   brewListItemResponseSchema,
   brewPathParamsSchema,
   brewRecipeNotFoundErrorResponseSchema,
@@ -143,6 +149,7 @@ import {
   deleteAdditiveFailureErrorResponseSchema,
   deleteAdditiveSuccessResponseSchema,
   deleteAdminUserSuccessResponseSchema,
+  deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   deleteChatAccessGrantResponseSchema,
@@ -424,15 +431,21 @@ export const BrewDeleteErrorResponse = brewDeleteErrorResponseSchema;
 export const BrewDetailNotFoundErrorResponse = brewDetailNotFoundErrorResponseSchema;
 export const BrewDeviceActionErrorResponse = brewDeviceActionErrorResponseSchema;
 export const BrewEntriesByStageResponse = brewEntriesByStageResponseSchema;
+export const BrewEntryBadRequestErrorResponse = brewEntryBadRequestErrorResponseSchema;
+export const BrewEntryConflictErrorResponse = brewEntryConflictErrorResponseSchema;
 export const BrewEntryCreateErrorResponse = brewEntryCreateErrorResponseSchema;
 export const BrewEntryDeleteErrorResponse = brewEntryDeleteErrorResponseSchema;
 export const BrewEntryIdConflictErrorResponse = brewEntryIdConflictErrorResponseSchema;
+export const BrewEntryNotFoundErrorResponse = brewEntryNotFoundErrorResponseSchema;
 export const BrewEntryPathParams = brewEntryPathParamsSchema;
 export const BrewEntryResponse = brewEntryResponseSchema;
 export const BrewEntryTypeResponse = brewEntryTypeResponseSchema;
 export const BrewEntryUpdateErrorResponse = brewEntryUpdateErrorResponseSchema;
 export const BrewEntryWithBrewIdResponse = brewEntryWithBrewIdResponseSchema;
 export const BrewFetchErrorResponse = brewFetchErrorResponseSchema;
+export const BrewInventoryErrorResponse = brewInventoryErrorResponseSchema;
+export const BrewInventoryOutcome = brewInventoryOutcomeSchema;
+export const BrewInventorySelection = brewInventorySelectionSchema;
 export const BrewListItemResponse = brewListItemResponseSchema;
 export const BrewPathParams = brewPathParamsSchema;
 export const BrewRecipeNotFoundErrorResponse = brewRecipeNotFoundErrorResponseSchema;
@@ -515,6 +528,7 @@ export const CreditPaymentRecoveryStatus = creditPaymentRecoveryStatusSchema;
 export const DeleteAdditiveFailureErrorResponse = deleteAdditiveFailureErrorResponseSchema;
 export const DeleteAdditiveSuccessResponse = deleteAdditiveSuccessResponseSchema;
 export const DeleteAdminUserSuccessResponse = deleteAdminUserSuccessResponseSchema;
+export const DeleteBrewEntryRequestBody = deleteBrewEntryRequestBodySchema;
 export const DeleteBrewEntrySuccessResponse = deleteBrewEntrySuccessResponseSchema;
 export const DeleteBrewSuccessResponse = deleteBrewSuccessResponseSchema;
 export const DeleteChatAccessGrantResponse = deleteChatAccessGrantResponseSchema;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { quantitySchema, quantityUnitSchema } from "@meadtools/inventory-domain";
 
 export const brewStageResponseSchema = z.enum([
   "PLANNED",
@@ -184,6 +185,31 @@ export const publicBrewFetchErrorResponseSchema = z.object({
   ]),
 });
 
+export const brewInventorySelectionSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("deduct"),
+    operation_id: z.string().uuid(),
+    stock_id: z.string().uuid(),
+    expected: z.object({ stock_id: z.string().uuid(), deducted: quantitySchema }).strict().nullable().default(null),
+  }).strict(),
+  z.object({ mode: z.literal("untracked") }).strict(),
+]);
+export const brewInventoryOutcomeSchema = z.object({
+  status: z.enum(["untracked", "deducted", "premium_unavailable", "reconciliation_required"]),
+  balances: z.array(z.object({ stock_id: z.string().uuid(), quantity: quantitySchema })).optional(),
+});
+export const brewInventoryErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.enum([
+    "INCOMPATIBLE_UNITS", "QUANTITY_PRECISION", "INVALID_QUANTITY", "INSUFFICIENT_STOCK",
+    "NOT_FOUND", "LINK_MISMATCH", "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "STALE_USAGE",
+    "USAGE_REMOVED", "ENTRY_MISMATCH", "STOCK_ARCHIVED", "STALE_STOCK", "SELECTION_REQUIRED",
+    "INVALID_INVENTORY_REQUEST", "RECONCILIATION_REQUIRED",
+  ]),
+  shortage: z.number().nonnegative().optional(),
+  unit: quantityUnitSchema.optional(),
+});
+
 const brewEntryMutationObjectSchema = z.object({
   datetime: z.string().optional(),
   title: z.string().nullable().optional(),
@@ -192,6 +218,7 @@ const brewEntryMutationObjectSchema = z.object({
   temperature: z.number().nullable().optional(),
   temp_units: temperatureUnitResponseSchema.nullable().optional(),
   data: jsonObjectSchema.nullable().optional(),
+  inventory: brewInventorySelectionSchema.optional(),
 });
 export const createBrewEntryRequestBodySchema =
   brewEntryMutationObjectSchema.extend({
@@ -201,6 +228,7 @@ export const createBrewEntryRequestBodySchema =
   });
 export const createBrewEntryResponseSchema = z.object({
   brew: brewResponseSchema,
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
 export const brewEntryIdConflictErrorResponseSchema = z.object({
   error: z.literal("Entry ID is already in use"),
@@ -208,12 +236,15 @@ export const brewEntryIdConflictErrorResponseSchema = z.object({
 export const updateBrewEntryRequestBodySchema = brewEntryMutationObjectSchema;
 export const updateBrewEntryResponseSchema = z.object({
   entry: brewEntryWithBrewIdResponseSchema.nullable(),
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
+export const deleteBrewEntryRequestBodySchema = z.object({ inventory: brewInventorySelectionSchema.optional() }).strict();
 export const deleteBrewSuccessResponseSchema = z.object({
   message: z.literal("Brew deleted successfully."),
 });
 export const deleteBrewEntrySuccessResponseSchema = z.object({
   message: z.literal("Entry deleted successfully."),
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
 export const attachDeviceToBrewRequestBodySchema = z.object({
   device_id: z.string(),
@@ -253,9 +284,20 @@ export const brewValidationErrorResponseSchema = errorEnum([
   "Missing brew_id",
   "Missing entry_id",
   "Invalid client_entry_id",
+  "Invalid entry request",
   "Invalid recipe_id",
   "Only ongoing brews can update their recipe snapshot",
   "Recipe snapshot not found",
+]);
+export const brewEntryBadRequestErrorResponseSchema = z.union([
+  brewValidationErrorResponseSchema, brewInventoryErrorResponseSchema,
+]);
+export const brewEntryConflictErrorResponseSchema = z.union([
+  brewEntryIdConflictErrorResponseSchema, brewInventoryErrorResponseSchema,
+]);
+export const brewEntryNotFoundErrorResponseSchema = z.union([
+  authenticatedRouteErrorResponseSchema, brewInventoryErrorResponseSchema,
+  z.object({ error: z.enum(["Brew not found", "Entry not found"]) }),
 ]);
 export const brewFetchErrorResponseSchema = errorEnum([
   "Failed to fetch brews.",
