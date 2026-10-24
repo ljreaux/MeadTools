@@ -121,6 +121,7 @@ import {
   createChatCreditGrantResponseSchema,
   createCreditCheckoutRequestBodySchema,
   createCreditCheckoutResponseSchema,
+  createEquipmentRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
@@ -168,6 +169,14 @@ import {
   deleteYeastFailureErrorResponseSchema,
   deleteYeastSuccessResponseSchema,
   endHydrometerBrewResponseSchema,
+  equipmentBrewSummarySchema,
+  equipmentErrorResponseSchema,
+  equipmentItemSchema,
+  equipmentMutationResponseSchema,
+  equipmentNotFoundErrorResponseSchema,
+  equipmentOverviewResponseSchema,
+  equipmentPathParamsSchema,
+  equipmentUnexpectedErrorResponseSchema,
   getRecipeResponseSchema,
   goFermTypeSchema,
   gravityUnitResponseSchema,
@@ -341,6 +350,7 @@ import {
   updateChatAccessAdministrationRequestBodySchema,
   updateChatConversationRequestBodySchema,
   updateChatConversationResponseSchema,
+  updateEquipmentRequestBodySchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -500,6 +510,7 @@ export type CreateChatCreditGrantRequestBody = z.infer<typeof createChatCreditGr
 export type CreateChatCreditGrantResponse = z.infer<typeof createChatCreditGrantResponseSchema>;
 export type CreateCreditCheckoutRequestBody = z.infer<typeof createCreditCheckoutRequestBodySchema>;
 export type CreateCreditCheckoutResponse = z.infer<typeof createCreditCheckoutResponseSchema>;
+export type CreateEquipmentRequestBody = z.infer<typeof createEquipmentRequestBodySchema>;
 export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
 export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
 export type CreateRecipeCommentFailureErrorResponse = z.infer<typeof createRecipeCommentFailureErrorResponseSchema>;
@@ -547,6 +558,14 @@ export type DeleteRecipeSuccessResponse = z.infer<typeof deleteRecipeSuccessResp
 export type DeleteYeastFailureErrorResponse = z.infer<typeof deleteYeastFailureErrorResponseSchema>;
 export type DeleteYeastSuccessResponse = z.infer<typeof deleteYeastSuccessResponseSchema>;
 export type EndHydrometerBrewResponse = z.infer<typeof endHydrometerBrewResponseSchema>;
+export type EquipmentBrewSummary = z.infer<typeof equipmentBrewSummarySchema>;
+export type EquipmentErrorResponse = z.infer<typeof equipmentErrorResponseSchema>;
+export type EquipmentItem = z.infer<typeof equipmentItemSchema>;
+export type EquipmentMutationResponse = z.infer<typeof equipmentMutationResponseSchema>;
+export type EquipmentNotFoundErrorResponse = z.infer<typeof equipmentNotFoundErrorResponseSchema>;
+export type EquipmentOverviewResponse = z.infer<typeof equipmentOverviewResponseSchema>;
+export type EquipmentPathParams = z.infer<typeof equipmentPathParamsSchema>;
+export type EquipmentUnexpectedErrorResponse = z.infer<typeof equipmentUnexpectedErrorResponseSchema>;
 export type GetRecipeResponse = z.infer<typeof getRecipeResponseSchema>;
 export type GoFermType = z.infer<typeof goFermTypeSchema>;
 export type GravityUnitResponse = z.infer<typeof gravityUnitResponseSchema>;
@@ -720,6 +739,7 @@ export type UpdateBrewResponse = z.infer<typeof updateBrewResponseSchema>;
 export type UpdateChatAccessAdministrationRequestBody = z.infer<typeof updateChatAccessAdministrationRequestBodySchema>;
 export type UpdateChatConversationRequestBody = z.infer<typeof updateChatConversationRequestBodySchema>;
 export type UpdateChatConversationResponse = z.infer<typeof updateChatConversationResponseSchema>;
+export type UpdateEquipmentRequestBody = z.infer<typeof updateEquipmentRequestBodySchema>;
 export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
 export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
 export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;

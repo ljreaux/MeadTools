@@ -51,9 +51,11 @@ function stockRecord(stock: inventory_stock): StockRecord {
 
 /** Small-account serialization also protects absent operation/consumption rows.
  * All inventory writes lock account -> brew -> entry -> stock IDs in order.
+ * NO KEY UPDATE serializes account mutations without blocking FK key-share
+ * checks in ordinary brew completion transactions (which could deadlock).
  * No lock, credentials, or persistence types escape to the shared domain package.
  */
-export function createInventoryService(database: PrismaClient = prisma) {
+export function createInventoryOperation(database: PrismaClient = prisma) {
   async function operation<T extends Prisma.InputJsonObject>(
     userId: number, operationKey: string, request: Prisma.InputJsonObject,
     readResult: (result: Prisma.JsonValue) => T,
@@ -63,7 +65,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     const requestHash = createHash("sha256").update(canonicalJson(request)).digest("hex");
     return database.$transaction(async (tx) => {
       const owners = await tx.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM users WHERE id = ${userId} FOR UPDATE
+        SELECT id FROM users WHERE id = ${userId} FOR NO KEY UPDATE
       `;
       if (!owners.length) throw new InventoryError("NOT_FOUND");
       const status = await getPremiumAccessStatus(userId, new Date(), tx);
@@ -83,6 +85,12 @@ export function createInventoryService(database: PrismaClient = prisma) {
       return result;
     }, { maxWait: 10_000, timeout: 15_000 });
   }
+
+  return operation;
+}
+
+export function createInventoryService(database: PrismaClient = prisma) {
+  const operation = createInventoryOperation(database);
 
   async function lockStock(tx: Tx, userId: number, ids: string[]) {
     const uniqueIds = [...new Set(ids)].sort();
@@ -270,7 +278,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     uuid.parse(input.entryId);
     return database.$transaction(async (tx) => {
       const owners = await tx.$queryRaw<Array<{ id: number }>>`
-        SELECT id FROM users WHERE id = ${userId} FOR UPDATE
+        SELECT id FROM users WHERE id = ${userId} FOR NO KEY UPDATE
       `;
       if (!owners.length) throw new InventoryError("NOT_FOUND");
       const status = await getPremiumAccessStatus(userId, new Date(), tx);

@@ -176,6 +176,16 @@ normalizer because the generator omits DELETE bodies. Imported inventory quantit
 definitions are rendered from the runtime Zod schemas so unit enums and numeric
 limits cannot degrade into unresolved references or generic object schemas.
 
+Equipment management adds authenticated `GET`/`POST /account/equipment` and
+`PATCH /account/equipment/{equipment_id}`. Reads include `can_manage`, retained
+equipment and ongoing owned brew choices. Mutations require premium and a stable
+operation UUID. PATCH discriminates `edit`, `assign` and `archive`; assignment
+includes the expected prior brew and an explicit reassignment choice. Conflicts
+return typed 409 errors, foreign records return 404, and expired accounts retain
+read-only access. The normalizer renders these schemas from runtime Zod to keep
+shared equipment capacity units and request defaults intact. The path-parity
+check excludes only these approved new paths; older endpoint docs are unchanged.
+
 The OpenAPI generator uses Zod schema mode. It scans:
 
 - `apps/web/app/api` for Route Handlers and their OpenAPI annotations.

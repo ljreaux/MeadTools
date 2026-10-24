@@ -797,5 +797,16 @@
       "required": false,
       "description": "Hydrometer token; required unless supplied in the body."
     }
+  ],
+  "PATCH /account/equipment/{equipment_id}": [
+    {
+      "in": "path",
+      "name": "equipment_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
   ]
 }

@@ -159,6 +159,587 @@
           "availableCredits"
         ]
       },
+      "UpdateEquipmentRequestBody": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "edit"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "equipment": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "vessel",
+                      "other"
+                    ]
+                  },
+                  "capacity": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz",
+                          "tsp",
+                          "tbsp"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notes": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 5000
+                  }
+                },
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "equipment"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "assign"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "brew_id": {
+                "nullable": true,
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "expected_brew_id": {
+                "nullable": true,
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "reassign": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "brew_id",
+              "expected_brew_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "archive"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": [
+              "action",
+              "operation_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "EquipmentMutationResponse": {
+        "type": "object",
+        "properties": {
+          "equipment": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "vessel",
+                  "other"
+                ]
+              },
+              "capacity": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "brew": {
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "name": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "recipe_name": {
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "recipe_name"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "capacity",
+              "notes",
+              "id",
+              "brew"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "equipment"
+        ],
+        "additionalProperties": false
+      },
+      "EquipmentErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "NOT_FOUND",
+              "PREMIUM_REQUIRED",
+              "OPERATION_CONFLICT",
+              "VESSEL_OCCUPIED",
+              "BREW_COMPLETE",
+              "NOT_A_VESSEL",
+              "ASSIGNMENT_CHANGED",
+              "INVALID_INVENTORY_REQUEST"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "AuthenticatedRouteErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Authorization header missing",
+              "Token missing",
+              "Invalid token or unauthorized access",
+              "Invalid or expired token",
+              "User not found",
+              "Server misconfiguration"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "EquipmentNotFoundErrorResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "NOT_FOUND",
+                  "PREMIUM_REQUIRED",
+                  "OPERATION_CONFLICT",
+                  "VESSEL_OCCUPIED",
+                  "BREW_COMPLETE",
+                  "NOT_A_VESSEL",
+                  "ASSIGNMENT_CHANGED",
+                  "INVALID_INVENTORY_REQUEST"
+                ]
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string",
+                "enum": [
+                  "Authorization header missing",
+                  "Token missing",
+                  "Invalid token or unauthorized access",
+                  "Invalid or expired token",
+                  "User not found",
+                  "Server misconfiguration"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "EquipmentUnexpectedErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Equipment request failed",
+              "Server misconfiguration"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "EquipmentOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "can_manage": {
+            "type": "boolean"
+          },
+          "equipment": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "vessel",
+                    "other"
+                  ]
+                },
+                "capacity": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "notes": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "string",
+                  "maxLength": 5000
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "brew": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "name": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "recipe_name": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "recipe_name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "name",
+                "type",
+                "capacity",
+                "notes",
+                "id",
+                "brew"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "brews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "name": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "recipe_name": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "recipe_name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "can_manage",
+          "equipment",
+          "brews"
+        ],
+        "additionalProperties": false
+      },
+      "CreateEquipmentRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "equipment": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "vessel",
+                  "other"
+                ]
+              },
+              "capacity": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "operation_id",
+          "equipment"
+        ],
+        "additionalProperties": false
+      },
       "KofiLinkClaimRequestBody": {
         "type": "object",
         "properties": {
@@ -1184,25 +1765,6 @@
             "type": "string",
             "enum": [
               "Public username is required."
-            ]
-          }
-        },
-        "required": [
-          "error"
-        ]
-      },
-      "AuthenticatedRouteErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Authorization header missing",
-              "Token missing",
-              "Invalid token or unauthorized access",
-              "Invalid or expired token",
-              "User not found",
-              "Server misconfiguration"
             ]
           }
         },
@@ -12770,6 +13332,266 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactSendErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/equipment": {
+      "get": {
+        "operationId": "get-account-equipment",
+        "summary": "List account equipment",
+        "description": "Returns retained owned equipment, vessel occupancy and ongoing owned brews. Expired premium accounts retain read access.",
+        "tags": [
+          "Equipment"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-account-equipment",
+        "summary": "Add equipment",
+        "description": "Creates owned equipment for a premium account. Reuse the operation ID for retries.",
+        "tags": [
+          "Equipment"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEquipmentRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/equipment/{equipment_id}": {
+      "patch": {
+        "operationId": "patch-account-equipment-{equipment_id}",
+        "summary": "Update equipment or its vessel assignment",
+        "description": "Premium accounts may edit equipment, archive unassigned equipment, or explicitly assign/reassign a vessel to an ongoing owned brew. Assignment requests include the expected prior brew.",
+        "tags": [
+          "Equipment"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "equipment_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEquipmentRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentUnexpectedErrorResponse"
                 }
               }
             }

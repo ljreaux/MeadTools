@@ -120,6 +120,7 @@ import {
   createChatCreditGrantResponseSchema,
   createCreditCheckoutRequestBodySchema,
   createCreditCheckoutResponseSchema,
+  createEquipmentRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
@@ -167,6 +168,14 @@ import {
   deleteYeastFailureErrorResponseSchema,
   deleteYeastSuccessResponseSchema,
   endHydrometerBrewResponseSchema,
+  equipmentBrewSummarySchema,
+  equipmentErrorResponseSchema,
+  equipmentItemSchema,
+  equipmentMutationResponseSchema,
+  equipmentNotFoundErrorResponseSchema,
+  equipmentOverviewResponseSchema,
+  equipmentPathParamsSchema,
+  equipmentUnexpectedErrorResponseSchema,
   getRecipeResponseSchema,
   goFermTypeSchema,
   gravityUnitResponseSchema,
@@ -340,6 +349,7 @@ import {
   updateChatAccessAdministrationRequestBodySchema,
   updateChatConversationRequestBodySchema,
   updateChatConversationResponseSchema,
+  updateEquipmentRequestBodySchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -499,6 +509,7 @@ export const CreateChatCreditGrantRequestBody = createChatCreditGrantRequestBody
 export const CreateChatCreditGrantResponse = createChatCreditGrantResponseSchema;
 export const CreateCreditCheckoutRequestBody = createCreditCheckoutRequestBodySchema;
 export const CreateCreditCheckoutResponse = createCreditCheckoutResponseSchema;
+export const CreateEquipmentRequestBody = createEquipmentRequestBodySchema;
 export const CreateIngredientFailureErrorResponse = createIngredientFailureErrorResponseSchema;
 export const CreateIngredientRequestBody = createIngredientRequestBodySchema;
 export const CreateRecipeCommentFailureErrorResponse = createRecipeCommentFailureErrorResponseSchema;
@@ -546,6 +557,14 @@ export const DeleteRecipeSuccessResponse = deleteRecipeSuccessResponseSchema;
 export const DeleteYeastFailureErrorResponse = deleteYeastFailureErrorResponseSchema;
 export const DeleteYeastSuccessResponse = deleteYeastSuccessResponseSchema;
 export const EndHydrometerBrewResponse = endHydrometerBrewResponseSchema;
+export const EquipmentBrewSummary = equipmentBrewSummarySchema;
+export const EquipmentErrorResponse = equipmentErrorResponseSchema;
+export const EquipmentItem = equipmentItemSchema;
+export const EquipmentMutationResponse = equipmentMutationResponseSchema;
+export const EquipmentNotFoundErrorResponse = equipmentNotFoundErrorResponseSchema;
+export const EquipmentOverviewResponse = equipmentOverviewResponseSchema;
+export const EquipmentPathParams = equipmentPathParamsSchema;
+export const EquipmentUnexpectedErrorResponse = equipmentUnexpectedErrorResponseSchema;
 export const GetRecipeResponse = getRecipeResponseSchema;
 export const GoFermType = goFermTypeSchema;
 export const GravityUnitResponse = gravityUnitResponseSchema;
@@ -719,6 +738,7 @@ export const UpdateBrewResponse = updateBrewResponseSchema;
 export const UpdateChatAccessAdministrationRequestBody = updateChatAccessAdministrationRequestBodySchema;
 export const UpdateChatConversationRequestBody = updateChatConversationRequestBodySchema;
 export const UpdateChatConversationResponse = updateChatConversationResponseSchema;
+export const UpdateEquipmentRequestBody = updateEquipmentRequestBodySchema;
 export const UpdateHydrometerBrewRecipeOrAlertsResponse = updateHydrometerBrewRecipeOrAlertsResponseSchema;
 export const UpdateHydrometerBrewRequestBody = updateHydrometerBrewRequestBodySchema;
 export const UpdateHydrometerBrewResponse = updateHydrometerBrewResponseSchema;

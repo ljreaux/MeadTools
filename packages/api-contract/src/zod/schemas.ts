@@ -7,6 +7,7 @@ export * from "./mcp";
 export * from "./auth";
 export * from "./recipes";
 export * from "./brews";
+export * from "./equipment";
 export * from "./admin";
 export * from "./hydrometers";
 export * from "./foundation";

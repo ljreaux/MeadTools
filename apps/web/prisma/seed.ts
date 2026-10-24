@@ -6,6 +6,7 @@ import RECIPES from "./seed-data/recipes_rows.json";
 import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
+import { seedEquipment } from "./seed-equipment";
 import bcrypt from "bcrypt";
 import { randomUUID as uuid } from "crypto";
 import ShortUniqueId from "short-unique-id";
@@ -235,6 +236,8 @@ async function main() {
 
   await generateLogs();
   await generateBrewEntries();
+  await seedEquipment(prisma, hydrometerSeedUser.id);
+  console.log("Equipment seeded for Key Lime Pie, traditional mead and spare supplies");
 }
 
 main()

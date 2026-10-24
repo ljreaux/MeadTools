@@ -33,22 +33,42 @@ data. The full API contract and generated OpenAPI describe these choices, typed
 errors and the optional DELETE body. Handler/database tests cover this wiring
 with only the account authentication boundary stubbed.
 
-This is a foundation, not a shipped feature. Equipment transaction adapters,
-stock-management routes, matching/reconciliation UI and account management UI are
-still required. The current browser UI does not yet offer inventory selection,
-and legacy summary entry types still need normalization. The complete Preview
-flow remains unverified. Larry reset and seeded local development
-and confirmed the new tables on October 24; the production migration remains
-unapplied to hosted environments. This transaction slice adds no schema changes.
+The equipment slice adds authenticated list/create/edit/archive and vessel
+assignment APIs plus `/account/equipment`. Premium accounts can search/filter
+items, record capacity and notes, and explicitly assign or reassign vessels.
+Expired accounts retain read-only equipment. Regular and hydrometer brew
+completion/deletion release occupancy while preserving assignment history and
+ingredient balances. Assignment/completion races are covered by PostgreSQL tests.
+
+The seed now adds ten equipment items to the regular test user: vessels for
+Key Lime Pie and Mead Wiki Simple Trad Metric, a spare bucket, and common tools.
+Two primary vessels start assigned to ongoing brews for those recipes; an
+existing ongoing brew is reused. The fixture test verifies recipe linkage and
+account isolation. This slice does not run the main seed or reset the local DB;
+fixtures appear on the next normal seed/reset.
+
+Browser checks on the shared local preview covered add/edit, assignment/release,
+search/filter and removal at mobile and desktop sizes. Temporary equipment was
+archived afterward. Ingredient stock management routes/UI, deduction selection,
+reconciliation and brew-page equipment display remain upcoming. The complete
+Preview flow remains unverified. Larry reset and seeded local development and
+confirmed the new tables on October 24; the production migration remains
+unapplied to hosted environments. This slice adds no schema changes.
 
 ### Stock transaction adapter
 
 `apps/web/lib/db/inventory.ts` exposes a server-only service. Each operation locks
-the account row, checks the existing account premium decision within the same
+the account row with `FOR NO KEY UPDATE`, checks the existing account premium decision within the same
 transaction, and then locks the owned brew/entry and stock in order. Account
 serialization protects both existing rows and absent retry/use identities; this
 deliberately trades per-account parallelism for simple, reliable local ordering.
 It must be used by every inventory mutation; direct Prisma writes bypass it.
+Equipment mutations share this operation helper. `NO KEY UPDATE` serializes
+account operations while allowing foreign-key key-share checks during ordinary
+brew completion; a stronger account lock can deadlock with the locked brew.
+Assignments lock the target brew before equipment. Lifecycle release updates
+only equipment still assigned to that brew, so a concurrent reassignment cannot
+be cleared accidentally.
 
 The account + operation key identifies a request. The adapter hashes the complete
 normalized request with sorted JSON keys and stores its response with the ledger

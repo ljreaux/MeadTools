@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
 import { mutateBrewEntryWithInventory } from "@/lib/brews/inventoryMutation";
 import { InventoryWriteError } from "@/lib/db/inventory";
+import { releaseEquipmentForBrew } from "@/lib/db/equipment";
 import {
   Prisma,
   brew_stage,
@@ -752,6 +753,10 @@ export async function patchBrewMetadata(
 
     if (!updatedBrew) return null;
 
+    if (updatedBrew.stage === brew_stage.COMPLETE || updatedBrew.end_date !== null) {
+      await releaseEquipmentForBrew(tx, userId, brewId);
+    }
+
     return {
       ...updatedBrew,
       recipe_name: updatedBrew.recipes?.name ?? null,
@@ -772,6 +777,10 @@ export async function deleteBrewForApp(brewId: string, userId: number) {
 
   // One transaction so you don’t end up half-deleted
   await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT id FROM brews WHERE id = ${brewId}::uuid AND user_id = ${userId} FOR UPDATE
+    `;
+    await releaseEquipmentForBrew(tx, userId, brewId);
     // detach ALL devices for this brew owned by this user
     await tx.devices.updateMany({
       where: { user_id: userId, brew_id: brewId },

@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Crown,
   Plug,
+  Wrench,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
@@ -99,6 +100,12 @@ function Header() {
       </TooltipProvider>
 
       {/* Hydrometer Dashboard */}
+      <TooltipProvider delayDuration={150}>
+        <Tooltip><TooltipTrigger asChild>
+          <Button asChild variant="ghost" size="icon"><Link href="/account/equipment" aria-label={t("equipment.title")}><Wrench className="h-5 w-5" /></Link></Button>
+        </TooltipTrigger><TooltipContent>{t("equipment.title")}</TooltipContent></Tooltip>
+      </TooltipProvider>
+
       <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>

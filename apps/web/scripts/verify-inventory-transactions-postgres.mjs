@@ -24,8 +24,14 @@ const hooks = registerHooks({ resolve(specifier, context, nextResolve) {
 } });
 const createRoute = await import("../app/api/brews/[brew_id]/entries/route.ts");
 const entryRoute = await import("../app/api/brews/[brew_id]/entries/[entry_id]/route.ts");
+const equipmentRoute = await import("../app/api/account/equipment/route.ts");
+const equipmentItemRoute = await import("../app/api/account/equipment/[equipment_id]/route.ts");
 hooks.deregister();
 const contract = await import("@meadtools/api-contract/brews");
+const equipmentContract = await import("@meadtools/api-contract/equipment");
+const { patchBrewMetadata, deleteBrewForApp } = await import("../lib/db/brews.ts");
+const { seedEquipment } = await import("../prisma/seed-equipment.ts");
+const hydrometerBrews = await import("../lib/db/iSpindel.ts");
 
 async function route(method, f, input, entryId) {
   const request = new NextRequest(`http://localhost/api/brews/${f.brewId}/entries${entryId ? `/${entryId}` : ""}`, {
@@ -43,6 +49,21 @@ const selection = (f, deducted = null) => ({ mode: "deduct", stock_id: f.stockId
   operation_id: randomUUID(), expected: deducted === null ? null : { stock_id: f.stockId, deducted: kg(deducted) } });
 const addition = (amount, inventory, entryId = randomUUID(), unit = "kg") => ({
   type: "ADDITION", client_entry_id: entryId, data: { kind: "INGREDIENT", name: "Honey", amount, unit }, inventory,
+});
+
+async function equipmentRequest(method, userId, input, id) {
+  const response = await (method === "PATCH" ? equipmentItemRoute.PATCH : equipmentRoute[method])(
+    new NextRequest(`http://localhost/api/account/equipment${id ? `/${id}` : ""}`, {
+      method, headers: { "x-inventory-fixture-user": String(userId), "Content-Type": "application/json" },
+      ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+    }), { params: Promise.resolve({ equipment_id: id }) });
+  return { status: response.status, body: await response.json() };
+}
+const vesselInput = () => ({ operation_id: randomUUID(), equipment: {
+  name: "Test carboy", type: "vessel", capacity: { value: 5, unit: "L" }, notes: null,
+} });
+const assignInput = (brewId, expected = null, reassign = false) => ({
+  action: "assign", operation_id: randomUUID(), brew_id: brewId, expected_brew_id: expected, reassign,
 });
 
 beforeEach(async () => {
@@ -438,4 +459,133 @@ test("direct API requests enforce ownership, valid selections and stable IDs", a
   assert.equal((await route("POST", f, { type: "STAGE_CHANGE", stage_to: "PRIMARY", inventory: selection(f) })).status, 400);
   assert.equal(await balance(f.stockId), 5);
   assert.equal(await prisma.inventory_consumptions.count(), 0);
+});
+
+test("equipment seed creates two recipe-linked examples and eight unassigned items for only the regular user", async () => {
+  const userId = await owner();
+  const otherId = await owner();
+  const { readFile } = await import("node:fs/promises");
+  const rows = JSON.parse(await readFile(new URL("../prisma/seed-data/recipes_rows.json", import.meta.url), "utf8"))
+    .filter((row) => ["Key Lime Pie", "Mead Wiki Simple Trad Metric"].includes(row.name));
+  await prisma.recipes.createMany({ data: rows.map((row) => ({ ...row, user_id: userId, dataV2: JSON.parse(row.dataV2) })) });
+  const recipe = await prisma.recipes.findFirstOrThrow({ where: { name: "Key Lime Pie" } });
+  const existing = await prisma.brews.create({ data: { user_id: userId, recipe_id: recipe.id, name: "Planning Test Brew" } });
+  await seedEquipment(prisma, userId);
+  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 10);
+  assert.equal(await prisma.equipment.count({ where: { user_id: otherId } }), 0);
+  assert.equal(await prisma.equipment.count({ where: { current_brew_id: { not: null } } }), 2);
+  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 3);
+  assert.equal(await prisma.equipment_assignment_events.count(), 2);
+  assert.equal(await prisma.brews.count(), 2);
+  assert.equal(await prisma.equipment.count({ where: { current_brew_id: existing.id } }), 1);
+  assert.equal(await prisma.inventory_consumptions.count(), 0);
+  const result = await equipmentRequest("GET", userId);
+  assert.equal(result.status, 200);
+  equipmentContract.equipmentOverviewResponseSchema.parse(result.body);
+});
+
+test("equipment CRUD APIs validate capacities, protect ownership and replay saves", async () => {
+  const userId = await owner();
+  const otherId = await owner();
+  const input = vesselInput();
+  const created = await equipmentRequest("POST", userId, input);
+  assert.equal(created.status, 201);
+  equipmentContract.equipmentMutationResponseSchema.parse(created.body);
+  const id = created.body.equipment.id;
+  assert.equal((await equipmentRequest("POST", userId, input)).body.equipment.id, id);
+  assert.equal(await prisma.equipment.count(), 1);
+  const edit = { action: "edit", operation_id: randomUUID(), equipment: { ...input.equipment, name: "Aging carboy" } };
+  assert.equal((await equipmentRequest("PATCH", userId, edit, id)).status, 200);
+  assert.equal((await equipmentRequest("PATCH", otherId, edit, id)).status, 404);
+  assert.equal((await equipmentRequest("GET", otherId)).body.equipment.length, 0);
+  for (const capacity of [{ value: -1, unit: "L" }, { value: 1, unit: "kg" }]) {
+    assert.equal((await equipmentRequest("POST", userId, { ...vesselInput(), equipment: { ...input.equipment, capacity } })).status, 400);
+  }
+  const archive = { action: "archive", operation_id: randomUUID() };
+  assert.equal((await equipmentRequest("PATCH", userId, archive, id)).status, 200);
+  assert.equal((await equipmentRequest("PATCH", userId, archive, id)).status, 200);
+  assert.equal((await equipmentRequest("GET", userId)).body.equipment.length, 0);
+  assert.ok((await prisma.equipment.findUniqueOrThrow({ where: { id } })).archived_at);
+});
+
+test("vessel API requires explicit reassignment and rejects stale, foreign and completed targets", async () => {
+  const f = await fixture();
+  const foreign = await fixture();
+  const second = await prisma.brews.create({ data: { user_id: f.userId } });
+  const completed = await prisma.brews.create({ data: { user_id: f.userId, stage: "COMPLETE" } });
+  const created = await equipmentRequest("POST", f.userId, vesselInput());
+  const id = created.body.equipment.id;
+  const assigned = assignInput(f.brewId);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assigned, id)).status, 200);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assigned, id)).status, 200);
+  assert.equal(await prisma.equipment_assignment_events.count(), 1);
+  const stale = await equipmentRequest("PATCH", f.userId, assignInput(second.id), id);
+  assert.equal(stale.status, 409);
+  assert.equal(stale.body.code, "ASSIGNMENT_CHANGED");
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(second.id, f.brewId), id)).status, 409);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(foreign.brewId, f.brewId, true), id)).status, 404);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(completed.id, f.brewId, true), id)).status, 409);
+  assert.equal((await equipmentRequest("PATCH", f.userId, { action: "archive", operation_id: randomUUID() }, id)).status, 409);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(second.id, f.brewId, true), id)).status, 200);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(null, second.id), id)).status, 200);
+  assert.equal(await prisma.equipment_assignment_events.count(), 3);
+});
+
+test("concurrent vessel assignments cannot displace a newly assigned brew", async () => {
+  const f = await fixture();
+  const second = await prisma.brews.create({ data: { user_id: f.userId } });
+  const id = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  const results = await Promise.all([f.brewId, second.id].map((brew) => equipmentRequest("PATCH", f.userId, assignInput(brew), id)));
+  assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+  assert.equal(await prisma.equipment_assignment_events.count(), 1);
+});
+
+test("expired premium retains equipment reads and free brew completion/deletion releases occupancy", async () => {
+  const f = await fixture();
+  const id = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  await equipmentRequest("PATCH", f.userId, assignInput(f.brewId), id);
+  await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2000-01-01") } });
+  const overview = await equipmentRequest("GET", f.userId);
+  assert.equal(overview.status, 200);
+  assert.equal(overview.body.can_manage, false);
+  assert.equal(overview.body.equipment.length, 1);
+  assert.equal((await equipmentRequest("POST", f.userId, vesselInput())).status, 403);
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(null, f.brewId), id)).status, 403);
+  await patchBrewMetadata(f.userId, f.brewId, { stage: "COMPLETE" });
+  assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
+  assert.equal(await prisma.equipment_assignment_events.count(), 2);
+  await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2100-01-01") } });
+  const next = await prisma.brews.create({ data: { user_id: f.userId } });
+  await equipmentRequest("PATCH", f.userId, assignInput(next.id), id);
+  await deleteBrewForApp(next.id, f.userId);
+  assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
+  assert.equal(await prisma.equipment_assignment_events.count(), 4);
+  assert.equal(await balance(f.stockId), 5);
+});
+
+test("hydrometer completion and deletion also release assigned vessels", async () => {
+  const f = await fixture();
+  const id = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  const device = await prisma.devices.create({ data: { user_id: f.userId, brew_id: f.brewId } });
+  await equipmentRequest("PATCH", f.userId, assignInput(f.brewId), id);
+  await hydrometerBrews.endBrew(device.id, f.brewId, f.userId);
+  assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
+  const second = await prisma.brews.create({ data: { user_id: f.userId } });
+  await equipmentRequest("PATCH", f.userId, assignInput(second.id), id);
+  await hydrometerBrews.deleteBrew(second.id, f.userId);
+  assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
+  assert.equal(await prisma.equipment_assignment_events.count(), 4);
+});
+
+test("a concurrent brew completion cannot leave an occupied completed vessel", async () => {
+  const f = await fixture();
+  const id = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  const results = await Promise.allSettled([
+    equipmentRequest("PATCH", f.userId, assignInput(f.brewId), id),
+    patchBrewMetadata(f.userId, f.brewId, { stage: "COMPLETE" }),
+  ]);
+  assert.ok(results.every((result) => result.status === "fulfilled"));
+  const assignment = results[0].value;
+  assert.ok([200, 409].includes(assignment.status));
+  assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
 });
