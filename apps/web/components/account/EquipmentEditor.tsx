@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export const equipmentSelectClass = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 
 export function EquipmentEditor({ item, busy, error, onClose, onSave }: {
   item: EquipmentItem | null; busy: boolean; error: string;
@@ -44,22 +45,29 @@ export function EquipmentEditor({ item, busy, error, onClose, onSave }: {
         <div className="space-y-2"><Label htmlFor={`${id}-name`}>{t("equipment.name")}</Label>
           <Input id={`${id}-name`} value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} disabled={busy} autoFocus /></div>
         <div className="space-y-2"><Label htmlFor={`${id}-type`}>{t("equipment.type")}</Label>
-          <select id={`${id}-type`} value={type} onChange={(e) => setType(e.target.value as "vessel" | "other")} className={equipmentSelectClass} disabled={busy || Boolean(item?.brew)}>
-            <option value="vessel">{t("equipment.vessel")}</option><option value="other">{t("equipment.tool")}</option>
-          </select></div>
+          <Select value={type} onValueChange={(value) => setType(value as "vessel" | "other")} disabled={busy || Boolean(item?.brew)}>
+            <SelectTrigger id={`${id}-type`}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vessel">{t("equipment.vessel")}</SelectItem>
+              <SelectItem value="other">{t("equipment.tool")}</SelectItem>
+            </SelectContent>
+          </Select></div>
         {type === "vessel" ? <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2"><Label htmlFor={`${id}-capacity`}>{t("equipment.capacityOptional")}</Label>
             <Input id={`${id}-capacity`} type="number" min="0.000001" max="1000000000" step="0.000001" value={capacity} onChange={(e) => setCapacity(e.target.value)} disabled={busy} /></div>
           <div className="space-y-2"><Label htmlFor={`${id}-unit`}>{t("equipment.unit")}</Label>
-            <select id={`${id}-unit`} value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} className={equipmentSelectClass} disabled={busy}>
-              {capacityUnitSchema.options.map((value) => <option key={value} value={value}>{t(`equipment.units.${value}`)}</option>)}
-            </select></div>
+            <Select value={unit} onValueChange={(value) => setUnit(value as typeof unit)} disabled={busy}>
+              <SelectTrigger id={`${id}-unit`}><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {capacityUnitSchema.options.map((value) => <SelectItem key={value} value={value}>{t(`equipment.units.${value}`)}</SelectItem>)}
+              </SelectContent>
+            </Select></div>
         </div> : null}
         <div className="space-y-2"><Label htmlFor={`${id}-notes`}>{t("equipment.notes")}</Label>
           <Textarea id={`${id}-notes`} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={5000} disabled={busy} /></div>
         {invalid || error ? <p role="alert" className="text-sm text-destructive">{invalid ? t("equipment.invalid") : error}</p> : null}
         <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("equipment.cancel")}</Button>
-          <Button type="submit" disabled={busy}>{t(busy ? "equipment.saving" : "equipment.save")}</Button></div>
+          <LoadingButton type="submit" loading={busy} loadingText={t("equipment.saving")}>{t("equipment.save")}</LoadingButton></div>
       </form>
     </DialogContent>
   </Dialog>;

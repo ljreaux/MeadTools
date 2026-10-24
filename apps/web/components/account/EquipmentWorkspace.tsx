@@ -4,17 +4,20 @@ import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Wrench, Container, Pencil, Trash2, ArrowRightLeft } from "lucide-react";
+import { Plus, Search, X, Wrench, Container, Pencil, Trash2, ArrowRightLeft } from "lucide-react";
 import type { EquipmentItem, EquipmentBrewSummary, CreateEquipmentRequestBody } from "@meadtools/api-contract/contracts";
 import { equipmentOverviewResponseSchema, equipmentMutationResponseSchema } from "@meadtools/api-contract/equipment";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import { qk } from "@/lib/db/queryKeys";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EquipmentEditor, equipmentSelectClass } from "./EquipmentEditor";
+import { EquipmentEditor } from "./EquipmentEditor";
 
 type Command = { id?: string; body:
   | { equipment: CreateEquipmentRequestBody["equipment"]; action?: "edit" }
@@ -80,11 +83,17 @@ export function EquipmentWorkspace() {
         <div key={stat.label} className="min-w-0 rounded-xl border bg-muted/20 p-4"><p className="text-2xl font-semibold tabular-nums">{stat.value}</p><p className="mt-1 break-words text-xs text-muted-foreground">{t(stat.label)}</p></div>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex gap-1 rounded-lg bg-muted p-1" role="group" aria-label={t("equipment.filter")}>
-        {(["all", "vessel", "other"] as const).map((value) => <Button key={value} size="sm" variant={filter === value ? "secondary" : "ghost"} aria-pressed={filter === value} onClick={() => setFilter(value)}>{t(`equipment.filters.${value}`)}</Button>)}
-      </div>
-      <div className="relative w-full sm:w-72"><Search aria-hidden className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} aria-label={t("equipment.search")} placeholder={t("equipment.search")} className="pl-9" /></div>
+      <Select value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
+        <SelectTrigger className="w-full sm:w-[180px]" aria-label={t("equipment.filter")}><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {(["all", "vessel", "other"] as const).map((value) => <SelectItem key={value} value={value}>{t(`equipment.filters.${value}`)}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <InputGroup className="w-full sm:max-w-sm">
+        <InputGroupInput type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("equipment.search")} placeholder={t("equipment.search")} />
+        <InputGroupAddon><Search aria-hidden /></InputGroupAddon>
+        {search ? <InputGroupAddon align="inline-end"><InputGroupButton aria-label={t("clear")} title={t("clear")} onClick={() => setSearch("")}><X aria-hidden /></InputGroupButton></InputGroupAddon> : null}
+      </InputGroup>
     </div>
     {visible.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {visible.map((item) => <article key={item.id} className="flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-sm">
@@ -112,12 +121,15 @@ export function EquipmentWorkspace() {
       onSave={(value) => save({ id: editor.item?.id, body: editor.item ? { action: "edit", equipment: value } : { equipment: value } }, () => setEditor(null))} /> : null}
     {assignment && data.can_manage ? <AssignmentDialog item={assignment} brews={data.brews} busy={mutation.isPending} error={error} onClose={() => setAssignment(null)}
       onSave={(brewId) => save({ id: assignment.id, body: { action: "assign", brew_id: brewId, expected_brew_id: assignment.brew?.id ?? null, reassign: Boolean(assignment.brew && brewId && brewId !== assignment.brew.id) } }, () => setAssignment(null))} /> : null}
-    {removing && data.can_manage ? <Dialog open onOpenChange={(open) => { if (!open && !mutation.isPending) setRemoving(null); }}><DialogContent>
-      <DialogHeader><DialogTitle>{t("equipment.removeTitle")}</DialogTitle><DialogDescription>{t("equipment.removeDescription", { name: removing.name })}</DialogDescription></DialogHeader>
+    {removing && data.can_manage ? <AlertDialog open onOpenChange={(open) => { if (!open && !mutation.isPending) setRemoving(null); }}><AlertDialogContent>
+      <AlertDialogHeader><AlertDialogTitle>{t("equipment.removeTitle")}</AlertDialogTitle><AlertDialogDescription>{t("equipment.removeDescription", { name: removing.name })}</AlertDialogDescription></AlertDialogHeader>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-      <div className="flex justify-end gap-2"><Button variant="outline" disabled={mutation.isPending} onClick={() => setRemoving(null)}>{t("equipment.cancel")}</Button>
-        <Button variant="destructive" disabled={mutation.isPending} onClick={() => void save({ id: removing.id, body: { action: "archive" } }, () => setRemoving(null))}>{t(mutation.isPending ? "equipment.saving" : "equipment.remove")}</Button></div>
-    </DialogContent></Dialog> : null}
+      <AlertDialogFooter><AlertDialogCancel disabled={mutation.isPending}>{t("equipment.cancel")}</AlertDialogCancel>
+        <AlertDialogAction asChild onClick={(event) => event.preventDefault()}>
+          <LoadingButton variant="destructive" loading={mutation.isPending} loadingText={t("equipment.saving")} onClick={() => void save({ id: removing.id, body: { action: "archive" } }, () => setRemoving(null))}>{t("equipment.remove")}</LoadingButton>
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent></AlertDialog> : null}
   </section>;
 }
 
@@ -132,13 +144,17 @@ function AssignmentDialog({ item, brews, busy, error, onClose, onSave }: {
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent>
     <DialogHeader><DialogTitle>{t("equipment.assignmentTitle", { name: item.name })}</DialogTitle><DialogDescription>{t("equipment.assignmentDescription")}</DialogDescription></DialogHeader>
     <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void onSave(brewId || null); }}>
-      <div className="space-y-2"><Label htmlFor={id}>{t("equipment.brew")}</Label><select id={id} className={equipmentSelectClass} value={brewId} onChange={(event) => setBrewId(event.target.value)} disabled={busy}>
-        <option value="">{t("equipment.unassigned")}</option>{brews.map((brew) => <option key={brew.id} value={brew.id}>{brew.name ?? brew.recipe_name ?? t("equipment.untitledBrew")}</option>)}
-      </select></div>
+      <div className="space-y-2"><Label htmlFor={id}>{t("equipment.brew")}</Label><Select value={brewId || "unassigned"} onValueChange={(value) => setBrewId(value === "unassigned" ? "" : value)} disabled={busy}>
+        <SelectTrigger id={id}><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="unassigned">{t("equipment.unassigned")}</SelectItem>
+          {brews.map((brew) => <SelectItem key={brew.id} value={brew.id}>{brew.name ?? brew.recipe_name ?? t("equipment.untitledBrew")}</SelectItem>)}
+        </SelectContent>
+      </Select></div>
       {reassigning ? <p className="rounded-md bg-muted p-3 text-sm">{t("equipment.reassignmentNotice", { name: item.brew?.name ?? item.brew?.recipe_name ?? t("equipment.untitledBrew") })}</p> : null}
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("equipment.cancel")}</Button>
-        <Button type="submit" disabled={busy || brewId === (item.brew?.id ?? "")}>{t(busy ? "equipment.saving" : reassigning ? "equipment.reassign" : "equipment.saveAssignment")}</Button></div>
+        <LoadingButton type="submit" loading={busy} loadingText={t("equipment.saving")} disabled={brewId === (item.brew?.id ?? "")}>{t(reassigning ? "equipment.reassign" : "equipment.saveAssignment")}</LoadingButton></div>
     </form>
   </DialogContent></Dialog>;
 }
