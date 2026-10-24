@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,8 @@ import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import { qk } from "@/lib/db/queryKeys";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SearchableInput from "@/components/ui/SearchableInput";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,7 @@ export function EquipmentWorkspace() {
     `${item.name} ${item.notes ?? ""} ${item.brew?.name ?? ""} ${item.brew?.recipe_name ?? ""}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   const occupied = data.equipment.filter((item) => item.brew).length;
   const available = data.equipment.filter((item) => item.type === "vessel" && !item.brew).length;
-  return <section className="space-y-6">
+  return <Tabs value={filter} onValueChange={(value) => setFilter(value as typeof filter)}><section className="space-y-6">
     <div className="flex flex-wrap items-end justify-between gap-4 pt-2 sm:pt-10">
       <div className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("equipment.title")}</h1>
         <p className="max-w-xl text-sm text-muted-foreground">{t("equipment.description")}</p></div>
@@ -83,18 +84,16 @@ export function EquipmentWorkspace() {
         <div key={stat.label} className="min-w-0 rounded-xl border bg-muted/20 p-4"><p className="text-2xl font-semibold tabular-nums">{stat.value}</p><p className="mt-1 break-words text-xs text-muted-foreground">{t(stat.label)}</p></div>)}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <Select value={filter} onValueChange={(value) => setFilter(value as typeof filter)}>
-        <SelectTrigger className="w-full sm:w-[180px]" aria-label={t("equipment.filter")}><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {(["all", "vessel", "other"] as const).map((value) => <SelectItem key={value} value={value}>{t(`equipment.filters.${value}`)}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <TabsList aria-label={t("equipment.filter")}>
+        {(["all", "vessel", "other"] as const).map((value) => <TabsTrigger key={value} value={value}>{t(`equipment.filters.${value}`)}</TabsTrigger>)}
+      </TabsList>
       <InputGroup className="w-full sm:max-w-sm">
         <InputGroupInput type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("equipment.search")} placeholder={t("equipment.search")} />
         <InputGroupAddon><Search aria-hidden /></InputGroupAddon>
         {search ? <InputGroupAddon align="inline-end"><InputGroupButton aria-label={t("clear")} title={t("clear")} onClick={() => setSearch("")}><X aria-hidden /></InputGroupButton></InputGroupAddon> : null}
       </InputGroup>
     </div>
+    <TabsContent value={filter}>
     {visible.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {visible.map((item) => <article key={item.id} className="flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-sm">
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -117,6 +116,7 @@ export function EquipmentWorkspace() {
     </div> : <div className="rounded-xl border border-dashed p-12 text-center"><Wrench aria-hidden className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
       <h2 className="font-semibold">{t(data.equipment.length ? "equipment.noMatches" : "equipment.emptyTitle")}</h2>
       <p className="mt-2 text-sm text-muted-foreground">{t(data.equipment.length ? "equipment.changeSearch" : "equipment.emptyDescription")}</p></div>}
+    </TabsContent>
     {editor && data.can_manage ? <EquipmentEditor key={editor.item?.id ?? "new"} item={editor.item} busy={mutation.isPending} error={error} onClose={() => setEditor(null)}
       onSave={(value) => save({ id: editor.item?.id, body: editor.item ? { action: "edit", equipment: value } : { equipment: value } }, () => setEditor(null))} /> : null}
     {assignment && data.can_manage ? <AssignmentDialog item={assignment} brews={data.brews} busy={mutation.isPending} error={error} onClose={() => setAssignment(null)}
@@ -130,8 +130,10 @@ export function EquipmentWorkspace() {
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent></AlertDialog> : null}
-  </section>;
+  </section></Tabs>;
 }
+
+const brewOptionValue = (option: { id: string }) => option.id;
 
 function AssignmentDialog({ item, brews, busy, error, onClose, onSave }: {
   item: EquipmentItem; brews: EquipmentBrewSummary[]; busy: boolean; error: string;
@@ -139,22 +141,26 @@ function AssignmentDialog({ item, brews, busy, error, onClose, onSave }: {
 }) {
   const { t } = useTranslation();
   const id = useId();
-  const [brewId, setBrewId] = useState(item.brew?.id ?? "");
+  const [brewId, setBrewId] = useState<string | null>(item.brew?.id ?? "");
+  const [brewQuery, setBrewQuery] = useState(item.brew?.id ?? "unassigned");
+  const options = useMemo(() => [
+    { id: "unassigned", label: t("equipment.unassigned") },
+    ...brews.map((brew) => ({ id: brew.id, label: [brew.name, brew.recipe_name].filter((name, index, names) => name && names.indexOf(name) === index).join(" — ") || t("equipment.untitledBrew") })),
+  ], [brews, t]);
   const reassigning = Boolean(item.brew && brewId && item.brew.id !== brewId);
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent>
     <DialogHeader><DialogTitle>{t("equipment.assignmentTitle", { name: item.name })}</DialogTitle><DialogDescription>{t("equipment.assignmentDescription")}</DialogDescription></DialogHeader>
-    <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void onSave(brewId || null); }}>
-      <div className="space-y-2"><Label htmlFor={id}>{t("equipment.brew")}</Label><Select value={brewId || "unassigned"} onValueChange={(value) => setBrewId(value === "unassigned" ? "" : value)} disabled={busy}>
-        <SelectTrigger id={id}><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="unassigned">{t("equipment.unassigned")}</SelectItem>
-          {brews.map((brew) => <SelectItem key={brew.id} value={brew.id}>{brew.name ?? brew.recipe_name ?? t("equipment.untitledBrew")}</SelectItem>)}
-        </SelectContent>
-      </Select></div>
+    <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (brewId !== null) void onSave(brewId || null); }}>
+      <div className="space-y-2"><Label htmlFor={id}>{t("equipment.brew")}</Label><SearchableInput
+        id={id} disabled={busy} dropdownPortal items={options} query={brewQuery} keyName="label"
+        getValue={brewOptionValue}
+        setQuery={(value) => { setBrewQuery(value); setBrewId(null); }}
+        onSelect={(option) => { setBrewQuery(option.id); setBrewId(option.id === "unassigned" ? "" : option.id); }}
+      /></div>
       {reassigning ? <p className="rounded-md bg-muted p-3 text-sm">{t("equipment.reassignmentNotice", { name: item.brew?.name ?? item.brew?.recipe_name ?? t("equipment.untitledBrew") })}</p> : null}
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("equipment.cancel")}</Button>
-        <LoadingButton type="submit" loading={busy} loadingText={t("equipment.saving")} disabled={brewId === (item.brew?.id ?? "")}>{t(reassigning ? "equipment.reassign" : "equipment.saveAssignment")}</LoadingButton></div>
+        <LoadingButton type="submit" loading={busy} loadingText={t("equipment.saving")} disabled={brewId === null || brewId === (item.brew?.id ?? "")}>{t(reassigning ? "equipment.reassign" : "equipment.saveAssignment")}</LoadingButton></div>
     </form>
   </DialogContent></Dialog>;
 }
