@@ -24,9 +24,10 @@ export const accountReadPresentationInstruction =
 
 export const mcpServerInstructions = [
   accountReadPresentationInstruction,
-  "MeadTools provides read-only account tools, unsaved recipe drafting, catalog lookups, and reviewed wiki retrieval. Use only tools available to this connection; account reads require explicit permission.",
+  "MeadTools provides read-only account tools, unsaved recipe drafting, standalone calculators, catalog lookups, and reviewed wiki retrieval. Use only tools available to this connection; account reads require explicit permission.",
   "When asked for a saved recipe or brew link, use its returned appUrl. These application links grant no access: private recipes require authorized sign-in and brews require owner sign-in. Never invent a public share link or infer public visibility from a URL. If appUrl is null, state that the application did not supply a link.",
   "When a successful recipe draft returns builderUrl, present that exact URL as a clickable link so the brewer can edit it in MeadTools and explicitly save. Do not shorten, reconstruct, or omit its fragment. A draft is not saved until the brewer confirms in the application. If builderLinkError is present, explain it instead of inventing a URL.",
+  "Use standalone calculator tools for isolated computations and the existing recipe tools for full recipe calculations. calculate_gravity_target plans OG from target ABV; estimate_original_gravity reconstructs missing OG from hydrometer and refractometer final readings. calculate_sulfite accepts ppm or pH; Campden tablets are an alternative to the returned sulfite grams. For priming ingredients other than table sugar, obtain sugar content with search_ingredients and supply sugarContentPercent. Follow returned units, assumptions and warnings.",
   mcpAdviceToolGuidance,
   ...brewingEvidenceInstructions
 ].join("\n\n");

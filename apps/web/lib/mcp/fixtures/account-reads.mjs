@@ -5,6 +5,7 @@ import { createAccountReadAdapter } from "../../account-read-adapter.ts";
 import { createMeadToolsMcpServer } from "../server.ts";
 import {
   accountReadInputSchemas,
+  calculatorToolNames,
   executeRecipeAgentTool,
   encodeAccountCursor
 } from "@meadtools/recipe-agent";
@@ -276,7 +277,7 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
 
   assert.equal(
     (await client.listTools()).tools.length,
-    scope.includes("account") ? 14 : 7
+    calculatorToolNames.length + (scope.includes("account") ? 14 : 7)
   );
   for (const [name, args] of [
     ["list_brews", {}],
