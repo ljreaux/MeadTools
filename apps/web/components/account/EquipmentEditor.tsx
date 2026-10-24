@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AmountUnitField } from "@/components/ui/amount-unit-field";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 
 export function EquipmentEditor({ item, busy, error, onClose, onSave }: {
@@ -52,16 +53,16 @@ export function EquipmentEditor({ item, busy, error, onClose, onSave }: {
               <SelectItem value="other">{t("equipment.tool")}</SelectItem>
             </SelectContent>
           </Select></div>
-        {type === "vessel" ? <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2"><Label htmlFor={`${id}-capacity`}>{t("equipment.capacityOptional")}</Label>
-            <Input id={`${id}-capacity`} type="number" min="0.000001" max="1000000000" step="0.000001" value={capacity} onChange={(e) => setCapacity(e.target.value)} disabled={busy} /></div>
-          <div className="space-y-2"><Label htmlFor={`${id}-unit`}>{t("equipment.unit")}</Label>
-            <Select value={unit} onValueChange={(value) => setUnit(value as typeof unit)} disabled={busy}>
-              <SelectTrigger id={`${id}-unit`}><SelectValue /></SelectTrigger>
+        {type === "vessel" ? <div className="space-y-2">
+          <Label htmlFor={`${id}-capacity`}>{t("equipment.capacityOptional")}</Label>
+          <AmountUnitField id={`${id}-capacity`} amount={capacity} unit={unit} onAmountChange={setCapacity} disabled={busy}
+            unitControl={<Select value={unit} onValueChange={(value) => setUnit(value as typeof unit)} disabled={busy}>
+              <SelectTrigger className="w-auto min-w-16 border-none shadow-none focus:ring-0" aria-label={t("equipment.unit")}><SelectValue /></SelectTrigger>
               <SelectContent>
                 {capacityUnitSchema.options.map((value) => <SelectItem key={value} value={value}>{t(`equipment.units.${value}`)}</SelectItem>)}
               </SelectContent>
-            </Select></div>
+            </Select>}
+          />
         </div> : null}
         <div className="space-y-2"><Label htmlFor={`${id}-notes`}>{t("equipment.notes")}</Label>
           <Textarea id={`${id}-notes`} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={5000} disabled={busy} /></div>

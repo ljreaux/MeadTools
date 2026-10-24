@@ -141,6 +141,7 @@ function AssignmentDialog({ item, brews, busy, error, onClose, onSave }: {
 }) {
   const { t } = useTranslation();
   const id = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [brewId, setBrewId] = useState<string | null>(item.brew?.id ?? "");
   const [brewQuery, setBrewQuery] = useState(item.brew?.id ?? "unassigned");
   const options = useMemo(() => [
@@ -148,8 +149,8 @@ function AssignmentDialog({ item, brews, busy, error, onClose, onSave }: {
     ...brews.map((brew) => ({ id: brew.id, label: [brew.name, brew.recipe_name].filter((name, index, names) => name && names.indexOf(name) === index).join(" — ") || t("equipment.untitledBrew") })),
   ], [brews, t]);
   const reassigning = Boolean(item.brew && brewId && item.brew.id !== brewId);
-  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent>
-    <DialogHeader><DialogTitle>{t("equipment.assignmentTitle", { name: item.name })}</DialogTitle><DialogDescription>{t("equipment.assignmentDescription")}</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent onOpenAutoFocus={(event) => { event.preventDefault(); titleRef.current?.focus(); }}>
+    <DialogHeader><DialogTitle ref={titleRef} tabIndex={-1} className="focus:outline-none">{t("equipment.assignmentTitle", { name: item.name })}</DialogTitle><DialogDescription>{t("equipment.assignmentDescription")}</DialogDescription></DialogHeader>
     <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); if (brewId !== null) void onSave(brewId || null); }}>
       <div className="space-y-2"><Label htmlFor={id}>{t("equipment.brew")}</Label><SearchableInput
         id={id} disabled={busy} dropdownPortal items={options} query={brewQuery} keyName="label"

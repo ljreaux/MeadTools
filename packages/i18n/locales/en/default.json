@@ -74,6 +74,12 @@
   "ABV": "ABV",
   "abvHeading": "ABV Calculator",
   "account": {
+    "navigation": {
+      "label": "Account navigation",
+      "brewing": "Brewing",
+      "tools": "Account & tools",
+      "mcp": "MCP setup"
+    },
     "accountSettings": "Account Settings",
     "label": "Account",
     "login": "Login/Register",
@@ -2534,6 +2540,102 @@
       "OPERATION_CONFLICT": "The previous save changed. Close the dialog and try again.",
       "INVALID_INVENTORY_REQUEST": "Check the equipment name, type and capacity, then try again.",
       "FAILED": "Your changes could not be saved. Try again."
+    }
+  },
+  "inventory": {
+    "title": "Inventory",
+    "description": "Keep track of ingredients and packaging on hand, record purchases and use, and review quantity changes.",
+    "add": "Add stock",
+    "addDescription": "Name your ingredient or packaging and record how much you have on hand.",
+    "name": "Name",
+    "category": "Category",
+    "quantity": "Amount",
+    "actualQuantity": "Quantity on hand",
+    "unit": "Unit",
+    "notes": "Notes (optional)",
+    "packagingHelp": "Record bottles, caps and corks in whole units. For corrections, enter the total on hand. Include the size or type in the item name.",
+    "unitHelp": "Choose the unit you want to keep this stock in. It stays fixed so its history remains consistent.",
+    "changeHelp": "Enter the amount added or used, in the stock item’s saved unit.",
+    "correctionHelp": "Enter the total you actually have on hand. This replaces the recorded quantity; it does not add to it.",
+    "save": "Save stock",
+    "invalid": "Enter a name and a valid amount with no more than six decimal places. Added or used amounts must be greater than zero. Packaging must use whole units.",
+    "saveError": "The stock change could not be saved. Your input has been kept so you can retry.",
+    "loading": "Loading inventory…",
+    "loadError": "Your inventory could not be loaded. Please try again.",
+    "readOnly": "Your inventory and recorded history are available to view. Premium access is required to make changes.",
+    "all": "All stock",
+    "search": "Search stock",
+    "noMatches": "No stock matches",
+    "changeSearch": "Try another search or stock category.",
+    "emptyTitle": "A place for your supplies",
+    "emptyDescription": "Add ingredients, bottles, caps or corks to keep track of what you have.",
+    "needsReview": "This stock needs review after a linked brew use changed while inventory was unavailable. New brew deductions are paused; changing the quantity here does not clear that review.",
+    "history": "History",
+    "historyNamed": "View history for {{name}}",
+    "removeNamed": "Remove {{name}}",
+    "removeTitle": "Remove stock?",
+    "removeDescription": "Remove {{name}} from your stock list? Recorded quantities and history will be kept. Removing stock does not undo past use.",
+    "stockChange": "Stock change",
+    "balanceAfter": "Recorded quantity after change: {{value}} {{unit}}",
+    "noHistory": "No quantity changes have been recorded.",
+    "recentHistory": "Showing the latest 100 changes.",
+    "categories": {
+      "honey": "Honey",
+      "fruit": "Fruit",
+      "yeast": "Yeast",
+      "additive": "Additives",
+      "packaging": "Packaging"
+    },
+    "actions": {
+      "receipt": "Add more",
+      "manual_use": "Record use",
+      "correction": "Correct quantity"
+    },
+    "kinds": {
+      "receipt": "Stock received",
+      "manual_use": "Manual use",
+      "correction": "Quantity correction",
+      "brew_use": "Brew use",
+      "usage_correction": "Brew use corrected",
+      "usage_removal": "Erroneous use reversed"
+    },
+    "unitGroups": {
+      "weight": "Weight",
+      "volume": "Volume",
+      "count": "Count"
+    },
+    "units": {
+      "kg": "kg",
+      "g": "g",
+      "mg": "mg",
+      "lb": "lb",
+      "oz": "oz",
+      "L": "L",
+      "mL": "mL",
+      "gal": "US gal",
+      "qt": "US qt",
+      "pt": "US pt",
+      "fl_oz": "US fl oz",
+      "imp_gal": "Imperial gal",
+      "imp_qt": "Imperial qt",
+      "imp_pt": "Imperial pt",
+      "imp_fl_oz": "Imperial fl oz",
+      "tsp": "US tsp",
+      "tbsp": "US tbsp",
+      "units": "units"
+    },
+    "errors": {
+      "INSUFFICIENT_STOCK": "There is not enough stock for that use. Record a purchase, correct the quantity, or reduce the amount.",
+      "STALE_STOCK": "This quantity changed while the form was open. Close and reopen it to use the latest balance.",
+      "STOCK_ARCHIVED": "This stock was removed. Refresh your list before making another change.",
+      "PREMIUM_REQUIRED": "Premium access is required to change inventory. Your recorded stock remains available to view.",
+      "NOT_FOUND": "This stock is no longer available to your account.",
+      "OPERATION_CONFLICT": "This request conflicts with an earlier attempt. Close and reopen the form.",
+      "INVALID_INVENTORY_REQUEST": "Check the amount, unit and notes before trying again.",
+      "INCOMPATIBLE_UNITS": "This amount cannot be converted to the stock item’s saved unit.",
+      "INVALID_QUANTITY": "Enter a valid nonnegative quantity.",
+      "QUANTITY_PRECISION": "Use no more than six decimal places.",
+      "FAILED": "The stock change could not be saved. Please try again."
     }
   }
 }

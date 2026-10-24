@@ -740,6 +740,785 @@
         ],
         "additionalProperties": false
       },
+      "InventoryStockHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "stock": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "honey",
+                  "fruit",
+                  "yeast",
+                  "additive",
+                  "packaging"
+                ]
+              },
+              "catalogReference": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "catalog": {
+                    "type": "string",
+                    "enum": [
+                      "ingredient",
+                      "yeast",
+                      "additive",
+                      "nutrient"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "catalog",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "reconciliation_required": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name",
+              "category",
+              "catalogReference",
+              "quantity",
+              "notes",
+              "id",
+              "reconciliation_required"
+            ],
+            "additionalProperties": false
+          },
+          "adjustments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "delta": {
+                  "type": "number"
+                },
+                "balance_after": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "g",
+                        "mg",
+                        "lb",
+                        "oz",
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp",
+                        "units"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "delta",
+                "balance_after",
+                "note",
+                "created_at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stock",
+          "adjustments",
+          "has_more"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryStockNotFoundResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INCOMPATIBLE_UNITS",
+                  "QUANTITY_PRECISION",
+                  "INVALID_QUANTITY",
+                  "INSUFFICIENT_STOCK",
+                  "NOT_FOUND",
+                  "LINK_MISMATCH",
+                  "PREMIUM_REQUIRED",
+                  "OPERATION_CONFLICT",
+                  "STALE_USAGE",
+                  "USAGE_REMOVED",
+                  "ENTRY_MISMATCH",
+                  "STOCK_ARCHIVED",
+                  "STALE_STOCK",
+                  "SELECTION_REQUIRED",
+                  "INVALID_INVENTORY_REQUEST",
+                  "RECONCILIATION_REQUIRED"
+                ]
+              },
+              "shortage": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "kg",
+                  "g",
+                  "mg",
+                  "lb",
+                  "oz",
+                  "L",
+                  "mL",
+                  "gal",
+                  "qt",
+                  "pt",
+                  "fl_oz",
+                  "imp_gal",
+                  "imp_qt",
+                  "imp_pt",
+                  "imp_fl_oz",
+                  "tsp",
+                  "tbsp",
+                  "units"
+                ]
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string",
+                "enum": [
+                  "Authorization header missing",
+                  "Token missing",
+                  "Invalid token or unauthorized access",
+                  "Invalid or expired token",
+                  "User not found",
+                  "Server misconfiguration"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "InventoryStockUnexpectedErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Inventory request failed",
+              "Server misconfiguration"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryStockErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "INCOMPATIBLE_UNITS",
+              "QUANTITY_PRECISION",
+              "INVALID_QUANTITY",
+              "INSUFFICIENT_STOCK",
+              "NOT_FOUND",
+              "LINK_MISMATCH",
+              "PREMIUM_REQUIRED",
+              "OPERATION_CONFLICT",
+              "STALE_USAGE",
+              "USAGE_REMOVED",
+              "ENTRY_MISMATCH",
+              "STOCK_ARCHIVED",
+              "STALE_STOCK",
+              "SELECTION_REQUIRED",
+              "INVALID_INVENTORY_REQUEST",
+              "RECONCILIATION_REQUIRED"
+            ]
+          },
+          "shortage": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "g",
+              "mg",
+              "lb",
+              "oz",
+              "L",
+              "mL",
+              "gal",
+              "qt",
+              "pt",
+              "fl_oz",
+              "imp_gal",
+              "imp_qt",
+              "imp_pt",
+              "imp_fl_oz",
+              "tsp",
+              "tbsp",
+              "units"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateInventoryStockRequestBody": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "receipt",
+                  "manual_use",
+                  "correction"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "note": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              },
+              "expected_balance": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "quantity",
+              "expected_balance"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "archive"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": [
+              "action",
+              "operation_id"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "InventoryStockMutationResponse": {
+        "type": "object",
+        "properties": {
+          "stockId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "balance": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000000
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "kg",
+                  "g",
+                  "mg",
+                  "lb",
+                  "oz",
+                  "L",
+                  "mL",
+                  "gal",
+                  "qt",
+                  "pt",
+                  "fl_oz",
+                  "imp_gal",
+                  "imp_qt",
+                  "imp_pt",
+                  "imp_fl_oz",
+                  "tsp",
+                  "tbsp",
+                  "units"
+                ]
+              }
+            },
+            "required": [
+              "value",
+              "unit"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "stockId",
+          "balance"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "can_manage": {
+            "type": "boolean"
+          },
+          "stock": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "honey",
+                    "fruit",
+                    "yeast",
+                    "additive",
+                    "packaging"
+                  ]
+                },
+                "catalogReference": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "catalog": {
+                      "type": "string",
+                      "enum": [
+                        "ingredient",
+                        "yeast",
+                        "additive",
+                        "nutrient"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "catalog",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "quantity": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "g",
+                        "mg",
+                        "lb",
+                        "oz",
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp",
+                        "units"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "notes": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "string",
+                  "maxLength": 5000
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "reconciliation_required": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "category",
+                "catalogReference",
+                "quantity",
+                "notes",
+                "id",
+                "reconciliation_required"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "can_manage",
+          "stock"
+        ],
+        "additionalProperties": false
+      },
+      "CreateInventoryStockRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "stock": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "honey",
+                  "fruit",
+                  "yeast",
+                  "additive",
+                  "packaging"
+                ]
+              },
+              "catalogReference": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "catalog": {
+                    "type": "string",
+                    "enum": [
+                      "ingredient",
+                      "yeast",
+                      "additive",
+                      "nutrient"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "catalog",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "name",
+              "category",
+              "quantity"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "operation_id",
+          "stock"
+        ],
+        "additionalProperties": false
+      },
       "KofiLinkClaimRequestBody": {
         "type": "object",
         "properties": {
@@ -15286,6 +16065,342 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteIngredientFailureErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory": {
+      "get": {
+        "operationId": "get-account-inventory",
+        "summary": "List inventory stock",
+        "description": "Returns only authenticated owned stock. Active accounts retain read access after premium expiry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-account-inventory",
+        "summary": "Add inventory stock",
+        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInventoryStockRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/{stock_id}": {
+      "get": {
+        "operationId": "get-account-inventory-{stock_id}",
+        "summary": "Read recent stock history",
+        "description": "Returns only authenticated owned stock. Active accounts retain read access after premium expiry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stock_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockHistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-account-inventory-{stock_id}",
+        "summary": "Adjust or archive inventory stock",
+        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stock_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInventoryStockRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
                 }
               }
             }

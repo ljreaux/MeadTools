@@ -808,5 +808,27 @@
       },
       "required": true
     }
+  ],
+  "GET /account/inventory/{stock_id}": [
+    {
+      "in": "path",
+      "name": "stock_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "PATCH /account/inventory/{stock_id}": [
+    {
+      "in": "path",
+      "name": "stock_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
   ]
 }

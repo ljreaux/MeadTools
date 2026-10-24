@@ -123,6 +123,7 @@ import {
   createEquipmentRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
+  createInventoryStockRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
   createRecipeCommentRequestBodySchema,
   createRecipeCommentResponseSchema,
@@ -214,6 +215,14 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  inventoryOverviewResponseSchema,
+  inventoryStockErrorResponseSchema,
+  inventoryStockHistoryResponseSchema,
+  inventoryStockItemSchema,
+  inventoryStockMutationResponseSchema,
+  inventoryStockNotFoundResponseSchema,
+  inventoryStockPathParamsSchema,
+  inventoryStockUnexpectedErrorResponseSchema,
   kofiLinkClaimRequestBodySchema,
   kofiLinkClaimResponseSchema,
   kofiLinkRequestBodySchema,
@@ -357,6 +366,7 @@ import {
   updateHydrometerLogRequestBodySchema,
   updateIngredientFailureErrorResponseSchema,
   updateIngredientRequestBodySchema,
+  updateInventoryStockRequestBodySchema,
   updateRecipeCommentFailureErrorResponseSchema,
   updateRecipeCommentRequestBodySchema,
   updateRecipeCommentResponseSchema,
@@ -512,6 +522,7 @@ export const CreateCreditCheckoutResponse = createCreditCheckoutResponseSchema;
 export const CreateEquipmentRequestBody = createEquipmentRequestBodySchema;
 export const CreateIngredientFailureErrorResponse = createIngredientFailureErrorResponseSchema;
 export const CreateIngredientRequestBody = createIngredientRequestBodySchema;
+export const CreateInventoryStockRequestBody = createInventoryStockRequestBodySchema;
 export const CreateRecipeCommentFailureErrorResponse = createRecipeCommentFailureErrorResponseSchema;
 export const CreateRecipeCommentRequestBody = createRecipeCommentRequestBodySchema;
 export const CreateRecipeCommentResponse = createRecipeCommentResponseSchema;
@@ -603,6 +614,14 @@ export const IngredientResponse = ingredientResponseSchema;
 export const IngredientsFetchErrorResponse = ingredientsFetchErrorResponseSchema;
 export const IngredientsResponse = ingredientsResponseSchema;
 export const InvalidRecipeIdErrorResponse = invalidRecipeIdErrorResponseSchema;
+export const InventoryOverviewResponse = inventoryOverviewResponseSchema;
+export const InventoryStockErrorResponse = inventoryStockErrorResponseSchema;
+export const InventoryStockHistoryResponse = inventoryStockHistoryResponseSchema;
+export const InventoryStockItem = inventoryStockItemSchema;
+export const InventoryStockMutationResponse = inventoryStockMutationResponseSchema;
+export const InventoryStockNotFoundResponse = inventoryStockNotFoundResponseSchema;
+export const InventoryStockPathParams = inventoryStockPathParamsSchema;
+export const InventoryStockUnexpectedErrorResponse = inventoryStockUnexpectedErrorResponseSchema;
 export const KofiLinkClaimRequestBody = kofiLinkClaimRequestBodySchema;
 export const KofiLinkClaimResponse = kofiLinkClaimResponseSchema;
 export const KofiLinkRequestBody = kofiLinkRequestBodySchema;
@@ -746,6 +765,7 @@ export const UpdateHydrometerDeviceRequestBody = updateHydrometerDeviceRequestBo
 export const UpdateHydrometerLogRequestBody = updateHydrometerLogRequestBodySchema;
 export const UpdateIngredientFailureErrorResponse = updateIngredientFailureErrorResponseSchema;
 export const UpdateIngredientRequestBody = updateIngredientRequestBodySchema;
+export const UpdateInventoryStockRequestBody = updateInventoryStockRequestBodySchema;
 export const UpdateRecipeCommentFailureErrorResponse = updateRecipeCommentFailureErrorResponseSchema;
 export const UpdateRecipeCommentRequestBody = updateRecipeCommentRequestBodySchema;
 export const UpdateRecipeCommentResponse = updateRecipeCommentResponseSchema;

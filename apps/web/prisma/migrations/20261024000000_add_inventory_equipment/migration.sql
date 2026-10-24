@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "inventory_stock_category" AS ENUM ('honey', 'fruit', 'yeast', 'additive');
+CREATE TYPE "inventory_stock_category" AS ENUM ('honey', 'fruit', 'yeast', 'additive', 'packaging');
 
 -- CreateEnum
 CREATE TYPE "equipment_type" AS ENUM ('vessel', 'other');
@@ -185,6 +185,9 @@ ALTER TABLE "equipment_assignment_events" ADD CONSTRAINT "equipment_assignment_e
 ALTER TABLE "inventory_stock"
   ADD CONSTRAINT "inventory_stock_quantity_check"
     CHECK ("quantity" >= 0 AND "quantity" <= 1000000000),
+  ADD CONSTRAINT "inventory_stock_packaging_check" CHECK (
+    "category" <> 'packaging' OR ("unit" = 'units' AND "quantity" = trunc("quantity"))
+  ),
   ADD CONSTRAINT "inventory_stock_name_check" CHECK (length(btrim("name")) > 0),
   ADD CONSTRAINT "inventory_stock_catalog_check" CHECK (
     ("catalog" IS NULL AND "catalog_id" IS NULL) OR

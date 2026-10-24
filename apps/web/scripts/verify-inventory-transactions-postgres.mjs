@@ -26,10 +26,13 @@ const createRoute = await import("../app/api/brews/[brew_id]/entries/route.ts");
 const entryRoute = await import("../app/api/brews/[brew_id]/entries/[entry_id]/route.ts");
 const equipmentRoute = await import("../app/api/account/equipment/route.ts");
 const equipmentItemRoute = await import("../app/api/account/equipment/[equipment_id]/route.ts");
+const inventoryRoute = await import("../app/api/account/inventory/route.ts");
+const inventoryItemRoute = await import("../app/api/account/inventory/[stock_id]/route.ts");
 hooks.deregister();
 const contract = await import("@meadtools/api-contract/brews");
 const equipmentContract = await import("@meadtools/api-contract/equipment");
 const { patchBrewMetadata, deleteBrewForApp } = await import("../lib/db/brews.ts");
+const { seedInventory } = await import("../prisma/seed-inventory.ts");
 const { seedEquipment } = await import("../prisma/seed-equipment.ts");
 const hydrometerBrews = await import("../lib/db/iSpindel.ts");
 
@@ -588,4 +591,105 @@ test("a concurrent brew completion cannot leave an occupied completed vessel", a
   const assignment = results[0].value;
   assert.ok([200, 409].includes(assignment.status));
   assert.equal((await prisma.equipment.findUniqueOrThrow({ where: { id } })).current_brew_id, null);
+});
+
+async function stockRequest(method, userId, input, id) {
+  const response = await (id ? inventoryItemRoute[method] : inventoryRoute[method])(
+    new NextRequest(`http://localhost/api/account/inventory${id ? `/${id}` : ""}`, {
+      method, headers: { "x-inventory-fixture-user": String(userId), "Content-Type": "application/json" },
+      ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+    }), { params: Promise.resolve({ stock_id: id }) });
+  return { status: response.status, body: await response.json() };
+}
+const stockCreateInput = () => ({ operation_id: randomUUID(), stock: { name: "Clover honey", category: "honey", quantity: kg(5) } });
+const stockChangeInput = (action, value, expected) => ({ operation_id: randomUUID(), action, quantity: kg(value), expected_balance: kg(expected), note: "Fixture count" });
+
+test("stock API creates, replays, converts changes and returns owned history", async () => {
+  const userId = await owner();
+  const input = stockCreateInput();
+  const created = await stockRequest("POST", userId, input);
+  assert.equal(created.status, 201);
+  assert.deepEqual(await stockRequest("POST", userId, input), created);
+  const id = created.body.stockId;
+  const receive = stockChangeInput("receipt", 1, 5);
+  receive.quantity = { value: 1000, unit: "g" };
+  assert.equal((await stockRequest("PATCH", userId, receive, id)).status, 200);
+  assert.equal((await stockRequest("PATCH", userId, stockChangeInput("manual_use", 2, 6), id)).status, 200);
+  assert.equal((await stockRequest("PATCH", userId, stockChangeInput("correction", 3, 4), id)).status, 200);
+  const list = await stockRequest("GET", userId);
+  assert.equal(list.body.can_manage, true);
+  assert.equal(list.body.stock[0].quantity.value, 3);
+  const history = await stockRequest("GET", userId, undefined, id);
+  assert.equal(history.body.adjustments.length, 4);
+  assert.equal(history.body.has_more, false);
+  assert.equal(history.body.adjustments.reduce((sum, entry) => sum + entry.delta, 0), 3);
+});
+test("stock API rejects invalid quantities, cross-owner requests, shortages and stale balances", async () => {
+  const f = await fixture();
+  const foreignId = await owner();
+  assert.equal((await stockRequest("GET", foreignId)).body.stock.length, 0);
+  assert.equal((await stockRequest("GET", foreignId, undefined, f.stockId)).status, 404);
+  assert.equal((await stockRequest("PATCH", foreignId, stockChangeInput("receipt", 1, 5), f.stockId)).status, 404);
+  const invalid = stockCreateInput(); invalid.stock.quantity.value = -1;
+  assert.equal((await stockRequest("POST", f.userId, invalid)).status, 400);
+  assert.equal((await stockRequest("PATCH", f.userId, stockChangeInput("manual_use", 6, 5), f.stockId)).body.code, "INSUFFICIENT_STOCK");
+  assert.equal(await balance(f.stockId), 5);
+  const responses = await Promise.all([1, 2].map(() => stockRequest("PATCH", f.userId, stockChangeInput("receipt", 1, 5), f.stockId)));
+  assert.deepEqual(responses.map((result) => result.status).sort(), [200, 409]);
+  assert.equal(responses.find((result) => result.status === 409).body.code, "STALE_STOCK");
+  assert.equal(await balance(f.stockId), 6);
+});
+test("stock removal retains history and consumption; expired accounts retain reads only", async () => {
+  const f = await fixture();
+  const linked = await route("POST", f, addition(1, selection(f)));
+  assert.equal(linked.status, 201);
+  const remove = { operation_id: randomUUID(), action: "archive" };
+  assert.equal((await stockRequest("PATCH", f.userId, remove, f.stockId)).status, 200);
+  assert.equal((await stockRequest("PATCH", f.userId, remove, f.stockId)).status, 200);
+  assert.equal((await stockRequest("GET", f.userId)).body.stock.length, 0);
+  assert.equal((await stockRequest("GET", f.userId, undefined, f.stockId)).body.adjustments.length, 2);
+  assert.equal(await balance(f.stockId), 4);
+  assert.equal(await prisma.inventory_consumptions.count({ where: { stock_id: f.stockId } }), 1);
+  assert.equal((await stockRequest("PATCH", f.userId, stockChangeInput("receipt", 1, 4), f.stockId)).body.code, "STOCK_ARCHIVED");
+  const live = await stock(f.userId);
+  await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2020-01-01") } });
+  assert.equal((await stockRequest("GET", f.userId)).body.can_manage, false);
+  assert.equal((await stockRequest("GET", f.userId, undefined, live.stockId)).status, 200);
+  assert.equal((await stockRequest("POST", f.userId, stockCreateInput())).status, 403);
+  assert.equal((await stockRequest("PATCH", f.userId, stockChangeInput("receipt", 1, 5), live.stockId)).status, 403);
+  assert.equal((await stockRequest("PATCH", f.userId, { operation_id: randomUUID(), action: "archive" }, live.stockId)).status, 403);
+  await prisma.users.update({ where: { id: f.userId }, data: { active: false } });
+  assert.equal((await stockRequest("GET", f.userId)).status, 404);
+});
+
+test("packaging stock rejects fractional/wrong-unit writes and retains whole-unit history", async () => {
+  const userId = await owner();
+  const input = { operation_id: randomUUID(), stock: { name: "750 mL bottles", category: "packaging", quantity: { value: 24, unit: "units" } } };
+  const added = await stockRequest("POST", userId, input);
+  assert.equal(added.status, 201);
+  const id = added.body.stockId;
+  for (const quantity of [{ value: 0.5, unit: "units" }, { value: 2, unit: "L" }]) {
+    assert.equal((await stockRequest("POST", userId, { ...input, operation_id: randomUUID(), stock: { ...input.stock, quantity } })).status, 400);
+    assert.equal((await stockRequest("PATCH", userId, { operation_id: randomUUID(), action: "manual_use", quantity, expected_balance: input.stock.quantity }, id)).status, 400);
+  }
+  const used = await stockRequest("PATCH", userId, { operation_id: randomUUID(), action: "manual_use", quantity: { value: 6, unit: "units" }, expected_balance: input.stock.quantity }, id);
+  assert.equal(used.status, 200);
+  assert.equal(await balance(id), 18);
+  const history = await stockRequest("GET", userId, undefined, id);
+  assert.deepEqual(history.body.adjustments.map((row) => row.delta).sort((a, b) => a - b), [-6, 24]);
+});
+test("inventory seed creates owned ingredient and packaging stock with matching initial receipts", async () => {
+  const userId = await owner();
+  const otherId = await owner();
+  await seedInventory(prisma, userId);
+  const list = (await stockRequest("GET", userId)).body.stock;
+  assert.equal(list.length, 10);
+  assert.equal(list.filter((row) => row.category === "packaging").length, 4);
+  assert.equal((await stockRequest("GET", otherId)).body.stock.length, 0);
+  for (const row of list) {
+    const history = (await stockRequest("GET", userId, undefined, row.id)).body.adjustments;
+    assert.equal(history.length, 1);
+    assert.equal(history[0].delta, row.quantity.value);
+    assert.equal(history[0].balance_after.unit, row.quantity.unit);
+  }
 });

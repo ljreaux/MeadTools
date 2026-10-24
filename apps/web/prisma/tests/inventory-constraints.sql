@@ -31,6 +31,12 @@ INSERT INTO inventory_stock (id, user_id, name, category, quantity, unit) VALUES
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = -1 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = 1000000001 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = 'NaN' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET category = 'packaging' $q$, '23514');
+INSERT INTO inventory_stock (id, user_id, name, category, quantity, unit) VALUES
+  ('00000000-0000-4000-8000-000000000099', -471, '750 mL bottles', 'packaging', 24, 'units');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = 1.5 WHERE category = 'packaging' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET unit = 'L' WHERE category = 'packaging' $q$, '23514');
+DELETE FROM inventory_stock WHERE id = '00000000-0000-4000-8000-000000000099';
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET name = '  ' $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET catalog = 'ingredient' $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET catalog = 'unknown', catalog_id = '42' $q$, '23514');

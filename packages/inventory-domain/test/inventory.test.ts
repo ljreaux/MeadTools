@@ -192,3 +192,12 @@ test("brew completion/deletion releases only owned occupancy; consumption stays 
   assert.equal(consumed.balance.value, 4);
   assert.equal(consumed.link?.deducted.value, 1);
 });
+
+
+test("packaging stock uses whole unit counts", () => {
+  const input = { name: "750 mL bottles", category: "packaging", quantity: { value: 24, unit: "units" } };
+  assert.ok(stockInputSchema.safeParse(input).success);
+  for (const quantity of [{ value: 1.5, unit: "units" }, { value: 24, unit: "kg" }, { value: 24, unit: "L" }]) {
+    assert.equal(stockInputSchema.safeParse({ ...input, quantity }).success, false);
+  }
+});

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import type { PremiumAccessResponse } from "@meadtools/api-contract/contracts";
+import Header from "./header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -121,8 +122,9 @@ export function PremiumAccount() {
   };
 
   return (
-    <main className="w-11/12 max-w-2xl rounded-xl bg-background p-6 space-y-5">
-      <h1 className="text-2xl font-semibold">{t("premium.title")}</h1>
+    <main className="relative w-11/12 max-w-[1200px] rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8 space-y-5">
+      <Header />
+      <h1 className="text-2xl font-semibold sm:pt-10">{t("premium.title")}</h1>
       <p className="text-muted-foreground">
         {t(
           status?.subscriptionsEnabled
@@ -210,7 +212,7 @@ export function PremiumAccount() {
           </Button>
         </form>
       ) : null}
-      <Link className="text-primary underline" href="/integrations/mcp">
+      <Link className="block w-fit text-primary underline" href="/integrations/mcp">
         {t("premium.mcpGuideLink")}
       </Link>
       {premiumQuery.isError && (

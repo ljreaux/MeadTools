@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import {
   brewInventorySelectionSchema, brewInventoryOutcomeSchema, brewInventoryErrorResponseSchema,
 } from "../packages/api-contract/src/zod/brews.ts";
+import * as inventorySchemas from "../packages/api-contract/src/zod/inventory.ts";
 import * as equipmentSchemas from "../packages/api-contract/src/zod/equipment.ts";
 
 const documentUrl = new URL("../apps/web/public/openapi.json", import.meta.url);
@@ -57,7 +58,7 @@ for (const [schemaName, publicName] of schemaToPublicName) {
 schemas.BrewInventorySelection = brewInventorySelectionSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
 schemas.BrewInventoryOutcome = brewInventoryOutcomeSchema.toJSONSchema({ target: "openapi-3.0" });
 schemas.BrewInventoryErrorResponse = brewInventoryErrorResponseSchema.toJSONSchema({ target: "openapi-3.0" });
-for (const [name, schema] of Object.entries(equipmentSchemas)) {
+for (const [name, schema] of Object.entries({ ...equipmentSchemas, ...inventorySchemas })) {
   const publicName = schemaToPublicName.get(name);
   if (publicName) schemas[publicName] = schema.toJSONSchema({ target: "openapi-3.0", io: name.includes("RequestBody") ? "input" : "output" });
 }

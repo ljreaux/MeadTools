@@ -11,6 +11,7 @@ import {
   mcpTokenCreateResponseSchema,
   mcpTokenListResponseSchema
 } from "@meadtools/api-contract/mcp";
+import Header from "./header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -182,8 +183,9 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
 
   return (
     <main className="mx-auto w-11/12 max-w-[1200px] pb-32 pt-24 sm:pb-36">
-      <div className="space-y-8 rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
-        <header className="mx-auto max-w-3xl space-y-3 text-center">
+      <div className="relative space-y-8 rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8">
+        {signedIn ? <Header /> : null}
+        <header className={`mx-auto max-w-3xl space-y-3 text-center ${signedIn ? "sm:pt-10" : ""}`}>
           <h1 className="text-3xl font-semibold">{t("mcpGuide.title")}</h1>
           <p className="text-muted-foreground">{t("mcpGuide.intro")}</p>
         </header>

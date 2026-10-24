@@ -323,6 +323,7 @@ enum inventory_stock_category {
   fruit
   yeast
   additive
+  packaging
 }
 
 enum equipment_type {

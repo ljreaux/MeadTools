@@ -186,6 +186,17 @@ read-only access. The normalizer renders these schemas from runtime Zod to keep
 shared equipment capacity units and request defaults intact. The path-parity
 check excludes only these approved new paths; older endpoint docs are unchanged.
 
+Ingredient and packaging stock management adds authenticated `GET`/`POST /account/inventory`
+and `GET`/`PATCH /account/inventory/{stock_id}`. Overview returns `can_manage`
+and owned nonarchived stock. The category enum includes `packaging`; packaging
+accepts only whole `units` counts, never volume-to-bottle conversion. Item reads include up to 100 recent adjustments
+and `has_more`; retained archived history remains readable. Premium mutations
+use stable operation UUIDs. Balance changes require `expected_balance`; PATCH
+chooses receipt, manual use, absolute correction or archival. Typed 400/403/404/
+409 failures preserve the existing inventory error codes. Runtime normalization
+retains shared unit enums and quantity limits, and path parity excludes these
+approved additions while preserving earlier endpoint documentation.
+
 The OpenAPI generator uses Zod schema mode. It scans:
 
 - `apps/web/app/api` for Route Handlers and their OpenAPI annotations.

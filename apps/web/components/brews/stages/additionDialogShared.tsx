@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { InputGroupText } from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { AmountUnitField } from "@/components/ui/amount-unit-field";
+export { AmountUnitField } from "@/components/ui/amount-unit-field";
 import { Textarea } from "@/components/ui/textarea";
 import {
   convertAdditiveAmount,
@@ -249,55 +250,6 @@ export function IngredientUnitSelect({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-export function AmountUnitField({
-  amount,
-  unit,
-  onAmountChange,
-  unitControl,
-  disabled
-}: {
-  amount: string;
-  unit: string;
-  onAmountChange: (value: string) => void;
-  unitControl?: React.ReactNode;
-  disabled?: boolean;
-}) {
-  if (!unitControl) {
-    return (
-      <InputGroup className="h-12">
-        <InputGroupInput
-          inputMode="decimal"
-          value={amount}
-          onChange={(event) => onAmountChange(event.target.value)}
-          onFocus={(event) => event.target.select()}
-          disabled={disabled}
-          className="h-full text-lg"
-        />
-        <InputGroupAddon align="inline-end">
-          <InputGroupText>{unit}</InputGroupText>
-        </InputGroupAddon>
-      </InputGroup>
-    );
-  }
-
-  return (
-    <InputGroup className="h-12">
-      <InputGroupInput
-        inputMode="decimal"
-        value={amount}
-        onChange={(event) => onAmountChange(event.target.value)}
-        onFocus={(event) => event.target.select()}
-        disabled={disabled}
-        className="h-full text-lg"
-      />
-      <InputGroupAddon align="inline-end" className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1">
-        <Separator orientation="vertical" className="h-12" />
-        {unitControl}
-      </InputGroupAddon>
-    </InputGroup>
   );
 }
 

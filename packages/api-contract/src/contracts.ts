@@ -124,6 +124,7 @@ import {
   createEquipmentRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
+  createInventoryStockRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
   createRecipeCommentRequestBodySchema,
   createRecipeCommentResponseSchema,
@@ -215,6 +216,14 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  inventoryOverviewResponseSchema,
+  inventoryStockErrorResponseSchema,
+  inventoryStockHistoryResponseSchema,
+  inventoryStockItemSchema,
+  inventoryStockMutationResponseSchema,
+  inventoryStockNotFoundResponseSchema,
+  inventoryStockPathParamsSchema,
+  inventoryStockUnexpectedErrorResponseSchema,
   kofiLinkClaimRequestBodySchema,
   kofiLinkClaimResponseSchema,
   kofiLinkRequestBodySchema,
@@ -358,6 +367,7 @@ import {
   updateHydrometerLogRequestBodySchema,
   updateIngredientFailureErrorResponseSchema,
   updateIngredientRequestBodySchema,
+  updateInventoryStockRequestBodySchema,
   updateRecipeCommentFailureErrorResponseSchema,
   updateRecipeCommentRequestBodySchema,
   updateRecipeCommentResponseSchema,
@@ -513,6 +523,7 @@ export type CreateCreditCheckoutResponse = z.infer<typeof createCreditCheckoutRe
 export type CreateEquipmentRequestBody = z.infer<typeof createEquipmentRequestBodySchema>;
 export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
 export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
+export type CreateInventoryStockRequestBody = z.infer<typeof createInventoryStockRequestBodySchema>;
 export type CreateRecipeCommentFailureErrorResponse = z.infer<typeof createRecipeCommentFailureErrorResponseSchema>;
 export type CreateRecipeCommentRequestBody = z.infer<typeof createRecipeCommentRequestBodySchema>;
 export type CreateRecipeCommentResponse = z.infer<typeof createRecipeCommentResponseSchema>;
@@ -604,6 +615,14 @@ export type IngredientResponse = z.infer<typeof ingredientResponseSchema>;
 export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchErrorResponseSchema>;
 export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
 export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
+export type InventoryOverviewResponse = z.infer<typeof inventoryOverviewResponseSchema>;
+export type InventoryStockErrorResponse = z.infer<typeof inventoryStockErrorResponseSchema>;
+export type InventoryStockHistoryResponse = z.infer<typeof inventoryStockHistoryResponseSchema>;
+export type InventoryStockItem = z.infer<typeof inventoryStockItemSchema>;
+export type InventoryStockMutationResponse = z.infer<typeof inventoryStockMutationResponseSchema>;
+export type InventoryStockNotFoundResponse = z.infer<typeof inventoryStockNotFoundResponseSchema>;
+export type InventoryStockPathParams = z.infer<typeof inventoryStockPathParamsSchema>;
+export type InventoryStockUnexpectedErrorResponse = z.infer<typeof inventoryStockUnexpectedErrorResponseSchema>;
 export type KofiLinkClaimRequestBody = z.infer<typeof kofiLinkClaimRequestBodySchema>;
 export type KofiLinkClaimResponse = z.infer<typeof kofiLinkClaimResponseSchema>;
 export type KofiLinkRequestBody = z.infer<typeof kofiLinkRequestBodySchema>;
@@ -747,6 +766,7 @@ export type UpdateHydrometerDeviceRequestBody = z.infer<typeof updateHydrometerD
 export type UpdateHydrometerLogRequestBody = z.infer<typeof updateHydrometerLogRequestBodySchema>;
 export type UpdateIngredientFailureErrorResponse = z.infer<typeof updateIngredientFailureErrorResponseSchema>;
 export type UpdateIngredientRequestBody = z.infer<typeof updateIngredientRequestBodySchema>;
+export type UpdateInventoryStockRequestBody = z.infer<typeof updateInventoryStockRequestBodySchema>;
 export type UpdateRecipeCommentFailureErrorResponse = z.infer<typeof updateRecipeCommentFailureErrorResponseSchema>;
 export type UpdateRecipeCommentRequestBody = z.infer<typeof updateRecipeCommentRequestBodySchema>;
 export type UpdateRecipeCommentResponse = z.infer<typeof updateRecipeCommentResponseSchema>;

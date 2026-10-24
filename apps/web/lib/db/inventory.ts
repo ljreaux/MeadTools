@@ -5,7 +5,7 @@ import { Prisma, type PrismaClient, type inventory_stock } from "@prisma/client"
 import { z } from "zod";
 import {
   InventoryError, convertQuantity, planConsumption, planStockChange,
-  normalizeQuantityUnit, quantitySchema, resolveInventoryAccess, stockInputSchema, toQuantityTicks,
+  normalizeQuantityUnit, validateStockQuantity, quantitySchema, resolveInventoryAccess, stockInputSchema, toQuantityTicks,
   type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
@@ -149,6 +149,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
         const stock = (await lockStock(tx, userId, [parsed.stockId])).get(parsed.stockId)!;
         if (stock.archived_at) throw new InventoryWriteError("STOCK_ARCHIVED");
+        validateStockQuantity(stock.category, parsed.quantity);
         if ((parsed.kind === "correction" && !parsed.expectedBalance) ||
             (parsed.expectedBalance && convertQuantity(parsed.expectedBalance, stock.unit).value !== stock.quantity.toNumber())) {
           throw new InventoryWriteError("STALE_STOCK");
@@ -156,6 +157,16 @@ export function createInventoryService(database: PrismaClient = prisma) {
         const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock), ...parsed });
         await writeBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note);
         return { stockId: stock.id, balance: plan.balance };
+      });
+  }
+
+  async function archiveStock(userId: number, operationKey: string, stockId: string): Promise<StockResult> {
+    uuid.parse(stockId);
+    return operation(userId, operationKey, { kind: "archive_stock", stockId },
+      (result) => stockResultSchema.parse(result), async (tx) => {
+        const stock = (await lockStock(tx, userId, [stockId])).get(stockId)!;
+        await tx.inventory_stock.update({ where: { id: stockId }, data: { archived_at: new Date() } });
+        return { stockId, balance: { value: stock.quantity.toNumber(), unit: stock.unit } };
       });
   }
 
@@ -214,6 +225,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
         }
         const stocks = await lockStock(tx, userId, [parsed.stockId, ...(previous ? [previous.stock_id] : [])]);
         const nextStock = stocks.get(parsed.stockId)!;
+        if (parsed.quantity) validateStockQuantity(nextStock.category, parsed.quantity);
         if ([...stocks.values()].some((stock) => stock.reconciliation_required)) {
           throw new InventoryWriteError("RECONCILIATION_REQUIRED");
         }
@@ -316,5 +328,5 @@ export function createInventoryService(database: PrismaClient = prisma) {
     }, { maxWait: 10_000, timeout: 15_000 });
   }
 
-  return { createStock, changeStock, mutateLinkedUsage, mutateUntrackedEntry };
+  return { createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
 }

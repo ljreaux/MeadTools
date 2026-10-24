@@ -40,20 +40,39 @@ Expired accounts retain read-only equipment. Regular and hydrometer brew
 completion/deletion release occupancy while preserving assignment history and
 ingredient balances. Assignment/completion races are covered by PostgreSQL tests.
 
-The seed now adds ten equipment items to the regular test user: vessels for
-Key Lime Pie and Mead Wiki Simple Trad Metric, a spare bucket, and common tools.
-Two primary vessels start assigned to ongoing brews for those recipes; an
-existing ongoing brew is reused. The fixture test verifies recipe linkage and
-account isolation. This slice does not run the main seed or reset the local DB;
-fixtures appear on the next normal seed/reset.
+The seed now adds ten equipment items to the regular test user: vessels for Key
+Lime Pie and Mead Wiki Simple Trad Metric, a spare bucket, and common tools. Two
+primary vessels start assigned to ongoing brews for those recipes; an existing
+ongoing brew is reused. The fixture test verifies recipe linkage and account
+isolation. The main seed has since been run successfully against local development
+after fixing its server-module startup conditions; it includes both premium test
+accounts and the equipment fixtures. The stock-management seed now adds ten stock
+items to the regular user only: honey, key lime juice, D47, US-05, Fermaid O,
+potassium metabisulfite, 48 wine bottles (750 mL), 24 beer bottles (330 mL), 50
+corks and 100 caps. Each has an atomic initial receipt/history entry. The agent
+did not rerun the main seed/reset for this slice; the new fixtures were verified
+in the restarted local preview.
 
 Browser checks on the shared local preview covered add/edit, assignment/release,
 search/filter and removal at mobile and desktop sizes. Temporary equipment was
-archived afterward. Ingredient stock management routes/UI, deduction selection,
-reconciliation and brew-page equipment display remain upcoming. The complete
-Preview flow remains unverified. Larry reset and seeded local development and
-confirmed the new tables on October 24; the production migration remains
-unapplied to hosted environments. This slice adds no schema changes.
+archived afterward. The stock-management slice now adds `/account/inventory` and
+authenticated list/create/change/history APIs. Premium users can add manually
+named stock, record receipts or manual use, correct the absolute quantity, inspect
+the latest 100 adjustments, and archive stock without reversing consumption or
+deleting history. Changes carry expected balances and account-scoped retry IDs.
+Expired accounts retain owned reads; inactive/foreign accounts cannot retrieve
+stock. Catalog selection, deduction selection, reconciliation and brew-page
+equipment display remain upcoming. Packaging stock covers bottles, caps and corks
+using whole `units` only. Names identify the bottle size/type; capacities do not
+convert to bottle counts. The complete Preview flow remains unverified. Larry
+reset and seeded local development and confirmed the new tables on October 24; the
+production migration remains unapplied to hosted environments. This slice adds the
+`packaging` stock category and whole-unit constraint. Larry confirmed the original
+inventory migration has not been applied anywhere and authorized amending it; the
+existing migration now includes those additions. The amended migration and
+constraint checks pass against a fresh disposable baseline database. Local
+development was updated with schema push, not migration history, without resetting
+data.
 
 ### Stock transaction adapter
 
@@ -98,6 +117,29 @@ selection is explicit here; the usage UI must use shared matching and resolve
 ambiguity/untracked uses before invoking the adapter. Expired/free logging uses
 the gateway's non-deduction path; explicitly requesting a premium deduction is
 rejected rather than silently pretending a deduction occurred.
+
+### Stock management API and UI
+
+`GET/POST /account/inventory` list retained active stock and create stock with an
+initial recorded quantity. `GET /account/inventory/{stock_id}` returns an owned
+item and its latest 100 immutable quantity changes, newest first, with `has_more`
+when older entries exist. History remains readable after archival. PATCH uses
+`receipt`, `manual_use`, `correction` or `archive`; balance changes include
+`expected_balance`, and every mutation includes `operation_id`. The existing
+transaction adapter applies compatible-unit conversion, shortage guards and
+stale-balance checks. The UI records subsequent changes in the stock's saved
+unit. Corrections replace the balance, rather than adding to it. Archive keeps
+the recorded quantity, consumption links and adjustment history unchanged.
+
+Packaging quantities are validated on creation, manual balance changes and
+linked usage, with the same guard in production SQL. The page reuses the brew-list
+category dropdown and clear-filter pattern, search input groups, and amount/unit
+fields with grouped weight/volume/count menus,
+selects, loading buttons, dialogs and removal confirmation. A reconciliation
+warning is retained after manual quantity changes; this page does not resolve
+past untracked brew changes. The database fixture covers route parsing,
+ownership, replay, compatible-unit changes, competing stale requests, shortage
+rollback, archival retention, premium expiry and inactive accounts.
 
 ### Brew-entry API integration
 
