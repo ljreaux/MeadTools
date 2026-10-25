@@ -1636,6 +1636,18 @@
                 "stabilizers": "Stabilisatoren",
                 "lossAdjustment": "Volumenverlust-Schätzungen"
             }
+        },
+        "qr": {
+            "action": "QR-Code",
+            "title": "Ansatz-QR-Code",
+            "description": "Drucke diesen Code für eine Flasche oder einen Gärbehälter aus. Öffentliche Ansätze folgen deinen aktuellen Freigabeeinstellungen. Private Ansätze erfordern, dass der Besitzer sich anmeldet. Das Erstellen eines Codes aktiviert das Teilen nicht.",
+            "previewAlt": "QR-Code, der zu diesem Ansatz führt",
+            "printHint": "Lade die SVG-Datei für scharfen Druck in beliebiger Größe herunter. Behalte den weißen Rand bei, drucke mindestens 30 mm breit und teste ein gedrucktes Etikett mit deinem Telefon. Gedruckte Links funktionieren weiter, nachdem das Premium abgelaufen ist, vorbehaltlich des Zugriffs auf den Ansatz.",
+            "generating": "QR-Code wird erstellt…",
+            "download": "SVG herunterladen",
+            "premiumRequired": "Aktiver Premiumzugang ist erforderlich, um Ansatz-QR-Codes zu erstellen oder herunterzuladen. Bereits gedruckte Links folgen weiterhin den aktuellen Freigabeeinstellungen des Ansatzes.",
+            "unavailable": "Dieser Ansatz ist nicht verfügbar oder du hast keinen Zugriff.",
+            "failed": "QR-Code konnte nicht erstellt werden. Bitte versuche es erneut."
         }
     },
     "admin": {
