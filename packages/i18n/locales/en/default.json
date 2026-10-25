@@ -2657,7 +2657,13 @@
     "catalogLink": "Link to catalog (optional)",
     "catalogNone": "No catalog link",
     "catalogHelp": "Link this stock to an ingredient, yeast, additive or nutrient for more reliable brew matching. Your stock name stays the same.",
-    "catalogLoadError": "The catalog could not be loaded. You can still save without a link."
+    "catalogLoadError": "The catalog could not be loaded. You can still save without a link.",
+    "access": {
+      "title": "Premium access required",
+      "viewReadOnly": "View read-only",
+      "hideItems": "Hide items",
+      "readOnlyTitle": "Read-only view"
+    }
   },
   "brewInventory": {
     "vessels": "Current containers",

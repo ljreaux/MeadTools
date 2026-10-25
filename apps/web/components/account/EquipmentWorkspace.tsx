@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -226,17 +227,6 @@ export function EquipmentWorkspace() {
             </Button>
           ) : null}
         </div>
-        {!data.can_manage ? (
-          <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-            <p>{t("equipment.readOnly")}</p>
-            <Link
-              href="/account/premium"
-              className="mt-1 inline-block underline underline-offset-4"
-            >
-              {t("equipment.premiumLink")}
-            </Link>
-          </div>
-        ) : null}
         <div className="grid grid-cols-3 gap-3">
           {[
             { value: data.equipment.length, label: "equipment.total" },
@@ -267,6 +257,7 @@ export function EquipmentWorkspace() {
           <InputGroup className="w-full sm:max-w-sm">
             <InputGroupInput
               type="search"
+              className="[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               aria-label={t("equipment.search")}
@@ -288,6 +279,7 @@ export function EquipmentWorkspace() {
             ) : null}
           </InputGroup>
         </div>
+        <PremiumCollectionNotice key={String(data.can_manage)} canManage={data.can_manage} description={t("equipment.readOnly")}>
         <TabsContent value={filter}>
           {visible.length ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -507,6 +499,7 @@ export function EquipmentWorkspace() {
             </div>
           )}
         </TabsContent>
+        </PremiumCollectionNotice>
         {editor && data.can_manage ? (
           <EquipmentEditor
             key={editor.item?.id ?? "new"}

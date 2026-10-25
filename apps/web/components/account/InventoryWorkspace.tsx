@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import Link from "next/link";
+import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, X, Package, History } from "lucide-react";
 import type { InventoryStockItem } from "@meadtools/api-contract/contracts";
@@ -40,7 +40,7 @@ export function InventoryWorkspace() {
       <div className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.description")}</p></div>
       {data.can_manage ? <Button onClick={() => open(null)}><Plus aria-hidden className="mr-2 h-4 w-4" />{t("inventory.add")}</Button> : null}
     </div>
-    {!data.can_manage ? <div className="rounded-lg border bg-muted/40 p-4 text-sm"><p>{t("inventory.readOnly")}</p><Link className="mt-1 inline-block underline underline-offset-4" href="/account/premium">{t("equipment.premiumLink")}</Link></div> : null}
+
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Label htmlFor={filterId} className="text-muted-foreground">{t("inventory.category")}</Label>
@@ -53,10 +53,11 @@ export function InventoryWorkspace() {
         </Select>
         {filter !== "all" ? <Button type="button" variant="ghost" size="sm" onClick={() => setFilter("all")}><X aria-hidden className="h-4 w-4" />{t("brews.filters.clear", "Clear filters")}</Button> : null}
       </div>
-      <InputGroup className="w-full sm:max-w-sm"><InputGroupInput type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("inventory.search")} placeholder={t("inventory.search")} /><InputGroupAddon><Search aria-hidden /></InputGroupAddon>
+      <InputGroup className="w-full sm:max-w-sm"><InputGroupInput className="[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none" type="search" value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("inventory.search")} placeholder={t("inventory.search")} /><InputGroupAddon><Search aria-hidden /></InputGroupAddon>
         {search ? <InputGroupAddon align="inline-end"><InputGroupButton aria-label={t("clear")} onClick={() => setSearch("")}><X aria-hidden /></InputGroupButton></InputGroupAddon> : null}
       </InputGroup>
     </div>
+    <PremiumCollectionNotice key={String(data.can_manage)} canManage={data.can_manage} description={t("inventory.readOnly")}>
       {visible.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visible.map((item) => <Card key={item.id} className="flex min-w-0 flex-col">
         <CardHeader><p className="text-xs text-muted-foreground">{t(`inventory.categories.${item.category}`)}</p><CardTitle className="break-words text-base">{item.name}</CardTitle></CardHeader>
         <CardContent className="flex flex-1 flex-col gap-4">
@@ -70,6 +71,7 @@ export function InventoryWorkspace() {
           </div>
         </CardContent>
       </Card>)}</div> : <div className="rounded-xl border border-dashed p-12 text-center"><Package aria-hidden className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><h2 className="font-semibold">{t(data.stock.length ? "inventory.noMatches" : "inventory.emptyTitle")}</h2><p className="mt-2 text-sm text-muted-foreground">{t(data.stock.length ? "inventory.changeSearch" : "inventory.emptyDescription")}</p></div>}
+    </PremiumCollectionNotice>
     {editor && data.can_manage ? <InventoryEditor key={`${editor.item?.id ?? "new"}-${editor.action}`} item={editor.item} action={editor.action} busy={mutation.isPending} error={error} onClose={() => setEditor(null)} onSave={(command) => save(command, () => setEditor(null))} /> : null}
     {history ? <InventoryHistory item={history} onClose={() => setHistory(null)} /> : null}
     {removing && data.can_manage ? <AlertDialog open onOpenChange={(value) => { if (!value && !mutation.isPending) setRemoving(null); }}><AlertDialogContent>
