@@ -9,6 +9,7 @@ import {
   stockTransferImportSchema, nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
+import { stockReconciliation } from "./inventory-reconciliation";
 import { getPremiumAccessStatus } from "./premium-access";
 
 export class InventoryWriteError extends Error {
@@ -303,6 +304,35 @@ export function createInventoryService(database: PrismaClient = prisma) {
       });
   }
 
+  async function reconcileStock(userId: number, operationKey: string, input: {
+    stockId: string; revision: string; quantity: Quantity; note?: string | null;
+  }): Promise<StockResult> {
+    const parsed = z.object({
+      stockId: uuid, revision: z.string().regex(/^[a-f0-9]{64}$/),
+      quantity: quantitySchema, note: z.string().max(5000).nullable().default(null),
+    }).strict().parse(input);
+    return operation(userId, operationKey, { kind: "reconcile_stock", input: parsed },
+      (result) => stockResultSchema.parse(result), async (tx, operationId) => {
+        const stock = (await lockStock(tx, userId, [parsed.stockId])).get(parsed.stockId)!;
+        if (stock.archived_at) throw new InventoryWriteError("STOCK_ARCHIVED");
+        const review = await stockReconciliation(tx, userId, stock);
+        if (!stock.reconciliation_required || review.revision !== parsed.revision)
+          throw new InventoryWriteError("STALE_STOCK");
+        validateStockQuantity(stock.category, parsed.quantity);
+        const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock),
+          kind: "correction", quantity: parsed.quantity });
+        // Count already includes past physical use. Only future edits apply the
+        // difference from these reviewed baselines; removed uses return no stock.
+        for (const use of review.uses) {
+          await tx.inventory_consumptions.update({ where: { id: use.id }, data:
+            use.current ? { deducted: use.current.value, reversed_at: null } : { reversed_at: new Date() } });
+        }
+        await writeBalance(tx, userId, operationId, stock, plan, "correction", null, parsed.note);
+        await tx.inventory_stock.update({ where: { id: stock.id }, data: { reconciliation_required: false } });
+        return { stockId: stock.id, balance: plan.balance };
+      });
+  }
+
   async function archiveStock(userId: number, operationKey: string, stockId: string): Promise<StockResult> {
     uuid.parse(stockId);
     return operation(userId, operationKey, { kind: "archive_stock", stockId },
@@ -461,5 +491,5 @@ export function createInventoryService(database: PrismaClient = prisma) {
     }, { maxWait: 10_000, timeout: 15_000 });
   }
 
-  return { importStock, editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
+  return { reconcileStock, importStock, editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
 }

@@ -210,9 +210,15 @@ deletion remain available. Editing/removing a previously linked use keeps its
 recorded balance and link unchanged, sets the stock's reconciliation flag and
 returns `reconciliation_required`. A missing entry with a retained link cannot
 be recreated by a legacy retry. On renewal, flagged stock rejects deductions
-with HTTP 409 instead of silently backfilling offline changes. Resolving that
-flag and establishing new link baselines still needs the reconciliation workflow
-before launch; a manual quantity adjustment does not silently clear it.
+with HTTP 409 instead of silently backfilling offline changes. Premium owners can
+use Review stock to confirm the physical amount on hand and review retained brew
+links. The revision-bound reconciliation snapshot includes
+stock and entry data, rejecting confirmations after either changes. Confirmation
+sets the absolute balance and rebases compatible links to their current logged
+quantities without another deduction. Missing/incompatible lines are closed
+without returning stock; additions logged untracked remain untracked. A normal
+manual quantity adjustment does not silently clear the flag. Reconciliation is
+atomic and replay-safe, with quantity changes retained as correction history.
 
 HTTP 400 represents malformed requests/units or incompatible selections; 403
 denies explicit deductions without premium; 404 hides unavailable owned records;

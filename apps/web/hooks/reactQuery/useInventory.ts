@@ -42,7 +42,8 @@ export function useInventory() {
     }));
   }, onSuccess: async () => {
     operation.current = null;
-    await client.invalidateQueries({ queryKey });
+    await Promise.all([client.invalidateQueries({ queryKey }),
+      client.invalidateQueries({ queryKey: ["account", "brew-inventory"] })]);
   } });
   return { overview, mutation };
 }

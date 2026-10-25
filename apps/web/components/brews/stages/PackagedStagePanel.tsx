@@ -1,6 +1,7 @@
 "use client";
 
 import { useBrewInventory } from "../BrewInventoryProvider";
+import { packagingEntryIdentity } from "@/lib/brews/stockChoiceBaseline";
 import { useBrewStockChoice } from "../BrewStockField";
 import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 import { AmountUnitField } from "@/components/ui/amount-unit-field";
@@ -67,6 +68,7 @@ export function PackagedStagePanel({
   } | null>(null);
   const [note, setNote] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
+  const pendingPackagingId = React.useRef<string | null>(null);
   const [completeDialogOpen, setCompleteDialogOpen] = React.useState(false);
 
   const unit =
@@ -219,6 +221,7 @@ export function PackagedStagePanel({
         datetime: datetimeIso,
       });
 
+      const savedEntryId = packagingEntryIdentity(pendingPackagingId, latestPackaging?.id);
       if (latestPackaging && helpers.patchEntry) {
         await helpers.patchEntry(latestPackaging.id, {
           datetime: datetimeIso,
@@ -230,9 +233,15 @@ export function PackagedStagePanel({
       } else {
         await helpers.addEntry({
           ...packagingInput,
+          client_entry_id: savedEntryId,
           inventory: stockChoice.selection(),
         });
       }
+
+      // Refresh the exact saved use before taking the next edit snapshot. This
+      // also replaces a pre-refresh tracked:false snapshot after first creation.
+      await stockChoice.saved(savedEntryId);
+      pendingPackagingId.current = null;
 
       if (volumeChanged) {
         await helpers.patchBrewMetadata({

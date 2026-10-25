@@ -949,3 +949,133 @@ test("an exported workbook restores inventory after a database reset with fresh 
   assert.equal(stock[0].quantity.value, 2.75);
   assert.equal(stock[0].name, "Restored honey");
 });
+
+async function expireAndEdit(f, input, data) {
+  await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2000-01-01')}});
+  const result = await route('PATCH', f, {data}, input.client_entry_id);
+  assert.equal(result.status, 200, JSON.stringify(result.body));
+  assert.equal(result.body.inventory.status, 'reconciliation_required');
+}
+async function renew(f) {
+  await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2100-01-01')}});
+}
+async function reconciliationReview(f) {
+  const response = await stockRequest('GET', f.userId, undefined, f.stockId);
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  assert.ok(response.body.reconciliation);
+  return response.body.reconciliation;
+}
+function reconcileInput(review, quantity, operation_id=randomUUID()) {
+  return {action:'reconcile',operation_id,revision:review.revision,quantity,note:'Confirmed physical count'};
+}
+test('renewal review confirms physical count, rebases converted uses, preserves untracked additions and retries once', async () => {
+  const f=await fixture();const input=addition(1,multiSelection([{line_key:'addition',stock_id:f.stockId}]));
+  assert.equal((await route('POST',f,input)).status,201);
+  await expireAndEdit(f,input,{...input.data,amount:1500,unit:'g'});
+  const untracked=addition(.5,{mode:'untracked'});
+  assert.equal((await route('POST',f,untracked)).status,201);
+  assert.equal((await stockRequest('GET',f.userId,undefined,f.stockId)).body.reconciliation,undefined);
+  await renew(f);
+  const review=await reconciliationReview(f);
+  assert.equal(review.uses.length,1);assert.deepEqual(review.uses[0].previous,kg(1));assert.deepEqual(review.uses[0].current,kg(1.5));
+  const request=reconcileInput(review,kg(3));
+  const saved=await stockRequest('PATCH',f.userId,request,f.stockId);
+  assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(await balance(f.stockId),3);
+  assert.deepEqual(await stockRequest('PATCH',f.userId,request,f.stockId),saved);
+  assert.equal((await prisma.inventory_stock.findUniqueOrThrow({where:{id:f.stockId}})).reconciliation_required,false);
+  assert.equal(await prisma.inventory_consumptions.count({where:{entry_id:untracked.client_entry_id}}),0);
+  const context=(await trackerInventory(f.userId,f.brewId)).body;
+  const expected=context.usages.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted}));
+  const edited=await route('PATCH',f,{data:{...input.data,amount:2},inventory:multiSelection([{line_key:'addition',stock_id:f.stockId}],expected)},input.client_entry_id);
+  assert.equal(edited.status,200,JSON.stringify(edited.body));assert.equal(await balance(f.stockId),2.5);
+  assert.equal(await prisma.inventory_adjustments.count({where:{stock_id:f.stockId,kind:'correction'}}),1);
+});
+test('review closes deleted or incompatible uses without returning stock and can confirm an unchanged balance',async()=>{
+  const f=await fixture();const first=addition(1,selection(f));const removed=addition(1,selection(f));
+  assert.equal((await route('POST',f,first)).status,201);assert.equal((await route('POST',f,removed)).status,201);
+  await expireAndEdit(f,first,{...first.data,amount:100,unit:'mL'});
+  assert.equal((await route('DELETE',f,undefined,removed.client_entry_id)).status,200);
+  await renew(f);const review=await reconciliationReview(f);
+  assert.equal(review.uses.length,2);assert.ok(review.uses.every(use=>use.current===null));
+  const saved=await stockRequest('PATCH',f.userId,reconcileInput(review,kg(3)),f.stockId);
+  assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(await balance(f.stockId),3);
+  assert.equal(await prisma.inventory_consumptions.count({where:{stock_id:f.stockId,reversed_at:null}}),0);
+  assert.equal(await prisma.inventory_adjustments.count({where:{stock_id:f.stockId,kind:'correction'}}),0);
+  assert.equal((await route('POST',f,addition(1,selection(f)))).status,201);assert.equal(await balance(f.stockId),2);
+  assert.equal((await route('POST',f,{...removed,inventory:selection(f)})).status,409); // new attempts cannot resurrect retained tombstones
+});
+test('review rejects changed brew data even when the stock balance did not change',async()=>{
+  const f=await fixture();const input=addition(1,selection(f));await route('POST',f,input);
+  await expireAndEdit(f,input,{...input.data,amount:2});await renew(f);const review=await reconciliationReview(f);
+  await expireAndEdit(f,input,{...input.data,amount:3});await renew(f);
+  const stale=await stockRequest('PATCH',f.userId,reconcileInput(review,kg(2)),f.stockId);
+  assert.equal(stale.status,409);assert.equal(stale.body.code,'STALE_STOCK');assert.equal(await balance(f.stockId),4);
+  assert.equal((await prisma.inventory_stock.findUniqueOrThrow({where:{id:f.stockId}})).reconciliation_required,true);
+  const current=await reconciliationReview(f);assert.notEqual(current.revision,review.revision);
+  assert.equal((await stockRequest('PATCH',f.userId,reconcileInput(current,kg(2)),f.stockId)).status,200);
+});
+test('review enforces ownership, premium, current quantity and a single concurrent confirmation',async()=>{
+  const f=await fixture();const other=await owner();const input=addition(1,selection(f));await route('POST',f,input);
+  await expireAndEdit(f,input,{...input.data,amount:2});await renew(f);const review=await reconciliationReview(f);
+  assert.equal((await stockRequest('PATCH',other,reconcileInput(review,kg(3)),f.stockId)).status,404);
+  await prisma.premium_memberships.deleteMany({where:{user_id:f.userId}});
+  assert.equal((await stockRequest('PATCH',f.userId,reconcileInput(review,kg(3)),f.stockId)).status,403);
+  await prisma.premium_memberships.create({data:{user_id:f.userId,source:'manual',paid_through:new Date('2100-01-01')}});
+  assert.equal((await stockRequest('PATCH',f.userId,reconcileInput(review,{value:3,unit:'L'}),f.stockId)).status,400);
+  const competing=await Promise.all([2,3].map(value=>stockRequest('PATCH',f.userId,reconcileInput(review,kg(value)),f.stockId)));
+  assert.deepEqual(competing.map(item=>item.status).sort(),[200,409]);
+  assert.equal(await prisma.inventory_operations.count({where:{user_id:f.userId,adjustments:{some:{kind:'correction'}}}}),1);
+});
+test('packaging snapshots from successive saves permit repeated edits with exact inventory deltas',async()=>{
+  const {captureStockChoiceBaseline}=await import('../lib/brews/stockChoiceBaseline.ts');
+  const f=await fixture();const item=await service.createStock(f.userId,randomUUID(),{name:'Bottles',category:'packaging',quantity:{value:20,unit:'units'}});
+  const entryId=randomUUID();const data={packagedVolumeLiters:3,bottleRows:[{label:'750',quantity:4,sizeLiters:.75}],closures:[]};
+  const selection=()=>[{line_key:'bottle:0',stock_id:item.stockId}];
+  assert.equal((await route('POST',f,{type:'PACKAGING',client_entry_id:entryId,data,inventory:multiSelection(selection())})).status,201);
+  let snapshot=captureStockChoiceBaseline(entryId,(await trackerInventory(f.userId,f.brewId)).body);
+  assert.equal(snapshot.tracked,true);
+  for(const quantity of [5,6]){
+    const expected=snapshot.uses.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted}));
+    const result=await route('PATCH',f,{data:{...data,bottleRows:[{...data.bottleRows[0],quantity}]},inventory:multiSelection(selection(),expected)},entryId);
+    assert.equal(result.status,200,JSON.stringify(result.body));
+    snapshot=captureStockChoiceBaseline(entryId,(await trackerInventory(f.userId,f.brewId)).body);
+    assert.equal(snapshot.uses[0].deducted.value,quantity);assert.equal(await balance(item.stockId),20-quantity);
+  }
+});
+
+test('a failed reconciliation audit rolls back link baselines, balance, review flag and retry receipt',async()=>{
+  const f=await fixture();const input=addition(1,selection(f));await route('POST',f,input);
+  await expireAndEdit(f,input,{...input.data,amount:2});await renew(f);const review=await reconciliationReview(f);
+  const operationId=randomUUID();
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_reconcile_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.delta = 13.37 AND NEW.kind = 'correction' THEN RAISE EXCEPTION 'fixture reconciliation failure'; END IF; RETURN NEW; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_reconcile_audit_failure BEFORE INSERT ON inventory_adjustments FOR EACH ROW EXECUTE FUNCTION fixture_reconcile_audit_failure()');
+  try{
+    const result=await stockRequest('PATCH',f.userId,reconcileInput(review,kg(17.37),operationId),f.stockId);
+    assert.equal(result.status,500);assert.equal(await balance(f.stockId),4);
+    const use=await prisma.inventory_consumptions.findFirstOrThrow({where:{stock_id:f.stockId}});
+    assert.equal(use.deducted.toNumber(),1);assert.equal(use.reversed_at,null);
+    assert.equal((await prisma.inventory_stock.findUniqueOrThrow({where:{id:f.stockId}})).reconciliation_required,true);
+    assert.equal(await prisma.inventory_operations.count({where:{operation_key:operationId}}),0);
+  }finally{
+    await prisma.$executeRawUnsafe('DROP TRIGGER fixture_reconcile_audit_failure ON inventory_adjustments');
+    await prisma.$executeRawUnsafe('DROP FUNCTION fixture_reconcile_audit_failure()');
+  }
+});
+
+test('packaging creation with a lost response cannot create a second entry or deduction on retry',async()=>{
+  const {packagingEntryIdentity}=await import('../lib/brews/stockChoiceBaseline.ts');
+  const f=await fixture();const bottles=await service.createStock(f.userId,randomUUID(),{name:'Bottles',category:'packaging',quantity:{value:20,unit:'units'}});
+  const pending={current:null};
+  const data={packagedVolumeLiters:3,bottleRows:[{label:'750',quantity:4,sizeLiters:.75}],closures:[]};
+  const inventory=multiSelection([{line_key:'bottle:0',stock_id:bottles.stockId}]);
+  const first=await route('POST',f,{type:'PACKAGING',client_entry_id:packagingEntryIdentity(pending),data,inventory});
+  assert.equal(first.status,201);
+  // Treat the response as lost: no latest entry in the UI and pending ID intact.
+  const retry=await route('POST',f,{type:'PACKAGING',client_entry_id:packagingEntryIdentity(pending),data,inventory});
+  assert.equal(retry.status,201,JSON.stringify(retry.body));
+  assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId,type:'PACKAGING'}}),1);
+  assert.equal(await balance(bottles.stockId),16);
+  // Even a changed retry intent must not create another entry with a new ID.
+  const changed=await route('POST',f,{type:'PACKAGING',client_entry_id:packagingEntryIdentity(pending),data:{...data,bottleRows:[{...data.bottleRows[0],quantity:5}]},inventory:multiSelection([{line_key:'bottle:0',stock_id:bottles.stockId}])});
+  assert.equal(changed.status,400);assert.equal(changed.body.code,'ENTRY_MISMATCH');assert.equal(await balance(bottles.stockId),16);
+});

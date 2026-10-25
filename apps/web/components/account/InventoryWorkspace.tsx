@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { InventoryReconcileDialog } from "./InventoryReconcileDialog";
 import { InventoryTransferActions } from "./InventoryTransferActions";
 import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 export function InventoryWorkspace() {
   const { t, i18n } = useTranslation();
   const { overview, mutation } = useInventory();
+  const [reconciling, setReconciling] = useState<string | null>(null);
   const filterId = useId();
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -82,7 +84,9 @@ export function InventoryWorkspace() {
         <CardContent className="flex flex-1 flex-col gap-4">
           <p className="text-2xl font-semibold tabular-nums">{format(item.quantity.value)} <span className="text-base font-normal text-muted-foreground">{t(`inventory.units.${item.quantity.unit}`)}</span></p>
           {item.notes ? <p className="break-words text-sm text-muted-foreground">{item.notes}</p> : null}
-          {item.reconciliation_required ? <p className="rounded-md border p-3 text-sm">{t("inventory.needsReview")}</p> : null}
+          {item.reconciliation_required ? <div className="space-y-3 rounded-md border p-3 text-sm"><p>{t("inventory.needsReview")}</p>
+            {data.can_manage ? <Button variant="outline" size="sm" onClick={() => { mutation.reset(); setReconciling(item.id); }}>{t("inventory.reconcile.title")}</Button> : null}
+          </div> : null}
           <div className="mt-auto flex flex-wrap gap-2">
             {data.can_manage ? <><Button size="sm" variant="outline" onClick={() => open(item, "details")}>{t("inventory.actions.details")}</Button><Button size="sm" variant="outline" onClick={() => open(item, "receipt")}>{t("inventory.actions.receipt")}</Button><Button size="sm" variant="outline" onClick={() => open(item, "manual_use")}>{t("inventory.actions.manual_use")}</Button><Button size="sm" variant="ghost" onClick={() => open(item, "correction")}>{t("inventory.actions.correction")}</Button></> : null}
             <Button size="sm" variant="ghost" onClick={() => setHistory(item)} aria-label={t("inventory.historyNamed", { name: item.name })}><History aria-hidden className="mr-1 h-4 w-4" />{t("inventory.history")}</Button>
@@ -92,6 +96,7 @@ export function InventoryWorkspace() {
       </Card>)}</div> : <div className="rounded-xl border border-dashed p-12 text-center"><Package aria-hidden className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><h2 className="font-semibold">{t(data.stock.length ? "inventory.noMatches" : "inventory.emptyTitle")}</h2><p className="mt-2 text-sm text-muted-foreground">{t(data.stock.length ? "inventory.changeSearch" : "inventory.emptyDescription")}</p></div>}
     </PremiumCollectionNotice>
     {editor && data.can_manage ? <InventoryEditor key={`${editor.item?.id ?? "new"}-${editor.action}`} item={editor.item} action={editor.action} busy={mutation.isPending} error={error} onClose={() => setEditor(null)} onSave={(command) => save(command, () => setEditor(null))} /> : null}
+    {reconciling && data.can_manage ? <InventoryReconcileDialog stockId={reconciling} busy={mutation.isPending} error={error} onClose={() => setReconciling(null)} onSave={(command) => save(command, () => setReconciling(null))} /> : null}
     {history ? <InventoryHistory item={history} onClose={() => setHistory(null)} /> : null}
     {removing && data.can_manage ? <AlertDialog open onOpenChange={(value) => { if (!value && !mutation.isPending) setRemoving(null); }}><AlertDialogContent>
       <AlertDialogHeader><AlertDialogTitle>{t("inventory.removeTitle")}</AlertDialogTitle><AlertDialogDescription>{t("inventory.removeDescription", { name: removing.name })}</AlertDialogDescription></AlertDialogHeader>

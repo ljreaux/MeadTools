@@ -231,6 +231,7 @@ import {
   inventoryStockMutationResponseSchema,
   inventoryStockNotFoundResponseSchema,
   inventoryStockPathParamsSchema,
+  inventoryStockReconciliationSchema,
   inventoryStockUnexpectedErrorResponseSchema,
   inventoryTransferErrorResponseSchema,
   inventoryTransferRequestBodySchema,
@@ -642,6 +643,7 @@ export const InventoryStockItem = inventoryStockItemSchema;
 export const InventoryStockMutationResponse = inventoryStockMutationResponseSchema;
 export const InventoryStockNotFoundResponse = inventoryStockNotFoundResponseSchema;
 export const InventoryStockPathParams = inventoryStockPathParamsSchema;
+export const InventoryStockReconciliation = inventoryStockReconciliationSchema;
 export const InventoryStockUnexpectedErrorResponse = inventoryStockUnexpectedErrorResponseSchema;
 export const InventoryTransferErrorResponse = inventoryTransferErrorResponseSchema;
 export const InventoryTransferRequestBody = inventoryTransferRequestBodySchema;

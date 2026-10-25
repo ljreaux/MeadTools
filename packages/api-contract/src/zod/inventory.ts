@@ -61,6 +61,15 @@ export const updateInventoryStockRequestBodySchema = z.discriminatedUnion(
       })
       .strict(),
     z
+      .object({
+        action: z.literal("reconcile"),
+        operation_id: z.string().uuid(),
+        revision: z.string().regex(/^[a-f0-9]{64}$/),
+        quantity: quantitySchema,
+        note: z.string().max(5000).nullable().default(null),
+      })
+      .strict(),
+    z
       .object({ action: z.literal("archive"), operation_id: z.string().uuid() })
       .strict(),
   ],
@@ -72,7 +81,22 @@ export const inventoryStockMutationResponseSchema = z.object({
 export const inventoryStockPathParamsSchema = z.object({
   stock_id: z.string().uuid(),
 });
+export const inventoryStockReconciliationSchema = z.object({
+  revision: z.string().regex(/^[a-f0-9]{64}$/),
+  uses: z.array(
+    z.object({
+      id: z.string().uuid(),
+      entry_id: z.string().uuid(),
+      brew_id: z.string().uuid(),
+      line_key: z.string(),
+      name: z.string(),
+      previous: quantitySchema,
+      current: quantitySchema.nullable(),
+    }),
+  ),
+});
 export const inventoryStockHistoryResponseSchema = z.object({
+  reconciliation: inventoryStockReconciliationSchema.optional(),
   stock: inventoryStockItemSchema,
   adjustments: z.array(
     z.object({

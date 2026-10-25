@@ -67,6 +67,7 @@ type InventoryContext = {
   equipmentLoading: boolean;
   equipmentError: boolean;
   refreshEquipment: () => void;
+  refreshInventory: () => Promise<BrewInventoryContextResponse>;
   run: <T>(
     intent: BrewStockIntent,
     execute: (selection?: BrewInventorySelection) => Promise<T>,
@@ -224,6 +225,14 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
         equipmentError: equipment.isError,
         refreshEquipment: () => {
           void equipment.refetch();
+        },
+        refreshInventory: async () => {
+          const [fresh] = await Promise.all([
+            context.refetch({ throwOnError: true }),
+            stock.refetch({ throwOnError: true }),
+          ]);
+          if (!fresh.data) throw new BrewInventoryRequestError("FAILED");
+          return fresh.data;
         },
         run,
       }}

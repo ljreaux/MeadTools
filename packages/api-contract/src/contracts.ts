@@ -232,6 +232,7 @@ import {
   inventoryStockMutationResponseSchema,
   inventoryStockNotFoundResponseSchema,
   inventoryStockPathParamsSchema,
+  inventoryStockReconciliationSchema,
   inventoryStockUnexpectedErrorResponseSchema,
   inventoryTransferErrorResponseSchema,
   inventoryTransferRequestBodySchema,
@@ -643,6 +644,7 @@ export type InventoryStockItem = z.infer<typeof inventoryStockItemSchema>;
 export type InventoryStockMutationResponse = z.infer<typeof inventoryStockMutationResponseSchema>;
 export type InventoryStockNotFoundResponse = z.infer<typeof inventoryStockNotFoundResponseSchema>;
 export type InventoryStockPathParams = z.infer<typeof inventoryStockPathParamsSchema>;
+export type InventoryStockReconciliation = z.infer<typeof inventoryStockReconciliationSchema>;
 export type InventoryStockUnexpectedErrorResponse = z.infer<typeof inventoryStockUnexpectedErrorResponseSchema>;
 export type InventoryTransferErrorResponse = z.infer<typeof inventoryTransferErrorResponseSchema>;
 export type InventoryTransferRequestBody = z.infer<typeof inventoryTransferRequestBodySchema>;

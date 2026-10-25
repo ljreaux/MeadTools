@@ -954,6 +954,136 @@
       "InventoryStockHistoryResponse": {
         "type": "object",
         "properties": {
+          "reconciliation": {
+            "type": "object",
+            "properties": {
+              "revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "uses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "entry_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "brew_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "line_key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "previous": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "g",
+                            "mg",
+                            "lb",
+                            "oz",
+                            "L",
+                            "mL",
+                            "gal",
+                            "qt",
+                            "pt",
+                            "fl_oz",
+                            "imp_gal",
+                            "imp_qt",
+                            "imp_pt",
+                            "imp_fl_oz",
+                            "tsp",
+                            "tbsp",
+                            "units"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "current": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "g",
+                            "mg",
+                            "lb",
+                            "oz",
+                            "L",
+                            "mL",
+                            "gal",
+                            "qt",
+                            "pt",
+                            "fl_oz",
+                            "imp_gal",
+                            "imp_qt",
+                            "imp_pt",
+                            "imp_fl_oz",
+                            "tsp",
+                            "tbsp",
+                            "units"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "entry_id",
+                    "brew_id",
+                    "line_key",
+                    "name",
+                    "previous",
+                    "current"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "revision",
+              "uses"
+            ],
+            "additionalProperties": false
+          },
           "stock": {
             "type": "object",
             "properties": {
@@ -1475,6 +1605,77 @@
               "operation_id",
               "quantity",
               "expected_balance"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "reconcile"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              },
+              "note": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "revision",
+              "quantity"
             ],
             "additionalProperties": false
           },
@@ -17951,7 +18152,7 @@
       "get": {
         "operationId": "get-account-inventory-{stock_id}",
         "summary": "Read recent stock history",
-        "description": "Returns only authenticated owned stock. Active accounts retain read access after premium expiry.",
+        "description": "Returns only authenticated owned stock. Active accounts retain read access after premium expiry. Premium owners also receive a revision-bound reconciliation review for flagged stock.",
         "tags": [
           "Inventory"
         ],
@@ -18026,8 +18227,8 @@
       },
       "patch": {
         "operationId": "patch-account-inventory-{stock_id}",
-        "summary": "Adjust or archive inventory stock",
-        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries.",
+        "summary": "Adjust, reconcile or archive inventory stock",
+        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. Reconciliation requires a reviewed revision, confirms a physical count and rebases existing brew links without replaying past deductions.",
         "tags": [
           "Inventory"
         ],

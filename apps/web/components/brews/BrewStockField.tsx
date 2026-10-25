@@ -8,7 +8,11 @@ import {
   type InventoryLine,
 } from "@meadtools/inventory-domain";
 import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
-import { useBrewInventory, type BrewStockUsage } from "./BrewInventoryProvider";
+import {
+  captureStockChoiceBaseline,
+  type StockChoiceBaseline,
+} from "@/lib/brews/stockChoiceBaseline";
+import { useBrewInventory } from "./BrewInventoryProvider";
 import { Label } from "@/components/ui/label";
 import SearchableInput from "@/components/ui/SearchableInput";
 const valueOf = (item: { id: string }) => item.id;
@@ -24,18 +28,15 @@ export function useBrewStockChoice(
   const id = useId();
   const live =
     inventory?.usages.filter((use) => use.entry_id === entryId) ?? [];
-  const [baseline, setBaseline] = useState<{
-    entryId: string;
-    uses: BrewStockUsage[];
-    tracked: boolean;
-  } | null>(null);
+  const [baseline, setBaseline] = useState<StockChoiceBaseline | null>(null);
   if (!entryId && baseline) setBaseline(null);
   if (entryId && inventory?.canManage && baseline?.entryId !== entryId)
-    setBaseline({
-      entryId,
-      uses: live,
-      tracked: inventory.trackedEntryIds.includes(entryId),
-    });
+    setBaseline(
+      captureStockChoiceBaseline(entryId, {
+        usages: inventory.usages,
+        tracked_entry_ids: inventory.trackedEntryIds,
+      }),
+    );
   const previous =
     baseline && baseline.entryId === entryId ? baseline.uses : live;
   const tracked =
@@ -296,6 +297,14 @@ export function useBrewStockChoice(
     selection,
     removalSelection,
     removalNotice,
+    saved: async (savedEntryId: string) => {
+      if (inventory?.canManage) {
+        const fresh = await inventory.refreshInventory();
+        setBaseline(captureStockChoiceBaseline(savedEntryId, fresh));
+      }
+      setChoices({});
+      operation.current = null;
+    },
     resetOperation: () => {
       operation.current = null;
     },

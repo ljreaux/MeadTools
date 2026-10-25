@@ -272,3 +272,11 @@ and import require premium; owner-scoped export/template download does not.
 Responses include sheet data, a base64 file or import counts. Row failures identify
 the source row; file limits use HTTP 413. The route is excluded from historical
 path parity and documented using runtime schemas and generated contracts.
+
+Stock history includes an optional revision-bound reconciliation review for
+flagged stock owned by a premium account. PATCH `/account/inventory/{stock_id}`
+accepts `action: reconcile`, the reviewed revision, an absolute physical quantity
+and optional note. Confirmation clears the flag and rebases compatible retained
+brew uses without replaying past deductions. Missing or incompatible lines close
+without returning stock. Changed stock or brew data returns `STALE_STOCK` (409);
+normal ownership, premium and operation replay rules apply.
