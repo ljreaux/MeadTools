@@ -252,3 +252,13 @@ subject, item count, cached-result flag, safe issue category, optional HTTP stat
 or missing-field categories. It never contains raw arguments, record IDs, source
 bodies or exception messages. Old clients can ignore it. These details describe
 a tool step, not a terminal request failure or permission to mutate records.
+
+The inventory component follow-up adds premium-only
+`POST /brews/{brew_id}/entries/batch`, which atomically saves reviewed additions
+and all stock uses. The operation and each entry have stable IDs for retries.
+The `items` inventory mode identifies each nutrient/packaging line and includes
+all previous deduction snapshots for optimistic concurrency checks. Private brew
+inventory context includes line keys/names and tracked entry IDs. Stock PATCH
+also supports a `details` action for names, notes and optional catalog links;
+quantities and units remain unchanged. These additions are included in generated
+contracts and OpenAPI, with the batch path excluded from legacy path parity.

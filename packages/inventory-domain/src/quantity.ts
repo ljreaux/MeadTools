@@ -12,7 +12,7 @@ export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
 
 /** Spellings already persisted by recipe/additive brew logging. */
 export function normalizeQuantityUnit(unit: unknown): QuantityUnit {
-  const aliases: Record<string, string> = { lbs: "lb", liters: "L", ml: "mL", quarts: "qt", "fl oz": "fl_oz" };
+  const aliases: Record<string, string> = { tablets:"units", tablet:"units", lbs: "lb", liters: "L", ml: "mL", quarts: "qt", "fl oz": "fl_oz" };
   return quantityUnitSchema.parse(typeof unit === "string" && Object.hasOwn(aliases, unit) ? aliases[unit] : unit);
 }
 

@@ -55,7 +55,7 @@
     "check:package-boundaries": "node scripts/check-package-boundaries.mjs",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web",
+    "db:reset": "docker compose down -v && docker compose up -d --wait && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web",
     "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,invoice.paid,customer.subscription.updated,customer.subscription.deleted,refund.created,refund.updated,charge.dispute.created,charge.dispute.funds_withdrawn --forward-to http://localhost:3000/api/webhooks/stripe",
     "test:inventory-domain": "npm test --workspace @meadtools/inventory-domain"
   },

@@ -40,7 +40,7 @@ Expired accounts retain read-only equipment. Regular and hydrometer brew
 completion/deletion release occupancy while preserving assignment history and
 ingredient balances. Assignment/completion races are covered by PostgreSQL tests.
 
-The seed now adds ten equipment items to the regular test user: vessels for Key
+The original seed adds ten equipment items to the regular test user: vessels for Key
 Lime Pie and Mead Wiki Simple Trad Metric, a spare bucket, and common tools. Two
 primary vessels start assigned to ongoing brews for those recipes; an existing
 ongoing brew is reused. The fixture test verifies recipe linkage and account
@@ -49,9 +49,7 @@ after fixing its server-module startup conditions; it includes both premium test
 accounts and the equipment fixtures. The stock-management seed now adds ten stock
 items to the regular user only: honey, key lime juice, D47, US-05, Fermaid O,
 potassium metabisulfite, 48 wine bottles (750 mL), 24 beer bottles (330 mL), 50
-corks and 100 caps. Each has an atomic initial receipt/history entry. The agent
-did not rerun the main seed/reset for this slice; the new fixtures were verified
-in the restarted local preview.
+corks and 100 caps. Each has an atomic initial receipt/history entry. The grouped-container revision rebuilds the local seed with the authorized reset and adds six interchangeable buckets.
 
 Browser checks on the shared local preview covered add/edit, assignment/release,
 search/filter and removal at mobile and desktop sizes. Temporary equipment was
@@ -61,8 +59,7 @@ named stock, record receipts or manual use, correct the absolute quantity, inspe
 the latest 100 adjustments, and archive stock without reversing consumption or
 deleting history. Changes carry expected balances and account-scoped retry IDs.
 Expired accounts retain owned reads; inactive/foreign accounts cannot retrieve
-stock. Catalog selection, deduction selection, reconciliation and brew-page
-equipment display remain upcoming. Packaging stock covers bottles, caps and corks
+stock. Catalog selection and reconciliation controls remain upcoming. Packaging stock covers bottles, caps and corks
 using whole `units` only. Names identify the bottle size/type; capacities do not
 convert to bottle counts. The complete Preview flow remains unverified. Larry
 reset and seeded local development and confirmed the new tables on October 24; the
@@ -73,6 +70,55 @@ existing migration now includes those additions. The amended migration and
 constraint checks pass against a fresh disposable baseline database. Local
 development was updated with schema push, not migration history, without resetting
 data.
+
+### Brew tracker integration
+
+Stock selection is part of the original addition and correction forms. There is
+no follow-up inventory dialog. Entry kind limits compatible categories (yeast,
+nutrients/additives, or ingredients); units must be convertible without guessing
+density or packet size. A unique name match is selected by default. Ambiguous or
+missing matches default to logging without changing stock. The form previews the
+rounded deduction and remaining balance and lets the user choose untracked use.
+Linked corrections retain the original expected deduction; removing an erroneous
+entry reverses its recorded amount through the existing delete confirmation.
+Stock controls and container controls are hidden on the tracker for unavailable
+premium access. Free logging continues and clearly reports unchanged inventory.
+
+Containers can be recorded in groups, such as six identical five-gallon buckets.
+Each physical unit has a stable identity, shared `group_id`, and optional label;
+users manage quantities and availability rather than inventing unique names. This
+preserves occupancy and history for an individually labeled bucket while unnamed
+buckets remain interchangeable. Account equipment cards show one group with its
+total, available count, per-brew allocations and optional individual labels.
+Group creation/resizing, labeling and allocation use account-scoped retry IDs.
+Resizing/removal cannot discard occupied units. Removed units retain their history.
+
+The existing stage-change forms offer container changes by default. They show the
+current allocation and a searchable choice for adding other container types;
+quantities and optional labels stay in the same form. Keeping the current setup
+requires no equipment write. An explicit change sends the expected current unit
+IDs and desired IDs in `containers` with the metadata request. The stage change,
+occupancy changes, assignment events and retry response commit atomically under
+the existing account/brew locking order. An occupied or stale choice rolls back
+the whole operation. Completion releases current containers without restoring
+ingredients. Containers can also be changed independently between stages.
+
+The private `GET /brews/{brew_id}/inventory` context supplies owned deductions and
+up to 50 recent changes grouped by operation, container group and label for
+display. Whole operations are loaded before grouping so large allocations retain
+their correct quantities. It returns empty arrays and `can_manage: false` when premium is
+unavailable. These details are separate from public brew responses. Expired
+linked corrections preserve stock and require reconciliation. Every mutation
+checks current access again.
+
+One physical use per ADDITION is supported; blended nutrient normalization and
+multi-row bottle/cap/cork deductions remain a following slice. The local schema
+and original unapplied inventory migration now include group identity and optional
+labels. The seed includes six five-gallon brew buckets (one labeled Blue lid),
+in addition to the earlier ten items. The local seed was rebuilt with Larry's
+explicit authorization. Regression checks cover category/default matching, pooled
+occupancy, optional labels, retries, concurrent overbooking, stage/assignment
+atomicity, ownership, stale forms, and premium expiry.
 
 ### Stock transaction adapter
 
@@ -251,8 +297,9 @@ The exact reconciliation UI is still part of integration work.
   atomic migration of all quantities.
 - Match only owned catalog namespace + ID. A recipe line ID is not a catalog ID.
   Multiple stock records with the same identity require selection. Missing catalog
-  identities require explicit selection or logging as untracked; names are never
-  an automatic match. Matching does not guarantee compatible quantity units.
+  identities fall back to Fuse name matching on unlinked stock only, with warnings
+  for weak or close matches. An item linked to another catalog identity is never
+  an automatic fallback. Category and quantity compatibility remain hard filters.
 - Insufficient stock fails the entire linked usage write. Show the shortage and
   allow adding/correcting stock or explicitly logging without deduction. No
   automatic negative balance or partial deduction.
@@ -261,9 +308,9 @@ The exact reconciliation UI is still part of integration work.
 
 - `apps/web/app/[locale]/account/brews/[brew_id]/page.tsx`: `addAddition`
   creates `ADDITION` with kind `INGREDIENT`, `NUTRIENT`, `YEAST` or `OTHER`.
-  `addAdditions` submits initial uses sequentially. Each confirmed initial use
-  needs a stable client ID and its own inventory decision across retries. If one
-  fails, keep successful IDs and show exactly which additions remain unsaved.
+  Premium `addAdditions` reviews stock once and commits the batch atomically.
+  Each entry retains a stable client ID across retries, and the batch operation
+  saves a receipt. Free logging continues without stock writes.
 - `PrimaryStagePanel.tsx` records recipe nutrients, Go-Ferm and manual nutrients
   through those additions. Subsequent ingredient/additive panels use the same
   addition callback. Preserve catalog identity separately from recipe line IDs.
@@ -315,3 +362,20 @@ The exact reconciliation UI is still part of integration work.
    on Preview with premium/free/expired/foreign/public accounts. Keep new paid
    subscriptions closed through the November 2 deployment; activation remains
    November 9 under #474.
+
+## Component and packaging integration
+
+`inventoryEntryLines` derives physical lines from recorded addition components,
+bottle rows, and optional closures. Nutrient component keys and built-in additive
+IDs distinguish all supported nutrients and stabilizers, including potassium and
+sodium sulfite and their Campden forms. Tablets normalize to unit counts and may
+include partial tablets; bottle and closure counts must be whole numbers. Never
+convert tablets to powder weight or infer bottle counts from packaged volume.
+
+The stabilization dialog reviews both stock choices inline. Bulk missing additions
+and supplemental stabilizers use one batch review. All entries, consumption lines,
+and deductions commit together. A batch aggregates one audit row per stock; its
+consumption reference is null when the adjustment covers multiple uses. Individual
+consumption records retain the entry, line key, stock, quantity and unit snapshots.
+Edits and removal return those exact snapshots before applying new quantities.
+Stock detail changes can rename or relink catalog items without changing balances.

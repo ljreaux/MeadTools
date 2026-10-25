@@ -167,6 +167,166 @@
               "action": {
                 "type": "string",
                 "enum": [
+                  "allocate"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "brew_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "expected_ids": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "brew_id",
+              "quantity",
+              "expected_ids"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "label"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "label": {
+                "nullable": true,
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "edit_group"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "equipment": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "vessel",
+                      "other"
+                    ]
+                  },
+                  "capacity": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz",
+                          "tsp",
+                          "tbsp"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notes": {
+                    "default": null,
+                    "nullable": true,
+                    "type": "string",
+                    "maxLength": 5000
+                  }
+                },
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "quantity",
+              "equipment"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
                   "edit"
                 ]
               },
@@ -290,6 +450,27 @@
               "action": {
                 "type": "string",
                 "enum": [
+                  "archive_group"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            },
+            "required": [
+              "action",
+              "operation_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
                   "archive"
                 ]
               },
@@ -370,6 +551,16 @@
                 "format": "uuid",
                 "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
               },
+              "group_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "label": {
+                "nullable": true,
+                "type": "string",
+                "maxLength": 100
+              },
               "brew": {
                 "nullable": true,
                 "type": "object",
@@ -402,6 +593,8 @@
               "capacity",
               "notes",
               "id",
+              "group_id",
+              "label",
               "brew"
             ],
             "additionalProperties": false
@@ -591,6 +784,16 @@
                   "format": "uuid",
                   "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
+                "group_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "label": {
+                  "nullable": true,
+                  "type": "string",
+                  "maxLength": 100
+                },
                 "brew": {
                   "nullable": true,
                   "type": "object",
@@ -623,6 +826,8 @@
                 "capacity",
                 "notes",
                 "id",
+                "group_id",
+                "label",
                 "brew"
               ],
               "additionalProperties": false
@@ -670,6 +875,12 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "quantity": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
           },
           "equipment": {
             "type": "object",
@@ -1101,6 +1312,65 @@
       },
       "UpdateInventoryStockRequestBody": {
         "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "details"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "catalogReference": {
+                "default": null,
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "catalog": {
+                    "type": "string",
+                    "enum": [
+                      "ingredient",
+                      "yeast",
+                      "additive",
+                      "nutrient"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "catalog",
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "name"
+            ],
+            "additionalProperties": false
+          },
           {
             "type": "object",
             "properties": {
@@ -3363,6 +3633,247 @@
           "error"
         ]
       },
+      "CreateBrewEntryBatchRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "entries": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "datetime": {
+                  "type": "string"
+                },
+                "title": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "gravity": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "temperature": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "temp_units": {
+                  "nullable": true,
+                  "type": "string",
+                  "enum": [
+                    "F",
+                    "C",
+                    "K"
+                  ]
+                },
+                "data": {
+                  "nullable": true,
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "inventory": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "items"
+                      ]
+                    },
+                    "operation_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "items": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "line_key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "stock_id": {
+                            "nullable": true,
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          }
+                        },
+                        "required": [
+                          "line_key",
+                          "stock_id"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "expected": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "line_key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "stock_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "deducted": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "kg",
+                                  "g",
+                                  "mg",
+                                  "lb",
+                                  "oz",
+                                  "L",
+                                  "mL",
+                                  "gal",
+                                  "qt",
+                                  "pt",
+                                  "fl_oz",
+                                  "imp_gal",
+                                  "imp_qt",
+                                  "imp_pt",
+                                  "imp_fl_oz",
+                                  "tsp",
+                                  "tbsp",
+                                  "units"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "value",
+                              "unit"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "line_key",
+                          "stock_id",
+                          "deducted"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "operation_id",
+                    "items",
+                    "expected"
+                  ],
+                  "additionalProperties": false
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ADDITION"
+                  ]
+                },
+                "stage_to": {
+                  "type": "string",
+                  "enum": [
+                    "PLANNED",
+                    "PRIMARY",
+                    "SECONDARY",
+                    "BULK_AGE",
+                    "STABILIZED",
+                    "BACKSWEETENED",
+                    "PACKAGED",
+                    "COMPLETE"
+                  ]
+                },
+                "client_entry_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                }
+              },
+              "required": [
+                "inventory",
+                "type",
+                "client_entry_id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "operation_id",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "CreateBrewEntryResponse": {
+        "type": "object",
+        "properties": {
+          "brew": {
+            "$ref": "#/components/schemas/BrewResponse"
+          },
+          "inventory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewInventoryOutcome"
+              }
+            ]
+          }
+        },
+        "required": [
+          "brew"
+        ]
+      },
+      "BrewEntryConflictErrorResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BrewEntryIdConflictErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+          }
+        ]
+      },
+      "BrewEntryCreateErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to create entry.",
+              "Server misconfiguration"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "CreateBrewEntryRequestBody": {
         "type": "object",
         "properties": {
@@ -3425,48 +3936,252 @@
           "type"
         ]
       },
-      "CreateBrewEntryResponse": {
+      "BrewInventoryContextResponse": {
         "type": "object",
         "properties": {
-          "brew": {
-            "$ref": "#/components/schemas/BrewResponse"
+          "can_manage": {
+            "type": "boolean"
           },
-          "inventory": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/BrewInventoryOutcome"
-              }
-            ]
+          "tracked_entry_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "usages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entry_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "line_key": {
+                  "type": "string"
+                },
+                "line_name": {
+                  "type": "string"
+                },
+                "stock_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "deducted": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "g",
+                        "mg",
+                        "lb",
+                        "oz",
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp",
+                        "units"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "stock": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "category": {
+                      "type": "string",
+                      "enum": [
+                        "honey",
+                        "fruit",
+                        "yeast",
+                        "additive",
+                        "packaging"
+                      ]
+                    },
+                    "catalogReference": {
+                      "default": null,
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "catalog": {
+                          "type": "string",
+                          "enum": [
+                            "ingredient",
+                            "yeast",
+                            "additive",
+                            "nutrient"
+                          ]
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "catalog",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "quantity": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "g",
+                            "mg",
+                            "lb",
+                            "oz",
+                            "L",
+                            "mL",
+                            "gal",
+                            "qt",
+                            "pt",
+                            "fl_oz",
+                            "imp_gal",
+                            "imp_qt",
+                            "imp_pt",
+                            "imp_fl_oz",
+                            "tsp",
+                            "tbsp",
+                            "units"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "notes": {
+                      "default": null,
+                      "nullable": true,
+                      "type": "string",
+                      "maxLength": 5000
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "reconciliation_required": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "category",
+                    "catalogReference",
+                    "quantity",
+                    "notes",
+                    "id",
+                    "reconciliation_required"
+                  ],
+                  "additionalProperties": false
+                },
+                "stock_archived": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "entry_id",
+                "line_key",
+                "line_name",
+                "stock_id",
+                "deducted",
+                "stock",
+                "stock_archived"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "vessel_events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "equipment_name": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "action": {
+                  "type": "string",
+                  "enum": [
+                    "assigned",
+                    "released"
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "equipment_name",
+                "quantity",
+                "action",
+                "created_at"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
-          "brew"
-        ]
-      },
-      "BrewEntryConflictErrorResponse": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/BrewEntryIdConflictErrorResponse"
-          },
-          {
-            "$ref": "#/components/schemas/BrewInventoryErrorResponse"
-          }
-        ]
-      },
-      "BrewEntryCreateErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Failed to create entry.",
-              "Server misconfiguration"
-            ]
-          }
-        },
-        "required": [
-          "error"
-        ]
+          "can_manage",
+          "tracked_entry_ids",
+          "usages",
+          "vessel_events"
+        ],
+        "additionalProperties": false
       },
       "BrewResponse": {
         "type": "object",
@@ -3621,6 +4336,18 @@
       "UpdateBrewRequestBody": {
         "type": "object",
         "properties": {
+          "containers": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewContainerChange"
+              }
+            ]
+          },
+          "stage_change_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -3737,22 +4464,251 @@
           "requested_email_alerts"
         ]
       },
-      "BrewSnapshotUpdateErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "enum": [
-              "Only ongoing brews can update their recipe snapshot",
-              "Recipe snapshot not found",
-              "Recipe not available",
-              "Brew snapshot changed; review it again",
-              "Recipe changed; review it again"
+      "BrewMetadataValidationErrorResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string",
+                "enum": [
+                  "Invalid JSON body",
+                  "Missing recipe_id",
+                  "Missing brew_id",
+                  "Missing entry_id",
+                  "Invalid client_entry_id",
+                  "Invalid entry request",
+                  "Invalid recipe_id",
+                  "Only ongoing brews can update their recipe snapshot",
+                  "Recipe snapshot not found"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string",
+                    "enum": [
+                      "Only ongoing brews can update their recipe snapshot",
+                      "Recipe snapshot not found",
+                      "Recipe not available",
+                      "Brew snapshot changed; review it again",
+                      "Recipe changed; review it again"
+                    ]
+                  }
+                },
+                "required": [
+                  "error"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "INCOMPATIBLE_UNITS",
+                      "QUANTITY_PRECISION",
+                      "INVALID_QUANTITY",
+                      "INSUFFICIENT_STOCK",
+                      "NOT_FOUND",
+                      "LINK_MISMATCH",
+                      "PREMIUM_REQUIRED",
+                      "OPERATION_CONFLICT",
+                      "STALE_USAGE",
+                      "USAGE_REMOVED",
+                      "ENTRY_MISMATCH",
+                      "STOCK_ARCHIVED",
+                      "STALE_STOCK",
+                      "SELECTION_REQUIRED",
+                      "INVALID_INVENTORY_REQUEST",
+                      "RECONCILIATION_REQUIRED"
+                    ]
+                  },
+                  "shortage": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "error",
+                  "code"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "ASSIGNMENT_CHANGED",
+                      "VESSEL_OCCUPIED",
+                      "BREW_COMPLETE",
+                      "NOT_FOUND",
+                      "PREMIUM_REQUIRED",
+                      "OPERATION_CONFLICT",
+                      "INVALID_INVENTORY_REQUEST",
+                      "ENTRY_MISMATCH"
+                    ]
+                  }
+                },
+                "required": [
+                  "error",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
             ]
           }
-        },
-        "required": [
-          "error"
+        ]
+      },
+      "BrewMetadataInventoryErrorResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string",
+                "enum": [
+                  "Only ongoing brews can update their recipe snapshot",
+                  "Recipe snapshot not found",
+                  "Recipe not available",
+                  "Brew snapshot changed; review it again",
+                  "Recipe changed; review it again"
+                ]
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INCOMPATIBLE_UNITS",
+                  "QUANTITY_PRECISION",
+                  "INVALID_QUANTITY",
+                  "INSUFFICIENT_STOCK",
+                  "NOT_FOUND",
+                  "LINK_MISMATCH",
+                  "PREMIUM_REQUIRED",
+                  "OPERATION_CONFLICT",
+                  "STALE_USAGE",
+                  "USAGE_REMOVED",
+                  "ENTRY_MISMATCH",
+                  "STOCK_ARCHIVED",
+                  "STALE_STOCK",
+                  "SELECTION_REQUIRED",
+                  "INVALID_INVENTORY_REQUEST",
+                  "RECONCILIATION_REQUIRED"
+                ]
+              },
+              "shortage": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "kg",
+                  "g",
+                  "mg",
+                  "lb",
+                  "oz",
+                  "L",
+                  "mL",
+                  "gal",
+                  "qt",
+                  "pt",
+                  "fl_oz",
+                  "imp_gal",
+                  "imp_qt",
+                  "imp_pt",
+                  "imp_fl_oz",
+                  "tsp",
+                  "tbsp",
+                  "units"
+                ]
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "ASSIGNMENT_CHANGED",
+                  "VESSEL_OCCUPIED",
+                  "BREW_COMPLETE",
+                  "NOT_FOUND",
+                  "PREMIUM_REQUIRED",
+                  "OPERATION_CONFLICT",
+                  "INVALID_INVENTORY_REQUEST",
+                  "ENTRY_MISMATCH"
+                ]
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          }
         ]
       },
       "BrewUpdateErrorResponse": {
@@ -7427,6 +8383,40 @@
           "error"
         ]
       },
+      "BrewContainerChange": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expected_ids": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "equipment_ids": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        },
+        "required": [
+          "operation_id",
+          "expected_ids",
+          "equipment_ids"
+        ],
+        "additionalProperties": false
+      },
       "BrewEntriesByStageResponse": {
         "type": "object",
         "properties": {
@@ -7621,6 +8611,117 @@
       },
       "BrewInventorySelection": {
         "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "items"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "items": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "line_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "stock_id": {
+                      "nullable": true,
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "required": [
+                    "line_key",
+                    "stock_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "expected": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "line_key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "stock_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "deducted": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "g",
+                            "mg",
+                            "lb",
+                            "oz",
+                            "L",
+                            "mL",
+                            "gal",
+                            "qt",
+                            "pt",
+                            "fl_oz",
+                            "imp_gal",
+                            "imp_qt",
+                            "imp_pt",
+                            "imp_fl_oz",
+                            "tsp",
+                            "tbsp",
+                            "units"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "line_key",
+                    "stock_id",
+                    "deducted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "mode",
+              "operation_id",
+              "items",
+              "expected"
+            ],
+            "additionalProperties": false
+          },
           {
             "type": "object",
             "properties": {
@@ -12728,7 +13829,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewValidationErrorResponse"
+                  "$ref": "#/components/schemas/BrewMetadataValidationErrorResponse"
                 }
               }
             }
@@ -12748,7 +13849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewSnapshotUpdateErrorResponse"
+                  "$ref": "#/components/schemas/BrewMetadataInventoryErrorResponse"
                 }
               }
             }
@@ -12758,7 +13859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                  "$ref": "#/components/schemas/BrewEntryNotFoundErrorResponse"
                 }
               }
             }
@@ -12768,7 +13869,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BrewSnapshotUpdateErrorResponse"
+                  "$ref": "#/components/schemas/BrewMetadataInventoryErrorResponse"
                 }
               }
             }
@@ -13421,6 +14522,113 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DeleteBrewEntryRequestBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brews/{brew_id}/entries/batch": {
+      "post": {
+        "operationId": "post-brews-{brew_id}-entries-batch",
+        "summary": "Log a reviewed batch of additions",
+        "description": "Premium-only: all entries and stock deductions commit together. Retrying the same operation returns its saved result.",
+        "tags": [
+          "Brews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brew_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrewEntryBatchRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBrewEntryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewEntryBadRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewEntryNotFoundErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewEntryConflictErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewEntryCreateErrorResponse"
+                }
               }
             }
           }
@@ -16391,6 +17599,84 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brews/{brew_id}/inventory": {
+      "get": {
+        "operationId": "get-brews-{brew_id}-inventory",
+        "summary": "Read private brew inventory context",
+        "description": "Returns owned linked deductions and the latest 50 vessel changes for active premium accounts. Free or expired accounts receive can_manage false and empty arrays. This context is never included in public brew responses.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brew_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewInventoryContextResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
                 }
               }
             }

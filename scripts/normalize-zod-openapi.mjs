@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import {
+  createBrewEntryBatchRequestBodySchema, brewContainerChangeSchema, updateBrewRequestBodySchema,
   brewInventorySelectionSchema, brewInventoryOutcomeSchema, brewInventoryErrorResponseSchema,
 } from "../packages/api-contract/src/zod/brews.ts";
 import * as inventorySchemas from "../packages/api-contract/src/zod/inventory.ts";
@@ -55,6 +56,9 @@ for (const [schemaName, publicName] of schemaToPublicName) {
 }
 // The static generator cannot resolve imported shared quantity schemas. Use
 // their actual runtime definitions rather than emitting dangling/object refs.
+schemas.BrewContainerChange = brewContainerChangeSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
+if (schemas.UpdateBrewRequestBody?.properties?.stage_change_datetime) schemas.UpdateBrewRequestBody.properties.stage_change_datetime = updateBrewRequestBodySchema.shape.stage_change_datetime.unwrap().toJSONSchema({ target: "openapi-3.0", io: "input" });
+schemas.CreateBrewEntryBatchRequestBody=createBrewEntryBatchRequestBodySchema.toJSONSchema({target:"openapi-3.0",io:"input"});
 schemas.BrewInventorySelection = brewInventorySelectionSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
 schemas.BrewInventoryOutcome = brewInventoryOutcomeSchema.toJSONSchema({ target: "openapi-3.0" });
 schemas.BrewInventoryErrorResponse = brewInventoryErrorResponseSchema.toJSONSchema({ target: "openapi-3.0" });

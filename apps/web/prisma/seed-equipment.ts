@@ -26,6 +26,8 @@ export async function seedEquipment(database: PrismaClient, userId: number) {
       }, select: { id: true } });
       brewIds.set(name, brew.id);
     }
+    const bucketGroup = randomUUID();
+    for (let i=0;i<6;i++) await tx.equipment.create({data:{user_id:userId,group_id:bucketGroup,name:"Brew bucket",type:"vessel",capacity:5,capacity_unit:"gal",label:i===0?"Blue lid":null,notes:"Six interchangeable five-gallon buckets; labels are optional."}});
     const fixtures = [
       { name: "Key Lime Pie primary fermenter", type: "vessel", capacity: { value: 30, unit: "L" },
         notes: "Headspace for the roughly five-gallon Key Lime Pie batch.", recipe: "Key Lime Pie" },
@@ -36,7 +38,7 @@ export async function seedEquipment(database: PrismaClient, userId: number) {
       { name: "Traditional aging carboy", type: "vessel", capacity: { value: 5, unit: "L" },
         notes: "Available for racking and aging the traditional batch." },
       { name: "Spare fermentation bucket", type: "vessel", capacity: { value: 12, unit: "L" }, notes: "Clean and available." },
-      { name: "Auto-siphon and tubing", type: "other", notes: "For transfers between primary and secondary vessels." },
+      { name: "Auto-siphon and tubing", type: "other", notes: "For transfers between primary and secondary containers." },
       { name: "Hydrometer and test jar", type: "other", notes: "For original and final gravity readings." },
       { name: "Digital scale", type: "other", notes: "For honey, yeast, nutrients and small additions." },
       { name: "Airlocks and bungs", type: "other", notes: "Spare airlocks and bungs for both recipes." },

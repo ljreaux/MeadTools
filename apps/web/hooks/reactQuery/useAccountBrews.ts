@@ -1,4 +1,5 @@
 "use client";
+import type { BrewContainerChange, BrewInventorySelection } from "@meadtools/api-contract/contracts";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
@@ -88,6 +89,7 @@ export type AccountBrew = {
 };
 
 type BrewEntryInputCommon = {
+  inventory?: BrewInventorySelection;
   datetime?: string;
   title?: string | null;
   note?: string | null;
@@ -139,6 +141,7 @@ export type CreateBrewEntryInput =
     } & BrewEntryInputCommon);
 
 export type PatchBrewEntryInput = {
+  inventory?: BrewInventorySelection;
   datetime?: string;
   title?: string | null;
   note?: string | null;
@@ -222,6 +225,7 @@ export function useCreateAccountBrew() {
  * PATCH /api/brews/:brewId  (metadata only)
  */
 export type PatchAccountBrewMetadataInput = {
+  containers?: BrewContainerChange;
   recipe_id?: number;
   update_recipe_snapshot?: boolean;
   expected_snapshotted_at?: string | null;
@@ -259,6 +263,8 @@ export function usePatchAccountBrewMetadata() {
     },
 
     onSuccess: (updated, vars) => {
+      void queryClient.invalidateQueries({queryKey:["account","equipment"]});
+      void queryClient.invalidateQueries({queryKey:["account","brew-inventory"]});
       // update list cache
       queryClient.setQueryData<AccountBrewListItem[] | undefined>(
         accountBrewsQk.list(),

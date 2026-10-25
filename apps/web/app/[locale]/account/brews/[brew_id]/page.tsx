@@ -1,4 +1,9 @@
 "use client";
+import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
+import {useCreateBrewEntryBatch} from "@/hooks/reactQuery/useCreateBrewEntry";
+import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import { useBrewStockChoice } from "@/components/brews/BrewStockField";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +26,7 @@ import { toast } from "@/hooks/use-toast";
 
 import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
+import { BrewVessels } from "@/components/brews/BrewVessels";
 import { BrewTimelineCharts } from "@/components/brews/BrewTimelineCharts";
 import { UpdateRecipeSnapshot } from "@/components/brews/UpdateRecipeSnapshot";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
@@ -773,7 +779,10 @@ export default function BrewPageClient() {
     );
   }
 
-  async function addAddition(input: {
+  const brewInventory=useBrewInventory();
+  const createBatch=useCreateBrewEntryBatch();
+  function buildAddition(input: {
+    inventory?: BrewInventorySelection;
     name: string;
     recipeIngredientId?: string;
     recipeAdditiveId?: string;
@@ -795,12 +804,12 @@ export default function BrewPageClient() {
     const nameKey =
       typeof input.meta?.nameKey === "string" ? input.meta.nameKey : getBrewItemKey(input.meta?.plannedName ?? input.name);
     const displayName = nameKey ? t(nameKey, getBrewItemLabel(t, input.name)) : getBrewItemLabel(t, input.name);
-    await addEntry(
-      entryPayload.addition({
+    return (
+      { ...entryPayload.addition({
         name: displayName,
         recipeIngredientId: input.recipeIngredientId,
         recipeAdditiveId: input.recipeAdditiveId,
-        amount: input.amount,
+        amount: input.amount == null ? input.amount : Number(input.amount.toFixed(6)),
         unit: input.unit,
         note: input.note ?? null,
         kind: input.kind,
@@ -811,12 +820,15 @@ export default function BrewPageClient() {
           plannedName: input.meta?.plannedName ?? input.name
         },
         datetime: input.datetime
-      })
+      }), inventory: input.inventory }
     );
   }
 
+  async function addAddition(input:Parameters<typeof buildAddition>[0]) {await addEntry(buildAddition(input));}
+
   async function addAdditions(
     inputs: Array<{
+      inventory?: BrewInventorySelection;
       name: string;
       recipeIngredientId?: string;
       recipeAdditiveId?: string;
@@ -836,10 +848,15 @@ export default function BrewPageClient() {
       datetime?: string;
     }>
   ) {
-    // simplest approach: fire sequentially so you don’t DDOS your own API
-    for (const x of inputs) {
-      await addAddition(x);
-    }
+    const entries=inputs.map(buildAddition);
+    const save=async(reviewed:CreateBrewEntryInput[],operationId:string)=>{
+      if(operationId&&reviewed.every(entry=>entry.inventory?.mode==='items')){await createBatch.mutateAsync({brewId,entries:reviewed,operationId});return;}
+      for(const entry of reviewed)await addEntry({...entry,inventory:undefined});
+    };
+    if(brewInventory?.canManage&&entries.every(entry=>entry.inventory?.mode==='items')) {
+      const first=entries[0].inventory;
+      await save(entries,first?.mode==='items'?first.operation_id:crypto.randomUUID());
+    }else if(brewInventory)await brewInventory.reviewBatch(entries,save);else await save(entries,'');
   }
 
   if (isLoading) return <BrewPageSkeleton />;
@@ -1158,6 +1175,8 @@ export default function BrewPageClient() {
         </div>
       </div>
 
+      <BrewVessels stage={brew.stage} brewId={brew.id} completed={brew.stage === "COMPLETE" || Boolean(brew.end_date)} />
+
       {brew.recipe_snapshot ? <UpdateRecipeSnapshot brew={brew} /> : null}
 
       <Accordion type="single" defaultValue="stage-panel" collapsible>
@@ -1170,8 +1189,8 @@ export default function BrewPageClient() {
               brewId={brew.id}
               stage={brew.stage}
               entries={allEntries}
-              onMoveToStage={async (to, datetime) => {
-                await saveMetadata({ stage: to, stage_change_datetime: datetime });
+              onMoveToStage={async (to, datetime, containers) => {
+                await saveMetadata({ stage: to, stage_change_datetime: datetime, containers });
               }}
               openAddEntry={openAddEntry}
               addAddition={addAddition}
@@ -1478,8 +1497,8 @@ export default function BrewPageClient() {
           toast({ description: t("saved", "Saved.") });
           setEditingEntry(null);
         }}
-        onDelete={async (entryId) => {
-          await deleteEntry({ brewId: brew.id, entryId });
+        onDelete={async (entryId, inventory) => {
+          await deleteEntry({ brewId: brew.id, entryId, inventory });
           toast({ description: t("deleted", "Deleted.") });
           setEditingEntry(null);
         }}
@@ -1537,7 +1556,7 @@ function EditBrewEntryDialog({
     temp_units?: any | null;
     data?: any | null;
   }) => Promise<void>;
-  onDelete: (entryId: string) => Promise<void>;
+  onDelete: (entryId: string, inventory?: BrewInventorySelection) => Promise<void>;
 }) {
   const { t, i18n } = useTranslation();
   const [datetime, setDatetime] = useState<Date>(new Date());
@@ -1561,6 +1580,8 @@ function EditBrewEntryDialog({
     Array<{ label: string; quantity: string; sizeLiters: string }>
   >([]);
   const [isSaving, setIsSaving] = useState(false);
+  const stockChoice = useBrewStockChoice(entry?.type === BREW_ENTRY_TYPE.ADDITION ? { ...(entry.data as object), name: additionName, amount: additionComponents.length ? additionComponents.reduce((sum,c)=>sum+parseNumber(c.amount),0) : parseNumber(additionAmount), unit: additionUnit, meta: { ...((entry.data as any)?.meta ?? {}), components: additionComponents.map(component=>({...component,amount:parseNumber(component.amount)})) } } : entry?.type === BREW_ENTRY_TYPE.PACKAGING ? { ...(entry.data as object), bottleRows: packagingRows.map(row=>({...row,quantity:parseNumber(row.quantity),sizeLiters:parseNumber(row.sizeLiters)})) } : null, entry?.id, entry?.type);
+
 
   useEffect(() => {
     if (!entry) return;
@@ -1663,6 +1684,7 @@ function EditBrewEntryDialog({
 
   const buildPatch = () => {
     const patch: {
+      inventory?: BrewInventorySelection;
       datetime?: string;
       title?: string | null;
       note?: string | null;
@@ -1775,6 +1797,7 @@ function EditBrewEntryDialog({
       };
       patch.title = additionName.trim() || entry.title;
       patch.data = nextData;
+      patch.inventory = stockChoice.selection();
       return patch;
     }
 
@@ -1830,8 +1853,10 @@ function EditBrewEntryDialog({
             : previous.packagedVolumeLiters,
         displayValue: n,
         displayUnit: volumeUnit || previousUnit,
+        closures: previous.closures,
         bottleRows: nextRows
       };
+      patch.inventory=stockChoice.selection();
       return patch;
     }
 
@@ -1843,6 +1868,8 @@ function EditBrewEntryDialog({
     setIsSaving(true);
     try {
       await onSave(entry.id, buildPatch());
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -1851,7 +1878,9 @@ function EditBrewEntryDialog({
   const remove = async () => {
     setIsSaving(true);
     try {
-      await onDelete(entry.id);
+      await onDelete(entry.id, stockChoice.removalSelection());
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -2207,6 +2236,7 @@ function EditBrewEntryDialog({
 
         </div>
 
+        {stockChoice.field}
         <DialogFooter className={`${BREW_TRACKER_DIALOG_FOOTER_CLASS} sm:justify-between`}>
           {canDelete ? (
             <AlertDialog>
@@ -2223,7 +2253,7 @@ function EditBrewEntryDialog({
                     {t(
                       "brews.deleteEntryDescription",
                       "This removes the entry from the brew timeline. This action cannot be undone."
-                    )}
+                    )}{stockChoice.removalNotice ? ` ${stockChoice.removalNotice}` : ""}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
@@ -2248,7 +2278,7 @@ function EditBrewEntryDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
               {t("cancel", "Cancel")}
             </Button>
-            <Button onClick={save} disabled={isSaving}>
+            <Button onClick={save} disabled={isSaving || !stockChoice.valid}>
               {t("save", "Save")}
             </Button>
           </div>

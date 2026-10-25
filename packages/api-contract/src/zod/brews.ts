@@ -115,7 +115,10 @@ const brewMutationResponseObjectSchema = brewListItemObjectSchema
 export const createBrewResponseSchema = z.object({
   brew: brewMutationResponseObjectSchema,
 });
+export const brewContainerChangeSchema = z.object({ operation_id: z.string().uuid(), expected_ids: z.array(z.string().uuid()).max(100), equipment_ids: z.array(z.string().uuid()).max(100) }).strict();
 export const updateBrewRequestBodySchema = z.object({
+  containers: brewContainerChangeSchema.optional(),
+  stage_change_datetime: z.string().datetime().optional(),
   name: z.string().nullable().optional(),
   stage: brewStageResponseSchema.optional(),
   current_volume_liters: z.number().nullable().optional(),
@@ -185,7 +188,10 @@ export const publicBrewFetchErrorResponseSchema = z.object({
   ]),
 });
 
+export const brewInventoryUseSchema=z.object({line_key:z.string().min(1).max(200),stock_id:z.string().uuid(),deducted:quantitySchema}).strict();
+export const brewInventoryItemsSchema=z.object({mode:z.literal("items"),operation_id:z.string().uuid(),items:z.array(z.object({line_key:z.string().min(1).max(200),stock_id:z.string().uuid().nullable()}).strict()).max(100),expected:z.array(brewInventoryUseSchema).max(100)}).strict();
 export const brewInventorySelectionSchema = z.discriminatedUnion("mode", [
+  brewInventoryItemsSchema,
   z.object({
     mode: z.literal("deduct"),
     operation_id: z.string().uuid(),
@@ -226,6 +232,10 @@ export const createBrewEntryRequestBodySchema =
     stage_to: brewStageResponseSchema.optional(),
     client_entry_id: z.string().uuid().optional(),
   });
+export const createBrewEntryBatchRequestBodySchema=z.object({
+ operation_id:z.string().uuid(),
+ entries:z.array(createBrewEntryRequestBodySchema.extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
+}).strict().refine(value=>new Set(value.entries.map(entry=>entry.client_entry_id)).size===value.entries.length,{message:'Entry IDs must be unique'});
 export const createBrewEntryResponseSchema = z.object({
   brew: brewResponseSchema,
   inventory: brewInventoryOutcomeSchema.optional(),

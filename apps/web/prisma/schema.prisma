@@ -235,6 +235,7 @@ model inventory_operations {
 /// Retain the physical-use identity and deduction after entry/brew deletion.
 /// Brew and entry IDs are historical snapshots, deliberately not cascading FKs.
 model inventory_consumptions {
+  line_key       String @default("addition") @db.VarChar(200)
   id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id        Int
   stock_id       String @db.Uuid
@@ -251,6 +252,7 @@ model inventory_consumptions {
   adjustments inventory_adjustments[]
 
   @@unique([user_id, use_key])
+  @@unique([user_id, entry_id, line_key])
   @@unique([id, user_id])
   @@index([user_id, brew_id, entry_id])
 }
@@ -280,6 +282,8 @@ model inventory_adjustments {
 }
 
 model equipment {
+  group_id        String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label           String? @db.VarChar(100)
   id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id         Int
   name            String @db.VarChar(200)
@@ -300,6 +304,7 @@ model equipment {
   @@unique([id, user_id])
   @@index([user_id, archived_at])
   @@index([current_brew_id, user_id])
+  @@index([user_id, group_id])
 }
 
 /// Historical brew IDs survive deletion; one event per retried assignment request.

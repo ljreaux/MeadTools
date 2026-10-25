@@ -47,6 +47,8 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewContainerChangeSchema,
+  brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
   brewDetailNotFoundErrorResponseSchema,
@@ -64,10 +66,16 @@ import {
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewInventoryContextResponseSchema,
   brewInventoryErrorResponseSchema,
+  brewInventoryItemsSchema,
   brewInventoryOutcomeSchema,
+  brewInventoryPathParamsSchema,
   brewInventorySelectionSchema,
+  brewInventoryUseSchema,
   brewListItemResponseSchema,
+  brewMetadataInventoryErrorResponseSchema,
+  brewMetadataValidationErrorResponseSchema,
   brewPathParamsSchema,
   brewRecipeNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
@@ -108,6 +116,7 @@ import {
   createAdditiveValidationErrorResponseSchema,
   createBjcpIngredientFailureErrorResponseSchema,
   createBjcpIngredientRequestBodySchema,
+  createBrewEntryBatchRequestBodySchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
   createBrewRequestBodySchema,
@@ -446,6 +455,8 @@ export const AuthenticatedRouteErrorResponse = authenticatedRouteErrorResponseSc
 export const BjcpIngredientResponse = bjcpIngredientResponseSchema;
 export const BjcpIngredientsFetchErrorResponse = bjcpIngredientsFetchErrorResponseSchema;
 export const BjcpIngredientsResponse = bjcpIngredientsResponseSchema;
+export const BrewContainerChange = brewContainerChangeSchema;
+export const BrewContainerErrorResponse = brewContainerErrorResponseSchema;
 export const BrewCreateErrorResponse = brewCreateErrorResponseSchema;
 export const BrewDeleteErrorResponse = brewDeleteErrorResponseSchema;
 export const BrewDetailNotFoundErrorResponse = brewDetailNotFoundErrorResponseSchema;
@@ -463,10 +474,16 @@ export const BrewEntryTypeResponse = brewEntryTypeResponseSchema;
 export const BrewEntryUpdateErrorResponse = brewEntryUpdateErrorResponseSchema;
 export const BrewEntryWithBrewIdResponse = brewEntryWithBrewIdResponseSchema;
 export const BrewFetchErrorResponse = brewFetchErrorResponseSchema;
+export const BrewInventoryContextResponse = brewInventoryContextResponseSchema;
 export const BrewInventoryErrorResponse = brewInventoryErrorResponseSchema;
+export const BrewInventoryItems = brewInventoryItemsSchema;
 export const BrewInventoryOutcome = brewInventoryOutcomeSchema;
+export const BrewInventoryPathParams = brewInventoryPathParamsSchema;
 export const BrewInventorySelection = brewInventorySelectionSchema;
+export const BrewInventoryUse = brewInventoryUseSchema;
 export const BrewListItemResponse = brewListItemResponseSchema;
+export const BrewMetadataInventoryErrorResponse = brewMetadataInventoryErrorResponseSchema;
+export const BrewMetadataValidationErrorResponse = brewMetadataValidationErrorResponseSchema;
 export const BrewPathParams = brewPathParamsSchema;
 export const BrewRecipeNotFoundErrorResponse = brewRecipeNotFoundErrorResponseSchema;
 export const BrewRecipeSnapshotResponse = brewRecipeSnapshotResponseSchema;
@@ -507,6 +524,7 @@ export const CreateAdditiveRequestBody = createAdditiveRequestBodySchema;
 export const CreateAdditiveValidationErrorResponse = createAdditiveValidationErrorResponseSchema;
 export const CreateBjcpIngredientFailureErrorResponse = createBjcpIngredientFailureErrorResponseSchema;
 export const CreateBjcpIngredientRequestBody = createBjcpIngredientRequestBodySchema;
+export const CreateBrewEntryBatchRequestBody = createBrewEntryBatchRequestBodySchema;
 export const CreateBrewEntryRequestBody = createBrewEntryRequestBodySchema;
 export const CreateBrewEntryResponse = createBrewEntryResponseSchema;
 export const CreateBrewRequestBody = createBrewRequestBodySchema;

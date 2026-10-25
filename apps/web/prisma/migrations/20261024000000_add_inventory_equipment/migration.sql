@@ -40,6 +40,7 @@ CREATE TABLE "inventory_operations" (
 
 -- CreateTable
 CREATE TABLE "inventory_consumptions" (
+    "line_key" VARCHAR(200) NOT NULL DEFAULT 'addition',
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "user_id" INTEGER NOT NULL,
     "stock_id" UUID NOT NULL,
@@ -74,6 +75,8 @@ CREATE TABLE "inventory_adjustments" (
 
 -- CreateTable
 CREATE TABLE "equipment" (
+    "group_id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "label" VARCHAR(100),
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "user_id" INTEGER NOT NULL,
     "name" VARCHAR(200) NOT NULL,
@@ -213,9 +216,9 @@ ALTER TABLE "inventory_adjustments"
     ("kind" = 'receipt' AND "delta" > 0 AND "consumption_id" IS NULL) OR
     ("kind" = 'manual_use' AND "delta" < 0 AND "consumption_id" IS NULL) OR
     ("kind" = 'correction' AND "consumption_id" IS NULL) OR
-    ("kind" = 'brew_use' AND "delta" < 0 AND "consumption_id" IS NOT NULL) OR
-    ("kind" = 'usage_correction' AND "consumption_id" IS NOT NULL) OR
-    ("kind" = 'usage_removal' AND "delta" > 0 AND "consumption_id" IS NOT NULL)
+    ("kind" = 'brew_use' AND "delta" < 0) OR
+    ("kind" = 'usage_correction') OR
+    ("kind" = 'usage_removal' AND "delta" > 0)
   );
 
 ALTER TABLE "equipment"
@@ -235,3 +238,7 @@ ALTER TABLE "equipment_assignment_events"
   ADD CONSTRAINT "equipment_assignment_events_changed_check"
     CHECK ("from_brew_id" IS DISTINCT FROM "to_brew_id");
 
+
+CREATE INDEX "equipment_user_id_group_id_idx" ON "equipment"("user_id", "group_id");
+
+CREATE UNIQUE INDEX "inventory_consumptions_user_id_entry_id_line_key_key" ON "inventory_consumptions"("user_id", "entry_id", "line_key");

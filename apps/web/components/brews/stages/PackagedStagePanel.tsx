@@ -1,5 +1,10 @@
 "use client";
 
+import { useBrewInventory } from "../BrewInventoryProvider";
+import { useBrewStockChoice } from "../BrewStockField";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
+import { AmountUnitField } from "@/components/ui/amount-unit-field";
+import { Input } from "@/components/ui/input";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,7 +12,7 @@ import {
   BottlingCalculator,
   L_PER_GAL,
   getPackagingBottleRows,
-  useBottlingRows
+  useBottlingRows,
 } from "@/components/extraCalcs/BottlingCalculator";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
@@ -16,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
 import {
   getBottlingVolumePrefill,
-  hasCurrentPostAdditionMeasurement
+  hasCurrentPostAdditionMeasurement,
 } from "@/lib/brews/bottlingLoss";
 import { entryPayload, type BrewPackagingData } from "@/lib/utils/entryPayload";
 import type { StagePanelProps } from "../stageConfig";
@@ -27,12 +32,14 @@ import {
   latestLoggedItem,
   StageFocusActions,
   StatusTile,
-  WarningsPanel
+  WarningsPanel,
 } from "./StagePanelShared";
 
 function getLatestPackaging(ctx: StagePanelProps["ctx"]) {
   return latestLoggedItem(
-    ctx.brew.entries.filter((entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING)
+    ctx.brew.entries.filter(
+      (entry) => entry.type === BREW_ENTRY_TYPE.PACKAGING,
+    ),
   );
 }
 
@@ -48,11 +55,16 @@ export function PackagedStagePanel({
   ctx,
   helpers,
   warnings = [],
-  readOnly = false
+  readOnly = false,
 }: StagePanelProps) {
   const { i18n } = useTranslation();
   const bottling = useBottlingRows();
   const [datetime, setDatetime] = React.useState<Date>(new Date());
+  const inventory = useBrewInventory();
+  const [closureDraft, setClosureDraft] = React.useState<{
+    entryId: string | undefined;
+    items: Array<{ name: string; quantity: number }>;
+  } | null>(null);
   const [note, setNote] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = React.useState(false);
@@ -64,21 +76,21 @@ export function PackagedStagePanel({
   const canEdit = status === "current" && !readOnly;
   const latestPackaging = getLatestPackaging(ctx);
   const latestPackagingData = latestPackaging?.data as
-    | BrewPackagingData
-    | null
-    | undefined;
+    BrewPackagingData | null | undefined;
   const savedPackagedVolume = latestPackagingData?.packagedVolumeLiters ?? null;
   const currentVolume = ctx.brew.current_volume_liters;
   const hasMeasuredCurrentVolume =
-    typeof currentVolume === "number" && Number.isFinite(currentVolume) && currentVolume > 0;
-  const plannedBottlingVolumeL =
-    ctx.recipe.recipeData?.lossAdjustment?.secondary?.enabled
-      ? ctx.recipe.derived?.volume.bottlingL
-      : null;
-  const secondaryLossPercentage =
-    ctx.recipe.recipeData?.lossAdjustment?.secondary?.enabled
-      ? ctx.recipe.derived?.volume.secondaryLossPercentage ?? null
-      : null;
+    typeof currentVolume === "number" &&
+    Number.isFinite(currentVolume) &&
+    currentVolume > 0;
+  const plannedBottlingVolumeL = ctx.recipe.recipeData?.lossAdjustment
+    ?.secondary?.enabled
+    ? ctx.recipe.derived?.volume.bottlingL
+    : null;
+  const secondaryLossPercentage = ctx.recipe.recipeData?.lossAdjustment
+    ?.secondary?.enabled
+    ? (ctx.recipe.derived?.volume.secondaryLossPercentage ?? null)
+    : null;
   const secondaryIngredientIds = ctx.recipe.secondaryIngredients
     .filter((line) => (line.name ?? "").trim())
     .map((line) => String(line.lineId));
@@ -86,14 +98,14 @@ export function PackagedStagePanel({
     entries: ctx.brew.entries,
     currentVolumeL: currentVolume,
     secondaryIngredientIds,
-    loggedIngredientIds: ctx.recipe.actual.loggedRecipeIngredientIds
+    loggedIngredientIds: ctx.recipe.actual.loggedRecipeIngredientIds,
   });
   const prefill = getBottlingVolumePrefill({
     currentVolumeL: currentVolume,
     effectiveVolumeL: ctx.brew.effective_current_volume_liters,
     recipeBottlingVolumeL: plannedBottlingVolumeL ?? null,
     secondaryLossPercentage,
-    hasPostAdditionMeasurement
+    hasPostAdditionMeasurement,
   });
   const displayPackagedVolume = savedPackagedVolume ?? currentVolume;
   const packageCount = getPackageCount(latestPackagingData);
@@ -107,7 +119,18 @@ export function PackagedStagePanel({
   const displayUnit = bottling.volumeUnits === "gallons" ? "gal" : "L";
   const bottleRows = getPackagingBottleRows(
     bottling.bottleRows,
-    bottling.getPerBottleLiters
+    bottling.getPerBottleLiters,
+  );
+  const closures =
+    closureDraft?.entryId === latestPackaging?.id
+      ? (closureDraft?.items ?? [])
+      : (latestPackagingData?.closures ?? []);
+  const setClosures = (items: Array<{ name: string; quantity: number }>) =>
+    setClosureDraft({ entryId: latestPackaging?.id, items });
+  const stockChoice = useBrewStockChoice(
+    { bottleRows, closures },
+    latestPackaging?.id,
+    "PACKAGING",
   );
   const locale = i18n.resolvedLanguage;
 
@@ -124,9 +147,9 @@ export function PackagedStagePanel({
               : useGallons
                 ? latestPackagingData.packagedVolumeLiters / L_PER_GAL
                 : latestPackagingData.packagedVolumeLiters
-            ).toFixed(3)
-          )
-        )
+            ).toFixed(3),
+          ),
+        ),
       );
       bottling.loadPackagingRows(latestPackagingData.bottleRows ?? []);
       return;
@@ -150,15 +173,13 @@ export function PackagedStagePanel({
     unit,
     ctx.brew.effective_current_volume_liters,
     plannedBottlingVolumeL,
-    prefill.volumeL
+    prefill.volumeL,
   ]);
 
   const applyBottlingVolume = (volumeL: number | null) => {
-    if (typeof volumeL !== "number" || volumeL <= 0)
-      return;
-    const value = bottling.volumeUnits === "gallons"
-      ? volumeL / L_PER_GAL
-      : volumeL;
+    if (typeof volumeL !== "number" || volumeL <= 0) return;
+    const value =
+      bottling.volumeUnits === "gallons" ? volumeL / L_PER_GAL : volumeL;
     bottling.setTotalVolume(String(Number(value.toFixed(2))));
   };
 
@@ -166,11 +187,11 @@ export function PackagedStagePanel({
     type:
       | typeof BREW_ENTRY_TYPE.NOTE
       | typeof BREW_ENTRY_TYPE.TASTING
-      | typeof BREW_ENTRY_TYPE.ISSUE
+      | typeof BREW_ENTRY_TYPE.ISSUE,
   ) => {
     helpers.openAddEntry?.({
       presetType: type,
-      allowedTypes: [type]
+      allowedTypes: [type],
     });
   };
 
@@ -193,8 +214,9 @@ export function PackagedStagePanel({
         displayValue,
         displayUnit,
         bottleRows,
+        closures,
         note: note.trim() || null,
-        datetime: datetimeIso
+        datetime: datetimeIso,
       });
 
       if (latestPackaging && helpers.patchEntry) {
@@ -202,15 +224,19 @@ export function PackagedStagePanel({
           datetime: datetimeIso,
           title: packagingInput.title,
           note: packagingInput.note,
-          data: packagingInput.data
+          inventory: stockChoice.selection(),
+          data: packagingInput.data,
         });
       } else {
-        await helpers.addEntry(packagingInput);
+        await helpers.addEntry({
+          ...packagingInput,
+          inventory: stockChoice.selection(),
+        });
       }
 
       if (volumeChanged) {
         await helpers.patchBrewMetadata({
-          current_volume_liters: saveVolumeLiters
+          current_volume_liters: saveVolumeLiters,
         });
       }
       // The first packaging save records the packaged yield even if it happens
@@ -223,11 +249,13 @@ export function PackagedStagePanel({
             displayValue,
             displayUnit,
             note: t("brews.packaged.volumeEntryNote", "Packaged volume"),
-            datetime: datetimeIso
-          })
+            datetime: datetimeIso,
+          }),
         );
       }
       setNote("");
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -261,11 +289,11 @@ export function PackagedStagePanel({
         <StageFocusActions
           title={t(
             "brews.packaged.focus",
-            "Record packaging details and finish the brew"
+            "Record packaging details and finish the brew",
           )}
           description={t(
             "brews.packaged.workflowHint",
-            "Save package sizes, counts, and volume before marking the brew complete."
+            "Save package sizes, counts, and volume before marking the brew complete.",
           )}
         >
           <Button
@@ -328,13 +356,15 @@ export function PackagedStagePanel({
                     {t(
                       prefill.source === "adjusted_measurement"
                         ? "brews.packaged.measuredBottlingEstimate"
-                        : "brews.packaged.recipeBottlingEstimate"
-                    )}: {formatVolume(
+                        : "brews.packaged.recipeBottlingEstimate",
+                    )}
+                    :{" "}
+                    {formatVolume(
                       prefill.source === "adjusted_measurement"
                         ? prefill.volumeL
                         : plannedBottlingVolumeL,
                       unit,
-                      locale
+                      locale,
                     )}
                   </span>
                   {hasMeasuredCurrentVolume ? (
@@ -348,12 +378,15 @@ export function PackagedStagePanel({
                       >
                         {t("brews.packaged.useRecordedVolume")}
                       </Button>
-                      {typeof plannedBottlingVolumeL === "number" && plannedBottlingVolumeL > 0 ? (
+                      {typeof plannedBottlingVolumeL === "number" &&
+                      plannedBottlingVolumeL > 0 ? (
                         <Button
                           size="sm"
                           variant="outline"
                           type="button"
-                          onClick={() => applyBottlingVolume(plannedBottlingVolumeL)}
+                          onClick={() =>
+                            applyBottlingVolume(plannedBottlingVolumeL)
+                          }
                           disabled={!canEdit}
                         >
                           {t("brews.packaged.useRecipeEstimate")}
@@ -369,12 +402,88 @@ export function PackagedStagePanel({
                       : hasMeasuredCurrentVolume
                         ? "brews.packaged.measurementBeforeAdditions"
                         : "brews.packaged.estimatePrefilled",
-                    { percentage: secondaryLossPercentage }
+                    { percentage: secondaryLossPercentage },
                   )}
                 </p>
               </div>
             ) : null}
             <BottlingCalculator state={bottling} compact />
+            {inventory?.canManage ? (
+              <div className="space-y-3">
+                <Label>{t("brewInventory.closures")}</Label>
+                {closures.map((closure, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    <Input
+                      aria-label={t("brewInventory.closureName")}
+                      className="min-w-32 flex-1"
+                      value={closure.name}
+                      onChange={(event) =>
+                        setClosures(
+                          closures.map((item, i) =>
+                            i === index
+                              ? { ...item, name: event.target.value }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                    <AmountUnitField
+                      id={`closure-${index}`}
+                      aria-label={t("brewInventory.closureQuantity")}
+                      amount={String(closure.quantity)}
+                      unit={t("inventory.units.units")}
+                      onAmountChange={(value) =>
+                        setClosures(
+                          closures.map((item, i) =>
+                            i === index
+                              ? { ...item, quantity: Number(value) }
+                              : item,
+                          ),
+                        )
+                      }
+                    />
+                    <Button
+                      variant="ghost"
+                      onClick={() =>
+                        setClosures(closures.filter((_, i) => i !== index))
+                      }
+                    >
+                      {t("equipment.remove")}
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  {(["corks", "caps"] as const).map((kind) => (
+                    <Button
+                      key={kind}
+                      variant="outline"
+                      onClick={() =>
+                        setClosures([
+                          ...closures,
+                          {
+                            name: t(`brewInventory.${kind}`),
+                            quantity: bottleRows.reduce(
+                              (sum, row) => sum + row.quantity,
+                              0,
+                            ),
+                          },
+                        ])
+                      }
+                    >
+                      {t(
+                        kind === "corks"
+                          ? "brewInventory.addCorks"
+                          : "brewInventory.addCaps",
+                      )}
+                    </Button>
+                  ))}
+                </div>
+                {stockChoice.field}
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-4 space-y-2">
@@ -389,7 +498,12 @@ export function PackagedStagePanel({
           <div className="mt-4 flex justify-end">
             <Button
               onClick={savePackaging}
-              disabled={!canEdit || isSaving || saveVolumeLiters <= 0}
+              disabled={
+                !canEdit ||
+                isSaving ||
+                saveVolumeLiters <= 0 ||
+                !stockChoice.valid
+              }
             >
               {t("brews.packaged.savePackaging", "Save packaging")}
             </Button>
@@ -406,7 +520,7 @@ export function PackagedStagePanel({
             {formatVolume(
               latestPackagingData?.packagedVolumeLiters,
               unit,
-              locale
+              locale,
             )}
             {packageCount > 0
               ? ` · ${formatNumber(packageCount, 0, locale)} ${t("brews.packaged.packages", "packages")}`

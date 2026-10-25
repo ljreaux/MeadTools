@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   InventoryError, convertQuantity, planConsumption, planStockChange,
   normalizeQuantityUnit, validateStockQuantity, quantitySchema, resolveInventoryAccess, stockInputSchema, toQuantityTicks,
-  type ConsumptionLink, type Quantity, type StockRecord,
+  nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "./premium-access";
@@ -118,12 +118,32 @@ export function createInventoryService(database: PrismaClient = prisma) {
     } });
   }
 
+  async function validateCatalog(tx: Tx, category: string, reference?: CatalogReference | null) {
+    if (!reference) return;
+    const compatible = reference.catalog === 'ingredient' ? ['honey','fruit'].includes(category) : reference.catalog === 'yeast' ? category === 'yeast' : category === 'additive';
+    if (!compatible) throw new InventoryError('LINK_MISMATCH');
+    const id = Number(reference.id);
+    const exists = reference.catalog === 'nutrient' ? Boolean(nutrientReference(reference.id)) : reference.catalog === 'additive' ? stabilizerCatalog.some(item=>item.id===reference.id) || z.string().uuid().safeParse(reference.id).success && await tx.additives.findFirst({where:{id:reference.id},select:{id:true}}) : Number.isSafeInteger(id) && id > 0 ? reference.catalog === 'ingredient' ? await tx.ingredients.findUnique({where:{id},select:{id:true}}) : await tx.yeasts.findUnique({where:{id},select:{id:true}}) : null;
+    if (!exists) throw new InventoryError('LINK_MISMATCH');
+  }
+  async function editStock(userId: number, operationKey: string, input: {stockId:string;name:string;catalogReference?:CatalogReference|null;notes?:string|null}):Promise<StockResult> {
+    const details = z.object({name:stockInputSchema.shape.name,catalogReference:stockInputSchema.shape.catalogReference,notes:stockInputSchema.shape.notes}).parse(input);
+    return operation(userId,operationKey,{kind:'stock_details',stockId:input.stockId,details},result=>stockResultSchema.parse(result),async(tx)=>{
+      const stock=(await lockStock(tx,userId,[uuid.parse(input.stockId)])).get(input.stockId)!;
+      if(stock.archived_at)throw new InventoryWriteError('STOCK_ARCHIVED');
+      await validateCatalog(tx,stock.category,details.catalogReference);
+      await tx.inventory_stock.update({where:{id:stock.id},data:{name:details.name,catalog:details.catalogReference?.catalog??null,catalog_id:details.catalogReference?.id??null,notes:details.notes}});
+      return {stockId:stock.id,balance:{value:stock.quantity.toNumber(),unit:stock.unit}};
+    });
+  }
+
   async function createStock(
     userId: number, operationKey: string, input: z.input<typeof stockInputSchema>,
   ): Promise<StockResult> {
     const parsed = stockInputSchema.parse(input);
     return operation(userId, operationKey, { kind: "create_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
+        await validateCatalog(tx, parsed.category, parsed.catalogReference);
         const stock = await tx.inventory_stock.create({ data: {
           user_id: userId, name: parsed.name, category: parsed.category,
           catalog: parsed.catalogReference?.catalog ?? null,
@@ -207,6 +227,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
           !entry || entry.brew_id !== parsed.brewId || entry.user_id !== userId || entry.type !== "ADDITION") {
           throw new InventoryWriteError("ENTRY_MISMATCH");
         }
+        if(await tx.inventory_consumptions.count({where:{user_id:userId,entry_id:parsed.entryId,line_key:{not:"addition"}}}))throw new InventoryWriteError("SELECTION_REQUIRED");
         const previous = await tx.inventory_consumptions.findUnique({
           where: { user_id_use_key: { user_id: userId, use_key: parsed.entryId } },
         });
@@ -303,30 +324,19 @@ export function createInventoryService(database: PrismaClient = prisma) {
         SELECT id FROM brew_entries WHERE id = ${input.entryId}::uuid
           AND brew_id = ${input.brewId}::uuid AND user_id = ${userId} FOR UPDATE
       `;
-      const link = await tx.inventory_consumptions.findUnique({
-        where: { user_id_use_key: { user_id: userId, use_key: input.entryId } },
-      });
-      if (link && (link.brew_id !== input.brewId || link.entry_id !== input.entryId)) {
-        throw new InventoryError("NOT_FOUND");
-      }
-      if (link?.reversed_at) throw new InventoryWriteError("USAGE_REMOVED");
-      if (link && input.kind === "create") {
-        const entry = await tx.brew_entries.findFirst({
-          where: { id: input.entryId, brew_id: input.brewId, user_id: userId }, select: { id: true },
-        });
-        if (!entry) throw new InventoryWriteError("USAGE_REMOVED");
-      }
-      const affectsUsage = input.kind === "remove" ||
-        (input.kind === "edit" && Object.hasOwn(input.entryMutation, "data"));
-      if (link && affectsUsage && status.premiumEnabled) throw new InventoryWriteError("SELECTION_REQUIRED");
-      if (link && affectsUsage) {
-        await tx.inventory_stock.update({ where: { id: link.stock_id }, data: { reconciliation_required: true } });
-      }
+      const links = await tx.inventory_consumptions.findMany({where:{user_id:userId,entry_id:input.entryId}});
+      if(links.some(link=>link.brew_id!==input.brewId))throw new InventoryError("NOT_FOUND");
+      if(links.length&&input.kind==="create"&&!await tx.brew_entries.findFirst({where:{id:input.entryId,brew_id:input.brewId,user_id:userId},select:{id:true}}))throw new InventoryWriteError("USAGE_REMOVED");
+      const active=links.filter(link=>!link.reversed_at);
+      const link=active[0];
+      const affectsUsage=input.kind==="remove"||(input.kind==="edit"&&Object.hasOwn(input.entryMutation,"data"));
+      if(link&&affectsUsage&&status.premiumEnabled)throw new InventoryWriteError("SELECTION_REQUIRED");
+      if(link&&affectsUsage)await tx.inventory_stock.updateMany({where:{id:{in:active.map(link=>link.stock_id)}},data:{reconciliation_required:true}});
       await writeEntry(tx);
       return { status: link && affectsUsage ? "reconciliation_required" : link ? "deducted" :
         status.premiumEnabled ? "untracked" : "premium_unavailable" };
     }, { maxWait: 10_000, timeout: 15_000 });
   }
 
-  return { createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
+  return { editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
 }

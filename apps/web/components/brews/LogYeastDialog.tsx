@@ -1,4 +1,7 @@
 "use client";
+import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import { useBrewStockChoice } from "@/components/brews/BrewStockField";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -27,11 +30,12 @@ import { AmountUnitField } from "@/components/brews/stages/additionDialogShared"
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
 import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import type { BrewPlannedYeast } from "@/lib/utils/buildBrewRecipeStageData";
-import { isValidNumber } from "@/lib/utils/validateInput";
+import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import type { NitrogenRequirement } from "@/types/nutrientData";
 import type { Yeast } from "@/types/nutrientTypes";
 
 type LogYeastInput = {
+  inventory?: BrewInventorySelection;
   name: string;
   amount?: number;
   unit?: string;
@@ -154,6 +158,7 @@ export function LogYeastDialog({
   };
 
   const actualName = yeastDisplayName(brand === "Other" ? "" : brand, strain);
+  const stockChoice = useBrewStockChoice({name:actualName,kind:"YEAST",amount:parseNumber(amount),unit:"g",meta:{yeastId:selectedYeast?.id}});
   const matchesPlanned =
     !forceManual &&
     planned != null &&
@@ -164,11 +169,12 @@ export function LogYeastDialog({
     const trimmedName = actualName.trim();
     if (!trimmedName) return;
 
-    const parsedAmount = amount.trim() ? Number(amount) : undefined;
+    const parsedAmount = amount.trim() ? parseNumber(amount) : undefined;
 
     setIsSaving(true);
     try {
       await onSave({
+        inventory: stockChoice.selection(),
         name: trimmedName,
         amount:
           typeof parsedAmount === "number" && Number.isFinite(parsedAmount)
@@ -193,6 +199,8 @@ export function LogYeastDialog({
           plannedStrain: planned?.strain
         }
       });
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -294,6 +302,7 @@ export function LogYeastDialog({
           </div>
 
           <div className="space-y-2">
+            {stockChoice.field}
             <Label>{t("note", "Note")}</Label>
             <Textarea
               value={note}
@@ -308,7 +317,7 @@ export function LogYeastDialog({
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>
-          <Button onClick={save} disabled={isSaving || !actualName.trim()}>
+          <Button onClick={save} disabled={isSaving || !actualName.trim() || !stockChoice.valid}>
             {t("save", "Save")}
           </Button>
         </DialogFooter>

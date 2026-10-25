@@ -3,3 +3,8 @@ export * from "./schemas";
 export * from "./consumption";
 export * from "./equipment";
 export * from "./access";
+export * from "./brew-usage";
+export * from "./equipment-groups";
+export * from './entry-lines';
+export * from './stock-matching';
+export * from './catalog';

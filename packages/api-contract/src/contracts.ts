@@ -48,6 +48,8 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewContainerChangeSchema,
+  brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
   brewDetailNotFoundErrorResponseSchema,
@@ -65,10 +67,16 @@ import {
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewInventoryContextResponseSchema,
   brewInventoryErrorResponseSchema,
+  brewInventoryItemsSchema,
   brewInventoryOutcomeSchema,
+  brewInventoryPathParamsSchema,
   brewInventorySelectionSchema,
+  brewInventoryUseSchema,
   brewListItemResponseSchema,
+  brewMetadataInventoryErrorResponseSchema,
+  brewMetadataValidationErrorResponseSchema,
   brewPathParamsSchema,
   brewRecipeNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
@@ -109,6 +117,7 @@ import {
   createAdditiveValidationErrorResponseSchema,
   createBjcpIngredientFailureErrorResponseSchema,
   createBjcpIngredientRequestBodySchema,
+  createBrewEntryBatchRequestBodySchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
   createBrewRequestBodySchema,
@@ -447,6 +456,8 @@ export type AuthenticatedRouteErrorResponse = z.infer<typeof authenticatedRouteE
 export type BjcpIngredientResponse = z.infer<typeof bjcpIngredientResponseSchema>;
 export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFetchErrorResponseSchema>;
 export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
+export type BrewContainerChange = z.infer<typeof brewContainerChangeSchema>;
+export type BrewContainerErrorResponse = z.infer<typeof brewContainerErrorResponseSchema>;
 export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
 export type BrewDeleteErrorResponse = z.infer<typeof brewDeleteErrorResponseSchema>;
 export type BrewDetailNotFoundErrorResponse = z.infer<typeof brewDetailNotFoundErrorResponseSchema>;
@@ -464,10 +475,16 @@ export type BrewEntryTypeResponse = z.infer<typeof brewEntryTypeResponseSchema>;
 export type BrewEntryUpdateErrorResponse = z.infer<typeof brewEntryUpdateErrorResponseSchema>;
 export type BrewEntryWithBrewIdResponse = z.infer<typeof brewEntryWithBrewIdResponseSchema>;
 export type BrewFetchErrorResponse = z.infer<typeof brewFetchErrorResponseSchema>;
+export type BrewInventoryContextResponse = z.infer<typeof brewInventoryContextResponseSchema>;
 export type BrewInventoryErrorResponse = z.infer<typeof brewInventoryErrorResponseSchema>;
+export type BrewInventoryItems = z.infer<typeof brewInventoryItemsSchema>;
 export type BrewInventoryOutcome = z.infer<typeof brewInventoryOutcomeSchema>;
+export type BrewInventoryPathParams = z.infer<typeof brewInventoryPathParamsSchema>;
 export type BrewInventorySelection = z.infer<typeof brewInventorySelectionSchema>;
+export type BrewInventoryUse = z.infer<typeof brewInventoryUseSchema>;
 export type BrewListItemResponse = z.infer<typeof brewListItemResponseSchema>;
+export type BrewMetadataInventoryErrorResponse = z.infer<typeof brewMetadataInventoryErrorResponseSchema>;
+export type BrewMetadataValidationErrorResponse = z.infer<typeof brewMetadataValidationErrorResponseSchema>;
 export type BrewPathParams = z.infer<typeof brewPathParamsSchema>;
 export type BrewRecipeNotFoundErrorResponse = z.infer<typeof brewRecipeNotFoundErrorResponseSchema>;
 export type BrewRecipeSnapshotResponse = z.infer<typeof brewRecipeSnapshotResponseSchema>;
@@ -508,6 +525,7 @@ export type CreateAdditiveRequestBody = z.infer<typeof createAdditiveRequestBody
 export type CreateAdditiveValidationErrorResponse = z.infer<typeof createAdditiveValidationErrorResponseSchema>;
 export type CreateBjcpIngredientFailureErrorResponse = z.infer<typeof createBjcpIngredientFailureErrorResponseSchema>;
 export type CreateBjcpIngredientRequestBody = z.infer<typeof createBjcpIngredientRequestBodySchema>;
+export type CreateBrewEntryBatchRequestBody = z.infer<typeof createBrewEntryBatchRequestBodySchema>;
 export type CreateBrewEntryRequestBody = z.infer<typeof createBrewEntryRequestBodySchema>;
 export type CreateBrewEntryResponse = z.infer<typeof createBrewEntryResponseSchema>;
 export type CreateBrewRequestBody = z.infer<typeof createBrewRequestBodySchema>;

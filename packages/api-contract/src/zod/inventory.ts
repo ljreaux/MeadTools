@@ -1,40 +1,147 @@
 import { z } from "zod";
-import { stockInputSchema, quantitySchema, packagingQuantitySchema } from "@meadtools/inventory-domain";
-import { authenticatedRouteErrorResponseSchema, brewInventoryErrorResponseSchema } from "./brews";
+import {
+  stockInputSchema,
+  quantitySchema,
+  packagingQuantitySchema,
+} from "@meadtools/inventory-domain";
+import {
+  authenticatedRouteErrorResponseSchema,
+  brewValidationErrorResponseSchema,
+  brewSnapshotUpdateErrorResponseSchema,
+  brewInventoryErrorResponseSchema,
+} from "./brews";
 
-export const inventoryStockItemSchema = z.object({
-  ...stockInputSchema.shape,
-  id: z.string().uuid(),
-  reconciliation_required: z.boolean(),
-}).refine((stock) => stock.category !== "packaging" || packagingQuantitySchema.safeParse(stock.quantity).success, {
-  path: ["quantity"], message: "Packaging is recorded in whole units",
-});
+export const inventoryStockItemSchema = z
+  .object({
+    ...stockInputSchema.shape,
+    id: z.string().uuid(),
+    reconciliation_required: z.boolean(),
+  })
+  .refine(
+    (stock) =>
+      stock.category !== "packaging" ||
+      packagingQuantitySchema.safeParse(stock.quantity).success,
+    {
+      path: ["quantity"],
+      message: "Packaging is recorded in whole units",
+    },
+  );
 export const inventoryOverviewResponseSchema = z.object({
-  can_manage: z.boolean(), stock: z.array(inventoryStockItemSchema),
+  can_manage: z.boolean(),
+  stock: z.array(inventoryStockItemSchema),
 });
-export const createInventoryStockRequestBodySchema = z.object({
-  operation_id: z.string().uuid(), stock: stockInputSchema,
-}).strict();
-export const updateInventoryStockRequestBodySchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.enum(["receipt", "manual_use", "correction"]), operation_id: z.string().uuid(),
-    quantity: quantitySchema, note: z.string().max(5000).nullable().default(null),
-    expected_balance: quantitySchema,
-  }).strict(),
-  z.object({ action: z.literal("archive"), operation_id: z.string().uuid() }).strict(),
-]);
+export const createInventoryStockRequestBodySchema = z
+  .object({
+    operation_id: z.string().uuid(),
+    stock: stockInputSchema,
+  })
+  .strict();
+export const updateInventoryStockRequestBodySchema = z.discriminatedUnion(
+  "action",
+  [
+    z
+      .object({
+        action: z.literal("details"),
+        operation_id: z.string().uuid(),
+        name: stockInputSchema.shape.name,
+        catalogReference: stockInputSchema.shape.catalogReference,
+        notes: stockInputSchema.shape.notes,
+      })
+      .strict(),
+    z
+      .object({
+        action: z.enum(["receipt", "manual_use", "correction"]),
+        operation_id: z.string().uuid(),
+        quantity: quantitySchema,
+        note: z.string().max(5000).nullable().default(null),
+        expected_balance: quantitySchema,
+      })
+      .strict(),
+    z
+      .object({ action: z.literal("archive"), operation_id: z.string().uuid() })
+      .strict(),
+  ],
+);
 export const inventoryStockMutationResponseSchema = z.object({
-  stockId: z.string().uuid(), balance: quantitySchema,
+  stockId: z.string().uuid(),
+  balance: quantitySchema,
 });
-export const inventoryStockPathParamsSchema = z.object({ stock_id: z.string().uuid() });
+export const inventoryStockPathParamsSchema = z.object({
+  stock_id: z.string().uuid(),
+});
 export const inventoryStockHistoryResponseSchema = z.object({
   stock: inventoryStockItemSchema,
-  adjustments: z.array(z.object({
-    id: z.string().uuid(), kind: z.string(), delta: z.number(), balance_after: quantitySchema,
-    note: z.string().nullable(), created_at: z.string().datetime(),
-  })),
+  adjustments: z.array(
+    z.object({
+      id: z.string().uuid(),
+      kind: z.string(),
+      delta: z.number(),
+      balance_after: quantitySchema,
+      note: z.string().nullable(),
+      created_at: z.string().datetime(),
+    }),
+  ),
   has_more: z.boolean(),
 });
-export const inventoryStockErrorResponseSchema = brewInventoryErrorResponseSchema;
-export const inventoryStockNotFoundResponseSchema = z.union([inventoryStockErrorResponseSchema, authenticatedRouteErrorResponseSchema]);
-export const inventoryStockUnexpectedErrorResponseSchema = z.object({ error: z.enum(["Inventory request failed", "Server misconfiguration"]) });
+export const inventoryStockErrorResponseSchema =
+  brewInventoryErrorResponseSchema;
+export const inventoryStockNotFoundResponseSchema = z.union([
+  inventoryStockErrorResponseSchema,
+  authenticatedRouteErrorResponseSchema,
+]);
+export const inventoryStockUnexpectedErrorResponseSchema = z.object({
+  error: z.enum(["Inventory request failed", "Server misconfiguration"]),
+});
+
+/** Private brew-tracker context. Unavailable premium access returns no stock links or equipment history. */
+export const brewInventoryContextResponseSchema = z.object({
+  can_manage: z.boolean(),
+  tracked_entry_ids: z.array(z.string().uuid()),
+  usages: z.array(
+    z.object({
+      entry_id: z.string().uuid(),
+      line_key: z.string(),
+      line_name: z.string(),
+      stock_id: z.string().uuid(),
+      deducted: quantitySchema,
+      stock: inventoryStockItemSchema,
+      stock_archived: z.boolean(),
+    }),
+  ),
+  vessel_events: z.array(
+    z.object({
+      id: z.string().uuid(),
+      equipment_name: z.string(),
+      quantity: z.number().int().min(1),
+      action: z.enum(["assigned", "released"]),
+      created_at: z.string().datetime(),
+    }),
+  ),
+});
+export const brewInventoryPathParamsSchema = z.object({
+  brew_id: z.string().uuid(),
+});
+
+export const brewContainerErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.enum([
+    "ASSIGNMENT_CHANGED",
+    "VESSEL_OCCUPIED",
+    "BREW_COMPLETE",
+    "NOT_FOUND",
+    "PREMIUM_REQUIRED",
+    "OPERATION_CONFLICT",
+    "INVALID_INVENTORY_REQUEST",
+    "ENTRY_MISMATCH",
+  ]),
+});
+export const brewMetadataInventoryErrorResponseSchema = z.union([
+  brewSnapshotUpdateErrorResponseSchema,
+  brewInventoryErrorResponseSchema,
+  brewContainerErrorResponseSchema,
+]);
+
+export const brewMetadataValidationErrorResponseSchema = z.union([
+  brewValidationErrorResponseSchema,
+  brewMetadataInventoryErrorResponseSchema,
+]);

@@ -53,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
   try {
     const { stock_id } = inventoryStockPathParamsSchema.parse(await params);
     const input = updateInventoryStockRequestBodySchema.parse(await req.json().catch(() => null));
-    const result = input.action === "archive" ? await service.archiveStock(user, input.operation_id, stock_id) :
+    const result = input.action === "details" ? await service.editStock(user,input.operation_id,{stockId:stock_id,...input}) : input.action === "archive" ? await service.archiveStock(user, input.operation_id, stock_id) :
       await service.changeStock(user, input.operation_id, { stockId: stock_id, kind: input.action,
         quantity: input.quantity, note: input.note, expectedBalance: input.expected_balance });
     return NextResponse.json(result);

@@ -22,12 +22,15 @@ const hooks = registerHooks({ resolve(specifier, context, nextResolve) {
   };
   return nextResolve(specifier, context);
 } });
+const batchRoute=await import("../app/api/brews/[brew_id]/entries/batch/route.ts");
 const createRoute = await import("../app/api/brews/[brew_id]/entries/route.ts");
 const entryRoute = await import("../app/api/brews/[brew_id]/entries/[entry_id]/route.ts");
 const equipmentRoute = await import("../app/api/account/equipment/route.ts");
 const equipmentItemRoute = await import("../app/api/account/equipment/[equipment_id]/route.ts");
 const inventoryRoute = await import("../app/api/account/inventory/route.ts");
 const inventoryItemRoute = await import("../app/api/account/inventory/[stock_id]/route.ts");
+const brewMetadataRoute = await import("../app/api/brews/[brew_id]/route.ts");
+const brewInventoryRoute = await import("../app/api/brews/[brew_id]/inventory/route.ts");
 hooks.deregister();
 const contract = await import("@meadtools/api-contract/brews");
 const equipmentContract = await import("@meadtools/api-contract/equipment");
@@ -464,7 +467,7 @@ test("direct API requests enforce ownership, valid selections and stable IDs", a
   assert.equal(await prisma.inventory_consumptions.count(), 0);
 });
 
-test("equipment seed creates two recipe-linked examples and eight unassigned items for only the regular user", async () => {
+test("equipment seed creates recipe-linked examples and a six-bucket pool for only the regular user", async () => {
   const userId = await owner();
   const otherId = await owner();
   const { readFile } = await import("node:fs/promises");
@@ -474,10 +477,10 @@ test("equipment seed creates two recipe-linked examples and eight unassigned ite
   const recipe = await prisma.recipes.findFirstOrThrow({ where: { name: "Key Lime Pie" } });
   const existing = await prisma.brews.create({ data: { user_id: userId, recipe_id: recipe.id, name: "Planning Test Brew" } });
   await seedEquipment(prisma, userId);
-  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 10);
+  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 16);
   assert.equal(await prisma.equipment.count({ where: { user_id: otherId } }), 0);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: { not: null } } }), 2);
-  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 3);
+  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 9);
   assert.equal(await prisma.equipment_assignment_events.count(), 2);
   assert.equal(await prisma.brews.count(), 2);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: existing.id } }), 1);
@@ -683,7 +686,7 @@ test("inventory seed creates owned ingredient and packaging stock with matching 
   const otherId = await owner();
   await seedInventory(prisma, userId);
   const list = (await stockRequest("GET", userId)).body.stock;
-  assert.equal(list.length, 10);
+  assert.equal(list.length, 19);
   assert.equal(list.filter((row) => row.category === "packaging").length, 4);
   assert.equal((await stockRequest("GET", otherId)).body.stock.length, 0);
   for (const row of list) {
@@ -692,4 +695,183 @@ test("inventory seed creates owned ingredient and packaging stock with matching 
     assert.equal(history[0].delta, row.quantity.value);
     assert.equal(history[0].balance_after.unit, row.quantity.unit);
   }
+});
+
+async function trackerInventory(userId, brewId) {
+  const response = await brewInventoryRoute.GET(new NextRequest(`http://localhost/api/brews/${brewId}/inventory`, {
+    headers: { "x-inventory-fixture-user": String(userId) },
+  }), { params: Promise.resolve({ brew_id: brewId }) });
+  return { status: response.status, body: await response.json() };
+}
+test("brew tracker context hides deductions and all equipment history without premium", async () => {
+  const f = await fixture();
+  const added = await route("POST", f, addition(1, selection(f)));
+  assert.equal(added.status, 201);
+  const vessel = await equipmentRequest("POST", f.userId, vesselInput());
+  assert.equal((await equipmentRequest("PATCH", f.userId, assignInput(f.brewId), vessel.body.equipment.id)).status, 200);
+  const context = await trackerInventory(f.userId, f.brewId);
+  assert.equal(context.status, 200);
+  assert.equal(context.body.can_manage, true);
+  assert.equal(context.body.usages.length, 1);
+  assert.deepEqual(context.body.usages[0].deducted, kg(1));
+  assert.equal(context.body.vessel_events[0].action, "assigned");
+  const otherId = await owner();
+  assert.equal((await trackerInventory(otherId, f.brewId)).status, 404);
+  assert.equal((await trackerInventory(f.userId, "not-a-uuid")).status, 400);
+  await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2020-01-01") } });
+  assert.deepEqual((await trackerInventory(f.userId, f.brewId)).body, { can_manage: false, tracked_entry_ids: [], usages: [], vessel_events: [] });
+  assert.equal((await stockRequest("GET", f.userId)).body.stock.length, 1);
+  assert.equal((await equipmentRequest("GET", f.userId)).body.equipment.length, 1);
+  await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2100-01-01") } });
+  process.env.PREMIUM_ACCESS_ENABLED = "false";
+  assert.equal((await trackerInventory(f.userId, f.brewId)).body.can_manage, false);
+});
+test("tracker vessel assignments can change across stages and use multiple vessels", async () => {
+  const f = await fixture();
+  const first = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  const second = (await equipmentRequest("POST", f.userId, vesselInput())).body.equipment.id;
+  await equipmentRequest("PATCH", f.userId, assignInput(f.brewId), first);
+  await patchBrewMetadata(f.userId, f.brewId, { stage: "PRIMARY" });
+  await equipmentRequest("PATCH", f.userId, assignInput(f.brewId), second);
+  assert.equal(await prisma.equipment.count({ where: { current_brew_id: f.brewId } }), 2);
+  await patchBrewMetadata(f.userId, f.brewId, { stage: "SECONDARY" });
+  assert.equal(await prisma.equipment.count({ where: { current_brew_id: f.brewId } }), 2);
+  await equipmentRequest("PATCH", f.userId, assignInput(null, f.brewId), first);
+  const context = await trackerInventory(f.userId, f.brewId);
+  assert.equal(context.body.vessel_events.length, 3);
+  assert.equal(context.body.vessel_events.filter((event) => event.action === "released").length, 1);
+  assert.equal(await prisma.equipment.count({ where: { current_brew_id: f.brewId } }), 1);
+});
+test("brew stock context follows linked corrections and reversals, and rejects blended deductions", async () => {
+  const f = await fixture();
+  const input = addition(1, selection(f));
+  assert.equal((await route("POST", f, input)).status, 201);
+  const entryId = input.client_entry_id;
+  let context = (await trackerInventory(f.userId, f.brewId)).body;
+  assert.equal(context.usages[0].entry_id, entryId);
+  const correction = { data: { kind: "INGREDIENT", name: "Honey", amount: 2, unit: "kg" }, inventory: selection(f, 1) };
+  assert.equal((await route("PATCH", f, correction, entryId)).status, 200);
+  context = (await trackerInventory(f.userId, f.brewId)).body;
+  assert.deepEqual(context.usages[0].deducted, kg(2));
+  assert.equal((await route("DELETE", f, { inventory: selection(f, 2) }, entryId)).status, 200);
+  assert.equal((await trackerInventory(f.userId, f.brewId)).body.usages.length, 0);
+  assert.equal(await balance(f.stockId), 5);
+  const blended = addition(1, selection(f));
+  blended.data.meta = { components: [{ name: "A", amount: 0.5 }, { name: "B", amount: 0.5 }] };
+  assert.equal((await route("POST", f, blended)).status, 400);
+  assert.equal(await balance(f.stockId), 5);
+});
+
+async function metadataRequest(f, input) {
+ const response=await brewMetadataRoute.PATCH(new NextRequest(`http://localhost/api/brews/${f.brewId}`,{method:'PATCH',headers:{'Content-Type':'application/json','x-inventory-fixture-user':String(f.userId)},body:JSON.stringify(input)}),{params:Promise.resolve({brew_id:f.brewId})});
+ return {status:response.status,body:await response.json()};
+}
+test('six identical containers form a pool with optional labels, quantities and independent occupancy',async()=>{
+ const f=await fixture();
+ const input={...vesselInput(),quantity:6};
+ const created=await equipmentRequest('POST',f.userId,input);assert.equal(created.status,201);
+ assert.equal((await equipmentRequest('POST',f.userId,input)).status,201);
+ const groupId=created.body.equipment.group_id;
+ let units=(await equipmentRequest('GET',f.userId)).body.equipment.filter(unit=>unit.group_id===groupId);
+ assert.equal(units.length,6);assert.ok(units.every(unit=>unit.name===input.equipment.name && unit.label===null));
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'label',operation_id:randomUUID(),label:'Blue lid'},units[0].id)).status,200);
+ const assignment={action:'allocate',operation_id:randomUUID(),brew_id:f.brewId,quantity:2,expected_ids:[]};
+ assert.equal((await equipmentRequest('PATCH',f.userId,assignment,units[0].id)).status,200);
+ assert.equal((await equipmentRequest('PATCH',f.userId,assignment,units[0].id)).status,200);
+ units=(await equipmentRequest('GET',f.userId)).body.equipment;
+ assert.equal(units.filter(unit=>unit.brew?.id===f.brewId).length,2);assert.equal(units.filter(unit=>!unit.brew).length,4);
+ const tooSmall={action:'edit_group',operation_id:randomUUID(),quantity:1,equipment:input.equipment};
+ assert.equal((await equipmentRequest('PATCH',f.userId,tooSmall,units[0].id)).status,409);
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'archive_group',operation_id:randomUUID()},units[0].id)).status,409);
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'allocate',operation_id:randomUUID(),brew_id:f.brewId,quantity:7,expected_ids:units.filter(unit=>unit.brew).map(unit=>unit.id)},units[0].id)).status,409);
+});
+test('stage and container changes are atomic, owned, retryable and reject stale or occupied units',async()=>{
+ const f=await fixture();const other=await fixture();
+ const one=(await equipmentRequest('POST',f.userId,{...vesselInput(),quantity:2})).body.equipment;
+ const units=(await equipmentRequest('GET',f.userId)).body.equipment;
+ const change={stage:'PRIMARY',containers:{operation_id:randomUUID(),expected_ids:[],equipment_ids:units.map(unit=>unit.id)}};
+ assert.equal((await metadataRequest(f,change)).status,200);assert.equal((await metadataRequest(f,change)).status,200);
+ assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId,type:'STAGE_CHANGE'}}),1);
+ assert.equal(await prisma.equipment.count({where:{current_brew_id:f.brewId}}),2);
+ const stale={stage:'SECONDARY',containers:{operation_id:randomUUID(),expected_ids:[],equipment_ids:[]}};
+ assert.equal((await metadataRequest(f,stale)).status,409);assert.equal((await prisma.brews.findUnique({where:{id:f.brewId}})).stage,'PRIMARY');
+ const foreign=(await equipmentRequest('POST',other.userId,vesselInput())).body.equipment.id;
+ assert.equal((await metadataRequest(f,{stage:'SECONDARY',containers:{operation_id:randomUUID(),expected_ids:units.map(unit=>unit.id),equipment_ids:[foreign]}})).status,404);
+ const secondBrew=await prisma.brews.create({data:{user_id:f.userId,name:'Other batch'}});
+ const competing={...f,brewId:secondBrew.id};
+ assert.equal((await metadataRequest(competing,{stage:'PRIMARY',containers:{operation_id:randomUUID(),expected_ids:[],equipment_ids:[one.id]}})).status,409);
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2020-01-01')}});
+ assert.equal((await metadataRequest(f,{stage:'SECONDARY',containers:{operation_id:randomUUID(),expected_ids:units.map(unit=>unit.id),equipment_ids:[]}})).status,403);
+ assert.equal((await metadataRequest(f,{stage:'SECONDARY'})).status,200);
+ assert.equal(await prisma.equipment.count({where:{current_brew_id:f.brewId}}),2);
+});
+test('concurrent brews cannot overbook an identical-container pool',async()=>{
+ const f=await fixture(); const created=(await equipmentRequest('POST',f.userId,{...vesselInput(),quantity:6})).body.equipment;
+ const second=await prisma.brews.create({data:{user_id:f.userId,name:'Concurrent batch'}});
+ const results=await Promise.all([f.brewId,second.id].map(brew_id=>equipmentRequest('PATCH',f.userId,{action:'allocate',operation_id:randomUUID(),brew_id,quantity:5,expected_ids:[]},created.id)));
+ assert.deepEqual(results.map(result=>result.status).sort(),[200,409]);
+ assert.equal(await prisma.equipment.count({where:{current_brew_id:{not:null}}}),5);
+});
+test('group quantities grow and shrink without losing occupied units, labels or retry safety',async()=>{
+ const f=await fixture();const input={...vesselInput(),quantity:6};const first=(await equipmentRequest('POST',f.userId,input)).body.equipment;
+ assert.equal((await equipmentRequest('POST',f.userId,{...input,quantity:0})).status,400);
+ await equipmentRequest('PATCH',f.userId,{action:'label',operation_id:randomUUID(),label:'Blue lid'},first.id);
+ await equipmentRequest('PATCH',f.userId,{action:'allocate',operation_id:randomUUID(),brew_id:f.brewId,quantity:2,expected_ids:[]},first.id);
+ const grow={action:'edit_group',operation_id:randomUUID(),quantity:8,equipment:{...input.equipment,name:'Five gallon buckets'}};
+ assert.equal((await equipmentRequest('PATCH',f.userId,grow,first.id)).status,200);assert.equal((await equipmentRequest('PATCH',f.userId,grow,first.id)).status,200);
+ let units=(await equipmentRequest('GET',f.userId)).body.equipment;assert.equal(units.length,8);assert.ok(units.every(unit=>unit.name==='Five gallon buckets'));assert.equal(units.filter(unit=>unit.label==='Blue lid').length,1);
+ const shrink={...grow,operation_id:randomUUID(),quantity:4};assert.equal((await equipmentRequest('PATCH',f.userId,shrink,first.id)).status,200);
+ units=(await equipmentRequest('GET',f.userId)).body.equipment;assert.equal(units.length,4);assert.equal(units.filter(unit=>unit.brew).length,2);assert.equal(units.filter(unit=>unit.label==='Blue lid').length,1);
+ const current=units.filter(unit=>unit.brew).map(unit=>unit.id);
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'allocate',operation_id:randomUUID(),brew_id:f.brewId,quantity:0,expected_ids:current},units[0].id)).status,200);
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'archive_group',operation_id:randomUUID()},units[0].id)).status,200);
+ assert.equal((await equipmentRequest('GET',f.userId)).body.equipment.length,0);assert.equal(await prisma.equipment.count(),8);assert.ok(await prisma.equipment_assignment_events.count()>=4);
+});
+test('container history groups the full quantity before limiting recent changes',async()=>{
+ const f=await fixture();const item=(await equipmentRequest('POST',f.userId,{...vesselInput(),quantity:100})).body.equipment;
+ assert.equal((await equipmentRequest('PATCH',f.userId,{action:'allocate',operation_id:randomUUID(),brew_id:f.brewId,quantity:100,expected_ids:[]},item.id)).status,200);
+ const context=(await trackerInventory(f.userId,f.brewId)).body;
+ assert.equal(context.vessel_events.length,1);assert.equal(context.vessel_events[0].quantity,100);
+});
+
+const multiSelection=(items,expected=[])=>({mode:'items',operation_id:randomUUID(),items,expected});
+async function batchRequest(f,entries,operationId=randomUUID()) {
+ const req=new NextRequest(`http://localhost/api/brews/${f.brewId}/entries/batch`,{method:'POST',headers:{'Content-Type':'application/json','x-inventory-fixture-user':String(f.userId)},body:JSON.stringify({operation_id:operationId,entries})});
+ const response=await batchRoute.POST(req,{params:Promise.resolve({brew_id:f.brewId})});return {status:response.status,body:await response.json()};
+}
+test('multi-component nutrient uses edit and reverse each stock together',async()=>{
+ const f=await fixture();const a=await service.createStock(f.userId,randomUUID(),{name:'Fermaid O',category:'additive',quantity:{value:10,unit:'g'},catalogReference:{catalog:'nutrient',id:'fermO'}});const b=await service.createStock(f.userId,randomUUID(),{name:'Fermaid K',category:'additive',quantity:{value:10,unit:'g'}});
+ const id=randomUUID();const data={name:'Nutrient addition 1',kind:'NUTRIENT',meta:{components:[{key:'fermO',name:'Fermaid O',amount:2,unit:'g'},{key:'fermK',name:'Fermaid K',amount:3,unit:'g'}]}};
+ const items=[{line_key:'component:fermO',stock_id:a.stockId},{line_key:'component:fermK',stock_id:b.stockId}];
+ const created=await route('POST',f,{type:'ADDITION',client_entry_id:id,data,inventory:multiSelection(items)});assert.equal(created.status,201,JSON.stringify(created.body));assert.equal(await balance(a.stockId),8);assert.equal(await balance(b.stockId),7);
+ const context=await trackerInventory(f.userId,f.brewId);const expected=context.body.usages.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted}));assert.equal(expected.length,2);assert.deepEqual(context.body.usages.map(use=>use.line_name).sort(),['Fermaid K','Fermaid O']);
+ const oldClient=await route('DELETE',f,{inventory:selection({...f,stockId:a.stockId},2)},id);assert.equal(oldClient.status,409);
+ const removed=await route('DELETE',f,{inventory:multiSelection([],expected)},id);assert.equal(removed.status,200,JSON.stringify(removed.body));assert.equal(await balance(a.stockId),10);assert.equal(await balance(b.stockId),10);
+});
+test('batch shares one ledger row per stock, replays safely and rolls back a late shortage',async()=>{
+ const f=await fixture();const entries=[2,2].map(amount=>addition(amount,multiSelection([{line_key:'addition',stock_id:f.stockId}])));const op=randomUUID();const first=await batchRequest(f,entries,op);assert.equal(first.status,201,JSON.stringify(first.body));assert.equal(await balance(f.stockId),1);assert.equal((await batchRequest(f,entries,op)).status,201);assert.equal(await balance(f.stockId),1);
+ const operation=await prisma.inventory_operations.findUniqueOrThrow({where:{user_id_operation_key:{user_id:f.userId,operation_key:op}}});const adjustments=await prisma.inventory_adjustments.findMany({where:{operation_id:operation.id}});assert.equal(adjustments.length,1);assert.equal(adjustments[0].delta.toNumber(),-4);
+ const failing=[.5,1].map(amount=>addition(amount,multiSelection([{line_key:'addition',stock_id:f.stockId}])));const failed=await batchRequest(f,failing);assert.equal(failed.status,409,JSON.stringify(failed.body));assert.equal(await balance(f.stockId),1);assert.equal(await prisma.brew_entries.count({where:{id:{in:failing.map(entry=>entry.client_entry_id)}}}),0);
+});
+test('packaging bottle and closure counts are corrected and reversed independently',async()=>{
+ const f=await fixture();const bottles=await service.createStock(f.userId,randomUUID(),{name:'750 mL bottles',category:'packaging',quantity:{value:20,unit:'units'}});const corks=await service.createStock(f.userId,randomUUID(),{name:'Corks',category:'packaging',quantity:{value:20,unit:'units'}});const id=randomUUID();const data={packagedVolumeLiters:3,bottleRows:[{label:'750',quantity:4,sizeLiters:.75}],closures:[{name:'Corks',quantity:4}]};const items=[{line_key:'bottle:0',stock_id:bottles.stockId},{line_key:'closure:0',stock_id:corks.stockId}];
+ assert.equal((await route('POST',f,{type:'PACKAGING',client_entry_id:id,data,inventory:multiSelection(items)})).status,201);assert.equal(await balance(bottles.stockId),16);assert.equal(await balance(corks.stockId),16);
+ const expected=(await trackerInventory(f.userId,f.brewId)).body.usages.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted}));const next={...data,bottleRows:[{label:'750',quantity:2,sizeLiters:.75}],closures:[{name:'Corks',quantity:2}]};assert.equal((await route('PATCH',f,{data:next,inventory:multiSelection(items,expected)},id)).status,200);assert.equal(await balance(bottles.stockId),18);assert.equal(await balance(corks.stockId),18);
+ const snapshot=(await trackerInventory(f.userId,f.brewId)).body.usages.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted}));assert.equal((await route('DELETE',f,{inventory:multiSelection([],snapshot)},id)).status,200);assert.equal(await balance(bottles.stockId),20);assert.equal(await balance(corks.stockId),20);
+});
+test('catalog details preserve quantity and validate the reference',async()=>{
+ const f=await fixture();const input={action:'details',operation_id:randomUUID(),name:'My honey',catalogReference:null,notes:'Opened'};const response=await stockRequest('PATCH',f.userId,input,f.stockId);assert.equal(response.status,200);assert.equal(await balance(f.stockId),5);assert.equal((await stockRequest('PATCH',f.userId,input,f.stockId)).status,200);
+ assert.equal((await stockRequest('PATCH',f.userId,{...input,operation_id:randomUUID(),catalogReference:{catalog:'nutrient',id:'fermO'}},f.stockId)).status,400);
+});
+
+test('stabilization batch tracks powders and partial Campden tablets in their own units',async()=>{
+ const f=await fixture();const sorbate=await service.createStock(f.userId,randomUUID(),{name:'Sorbate jar',category:'additive',catalogReference:{catalog:'additive',id:'potassiumSorbate'},quantity:{value:10,unit:'g'}});const campden=await service.createStock(f.userId,randomUUID(),{name:'Campden tub',category:'additive',catalogReference:{catalog:'additive',id:'campdenPotassium'},quantity:{value:20,unit:'units'}});
+ const entries=[{kind:'sorbate',amount:2,unit:'g',stockId:sorbate.stockId},{kind:'sulfite',amount:.5,unit:'tablets',stockId:campden.stockId}].map(item=>({type:'ADDITION',client_entry_id:randomUUID(),data:{name:'Stabilizer',kind:'OTHER',amount:item.amount,unit:item.unit,meta:{stabilizerKind:item.kind,stabilizerType:'kmeta',sulfiteForm:'campden'}},inventory:multiSelection([{line_key:'addition',stock_id:item.stockId}])}));
+ const saved=await batchRequest(f,entries);assert.equal(saved.status,201,JSON.stringify(saved.body));assert.equal(await balance(sorbate.stockId),8);assert.equal(await balance(campden.stockId),19.5);
+});
+test('premium expiry rejects batches without entries or deductions',async()=>{
+ const f=await fixture();await prisma.premium_memberships.deleteMany({where:{user_id:f.userId}});const entries=[addition(2,multiSelection([{line_key:'addition',stock_id:f.stockId}]))];const saved=await batchRequest(f,entries);assert.equal(saved.status,403);assert.equal(await balance(f.stockId),5);assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId}}),0);
+});
+test('concurrent batches cannot overspend shared stock',async()=>{
+ const f=await fixture();const make=()=>[addition(3,multiSelection([{line_key:'addition',stock_id:f.stockId}]))];const results=await Promise.all([batchRequest(f,make()),batchRequest(f,make())]);assert.deepEqual(results.map(result=>result.status).sort(),[201,409]);assert.equal(await balance(f.stockId),2);assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId}}),1);
 });

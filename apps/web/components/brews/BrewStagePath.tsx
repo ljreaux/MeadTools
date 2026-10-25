@@ -1,3 +1,6 @@
+import type { BrewContainerChange } from "@meadtools/api-contract/contracts";
+import { useBrewContainerChoice } from "./BrewContainerFields";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 import {
   BREW_ENTRY_TYPE,
   GRAVITY_UNITS,
@@ -49,7 +52,7 @@ type RecordVolumeIntent = "current" | "secondaryVolume";
 type BrewStagePathProps = {
   brewId: string;
   stage: BrewStage;
-  onMoveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
+  onMoveToStage: (to: BrewStage, datetime?: string, containers?: BrewContainerChange) => Promise<void>;
   entries: BrewEntry[];
   current_volume_liters: number | null;
   gravity_unit_preference?: GravityUnit;
@@ -212,8 +215,9 @@ export function BrewStagePath({
               }
             };
             const helpers = {
-              moveToStage: async (to: BrewStage, datetime?: string) => {
-                await onMoveToStage(to, datetime);
+              moveToStage: async (to: BrewStage, datetime?: string, containers?: BrewContainerChange) => {
+                if (!datetime) { setActiveId(getBrewTrackerStage(to)); setPendingStageMove(getBrewTrackerStage(to)); return; }
+                await onMoveToStage(to, datetime, containers);
                 setActiveId(getBrewTrackerStage(to));
               },
               openStageMoveReview: (to: BrewStage) => {
@@ -462,14 +466,14 @@ export function BrewStagePath({
                     warnings={STAGE_CONFIG.PRIMARY.warnings ?? []}
                     ctx={ctx}
                     helpers={helpers}
-                    onMove={async (stageChangeDatetime) => {
+                    onMove={async (stageChangeDatetime, containers) => {
                       const decision = getStageMoveDecision(
                         "SECONDARY",
                         stage,
                         ctx
                       );
                       if (!decision.allowed) return;
-                      await onMoveToStage("SECONDARY", stageChangeDatetime);
+                      await onMoveToStage("SECONDARY", stageChangeDatetime, containers);
                       setActiveId("SECONDARY");
                       setReviewStage(null);
                     }}
@@ -477,17 +481,14 @@ export function BrewStagePath({
                 ) : null}
                 {!readOnly ? (
                   <StageMoveDateDialog
+                    allowContainers={s !== "COMPLETE"}
                     open={pendingStageMove === s}
                     onOpenChange={(open) => {
                       if (!open) setPendingStageMove(null);
                     }}
-                    title={
-                      status === "past"
-                        ? t("brews.moveBack", "Move back to this stage")
-                        : t("brews.moveToStage", "Move to this stage")
-                    }
-                    onMove={async (datetime) => {
-                      await onMoveToStage(s, datetime);
+                    title={t("brewInventory.moveStage", {stage:t(`brewStage.${s}`)})}
+                    onMove={async (datetime, containers) => {
+                      await onMoveToStage(s, datetime, containers);
                       setActiveId(s);
                       setPendingStageMove(null);
                     }}
@@ -570,6 +571,7 @@ export function BrewStagePath({
 }
 
 function StageMoveDateDialog({
+  allowContainers = true,
   open,
   onOpenChange,
   title,
@@ -578,9 +580,11 @@ function StageMoveDateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  onMove: (datetime: string) => Promise<void>;
+  allowContainers?: boolean;
+  onMove: (datetime: string, containers?: BrewContainerChange) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const containers = useBrewContainerChoice(open && allowContainers,true);
   const [datetime, setDatetime] = useState<Date>(new Date());
   const [isSaving, setIsSaving] = useState(false);
 
@@ -591,8 +595,8 @@ function StageMoveDateDialog({
   const move = async () => {
     setIsSaving(true);
     try {
-      await onMove(datetime.toISOString());
-    } finally {
+      await onMove(datetime.toISOString(), allowContainers ? containers.change() : undefined);
+    } catch (error) { reportBrewInventoryError(error,t); } finally {
       setIsSaving(false);
     }
   };
@@ -613,6 +617,7 @@ function StageMoveDateDialog({
             hourCycle={12}
           />
         </div>
+        {containers.field}
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button
             variant="secondary"
@@ -621,7 +626,7 @@ function StageMoveDateDialog({
           >
             {t("cancel", "Cancel")}
           </Button>
-          <Button onClick={move} disabled={isSaving}>
+          <Button onClick={move} disabled={isSaving || (allowContainers && !containers.valid)}>
             {t("save", "Save")}
           </Button>
         </DialogFooter>
@@ -647,9 +652,10 @@ function StageMoveReviewDialog({
   warnings: NonNullable<(typeof STAGE_CONFIG)["PRIMARY"]["warnings"]>;
   ctx: Parameters<NonNullable<(typeof warnings)[number]["isActive"]>>[0];
   helpers: Parameters<NonNullable<(typeof required)[number]["run"]>>[0];
-  onMove: (datetime: string) => Promise<void>;
+  onMove: (datetime: string, containers?: BrewContainerChange) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const containers = useBrewContainerChoice(open,true);
   const [yeastOpen, setYeastOpen] = useState(false);
   const [datetime, setDatetime] = useState<Date>(new Date());
   const unmet = required.filter((item) => !item.isMet(ctx));
@@ -772,13 +778,14 @@ function StageMoveReviewDialog({
           </div>
         </div>
 
+        {containers.field}
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             {t("cancel", "Cancel")}
           </Button>
           <Button
-            disabled={!canMove}
-            onClick={() => onMove(datetime.toISOString())}
+            disabled={!canMove || !containers.valid}
+            onClick={() => { void onMove(datetime.toISOString(), containers.change()).catch(error=>reportBrewInventoryError(error,t)); }}
           >
             {t("brews.moveToSecondary", "Move to Secondary")}
           </Button>

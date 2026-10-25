@@ -1,3 +1,4 @@
+import { entryMutationError } from "@/lib/brews/entryMutationError";
 import {
   deleteBrewForApp,
   getBrewForApp,
@@ -56,11 +57,11 @@ export async function GET(
  * @body UpdateBrewRequestBody
  * @response 200:UpdateBrewResponse
  * @responseSet none
- * @add 400:BrewValidationErrorResponse
+ * @add 400:BrewMetadataValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
- * @add 403:BrewSnapshotUpdateErrorResponse
- * @add 409:BrewSnapshotUpdateErrorResponse
+ * @add 404:BrewEntryNotFoundErrorResponse
+ * @add 403:BrewMetadataInventoryErrorResponse
+ * @add 409:BrewMetadataInventoryErrorResponse
  * @add 500:BrewUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -86,6 +87,8 @@ export async function PATCH(
     const updated = await patchBrewMetadata(userId, brew_id, body);
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
+    const inventoryError = entryMutationError(err);
+    if (inventoryError) return inventoryError;
     if (err instanceof Error) {
       if (err.message === "Recipe not available") {
         return NextResponse.json({ error: err.message }, { status: 403 });

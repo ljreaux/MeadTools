@@ -1,3 +1,7 @@
+import { brewContainerChangeSchema } from "@meadtools/api-contract/brews";
+import type { BrewContainerChange } from "@meadtools/api-contract/contracts";
+import { createInventoryOperation } from "./inventory";
+import { replaceBrewContainers } from "./equipment";
 import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
 import type { BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
@@ -94,6 +98,7 @@ export type BrewForApp = {
 };
 
 export type PatchBrewMetadataInput = {
+  containers?: BrewContainerChange;
   recipe_id?: number;
   update_recipe_snapshot?: boolean;
   expected_snapshotted_at?: string | null;
@@ -426,7 +431,14 @@ export async function patchBrewMetadata(
   brewId: string,
   input: PatchBrewMetadataInput
 ) {
-  return prisma.$transaction(async (tx) => {
+  const change = input.containers ? brewContainerChangeSchema.parse(input.containers) : null;
+  if (change && (!input.stage || input.stage === "COMPLETE")) throw new InventoryWriteError("ENTRY_MISMATCH");
+  const write = async (tx: Prisma.TransactionClient) => {
+    if (change) {
+      const owned = await tx.$queryRaw<Array<{ id: string }>>`SELECT id FROM brews WHERE id = ${brewId}::uuid AND user_id = ${userId} FOR UPDATE`;
+      if (!owned.length) throw new Error("Brew not found");
+      await replaceBrewContainers(tx,userId,brewId,change,change.operation_id);
+    }
     if (input.update_recipe_snapshot) {
       await tx.$queryRaw(Prisma.sql`
         SELECT id FROM brews
@@ -763,7 +775,13 @@ export async function patchBrewMetadata(
       recipe_private: updatedBrew.recipes?.private ?? null,
       recipes: undefined
     };
-  });
+  };
+  if (change) {
+    const result = await createInventoryOperation(prisma)<{brew:Prisma.InputJsonObject|null}>(userId,change.operation_id,JSON.parse(JSON.stringify({kind:"stage_containers",brewId,input})),value=>value as {brew:Prisma.InputJsonObject|null},async tx=>({brew:JSON.parse(JSON.stringify(await write(tx)))}));
+    // Saved retry responses use the same JSON representation returned by the HTTP route.
+    return result.brew as unknown as Awaited<ReturnType<typeof write>>;
+  }
+  return prisma.$transaction(write);
 }
 
 export async function deleteBrewForApp(brewId: string, userId: number) {
@@ -1251,33 +1269,7 @@ async function syncCurrentVolume(
   return currentVolume;
 }
 
-export async function createBrewEntryForApp(
-  userId: number,
-  brewId: string,
-  input: CreateBrewEntryInput
-): Promise<{ brew: BrewForApp; inventory: BrewInventoryOutcome }> {
-  if (input.inventory?.mode === "deduct" && (!input.client_entry_id || input.type !== "ADDITION")) {
-    throw new InventoryWriteError("ENTRY_MISMATCH");
-  }
-  // ownership check
-  const brew = await prisma.brews.findFirst({
-    where: { id: brewId, user_id: userId },
-    select: { id: true }
-  });
-  if (!brew) throw new Error("Brew not found");
-
-  // Stage changes are handled ONLY through patchBrewMetadata
-  if (input.type === brew_entry_type.STAGE_CHANGE) {
-    const to =
-      input.stage_to ?? ((input.data as any)?.to as brew_stage | undefined);
-    if (!to) throw new Error("Missing stage_to");
-
-    await patchBrewMetadata(userId, brewId, { stage: to });
-
-    // consistent return
-    return { brew: await getBrewForApp(userId, brewId), inventory: { status: "untracked" } };
-  }
-
+export async function writeCreatedBrewEntry(tx:Prisma.TransactionClient,userId:number,brewId:string,entryId:string,input:CreateBrewEntryInput) {
   const dtRaw = input.datetime;
   const datetime =
     dtRaw == null
@@ -1287,11 +1279,6 @@ export async function createBrewEntryForApp(
         : new Date(dtRaw);
   if (Number.isNaN(datetime.getTime())) throw new Error("Invalid datetime");
 
-  const entryId = input.client_entry_id ?? randomUUID();
-  const inventory = await mutateBrewEntryWithInventory(userId, {
-    brewId, entryId, kind: "create", selection: input.inventory,
-    entryMutation: JSON.parse(JSON.stringify(input)),
-  }, async (tx) => {
     const entryData = {
       brew_id: brewId,
       user_id: userId,
@@ -1343,6 +1330,41 @@ export async function createBrewEntryForApp(
     if (input.type === brew_entry_type.VOLUME) {
       await syncCurrentVolume(tx, brewId);
     }
+}
+
+export async function createBrewEntryForApp(
+  userId: number,
+  brewId: string,
+  input: CreateBrewEntryInput
+): Promise<{ brew: BrewForApp; inventory: BrewInventoryOutcome }> {
+  if (input.inventory && input.inventory.mode !== "untracked" && (!input.client_entry_id || !["ADDITION","PACKAGING"].includes(input.type))) {
+    throw new InventoryWriteError("ENTRY_MISMATCH");
+  }
+  // ownership check
+  const brew = await prisma.brews.findFirst({
+    where: { id: brewId, user_id: userId },
+    select: { id: true }
+  });
+  if (!brew) throw new Error("Brew not found");
+
+  // Stage changes are handled ONLY through patchBrewMetadata
+  if (input.type === brew_entry_type.STAGE_CHANGE) {
+    const to =
+      input.stage_to ?? ((input.data as any)?.to as brew_stage | undefined);
+    if (!to) throw new Error("Missing stage_to");
+
+    await patchBrewMetadata(userId, brewId, { stage: to });
+
+    // consistent return
+    return { brew: await getBrewForApp(userId, brewId), inventory: { status: "untracked" } };
+  }
+
+  const entryId = input.client_entry_id ?? randomUUID();
+  const inventory = await mutateBrewEntryWithInventory(userId, {
+    brewId, entryId, kind: "create", selection: input.inventory,
+    entryMutation: JSON.parse(JSON.stringify(input)),
+  }, async (tx) => {
+    await writeCreatedBrewEntry(tx,userId,brewId,entryId,input);
   });
 
   // consistent return

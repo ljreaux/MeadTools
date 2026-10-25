@@ -39,7 +39,11 @@
       "name": "status",
       "schema": {
         "type": "string",
-        "enum": ["completed", "failed", "reserved"]
+        "enum": [
+          "completed",
+          "failed",
+          "reserved"
+        ]
       },
       "required": false
     },
@@ -669,7 +673,10 @@
       "name": "order",
       "schema": {
         "type": "string",
-        "enum": ["asc", "desc"]
+        "enum": [
+          "asc",
+          "desc"
+        ]
       },
       "required": false
     },
@@ -705,7 +712,10 @@
       "name": "order",
       "schema": {
         "type": "string",
-        "enum": ["asc", "desc"]
+        "enum": [
+          "asc",
+          "desc"
+        ]
       },
       "required": false
     },
@@ -829,6 +839,28 @@
         "format": "uuid"
       },
       "required": true
+    }
+  ],
+  "GET /brews/{brew_id}/inventory": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "POST /brews/{brew_id}/entries/batch": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
     }
   ]
 }

@@ -64,7 +64,7 @@ export function InventoryWorkspace() {
           {item.notes ? <p className="break-words text-sm text-muted-foreground">{item.notes}</p> : null}
           {item.reconciliation_required ? <p className="rounded-md border p-3 text-sm">{t("inventory.needsReview")}</p> : null}
           <div className="mt-auto flex flex-wrap gap-2">
-            {data.can_manage ? <><Button size="sm" variant="outline" onClick={() => open(item, "receipt")}>{t("inventory.actions.receipt")}</Button><Button size="sm" variant="outline" onClick={() => open(item, "manual_use")}>{t("inventory.actions.manual_use")}</Button><Button size="sm" variant="ghost" onClick={() => open(item, "correction")}>{t("inventory.actions.correction")}</Button></> : null}
+            {data.can_manage ? <><Button size="sm" variant="outline" onClick={() => open(item, "details")}>{t("inventory.actions.details")}</Button><Button size="sm" variant="outline" onClick={() => open(item, "receipt")}>{t("inventory.actions.receipt")}</Button><Button size="sm" variant="outline" onClick={() => open(item, "manual_use")}>{t("inventory.actions.manual_use")}</Button><Button size="sm" variant="ghost" onClick={() => open(item, "correction")}>{t("inventory.actions.correction")}</Button></> : null}
             <Button size="sm" variant="ghost" onClick={() => setHistory(item)} aria-label={t("inventory.historyNamed", { name: item.name })}><History aria-hidden className="mr-1 h-4 w-4" />{t("inventory.history")}</Button>
             {data.can_manage ? <Button size="sm" variant="ghost" onClick={() => { mutation.reset(); setRemoving(item); }} aria-label={t("inventory.removeNamed", { name: item.name })}>{t("equipment.remove")}</Button> : null}
           </div>

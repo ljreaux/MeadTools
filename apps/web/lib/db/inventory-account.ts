@@ -6,7 +6,7 @@ import type { InventoryOverviewResponse, InventoryStockHistoryResponse } from "@
 import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "./premium-access";
 
-function stockItem(row: inventory_stock) {
+export function stockItem(row: inventory_stock) {
   return inventoryStockItemSchema.parse({
     id: row.id, name: row.name, category: row.category,
     catalogReference: row.catalog && row.catalog_id ? { catalog: row.catalog, id: row.catalog_id } : null,

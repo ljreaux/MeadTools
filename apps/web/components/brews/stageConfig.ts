@@ -1,3 +1,4 @@
+import type { BrewContainerChange, BrewInventorySelection } from "@meadtools/api-contract/contracts";
 // stageConfig.ts
 import {
   BREW_ENTRY_TYPE,
@@ -74,11 +75,12 @@ export type StagePrereq = {
 };
 
 export type BrewStageHelpers = {
-  moveToStage: (to: BrewStage, datetime?: string) => Promise<void>;
+  moveToStage: (to: BrewStage, datetime?: string, containers?: BrewContainerChange) => Promise<void>;
   openRecordVolume?: () => void;
   acceptRecipeOriginalGravity?: () => Promise<void>;
 
   addAddition: (input: {
+    inventory?: BrewInventorySelection;
     name: string;
     amount?: number;
     unit?: string;
@@ -100,7 +102,8 @@ export type BrewStageHelpers = {
 
   addAdditions: (
     inputs: Array<{
-      name: string;
+      inventory?: BrewInventorySelection;
+    name: string;
       amount?: number;
       unit?: string;
       note?: string;

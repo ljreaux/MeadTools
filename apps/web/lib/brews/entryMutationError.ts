@@ -1,3 +1,4 @@
+import { EquipmentAssignmentChangedError } from "@/lib/db/equipment";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { InventoryError } from "@meadtools/inventory-domain";
@@ -5,6 +6,7 @@ import { InventoryWriteError } from "@/lib/db/inventory";
 
 /** Allowlisted errors only; never expose arbitrary exception/SQL messages. */
 export function entryMutationError(error: unknown): NextResponse | null {
+  if (error instanceof EquipmentAssignmentChangedError) return NextResponse.json({error:"Container assignments changed; review them again",code:error.code},{status:409});
   if (error instanceof ZodError) return NextResponse.json({
     error: "Invalid inventory request", code: "INVALID_INVENTORY_REQUEST",
   }, { status: 400 });

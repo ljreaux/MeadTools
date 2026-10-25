@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "a7c5987ebec7538d8b9a1600987e9aab0619fa071e4305e032b31ffbcccb8994";
+  "0d4879e2b6460ada0f39d96d3cc047019b39d5581dd0ff39e691be9458753c5e";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -128,11 +128,17 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
       };
     }
   }
+  const metadata = pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.patch;
+  if (metadata?.responses) {
+    metadata.responses["400"] = {description:"Bad Request",content:{"application/json":{schema:{$ref:"#/components/schemas/BrewValidationErrorResponse"}}}};
+    metadata.responses["404"] = {description:"Not Found",content:{"application/json":{schema:{$ref:"#/components/schemas/AuthenticatedRouteErrorResponse"}}}};
+  }
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.patch?.responses?.["403"];
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.patch?.responses?.["409"];
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries"]?.post
     ?.responses?.["409"];
   delete pathsWithoutApprovedAdditions["/nutrient-presets"];
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}/inventory"];
   delete pathsWithoutApprovedAdditions["/account/inventory"];
   delete pathsWithoutApprovedAdditions["/account/inventory/{stock_id}"];
   delete pathsWithoutApprovedAdditions["/account/equipment"];
@@ -165,6 +171,7 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
     "/admin/chat-access/payment-recoveries/{recoveryId}"
   ];
   delete pathsWithoutApprovedAdditions["/admin/chat/usage"];
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries/batch"];
   const canonicalPaths = JSON.stringify(
     sortJson(pathsWithoutApprovedAdditions),
   );

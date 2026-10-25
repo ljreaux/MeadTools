@@ -1,8 +1,11 @@
 import "server-only";
 
+import { applyEntryInventoryLines } from "@/lib/db/inventory-lines";
+import { createInventoryOperation } from "@/lib/db/inventory";
+import { brewInventoryOutcomeSchema, brewInventoryItemsSchema } from "@meadtools/api-contract/brews";
 import type { Prisma } from "@prisma/client";
 import type { BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
-import { normalizeQuantityUnit, quantitySchema } from "@meadtools/inventory-domain";
+import { additionInventoryQuantity } from "@meadtools/inventory-domain";
 import { createInventoryService, InventoryWriteError } from "@/lib/db/inventory";
 
 const inventory = createInventoryService();
@@ -13,6 +16,10 @@ export async function mutateBrewEntryWithInventory(userId: number, input: {
   selection?: BrewInventorySelection;
   entryMutation: Prisma.InputJsonObject;
 }, writeEntry: (tx: Prisma.TransactionClient) => Promise<void>): Promise<BrewInventoryOutcome> {
+  if(input.selection?.mode === "items") {
+    const selection=brewInventoryItemsSchema.parse(input.selection);
+    return createInventoryOperation()(userId,selection.operation_id,JSON.parse(JSON.stringify({kind:"entry_lines",input})),value=>brewInventoryOutcomeSchema.parse(value),async(tx,operationId)=>applyEntryInventoryLines(tx,userId,operationId,input,selection,writeEntry));
+  }
   if (input.selection?.mode !== "deduct") {
     return inventory.mutateUntrackedEntry(userId, input, writeEntry);
   }
@@ -23,10 +30,8 @@ export async function mutateBrewEntryWithInventory(userId: number, input: {
   if (input.kind !== "remove" && (!data || typeof data !== "object" || Array.isArray(data))) {
     throw new InventoryWriteError("ENTRY_MISMATCH");
   }
-  const addition = data as Prisma.InputJsonObject;
-  const quantity = input.kind === "remove" ? null : quantitySchema.parse({
-    value: addition.amount, unit: normalizeQuantityUnit(addition.unit),
-  });
+  const quantity = input.kind === "remove" ? null : additionInventoryQuantity(data);
+  if (input.kind !== "remove" && !quantity) throw new InventoryWriteError("ENTRY_MISMATCH");
   const result = await inventory.mutateLinkedUsage(userId, input.selection.operation_id, {
     brewId: input.brewId, entryId: input.entryId, kind: input.kind,
     stockId: input.selection.stock_id, quantity,
