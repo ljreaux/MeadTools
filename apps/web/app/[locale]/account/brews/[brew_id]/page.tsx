@@ -1,5 +1,6 @@
 "use client";
 import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
+import { BrewQrDialog } from "@/components/brews/BrewQrDialog";
 import {useCreateBrewEntryBatch} from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
 import { useBrewStockChoice } from "@/components/brews/BrewStockField";
@@ -862,8 +863,11 @@ export default function BrewPageClient() {
   if (isLoading) return <BrewPageSkeleton />;
 
   if (isError || !brew) {
-    console.error(error);
-    return <div className="text-center my-4">{t("brews.error.loadDetail", "Something went wrong loading this brew.")}</div>;
+    const unavailable = (error as { status?: number } | null)?.status === 404;
+    if (!unavailable) console.error(error);
+    return <div className="text-center my-4">{unavailable
+      ? t("brews.qr.unavailable")
+      : t("brews.error.loadDetail", "Something went wrong loading this brew.")}</div>;
   }
 
   const historyFilterOptions: Array<{ value: HistoryFilter; label: string }> = [
@@ -1008,6 +1012,7 @@ export default function BrewPageClient() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <BrewQrDialog key={brew.id} brewId={brew.id} />
             {brew.public &&
             brew.recipe_id &&
             brew.recipe_private === false ? (

@@ -813,6 +813,18 @@
     "temperature": "Temperature"
   },
   "brews": {
+    "qr": {
+      "action": "QR code",
+      "title": "Brew QR code",
+      "description": "Print this code for a bottle or fermenter. Public brews follow your current sharing settings. Private brews require the owner to sign in. Generating a code does not enable sharing.",
+      "previewAlt": "QR code linking to this brew",
+      "printHint": "Download the SVG for sharp printing at any size. Keep the white border, print at least 30 mm wide, and test a printed label with your phone. Printed links keep working after premium expires, subject to brew access.",
+      "generating": "Generating QR code…",
+      "download": "Download SVG",
+      "premiumRequired": "Active premium access is required to generate or download brew QR codes. Previously printed links still follow the brew’s current sharing settings.",
+      "unavailable": "This brew is unavailable or you do not have access.",
+      "failed": "Could not generate the QR code. Please try again."
+    },
     "actions": {
       "addEntry": "Add entry",
       "label": "Actions",
