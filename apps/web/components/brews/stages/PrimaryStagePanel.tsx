@@ -1,4 +1,5 @@
 "use client";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -372,6 +373,7 @@ export function PrimaryStagePanel({
       unit: "g",
       meta: {
         goFerm: true,
+        nutrientKey:plannedGoFermType==='protect'?'goFermProtect':plannedGoFermType==='sterol-flash'?'goFermSterolFlash':'goFerm',
         goFermUsed: true,
         actualYeastAmount: actualYeastAmountG,
         actualYeastUnit: actualYeastAmountG != null ? "g" : undefined,
@@ -415,6 +417,7 @@ export function PrimaryStagePanel({
       note: t("brews.primary.goFermNotUsed", "Go-Ferm not used."),
       meta: {
         goFerm: true,
+        nutrientKey:plannedGoFermType==='protect'?'goFermProtect':plannedGoFermType==='sterol-flash'?'goFermSterolFlash':'goFerm',
         goFermUsed: false,
         plannedAmount: goFerm?.amount,
         plannedUnit: "g",
@@ -436,10 +439,12 @@ export function PrimaryStagePanel({
             unit,
             recipeIngredientId: String(item.line.lineId),
             source: "recipe_ingredient" as const,
-            meta: { plannedAmount: amount, plannedUnit: unit }
+            meta: { plannedAmount: amount, plannedUnit: unit, catalogReference:item.line.ref.kind==='catalog'?{catalog:'ingredient',id:String(item.line.ref.ingredientId)}:undefined }
           };
         })
       );
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setLoggingMissingIngredients(false);
     }
@@ -798,7 +803,7 @@ export function PrimaryStagePanel({
                             unit,
                             ...getPlannedIngredientAmounts(item.line),
                             recipeIngredientId: String(item.line.lineId),
-                            meta: { plannedAmount: amount, plannedUnit: unit }
+                            meta: { plannedAmount: amount, plannedUnit: unit, catalogReference:item.line.ref.kind==='catalog'?{catalog:'ingredient',id:String(item.line.ref.ingredientId)}:undefined }
                           })
                         }
                       />

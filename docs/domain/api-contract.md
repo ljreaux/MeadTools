@@ -163,6 +163,40 @@ the baseline.
 
 ## Generator inputs
 
+The inventory brew-entry integration adds optional `inventory` selections to
+POST/PATCH and an optional DELETE body on brew entries. Deduct mode requires a
+stable operation UUID and stock UUID; corrections/removal include the prior
+deducted stock quantity. Existing untracked requests remain valid, and mutation
+responses add an optional inventory outcome beside the existing result. No stock
+identities are added to public brew entry data. The three entry operations now
+document typed 400/403/404/409 failures, including stock shortages and stale
+deductions. The path parity check normalizes these reviewed entry changes before
+comparing the earlier routes. DELETE's optional body is restored by the OpenAPI
+normalizer because the generator omits DELETE bodies. Imported inventory quantity
+definitions are rendered from the runtime Zod schemas so unit enums and numeric
+limits cannot degrade into unresolved references or generic object schemas.
+
+Equipment management adds authenticated `GET`/`POST /account/equipment` and
+`PATCH /account/equipment/{equipment_id}`. Reads include `can_manage`, retained
+equipment and ongoing owned brew choices. Mutations require premium and a stable
+operation UUID. PATCH discriminates `edit`, `assign` and `archive`; assignment
+includes the expected prior brew and an explicit reassignment choice. Conflicts
+return typed 409 errors, foreign records return 404, and expired accounts retain
+read-only access. The normalizer renders these schemas from runtime Zod to keep
+shared equipment capacity units and request defaults intact. The path-parity
+check excludes only these approved new paths; older endpoint docs are unchanged.
+
+Ingredient and packaging stock management adds authenticated `GET`/`POST /account/inventory`
+and `GET`/`PATCH /account/inventory/{stock_id}`. Overview returns `can_manage`
+and owned nonarchived stock. The category enum includes `packaging`; packaging
+accepts only whole `units` counts, never volume-to-bottle conversion. Item reads include up to 100 recent adjustments
+and `has_more`; retained archived history remains readable. Premium mutations
+use stable operation UUIDs. Balance changes require `expected_balance`; PATCH
+chooses receipt, manual use, absolute correction or archival. Typed 400/403/404/
+409 failures preserve the existing inventory error codes. Runtime normalization
+retains shared unit enums and quantity limits, and path parity excludes these
+approved additions while preserving earlier endpoint documentation.
+
 The OpenAPI generator uses Zod schema mode. It scans:
 
 - `apps/web/app/api` for Route Handlers and their OpenAPI annotations.
@@ -218,3 +252,31 @@ subject, item count, cached-result flag, safe issue category, optional HTTP stat
 or missing-field categories. It never contains raw arguments, record IDs, source
 bodies or exception messages. Old clients can ignore it. These details describe
 a tool step, not a terminal request failure or permission to mutate records.
+
+The inventory component follow-up adds premium-only
+`POST /brews/{brew_id}/entries/batch`, which atomically saves reviewed additions
+and all stock uses. The operation and each entry have stable IDs for retries.
+The `items` inventory mode identifies each nutrient/packaging line and includes
+all previous deduction snapshots for optimistic concurrency checks. Private brew
+inventory context includes line keys/names and tracked entry IDs. Stock PATCH
+also supports a `details` action for names, notes and optional catalog links;
+quantities and units remain unchanged. These additions are included in generated
+contracts and OpenAPI, with the batch path excluded from legacy path parity.
+
+Inventory spreadsheet transfers add `POST /account/inventory/transfer` with
+`inspect`, `import` and `export` actions. Inspection accepts bounded base64 XLSX
+or UTF-8 CSV and returns literal sheet rows for mapping. Import accepts reviewed
+normalized stock rows with a stable operation ID; explicit updates use owned
+stock IDs and expected snapshots, while new rows retain separate lots. Inspection
+and import require premium; owner-scoped export/template download does not.
+Responses include sheet data, a base64 file or import counts. Row failures identify
+the source row; file limits use HTTP 413. The route is excluded from historical
+path parity and documented using runtime schemas and generated contracts.
+
+Stock history includes an optional revision-bound reconciliation review for
+flagged stock owned by a premium account. PATCH `/account/inventory/{stock_id}`
+accepts `action: reconcile`, the reviewed revision, an absolute physical quantity
+and optional note. Confirmation clears the flag and rebases compatible retained
+brew uses without replaying past deductions. Missing or incompatible lines close
+without returning stock. Changed stock or brew data returns `STALE_STOCK` (409);
+normal ownership, premium and operation replay rules apply.

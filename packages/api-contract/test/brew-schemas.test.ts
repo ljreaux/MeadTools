@@ -6,9 +6,33 @@ import {
   brewDetailNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
   createBrewEntryRequestBodySchema,
+  brewInventoryErrorResponseSchema,
+  brewInventorySelectionSchema,
+  deleteBrewEntryRequestBodySchema,
+  updateBrewEntryRequestBodySchema,
   publicBrewFetchErrorResponseSchema,
   updateBrewRequestBodySchema
 } from "../src/zod/brews";
+
+test("inventory selections are optional and accept only an explicit owned-stock choice or untracked mode", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+  const inventory = { mode: "deduct", operation_id: id, stock_id: id,
+    expected: { stock_id: id, deducted: { value: 1, unit: "kg" } } };
+  assert.equal(createBrewEntryRequestBodySchema.safeParse({ type: "ADDITION", inventory }).success, true);
+  assert.equal(updateBrewEntryRequestBodySchema.safeParse({ inventory }).success, true);
+  assert.equal(deleteBrewEntryRequestBodySchema.safeParse({ inventory }).success, true);
+  assert.equal(deleteBrewEntryRequestBodySchema.safeParse({}).success, true);
+  assert.equal(brewInventorySelectionSchema.safeParse({ mode: "untracked" }).success, true);
+  for (const invalid of [
+    { ...inventory, stock_id: "not-an-id" }, { ...inventory, operation_id: "not-an-id" },
+    { ...inventory, user_id: 2 }, { mode: "untracked", stock_id: id },
+    { ...inventory, expected: { stock_id: id, deducted: { value: -1, unit: "kg" } } },
+    { ...inventory, expected: { stock_id: id, deducted: { value: 1, unit: "bags" } } },
+  ]) assert.equal(brewInventorySelectionSchema.safeParse(invalid).success, false);
+  assert.equal(brewInventoryErrorResponseSchema.safeParse({
+    error: "Insufficient stock", code: "INSUFFICIENT_STOCK", shortage: 1, unit: "kg",
+  }).success, true);
+});
 
 test("brew entry schemas preserve nullable readings and arbitrary JSON data", () => {
   assert.equal(

@@ -36,7 +36,9 @@ model brews {
   users   users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   devices devices[]
   logs    logs[]
+  equipment equipment[]
 
+  @@unique([id, user_id])
   @@index([user_id, start_date])
   @@index([recipe_id])
 }
@@ -183,6 +185,176 @@ model users {
   mcp_rate_buckets        mcp_rate_buckets?
   mcp_tool_leases         mcp_tool_leases[]
   mcp_tool_usage          mcp_tool_usage[]
+  inventory_stock        inventory_stock[]
+  inventory_operations   inventory_operations[]
+  equipment              equipment[]
+}
+
+/// Archive referenced stock; preserve quantities and audit records after expiry.
+model inventory_stock {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         Int
+  name            String @db.VarChar(200)
+  category        inventory_stock_category
+  catalog         String? @db.VarChar(32)
+  catalog_id      String? @db.VarChar(200)
+  quantity        Decimal @db.Decimal(16, 6)
+  unit            inventory_quantity_unit
+  notes           String? @db.VarChar(5000)
+  archived_at     DateTime? @db.Timestamptz(6)
+  reconciliation_required Boolean @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  consumptions inventory_consumptions[]
+  adjustments  inventory_adjustments[]
+
+  // The compound key enforces ownership and preserves the historical stock unit.
+  @@unique([id, user_id, unit])
+  @@index([user_id, archived_at])
+  @@index([user_id, catalog, catalog_id])
+}
+
+/// One request identity per account, including a saved response for retries.
+model inventory_operations {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       Int
+  operation_key String @db.Uuid
+  request_hash  String @db.VarChar(64)
+  result        Json
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  user        users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  adjustments inventory_adjustments[]
+
+  @@unique([user_id, operation_key])
+  @@unique([id, user_id])
+}
+
+/// Retain the physical-use identity and deduction after entry/brew deletion.
+/// Brew and entry IDs are historical snapshots, deliberately not cascading FKs.
+model inventory_consumptions {
+  line_key       String @default("addition") @db.VarChar(200)
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        Int
+  stock_id       String @db.Uuid
+  brew_id        String @db.Uuid
+  entry_id       String @db.Uuid
+  use_key        String @db.Uuid
+  deducted       Decimal @db.Decimal(16, 6)
+  unit           inventory_quantity_unit
+  reversed_at    DateTime? @db.Timestamptz(6)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  stock       inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
+  adjustments inventory_adjustments[]
+
+  @@unique([user_id, use_key])
+  @@unique([user_id, entry_id, line_key])
+  @@unique([id, user_id])
+  @@index([user_id, brew_id, entry_id])
+}
+
+/// Append-only audit rows; write with balance, operation and consumption in one transaction.
+model inventory_adjustments {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        Int
+  stock_id       String @db.Uuid
+  operation_id   String @db.Uuid
+  consumption_id String? @db.Uuid
+  kind           String @db.VarChar(32)
+  delta          Decimal @db.Decimal(16, 6)
+  balance_after  Decimal @db.Decimal(16, 6)
+  unit           inventory_quantity_unit
+  note           String? @db.VarChar(5000)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  stock       inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
+  operation   inventory_operations @relation(fields: [operation_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+  // Audit stock/unit stays unchanged when a use is corrected to a different item.
+  consumption inventory_consumptions? @relation(fields: [consumption_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([operation_id, stock_id])
+  @@index([user_id, stock_id, created_at])
+  @@index([consumption_id])
+}
+
+model equipment {
+  group_id        String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label           String? @db.VarChar(100)
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         Int
+  name            String @db.VarChar(200)
+  type            equipment_type
+  capacity        Decimal? @db.Decimal(16, 6)
+  capacity_unit   inventory_quantity_unit?
+  notes           String? @db.VarChar(5000)
+  current_brew_id String? @db.Uuid
+  archived_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  // Release explicitly in the brew completion/deletion transaction.
+  brew brews? @relation(fields: [current_brew_id, user_id], references: [id, user_id], onDelete: NoAction, onUpdate: Restrict)
+  assignment_events equipment_assignment_events[]
+
+  @@unique([id, user_id])
+  @@index([user_id, archived_at])
+  @@index([current_brew_id, user_id])
+  @@index([user_id, group_id])
+}
+
+/// Historical brew IDs survive deletion; one event per retried assignment request.
+model equipment_assignment_events {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       Int
+  equipment_id  String @db.Uuid
+  operation_key String @db.Uuid
+  from_brew_id  String? @db.Uuid
+  to_brew_id    String? @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  equipment equipment @relation(fields: [equipment_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([user_id, operation_key, equipment_id])
+  @@index([user_id, equipment_id, created_at])
+}
+
+enum inventory_stock_category {
+  honey
+  fruit
+  yeast
+  additive
+  packaging
+}
+
+enum equipment_type {
+  vessel
+  other
+}
+
+enum inventory_quantity_unit {
+  kg
+  g
+  mg
+  lb
+  oz
+  L
+  mL
+  gal
+  qt
+  pt
+  fl_oz
+  imp_gal
+  imp_qt
+  imp_pt
+  imp_fl_oz
+  tsp
+  tbsp
+  units
 }
 
 /// Account-scoped premium access from a paid period or an operator grant.

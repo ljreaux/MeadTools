@@ -1,4 +1,7 @@
 "use client";
+import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import { useBrewStockChoice } from "@/components/brews/BrewStockField";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 
 import * as React from "react";
 import type { TFunction } from "i18next";
@@ -6,14 +9,31 @@ import { useTranslation } from "react-i18next";
 import lodash from "lodash";
 
 import { Button } from "@/components/ui/button";
-import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
+import {
+  BREW_TRACKER_DIALOG_CONTENT_CLASS,
+  BREW_TRACKER_DIALOG_FOOTER_CLASS,
+} from "@/components/brews/brewTrackerDialog";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { InputGroupText } from "@/components/ui/input-group";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AmountUnitField } from "@/components/ui/amount-unit-field";
+export { AmountUnitField } from "@/components/ui/amount-unit-field";
 import { Textarea } from "@/components/ui/textarea";
 import {
   convertAdditiveAmount,
@@ -24,10 +44,18 @@ import {
   shouldConvertAdditiveAmount,
   type UnitDim,
   VOLUME_TO_L,
-  WEIGHT_TO_KG
+  WEIGHT_TO_KG,
 } from "@meadtools/core/recipe";
-import { isValidNumber, normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
-import type { IngredientLine, VolumeUnit, WeightUnit } from "@/types/recipeData";
+import {
+  isValidNumber,
+  normalizeNumberString,
+  parseNumber,
+} from "@/lib/utils/validateInput";
+import type {
+  IngredientLine,
+  VolumeUnit,
+  WeightUnit,
+} from "@/types/recipeData";
 
 export type AdditionBasis = "weight" | "volume" | "other";
 export type PlannedAdditionSource =
@@ -73,6 +101,7 @@ type EditableAdditionComponent = {
 };
 
 export type PlannedAdditionSaveInput = {
+  inventory?: BrewInventorySelection;
   name: string;
   amount?: number;
   unit?: string;
@@ -86,9 +115,28 @@ export type PlannedAdditionSaveInput = {
 };
 
 const ingredientWeightUnits: WeightUnit[] = ["kg", "g", "lb", "oz"];
-const ingredientVolumeUnits: VolumeUnit[] = ["L", "mL", "gal", "qt", "pt", "fl_oz", "imp_gal", "imp_qt", "imp_pt", "imp_fl_oz"];
+const ingredientVolumeUnits: VolumeUnit[] = [
+  "L",
+  "mL",
+  "gal",
+  "qt",
+  "pt",
+  "fl_oz",
+  "imp_gal",
+  "imp_qt",
+  "imp_pt",
+  "imp_fl_oz",
+];
 const additiveWeightUnits = ["g", "mg", "kg", "oz", "lbs"];
-const additiveVolumeUnits = ["ml", "liters", "fl_oz", "quarts", "gal", "tsp", "tbsp"];
+const additiveVolumeUnits = [
+  "ml",
+  "liters",
+  "fl_oz",
+  "quarts",
+  "gal",
+  "tsp",
+  "tbsp",
+];
 const additiveCountUnits = ["units"];
 
 const unitTranslationKeys: Record<string, string> = {
@@ -111,7 +159,7 @@ const unitTranslationKeys: Record<string, string> = {
   quarts: "QUARTS",
   tbsp: "TBSP",
   tsp: "TSP",
-  units: "units.units"
+  units: "units.units",
 };
 
 const unitDisplayFallbacks: Record<string, string> = {
@@ -124,7 +172,7 @@ const unitDisplayFallbacks: Record<string, string> = {
   imp_qt: "imp qt",
   liters: "L",
   ml: "mL",
-  quarts: "qt"
+  quarts: "qt",
 };
 
 export function getUnitLabel(t: TFunction, unit: string) {
@@ -154,7 +202,7 @@ export function getBrewItemKey(name?: string | null) {
     protect: "nuteResults.gfTypes.gfProtect",
     "sodium metabisulfite": "naMeta",
     sorbate: "sorbate",
-    "sterol-flash": "nuteResults.gfTypes.gfSterol"
+    "sterol-flash": "nuteResults.gfTypes.gfSterol",
   };
 
   return explicitKeys[normalized] ?? lodash.camelCase(value);
@@ -173,16 +221,35 @@ function fmtNumber(value?: number | null, decimals = 2) {
   return normalizeNumberString(value, decimals);
 }
 
-export function convertIngredientAmount(amountStr: string, fromUnit: string, toUnit: string, basis: AdditionBasis) {
+export function convertIngredientAmount(
+  amountStr: string,
+  fromUnit: string,
+  toUnit: string,
+  basis: AdditionBasis,
+) {
   const amount = parseNumber(amountStr);
   if (!Number.isFinite(amount)) return amountStr;
 
-  if (basis === "weight" && fromUnit in WEIGHT_TO_KG && toUnit in KG_TO_WEIGHT) {
-    return fmtNumber(amount * WEIGHT_TO_KG[fromUnit as WeightUnit] * KG_TO_WEIGHT[toUnit as WeightUnit], 3);
+  if (
+    basis === "weight" &&
+    fromUnit in WEIGHT_TO_KG &&
+    toUnit in KG_TO_WEIGHT
+  ) {
+    return fmtNumber(
+      amount *
+        WEIGHT_TO_KG[fromUnit as WeightUnit] *
+        KG_TO_WEIGHT[toUnit as WeightUnit],
+      3,
+    );
   }
 
   if (basis === "volume" && fromUnit in VOLUME_TO_L && toUnit in L_TO_VOLUME) {
-    return fmtNumber(amount * VOLUME_TO_L[fromUnit as VolumeUnit] * L_TO_VOLUME[toUnit as VolumeUnit], 3);
+    return fmtNumber(
+      amount *
+        VOLUME_TO_L[fromUnit as VolumeUnit] *
+        L_TO_VOLUME[toUnit as VolumeUnit],
+      3,
+    );
   }
 
   return amountStr;
@@ -197,21 +264,24 @@ export function getPlannedIngredientAmounts(line: IngredientLine) {
     weightAmount: Number.isFinite(weightAmount) ? weightAmount : undefined,
     weightUnit: line.amounts.weight.unit,
     volumeAmount: Number.isFinite(volumeAmount) ? volumeAmount : undefined,
-    volumeUnit: line.amounts.volume.unit
+    volumeUnit: line.amounts.volume.unit,
   };
 }
 
 export function IngredientBasisSelect({
   value,
   onValueChange,
-  t
+  t,
 }: {
   value: AdditionBasis;
   onValueChange: (value: AdditionBasis) => void;
   t: TFunction;
 }) {
   return (
-    <Select value={value} onValueChange={(next) => onValueChange(next as AdditionBasis)}>
+    <Select
+      value={value}
+      onValueChange={(next) => onValueChange(next as AdditionBasis)}
+    >
       <SelectTrigger>
         <SelectValue />
       </SelectTrigger>
@@ -227,7 +297,7 @@ export function IngredientUnitSelect({
   basis,
   value,
   onValueChange,
-  triggerClassName
+  triggerClassName,
 }: {
   basis: AdditionBasis;
   value: string;
@@ -238,66 +308,22 @@ export function IngredientUnitSelect({
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={triggerClassName ?? "p-2 border-none mr-2 w-20"}>
+      <SelectTrigger
+        className={triggerClassName ?? "p-2 border-none mr-2 w-20"}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {(basis === "weight" ? ingredientWeightUnits : ingredientVolumeUnits).map((item) => (
+        {(basis === "weight"
+          ? ingredientWeightUnits
+          : ingredientVolumeUnits
+        ).map((item) => (
           <SelectItem key={item} value={item}>
             {getUnitLabel(t, item)}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-export function AmountUnitField({
-  amount,
-  unit,
-  onAmountChange,
-  unitControl,
-  disabled
-}: {
-  amount: string;
-  unit: string;
-  onAmountChange: (value: string) => void;
-  unitControl?: React.ReactNode;
-  disabled?: boolean;
-}) {
-  if (!unitControl) {
-    return (
-      <InputGroup className="h-12">
-        <InputGroupInput
-          inputMode="decimal"
-          value={amount}
-          onChange={(event) => onAmountChange(event.target.value)}
-          onFocus={(event) => event.target.select()}
-          disabled={disabled}
-          className="h-full text-lg"
-        />
-        <InputGroupAddon align="inline-end">
-          <InputGroupText>{unit}</InputGroupText>
-        </InputGroupAddon>
-      </InputGroup>
-    );
-  }
-
-  return (
-    <InputGroup className="h-12">
-      <InputGroupInput
-        inputMode="decimal"
-        value={amount}
-        onChange={(event) => onAmountChange(event.target.value)}
-        onFocus={(event) => event.target.select()}
-        disabled={disabled}
-        className="h-full text-lg"
-      />
-      <InputGroupAddon align="inline-end" className="px-1 text-xs sm:text-sm whitespace-nowrap mr-1">
-        <Separator orientation="vertical" className="h-12" />
-        {unitControl}
-      </InputGroupAddon>
-    </InputGroup>
   );
 }
 
@@ -308,7 +334,7 @@ export function StaticUnitLabel({ children }: { children: React.ReactNode }) {
 export function AdditiveUnitSelect({
   value,
   onValueChange,
-  triggerClassName
+  triggerClassName,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -318,7 +344,9 @@ export function AdditiveUnitSelect({
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={triggerClassName ?? "p-2 border-none mr-2 w-16"}>
+      <SelectTrigger
+        className={triggerClassName ?? "p-2 border-none mr-2 w-16"}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -353,7 +381,7 @@ export function PlannedAdditionDialog({
   nutrientNotice,
   goFermOptions,
   calculateGoFermFromYeastAmount,
-  includeEmptyComponents = false
+  includeEmptyComponents = false,
 }: {
   planned: PlannedAdditionDialogItem | null;
   onOpenChange: (open: boolean) => void;
@@ -362,7 +390,10 @@ export function PlannedAdditionDialog({
   stage?: string;
   nutrientNotice?: string;
   goFermOptions?: ReadonlyArray<{ value: string; label: string }>;
-  calculateGoFermFromYeastAmount?: (type: string, yeastAmountG?: number | null) => { amount: number; water: number } | null;
+  calculateGoFermFromYeastAmount?: (
+    type: string,
+    yeastAmountG?: number | null,
+  ) => { amount: number; water: number } | null;
   includeEmptyComponents?: boolean;
 }) {
   const { t } = useTranslation();
@@ -374,15 +405,27 @@ export function PlannedAdditionDialog({
   const [amountDim, setAmountDim] = React.useState<UnitDim>("unknown");
   const [note, setNote] = React.useState("");
   const [datetime, setDatetime] = React.useState<Date>(new Date());
-  const [components, setComponents] = React.useState<EditableAdditionComponent[]>([]);
+  const [components, setComponents] = React.useState<
+    EditableAdditionComponent[]
+  >([]);
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (!planned) return;
-    setName(planned.source === "recipe_go_ferm" ? planned.name : getBrewItemLabel(t, planned.name));
-    setAmount(typeof planned.amount === "number" ? fmtNumber(planned.amount) : "");
+    setName(
+      planned.source === "recipe_go_ferm"
+        ? planned.name
+        : getBrewItemLabel(t, planned.name),
+    );
+    setAmount(
+      typeof planned.amount === "number" ? fmtNumber(planned.amount) : "",
+    );
     setUnit(planned.unit ?? "");
-    setBasis(planned.source === "recipe_ingredient" ? (planned.basis ?? "weight") : "other");
+    setBasis(
+      planned.source === "recipe_ingredient"
+        ? (planned.basis ?? "weight")
+        : "other",
+    );
     setAmountTouched(false);
     setAmountDim(inferAdditiveAmountDimFromUnit(planned.unit ?? ""));
     setNote("");
@@ -390,20 +433,49 @@ export function PlannedAdditionDialog({
     setComponents(
       (planned.components ?? []).map((component) => ({
         ...component,
-        amount: fmtNumber(component.amount)
-      }))
+        amount: fmtNumber(component.amount),
+      })),
     );
   }, [planned, t]);
 
+  const stockChoice = useBrewStockChoice({
+    name,
+    kind: planned?.kind,
+    amount: components.length
+      ? components.reduce((sum, c) => sum + parseNumber(c.amount || "0"), 0)
+      : parseNumber(amount),
+    unit,
+    meta: {
+      ...planned?.meta,
+      nutrientKey:
+        planned?.source === "recipe_go_ferm"
+          ? name === "protect"
+            ? "goFermProtect"
+            : name === "sterol-flash"
+              ? "goFermSterolFlash"
+              : "goFerm"
+          : planned?.meta?.nutrientKey,
+      components: components.map((component) => ({
+        ...component,
+        amount: parseNumber(component.amount),
+      })),
+    },
+  });
+
   const usesIngredientUnits = planned?.source === "recipe_ingredient";
-  const usesAdditiveUnits = planned?.source === "recipe_additive" || planned?.source === "recipe_go_ferm";
+  const usesAdditiveUnits =
+    planned?.source === "recipe_additive" ||
+    planned?.source === "recipe_go_ferm";
   const isGoFerm = planned?.source === "recipe_go_ferm";
   const isNutrient = planned?.source === "recipe_nutrient";
 
   const changeGoFermType = (nextType: string) => {
     setName(nextType);
 
-    const recalculated = calculateGoFermFromYeastAmount?.(nextType, planned?.meta?.actualYeastAmount);
+    const recalculated = calculateGoFermFromYeastAmount?.(
+      nextType,
+      planned?.meta?.actualYeastAmount,
+    );
     if (!recalculated) return;
 
     setAmount(String(recalculated.amount));
@@ -425,12 +497,20 @@ export function PlannedAdditionDialog({
     if (!planned || nextBasis === "other") return;
 
     if (nextBasis === "weight") {
-      setAmount(typeof planned.weightAmount === "number" ? String(planned.weightAmount) : "");
+      setAmount(
+        typeof planned.weightAmount === "number"
+          ? String(planned.weightAmount)
+          : "",
+      );
       setUnit(planned.weightUnit ?? "g");
       return;
     }
 
-    setAmount(typeof planned.volumeAmount === "number" ? String(planned.volumeAmount) : "");
+    setAmount(
+      typeof planned.volumeAmount === "number"
+        ? String(planned.volumeAmount)
+        : "",
+    );
     setUnit(planned.volumeUnit ?? "L");
   };
 
@@ -452,14 +532,14 @@ export function PlannedAdditionDialog({
       fromUnit,
       toUnit: nextUnit,
       amountTouched,
-      amountDim
+      amountDim,
     });
     const nextAmount =
       doConvert && amount.trim().length > 0
         ? convertAdditiveAmount({
             amountStr: amount,
             fromUnit,
-            toUnit: nextUnit
+            toUnit: nextUnit,
           })
         : amount;
 
@@ -469,8 +549,8 @@ export function PlannedAdditionDialog({
       nextAdditiveAmountDimOnUnitChange({
         fromUnit,
         toUnit: nextUnit,
-        prevAmountDim: amountDim
-      })
+        prevAmountDim: amountDim,
+      }),
     );
   };
 
@@ -484,7 +564,7 @@ export function PlannedAdditionDialog({
       const parsed = parseNumber(component.amount);
       return {
         ...component,
-        amount: Number.isFinite(parsed) ? parsed : 0
+        amount: Number.isFinite(parsed) ? parsed : 0,
       };
     });
     const componentTotal = actualComponents.reduce((sum, component) => {
@@ -501,6 +581,7 @@ export function PlannedAdditionDialog({
     setIsSaving(true);
     try {
       await onSave({
+        inventory: stockChoice.selection(),
         name: getBrewItemLabel(t, trimmedName),
         amount: actualAmount,
         unit: unit.trim() || planned.unit,
@@ -512,7 +593,15 @@ export function PlannedAdditionDialog({
         datetime: datetime.toISOString(),
         meta: {
           ...(planned.meta ?? {}),
-          nameKey: planned.meta?.nameKey ?? getBrewItemKey(planned.name) ?? undefined,
+          nutrientKey: isGoFerm
+            ? trimmedName === "protect"
+              ? "goFermProtect"
+              : trimmedName === "sterol-flash"
+                ? "goFermSterolFlash"
+                : "goFerm"
+            : planned.meta?.nutrientKey,
+          nameKey:
+            planned.meta?.nameKey ?? getBrewItemKey(planned.name) ?? undefined,
           plannedName: planned.name,
           plannedAmount: planned.amount,
           plannedUnit: planned.unit,
@@ -524,13 +613,21 @@ export function PlannedAdditionDialog({
           plannedVolumeUnit: planned.volumeUnit,
           actualWaterAmount:
             isGoFerm && planned.meta?.actualYeastAmount
-              ? calculateGoFermFromYeastAmount?.(trimmedName, planned.meta.actualYeastAmount)?.water
+              ? calculateGoFermFromYeastAmount?.(
+                  trimmedName,
+                  planned.meta.actualYeastAmount,
+                )?.water
               : planned.meta?.plannedWaterAmount,
           actualWaterUnit: isGoFerm ? "mL" : undefined,
-          components: actualComponents.length > 0 || includeEmptyComponents ? actualComponents : undefined,
-          stage: stage ?? planned.meta?.stage
-        }
+          components:
+            actualComponents.length > 0 || includeEmptyComponents
+              ? actualComponents
+              : undefined,
+          stage: stage ?? planned.meta?.stage,
+        },
       });
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -538,7 +635,9 @@ export function PlannedAdditionDialog({
 
   return (
     <Dialog open={Boolean(planned)} onOpenChange={onOpenChange}>
-      <DialogContent className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}>
+      <DialogContent
+        className={`${BREW_TRACKER_DIALOG_CONTENT_CLASS} sm:max-w-[560px]`}
+      >
         <DialogHeader>
           <DialogTitle>{planned?.title ?? defaultTitle}</DialogTitle>
         </DialogHeader>
@@ -560,7 +659,10 @@ export function PlannedAdditionDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <Input value={name} onChange={(event) => setName(event.target.value)} />
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
             )}
           </div>
 
@@ -575,8 +677,13 @@ export function PlannedAdditionDialog({
               <Label>{t("amounts", "Amounts")}</Label>
               <div className="space-y-2">
                 {components.map((component, index) => (
-                  <div key={component.key} className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]">
-                    <div className="self-center text-sm">{getBrewItemLabel(t, component.name)}</div>
+                  <div
+                    key={component.key}
+                    className="grid gap-2 sm:grid-cols-[1fr_minmax(11rem,14rem)]"
+                  >
+                    <div className="self-center text-sm">
+                      {getBrewItemLabel(t, component.name)}
+                    </div>
                     <AmountUnitField
                       amount={String(component.amount)}
                       unit={component.unit}
@@ -585,7 +692,7 @@ export function PlannedAdditionDialog({
                         const next = [...components];
                         next[index] = {
                           ...component,
-                          amount: value
+                          amount: value,
                         };
                         setComponents(next);
                       }}
@@ -597,22 +704,36 @@ export function PlannedAdditionDialog({
           ) : (
             <div className="space-y-2">
               <Label>{t("amount", "Amount")}</Label>
-              {usesIngredientUnits ? <IngredientBasisSelect value={basis} onValueChange={changeBasis} t={t} /> : null}
+              {usesIngredientUnits ? (
+                <IngredientBasisSelect
+                  value={basis}
+                  onValueChange={changeBasis}
+                  t={t}
+                />
+              ) : null}
               <AmountUnitField
                 amount={amount}
                 unit={unit}
                 onAmountChange={changeAmount}
                 unitControl={
                   usesIngredientUnits ? (
-                    <IngredientUnitSelect basis={basis} value={unit} onValueChange={changeUnit} />
+                    <IngredientUnitSelect
+                      basis={basis}
+                      value={unit}
+                      onValueChange={changeUnit}
+                    />
                   ) : usesAdditiveUnits ? (
-                    <AdditiveUnitSelect value={unit} onValueChange={changeUnit} />
+                    <AdditiveUnitSelect
+                      value={unit}
+                      onValueChange={changeUnit}
+                    />
                   ) : undefined
                 }
               />
             </div>
           )}
 
+          {stockChoice.field}
           <div className="space-y-2">
             <Label>{t("note", "Note")}</Label>
             <Textarea
@@ -625,15 +746,26 @@ export function PlannedAdditionDialog({
 
           <div className="space-y-2">
             <Label>{t("date", "Date")}</Label>
-            <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
+            <DateTimePicker
+              value={datetime}
+              onChange={(value) => value && setDatetime(value)}
+              hourCycle={12}
+            />
           </div>
         </div>
 
         <DialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t("cancel", "Cancel")}
           </Button>
-          <Button onClick={save} disabled={isSaving || !name.trim()}>
+          <Button
+            onClick={save}
+            disabled={isSaving || !name.trim() || !stockChoice.valid}
+          >
             {t("save", "Save")}
           </Button>
         </DialogFooter>
