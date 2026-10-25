@@ -262,3 +262,13 @@ inventory context includes line keys/names and tracked entry IDs. Stock PATCH
 also supports a `details` action for names, notes and optional catalog links;
 quantities and units remain unchanged. These additions are included in generated
 contracts and OpenAPI, with the batch path excluded from legacy path parity.
+
+Inventory spreadsheet transfers add `POST /account/inventory/transfer` with
+`inspect`, `import` and `export` actions. Inspection accepts bounded base64 XLSX
+or UTF-8 CSV and returns literal sheet rows for mapping. Import accepts reviewed
+normalized stock rows with a stable operation ID; explicit updates use owned
+stock IDs and expected snapshots, while new rows retain separate lots. Inspection
+and import require premium; owner-scoped export/template download does not.
+Responses include sheet data, a base64 file or import counts. Row failures identify
+the source row; file limits use HTTP 413. The route is excluded from historical
+path parity and documented using runtime schemas and generated contracts.

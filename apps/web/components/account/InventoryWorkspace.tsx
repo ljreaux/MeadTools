@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { InventoryTransferActions } from "./InventoryTransferActions";
 import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, X, Package, History } from "lucide-react";
@@ -8,6 +9,7 @@ import type { InventoryStockItem } from "@meadtools/api-contract/contracts";
 import { useInventory, useInventoryHistory, InventoryRequestError, type InventoryCommand } from "@/hooks/reactQuery/useInventory";
 import { InventoryEditor, inventoryCategories, type InventoryAction } from "./InventoryEditor";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
@@ -40,6 +42,23 @@ export function InventoryWorkspace() {
       <div className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.description")}</p></div>
       {data.can_manage ? <Button onClick={() => open(null)}><Plus aria-hidden className="mr-2 h-4 w-4" />{t("inventory.add")}</Button> : null}
     </div>
+
+    <Accordion type="single" collapsible className="border-t">
+      <AccordionItem value="inventory-transfer">
+        <AccordionTrigger className="text-base font-semibold">{t("inventory.transfer.sectionTitle")}</AccordionTrigger>
+        <AccordionContent>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <p className="text-sm text-muted-foreground">{t(data.can_manage ? "inventory.transfer.importHelp" : "inventory.transfer.importPremiumHelp")}</p>
+              <p className="text-sm text-muted-foreground">{t("inventory.transfer.exportHelp")}</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <InventoryTransferActions canManage={data.can_manage} stock={data.stock} />
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
 
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">

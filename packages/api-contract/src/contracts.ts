@@ -233,6 +233,9 @@ import {
   inventoryStockNotFoundResponseSchema,
   inventoryStockPathParamsSchema,
   inventoryStockUnexpectedErrorResponseSchema,
+  inventoryTransferErrorResponseSchema,
+  inventoryTransferRequestBodySchema,
+  inventoryTransferResponseSchema,
   kofiLinkClaimRequestBodySchema,
   kofiLinkClaimResponseSchema,
   kofiLinkRequestBodySchema,
@@ -641,6 +644,9 @@ export type InventoryStockMutationResponse = z.infer<typeof inventoryStockMutati
 export type InventoryStockNotFoundResponse = z.infer<typeof inventoryStockNotFoundResponseSchema>;
 export type InventoryStockPathParams = z.infer<typeof inventoryStockPathParamsSchema>;
 export type InventoryStockUnexpectedErrorResponse = z.infer<typeof inventoryStockUnexpectedErrorResponseSchema>;
+export type InventoryTransferErrorResponse = z.infer<typeof inventoryTransferErrorResponseSchema>;
+export type InventoryTransferRequestBody = z.infer<typeof inventoryTransferRequestBodySchema>;
+export type InventoryTransferResponse = z.infer<typeof inventoryTransferResponseSchema>;
 export type KofiLinkClaimRequestBody = z.infer<typeof kofiLinkClaimRequestBodySchema>;
 export type KofiLinkClaimResponse = z.infer<typeof kofiLinkClaimResponseSchema>;
 export type KofiLinkRequestBody = z.infer<typeof kofiLinkRequestBodySchema>;

@@ -8,3 +8,4 @@ export * from "./equipment-groups";
 export * from './entry-lines';
 export * from './stock-matching';
 export * from './catalog';
+export * from './stock-transfer';

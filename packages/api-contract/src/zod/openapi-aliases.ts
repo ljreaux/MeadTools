@@ -232,6 +232,9 @@ import {
   inventoryStockNotFoundResponseSchema,
   inventoryStockPathParamsSchema,
   inventoryStockUnexpectedErrorResponseSchema,
+  inventoryTransferErrorResponseSchema,
+  inventoryTransferRequestBodySchema,
+  inventoryTransferResponseSchema,
   kofiLinkClaimRequestBodySchema,
   kofiLinkClaimResponseSchema,
   kofiLinkRequestBodySchema,
@@ -640,6 +643,9 @@ export const InventoryStockMutationResponse = inventoryStockMutationResponseSche
 export const InventoryStockNotFoundResponse = inventoryStockNotFoundResponseSchema;
 export const InventoryStockPathParams = inventoryStockPathParamsSchema;
 export const InventoryStockUnexpectedErrorResponse = inventoryStockUnexpectedErrorResponseSchema;
+export const InventoryTransferErrorResponse = inventoryTransferErrorResponseSchema;
+export const InventoryTransferRequestBody = inventoryTransferRequestBodySchema;
+export const InventoryTransferResponse = inventoryTransferResponseSchema;
 export const KofiLinkClaimRequestBody = kofiLinkClaimRequestBodySchema;
 export const KofiLinkClaimResponse = kofiLinkClaimResponseSchema;
 export const KofiLinkRequestBody = kofiLinkRequestBodySchema;

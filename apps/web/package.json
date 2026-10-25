@@ -92,8 +92,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "csv-parse": "^7.0.3",
     "date-fns": "^2.30.0",
     "dotenv": "^16.4.7",
+    "fflate": "^0.8.3",
     "file-saver": "^2.0.5",
     "fuse.js": "^7.1.0",
     "google-auth-library": "^9.15.0",
@@ -120,6 +122,7 @@
     "react-joyride": "^3.2.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
+    "read-excel-file": "^9.3.12",
     "recharts": "^2.15.0",
     "recharts-to-png": "^2.4.0",
     "rehype-autolink-headings": "^7.1.0",
@@ -134,6 +137,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "use-stick-to-bottom": "^1.1.6",
+    "write-excel-file": "^4.1.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {

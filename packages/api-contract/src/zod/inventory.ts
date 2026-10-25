@@ -1,5 +1,8 @@
 import { z } from "zod";
 import {
+  stockTransferImportSchema,
+  SHEET_COLUMN_LIMIT,
+  SHEET_ROW_LIMIT,
   stockInputSchema,
   quantitySchema,
   packagingQuantitySchema,
@@ -144,4 +147,62 @@ export const brewMetadataInventoryErrorResponseSchema = z.union([
 export const brewMetadataValidationErrorResponseSchema = z.union([
   brewValidationErrorResponseSchema,
   brewMetadataInventoryErrorResponseSchema,
+]);
+
+export const inventoryTransferRequestBodySchema = z.discriminatedUnion(
+  "action",
+  [
+    z
+      .object({
+        action: z.literal("inspect"),
+        filename: z.string().min(1).max(255),
+        content: z.string().min(1).max(7_000_000),
+        delimiter: z.enum(["auto", ",", ";", "\t"]).default("auto"),
+      })
+      .strict(),
+    z.object({ ...stockTransferImportSchema.shape }).strict(),
+    z
+      .object({
+        action: z.literal("export"),
+        format: z.enum(["xlsx", "csv"]),
+        template: z.boolean().default(false),
+      })
+      .strict(),
+  ],
+);
+export const inventoryTransferResponseSchema = z.union([
+  z.object({
+    kind: z.literal("sheets"),
+    sheets: z
+      .array(
+        z.object({
+          name: z.string().max(200),
+          rows: z
+            .array(z.array(z.string().max(5000)).max(SHEET_COLUMN_LIMIT))
+            .max(SHEET_ROW_LIMIT),
+        }),
+      )
+      .max(12),
+  }),
+  z.object({
+    kind: z.literal("file"),
+    filename: z.string(),
+    media_type: z.string(),
+    content: z.string(),
+  }),
+  z.object({
+    kind: z.literal("imported"),
+    created: z.number().int().nonnegative(),
+    updated: z.number().int().nonnegative(),
+  }),
+]);
+export const inventoryTransferErrorResponseSchema = z.union([
+  inventoryStockErrorResponseSchema.extend({
+    row_number: z.number().int().optional(),
+  }),
+  z.object({
+    error: z.string(),
+    code: z.enum(["INVALID_IMPORT_FILE", "IMPORT_LIMIT"]),
+    row_number: z.number().int().optional(),
+  }),
 ]);

@@ -1,12 +1,12 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient, type inventory_stock } from "@prisma/client";
 import { z } from "zod";
 import {
   InventoryError, convertQuantity, planConsumption, planStockChange,
   normalizeQuantityUnit, validateStockQuantity, quantitySchema, resolveInventoryAccess, stockInputSchema, toQuantityTicks,
-  nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
+  stockTransferImportSchema, nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "./premium-access";
@@ -19,6 +19,10 @@ export class InventoryWriteError extends Error {
     super(code);
     this.name = "InventoryWriteError";
   }
+}
+
+export class InventoryImportRowError extends Error {
+  constructor(readonly error:unknown,readonly rowNumber:number){super('Inventory import row failed');}
 }
 
 const uuid = z.string().uuid();
@@ -154,6 +158,125 @@ export function createInventoryService(database: PrismaClient = prisma) {
         await writeBalance(tx, userId, operationId, stock, plan, "receipt");
         return { stockId: stock.id, balance: plan.balance };
       });
+  }
+
+  async function importStock(userId: number, input: unknown) {
+    const parsed = stockTransferImportSchema.parse(input);
+    const resultSchema = z.object({
+      created: z.number().int(),
+      updated: z.number().int(),
+    });
+    return operation(
+      userId,
+      parsed.operation_id,
+      JSON.parse(JSON.stringify({ kind: "import_stock", input: parsed })),
+      (value) => resultSchema.parse(value),
+      async (tx, operationId) => {
+        const ids = parsed.rows.flatMap((row) =>
+          row.stock_id ? [row.stock_id] : [],
+        );
+        if (parsed.mode === "create" && ids.length)
+          throw new InventoryWriteError("ENTRY_MISMATCH");
+        const previous = ids.length
+          ? await lockStock(tx, userId, ids)
+          : new Map<string, inventory_stock>();
+        const references = new Set<string>();
+        for (const row of parsed.rows) {
+          try {
+            const key = JSON.stringify([
+              row.stock.category,
+              row.stock.catalogReference,
+            ]);
+            if (!references.has(key)) {
+              await validateCatalog(
+                tx,
+                row.stock.category,
+                row.stock.catalogReference,
+              );
+              references.add(key);
+            }
+            if (!row.stock_id) continue;
+            const old = previous.get(row.stock_id)!;
+            if (old.archived_at) throw new InventoryWriteError("STOCK_ARCHIVED");
+            if (old.reconciliation_required)
+              throw new InventoryWriteError("RECONCILIATION_REQUIRED");
+            const snapshot = {
+              name: old.name,
+              category: old.category,
+              quantity: { value: old.quantity.toNumber(), unit: old.unit },
+              notes: old.notes,
+              catalogReference:
+                old.catalog && old.catalog_id
+                  ? { catalog: old.catalog, id: old.catalog_id }
+                  : null,
+            };
+            if (
+              !row.expected ||
+              canonicalJson(JSON.parse(JSON.stringify(row.expected))) !==
+                canonicalJson(snapshot)
+            )
+              throw new InventoryWriteError("STALE_STOCK");
+            if (
+              old.category !== row.stock.category ||
+              old.unit !== row.stock.quantity.unit
+            )
+              throw new InventoryError("INCOMPATIBLE_UNITS");
+          } catch (error) {
+            throw new InventoryImportRowError(error, row.row_number);
+          }
+        }
+        const added = parsed.rows
+          .filter((row) => !row.stock_id)
+          .map((row) => ({ ...row, id: randomUUID() }));
+        if (added.length)
+          await tx.inventory_stock.createMany({
+            data: added.map(({ id, stock }) => ({
+              id,
+              user_id: userId,
+              name: stock.name,
+              category: stock.category,
+              quantity: stock.quantity.value,
+              unit: stock.quantity.unit,
+              notes: stock.notes,
+              catalog: stock.catalogReference?.catalog ?? null,
+              catalog_id: stock.catalogReference?.id ?? null,
+            })),
+          });
+        const receipts = added
+          .filter((row) => row.stock.quantity.value > 0)
+          .map((row) => ({
+            user_id: userId,
+            stock_id: row.id,
+            operation_id: operationId,
+            kind: "receipt",
+            delta: row.stock.quantity.value,
+            balance_after: row.stock.quantity.value,
+            unit: row.stock.quantity.unit,
+          }));
+        if (receipts.length)
+          await tx.inventory_adjustments.createMany({ data: receipts });
+        for (const row of parsed.rows.filter((row) => row.stock_id)) {
+          const old = previous.get(row.stock_id!)!;
+          const plan = planStockChange({
+            ownerId: userId,
+            stock: stockRecord(old),
+            kind: "correction",
+            quantity: row.stock.quantity,
+          });
+          await writeBalance(tx, userId, operationId, old, plan, "correction");
+          await tx.inventory_stock.update({
+            where: { id: old.id },
+            data: {
+              name: row.stock.name,
+              notes: row.stock.notes,
+              catalog: row.stock.catalogReference?.catalog ?? null,
+              catalog_id: row.stock.catalogReference?.id ?? null,
+            },
+          });
+        }
+        return { created: added.length, updated: ids.length };
+      },
+    );
   }
 
   async function changeStock(userId: number, operationKey: string, input: {
@@ -338,5 +461,5 @@ export function createInventoryService(database: PrismaClient = prisma) {
     }, { maxWait: 10_000, timeout: 15_000 });
   }
 
-  return { editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
+  return { importStock, editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
 }

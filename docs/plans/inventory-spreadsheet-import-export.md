@@ -1,7 +1,20 @@
 # Inventory spreadsheet import/export — next implementation pass
 
-Status: planned only. No spreadsheet upload, parsing, export or import persistence
-is implemented by the premium-overlay refinement.
+Status: implemented locally in the spreadsheet slice following commit `daa5f9d6f`.
+The flow includes XLSX/CSV export, a blank Excel template, file inspection,
+sheet/header selection, mapping, number formats/defaults, optional source columns
+in notes, paged row review, catalog choices, and an atomic audited import with
+explicit owned-ID updates. Export remains available after premium expiry.
+
+Current limits: 5 MB upload, 20 MB expanded XLSX, 12 sheets, 1,101 rows and
+50 columns per sheet, and 1,000 selected rows per import. The 1,000-row create
+fixture completed in approximately 100 ms locally. These are development results,
+not production latency guarantees. Existing inventory tables/operation receipts
+are reused; this slice needs no schema change or local reset.
+
+The remaining text records the product/verification design. Named platform
+presets remain future work until representative source exports are available;
+the generic column mapper is implemented.
 
 ## Goal and scope
 

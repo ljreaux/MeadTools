@@ -1789,6 +1789,520 @@
         ],
         "additionalProperties": false
       },
+      "InventoryTransferRequestBody": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "inspect"
+                ]
+              },
+              "filename": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 7000000
+              },
+              "delimiter": {
+                "default": "auto",
+                "type": "string",
+                "enum": [
+                  "auto",
+                  ",",
+                  ";",
+                  "\t"
+                ]
+              }
+            },
+            "required": [
+              "action",
+              "filename",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "import"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "create",
+                  "update"
+                ]
+              },
+              "rows": {
+                "minItems": 1,
+                "maxItems": 1000,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "row_number": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1101
+                    },
+                    "stock": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "honey",
+                            "fruit",
+                            "yeast",
+                            "additive",
+                            "packaging"
+                          ]
+                        },
+                        "catalogReference": {
+                          "default": null,
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "catalog": {
+                              "type": "string",
+                              "enum": [
+                                "ingredient",
+                                "yeast",
+                                "additive",
+                                "nutrient"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "catalog",
+                            "id"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "quantity": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1000000000
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "kg",
+                                "g",
+                                "mg",
+                                "lb",
+                                "oz",
+                                "L",
+                                "mL",
+                                "gal",
+                                "qt",
+                                "pt",
+                                "fl_oz",
+                                "imp_gal",
+                                "imp_qt",
+                                "imp_pt",
+                                "imp_fl_oz",
+                                "tsp",
+                                "tbsp",
+                                "units"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "unit"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "notes": {
+                          "default": null,
+                          "nullable": true,
+                          "type": "string",
+                          "maxLength": 5000
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "category",
+                        "quantity"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "stock_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "expected": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "honey",
+                            "fruit",
+                            "yeast",
+                            "additive",
+                            "packaging"
+                          ]
+                        },
+                        "catalogReference": {
+                          "default": null,
+                          "nullable": true,
+                          "type": "object",
+                          "properties": {
+                            "catalog": {
+                              "type": "string",
+                              "enum": [
+                                "ingredient",
+                                "yeast",
+                                "additive",
+                                "nutrient"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "catalog",
+                            "id"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "quantity": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1000000000
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "kg",
+                                "g",
+                                "mg",
+                                "lb",
+                                "oz",
+                                "L",
+                                "mL",
+                                "gal",
+                                "qt",
+                                "pt",
+                                "fl_oz",
+                                "imp_gal",
+                                "imp_qt",
+                                "imp_pt",
+                                "imp_fl_oz",
+                                "tsp",
+                                "tbsp",
+                                "units"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "value",
+                            "unit"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "notes": {
+                          "default": null,
+                          "nullable": true,
+                          "type": "string",
+                          "maxLength": 5000
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "category",
+                        "quantity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "row_number",
+                    "stock"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "mode",
+              "rows"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "export"
+                ]
+              },
+              "format": {
+                "type": "string",
+                "enum": [
+                  "xlsx",
+                  "csv"
+                ]
+              },
+              "template": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "action",
+              "format"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "InventoryTransferResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "sheets"
+                ]
+              },
+              "sheets": {
+                "maxItems": 12,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    "rows": {
+                      "maxItems": 1101,
+                      "type": "array",
+                      "items": {
+                        "maxItems": 50,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 5000
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "rows"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "sheets"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "file"
+                ]
+              },
+              "filename": {
+                "type": "string"
+              },
+              "media_type": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "filename",
+              "media_type",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "imported"
+                ]
+              },
+              "created": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "updated": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "kind",
+              "created",
+              "updated"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "InventoryTransferErrorResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INCOMPATIBLE_UNITS",
+                  "QUANTITY_PRECISION",
+                  "INVALID_QUANTITY",
+                  "INSUFFICIENT_STOCK",
+                  "NOT_FOUND",
+                  "LINK_MISMATCH",
+                  "PREMIUM_REQUIRED",
+                  "OPERATION_CONFLICT",
+                  "STALE_USAGE",
+                  "USAGE_REMOVED",
+                  "ENTRY_MISMATCH",
+                  "STOCK_ARCHIVED",
+                  "STALE_STOCK",
+                  "SELECTION_REQUIRED",
+                  "INVALID_INVENTORY_REQUEST",
+                  "RECONCILIATION_REQUIRED"
+                ]
+              },
+              "shortage": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "kg",
+                  "g",
+                  "mg",
+                  "lb",
+                  "oz",
+                  "L",
+                  "mL",
+                  "gal",
+                  "qt",
+                  "pt",
+                  "fl_oz",
+                  "imp_gal",
+                  "imp_qt",
+                  "imp_pt",
+                  "imp_fl_oz",
+                  "tsp",
+                  "tbsp",
+                  "units"
+                ]
+              },
+              "row_number": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_IMPORT_FILE",
+                  "IMPORT_LIMIT"
+                ]
+              },
+              "row_number": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "error",
+              "code"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "KofiLinkClaimRequestBody": {
         "type": "object",
         "properties": {
@@ -17599,6 +18113,113 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/transfer": {
+      "post": {
+        "operationId": "post-account-inventory-transfer",
+        "summary": "Import or export inventory spreadsheets",
+        "description": "Export and blank templates remain available to active owners after premium expiry. Inspect and import require premium. Reviewed imports are atomic and replay-safe; update mode uses owned stock IDs and expected snapshots. File content is base64 encoded. Supports XLSX and CSV with bounded file expansion and row limits.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryTransferRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryTransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryTransferErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryTransferErrorResponse"
                 }
               }
             }

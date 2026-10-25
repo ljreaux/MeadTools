@@ -27,6 +27,7 @@ const createRoute = await import("../app/api/brews/[brew_id]/entries/route.ts");
 const entryRoute = await import("../app/api/brews/[brew_id]/entries/[entry_id]/route.ts");
 const equipmentRoute = await import("../app/api/account/equipment/route.ts");
 const equipmentItemRoute = await import("../app/api/account/equipment/[equipment_id]/route.ts");
+const inventoryTransferRoute=await import("../app/api/account/inventory/transfer/route.ts");
 const inventoryRoute = await import("../app/api/account/inventory/route.ts");
 const inventoryItemRoute = await import("../app/api/account/inventory/[stock_id]/route.ts");
 const brewMetadataRoute = await import("../app/api/brews/[brew_id]/route.ts");
@@ -874,4 +875,77 @@ test('premium expiry rejects batches without entries or deductions',async()=>{
 });
 test('concurrent batches cannot overspend shared stock',async()=>{
  const f=await fixture();const make=()=>[addition(3,multiSelection([{line_key:'addition',stock_id:f.stockId}]))];const results=await Promise.all([batchRequest(f,make()),batchRequest(f,make())]);assert.deepEqual(results.map(result=>result.status).sort(),[201,409]);assert.equal(await balance(f.stockId),2);assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId}}),1);
+});
+
+async function transferRequest(userId,input){const response=await inventoryTransferRoute.POST(new NextRequest('http://localhost/api/account/inventory/transfer',{method:'POST',headers:{'Content-Type':'application/json','x-inventory-fixture-user':String(userId)},body:JSON.stringify(input)}));return {status:response.status,body:await response.json()};}
+const transferStock=(name='Imported honey',value=2)=>({name,category:'honey',quantity:kg(value),notes:null,catalogReference:null});
+const importRequest=(rows,mode='create',operation_id=randomUUID())=>({action:'import',operation_id,mode,rows});
+test('inventory imports preserve separate lots, audit starting quantities and replay exactly once',async()=>{
+ const userId=await owner();const input=importRequest([2,3,0].map((value,index)=>({row_number:index+2,stock:transferStock('Same name',value)})));const first=await transferRequest(userId,input);assert.equal(first.status,200,JSON.stringify(first.body));assert.deepEqual(first.body,{kind:'imported',created:3,updated:0});assert.deepEqual(await transferRequest(userId,input),first);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),3);assert.equal(await prisma.inventory_adjustments.count({where:{user_id:userId}}),2);
+ const changed=await transferRequest(userId,{...input,rows:[{row_number:2,stock:transferStock('Different')}]});assert.equal(changed.status,409);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),3);
+});
+test('inventory import rolls back all rows on invalid catalog identity and reports its row',async()=>{
+ const userId=await owner();const input=importRequest([{row_number:2,stock:transferStock()},{row_number:3,stock:{name:'Nutrients',category:'additive',quantity:{value:5,unit:'g'},catalogReference:{catalog:'nutrient',id:'unknown'}}}]);const result=await transferRequest(userId,input);assert.equal(result.status,400,JSON.stringify(result.body));assert.equal(result.body.row_number,3);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),0);assert.equal(await prisma.inventory_operations.count({where:{user_id:userId}}),0);
+});
+test('explicit inventory updates use absolute corrections and immutable review snapshots',async()=>{
+ const f=await fixture();const previous=(await stockRequest('GET',f.userId)).body.stock.find(item=>item.id===f.stockId);const {id,reconciliation_required,...expected}=previous;
+ const input=importRequest([{row_number:2,stock_id:id,expected,stock:{...expected,name:'Renamed honey',quantity:kg(3)}}],'update');const result=await transferRequest(f.userId,input);assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(await balance(id),3);assert.equal((await transferRequest(f.userId,input)).status,200);assert.equal(await balance(id),3);const stale=await transferRequest(f.userId,{...input,operation_id:randomUUID()});assert.equal(stale.status,409);assert.equal(stale.body.code,'STALE_STOCK');assert.equal(stale.body.row_number,2);const history=(await stockRequest('GET',f.userId,undefined,id)).body.adjustments;assert.equal(history.filter(row=>row.kind==='correction').length,1);assert.equal(history.find(row=>row.kind==='correction').delta,-2);
+});
+test('foreign IDs, duplicate updates, create-mode IDs and reconciliation cannot bypass import rules',async()=>{
+ const f=await fixture();const other=await fixture();const prior=(await stockRequest('GET',f.userId)).body.stock[0];const {id,reconciliation_required,...expected}=prior;
+ assert.equal((await transferRequest(other.userId,importRequest([{row_number:2,stock_id:id,expected,stock:expected}],'update'))).status,404);
+ assert.equal((await transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:expected}]))).status,400);
+ assert.equal((await transferRequest(f.userId,importRequest([2,3].map(row_number=>({row_number,stock_id:id,expected,stock:expected})),'update'))).status,400);
+ await prisma.inventory_stock.update({where:{id},data:{reconciliation_required:true}});assert.equal((await transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:expected}],'update'))).body.code,'RECONCILIATION_REQUIRED');assert.equal(await balance(id),5);
+});
+test('expired accounts can export owned stock but cannot inspect files or import',async()=>{
+ const f=await fixture();const other=await fixture();await prisma.premium_memberships.deleteMany({where:{user_id:f.userId}});const exported=await transferRequest(f.userId,{action:'export',format:'csv',template:false});assert.equal(exported.status,200);const csv=Buffer.from(exported.body.content,'base64').toString();assert.ok(csv.includes(f.stockId));assert.ok(!csv.includes(other.stockId));assert.equal((await transferRequest(f.userId,importRequest([{row_number:2,stock:transferStock()}]))).status,403);assert.equal((await transferRequest(f.userId,{action:'inspect',filename:'stock.csv',content:Buffer.from('Name,Quantity\nHoney,1').toString('base64'),delimiter:'auto'})).status,403);
+});
+test('a 1000-row import uses bounded bulk writes and keeps replay-safe audit balances',async()=>{
+ const userId=await owner();const input=importRequest(Array.from({length:1000},(_,index)=>({row_number:index+2,stock:transferStock(`Lot ${index}`,1)})));const started=Date.now();const saved=await transferRequest(userId,input);assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(saved.body.created,1000);assert.equal(await prisma.inventory_adjustments.count({where:{user_id:userId}}),1000);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),1000);console.log(`1000-row import fixture completed in ${Date.now()-started}ms`);
+});
+
+test('import rolls back inserted stock when a late audit insert fails',async()=>{
+ const userId=await owner();
+ await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_transfer_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.delta = 13.37 AND NEW.kind = 'receipt' THEN RAISE EXCEPTION 'fixture audit failure'; END IF; RETURN NEW; END $$");
+ await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_transfer_audit_failure BEFORE INSERT ON inventory_adjustments FOR EACH ROW EXECUTE FUNCTION fixture_transfer_audit_failure()');
+ try{const result=await transferRequest(userId,importRequest([{row_number:2,stock:transferStock('First',2)},{row_number:3,stock:transferStock('Second',13.37)}]));assert.equal(result.status,500);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),0);assert.equal(await prisma.inventory_operations.count({where:{user_id:userId}}),0);assert.equal(await prisma.inventory_adjustments.count({where:{user_id:userId}}),0);}
+ finally{await prisma.$executeRawUnsafe('DROP TRIGGER fixture_transfer_audit_failure ON inventory_adjustments');await prisma.$executeRawUnsafe('DROP FUNCTION fixture_transfer_audit_failure()');}
+});
+test('concurrent imported updates cannot overwrite the same reviewed balance',async()=>{
+ const f=await fixture();const {id,reconciliation_required,...expected}=(await stockRequest('GET',f.userId)).body.stock[0];const results=await Promise.all([3,4].map(value=>transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:{...expected,quantity:kg(value)}}],'update'))));assert.deepEqual(results.map(result=>result.status).sort(),[200,409]);assert.ok([3,4].includes(await balance(id)));assert.equal(await prisma.inventory_adjustments.count({where:{stock_id:id,kind:'correction'}}),1);
+});
+
+
+test("an exported workbook restores inventory after a database reset with fresh stock IDs", async () => {
+  const { normalizeTransferRow, suggestTransferMapping, resolveTransferStockIdentity } =
+    await import("@meadtools/inventory-domain");
+  const originalUser = await owner();
+  const created = await service.createStock(originalUser, randomUUID(), transferStock("Restored honey", 2.75));
+  const exported = await transferRequest(originalUser, {action: "export", format: "xlsx", template: false});
+  assert.equal(exported.status, 200);
+  // Reset only the guarded disposable fixture database, keeping the old workbook.
+  await prisma.$executeRawUnsafe("TRUNCATE users CASCADE");
+  const restoredUser = await owner();
+  const inspected = await transferRequest(restoredUser, {
+    action: "inspect", filename: exported.body.filename, content: exported.body.content, delimiter: "auto",
+  });
+  assert.equal(inspected.status, 200);
+  const sheet = inspected.body.sheets.find(sheet => sheet.name === "Inventory");
+  const mapping = suggestTransferMapping(sheet.rows[0]);
+  const parsed = normalizeTransferRow(sheet.rows[1], mapping, ".");
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.stockId, created.stockId);
+  const identity = resolveTransferStockIdentity("create", parsed.stockId, new Map());
+  assert.equal(identity.skipByDefault, false);
+  const input = importRequest([{row_number: 2, stock: parsed.stock,
+    ...(identity.stockId ? {stock_id: identity.stockId} : {})}]);
+  const restored = await transferRequest(restoredUser, input);
+  assert.equal(restored.status, 200, JSON.stringify(restored.body));
+  assert.deepEqual(restored.body, {kind: "imported", created: 1, updated: 0});
+  const stock = (await stockRequest("GET", restoredUser)).body.stock;
+  assert.equal(stock.length, 1);
+  assert.notEqual(stock[0].id, parsed.stockId);
+  assert.equal(stock[0].quantity.value, 2.75);
+  assert.equal(stock[0].name, "Restored honey");
 });
