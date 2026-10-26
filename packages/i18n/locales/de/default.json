@@ -1648,6 +1648,16 @@
             "premiumRequired": "Aktiver Premiumzugang ist erforderlich, um Ansatz-QR-Codes zu erstellen oder herunterzuladen. Bereits gedruckte Links folgen weiterhin den aktuellen Freigabeeinstellungen des Ansatzes.",
             "unavailable": "Dieser Ansatz ist nicht verfügbar oder du hast keinen Zugriff.",
             "failed": "QR-Code konnte nicht erstellt werden. Bitte versuche es erneut."
+        },
+        "yeast": {
+            "amountUnit": "Hefeeinheit",
+            "packetUnits": "Einheiten (Päckchen)",
+            "packetWeight": "Gewicht pro Päckchen",
+            "packetWeightHint": "Gib das auf einem vollen Päckchen angegebene Hefegewicht ein. Dieser Wert wird mit der Anzahl der für Go-Ferm, Rehydrierung und Nährstoffempfehlungen verwendeten Päckchen multipliziert; im Inventar werden weiterhin Päckchen abgezogen.",
+            "packetWeightRequired": "Gib eine positive Anzahl Päckchen und das Gewicht pro Päckchen an.",
+            "totalWeight": "Hefengewicht für Empfehlungen: {{amount}} g",
+            "packetHint": "Gib ganze oder Teil-Päckchen ein (0,5 = halbes Päckchen).",
+            "packetInventoryHint": "Gib ganze oder Teil-Päckchen ein (0,5 = halbes Päckchen). Das Inventar muss ebenfalls Einheiten verwenden."
         }
     },
     "admin": {
@@ -2830,7 +2840,9 @@
         "removeNamed": "{{name}} entfernen",
         "removeTitle": "Bestand entfernen?",
         "removeDescription": "Möchtest du {{name}} aus deiner Bestandsliste entfernen? Aufgezeichnete Mengen und Verlauf bleiben erhalten. Das Entfernen des Bestands macht frühere Verwendungen nicht rückgängig.",
-        "stockChange": "Bestandsänderung"
+        "stockChange": "Bestandsänderung",
+        "yeastPacketHelp": "Verwalte Hefe-Päckchen mit Anzahl → Einheiten. Teil-Päckchen werden unterstützt (0,5 = halbes Päckchen). Wähle Einheiten (Päckchen), wenn du Hefe in einem Ansatz erfasst, damit von diesem Bestand abgezogen wird, und gib Gramm pro Päckchen an, um die Go-Ferm-Empfehlungen beizubehalten.",
+        "yeastSavedUnitHelp": "Wenn ein Bestand in Einheiten gespeichert ist, wähle im Ansatz-Tracker Einheiten (Päckchen); Teil-Päckchen wie 0,5 werden unterstützt. Gib Gramm pro Päckchen an, um die Go-Ferm-Empfehlungen beizubehalten. Um von Gewicht auf Päckchen umzustellen, füge einen separaten Hefebestand in Einheiten hinzu."
     },
     "brewInventory": {
         "containersForStage": "Behälter",
