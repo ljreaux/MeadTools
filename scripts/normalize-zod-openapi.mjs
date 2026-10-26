@@ -4,6 +4,7 @@ import {
   brewInventorySelectionSchema, brewInventoryOutcomeSchema, brewInventoryErrorResponseSchema,
 } from "../packages/api-contract/src/zod/brews.ts";
 import * as inventorySchemas from "../packages/api-contract/src/zod/inventory.ts";
+import * as brewImageSchemas from "../packages/api-contract/src/zod/brew-images.ts";
 import * as equipmentSchemas from "../packages/api-contract/src/zod/equipment.ts";
 
 const documentUrl = new URL("../apps/web/public/openapi.json", import.meta.url);
@@ -62,7 +63,7 @@ schemas.CreateBrewEntryBatchRequestBody=createBrewEntryBatchRequestBodySchema.to
 schemas.BrewInventorySelection = brewInventorySelectionSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
 schemas.BrewInventoryOutcome = brewInventoryOutcomeSchema.toJSONSchema({ target: "openapi-3.0" });
 schemas.BrewInventoryErrorResponse = brewInventoryErrorResponseSchema.toJSONSchema({ target: "openapi-3.0" });
-for (const [name, schema] of Object.entries({ ...equipmentSchemas, ...inventorySchemas })) {
+for (const [name, schema] of Object.entries({ ...equipmentSchemas, ...inventorySchemas, ...brewImageSchemas })) {
   const publicName = schemaToPublicName.get(name);
   if (publicName) schemas[publicName] = schema.toJSONSchema({ target: "openapi-3.0", io: name.includes("RequestBody") ? "input" : "output" });
 }

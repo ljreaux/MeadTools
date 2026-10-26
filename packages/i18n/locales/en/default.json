@@ -2325,7 +2325,11 @@
     "backsweetenedFg": "This value is automatically calculated based on the ingredients marked \"secondary\". Adjusting the value and clicking submit will alter the amounts of these secondary ingredients to meet your target gravity.",
     "benchTrials": {
       "body": "Bench Trials are a complicated topic that require further research than I can easily provide here. Follow these links for additional information ",
-      "linkTexts": ["DtM Video, ", "Scott Labs Article, ", "Chef's Article."]
+      "linkTexts": [
+        "DtM Video, ",
+        "Scott Labs Article, ",
+        "Chef's Article."
+      ]
     },
     "brix": "Brix measures the amount of dissolved solids in solution. 1g of sucrose in 100ml of water is 1 Brix, so it is roughly the same as percent sugar. You can measure brix with a refractometer, calculate it by nutrition facts, or convert your SG to brix over on ExtraCalc to use custom sugar percentages in this calculator. ",
     "campden": "Campden tablets vary quite a bit in the amount of free SO2 that they provide MeadTools assumes that one campden tablet provides 75PPM of free SO2.",
@@ -2785,7 +2789,10 @@
       "rowNumber": "Row",
       "errorColumn": "Errors",
       "workbookInstructions": [
-        ["MeadTools inventory format", "1"],
+        [
+          "MeadTools inventory format",
+          "1"
+        ],
         [
           "Import",
           "Map columns, review rows, then confirm. Up to 1,000 rows per import."
@@ -2798,7 +2805,10 @@
           "Updating existing inventory",
           "Choose Update existing stock explicitly; stock IDs identify owned rows. Category and unit must stay unchanged."
         ],
-        ["Categories", "honey, fruit, yeast, additive, packaging"],
+        [
+          "Categories",
+          "honey, fruit, yeast, additive, packaging"
+        ],
         [
           "Packaging",
           "Use whole unit counts. Campden is an additive; partial unit counts are supported."
@@ -2882,5 +2892,50 @@
     "caps": "Caps",
     "dismissNotice": "Dismiss notification",
     "reviewHelp": "Selected stock updates when you save. Lines left untracked will be logged without a deduction."
+  },
+  "brewImages": {
+    "title": "Photos",
+    "photoAlt": "Brew photo",
+    "openPhoto": "Open brew photo",
+    "add": "Add photo",
+    "loading": "Loading photos…",
+    "uploading": "Uploading photo",
+    "processing": "Processing photo…",
+    "progress": "Uploading: {{progress}}%",
+    "retry": "Try loading again",
+    "retryUpload": "Retry upload",
+    "empty": "No photos yet.",
+    "caption": "Caption",
+    "saveCaption": "Save caption",
+    "remove": "Remove photo",
+    "removeTitle": "Remove this photo?",
+    "removeDescription": "The photo and its caption will be removed from this brew. This cannot be undone.",
+    "publicDescription": "Photos shared with this public brew.",
+    "editDescription": "View your photo or update its caption.",
+    "limits": "JPEG, PNG or WebP, up to 20 MiB. Photos are resized automatically. Up to 20 photos per brew.",
+    "usage": "{{used}} of 250 MiB used, including photos awaiting cleanup.",
+    "unavailable": "New photo uploads are currently unavailable. You can still view and manage existing photos.",
+    "publicNotice": "Photos and captions on this brew are visible publicly whenever its linked recipe is also public.",
+    "errors": {
+      "INVALID_IMAGE": "Choose a valid JPEG, PNG or WebP still image. HEIC photos need conversion first.",
+      "IMAGE_TOO_LARGE": "This photo is too large. Choose a smaller photo (up to 20 MiB and 40 megapixels).",
+      "QUOTA_EXCEEDED": "Your 250 MiB storage allowance is full. Remove photos and allow cleanup to finish before trying again.",
+      "BREW_IMAGE_LIMIT": "This brew already has 20 photos, including uploads or photos awaiting cleanup.",
+      "PREMIUM_REQUIRED": "An active premium membership is required to upload new photos.",
+      "NOT_FOUND": "This photo or brew is no longer available.",
+      "UPLOAD_IN_PROGRESS": "An upload is still processing or awaiting cleanup. Retry in about 15 minutes.",
+      "OPERATION_CONFLICT": "This upload has changed or was removed. Choose the photo again.",
+      "UPLOAD_FAILED": "The upload could not be completed. Retry to check or finish the same upload.",
+      "STORAGE_UNAVAILABLE": "Photo storage is not connected yet. Please try again later.",
+      "RATE_LIMITED": "You have reached the daily upload limit. Please try again tomorrow."
+    },
+    "addToEntry": "Attach photos",
+    "entryPickerHelp": "Selected photos will be uploaded when you save this entry.",
+    "removeSelected": "Remove {{name}}",
+    "entrySavedRetry": "Your entry is saved. Some photos could not be uploaded. Retry to finish uploading, or choose Done to keep the entry as it is.",
+    "brewPhoto": "Brew photo",
+    "entryPhoto": "Entry photo",
+    "uploadingPhoto": "Uploading photo {{current}} of {{total}}",
+    "selectedPhotoAlt": "Preview of {{name}}"
   }
 }

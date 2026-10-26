@@ -31,6 +31,7 @@ model brews {
   gravity_unit_preference gravity_unit @default(SG)
 
   // relations
+  images brew_images[]
   entries brew_entries[]
   recipes recipes?       @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users   users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -44,6 +45,7 @@ model brews {
 }
 
 model brew_entries {
+  images brew_images[]
   id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   brew_id  String   @db.Uuid
   user_id  Int?
@@ -161,6 +163,7 @@ model users {
   /// Claimed before SMTP to keep automated sends at most once per release.
   product_updates_last_emailed_date DateTime? @db.Date
 
+  brew_images              brew_images[]
   brews                    brews[]
   brew_entries             brew_entries[]
   devices                  devices[]
@@ -1207,4 +1210,35 @@ enum credit_stripe_refund_event_status {
 enum chat_access_mode {
   beta_allowlist
   all_active_users
+}
+
+/// Durable upload reservations and cleanup survive brew deletion.
+model brew_images {
+  id String @id @db.Uuid
+  brew_id String? @db.Uuid
+  original_brew_id String @db.Uuid
+  entry_id String? @db.Uuid
+  original_entry_id String? @db.Uuid
+  user_id Int
+  status String @db.VarChar(16)
+  request_hash String @db.VarChar(64)
+  image_key String
+  thumbnail_key String
+  caption String @default("") @db.VarChar(500)
+  width Int @default(0)
+  height Int @default(0)
+  size_bytes Int @default(0)
+  reserved_bytes Int
+  attempts Int @default(1)
+  removed Boolean @default(false)
+  cleanup_after DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  entry brew_entries? @relation(fields: [entry_id], references: [id], onDelete: SetNull)
+  brew brews? @relation(fields: [brew_id], references: [id], onDelete: SetNull)
+  user users @relation(fields: [user_id], references: [id], onDelete: NoAction)
+  @@index([user_id, status])
+  @@index([brew_id, status])
+  @@index([entry_id, status])
+  @@index([status, cleanup_after])
 }

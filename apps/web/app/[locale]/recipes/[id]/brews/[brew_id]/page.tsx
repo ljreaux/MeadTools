@@ -27,6 +27,7 @@ export default async function PublicRecipeBrewPage({
       <CardWrapper>
         <BrewViewer
           brew={brew}
+          showPhotos
           backHref={`/recipes/${recipeId}`}
           recipeHref={`/recipes/${recipeId}`}
           backLabelKey="publicBrews.backToRecipe"

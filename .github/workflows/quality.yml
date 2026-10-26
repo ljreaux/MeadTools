@@ -103,6 +103,26 @@ jobs:
           npm run test:premium-foundation
           npm run test:mcp-account-reads-postgres
 
+      - name: Verify brew image quota, privacy, and cleanup on disposable PostgreSQL
+        env:
+          DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:5432/meadtools_brew_images_test
+          DATABASE_DIRECT_URL: postgresql://fixture:fixture@127.0.0.1:5432/meadtools_brew_images_test
+        working-directory: apps/web
+        run: |
+          node --input-type=module <<'NODE'
+          import { PrismaClient } from '@prisma/client';
+          const url = new URL(process.env.DATABASE_URL);
+          url.pathname = '/postgres';
+          const db = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+          try {
+            await db.$executeRawUnsafe('CREATE DATABASE meadtools_brew_images_test');
+          } finally {
+            await db.$disconnect();
+          }
+          NODE
+          npx prisma migrate deploy --config prisma.test.config.ts
+          npm run test:brew-images-postgres
+
       - name: Regenerate OpenAPI document
         run: npm run openapi:generate
 
