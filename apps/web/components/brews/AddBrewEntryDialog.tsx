@@ -1,6 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthToken } from "@/hooks/auth/useAuthToken";
+import { uploadBrewImage } from "@/lib/brews/uploadBrewImage";
+import { BrewEntryImagePicker, type DraftBrewImage } from "./BrewEntryImagePicker";
+import { BrewImageUploadProgress } from "./BrewImageUploadProgress";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/hooks/use-toast";
 
@@ -110,6 +115,16 @@ export default function AddBrewEntryDialog({
     presetType ?? defaultType ?? options[0]?.value ?? BREW_ENTRY_TYPE.NOTE;
   const { t } = useTranslation();
   const { mutateAsync, isPending } = useCreateBrewEntry();
+  const token = useAuthToken();
+  const queryClient = useQueryClient();
+  const entryId = React.useRef<string | null>(null);
+  const [savedEntryId, setSavedEntryId] = React.useState<string | null>(null);
+  const [photos, setPhotos] = React.useState<DraftBrewImage[]>([]);
+  const [uploading, setUploading] = React.useState(false);
+  const [photoError, setPhotoError] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState<{ value: number; current: number; total: number } | null>(null);
+  const [preparingPhotos, setPreparingPhotos] = React.useState(false);
+  const busy = isPending || uploading || preparingPhotos;
 
   const [openInternal, setOpenInternal] = React.useState(false);
   const open = openProp ?? openInternal;
@@ -152,6 +167,10 @@ export default function AddBrewEntryDialog({
   );
 
   function reset() {
+    entryId.current = null;
+    setSavedEntryId(null);
+    setPhotos([]);
+    setPhotoError(false);
     setType(initialType);
     setTitle("");
     setNote("");
@@ -290,18 +309,31 @@ export default function AddBrewEntryDialog({
   }
 
   async function onSubmit() {
+    setUploading(true);
+    setPhotoError(false);
+    let saved = savedEntryId;
     try {
-      const input = buildInput();
-      await mutateAsync({ brewId, input });
+      if (!saved) {
+        entryId.current ??= crypto.randomUUID();
+        await mutateAsync({ brewId, input: { ...buildInput(), client_entry_id: entryId.current } });
+        saved = entryId.current;
+        setSavedEntryId(saved);
+      }
+      for (const [index, photo] of photos.entries()) {
+        setUploadProgress({value: 0, current: index + 1, total: photos.length});
+        await uploadBrewImage(brewId, { operation_id: photo.operation_id, content_type: photo.content_type, base64: photo.base64, caption: photo.caption, entry_id: saved }, token, value => setUploadProgress({value, current: index + 1, total: photos.length}));
+        setPhotos(current => current.filter(item => item.operation_id !== photo.operation_id));
+      }
       toast({ description: t("saved", "Saved.") });
       setOpen(false);
       reset();
-    } catch (err) {
-      console.error(err);
-      toast({
-        description: t("error", "Something went wrong."),
-        variant: "destructive"
-      });
+    } catch {
+      if (saved) setPhotoError(true);
+      else toast({ description: t("error", "Something went wrong."), variant: "destructive" });
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+      void queryClient.invalidateQueries({ queryKey: ["brew-images", brewId] });
     }
   }
 
@@ -320,6 +352,7 @@ export default function AddBrewEntryDialog({
     <Dialog
       open={open}
       onOpenChange={(v) => {
+        if (busy) return;
         setOpen(v);
         if (!v) reset();
       }}
@@ -337,6 +370,7 @@ export default function AddBrewEntryDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <fieldset disabled={busy || Boolean(savedEntryId)} className="space-y-4">
           {options.length > 1 && (
             <div className="space-y-2">
               <Label>{t("type", "Type")}</Label>
@@ -548,6 +582,10 @@ export default function AddBrewEntryDialog({
             </div>
           )}
 
+          </fieldset>
+          <BrewEntryImagePicker brewId={brewId} photos={photos} onChange={setPhotos} disabled={busy} onPreparingChange={setPreparingPhotos} />
+          {uploadProgress && <BrewImageUploadProgress {...uploadProgress} />}
+          {photoError && <p role="alert" className="text-sm text-destructive">{t("brewImages.entrySavedRetry")}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
@@ -556,12 +594,12 @@ export default function AddBrewEntryDialog({
                 setOpen(false);
                 reset();
               }}
-              disabled={isPending}
+              disabled={busy}
             >
-              {t("cancel", "Cancel")}
+              {savedEntryId ? t("done", "Done") : t("cancel", "Cancel")}
             </Button>
-            <Button type="button" onClick={onSubmit} disabled={isPending}>
-              {t("save", "Save")}
+            <Button type="button" onClick={onSubmit} disabled={busy}>
+              {uploading ? t("brewImages.processing") : savedEntryId ? t("brewImages.retryUpload") : t("save", "Save")}
             </Button>
           </div>
         </div>

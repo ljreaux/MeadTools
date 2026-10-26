@@ -128,6 +128,7 @@ export function useCreateBrewEntry() {
     onSuccess: (data, vars) => {
       inventory.success();
       queryClient.setQueryData(accountBrewsQk.detail(vars.brewId), data);
+      void queryClient.invalidateQueries({ queryKey: ["brew-images", vars.brewId] });
       void queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
     },
   });
@@ -184,6 +185,7 @@ export function usePatchBrewEntry() {
     onSuccess: (data, vars) => {
       inventory.success();
       queryClient.setQueryData(accountBrewsQk.detail(vars.brewId), data);
+      void queryClient.invalidateQueries({ queryKey: ["brew-images", vars.brewId] });
       void queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
     },
   });
@@ -243,6 +245,7 @@ export function useDeleteBrewEntry() {
     onSuccess: (data, vars) => {
       inventory.success();
       queryClient.setQueryData(accountBrewsQk.detail(vars.brewId), data);
+      void queryClient.invalidateQueries({ queryKey: ["brew-images", vars.brewId] });
       void queryClient.invalidateQueries({ queryKey: accountBrewsQk.list() });
     },
   });

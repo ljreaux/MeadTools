@@ -66,6 +66,16 @@ import {
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewImageAccessQueryParamsSchema,
+  brewImageAccessResponseSchema,
+  brewImageErrorResponseSchema,
+  brewImageMutationResponseSchema,
+  brewImagePathParamsSchema,
+  brewImageRemovedResponseSchema,
+  brewImageResponseSchema,
+  brewImagesPathParamsSchema,
+  brewImagesQueryParamsSchema,
+  brewImagesResponseSchema,
   brewInventoryContextResponseSchema,
   brewInventoryErrorResponseSchema,
   brewInventoryItemsSchema,
@@ -119,6 +129,7 @@ import {
   createBrewEntryBatchRequestBodySchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
+  createBrewImageRequestBodySchema,
   createBrewRequestBodySchema,
   createBrewResponseSchema,
   createChatAccessGrantRequestBodySchema,
@@ -276,6 +287,7 @@ import {
   publicBrewEntriesByStageResponseSchema,
   publicBrewEntryResponseSchema,
   publicBrewFetchErrorResponseSchema,
+  publicBrewImagesResponseSchema,
   publicBrewListItemResponseSchema,
   publicBrewLogResponseSchema,
   publicBrewNotFoundErrorResponseSchema,
@@ -366,6 +378,7 @@ import {
   updateAdminUserRequestBodySchema,
   updateBrewEntryRequestBodySchema,
   updateBrewEntryResponseSchema,
+  updateBrewImageRequestBodySchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateChatAccessAdministrationRequestBodySchema,
@@ -478,6 +491,16 @@ export const BrewEntryTypeResponse = brewEntryTypeResponseSchema;
 export const BrewEntryUpdateErrorResponse = brewEntryUpdateErrorResponseSchema;
 export const BrewEntryWithBrewIdResponse = brewEntryWithBrewIdResponseSchema;
 export const BrewFetchErrorResponse = brewFetchErrorResponseSchema;
+export const BrewImageAccessQueryParams = brewImageAccessQueryParamsSchema;
+export const BrewImageAccessResponse = brewImageAccessResponseSchema;
+export const BrewImageErrorResponse = brewImageErrorResponseSchema;
+export const BrewImageMutationResponse = brewImageMutationResponseSchema;
+export const BrewImagePathParams = brewImagePathParamsSchema;
+export const BrewImageRemovedResponse = brewImageRemovedResponseSchema;
+export const BrewImageResponse = brewImageResponseSchema;
+export const BrewImagesPathParams = brewImagesPathParamsSchema;
+export const BrewImagesQueryParams = brewImagesQueryParamsSchema;
+export const BrewImagesResponse = brewImagesResponseSchema;
 export const BrewInventoryContextResponse = brewInventoryContextResponseSchema;
 export const BrewInventoryErrorResponse = brewInventoryErrorResponseSchema;
 export const BrewInventoryItems = brewInventoryItemsSchema;
@@ -531,6 +554,7 @@ export const CreateBjcpIngredientRequestBody = createBjcpIngredientRequestBodySc
 export const CreateBrewEntryBatchRequestBody = createBrewEntryBatchRequestBodySchema;
 export const CreateBrewEntryRequestBody = createBrewEntryRequestBodySchema;
 export const CreateBrewEntryResponse = createBrewEntryResponseSchema;
+export const CreateBrewImageRequestBody = createBrewImageRequestBodySchema;
 export const CreateBrewRequestBody = createBrewRequestBodySchema;
 export const CreateBrewResponse = createBrewResponseSchema;
 export const CreateChatAccessGrantRequestBody = createChatAccessGrantRequestBodySchema;
@@ -688,6 +712,7 @@ export const PublicBrewDetailResponse = publicBrewDetailResponseSchema;
 export const PublicBrewEntriesByStageResponse = publicBrewEntriesByStageResponseSchema;
 export const PublicBrewEntryResponse = publicBrewEntryResponseSchema;
 export const PublicBrewFetchErrorResponse = publicBrewFetchErrorResponseSchema;
+export const PublicBrewImagesResponse = publicBrewImagesResponseSchema;
 export const PublicBrewListItemResponse = publicBrewListItemResponseSchema;
 export const PublicBrewLogResponse = publicBrewLogResponseSchema;
 export const PublicBrewNotFoundErrorResponse = publicBrewNotFoundErrorResponseSchema;
@@ -778,6 +803,7 @@ export const UpdateAdditiveRequestBody = updateAdditiveRequestBodySchema;
 export const UpdateAdminUserRequestBody = updateAdminUserRequestBodySchema;
 export const UpdateBrewEntryRequestBody = updateBrewEntryRequestBodySchema;
 export const UpdateBrewEntryResponse = updateBrewEntryResponseSchema;
+export const UpdateBrewImageRequestBody = updateBrewImageRequestBodySchema;
 export const UpdateBrewRequestBody = updateBrewRequestBodySchema;
 export const UpdateBrewResponse = updateBrewResponseSchema;
 export const UpdateChatAccessAdministrationRequestBody = updateChatAccessAdministrationRequestBodySchema;

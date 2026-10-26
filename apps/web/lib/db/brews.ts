@@ -1,3 +1,4 @@
+import { queueBrewImageRemoval } from "./brew-images";
 import { brewContainerChangeSchema } from "@meadtools/api-contract/brews";
 import type { BrewContainerChange } from "@meadtools/api-contract/contracts";
 import { createInventoryOperation } from "./inventory";
@@ -799,6 +800,7 @@ export async function deleteBrewForApp(brewId: string, userId: number) {
       SELECT id FROM brews WHERE id = ${brewId}::uuid AND user_id = ${userId} FOR UPDATE
     `;
     await releaseEquipmentForBrew(tx, userId, brewId);
+    await queueBrewImageRemoval(tx, { brew_id: brewId, user_id: userId });
     // detach ALL devices for this brew owned by this user
     await tx.devices.updateMany({
       where: { user_id: userId, brew_id: brewId },
@@ -1504,6 +1506,7 @@ export async function deleteBrewEntryForApp(
     });
     if (!entry) throw new Error("Entry not found");
     if (entry.type === brew_entry_type.STAGE_CHANGE) throw new Error("Cannot delete stage change entry");
+    await queueBrewImageRemoval(tx, { entry_id: entryId, brew_id: brewId, user_id: userId });
     await tx.brew_entries.delete({ where: { id: entryId } });
     await syncLatestGravity(tx, brewId);
     if (shouldSyncEstimatedAbvForEntry(entry)) await syncEstimatedAbvEntry(tx, brewId, userId);

@@ -414,6 +414,7 @@ async function createHydrometerLogSeries({
 }
 
 async function clearDb() {
+  await prisma.brew_images.deleteMany();
   // Order matters because of FKs
   await prisma.equipment_assignment_events.deleteMany();
   await prisma.equipment.deleteMany();

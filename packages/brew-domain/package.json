@@ -11,7 +11,8 @@
     "./timeline": "./src/timeline.ts",
     "./scaling": "./src/scaling.ts",
     "./links": "./src/links.ts",
-    "./qr": "./src/qr.ts"
+    "./qr": "./src/qr.ts",
+    "./images": "./src/images.ts"
   },
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",

@@ -280,3 +280,17 @@ and optional note. Confirmation clears the flag and rebases compatible retained
 brew uses without replaying past deductions. Missing or incompatible lines close
 without returning stock. Changed stock or brew data returns `STALE_STOCK` (409);
 normal ownership, premium and operation replay rules apply.
+
+Brew photos add `GET`/`POST /brews/{brew_id}/images` and
+`GET`/`PATCH`/`DELETE /brews/{brew_id}/images/{image_id}`. GET defaults to
+account authentication; explicit `public=true` uses the current public-brew,
+public-recipe and active-owner checks. Upload accepts bounded base64 JPEG,
+PNG or WebP and a stable operation UUID. Optional `entry_id` targets an owned
+visible entry; omission creates a hidden NOTE entry for a direct brew photo.
+Image metadata includes entry identity, title, date and hidden status. Entry
+deletion hides linked photos and queues cleanup. Typed size/quota/concurrency
+errors. Read access returns a 60-second private URL; captions and removal remain
+available to active owners after premium expiry. Internal scheduled cleanup is
+excluded from public OpenAPI. Runtime normalization preserves image schemas'
+strictness, formats and byte limits. Only the two new paths are excluded from
+historical path parity; existing endpoints remain unchanged.

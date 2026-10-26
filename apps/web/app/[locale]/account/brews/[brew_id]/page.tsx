@@ -1,4 +1,5 @@
 "use client";
+import { BrewImages } from "@/components/brews/BrewImages";
 import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
 import { BrewQrDialog } from "@/components/brews/BrewQrDialog";
 import {useCreateBrewEntryBatch} from "@/hooks/reactQuery/useCreateBrewEntry";
@@ -76,7 +77,7 @@ import {
   type AdditionBasis
 } from "@/components/brews/stages/additionDialogShared";
 
-type HistoryView = "stages" | "metrics" | "charts";
+type HistoryView = "stages" | "metrics" | "charts" | "photos";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
 type HistorySortOrder = "oldest" | "newest";
 type BrewT = ReturnType<typeof useTranslation>["t"];
@@ -944,6 +945,7 @@ export default function BrewPageClient() {
             ))}
           </div>
         ) : null}
+        <BrewImages brewId={brew.id} entryId={entry.id} compact />
       </div>
     );
   };
@@ -1290,6 +1292,7 @@ export default function BrewPageClient() {
               <TabsTrigger value="charts" className="h-6 px-2">
                 {t("brews.history.views.charts", "Charts")}
               </TabsTrigger>
+              <TabsTrigger value="photos" className="h-6 px-2">{t("brewImages.title")}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1489,6 +1492,7 @@ export default function BrewPageClient() {
             volumeUnit={recipeVolumeUnit}
           />
         </TabsContent>
+        <TabsContent value="photos" className="mt-0"><BrewImages brewId={brew.id} brewPublic={brew.public} /></TabsContent>
       </Tabs>
       <EditBrewEntryDialog
         entry={editingEntry}
