@@ -358,13 +358,13 @@ export function PrimaryStagePanel({
       ? "0 g"
       : typeof loggedGoFerm?.amount === "number"
         ? `${fmtNumber(loggedGoFerm.amount)} ${loggedGoFerm.unit || "g"}`
-        : `${fmtNumber(ctx.recipe.nutrientPlan?.derived.goFerm.amount)} g`;
+        : `${fmtNumber(defaultGoFermAmount)} g`;
   const goFermRowDetail =
     loggedGoFerm && !loggedGoFermUsed
       ? t("brews.primary.goFermNotUsed", "Go-Ferm not used.")
       : typeof loggedGoFermWater === "number"
         ? `${fmtNumber(loggedGoFermWater, 0)} mL ${t("water", "water")}`
-        : `${fmtNumber(ctx.recipe.nutrientPlan?.derived.goFerm.water, 0)} mL ${t("water", "water")}`;
+        : `${fmtNumber(defaultGoFermWater, 0)} mL ${t("water", "water")}`;
   const logGoFerm = () =>
     setAdditionDialog({
       title: t("brews.primary.logGoFerm", "Log Go-Ferm"),

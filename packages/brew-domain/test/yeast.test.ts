@@ -19,3 +19,13 @@ test("packet counts and unknown weights cannot become grams for nutrients or Go-
   }
   assert.equal(loggedYeastAmountG(null), null);
 });
+
+test("packet guidance uses the supplied weight and follows corrected counts", () => {
+  const packet = { amount: 0.5, unit: "units", meta: { packetWeightG: 5 } };
+  assert.equal(loggedYeastAmountG(packet), 2.5);
+  assert.equal(loggedYeastAmountG({ ...packet, amount: 0.25 }), 1.25);
+  assert.equal(loggedYeastAmountG({ ...packet, meta: { packetWeightG: 10 } }), 5);
+  for (const packetWeightG of [0, -5, NaN, Infinity, "5", undefined]) {
+    assert.equal(loggedYeastAmountG({ ...packet, meta: { packetWeightG } }), null);
+  }
+});

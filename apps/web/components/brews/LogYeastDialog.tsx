@@ -2,6 +2,8 @@
 import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
 import { useBrewStockChoice } from "@/components/brews/BrewStockField";
 import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
+import { YeastPacketWeightField } from "./YeastPacketWeightField";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -103,6 +105,7 @@ export function LogYeastDialog({
   const [selectedYeast, setSelectedYeast] = React.useState<Yeast | null>(null);
   const [amount, setAmount] = React.useState("");
   const [unit, setUnit] = React.useState<"g" | "units">("g");
+  const [packetWeightG, setPacketWeightG] = React.useState("");
   const amountId = React.useId();
   const amountHintId = React.useId();
   const [nitrogenRequirement, setNitrogenRequirement] =
@@ -123,6 +126,7 @@ export function LogYeastDialog({
 
     setSelectedYeast(forceManual ? null : plannedYeast);
     setUnit("g");
+    setPacketWeightG("");
     setBrand(forceManual ? "Other" : planned?.brand || plannedYeast?.brand || "Other");
     setStrain(forceManual ? "" : planned?.strain || plannedYeast?.name || "");
     setAmount(
@@ -162,6 +166,9 @@ export function LogYeastDialog({
   };
 
   const actualName = yeastDisplayName(brand === "Other" ? "" : brand, strain);
+  const validPacketWeight = unit !== "units" || (loggedYeastAmountG({
+    amount: parseNumber(amount), unit, meta: { packetWeightG: parseNumber(packetWeightG) },
+  }) ?? 0) > 0;
   const stockChoice = useBrewStockChoice({
     name: actualName,
     kind: "YEAST",
@@ -177,7 +184,7 @@ export function LogYeastDialog({
 
   const save = async () => {
     const trimmedName = actualName.trim();
-    if (!trimmedName) return;
+    if (!trimmedName || !validPacketWeight) return;
 
     const parsedAmount = amount.trim() ? parseNumber(amount) : undefined;
 
@@ -196,6 +203,7 @@ export function LogYeastDialog({
         kind: "YEAST",
         source: matchesPlanned ? "recipe_yeast" : "manual_yeast",
         meta: {
+          packetWeightG: unit === "units" ? parseNumber(packetWeightG) : undefined,
           yeastId: selectedYeast?.id ?? null,
           brand: brand === "Other" ? null : brand,
           strain: strain.trim(),
@@ -305,6 +313,10 @@ export function LogYeastDialog({
             ) : null}
           </div>
 
+          {unit === "units" ? (
+            <YeastPacketWeightField value={packetWeightG} amount={amount} onChange={setPacketWeightG} />
+          ) : null}
+
           <div className="space-y-2">
             <Label>{t("date", "Date")}</Label>
             <DateTimePicker value={datetime} onChange={(value) => value && setDatetime(value)} hourCycle={12} />
@@ -355,7 +367,7 @@ export function LogYeastDialog({
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
             {t("cancel", "Cancel")}
           </Button>
-          <Button onClick={save} disabled={isSaving || !actualName.trim() || !stockChoice.valid}>
+          <Button onClick={save} disabled={isSaving || !actualName.trim() || !stockChoice.valid || !validPacketWeight}>
             {t("save", "Save")}
           </Button>
         </DialogFooter>
