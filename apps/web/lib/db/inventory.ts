@@ -37,6 +37,21 @@ type StockResult = z.infer<typeof stockResultSchema>;
 type UsageResult = z.infer<typeof usageResultSchema>;
 type Tx = Prisma.TransactionClient;
 
+/** Shared quantity ledger for consumables and finished bottles. */
+export async function writeInventoryBalance(
+  tx: Tx, userId: number, operationId: string, stock: inventory_stock,
+  plan: { balance: Quantity; adjustment: number }, kind: string,
+  consumptionId: string | null = null, note: string | null = null,
+) {
+  if (plan.adjustment === 0) return;
+  await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value } });
+  await tx.inventory_adjustments.create({ data: {
+    user_id: userId, stock_id: stock.id, operation_id: operationId,
+    consumption_id: consumptionId, kind, delta: plan.adjustment,
+    balance_after: plan.balance.value, unit: stock.unit, note,
+  } });
+}
+
 function canonicalJson(value: Prisma.InputJsonValue): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item!)).join(",")}]`;
@@ -105,7 +120,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
       ORDER BY id FOR UPDATE
     `);
     const rows = await tx.inventory_stock.findMany({ where: { user_id: userId, id: { in: uniqueIds } } });
-    if (rows.length !== uniqueIds.length) throw new InventoryError("NOT_FOUND");
+    if (rows.length !== uniqueIds.length || rows.some((row) => row.category === "mead")) throw new InventoryError("NOT_FOUND");
     return new Map(rows.map((row) => [row.id, row]));
   }
 
@@ -114,13 +129,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     plan: { balance: Quantity; adjustment: number }, kind: string,
     consumptionId: string | null = null, note: string | null = null,
   ) {
-    if (plan.adjustment === 0) return;
-    await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value } });
-    await tx.inventory_adjustments.create({ data: {
-      user_id: userId, stock_id: stock.id, operation_id: operationId,
-      consumption_id: consumptionId, kind, delta: plan.adjustment,
-      balance_after: plan.balance.value, unit: stock.unit, note,
-    } });
+    return writeInventoryBalance(tx, userId, operationId, stock, plan, kind, consumptionId, note);
   }
 
   async function validateCatalog(tx: Tx, category: string, reference?: CatalogReference | null) {

@@ -189,6 +189,7 @@ model users {
   mcp_tool_leases         mcp_tool_leases[]
   mcp_tool_usage          mcp_tool_usage[]
   inventory_stock        inventory_stock[]
+  inventory_meads        inventory_meads[]
   inventory_operations   inventory_operations[]
   equipment              equipment[]
 }
@@ -208,8 +209,11 @@ model inventory_stock {
   reconciliation_required Boolean @default(false)
   created_at      DateTime @default(now()) @db.Timestamptz(6)
   updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  mead_id         String? @db.Uuid
+  bottle_size_liters Decimal? @db.Decimal(16, 6)
 
   user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  mead         inventory_meads? @relation(fields: [mead_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
   consumptions inventory_consumptions[]
   adjustments  inventory_adjustments[]
 
@@ -217,6 +221,26 @@ model inventory_stock {
   @@unique([id, user_id, unit])
   @@index([user_id, archived_at])
   @@index([user_id, catalog, catalog_id])
+  @@unique([mead_id, bottle_size_liters])
+}
+
+/// User-defined finished-mead entry. A single entry may contain several bottle
+/// sizes and receive stock from multiple bottlings; it is not a required lot.
+model inventory_meads {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     Int
+  name        String @db.VarChar(200)
+  notes       String? @db.VarChar(5000)
+  version     Int @default(0)
+  archived_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  stock inventory_stock[]
+
+  @@unique([id, user_id])
+  @@index([user_id, archived_at])
 }
 
 /// One request identity per account, including a saved response for retries.
@@ -332,6 +356,7 @@ enum inventory_stock_category {
   yeast
   additive
   packaging
+  mead
 }
 
 enum equipment_type {

@@ -72,7 +72,9 @@ INSERT INTO inventory_adjustments
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET balance_after = -1 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET delta = 0 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET kind = 'receipt' $q$, '23514');
-SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET consumption_id = NULL $q$, '23514');
+-- Multi-line uses already aggregate one operation/stock row; such a row has no
+-- single consumption identity. Its stock, operation and ownership FKs still apply.
+UPDATE inventory_adjustments SET consumption_id = NULL;
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET user_id = -472 $q$, '23503');
 SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_adjustments
   (user_id, stock_id, operation_id, consumption_id, kind, delta, balance_after, unit)
@@ -115,5 +117,21 @@ DO $$ BEGIN
     RAISE EXCEPTION 'Brew deletion changed stock balances or removed historical records';
   END IF;
 END $$;
+INSERT INTO inventory_meads (id, user_id, name) VALUES
+  ('00000000-0000-4000-8000-000000000011', -471, 'House traditional');
+INSERT INTO inventory_stock (id, user_id, name, category, quantity, unit, mead_id, bottle_size_liters) VALUES
+  ('00000000-0000-4000-8000-000000000012', -471, 'House traditional', 'mead', 12, 'units',
+   '00000000-0000-4000-8000-000000000011', 0.75);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = 1.5 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET unit = 'L' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_liters = 0 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET mead_id = NULL WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET user_id = -472 WHERE category = 'mead' $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET category = 'packaging' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_meads $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_stock
+  (user_id, name, category, quantity, unit, mead_id, bottle_size_liters)
+  SELECT user_id, name, category, quantity, unit, mead_id, bottle_size_liters FROM inventory_stock WHERE category = 'mead' $q$, '23505');
+
 ROLLBACK;
 \echo Inventory migration constraints passed.

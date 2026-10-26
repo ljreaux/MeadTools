@@ -6,6 +6,10 @@ import {
   stockInputSchema,
   quantitySchema,
   packagingQuantitySchema,
+  finishedMeadDetailsSchema,
+  finishedMeadInputSchema,
+  bottleCountSchema,
+  bottleSizeLitersSchema,
 } from "@meadtools/inventory-domain";
 import {
   authenticatedRouteErrorResponseSchema,
@@ -118,6 +122,57 @@ export const inventoryStockNotFoundResponseSchema = z.union([
 ]);
 export const inventoryStockUnexpectedErrorResponseSchema = z.object({
   error: z.enum(["Inventory request failed", "Server misconfiguration"]),
+});
+
+export const finishedMeadBottleSchema = z.object({
+  id: z.string().uuid(),
+  size_liters: bottleSizeLitersSchema,
+  quantity: bottleCountSchema,
+});
+export const finishedMeadItemSchema = z.object({
+  ...finishedMeadDetailsSchema.shape,
+  id: z.string().uuid(),
+  revision: z.string().regex(/^[a-f0-9]{64}$/),
+  bottles: z.array(finishedMeadBottleSchema),
+});
+export const finishedMeadOverviewResponseSchema = z.object({
+  can_manage: z.boolean(),
+  meads: z.array(finishedMeadItemSchema),
+});
+export const createFinishedMeadRequestBodySchema = z.object({
+  operation_id: z.string().uuid(),
+  mead: finishedMeadInputSchema,
+}).strict();
+export const finishedMeadPathParamsSchema = z.object({ mead_id: z.string().uuid() });
+export const finishedMeadMutationResponseSchema = z.object({ mead_id: z.string().uuid() });
+const finishedMeadChangeBase = z.object({
+  operation_id: z.string().uuid(),
+  expected_revision: finishedMeadItemSchema.shape.revision,
+});
+export const updateFinishedMeadRequestBodySchema = z.discriminatedUnion("action", [
+  finishedMeadChangeBase.extend({ action: z.literal("details"), ...finishedMeadDetailsSchema.shape }).strict(),
+  finishedMeadChangeBase.extend({
+    action: z.enum(["receipt", "manual_use", "correction"]),
+    size_liters: bottleSizeLitersSchema,
+    quantity: bottleCountSchema,
+    note: z.string().max(5000).nullable().default(null),
+  }).strict().refine((value) => value.action === "correction" || value.quantity > 0, {
+    path: ["quantity"], message: "Enter a positive bottle count",
+  }),
+  finishedMeadChangeBase.extend({ action: z.literal("archive") }).strict(),
+]);
+export const finishedMeadHistoryResponseSchema = z.object({
+  mead: finishedMeadItemSchema,
+  adjustments: z.array(z.object({
+    id: z.string().uuid(),
+    kind: z.string(),
+    size_liters: bottleSizeLitersSchema,
+    delta: z.number().int(),
+    balance_after: bottleCountSchema,
+    note: z.string().nullable(),
+    created_at: z.string().datetime(),
+  })),
+  has_more: z.boolean(),
 });
 
 /** Private brew-tracker context. Unavailable premium access returns no stock links or equipment history. */

@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 import { InventoryReconcileDialog } from "./InventoryReconcileDialog";
 import { InventoryTransferActions } from "./InventoryTransferActions";
 import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
+import { FinishedMeadsWorkspace } from "./FinishedMeadsWorkspace";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, X, Package, History } from "lucide-react";
 import type { InventoryStockItem } from "@meadtools/api-contract/contracts";
@@ -20,6 +22,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 export function InventoryWorkspace() {
+  const { t } = useTranslation();
+  return <div className="space-y-6 pt-2 sm:pt-10">
+    <header className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.description")}</p></header>
+    <Tabs defaultValue="consumables">
+      <TabsList aria-label={t("inventory.title")}><TabsTrigger value="consumables">{t("inventory.consumables")}</TabsTrigger><TabsTrigger value="meads">{t("inventory.meads.title")}</TabsTrigger></TabsList>
+      <TabsContent value="consumables"><ConsumablesWorkspace /></TabsContent>
+      <TabsContent value="meads"><FinishedMeadsWorkspace /></TabsContent>
+    </Tabs>
+  </div>;
+}
+
+function ConsumablesWorkspace() {
   const { t, i18n } = useTranslation();
   const { overview, mutation } = useInventory();
   const [reconciling, setReconciling] = useState<string | null>(null);
@@ -40,8 +54,8 @@ export function InventoryWorkspace() {
   if (overview.isError || !data) return <div role="alert" className="space-y-3 py-12 text-center"><p>{t("inventory.loadError")}</p><Button variant="outline" onClick={() => void overview.refetch()}>{t("equipment.retry")}</Button></div>;
   const visible = data.stock.filter((item) => (filter === "all" || item.category === filter) && `${item.name} ${item.notes ?? ""}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   return <section className="space-y-6">
-    <div className="flex flex-wrap items-end justify-between gap-4 pt-2 sm:pt-10">
-      <div className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.description")}</p></div>
+    <div className="flex flex-wrap items-end justify-between gap-4 pt-4">
+      <div className="space-y-2"><h2 className="text-xl font-semibold">{t("inventory.consumables")}</h2><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.consumablesDescription")}</p></div>
       {data.can_manage ? <Button onClick={() => open(null)}><Plus aria-hidden className="mr-2 h-4 w-4" />{t("inventory.add")}</Button> : null}
     </div>
 

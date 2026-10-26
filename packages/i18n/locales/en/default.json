@@ -2655,7 +2655,7 @@
   },
   "inventory": {
     "title": "Inventory",
-    "description": "Keep track of ingredients and packaging on hand, record purchases and use, and review quantity changes.",
+    "description": "Track what goes into your brews and the finished meads you have on hand.",
     "add": "Add stock",
     "addDescription": "Name your ingredient or packaging and record how much you have on hand.",
     "name": "Name",
@@ -2920,6 +2920,60 @@
           "Use literal values; remove formulas, macros and external workbook links."
         ]
       ]
+    },
+    "consumables": "Consumables",
+    "consumablesDescription": "Ingredients, additives and packaging ready for your next brew.",
+    "meads": {
+      "title": "Finished meads",
+      "description": "Keep your meads together however you like, with a separate count for each bottle size.",
+      "add": "Add finished mead",
+      "addDescription": "Add the bottles you have on hand. You can combine several bottle sizes in one entry.",
+      "nameHelp": "Name it by style, batch, year or any grouping you prefer.",
+      "bottleSize": "Bottle size",
+      "capacity": "Capacity per bottle",
+      "capacityUnit": "Bottle capacity unit",
+      "onHand": "Bottles on hand",
+      "bottlesUnit": "bottles",
+      "countHelp": "Enter a whole bottle count.",
+      "addSize": "Add another bottle size",
+      "removeSize": "Remove this size",
+      "removeSizeNamed": "Remove bottle size {{index}}",
+      "receiptHelp": "An existing size adds to its count. A new size stays together in this mead entry.",
+      "useHelp": "Record bottles you drank, gifted or otherwise used. Add an optional note below.",
+      "remaining_one": "{{count}} remaining",
+      "remaining_other": "{{count}} remaining",
+      "bottleCount_one": "{{count}} bottle",
+      "bottleCount_other": "{{count}} bottles",
+      "totalVolume": "{{volume}} L on hand",
+      "balanceAfter_one": "{{count}} bottle of this size remaining after this change",
+      "balanceAfter_other": "{{count}} bottles of this size remaining after this change",
+      "invalid": "Enter a positive bottle size and a whole bottle count. Added or used counts must be greater than zero.",
+      "search": "Search finished meads",
+      "emptyTitle": "Your finished meads belong here",
+      "emptyDescription": "Add your first mead with the bottle sizes and counts you have on hand.",
+      "archive": "Archive",
+      "archiveTitle": "Archive this finished mead?",
+      "archiveDescription": "Hide {{name}} from your active inventory. Its bottle counts and recorded history will be kept.",
+      "actions": {
+        "details": "Edit details",
+        "receipt": "Add bottles",
+        "manual_use": "Use bottles",
+        "correction": "Correct count"
+      },
+      "kinds": {
+        "receipt": "Bottles added",
+        "manual_use": "Bottles used",
+        "correction": "Count corrected"
+      },
+      "save": "Save",
+      "invalidCreate": "Enter a name, positive bottle sizes and whole bottle counts. Combine duplicate sizes into one row.",
+      "invalidName": "Enter a name of up to 200 characters.",
+      "errors": {
+        "INSUFFICIENT_STOCK": "You do not have that many bottles of this size. Check the count or use fewer bottles.",
+        "STALE_STOCK": "This mead changed while the form was open. Close it and reopen to review the current counts."
+      },
+      "bottleDelta_one": "{{amount}} bottle",
+      "bottleDelta_other": "{{amount}} bottles"
     }
   },
   "brewInventory": {

@@ -142,6 +142,7 @@ import {
   createCreditCheckoutRequestBodySchema,
   createCreditCheckoutResponseSchema,
   createEquipmentRequestBodySchema,
+  createFinishedMeadRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createInventoryStockRequestBodySchema,
@@ -198,6 +199,12 @@ import {
   equipmentOverviewResponseSchema,
   equipmentPathParamsSchema,
   equipmentUnexpectedErrorResponseSchema,
+  finishedMeadBottleSchema,
+  finishedMeadHistoryResponseSchema,
+  finishedMeadItemSchema,
+  finishedMeadMutationResponseSchema,
+  finishedMeadOverviewResponseSchema,
+  finishedMeadPathParamsSchema,
   getRecipeResponseSchema,
   goFermTypeSchema,
   gravityUnitResponseSchema,
@@ -386,6 +393,7 @@ import {
   updateChatConversationRequestBodySchema,
   updateChatConversationResponseSchema,
   updateEquipmentRequestBodySchema,
+  updateFinishedMeadRequestBodySchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -567,6 +575,7 @@ export type CreateChatCreditGrantResponse = z.infer<typeof createChatCreditGrant
 export type CreateCreditCheckoutRequestBody = z.infer<typeof createCreditCheckoutRequestBodySchema>;
 export type CreateCreditCheckoutResponse = z.infer<typeof createCreditCheckoutResponseSchema>;
 export type CreateEquipmentRequestBody = z.infer<typeof createEquipmentRequestBodySchema>;
+export type CreateFinishedMeadRequestBody = z.infer<typeof createFinishedMeadRequestBodySchema>;
 export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
 export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
 export type CreateInventoryStockRequestBody = z.infer<typeof createInventoryStockRequestBodySchema>;
@@ -623,6 +632,12 @@ export type EquipmentNotFoundErrorResponse = z.infer<typeof equipmentNotFoundErr
 export type EquipmentOverviewResponse = z.infer<typeof equipmentOverviewResponseSchema>;
 export type EquipmentPathParams = z.infer<typeof equipmentPathParamsSchema>;
 export type EquipmentUnexpectedErrorResponse = z.infer<typeof equipmentUnexpectedErrorResponseSchema>;
+export type FinishedMeadBottle = z.infer<typeof finishedMeadBottleSchema>;
+export type FinishedMeadHistoryResponse = z.infer<typeof finishedMeadHistoryResponseSchema>;
+export type FinishedMeadItem = z.infer<typeof finishedMeadItemSchema>;
+export type FinishedMeadMutationResponse = z.infer<typeof finishedMeadMutationResponseSchema>;
+export type FinishedMeadOverviewResponse = z.infer<typeof finishedMeadOverviewResponseSchema>;
+export type FinishedMeadPathParams = z.infer<typeof finishedMeadPathParamsSchema>;
 export type GetRecipeResponse = z.infer<typeof getRecipeResponseSchema>;
 export type GoFermType = z.infer<typeof goFermTypeSchema>;
 export type GravityUnitResponse = z.infer<typeof gravityUnitResponseSchema>;
@@ -811,6 +826,7 @@ export type UpdateChatAccessAdministrationRequestBody = z.infer<typeof updateCha
 export type UpdateChatConversationRequestBody = z.infer<typeof updateChatConversationRequestBodySchema>;
 export type UpdateChatConversationResponse = z.infer<typeof updateChatConversationResponseSchema>;
 export type UpdateEquipmentRequestBody = z.infer<typeof updateEquipmentRequestBodySchema>;
+export type UpdateFinishedMeadRequestBody = z.infer<typeof updateFinishedMeadRequestBodySchema>;
 export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
 export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
 export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;

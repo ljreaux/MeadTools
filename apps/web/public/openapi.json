@@ -1755,6 +1755,404 @@
         ],
         "additionalProperties": false
       },
+      "FinishedMeadHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "mead": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "bottles": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "size_liters": {
+                      "type": "number",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "maximum": 1000000000
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "size_liters",
+                    "quantity"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "name",
+              "notes",
+              "id",
+              "revision",
+              "bottles"
+            ],
+            "additionalProperties": false
+          },
+          "adjustments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "size_liters": {
+                  "type": "number",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 1000000000
+                },
+                "delta": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "balance_after": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "size_liters",
+                "delta",
+                "balance_after",
+                "note",
+                "created_at"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mead",
+          "adjustments",
+          "has_more"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateFinishedMeadRequestBody": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "expected_revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "details"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "operation_id",
+              "expected_revision",
+              "action",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "expected_revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "receipt",
+                  "manual_use",
+                  "correction"
+                ]
+              },
+              "size_liters": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 1000000000
+              },
+              "quantity": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000000
+              },
+              "note": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "operation_id",
+              "expected_revision",
+              "action",
+              "size_liters",
+              "quantity"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "expected_revision": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "archive"
+                ]
+              }
+            },
+            "required": [
+              "operation_id",
+              "expected_revision",
+              "action"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "FinishedMeadMutationResponse": {
+        "type": "object",
+        "properties": {
+          "mead_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "mead_id"
+        ],
+        "additionalProperties": false
+      },
+      "FinishedMeadOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "can_manage": {
+            "type": "boolean"
+          },
+          "meads": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "notes": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "string",
+                  "maxLength": 5000
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "revision": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "bottles": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "size_liters": {
+                        "type": "number",
+                        "minimum": 0,
+                        "exclusiveMinimum": true,
+                        "maximum": 1000000000
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "size_liters",
+                      "quantity"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "notes",
+                "id",
+                "revision",
+                "bottles"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "can_manage",
+          "meads"
+        ],
+        "additionalProperties": false
+      },
+      "CreateFinishedMeadRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "mead": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "notes": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              },
+              "bottles": {
+                "minItems": 1,
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "size_liters": {
+                      "type": "number",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "maximum": 1000000000
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    }
+                  },
+                  "required": [
+                    "size_liters",
+                    "quantity"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "name",
+              "bottles"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "operation_id",
+          "mead"
+        ],
+        "additionalProperties": false
+      },
       "InventoryOverviewResponse": {
         "type": "object",
         "properties": {
@@ -19141,6 +19539,159 @@
         }
       }
     },
+    "/account/inventory/meads": {
+      "get": {
+        "operationId": "get-account-inventory-meads",
+        "summary": "List finished meads",
+        "description": "Returns owned finished-mead entries with bottle counts by size. Active accounts retain read-only access after premium expiry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishedMeadOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-account-inventory-meads",
+        "summary": "Add a finished mead",
+        "description": "Creates a user-named entry with one or more bottle sizes and atomic initial quantity history. Requires premium and a stable operation UUID for retries. No brew or lot is required.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFinishedMeadRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishedMeadMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/account/inventory/transfer": {
       "post": {
         "operationId": "post-account-inventory-transfer",
@@ -19309,6 +19860,169 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/meads/{mead_id}": {
+      "get": {
+        "operationId": "get-account-inventory-meads-{mead_id}",
+        "summary": "Read finished-mead history",
+        "description": "Returns an owned entry and up to 100 recent quantity changes across its bottle sizes. History is retained after archival and premium expiry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishedMeadHistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-account-inventory-meads-{mead_id}",
+        "summary": "Update finished mead or bottle counts",
+        "description": "Premium-only details, receipt, manual use, absolute correction or archive. Mutations require the reviewed revision and stable operation UUID; conflicts never overwrite newer counts. Bottle size identifies a count, and receipt can add another size to the same entry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFinishedMeadRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishedMeadMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
                 }
               }
             }

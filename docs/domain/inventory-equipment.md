@@ -1,5 +1,27 @@
 # Inventory and equipment — issue 471
 
+## Finished mead follow-up — issue 479
+
+Inventory now separates Consumables and Finished meads views. The first finished
+mead slice supports manually named entries, multiple bottle sizes per entry,
+receipts into existing/new sizes, bottle use, absolute corrections, details,
+archival, and shared quantity history. Users choose their grouping without a
+required lot, tracked brew, or batch. The existing stock ledger and account
+operation helper protect ownership, premium access, retries, stale forms, and
+rollback. New `inventory_meads` rows group `mead` stock by bottle capacity.
+Production migration `20261026000000_add_finished_mead_inventory` adds ownership
+and whole-bottle/capacity constraints. Existing consumables API and spreadsheet
+operations remain scoped to consumables. Storage, custom labels, multi-rule
+sorting, automatic bottling output, and finished-mead spreadsheet transfers are
+subsequent review phases in [the implementation plan](../plans/finished-mead-inventory.md).
+
+The schema smoke test now also checks finished-mead ownership, positive capacities,
+whole counts, required grouping, and unique sizes. Its old expectation that every
+brew-use ledger row must name one consumption was corrected to match the already
+implemented multi-line aggregate ledger; quantity, operation and ownership guards
+remain in place. The new migration and both sets of constraints passed against a
+fresh disposable database initialized from the preceding schema.
+
 Tracking: [#471](https://github.com/ljreaux/MeadTools/issues/471), launch integration
 [#474](https://github.com/ljreaux/MeadTools/issues/474).
 

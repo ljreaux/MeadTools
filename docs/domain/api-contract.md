@@ -1,5 +1,17 @@
 # Shared API contract
 
+Finished-mead inventory adds authenticated `GET`/`POST`
+`/account/inventory/meads` and `GET`/`PATCH`
+`/account/inventory/meads/{mead_id}`. Entries are user-defined groups containing
+whole bottle counts by capacity; no brew or lot is required. Reads retain owned
+access after premium expiry. Premium mutations use operation UUIDs and an expected
+entry revision; receipts add existing/new sizes, manual use deducts bottles,
+corrections replace a size's on-hand count, details edit name/notes, and archive
+retains counts/history. History returns the latest 100 quantity changes across
+sizes. Existing consumables endpoints and spreadsheet transfers remain scoped to
+consumables; they cannot alter finished bottle records. Only the two new paths
+are excluded from historical endpoint parity.
+
 `@meadtools/api-contract` owns the stable runtime request and response schemas
 used by MeadTools, the OpenAPI generator, and external TypeScript consumers.
 Zod schemas are the source of truth. Public TypeScript contracts are inferred
