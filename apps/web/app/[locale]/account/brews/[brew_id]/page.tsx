@@ -1,4 +1,6 @@
 "use client";
+import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
 import { BrewImages } from "@/components/brews/BrewImages";
 import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
 import { BrewQrDialog } from "@/components/brews/BrewQrDialog";
@@ -1581,6 +1583,13 @@ function EditBrewEntryDialog({
   const [additionName, setAdditionName] = useState("");
   const [additionAmount, setAdditionAmount] = useState("");
   const [additionUnit, setAdditionUnit] = useState("");
+  const [packetWeightG, setPacketWeightG] = useState("");
+  const isPacketYeast = entry?.type === BREW_ENTRY_TYPE.ADDITION &&
+    (entry.data as Partial<BrewAdditionData> | null)?.kind === "YEAST" && additionUnit === "units";
+  const validPacketWeight = !isPacketYeast || (loggedYeastAmountG({
+    amount: parseNumber(additionAmount), unit: additionUnit,
+    meta: { packetWeightG: parseNumber(packetWeightG) },
+  }) ?? 0) > 0;
   const [additionBasis, setAdditionBasis] = useState<AdditionBasis>("other");
   const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: string; unit: string }>>([]);
   const [volume, setVolume] = useState("");
@@ -1625,6 +1634,7 @@ function EditBrewEntryDialog({
     setAdditionName(addition?.name ? getBrewItemLabel(t, addition.name) : entry.title ? translateTimelineTitle(t, entry.title) : "");
     setAdditionAmount(typeof addition?.amount === "number" ? String(addition.amount) : "");
     setAdditionUnit(addition?.unit ?? "");
+    setPacketWeightG(typeof addition?.meta?.packetWeightG === "number" ? String(addition.meta.packetWeightG) : "");
     setAdditionBasis(inferAdditionBasis(addition?.unit ?? ""));
     setAdditionComponents(
       Array.isArray(addition?.meta?.components)
@@ -1785,6 +1795,7 @@ function EditBrewEntryDialog({
       const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? parseNumber(additionAmount) : undefined;
       if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
       const existingMeta = ((entry.data as any) ?? {}).meta ?? {};
+      if (!validPacketWeight) throw new Error(t("brews.yeast.packetWeightRequired"));
       const nextNameKey =
         typeof existingMeta.nameKey === "string" ? existingMeta.nameKey : getBrewItemKey(existingMeta.plannedName ?? additionName);
       const nextData = {
@@ -1801,7 +1812,8 @@ function EditBrewEntryDialog({
               }
             : {
                 ...existingMeta,
-                nameKey: nextNameKey ?? undefined
+                nameKey: nextNameKey ?? undefined,
+                packetWeightG: isPacketYeast ? parseNumber(packetWeightG) : undefined
               }
       };
       patch.title = additionName.trim() || entry.title;
@@ -2098,6 +2110,8 @@ function EditBrewEntryDialog({
                         <AdditiveUnitSelect
                           value={additionUnit}
                           onValueChange={(value) => {
+                            if ((entry.data as Partial<BrewAdditionData> | null)?.kind === "YEAST" &&
+                              (value === "units") !== (additionUnit === "units")) setAdditionAmount("");
                             setAdditionUnit(value);
                             setAdditionBasis(inferAdditionBasis(value));
                           }}
@@ -2107,6 +2121,7 @@ function EditBrewEntryDialog({
                   )}
                 </div>
               )}
+              {isPacketYeast ? <YeastPacketWeightField value={packetWeightG} amount={additionAmount} onChange={setPacketWeightG} /> : null}
             </div>
           ) : null}
 
@@ -2287,7 +2302,7 @@ function EditBrewEntryDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
               {t("cancel", "Cancel")}
             </Button>
-            <Button onClick={save} disabled={isSaving || !stockChoice.valid}>
+            <Button onClick={save} disabled={isSaving || !stockChoice.valid || !validPacketWeight}>
               {t("save", "Save")}
             </Button>
           </div>

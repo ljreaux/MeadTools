@@ -262,6 +262,11 @@ export function InventoryEditor({
               </p>
             </div>
           ) : null}
+          {(item?.category ?? category) === "yeast" ? (
+            <p className="text-sm text-muted-foreground">
+              {t(item ? "inventory.yeastSavedUnitHelp" : "inventory.yeastPacketHelp")}
+            </p>
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor={`${id}-note`}>{t("inventory.notes")}</Label>
             <Textarea

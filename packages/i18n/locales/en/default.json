@@ -813,6 +813,16 @@
     "temperature": "Temperature"
   },
   "brews": {
+    "yeast": {
+      "amountUnit": "Yeast amount unit",
+      "packetUnits": "units (packets)",
+      "packetWeight": "Weight per packet",
+      "packetWeightHint": "Enter the yeast weight printed on one full packet. This is multiplied by the packets used for Go-Ferm, rehydration water and nutrient guidance; inventory still deducts packets.",
+      "packetWeightRequired": "Enter a positive packet count and weight per packet.",
+      "totalWeight": "Yeast weight used for guidance: {{amount}} g",
+      "packetHint": "Enter whole or partial packets (0.5 = half a packet).",
+      "packetInventoryHint": "Enter whole or partial packets (0.5 = half a packet). Inventory must also use units."
+    },
     "qr": {
       "action": "QR code",
       "title": "Brew QR code",
@@ -2578,6 +2588,8 @@
     "notes": "Notes (optional)",
     "packagingHelp": "Record bottles, caps and corks in whole units. For corrections, enter the total on hand. Include the size or type in the item name.",
     "unitHelp": "Choose the unit you want to keep this stock in. It stays fixed so its history remains consistent.",
+    "yeastPacketHelp": "Track yeast packets with Count → units. Partial packets are supported (0.5 = half a packet). Choose units (packets) when logging yeast in a brew to deduct from this stock, and enter grams per packet to keep Go-Ferm guidance.",
+    "yeastSavedUnitHelp": "For stock saved in units, choose units (packets) in the brew tracker; partial packets such as 0.5 are supported. Enter grams per packet to keep Go-Ferm guidance. To switch from weight to packets, add a separate yeast stock item in units.",
     "changeHelp": "Enter the amount added or used, in the stock item’s saved unit.",
     "correctionHelp": "Enter the total you actually have on hand. This replaces the recorded quantity; it does not add to it.",
     "save": "Save stock",
