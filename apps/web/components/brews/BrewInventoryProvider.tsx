@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
 import {
@@ -76,6 +76,7 @@ type InventoryContext = {
 const Context = createContext<InventoryContext | null>(null);
 export const useBrewInventory = () => useContext(Context);
 export function BrewInventoryProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [batch, setBatch] = useState<InventoryBatch | null>(null);
   const { brew_id: brewId } = useParams<{ brew_id: string }>();
   const { user } = useAuth();
@@ -230,6 +231,7 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
           const [fresh] = await Promise.all([
             context.refetch({ throwOnError: true }),
             stock.refetch({ throwOnError: true }),
+            queryClient.invalidateQueries({ queryKey: ["account", "inventory-organization", user?.id] }),
           ]);
           if (!fresh.data) throw new BrewInventoryRequestError("FAILED");
           return fresh.data;

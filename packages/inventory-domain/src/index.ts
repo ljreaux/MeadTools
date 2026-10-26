@@ -10,3 +10,4 @@ export * from './stock-matching';
 export * from './catalog';
 export * from './stock-transfer';
 export * from './finished-mead';
+export * from './organization';

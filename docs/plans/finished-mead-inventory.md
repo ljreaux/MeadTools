@@ -19,7 +19,7 @@ compiler took unusually long on the new endpoint. No local data reset was used.
 Review focus: does an entry feel like the user's chosen grouping, are the bottle
 counts clear, and do Add bottles / Use bottles / Correct count describe the right
 actions? Storage, custom label/filter pills and multiple sorting rules belong to
-Phase 2 and have not started.
+Phase 2 below.
 
 Experience: open Inventory, choose Finished meads, and add a named entry with one
 or several bottle sizes. Add more bottles to that entry, use or gift bottles,
@@ -46,6 +46,28 @@ new production migration is reviewed and verified on a disposable database.
 
 ## Phase 2: find and organize the collection
 
+Implemented for review on October 26, 2026. The shared domain suite
+has 40 passing tests; the PostgreSQL suite has 80 passing transaction/handler
+tests, including owner isolation, concurrent edits, safe retries, allocation
+reductions, source selection, audit rollback, hierarchy changes, expiry and seed
+behavior. All 55 API contract tests, 3 translation tests, relevant workspace
+typechecks, package boundaries and migration constraints pass. Targeted lint has
+no errors (the shared SearchableInput retains its existing state-in-effect
+warning). A separate additive production migration preserves Phase 1 history.
+
+Browser checks on the user's existing server covered category creation and
+assignment, nested storage, keyboard selection, saved any/all category filters,
+parent-location filtering, pointer/keyboard/explicit-button sort reordering,
+preferences after reload, source-specific bottle use, retained movement history,
+and the 390 px mobile workspace/dialog. The review example has 11 × 750 mL bottles,
+two categories and two bottles in Cellar → Box A2 at position A1–A3; nine remain
+unlocated. The existing server was restarted by Larry to load the generated
+database client. No extra server or local data reset was used.
+
+Review focus: do category/filter pills and ordered sorting feel flexible, and is
+it clear that placing or moving bottles changes storage while Use bottles changes
+the collection's total? Phase 3 bottling integration remains pending review.
+
 Experience: give consumables and finished meads multiple custom labels, place
 stock in meaningful storage areas and boxes, and find it using removable filter
 pills. Apply several ordered sorting rules, each with its own direction, and
@@ -59,6 +81,31 @@ remains valid. Moves preserve total stock and retain movement history. Consuming
 or correcting counts updates allocations atomically, and deleting a location
 requires resolving its remaining allocations. Storage is separate from brewing
 vessel occupancy.
+
+The Inventory workspace now includes Storage & categories for creating, renaming
+and archiving categories and nested storage locations. Each stock card has an
+Organize action with category assignment, storage positions and movement history.
+Finished-mead categories apply to the user's grouping, while each bottle size has
+its own allocations. Position text remains optional and free-form; no lot or
+box-coordinate format is imposed.
+
+Consumables and finished meads have separate account-scoped browser preferences.
+Search covers names, notes, categories and location paths. Filters include stock
+type, multiple categories with any/all matching, parent or individual locations,
+and availability. Ordered sorting pills support direction changes, pointer drag,
+keyboard drag and explicit earlier/later buttons. Amount sorting converts
+compatible units and keeps mass, volume and counts in separate groups.
+
+Storage edits replace a reviewed allocation snapshot atomically without changing
+stock totals. Stale revisions require reopening the editor. Manual use optionally
+selects unlocated stock or a particular location/position. Automatic use and count
+corrections draw from unlocated stock first, then locations in path/position order.
+Receipts and reversals return stock to unlocated rather than guessing its physical
+position. Every changed allocation records a retained location-path snapshot.
+Locations with stock or active children, and stock with allocations, cannot be
+archived until resolved. Read-only access after expiry retains organization and
+history. Production constraints enforce ownership, units, positive allocations and
+valid label targets; transactions enforce totals and whole bottle counts.
 
 ## Phase 3: connect bottling to inventory
 

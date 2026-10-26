@@ -30,6 +30,8 @@ const equipmentItemRoute = await import("../app/api/account/equipment/[equipment
 const inventoryTransferRoute=await import("../app/api/account/inventory/transfer/route.ts");
 const inventoryRoute = await import("../app/api/account/inventory/route.ts");
 const inventoryItemRoute = await import("../app/api/account/inventory/[stock_id]/route.ts");
+const organizationRoute = await import("../app/api/account/inventory/organization/route.ts");
+const storageRoute = await import("../app/api/account/inventory/storage/[stock_id]/route.ts");
 const finishedMeadsRoute = await import("../app/api/account/inventory/meads/route.ts");
 const finishedMeadRoute = await import("../app/api/account/inventory/meads/[mead_id]/route.ts");
 const brewMetadataRoute = await import("../app/api/brews/[brew_id]/route.ts");
@@ -1209,4 +1211,178 @@ test('finished-mead revisions remain stale when a count is changed and then rest
   assert.deepEqual(current.bottles, original.bottles);
   assert.notEqual(current.revision, original.revision);
   assert.equal((await f.update({ action: 'manual_use', size_liters: .375, quantity: 1 }, original.revision)).status, 409);
+});
+
+async function organizationRequest(userId, input) {
+  const method = input ? 'PATCH' : 'GET';
+  const response = await organizationRoute[method](new NextRequest('http://localhost/api/account/inventory/organization', {
+    method, headers: {'x-inventory-fixture-user': String(userId), 'Content-Type': 'application/json'},
+    ...(input ? {body: JSON.stringify(input)} : {}),
+  }));
+  return {status: response.status, body: await response.json()};
+}
+async function organizationChange(userId, change) {
+  return organizationRequest(userId, {operation_id: randomUUID(), ...change});
+}
+async function location(userId, name='Cellar', parent_id=null) {
+  const response = await organizationChange(userId, {action: 'create_location', name, parent_id});
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  return response.body.id;
+}
+async function organizedStock(userId, id) {
+  return (await organizationRequest(userId)).body.stock.find(row => row.id === id);
+}
+async function storageRequest(method, userId, stockId, input) {
+  const response = await storageRoute[method](new NextRequest(`http://localhost/api/account/inventory/storage/${stockId}`, {
+    method, headers: {'x-inventory-fixture-user': String(userId), 'Content-Type': 'application/json'},
+    ...(input ? {body: JSON.stringify(input)} : {}),
+  }), {params: Promise.resolve({stock_id: stockId})});
+  return {status: response.status, body: await response.json()};
+}
+async function place(userId, stockId, allocations, expected) {
+  const input = {operation_id: randomUUID(), expected_revision: expected ?? (await organizedStock(userId, stockId)).revision, allocations};
+  return storageRequest('PATCH', userId, stockId, input);
+}
+const position = (location_id, quantity, name='C3') => ({location_id, quantity, position: name});
+
+test('custom categories apply across stock and finished meads with ownership and stale selection guards', async () => {
+  const f = await meadFixture();
+  const honey = await stock(f.userId);
+  const first = await organizationChange(f.userId, {action: 'create_label', name: 'Competition'});
+  const second = await organizationChange(f.userId, {action: 'create_label', name: 'Ready'});
+  assert.equal(first.status, 200);
+  const ids = [first.body.id, second.body.id];
+  for (const [kind,id] of [['stock',honey.stockId],['mead',f.id]]) {
+    assert.equal((await organizationChange(f.userId, {action:'assign_labels',kind,id,label_ids:ids,expected_label_ids:[]})).status,200);
+    assert.equal((await organizationChange(f.userId, {action:'assign_labels',kind,id,label_ids:[],expected_label_ids:[]})).status,409);
+  }
+  assert.equal((await organizationRequest(f.userId)).body.assignments.length,2);
+  assert.equal((await organizationChange(f.userId,{action:'create_label',name:' competition '})).status,400);
+  const other = await owner();
+  assert.deepEqual((await organizationRequest(other)).body.labels,[]);
+  assert.equal((await organizationChange(other,{action:'assign_labels',kind:'mead',id:f.id,label_ids:ids,expected_label_ids:[]})).status,404);
+  assert.equal((await organizationChange(f.userId,{action:'edit_label',id:first.body.id,name:'For competitions',expected_version:0})).status,200);
+  assert.equal((await organizationChange(f.userId,{action:'archive_label',id:first.body.id,expected_version:0})).status,409);
+  assert.equal(await balance(honey.stockId),5);
+});
+
+test('storage moves preserve total stock, replay once and reject stale, foreign or excessive allocations',async()=>{
+  const f=await fixture();const room=await location(f.userId);const box=await location(f.userId,'Box A2',room);
+  const initial=await organizedStock(f.userId,f.stockId);
+  const input={operation_id:randomUUID(),expected_revision:initial.revision,allocations:[position(box,3)]};
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,1);
+  assert.equal((await place(f.userId,f.stockId,[position(box,2)],initial.revision)).status,409);
+  assert.equal((await place(f.userId,f.stockId,[position(box,6)])).status,409);
+  const other=await owner();const foreign=await location(other);
+  assert.equal((await place(f.userId,f.stockId,[position(foreign,2)])).status,404);
+  assert.equal((await storageRequest('GET',other,f.stockId)).status,404);
+  const revision=(await organizedStock(f.userId,f.stockId)).revision;
+  const requests=await Promise.all([2,4].map(quantity=>place(f.userId,f.stockId,[position(box,quantity)],revision)));
+  assert.deepEqual(requests.map(row=>row.status).sort(),[200,409]);
+});
+
+test('manual use can select a position and automatic use/corrections keep allocations within the balance',async()=>{
+  const f=await fixture();const room=await location(f.userId);
+  assert.equal((await place(f.userId,f.stockId,[position(room,4)])).status,200);
+  const use=async(value,storage_source)=>stockRequest('PATCH',f.userId,{action:'manual_use',operation_id:randomUUID(),quantity:kg(value),expected_balance:kg(await balance(f.stockId)),...(storage_source===undefined?{}:{storage_source})},f.stockId);
+  assert.equal((await use(1,{location_id:room,position:'C3'})).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,3);
+  assert.equal((await use(2,'unlocated')).status,409);
+  assert.equal(await balance(f.stockId),4);
+  assert.equal((await use(2)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,2);
+  assert.equal((await stockRequest('PATCH',f.userId,{action:'correction',operation_id:randomUUID(),quantity:kg(.5),expected_balance:kg(2)},f.stockId)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,.5);
+  const changes=(await storageRequest('GET',f.userId,f.stockId)).body.changes;
+  assert.equal(changes.length,4);
+  assert.equal(changes[0].reason,'correction');
+});
+
+test('finished bottles use a specific box and whole allocations; stored entries cannot be archived',async()=>{
+  const f=await meadFixture();const box=await location(f.userId,'Competition box');
+  const stockId=(await f.read()).mead.bottles.find(row=>row.size_liters===.75).id;
+  assert.equal((await place(f.userId,stockId,[position(box,8)])).status,200);
+  assert.equal((await place(f.userId,stockId,[position(box,1.5)])).status,400);
+  assert.equal((await f.update({action:'manual_use',size_liters:.75,quantity:3,storage_source:{location_id:box,position:'C3'}})).status,200);
+  assert.equal((await organizedStock(f.userId,stockId)).allocations[0].quantity,5);
+  assert.equal((await f.update({action:'archive'})).status,409);
+  assert.equal((await place(f.userId,stockId,[])).status,200);
+  assert.equal((await f.update({action:'archive'})).status,200);
+  assert.equal((await storageRequest('GET',f.userId,stockId)).body.changes.length,3);
+});
+
+test('linked brew use and its correction reduce stored consumables; reversal returns unlocated stock',async()=>{
+  const f=await fixture();const room=await location(f.userId);
+  await place(f.userId,f.stockId,[position(room,4)]);
+  const entry=addition(2,selection(f));
+  assert.equal((await route('POST',f,entry)).status,201);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,3);
+  assert.equal((await route('PATCH',f,{data:{...entry.data,amount:4},inventory:selection(f,2)},entry.client_entry_id)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,1);
+  assert.equal((await route('DELETE',f,{inventory:selection(f,4)},entry.client_entry_id)).status,200);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,1);
+  const before=(await storageRequest('GET',f.userId,f.stockId)).body.changes.length;
+  const batch=[4,2].map(amount=>addition(amount,multiSelection([{line_key:'addition',stock_id:f.stockId}])));
+  assert.equal((await batchRequest(f,batch)).status,409);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,before);
+});
+
+test('multi-line packaging updates stored bottle counts through the same transaction',async()=>{
+  const f=await fixture();const bottles=await service.createStock(f.userId,randomUUID(),{name:'Bottles',category:'packaging',quantity:{value:10,unit:'units'}});
+  const box=await location(f.userId);await place(f.userId,bottles.stockId,[position(box,8)]);
+  const entry={type:'PACKAGING',client_entry_id:randomUUID(),data:{packagedVolumeLiters:3,bottleRows:[{label:'750',quantity:4,sizeLiters:.75}]},inventory:multiSelection([{line_key:'bottle:0',stock_id:bottles.stockId}])};
+  assert.equal((await route('POST',f,entry)).status,201);
+  assert.equal(await balance(bottles.stockId),6);
+  assert.equal((await organizedStock(f.userId,bottles.stockId)).allocations[0].quantity,6);
+});
+
+test('location cycles, occupied archival and expiry cannot bypass ownership or retained history',async()=>{
+  const f=await fixture();const room=await location(f.userId);const box=await location(f.userId,'Box A2',room);
+  assert.equal((await organizationChange(f.userId,{action:'edit_location',id:room,name:'Cellar',parent_id:box,expected_version:0})).status,400);
+  assert.equal((await organizationChange(f.userId,{action:'archive_location',id:room,expected_version:0})).status,409);
+  await place(f.userId,f.stockId,[position(box,2)]);
+  assert.equal((await organizationChange(f.userId,{action:'archive_location',id:box,expected_version:0})).status,409);
+  assert.equal((await stockRequest('PATCH',f.userId,{action:'archive',operation_id:randomUUID()},f.stockId)).status,409);
+  assert.equal((await organizationChange(f.userId,{action:'edit_location',id:box,name:'Box B1',parent_id:room,expected_version:0})).status,200);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes[0].location_path,'Cellar → Box A2');
+  await prisma.premium_memberships.deleteMany({where:{user_id:f.userId}});
+  assert.equal((await organizationRequest(f.userId)).body.can_manage,false);
+  assert.equal((await place(f.userId,f.stockId,[])).status,403);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).status,200);
+});
+
+test('storage audit failure rolls back positions, movement events, revision and retry receipt',async()=>{
+  const f=await fixture();const a=await location(f.userId,'A');const b=await location(f.userId,'B');
+  await place(f.userId,f.stockId,[position(a,2)]);
+  const before=await organizedStock(f.userId,f.stockId);
+  const input={operation_id:randomUUID(),expected_revision:before.revision,allocations:[position(b,3)]};
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_storage_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.delta = 3 THEN RAISE EXCEPTION 'fixture storage history failure'; END IF; RETURN NEW; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_storage_failure BEFORE INSERT ON inventory_storage_events FOR EACH ROW EXECUTE FUNCTION fixture_storage_failure()');
+  try {
+    assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,500);
+    assert.deepEqual(await organizedStock(f.userId,f.stockId),before);
+    assert.equal(await prisma.inventory_operations.count({where:{operation_key:input.operation_id}}),0);
+    assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,1);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER fixture_storage_failure ON inventory_storage_events');
+    await prisma.$executeRawUnsafe('DROP FUNCTION fixture_storage_failure()');
+  }
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+});
+
+test('organization seed creates owner-scoped categories and locations without changing stock quantities',async()=>{
+  const f=await meadFixture();const honey=await stock(f.userId);const other=await owner();
+  const {seedInventoryOrganization}=await import('../prisma/seed-inventory-organization.ts');
+  await seedInventoryOrganization(prisma,f.userId);
+  const view=(await organizationRequest(f.userId)).body;
+  assert.equal(view.labels.length,2);assert.equal(view.locations.length,3);
+  assert.ok(view.locations.some(row=>row.path==='Cellar → Box A2'));
+  assert.equal(view.assignments.length,2);
+  assert.equal(view.stock.find(row=>row.id===honey.stockId).quantity.value,5);
+  assert.equal((await organizationRequest(other)).body.locations.length,0);
 });

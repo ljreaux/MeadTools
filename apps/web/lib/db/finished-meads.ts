@@ -8,6 +8,7 @@ import {
   updateFinishedMeadRequestBodySchema,
 } from "@meadtools/api-contract/inventory";
 import prisma from "@/lib/prisma";
+import type { InventoryStorageSource } from "@meadtools/api-contract/contracts";
 import { createInventoryOperation, InventoryWriteError, writeInventoryBalance } from "./inventory";
 import { getPremiumAccessStatus } from "./premium-access";
 
@@ -79,14 +80,14 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
     await changeBalance(tx, userId, operationId, stock, "receipt", count, note);
   }
   async function changeBalance(tx: Prisma.TransactionClient, userId: number, operationId: string,
-    stock: MeadRow["stock"][number], kind: "receipt" | "manual_use" | "correction", count: number, note: string | null) {
+    stock: MeadRow["stock"][number], kind: "receipt" | "manual_use" | "correction", count: number, note: string | null, source?: InventoryStorageSource) {
     const plan = planStockChange({
       ownerId: userId,
       stock: { id: stock.id, ownerId: userId, catalogReference: null,
         quantity: { value: stock.quantity.toNumber(), unit: "units" } },
       kind, quantity: { value: count, unit: "units" },
     });
-    await writeInventoryBalance(tx, userId, operationId, stock, plan, kind, null, note);
+    await writeInventoryBalance(tx, userId, operationId, stock, plan, kind, null, note, source);
   }
   async function create(userId: number, operationKey: string, input: unknown) {
     const parsed = finishedMeadInputSchema.parse(input);
@@ -109,6 +110,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
           await tx.inventory_meads.update({ where: { id }, data: { name: parsed.name, notes: parsed.notes, version: { increment: 1 } } });
           await tx.inventory_stock.updateMany({ where: { mead_id: id, user_id: userId }, data: { name: parsed.name } });
         } else if (parsed.action === "archive") {
+          if (await tx.inventory_allocations.count({ where: { user_id: userId, stock: { mead_id: id } } })) throw new InventoryWriteError("STORAGE_IN_USE");
           const now = new Date();
           await tx.inventory_meads.update({ where: { id }, data: { archived_at: now, version: { increment: 1 } } });
           await tx.inventory_stock.updateMany({ where: { mead_id: id, user_id: userId }, data: { archived_at: now } });
@@ -119,7 +121,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
             if (mead.stock.length >= 50) throw new InventoryError("INVALID_QUANTITY");
             await addBottles(tx, userId, operationId, mead, parsed.size_liters, parsed.quantity, parsed.note);
           } else {
-            await changeBalance(tx, userId, operationId, stock, parsed.action, parsed.quantity, parsed.note);
+            await changeBalance(tx, userId, operationId, stock, parsed.action, parsed.quantity, parsed.note, parsed.storage_source);
           }
           await tx.inventory_meads.update({ where: { id }, data: { version: { increment: 1 } } });
         }

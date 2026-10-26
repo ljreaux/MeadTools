@@ -40,7 +40,7 @@ export function useFinishedMeads() {
     }));
   }, onSuccess: async () => {
     operation.current = null;
-    await client.invalidateQueries({ queryKey });
+    await Promise.all([client.invalidateQueries({ queryKey }), client.invalidateQueries({ queryKey: ["account", "inventory-organization"] })]);
   } });
   return { overview, mutation };
 }

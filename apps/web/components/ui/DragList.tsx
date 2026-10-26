@@ -12,7 +12,8 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
-  sortableKeyboardCoordinates
+  sortableKeyboardCoordinates,
+  rectSortingStrategy
 } from "@dnd-kit/sortable";
 
 import SortableItem from "./SortableItem";
@@ -21,12 +22,18 @@ export default function DragList<T>({
   items,
   setItems,
   getId,
-  renderItem
+  renderItem,
+  layout = "vertical",
+  getDragLabel,
+  dragInstructions
 }: {
   items: T[];
   setItems: (arr: T[]) => void;
   getId: (item: T) => string;
   renderItem?: (item: T, i: number) => React.ReactNode;
+  layout?: "vertical" | "wrapped";
+  getDragLabel?: (item: T) => string;
+  dragInstructions?: string;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -52,6 +59,12 @@ export default function DragList<T>({
   };
 
   const itemIds = items.map(getId);
+  const content = items.map((item, i) => {
+    const id = getId(item);
+    return <SortableItem key={id} id={id} compact={layout === "wrapped"} handleLabel={getDragLabel?.(item)} instructions={dragInstructions}>
+      {renderItem ? renderItem(item, i) : id}
+    </SortableItem>;
+  });
 
   return (
     <DndContext
@@ -59,15 +72,8 @@ export default function DragList<T>({
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        {items.map((item, i) => {
-          const id = getId(item);
-          return (
-            <SortableItem key={id} id={id}>
-              {renderItem ? renderItem(item, i) : id}
-            </SortableItem>
-          );
-        })}
+      <SortableContext items={itemIds} strategy={layout === "wrapped" ? rectSortingStrategy : verticalListSortingStrategy}>
+        {layout === "wrapped" ? <div className="flex flex-wrap gap-2">{content}</div> : content}
       </SortableContext>
     </DndContext>
   );

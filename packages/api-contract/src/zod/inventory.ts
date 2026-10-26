@@ -18,6 +18,10 @@ import {
   brewInventoryErrorResponseSchema,
 } from "./brews";
 
+export const inventoryStorageSourceSchema = z.union([
+  z.literal("unlocated"), z.object({ location_id: z.string().uuid(), position: z.string().max(200) }).strict(),
+]);
+
 export const inventoryStockItemSchema = z
   .object({
     ...stockInputSchema.shape,
@@ -62,8 +66,9 @@ export const updateInventoryStockRequestBodySchema = z.discriminatedUnion(
         quantity: quantitySchema,
         note: z.string().max(5000).nullable().default(null),
         expected_balance: quantitySchema,
+        storage_source: inventoryStorageSourceSchema.optional(),
       })
-      .strict(),
+      .strict().refine((value) => value.storage_source === undefined || value.action === "manual_use", { message: "A storage source is only used for manual use" }),
     z
       .object({
         action: z.literal("reconcile"),
@@ -156,9 +161,10 @@ export const updateFinishedMeadRequestBodySchema = z.discriminatedUnion("action"
     size_liters: bottleSizeLitersSchema,
     quantity: bottleCountSchema,
     note: z.string().max(5000).nullable().default(null),
+    storage_source: inventoryStorageSourceSchema.optional(),
   }).strict().refine((value) => value.action === "correction" || value.quantity > 0, {
     path: ["quantity"], message: "Enter a positive bottle count",
-  }),
+  }).refine((value) => value.storage_source === undefined || value.action === "manual_use", { message: "A storage source is only used for manual use" }),
   finishedMeadChangeBase.extend({ action: z.literal("archive") }).strict(),
 ]);
 export const finishedMeadHistoryResponseSchema = z.object({
@@ -172,6 +178,41 @@ export const finishedMeadHistoryResponseSchema = z.object({
     note: z.string().nullable(),
     created_at: z.string().datetime(),
   })),
+  has_more: z.boolean(),
+});
+
+export const inventoryLabelSchema = z.object({ id: z.string().uuid(), name: z.string(), version: z.number().int() });
+export const inventoryLocationSchema = inventoryLabelSchema.extend({ parent_id: z.string().uuid().nullable(), path: z.string() });
+export const inventoryAllocationSchema = z.object({
+  location_id: z.string().uuid(), position: z.string().trim().max(200).default(""), quantity: quantitySchema.shape.value,
+}).strict();
+export const inventoryOrganizedStockSchema = z.object({
+  id: z.string().uuid(), name: z.string(), mead_id: z.string().uuid().nullable(),
+  bottle_size_liters: z.number().nullable(), quantity: quantitySchema,
+  revision: z.string().regex(/^[a-f0-9]{64}$/), allocations: z.array(inventoryAllocationSchema),
+});
+export const inventoryOrganizationResponseSchema = z.object({
+  can_manage: z.boolean(), labels: z.array(inventoryLabelSchema), locations: z.array(inventoryLocationSchema),
+  stock: z.array(inventoryOrganizedStockSchema),
+  assignments: z.array(z.object({ kind: z.enum(["stock", "mead"]), id: z.string().uuid(), label_ids: z.array(z.string().uuid()) })),
+});
+const organizationOperationSchema = z.object({ operation_id: z.string().uuid() });
+export const updateInventoryOrganizationRequestBodySchema = z.discriminatedUnion("action", [
+  organizationOperationSchema.extend({ action: z.literal("create_label"), name: z.string().trim().min(1).max(100) }).strict(),
+  organizationOperationSchema.extend({ action: z.literal("create_location"), name: z.string().trim().min(1).max(100), parent_id: z.string().uuid().nullable() }).strict(),
+  organizationOperationSchema.extend({ action: z.literal("edit_label"), id: z.string().uuid(), expected_version: z.number().int(), name: z.string().trim().min(1).max(100) }).strict(),
+  organizationOperationSchema.extend({ action: z.literal("edit_location"), id: z.string().uuid(), expected_version: z.number().int(), name: z.string().trim().min(1).max(100), parent_id: z.string().uuid().nullable() }).strict(),
+  organizationOperationSchema.extend({ action: z.enum(["archive_label", "archive_location"]), id: z.string().uuid(), expected_version: z.number().int() }).strict(),
+  organizationOperationSchema.extend({ action: z.literal("assign_labels"), kind: z.enum(["stock", "mead"]), id: z.string().uuid(), label_ids: z.array(z.string().uuid()).max(50), expected_label_ids: z.array(z.string().uuid()).max(50) }).strict(),
+]);
+export const inventoryOrganizationMutationResponseSchema = z.object({ id: z.string().uuid() });
+export const updateInventoryStorageRequestBodySchema = z.object({
+  operation_id: z.string().uuid(), expected_revision: z.string().regex(/^[a-f0-9]{64}$/),
+  allocations: z.array(inventoryAllocationSchema).max(100),
+}).strict().refine((value) => new Set(value.allocations.map((row) => JSON.stringify([row.location_id, row.position]))).size === value.allocations.length, { message: "Duplicate storage position" });
+export const inventoryStorageHistoryResponseSchema = z.object({
+  changes: z.array(z.object({ id: z.string().uuid(), operation_id: z.string().uuid(), location_path: z.string(), position: z.string(),
+    delta: z.number(), balance_after: z.number(), unit: quantitySchema.shape.unit, reason: z.string(), created_at: z.string().datetime() })),
   has_more: z.boolean(),
 });
 

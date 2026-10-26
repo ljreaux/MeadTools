@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: Context) {
 }
 /**
  * Update finished mead or bottle counts
- * @description Premium-only details, receipt, manual use, absolute correction or archive. Mutations require the reviewed revision and stable operation UUID; conflicts never overwrite newer counts. Bottle size identifies a count, and receipt can add another size to the same entry.
+ * @description Premium-only details, receipt, manual use, absolute correction or archive. Mutations require the reviewed revision and stable operation UUID; conflicts never overwrite newer counts. Bottle size identifies a count, and receipt can add another size to the same entry. Manual use accepts a storage source; automatic use draws unlocated stock first, then locations in path/position order. Stored bottles must be moved to unlocated before archival.
  * @pathParams FinishedMeadPathParams
  * @body UpdateFinishedMeadRequestBody
  * @response 200:FinishedMeadMutationResponse

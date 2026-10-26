@@ -41,6 +41,8 @@ type SearchableInputProps<T> = {
   dropdownPlacement?: "above" | "below";
   /** Render results outside a clipping parent, such as the compact chat form. */
   dropdownPortal?: boolean;
+  /** Dialog autofocus may focus a field without requesting suggestions. */
+  openOnFocus?: boolean;
 };
 
 function SearchableInput<T extends Record<string, any>>({
@@ -58,6 +60,7 @@ function SearchableInput<T extends Record<string, any>>({
   sortItems,
   dropdownPlacement = "below",
   dropdownPortal = false,
+  openOnFocus = true,
 }: SearchableInputProps<T>) {
   const dropdownRef = useRef<HTMLUListElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -126,6 +129,12 @@ function SearchableInput<T extends Record<string, any>>({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!dropdownOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      setDropdownOpen(true);
+      setHighlightIndex(e.key === "ArrowDown" ? 0 : visibleSuggestions.length - 1);
+      return;
+    }
     if (!dropdownOpen || visibleSuggestions.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -177,8 +186,9 @@ function SearchableInput<T extends Record<string, any>>({
         }}
         onFocus={(e) => {
           e.target.select();
-          setDropdownOpen(true);
+          if (openOnFocus) setDropdownOpen(true);
         }}
+        onClick={() => setDropdownOpen(true)}
         onKeyDown={handleKeyDown}
         role="combobox"
         aria-autocomplete="list"

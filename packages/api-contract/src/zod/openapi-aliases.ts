@@ -242,6 +242,12 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  inventoryAllocationSchema,
+  inventoryLabelSchema,
+  inventoryLocationSchema,
+  inventoryOrganizationMutationResponseSchema,
+  inventoryOrganizationResponseSchema,
+  inventoryOrganizedStockSchema,
   inventoryOverviewResponseSchema,
   inventoryStockErrorResponseSchema,
   inventoryStockHistoryResponseSchema,
@@ -251,6 +257,8 @@ import {
   inventoryStockPathParamsSchema,
   inventoryStockReconciliationSchema,
   inventoryStockUnexpectedErrorResponseSchema,
+  inventoryStorageHistoryResponseSchema,
+  inventoryStorageSourceSchema,
   inventoryTransferErrorResponseSchema,
   inventoryTransferRequestBodySchema,
   inventoryTransferResponseSchema,
@@ -400,7 +408,9 @@ import {
   updateHydrometerLogRequestBodySchema,
   updateIngredientFailureErrorResponseSchema,
   updateIngredientRequestBodySchema,
+  updateInventoryOrganizationRequestBodySchema,
   updateInventoryStockRequestBodySchema,
+  updateInventoryStorageRequestBodySchema,
   updateRecipeCommentFailureErrorResponseSchema,
   updateRecipeCommentRequestBodySchema,
   updateRecipeCommentResponseSchema,
@@ -675,6 +685,12 @@ export const IngredientResponse = ingredientResponseSchema;
 export const IngredientsFetchErrorResponse = ingredientsFetchErrorResponseSchema;
 export const IngredientsResponse = ingredientsResponseSchema;
 export const InvalidRecipeIdErrorResponse = invalidRecipeIdErrorResponseSchema;
+export const InventoryAllocation = inventoryAllocationSchema;
+export const InventoryLabel = inventoryLabelSchema;
+export const InventoryLocation = inventoryLocationSchema;
+export const InventoryOrganizationMutationResponse = inventoryOrganizationMutationResponseSchema;
+export const InventoryOrganizationResponse = inventoryOrganizationResponseSchema;
+export const InventoryOrganizedStock = inventoryOrganizedStockSchema;
 export const InventoryOverviewResponse = inventoryOverviewResponseSchema;
 export const InventoryStockErrorResponse = inventoryStockErrorResponseSchema;
 export const InventoryStockHistoryResponse = inventoryStockHistoryResponseSchema;
@@ -684,6 +700,8 @@ export const InventoryStockNotFoundResponse = inventoryStockNotFoundResponseSche
 export const InventoryStockPathParams = inventoryStockPathParamsSchema;
 export const InventoryStockReconciliation = inventoryStockReconciliationSchema;
 export const InventoryStockUnexpectedErrorResponse = inventoryStockUnexpectedErrorResponseSchema;
+export const InventoryStorageHistoryResponse = inventoryStorageHistoryResponseSchema;
+export const InventoryStorageSource = inventoryStorageSourceSchema;
 export const InventoryTransferErrorResponse = inventoryTransferErrorResponseSchema;
 export const InventoryTransferRequestBody = inventoryTransferRequestBodySchema;
 export const InventoryTransferResponse = inventoryTransferResponseSchema;
@@ -833,7 +851,9 @@ export const UpdateHydrometerDeviceRequestBody = updateHydrometerDeviceRequestBo
 export const UpdateHydrometerLogRequestBody = updateHydrometerLogRequestBodySchema;
 export const UpdateIngredientFailureErrorResponse = updateIngredientFailureErrorResponseSchema;
 export const UpdateIngredientRequestBody = updateIngredientRequestBodySchema;
+export const UpdateInventoryOrganizationRequestBody = updateInventoryOrganizationRequestBodySchema;
 export const UpdateInventoryStockRequestBody = updateInventoryStockRequestBodySchema;
+export const UpdateInventoryStorageRequestBody = updateInventoryStorageRequestBodySchema;
 export const UpdateRecipeCommentFailureErrorResponse = updateRecipeCommentFailureErrorResponseSchema;
 export const UpdateRecipeCommentRequestBody = updateRecipeCommentRequestBodySchema;
 export const UpdateRecipeCommentResponse = updateRecipeCommentResponseSchema;

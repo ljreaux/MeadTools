@@ -1,4 +1,5 @@
 import "server-only";
+import { reduceStorageForBalance } from "./inventory-storage";
 
 import { createHash, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient, type inventory_stock } from "@prisma/client";
@@ -9,6 +10,8 @@ import {
   stockTransferImportSchema, nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
+import { inventoryStorageSourceSchema } from "@meadtools/api-contract/inventory";
+import type { InventoryStorageSource } from "@meadtools/api-contract/contracts";
 import { stockReconciliation } from "./inventory-reconciliation";
 import { getPremiumAccessStatus } from "./premium-access";
 
@@ -16,7 +19,7 @@ export class InventoryWriteError extends Error {
   constructor(public readonly code:
     | "PREMIUM_REQUIRED" | "OPERATION_CONFLICT" | "STALE_USAGE"
     | "USAGE_REMOVED" | "ENTRY_MISMATCH" | "STOCK_ARCHIVED" | "STALE_STOCK" | "SELECTION_REQUIRED"
-    | "RECONCILIATION_REQUIRED") {
+    | "RECONCILIATION_REQUIRED" | "STORAGE_IN_USE" | "ORGANIZATION_CHANGED") {
     super(code);
     this.name = "InventoryWriteError";
   }
@@ -42,9 +45,11 @@ export async function writeInventoryBalance(
   tx: Tx, userId: number, operationId: string, stock: inventory_stock,
   plan: { balance: Quantity; adjustment: number }, kind: string,
   consumptionId: string | null = null, note: string | null = null,
+  storageSource?: InventoryStorageSource,
 ) {
   if (plan.adjustment === 0) return;
-  await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value } });
+  await reduceStorageForBalance(tx, userId, operationId, stock.id, plan.balance.value, kind, storageSource);
+  await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value, storage_version: { increment: 1 } } });
   await tx.inventory_adjustments.create({ data: {
     user_id: userId, stock_id: stock.id, operation_id: operationId,
     consumption_id: consumptionId, kind, delta: plan.adjustment,
@@ -292,11 +297,13 @@ export function createInventoryService(database: PrismaClient = prisma) {
   async function changeStock(userId: number, operationKey: string, input: {
     stockId: string; kind: "receipt" | "manual_use" | "correction";
     quantity: Quantity; note?: string | null; expectedBalance?: Quantity | null;
+    storageSource?: InventoryStorageSource;
   }): Promise<StockResult> {
     const parsed = z.object({
       stockId: uuid, kind: z.enum(["receipt", "manual_use", "correction"]),
       quantity: quantitySchema, note: z.string().max(5000).nullable().default(null),
       expectedBalance: quantitySchema.nullable().default(null),
+      storageSource: inventoryStorageSourceSchema.optional(),
     }).strict().parse(input);
     return operation(userId, operationKey, { kind: "change_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
@@ -308,7 +315,8 @@ export function createInventoryService(database: PrismaClient = prisma) {
           throw new InventoryWriteError("STALE_STOCK");
         }
         const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock), ...parsed });
-        await writeBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note);
+        if (parsed.storageSource !== undefined && parsed.kind !== "manual_use") throw new InventoryError("LINK_MISMATCH");
+        await writeInventoryBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note, parsed.storageSource);
         return { stockId: stock.id, balance: plan.balance };
       });
   }
@@ -347,6 +355,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     return operation(userId, operationKey, { kind: "archive_stock", stockId },
       (result) => stockResultSchema.parse(result), async (tx) => {
         const stock = (await lockStock(tx, userId, [stockId])).get(stockId)!;
+        if (await tx.inventory_allocations.count({ where: { user_id: userId, stock_id: stockId } })) throw new InventoryWriteError("STORAGE_IN_USE");
         await tx.inventory_stock.update({ where: { id: stockId }, data: { archived_at: new Date() } });
         return { stockId, balance: { value: stock.quantity.toNumber(), unit: stock.unit } };
       });

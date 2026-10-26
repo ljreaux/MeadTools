@@ -3,7 +3,8 @@ import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { convertQuantity, finishedMeadInputSchema, finishedMeadDetailsSchema } from "@meadtools/inventory-domain";
 import { updateFinishedMeadRequestBodySchema } from "@meadtools/api-contract/inventory";
-import type { FinishedMeadItem } from "@meadtools/api-contract/contracts";
+import type { FinishedMeadItem, InventoryStorageSource } from "@meadtools/api-contract/contracts";
+import { InventoryUseSource } from "./InventoryOrganizationSummary";
 import type { FinishedMeadCommand } from "@/hooks/reactQuery/useFinishedMeads";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { AmountUnitField } from "@/components/ui/amount-unit-field";
@@ -32,6 +33,7 @@ export function FinishedMeadEditor({ item, action, busy, error, onClose, onSave 
   const [size, setSize] = useState(String(item?.bottles[0]?.size_liters ?? 0.75));
   const [amount, setAmount] = useState(item && action === "correction" ? String(item.bottles[0]?.quantity ?? 0) : "");
   const [invalid, setInvalid] = useState(false);
+  const [source, setSource] = useState<InventoryStorageSource | undefined>(undefined);
   const format = (value: number) => new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 3 }).format(value);
   function patchRow(key: string, patch: Partial<BottleDraft>) {
     setRows((current) => current.map((row) => row.key === key ? { ...row, ...patch } : row));
@@ -61,11 +63,12 @@ export function FinishedMeadEditor({ item, action, busy, error, onClose, onSave 
       const change = updateFinishedMeadRequestBodySchema.safeParse({
         action, expected_revision: item.revision, operation_id: crypto.randomUUID(),
         size_liters: sizeLiters, quantity: numeric(amount), note: notes.trim() || null,
+        ...(action === "manual_use" && source !== undefined ? { storage_source: source } : {}),
       });
       if (!change.success) { setInvalid(true); return; }
       if ("size_liters" in change.data) {
-        const { action, expected_revision, size_liters, quantity, note } = change.data;
-        await onSave({ id: item.id, change: { action, expected_revision, size_liters, quantity, note } });
+        const { action, expected_revision, size_liters, quantity, note, storage_source } = change.data;
+        await onSave({ id: item.id, change: { action, expected_revision, size_liters, quantity, note, ...(storage_source === undefined ? {} : { storage_source }) } });
       }
     }
   }
@@ -101,7 +104,7 @@ export function FinishedMeadEditor({ item, action, busy, error, onClose, onSave 
         </div> : null}
         {item && action !== "details" ? <>
           {action !== "receipt" ? <div className="space-y-2"><Label htmlFor={`${id}-size`}>{t("inventory.meads.bottleSize")}</Label>
-            <Select value={size} disabled={busy} onValueChange={(value) => { setSize(value); if (action === "correction") setAmount(String(item.bottles.find((bottle) => String(bottle.size_liters) === value)?.quantity ?? 0)); }}>
+            <Select value={size} disabled={busy} onValueChange={(value) => { setSize(value); setSource(undefined); if (action === "correction") setAmount(String(item.bottles.find((bottle) => String(bottle.size_liters) === value)?.quantity ?? 0)); }}>
               <SelectTrigger id={`${id}-size`}><SelectValue /></SelectTrigger>
               <SelectContent>{item.bottles.map((bottle) => <SelectItem key={bottle.id} value={String(bottle.size_liters)}>{format(bottle.size_liters * 1000)} mL · {t("inventory.meads.remaining", { count: bottle.quantity })}</SelectItem>)}</SelectContent>
             </Select></div> : null}
@@ -110,6 +113,7 @@ export function FinishedMeadEditor({ item, action, busy, error, onClose, onSave 
             <p className="text-sm text-muted-foreground">{t(action === "correction" ? "inventory.correctionHelp" : action === "manual_use" ? "inventory.meads.useHelp" : "inventory.meads.countHelp")}</p>
           </div>
         </> : null}
+        {item && action === "manual_use" ? <InventoryUseSource stockId={item.bottles.find((row) => String(row.size_liters) === size)?.id} value={source} onChange={setSource} disabled={busy} /> : null}
         <div className="space-y-2"><Label htmlFor={`${id}-notes`}>{t("inventory.notes")}</Label>
           <Textarea id={`${id}-notes`} value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={5000} disabled={busy} />
         </div>

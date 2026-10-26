@@ -133,5 +133,30 @@ SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_stock
   (user_id, name, category, quantity, unit, mead_id, bottle_size_liters)
   SELECT user_id, name, category, quantity, unit, mead_id, bottle_size_liters FROM inventory_stock WHERE category = 'mead' $q$, '23505');
 
+INSERT INTO inventory_labels (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000013', -471, 'Competition');
+INSERT INTO inventory_locations (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000014', -471, 'Cellar');
+INSERT INTO inventory_locations (id, user_id, name, parent_id) VALUES
+  ('00000000-0000-4000-8000-000000000015', -471, 'Box A2', '00000000-0000-4000-8000-000000000014');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_locations SET parent_id = id $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_locations SET name = '' $q$, '23514');
+INSERT INTO inventory_label_links (user_id, label_id, stock_id) VALUES
+  (-471, '00000000-0000-4000-8000-000000000013', '00000000-0000-4000-8000-000000000003');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET mead_id = '00000000-0000-4000-8000-000000000011' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET stock_id = NULL $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET user_id = -472 $q$, '23503');
+INSERT INTO inventory_allocations (user_id, stock_id, unit, location_id, position, quantity) VALUES
+  (-471, '00000000-0000-4000-8000-000000000012', 'units', '00000000-0000-4000-8000-000000000015', 'C3', 3);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET quantity = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET user_id = -472 $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET unit = 'g' $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_allocations (user_id, stock_id, unit, location_id, position, quantity)
+  SELECT user_id, stock_id, unit, location_id, position, quantity FROM inventory_allocations $q$, '23505');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_locations $q$, '23503');
+INSERT INTO inventory_storage_events (user_id, stock_id, unit, operation_id, location_path, position, delta, balance_after, reason) VALUES
+  (-471, '00000000-0000-4000-8000-000000000012', 'units', '00000000-0000-4000-8000-000000000004', 'Cellar → Box A2', 'C3', 3, 3, 'move');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET balance_after = -1 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET delta = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET user_id = -472 $q$, '23503');
+
 ROLLBACK;
 \echo Inventory migration constraints passed.
