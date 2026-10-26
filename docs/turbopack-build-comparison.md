@@ -63,27 +63,41 @@ For local serving, bind `next start` to `localhost`. Binding to `127.0.0.1`
 produced a self-redirect on unprefixed English URLs with both bundlers; using
 `localhost` resolved the test-server behavior without an application change.
 
-## Vercel comparison still required
+## Vercel comparison
 
-Keep Enhanced (8 cores, 16 GB), iad1, preview environment, and cache disabled for
-the first deployment. Do not change machines during this comparison.
+Both deployments used Enhanced (8 cores, 16 GB), iad1, the preview environment,
+and explicitly skipped the build cache. The automatic cached PR deployment was
+canceled before running the uncached comparison.
 
 The Sentry-disabled webpack baseline is deployment
 `dpl_3UTU3CayZwmw69dxvMTXahEFvkpe`, commit `2ebdf6bb5`:
 
+The Turbopack deployment is
+[`dpl_6EM1CVp1hPwiRWXTneEafY9Xs3Dv`](https://vercel.com/larry-reauxs-projects/mead-tools/6EM1CVp1hPwiRWXTneEafY9Xs3Dv),
+commit `61396a206`. It reached READY on October 26, 2026.
+
 | Measurement | Vercel webpack baseline | Vercel Turbopack |
 | --- | ---: | ---: |
-| Install | 37 s; 2,152 packages | Pending |
-| Compilation | 161.4 s | Pending |
-| TypeScript | 35.1 s | Pending |
-| Static generation | 52 pages in 7.0 s | Pending |
-| Start through deployment | 290.7 s | Pending |
-| Final billable CPU minutes | Not recorded | Pending |
+| Install | 37 s; 2,152 packages | 46 s; 2,152 packages |
+| Compilation | 161.4 s | 36.9 s |
+| TypeScript | 35.1 s | 42 s |
+| Static generation | 52 pages in 7.0 s | 52 pages in 0.888 s |
+| Start through deployment | 290.7 s | 158.4 s |
+| Final billable CPU minutes | Not recorded | Not established |
 
-Record the same stages and the dashboard's final CPU usage for the new build.
-Verify the deployed preview's recipe builder, MDX, translations, themes, API
-documentation, and absence of Sentry uploads/events. A normal production release
-must separately verify readable Sentry stack frames and retained sampling.
-Only after that comparison should a separate Standard-machine retry be used to
+Compilation improved about 77%; start through deployment improved about 45%
+(132 seconds), despite installation and TypeScript taking longer. These are
+single-run elapsed times, not measured billable CPU savings. The logs confirm
+the Turbopack build command and contain no Sentry source-map upload passes or
+out-of-memory errors. Post-deployment cache creation/upload is excluded from the
+elapsed comparison, matching the earlier baseline definition.
+
+The live preview's English/German recipe builders hydrated successfully. The
+MDX yeast/Go-Ferm article rendered headings and code blocks in the Hive theme,
+and Scalar API documentation hydrated with navigation and endpoint groups.
+No authenticated writes or live AI requests were used for verification.
+
+A normal production release must separately verify readable Sentry stack frames
+and retained sampling. A separate Standard-machine retry would be needed to
 establish whether 8 GB is now sufficient. Prior Basic and Standard builds ran
-out of memory, so local memory numbers alone are insufficient to change machines.
+out of memory, so these results do not yet justify changing machines.
