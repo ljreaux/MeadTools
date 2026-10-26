@@ -1,6 +1,7 @@
 "use client";
 import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
 import { useBrewStockChoice } from "@/components/brews/BrewStockField";
+import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
 import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 import { YeastPacketWeightField } from "./YeastPacketWeightField";
 import { loggedYeastAmountG } from "@meadtools/brew-domain";
@@ -86,6 +87,7 @@ export function LogYeastDialog({
   onSave: (input: LogYeastInput) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const inventory = useBrewInventory();
   const { data: yeastList = [] } = useYeastsQuery();
   const brands = React.useMemo(() => {
     const values = new Set<string>(["Other"]);
@@ -308,7 +310,7 @@ export function LogYeastDialog({
             />
             {unit === "units" ? (
               <p id={amountHintId} className="text-sm text-muted-foreground">
-                {t("brews.yeast.packetHint")}
+                {t(inventory?.canManage ? "brews.yeast.packetInventoryHint" : "brews.yeast.packetHint")}
               </p>
             ) : null}
           </div>

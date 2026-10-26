@@ -820,7 +820,8 @@
       "packetWeightHint": "Enter the yeast weight printed on one full packet. This is multiplied by the packets used for Go-Ferm, rehydration water and nutrient guidance; inventory still deducts packets.",
       "packetWeightRequired": "Enter a positive packet count and weight per packet.",
       "totalWeight": "Yeast weight used for guidance: {{amount}} g",
-      "packetHint": "Enter whole or partial packets (0.5 = half a packet). Inventory must also use units."
+      "packetHint": "Enter whole or partial packets (0.5 = half a packet).",
+      "packetInventoryHint": "Enter whole or partial packets (0.5 = half a packet). Inventory must also use units."
     },
     "qr": {
       "action": "QR code",
