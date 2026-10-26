@@ -1,5 +1,6 @@
 "use client";
 import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -34,6 +35,7 @@ import {
 } from "./StagePanelShared";
 import {
   getBrewItemLabel,
+  getUnitLabel,
   getPlannedIngredientAmounts,
   PlannedAdditionDialog,
   type PlannedAdditionDialogItem
@@ -321,7 +323,7 @@ export function PrimaryStagePanel({
             "Log Go-Ferm or mark it not used before nutrient additions."
           )
         : null;
-  const actualYeastAmountG = ctx.recipe.actual.yeastAddition?.amount;
+  const actualYeastAmountG = loggedYeastAmountG(ctx.recipe.actual.yeastAddition);
   const yeastRowTitle =
     ctx.recipe.actual.yeastAddition?.name ||
     [ctx.recipe.yeast?.brand, ctx.recipe.yeast?.strain]
@@ -329,7 +331,7 @@ export function PrimaryStagePanel({
       .join(" ");
   const yeastRowAmount =
     typeof ctx.recipe.actual.yeastAddition?.amount === "number"
-      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${ctx.recipe.actual.yeastAddition.unit || "g"}`
+      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${getUnitLabel(t, ctx.recipe.actual.yeastAddition.unit || "g")}`
       : typeof ctx.recipe.yeast?.plannedAmountG === "number"
         ? `${fmtNumber(ctx.recipe.yeast.plannedAmountG)} g`
         : null;

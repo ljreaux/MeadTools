@@ -9,6 +9,41 @@ import {
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import { isRecipeData, type RecipeData } from "@/types/recipeData";
 
+test("packet logging preserves planned yeast weight for nutrient and Go-Ferm calculations", () => {
+  const build = (unit: string, amount: number) => buildBrewRecipeStageData({
+    recipeSnapshot: {
+      id: 1, name: "Packet batch", version: 2,
+      dataV2: backsweetenedMetricRecipeFixture,
+      snapshottedAt: "2026-01-01T00:00:00.000Z",
+    },
+    currentVolumeLiters: null, latestGravity: null,
+    entries: [
+      {
+        id: "basis", type: "GRAVITY", gravity: 1.1, title: null, note: null,
+        data: {
+          source: "nutrient_basis",
+          nutrientBasis: {
+            chosenOg: 1.1, suggestedOg: 1.1, estimatedFg: 1,
+            fermentableSg: 1.1, suggestedOgSource: "recipe", warningAcknowledged: false,
+          },
+        },
+      },
+      {
+        id: "yeast", type: "ADDITION", title: null, note: null, gravity: null,
+        data: { kind: "YEAST", source: "recipe_yeast", name: "Lalvin 71B", amount, unit },
+      },
+    ],
+  });
+  const packet = build("units", 0.5);
+  const weight = build("g", 7.5);
+  assert.equal(packet.actual.yeastAddition?.unit, "units");
+  assert.equal(packet.actual.yeastAddition?.amount, 0.5);
+  assert.ok(packet.planned.nutrientPlan);
+  assert.equal(packet.planned.nutrientPlan.data.inputs.yeastAmountG, "7.5");
+  assert.deepEqual(packet.planned.nutrientPlan.derived.goFerm, weight.planned.nutrientPlan?.derived.goFerm);
+  assert.equal(build("g", 2.5).planned.nutrientPlan?.data.inputs.yeastAmountG, "2.5");
+});
+
 test("renders an existing V2 snapshot that predates newly required nested fields", () => {
   const existingSnapshotData = structuredClone(traditionalRecipeFixture) as RecipeData;
 

@@ -102,6 +102,9 @@ export function LogYeastDialog({
   const [strain, setStrain] = React.useState("");
   const [selectedYeast, setSelectedYeast] = React.useState<Yeast | null>(null);
   const [amount, setAmount] = React.useState("");
+  const [unit, setUnit] = React.useState<"g" | "units">("g");
+  const amountId = React.useId();
+  const amountHintId = React.useId();
   const [nitrogenRequirement, setNitrogenRequirement] =
     React.useState<NitrogenRequirement>("Low");
   const [note, setNote] = React.useState("");
@@ -119,6 +122,7 @@ export function LogYeastDialog({
           ) ?? null;
 
     setSelectedYeast(forceManual ? null : plannedYeast);
+    setUnit("g");
     setBrand(forceManual ? "Other" : planned?.brand || plannedYeast?.brand || "Other");
     setStrain(forceManual ? "" : planned?.strain || plannedYeast?.name || "");
     setAmount(
@@ -158,7 +162,13 @@ export function LogYeastDialog({
   };
 
   const actualName = yeastDisplayName(brand === "Other" ? "" : brand, strain);
-  const stockChoice = useBrewStockChoice({name:actualName,kind:"YEAST",amount:parseNumber(amount),unit:"g",meta:{yeastId:selectedYeast?.id}});
+  const stockChoice = useBrewStockChoice({
+    name: actualName,
+    kind: "YEAST",
+    amount: parseNumber(amount),
+    unit,
+    meta: { yeastId: selectedYeast?.id },
+  });
   const matchesPlanned =
     !forceManual &&
     planned != null &&
@@ -180,7 +190,7 @@ export function LogYeastDialog({
           typeof parsedAmount === "number" && Number.isFinite(parsedAmount)
             ? parsedAmount
             : undefined,
-        unit: "g",
+        unit,
         note: note.trim() || undefined,
         datetime: datetime.toISOString(),
         kind: "YEAST",
@@ -256,15 +266,43 @@ export function LogYeastDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>{t("amount", "Amount")}</Label>
+            <Label htmlFor={amountId}>{t("amount", "Amount")}</Label>
             <AmountUnitField
+              id={amountId}
               amount={amount}
-              unit="g"
+              unit={unit}
               onAmountChange={(value) => {
                 if (!isValidNumber(value)) return;
                 setAmount(value);
               }}
+              unitControl={
+                <Select
+                  value={unit}
+                  onValueChange={(value: "g" | "units") => {
+                    setUnit(value);
+                    // Packet sizes vary: never reinterpret a weight as a count.
+                    setAmount("");
+                  }}
+                >
+                  <SelectTrigger
+                    className="border-0 shadow-none"
+                    aria-label={t("brews.yeast.amountUnit")}
+                    aria-describedby={unit === "units" ? amountHintId : undefined}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">{t("G", "g")}</SelectItem>
+                    <SelectItem value="units">{t("brews.yeast.packetUnits")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
             />
+            {unit === "units" ? (
+              <p id={amountHintId} className="text-sm text-muted-foreground">
+                {t("brews.yeast.packetHint")}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">

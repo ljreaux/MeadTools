@@ -813,6 +813,11 @@
     "temperature": "Temperature"
   },
   "brews": {
+    "yeast": {
+      "amountUnit": "Yeast amount unit",
+      "packetUnits": "units (packets)",
+      "packetHint": "Enter whole or partial packets, such as 0.5. Inventory must also use units. Go-Ferm and nutrient calculations use the recipe's planned yeast weight when you log packets."
+    },
     "qr": {
       "action": "QR code",
       "title": "Brew QR code",
@@ -2578,6 +2583,8 @@
     "notes": "Notes (optional)",
     "packagingHelp": "Record bottles, caps and corks in whole units. For corrections, enter the total on hand. Include the size or type in the item name.",
     "unitHelp": "Choose the unit you want to keep this stock in. It stays fixed so its history remains consistent.",
+    "yeastPacketHelp": "Track yeast packets with Count → units. Partial packets are supported (0.5 = half a packet). Choose units (packets) when logging yeast in a brew to deduct from this stock.",
+    "yeastSavedUnitHelp": "For stock saved in units, choose units (packets) in the brew tracker; partial packets such as 0.5 are supported. To switch from weight to packets, add a separate yeast stock item in units.",
     "changeHelp": "Enter the amount added or used, in the stock item’s saved unit.",
     "correctionHelp": "Enter the total you actually have on hand. This replaces the recorded quantity; it does not add to it.",
     "save": "Save stock",

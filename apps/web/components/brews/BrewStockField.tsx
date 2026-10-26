@@ -70,6 +70,7 @@ export function useBrewStockChoice(
       line.name,
       line.kind,
       line.catalogReference,
+      line.quantity.unit,
     ]);
     const prior = previous.find((use) => use.line_key === line.key);
     const match = matchInventoryStock(

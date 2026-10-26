@@ -33,6 +33,43 @@ const item = (
   catalogReference: reference ?? null,
   reconciliation_required: false,
 });
+test("fractional yeast packets match count stock and corrections restore previous usage", () => {
+  const line = inventoryEntryLines("ADDITION", {
+    kind: "YEAST", name: "Lalvin D-47", amount: 0.5, unit: "units",
+    meta: { yeastId: 47 },
+  })[0];
+  const packets = {
+    ...item("packets", "D-47 packets"), category: "yeast",
+    quantity: { value: 2, unit: "units" as const },
+    catalogReference: { catalog: "yeast" as const, id: "47" },
+  };
+  const grams = { ...packets, id: "grams", quantity: { value: 10, unit: "g" as const } };
+  const matched = matchInventoryStock([grams, packets], line);
+  assert.deepEqual(matched.choices.map((stock) => stock.id), ["packets"]);
+  assert.equal(matched.stock?.id, "packets");
+  const bindings = [{ line_key: "addition", stock_id: "packets" }];
+  const first = planEntryInventory({ stocks: [packets], lines: [line], bindings, previous: [] });
+  assert.deepEqual(first.balances[0].quantity, { value: 1.5, unit: "units" });
+  const corrected = planEntryInventory({
+    stocks: [{ ...packets, quantity: first.balances[0].quantity }],
+    lines: [{ ...line, quantity: { value: 0.25, unit: "units" } }],
+    bindings, previous: first.uses,
+  });
+  assert.deepEqual(corrected.balances[0].quantity, { value: 1.75, unit: "units" });
+  const removed = planEntryInventory({
+    stocks: [{ ...packets, quantity: corrected.balances[0].quantity }],
+    lines: [], bindings: [], previous: corrected.uses,
+  });
+  assert.deepEqual(removed.balances[0].quantity, packets.quantity);
+  assert.throws(() => planEntryInventory({
+    stocks: [packets], lines: [{ ...line, quantity: { value: 2.5, unit: "units" } }],
+    bindings, previous: [],
+  }), /INSUFFICIENT_STOCK/);
+  assert.throws(() => planEntryInventory({
+    stocks: [grams], lines: [line],
+    bindings: [{ line_key: "addition", stock_id: "grams" }], previous: [],
+  }), /INCOMPATIBLE_UNITS/);
+});
 test("nutrients match components and use stable nutrient IDs", () => {
   const line = nutrient();
   assert.equal(line.name, "Fermaid O");
