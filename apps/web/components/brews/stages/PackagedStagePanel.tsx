@@ -60,13 +60,15 @@ export function PackagedStagePanel({
 }: StagePanelProps) {
   const { i18n } = useTranslation();
   const bottling = useBottlingRows();
-  const [datetime, setDatetime] = React.useState<Date>(new Date());
+  const [datetime, setDatetime] = React.useState<Date>(
+    () => new Date(getLatestPackaging(ctx)?.datetime ?? Date.now()),
+  );
   const inventory = useBrewInventory();
   const [closureDraft, setClosureDraft] = React.useState<{
     entryId: string | undefined;
-    items: Array<{ name: string; quantity: number }>;
+    items: Array<{ id?: string; name: string; quantity: number }>;
   } | null>(null);
-  const [note, setNote] = React.useState("");
+  const [note, setNote] = React.useState(()=>getLatestPackaging(ctx)?.note??"");
   const [isSaving, setIsSaving] = React.useState(false);
   const pendingPackagingId = React.useRef<string | null>(null);
   const [completeDialogOpen, setCompleteDialogOpen] = React.useState(false);
@@ -76,7 +78,9 @@ export function PackagedStagePanel({
     ctx.recipe.derived?.volume.unit ??
     "gal";
   const canEdit = status === "current" && !readOnly;
-  const latestPackaging = getLatestPackaging(ctx);
+  const [recordAnother, setRecordAnother] = React.useState(false);
+  const savedPackaging = getLatestPackaging(ctx);
+  const latestPackaging = recordAnother ? undefined : savedPackaging;
   const latestPackagingData = latestPackaging?.data as
     BrewPackagingData | null | undefined;
   const savedPackagedVolume = latestPackagingData?.packagedVolumeLiters ?? null;
@@ -127,7 +131,7 @@ export function PackagedStagePanel({
     closureDraft?.entryId === latestPackaging?.id
       ? (closureDraft?.items ?? [])
       : (latestPackagingData?.closures ?? []);
-  const setClosures = (items: Array<{ name: string; quantity: number }>) =>
+  const setClosures = (items: Array<{ id?: string; name: string; quantity: number }>) =>
     setClosureDraft({ entryId: latestPackaging?.id, items });
   const stockChoice = useBrewStockChoice(
     { bottleRows, closures },
@@ -211,12 +215,21 @@ export function PackagedStagePanel({
         !hasCurrentVolume ||
         Math.abs(saveVolumeLiters - currentVolume) > VOLUME_CHANGE_THRESHOLD_L;
 
+      const savedClosures = closures.map(row=>({...row,id:row.id??crypto.randomUUID()}));
+      const reviewedStock = stockChoice.selection();
+      const packagingSelection = reviewedStock?.mode === "items" ? {
+        ...reviewedStock,
+        items: reviewedStock.items.map(item=>{
+          const legacyIndex=/^closure:(\d+)$/.exec(item.line_key)?.[1];
+          return legacyIndex !== undefined && savedClosures[Number(legacyIndex)] ? {...item,line_key:`closure:${savedClosures[Number(legacyIndex)].id}`} : item;
+        }),
+      } : reviewedStock;
       const packagingInput = entryPayload.packaging({
         packagedVolumeLiters: saveVolumeLiters,
         displayValue,
         displayUnit,
         bottleRows,
-        closures,
+        closures: savedClosures,
         note: note.trim() || null,
         datetime: datetimeIso,
       });
@@ -227,14 +240,14 @@ export function PackagedStagePanel({
           datetime: datetimeIso,
           title: packagingInput.title,
           note: packagingInput.note,
-          inventory: stockChoice.selection(),
+          inventory: packagingSelection,
           data: packagingInput.data,
         });
       } else {
         await helpers.addEntry({
           ...packagingInput,
           client_entry_id: savedEntryId,
-          inventory: stockChoice.selection(),
+          inventory: packagingSelection,
         });
       }
 
@@ -242,8 +255,9 @@ export function PackagedStagePanel({
       // also replaces a pre-refresh tracked:false snapshot after first creation.
       await stockChoice.saved(savedEntryId);
       pendingPackagingId.current = null;
+      setRecordAnother(false);
 
-      if (volumeChanged) {
+      if (volumeChanged && !inventory?.canManage) {
         await helpers.patchBrewMetadata({
           current_volume_liters: saveVolumeLiters,
         });
@@ -251,7 +265,7 @@ export function PackagedStagePanel({
       // The first packaging save records the packaged yield even if it happens
       // to equal the previous batch volume. Later edits only log a new volume
       // when that yield changes.
-      if (!latestPackaging || volumeChanged) {
+      if ((!latestPackaging || volumeChanged) && !inventory?.canManage) {
         await helpers.addEntry(
           entryPayload.volume({
             liters: saveVolumeLiters,
@@ -262,7 +276,7 @@ export function PackagedStagePanel({
           }),
         );
       }
-      setNote("");
+      setNote(packagingInput.note ?? "");
     } catch (error) {
       reportBrewInventoryError(error, t);
     } finally {
@@ -473,6 +487,7 @@ export function PackagedStagePanel({
                         setClosures([
                           ...closures,
                           {
+                            id: crypto.randomUUID(),
                             name: t(`brewInventory.${kind}`),
                             quantity: bottleRows.reduce(
                               (sum, row) => sum + row.quantity,
@@ -504,11 +519,28 @@ export function PackagedStagePanel({
             />
           </div>
 
+          {savedPackaging && canEdit ? <div className="mt-4 flex flex-wrap items-center gap-2">
+            <p className="text-sm text-muted-foreground">{t(recordAnother ? "bottlingInventory.newSession" : "bottlingInventory.correctSession")}</p>
+            <Button type="button" variant="outline" size="sm" disabled={isSaving} onClick={()=>{
+              pendingPackagingId.current=null;
+              setRecordAnother(value=>!value);
+              bottling.loadPackagingRows(recordAnother ? (savedPackaging.data as BrewPackagingData)?.bottleRows ?? [] : []);
+              setClosureDraft(null);
+              setNote(recordAnother ? savedPackaging.note ?? "" : "");
+              setDatetime(recordAnother && savedPackaging.datetime
+                ? new Date(savedPackaging.datetime)
+                : new Date());
+            }}>{t(recordAnother ? "bottlingInventory.returnToLatest" : "bottlingInventory.recordAnother")}</Button>
+          </div> : null}
+          {inventory?.contextLoading ? <p role="status" className="mt-4 text-sm text-muted-foreground">{t("inventory.loading")}</p> : null}
+          {inventory?.contextError ? <div role="alert" className="mt-4 space-y-2 text-sm"><p>{t("inventory.loadError")}</p><Button variant="outline" size="sm" onClick={()=>void inventory.refreshInventory().catch(error=>reportBrewInventoryError(error,t))}>{t("equipment.retry")}</Button></div> : null}
           <div className="mt-4 flex justify-end">
             <Button
               onClick={savePackaging}
               disabled={
                 !canEdit ||
+                inventory?.contextLoading ||
+                inventory?.contextError ||
                 isSaving ||
                 saveVolumeLiters <= 0 ||
                 !stockChoice.valid

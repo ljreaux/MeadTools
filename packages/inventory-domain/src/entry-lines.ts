@@ -34,6 +34,7 @@ const packagingSchema = z.object({
   bottleRows: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         label: z.string().optional(),
         quantity: count,
         sizeLiters: z.number().positive(),
@@ -42,7 +43,7 @@ const packagingSchema = z.object({
     .max(50)
     .default([]),
   closures: z
-    .array(z.object({ name: z.string().min(1).max(200), quantity: count }))
+    .array(z.object({ id: z.string().uuid().optional(), name: z.string().min(1).max(200), quantity: count }))
     .max(50)
     .default([]),
 });
@@ -55,13 +56,13 @@ export function inventoryEntryLines(
     const value = packagingSchema.parse(data);
     return [
       ...value.bottleRows.map((row, index) => ({
-        key: `bottle:${index}`,
+        key: `bottle:${row.id ?? index}`,
         name: `${Number((row.sizeLiters * 1000).toFixed(3))} mL bottles`,
         kind: "PACKAGING",
         quantity: { value: row.quantity, unit: "units" as const },
       })),
       ...value.closures.map((row, index) => ({
-        key: `closure:${index}`,
+        key: `closure:${row.id ?? index}`,
         name: row.name,
         kind: "PACKAGING",
         quantity: { value: row.quantity, unit: "units" as const },

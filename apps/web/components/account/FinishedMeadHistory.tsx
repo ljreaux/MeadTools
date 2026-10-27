@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import type { FinishedMeadItem } from "@meadtools/api-contract/contracts";
 import { useFinishedMeadHistory } from "@/hooks/reactQuery/useFinishedMeads";
@@ -17,7 +18,8 @@ export function FinishedMeadHistory({ item, onClose }: { item: FinishedMeadItem;
           <time dateTime={change.created_at} className="text-muted-foreground">{new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(change.created_at))}</time></div>
         <p>{t("inventory.meads.bottleDelta", { count: Math.abs(change.delta), amount: new Intl.NumberFormat(i18n.language, { signDisplay: "exceptZero" }).format(change.delta) })} · {number(change.size_liters * 1000)} mL</p>
         <p className="text-sm text-muted-foreground">{t("inventory.meads.balanceAfter", { count: change.balance_after })}</p>
-        {change.note ? <p className="break-words text-sm">{change.note}</p> : null}
+        {change.source ? <p className="break-words text-sm">{change.source.removed ? <>{change.source.name} · {t("bottlingInventory.sourceRemoved")}</> : <Link className="underline underline-offset-4" href={`/account/brews/${change.source.brew_id}`}>{change.source.name}</Link>}</p> : null}
+        {change.note && !change.source ? <p className="break-words text-sm">{change.note}</p> : null}
       </li>)}</ol> : <p>{t("inventory.noHistory")}</p>}
       {query.data.has_more ? <p className="text-sm text-muted-foreground">{t("inventory.recentHistory")}</p> : null}
     </> : null}

@@ -166,7 +166,7 @@ export function useBrewStockChoice(
     <div className="space-y-3 rounded-lg border p-3">
       {!editable ? (
         <p className="text-sm text-muted-foreground">
-          {t("brewInventory.untrackedExisting")}
+          {t(entryType === "PACKAGING" ? "bottlingInventory.packagingUntrackedExisting" : "brewInventory.untrackedExisting")}
         </p>
       ) : (
         <>
@@ -248,7 +248,7 @@ export function useBrewStockChoice(
                     : t(
                         bindings.some((binding) => binding.stock_id)
                           ? "brewInventory.reviewHelp"
-                          : "brewInventory.untrackedHelp",
+                          : entryType === "PACKAGING" ? "bottlingInventory.noPackagingDeduction" : "brewInventory.untrackedHelp",
                       ))}
           </p>
           {!problem

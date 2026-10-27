@@ -45,14 +45,14 @@ export async function writeInventoryBalance(
   tx: Tx, userId: number, operationId: string, stock: inventory_stock,
   plan: { balance: Quantity; adjustment: number }, kind: string,
   consumptionId: string | null = null, note: string | null = null,
-  storageSource?: InventoryStorageSource,
+  storageSource?: InventoryStorageSource, bottlingId?: string,
 ) {
   if (plan.adjustment === 0) return;
   await reduceStorageForBalance(tx, userId, operationId, stock.id, plan.balance.value, kind, storageSource);
   await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value, storage_version: { increment: 1 } } });
   await tx.inventory_adjustments.create({ data: {
     user_id: userId, stock_id: stock.id, operation_id: operationId,
-    consumption_id: consumptionId, kind, delta: plan.adjustment,
+    consumption_id: consumptionId, bottling_id: bottlingId ?? null, kind, delta: plan.adjustment,
     balance_after: plan.balance.value, unit: stock.unit, note,
   } });
 }

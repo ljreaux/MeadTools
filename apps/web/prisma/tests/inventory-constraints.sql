@@ -158,5 +158,18 @@ SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET balance_a
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET delta = 0 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET user_id = -472 $q$, '23503');
 
+INSERT INTO inventory_bottlings (id,user_id,brew_id,entry_id,source_name,source_snapshot) VALUES
+ ('00000000-0000-4000-8000-000000000016',-471,'00000000-0000-4000-8000-000000000017','00000000-0000-4000-8000-000000000018','Retained source','{}');
+INSERT INTO inventory_productions (user_id,bottling_id,stock_id,row_id,quantity) VALUES
+ (-471,'00000000-0000-4000-8000-000000000016','00000000-0000-4000-8000-000000000012','00000000-0000-4000-8000-000000000019',3);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_productions SET quantity = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_productions SET user_id = -472 $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_bottlings $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_productions (user_id,bottling_id,stock_id,row_id,quantity)
+ SELECT user_id,bottling_id,stock_id,row_id,quantity FROM inventory_productions $q$, '23505');
+INSERT INTO inventory_bottlings (id,user_id,brew_id,entry_id,source_name,source_snapshot) VALUES
+ ('00000000-0000-4000-8000-000000000020',-472,'00000000-0000-4000-8000-000000000021','00000000-0000-4000-8000-000000000022','Other owner','{}');
+UPDATE inventory_adjustments SET bottling_id = '00000000-0000-4000-8000-000000000016';
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET bottling_id = '00000000-0000-4000-8000-000000000020' $q$, '23503');
 ROLLBACK;
 \echo Inventory migration constraints passed.

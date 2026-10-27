@@ -172,6 +172,7 @@ export const finishedMeadHistoryResponseSchema = z.object({
   adjustments: z.array(z.object({
     id: z.string().uuid(),
     kind: z.string(),
+    source: z.object({name:z.string(),brew_id:z.string().uuid(),entry_id:z.string().uuid(),removed:z.boolean()}).nullable().default(null),
     size_liters: bottleSizeLitersSchema,
     delta: z.number().int(),
     balance_after: bottleCountSchema,
@@ -191,7 +192,10 @@ export const inventoryOrganizedStockSchema = z.object({
   bottle_size_liters: z.number().nullable(), quantity: quantitySchema,
   revision: z.string().regex(/^[a-f0-9]{64}$/), allocations: z.array(inventoryAllocationSchema),
 });
+export const acknowledgeBottlingChangeRequestBodySchema = z.object({operation_id:z.string().uuid(),expected_revision:z.string().regex(/^[a-f0-9]{64}$/),confirmed_on_hand:z.literal(true)}).strict();
+export const inventoryBottlingPathParamsSchema = z.object({bottling_id:z.string().uuid()});
 export const inventoryOrganizationResponseSchema = z.object({
+  bottling_changes: z.array(z.object({id:z.string().uuid(),brew_id:z.string().uuid(),source_name:z.string(),revision:z.string(),stock_ids:z.array(z.string().uuid()),source_missing:z.boolean()})).default([]),
   can_manage: z.boolean(), labels: z.array(inventoryLabelSchema), locations: z.array(inventoryLocationSchema),
   stock: z.array(inventoryOrganizedStockSchema),
   assignments: z.array(z.object({ kind: z.enum(["stock", "mead"]), id: z.string().uuid(), label_ids: z.array(z.string().uuid()) })),
@@ -217,7 +221,13 @@ export const inventoryStorageHistoryResponseSchema = z.object({
 });
 
 /** Private brew-tracker context. Unavailable premium access returns no stock links or equipment history. */
+export const brewBottlingContextSchema = z.object({
+  entry_id: z.string().uuid(), revision: z.string(), reconciliation_required: z.boolean(), source_name: z.string(),
+  outputs: z.array(z.object({row_id:z.string().uuid(),stock_id:z.string().uuid(),mead_id:z.string().uuid(),name:z.string(),quantity:z.number().int(),size_liters:z.number()})),
+});
 export const brewInventoryContextResponseSchema = z.object({
+  bottlings: z.array(brewBottlingContextSchema).default([]),
+  brew_name: z.string().nullable().default(null),
   can_manage: z.boolean(),
   tracked_entry_ids: z.array(z.string().uuid()),
   usages: z.array(

@@ -190,6 +190,7 @@ model users {
   mcp_tool_usage          mcp_tool_usage[]
   inventory_stock        inventory_stock[]
   inventory_meads        inventory_meads[]
+  inventory_bottlings    inventory_bottlings[]
   inventory_labels       inventory_labels[]
   inventory_locations    inventory_locations[]
   inventory_operations   inventory_operations[]
@@ -217,6 +218,7 @@ model inventory_stock {
 
   user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)
   mead         inventory_meads? @relation(fields: [mead_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+  productions inventory_productions[]
   consumptions inventory_consumptions[]
   adjustments  inventory_adjustments[]
   allocations inventory_allocations[]
@@ -372,6 +374,7 @@ model inventory_adjustments {
   stock_id       String @db.Uuid
   operation_id   String @db.Uuid
   consumption_id String? @db.Uuid
+  bottling_id    String? @db.Uuid
   kind           String @db.VarChar(32)
   delta          Decimal @db.Decimal(16, 6)
   balance_after  Decimal @db.Decimal(16, 6)
@@ -384,6 +387,9 @@ model inventory_adjustments {
   // Audit stock/unit stays unchanged when a use is corrected to a different item.
   consumption inventory_consumptions? @relation(fields: [consumption_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
 
+  bottling inventory_bottlings? @relation(fields: [bottling_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([bottling_id])
   @@unique([operation_id, stock_id])
   @@index([user_id, stock_id, created_at])
   @@index([consumption_id])
@@ -1347,4 +1353,36 @@ model brew_images {
   @@index([brew_id, status])
   @@index([entry_id, status])
   @@index([status, cleanup_after])
+}
+
+/// Private production provenance survives source entry/brew deletion.
+/// Source IDs deliberately have no cascading FK; source_snapshot retains context.
+model inventory_bottlings {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id Int
+  brew_id String @db.Uuid
+  entry_id String @unique @db.Uuid
+  source_name String @db.VarChar(200)
+  source_snapshot Json
+  version Int @default(0)
+  reconciliation_required Boolean @default(false)
+  removed_at DateTime? @db.Timestamptz(6)
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  outputs inventory_productions[]
+  adjustments inventory_adjustments[]
+  @@unique([id, user_id])
+  @@index([user_id, brew_id])
+}
+
+model inventory_productions {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id Int
+  bottling_id String @db.Uuid
+  stock_id String @db.Uuid
+  row_id String @db.Uuid
+  quantity Int
+  bottling inventory_bottlings @relation(fields: [bottling_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+  stock inventory_stock @relation(fields: [stock_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([bottling_id, row_id, stock_id])
+  @@index([user_id, stock_id])
 }

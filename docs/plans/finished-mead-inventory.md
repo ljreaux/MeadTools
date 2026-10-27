@@ -66,7 +66,7 @@ database client. No extra server or local data reset was used.
 
 Review focus: do category/filter pills and ordered sorting feel flexible, and is
 it clear that placing or moving bottles changes storage while Use bottles changes
-the collection's total? Phase 3 bottling integration remains pending review.
+the collection's total? Phase 3 bottling integration is described below.
 
 Experience: give consumables and finished meads multiple custom labels, place
 stock in meaningful storage areas and boxes, and find it using removable filter
@@ -108,6 +108,75 @@ history. Production constraints enforce ownership, units, positive allocations a
 valid label targets; transactions enforce totals and whole bottle counts.
 
 ## Phase 3: connect bottling to inventory
+
+Implemented for review on October 27, 2026. Validation passed: 43 shared inventory
+tests, 32 brew-domain tests, 57 API contract tests, 98 PostgreSQL transaction/route
+tests, 11 targeted web bottling/baseline tests and 3 translation tests. Relevant
+workspace typechecks, targeted lint, package boundaries, migration constraints and
+Prisma schema parity passed. The generated OpenAPI change was reviewed alongside
+the API contract and historical endpoint checks.
+
+Browser checks on a separate review brew covered mixed sizes, splitting output
+between a new and an existing entry, initial Box A2 placement, measured yield
+independent of nominal capacity, later bottle use, an output correction preserving
+that use, the separate-new-bottling/reset action, retained history/source links
+and a 390 px mobile review. The review collection now contains two 375 mL bottles
+in Cellar → Box A2 at B1–B2 and one unlocated 750 mL bottle. Its source records five
+produced bottles across the two entries and a measured 2.95 L yield; the new entry
+has three remaining after a use and correction. A temporary webpack preview was
+used and stopped after checking. No development database reset or full seed run
+was used.
+
+Inventory-enabled packaging saves now
+open a review of finished bottles, target entries, added-bottle storage and
+resulting on-hand balances. Finished output remains optional. Multiple bottle
+sizes can share an entry or split between existing entries and a new entry. The
+packaged-stage form distinguishes correcting its latest record from recording
+another bottling, and preserves the saved date and note when beginning an edit.
+
+Bottle and closure rows now retain UUIDs. Legacy input-deduction keys remain
+readable; a reviewed packaging edit upgrades closure keys without changing the
+meaning of prior deductions. Converted capacities use the inventory's six-place
+liter identity and remain intact when reopening custom bottle rows.
+
+The premium review uses one account-serialized retry operation for packaging,
+optional supply deductions, measured yield and its related volume/ABV history,
+finished stock, storage movements and audit records. Counts come from confirmed
+whole-bottle rows, independently of measured yield. A repeated save with the same
+operation cannot add the output twice. Corrections apply only the production
+difference; later uses and receipts remain reflected in the balance. A reduction
+cannot consume bottles still assigned to storage. Added bottles are placed in
+listed order, up to the positive production difference; prior moves stay intact.
+
+Private production records retain source IDs, a name and a packaging snapshot;
+quantity-ledger rows retain an owned foreign key to that source even when output
+links are removed. Finished-mead history links to a live source or displays its
+retained name after removal. None of the output selections, stock identities or
+locations are written into public timeline data. Brew deletion preserves finished
+stock and provenance. Explicit packaging removal reviews output reversal and
+returns tracked supplies in the same transaction. Completing/reopening a brew
+does not produce bottles.
+
+Older untracked packaging needs confirmation of the bottles still on hand before
+receiving stock. Existing tracked supplies are not retroactively inferred. If a
+source changes through the legacy/free path after premium expires, counts and
+storage are retained and a reconciliation warning is recorded. Renewal never
+replays output. The review's Keep reviewed on-hand counts mode links existing,
+physically reviewed inventory without a receipt. Its produced-count baseline may
+exceed the remaining stock because previously used bottles stay used. A removed source can be
+acknowledged from Finished meads after correcting physical counts; this clears
+the warning while preserving stock and source history.
+
+The additive production migration includes ownership, quantity and retained
+history constraints. The guarded local seed attributes existing sample bottles
+to an example bottling without receiving them again. Local schema push preserved
+data; the main seed and reset were not run. The prior filter cleanup is included
+in this phase's local commit.
+
+Review focus: is the difference between supplies used, bottles produced and
+bottles still on hand clear? Does correcting a record feel distinct from another
+bottling, and do the balance preview and reconciliation choices explain changes
+before saving? Import/export and the final cross-flow review remain Phase 4.
 
 Experience: review packaging use and finished bottles in the bottling flow, then
 create entries, add to compatible entries, or split output between entries and

@@ -1,5 +1,7 @@
 "use client";
 
+import { BottlingInventoryReview } from "./BottlingInventoryReview";
+import type { BrewBottlingSelection } from "@meadtools/api-contract/contracts";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +54,8 @@ export class BrewInventoryRequestError extends Error {
 }
 type InventoryContext = {
   canManage: boolean;
+  contextLoading: boolean;
+  contextError: boolean;
   trackedEntryIds: string[];
   resolveLines: (lines: InventoryLine[]) => InventoryLine[];
   reviewBatch: (
@@ -70,13 +74,17 @@ type InventoryContext = {
   refreshInventory: () => Promise<BrewInventoryContextResponse>;
   run: <T>(
     intent: BrewStockIntent,
-    execute: (selection?: BrewInventorySelection) => Promise<T>,
+    execute: (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => Promise<T>,
   ) => Promise<T>;
 };
 const Context = createContext<InventoryContext | null>(null);
 export const useBrewInventory = () => useContext(Context);
 export function BrewInventoryProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const [bottling, setBottling] = useState<{
+    intent: BrewStockIntent; source?: BrewInventoryContextResponse["bottlings"][number]; packaging?: BrewInventorySelection;
+    save: (selection: BrewBottlingSelection)=>Promise<void>; cancel:()=>void;
+  } | null>(null);
   const [batch, setBatch] = useState<InventoryBatch | null>(null);
   const { brew_id: brewId } = useParams<{ brew_id: string }>();
   const { user } = useAuth();
@@ -152,10 +160,21 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
   });
   async function run<T>(
     intent: BrewStockIntent,
-    execute: (selection?: BrewInventorySelection) => Promise<T>,
+    execute: (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => Promise<T>,
   ) {
     if (!canManage) return execute();
-    if (intent.retrySelection) return execute(intent.retrySelection);
+    const source = context.data?.bottlings.find(row=>row.entry_id===intent.entryId);
+    const packagingData = intent.data && typeof intent.data === "object" && ("bottleRows" in intent.data || "packagedVolumeLiters" in intent.data);
+    const perform = (selection?: BrewInventorySelection):Promise<T> => {
+      if ((source || intent.entryType === "PACKAGING" || packagingData) && (intent.kind === "remove" || intent.data !== undefined)) {
+        return new Promise<T>((resolve,reject)=>setBottling({intent,source,packaging:selection,
+          save: async bottling=>{const result=await execute(selection,bottling);setBottling(null);resolve(result);},
+          cancel:()=>{setBottling(null);reject(new BrewInventoryCancelled());},
+        }));
+      }
+      return execute(selection);
+    };
+    if (intent.retrySelection) return perform(intent.retrySelection);
     const previous =
       context.data?.usages.filter((use) => use.entry_id === intent.entryId) ??
       [];
@@ -164,21 +183,21 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
       !previous.length &&
       !context.data?.tracked_entry_ids.includes(intent.entryId)
     )
-      return execute();
-    if (intent.kind === "edit" && intent.data === undefined) return execute();
+      return perform();
+    if (intent.kind === "edit" && intent.data === undefined) return perform();
     if (intent.selection)
-      return execute(
+      return perform(
         intent.selection.mode === "untracked"
           ? intent.selection
           : { ...intent.selection, operation_id: intent.operationId },
       );
     // Interactive entry forms supply their reviewed choices. Other entry types do not infer physical use.
-    if (intent.kind === "create") return execute();
+    if (intent.kind === "create") return perform();
     const lines =
       intent.kind === "remove"
         ? []
-        : tryInventoryEntryLines(intent.entryType ?? "ADDITION", intent.data);
-    return execute({
+        : tryInventoryEntryLines(intent.entryType ?? (packagingData || source ? "PACKAGING" : "ADDITION"), intent.data);
+    return perform({
       mode: "items",
       operation_id: intent.operationId,
       expected: previous.map(({ line_key, stock_id, deducted }) => ({
@@ -199,6 +218,8 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
     <Context.Provider
       value={{
         canManage,
+        contextLoading: context.isPending,
+        contextError: context.isError,
         resolveLines: (lines) => resolveCatalogReferences(lines, catalog),
         trackedEntryIds: context.data?.tracked_entry_ids ?? [],
         reviewBatch: async (entries, save) => {
@@ -240,6 +261,8 @@ export function BrewInventoryProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {bottling ? <BottlingInventoryReview data={bottling.intent.data} source={bottling.source} kind={bottling.intent.kind}
+        name={context.data?.brew_name ?? ""} packaging={bottling.packaging} onSave={bottling.save} onCancel={bottling.cancel}/> : null}
       {batch ? (
         <BrewInventoryBatchDialog
           batch={batch}

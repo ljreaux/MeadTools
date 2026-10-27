@@ -8,6 +8,7 @@ import {
   accountRecipeOwnerResponseSchema,
   accountRecipeResponseSchema,
   accountUserResponseSchema,
+  acknowledgeBottlingChangeRequestBodySchema,
   additiveAmountDimSchema,
   additiveByIdPathParamsSchema,
   additiveByIdResponseSchema,
@@ -47,6 +48,8 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewBottlingContextSchema,
+  brewBottlingSelectionSchema,
   brewContainerChangeSchema,
   brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
@@ -243,6 +246,7 @@ import {
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
   inventoryAllocationSchema,
+  inventoryBottlingPathParamsSchema,
   inventoryLabelSchema,
   inventoryLocationSchema,
   inventoryOrganizationMutationResponseSchema,
@@ -451,6 +455,7 @@ export const AccountInfoUnauthorizedErrorResponse = accountInfoUnauthorizedError
 export const AccountRecipeOwnerResponse = accountRecipeOwnerResponseSchema;
 export const AccountRecipeResponse = accountRecipeResponseSchema;
 export const AccountUserResponse = accountUserResponseSchema;
+export const AcknowledgeBottlingChangeRequestBody = acknowledgeBottlingChangeRequestBodySchema;
 export const AdditiveAmountDim = additiveAmountDimSchema;
 export const AdditiveByIdPathParams = additiveByIdPathParamsSchema;
 export const AdditiveByIdResponse = additiveByIdResponseSchema;
@@ -490,6 +495,8 @@ export const AuthenticatedRouteErrorResponse = authenticatedRouteErrorResponseSc
 export const BjcpIngredientResponse = bjcpIngredientResponseSchema;
 export const BjcpIngredientsFetchErrorResponse = bjcpIngredientsFetchErrorResponseSchema;
 export const BjcpIngredientsResponse = bjcpIngredientsResponseSchema;
+export const BrewBottlingContext = brewBottlingContextSchema;
+export const BrewBottlingSelection = brewBottlingSelectionSchema;
 export const BrewContainerChange = brewContainerChangeSchema;
 export const BrewContainerErrorResponse = brewContainerErrorResponseSchema;
 export const BrewCreateErrorResponse = brewCreateErrorResponseSchema;
@@ -686,6 +693,7 @@ export const IngredientsFetchErrorResponse = ingredientsFetchErrorResponseSchema
 export const IngredientsResponse = ingredientsResponseSchema;
 export const InvalidRecipeIdErrorResponse = invalidRecipeIdErrorResponseSchema;
 export const InventoryAllocation = inventoryAllocationSchema;
+export const InventoryBottlingPathParams = inventoryBottlingPathParamsSchema;
 export const InventoryLabel = inventoryLabelSchema;
 export const InventoryLocation = inventoryLocationSchema;
 export const InventoryOrganizationMutationResponse = inventoryOrganizationMutationResponseSchema;

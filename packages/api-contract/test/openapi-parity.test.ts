@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "a95e2f5d9548dabd32ed9d46072e548e614aea919a158ab950808095984134c2";
+  "f453b6fda0ed1fd9ad053cf33039ccebb5e0f135f06dffc605af7834a7dbed31";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -65,11 +65,17 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
     paths: Record<string, {
       get?: { responses?: Record<string, unknown> };
       post?: { description?: string; parameters?: unknown[]; responses?: Record<string, unknown> };
-      patch?: { responses?: Record<string, unknown> };
-      delete?: { requestBody?: unknown; responses?: Record<string, unknown> };
+      patch?: { description?: string; responses?: Record<string, unknown> };
+      delete?: { description?: string; requestBody?: unknown; responses?: Record<string, unknown> };
     }>;
   };
   const pathsWithoutApprovedAdditions = structuredClone(document.paths);
+  // Bottling adds private reviewed output selections to the existing entry writes.
+  pathsWithoutApprovedAdditions["/brews/{brew_id}/entries"].post!.description = "Adds a timeline entry to a brew. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.";
+  pathsWithoutApprovedAdditions["/brews/{brew_id}/entries/{entry_id}"].patch!.description = "Updates a timeline entry for a brew. Stage change entries only allow datetime and note edits.";
+  pathsWithoutApprovedAdditions["/brews/{brew_id}/entries/{entry_id}"].delete!.description = "Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.";
+  delete pathsWithoutApprovedAdditions["/account/inventory/bottlings/{bottling_id}"];
+
   // Inventory keeps legacy requests valid and adds explicit deduction choices,
   // typed failures and an optional DELETE body. Compare older path docs below.
   for (const [path, method] of [

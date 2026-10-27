@@ -57,13 +57,15 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
       const mead = await owned(tx, userId, id);
       const changes = await tx.inventory_adjustments.findMany({
         where: { user_id: userId, stock: { mead_id: id } },
-        include: { stock: { select: { bottle_size_liters: true } } },
+        include: { stock: { select: { bottle_size_liters: true } }, bottling: true },
         orderBy: [{ created_at: "desc" }, { id: "desc" }], take: 101,
       });
+      const sourceEntries=await tx.brew_entries.findMany({where:{user_id:userId,id:{in:changes.flatMap(change=>change.bottling?[change.bottling.entry_id]:[])}},select:{id:true,brew_id:true}});
       return {
         mead: item(mead), has_more: changes.length > 100,
         adjustments: changes.slice(0, 100).map((change) => ({
           id: change.id, kind: change.kind,
+          source: change.bottling ? {name:change.bottling.source_name,brew_id:change.bottling.brew_id,entry_id:change.bottling.entry_id,removed:!!change.bottling.removed_at || !sourceEntries.some(entry=>entry.id===change.bottling!.entry_id&&entry.brew_id===change.bottling!.brew_id)} : null,
           size_liters: change.stock.bottle_size_liters!.toNumber(),
           delta: change.delta.toNumber(), balance_after: change.balance_after.toNumber(),
           note: change.note, created_at: change.created_at.toISOString(),

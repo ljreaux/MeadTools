@@ -9,6 +9,7 @@ import {
   accountRecipeOwnerResponseSchema,
   accountRecipeResponseSchema,
   accountUserResponseSchema,
+  acknowledgeBottlingChangeRequestBodySchema,
   additiveAmountDimSchema,
   additiveByIdPathParamsSchema,
   additiveByIdResponseSchema,
@@ -48,6 +49,8 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewBottlingContextSchema,
+  brewBottlingSelectionSchema,
   brewContainerChangeSchema,
   brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
@@ -244,6 +247,7 @@ import {
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
   inventoryAllocationSchema,
+  inventoryBottlingPathParamsSchema,
   inventoryLabelSchema,
   inventoryLocationSchema,
   inventoryOrganizationMutationResponseSchema,
@@ -452,6 +456,7 @@ export type AccountInfoUnauthorizedErrorResponse = z.infer<typeof accountInfoUna
 export type AccountRecipeOwnerResponse = z.infer<typeof accountRecipeOwnerResponseSchema>;
 export type AccountRecipeResponse = z.infer<typeof accountRecipeResponseSchema>;
 export type AccountUserResponse = z.infer<typeof accountUserResponseSchema>;
+export type AcknowledgeBottlingChangeRequestBody = z.infer<typeof acknowledgeBottlingChangeRequestBodySchema>;
 export type AdditiveAmountDim = z.infer<typeof additiveAmountDimSchema>;
 export type AdditiveByIdPathParams = z.infer<typeof additiveByIdPathParamsSchema>;
 export type AdditiveByIdResponse = z.infer<typeof additiveByIdResponseSchema>;
@@ -491,6 +496,8 @@ export type AuthenticatedRouteErrorResponse = z.infer<typeof authenticatedRouteE
 export type BjcpIngredientResponse = z.infer<typeof bjcpIngredientResponseSchema>;
 export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFetchErrorResponseSchema>;
 export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
+export type BrewBottlingContext = z.infer<typeof brewBottlingContextSchema>;
+export type BrewBottlingSelection = z.infer<typeof brewBottlingSelectionSchema>;
 export type BrewContainerChange = z.infer<typeof brewContainerChangeSchema>;
 export type BrewContainerErrorResponse = z.infer<typeof brewContainerErrorResponseSchema>;
 export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
@@ -687,6 +694,7 @@ export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchError
 export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
 export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
 export type InventoryAllocation = z.infer<typeof inventoryAllocationSchema>;
+export type InventoryBottlingPathParams = z.infer<typeof inventoryBottlingPathParamsSchema>;
 export type InventoryLabel = z.infer<typeof inventoryLabelSchema>;
 export type InventoryLocation = z.infer<typeof inventoryLocationSchema>;
 export type InventoryOrganizationMutationResponse = z.infer<typeof inventoryOrganizationMutationResponseSchema>;

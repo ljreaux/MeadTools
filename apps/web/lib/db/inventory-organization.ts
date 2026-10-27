@@ -1,4 +1,5 @@
 import "server-only";
+import { readBottlingChanges } from "./bottling";
 import type { PrismaClient } from "@prisma/client";
 import {
   InventoryError,
@@ -61,7 +62,8 @@ export function createInventoryOrganizationService(
           assignments.get(key)!.label_ids.push(link.label_id);
         }
         return {
-          can_manage: status.premiumEnabled,
+          bottling_changes: await readBottlingChanges(tx,userId),
+        can_manage: status.premiumEnabled,
           labels: labels.map(({ id, name, version }) => ({
             id,
             name,

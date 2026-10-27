@@ -9,7 +9,7 @@ import { planEntryInventory } from "@meadtools/inventory-domain";
 const entry = "e";
 function context(quantity: number): BrewInventoryContextResponse {
   return {
-    can_manage: true,
+    can_manage: true, bottlings: [], brew_name: null,
     tracked_entry_ids: [entry],
     vessel_events: [],
     usages: [

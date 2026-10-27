@@ -9,8 +9,39 @@ entry revision; receipts add existing/new sizes, manual use deducts bottles,
 corrections replace a size's on-hand count, details edit name/notes, and archive
 retains counts/history. History returns the latest 100 quantity changes across
 sizes. Existing consumables endpoints and spreadsheet transfers remain scoped to
-consumables; they cannot alter finished bottle records. Only the two new paths
-are excluded from historical endpoint parity.
+consumables; they cannot alter finished bottle records. These finished-mead paths are approved exclusions from historical endpoint parity.
+
+Inventory organization adds authenticated `GET`/`PATCH`
+`/account/inventory/organization` and `GET`/`PATCH`
+`/account/inventory/storage/{stock_id}` for custom labels, nested locations,
+reviewed allocations and retained movement history. Quantity mutations accept an
+optional manual-use storage source; automatic use draws unlocated stock first.
+The private organization response also reports changed bottling sources.
+
+Bottling adds an optional top-level `bottling` selection to entry create, patch
+and delete requests. It contains an operation UUID, an expected production
+revision, `sync` or `reconcile` mode, explicit on-hand confirmation and output
+splits by bottle-row UUID. A target references an existing owned mead entry or a
+new client-generated entry UUID/name. Storage positions apply only to newly
+added output. Packaging data's bottle rows use stable `id` UUIDs, whole counts
+and `sizeLiters` with six-place precision; closure rows also retain optional
+UUIDs. Older untracked JSON and index-based deduction keys stay readable.
+The addition-only batch endpoint remains scoped to supply deductions.
+
+A reviewed premium operation records packaging, supply deductions, measured
+volume/ABV history, finished-output differences, storage and quantity audit
+atomically. Private selections never enter public timeline JSON. Owned brew
+inventory context retains production revisions after expiry; source changes
+require reconciliation instead of replaying output. Reconciliation links
+reviewed existing counts without receiving bottles. Reconciliation rebases produced
+counts independently of the remaining balance so later uses stay reflected. `PATCH`
+`/account/inventory/bottlings/{bottling_id}` acknowledges an owned removed source
+only with its reviewed revision and explicit physical-count confirmation. It
+preserves counts, allocations and provenance. Finished-mead quantity history
+includes an optional retained source reference and removal state. These approved
+entry descriptions, private endpoints and new component schemas are reviewed
+alongside the generated OpenAPI baseline; historical endpoint parity still
+checks all other route documentation.
 
 `@meadtools/api-contract` owns the stable runtime request and response schemas
 used by MeadTools, the OpenAPI generator, and external TypeScript consumers.

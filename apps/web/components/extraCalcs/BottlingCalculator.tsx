@@ -55,6 +55,7 @@ export type BottleRow = {
 };
 
 export type PackagingBottleRow = {
+  id?: string;
   label: string;
   quantity: number;
   sizeLiters: number;
@@ -69,9 +70,9 @@ function safeFloat(s: string | undefined) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function formatInputNumber(value: number) {
+function formatInputNumber(value: number, precision = 3) {
   if (!Number.isFinite(value)) return "";
-  return String(Number(value.toFixed(3)));
+  return String(Number(value.toFixed(precision)));
 }
 
 export function toLiters(value: string | number, unit: CustomUnit) {
@@ -80,23 +81,21 @@ export function toLiters(value: string | number, unit: CustomUnit) {
 }
 
 function createInitialBottleRows(): BottleRow[] {
-  return Object.keys(BOTTLE_SIZES_L).map((size, idx) => ({
+  return Object.keys(BOTTLE_SIZES_L).map((size) => ({
     size: size as BottleSizeKey,
     quantity: "",
-    id: idx.toString(),
+    id: crypto.randomUUID(),
     totalVolumeL: 0,
     customSizeValue: "",
     customSizeUnits: "liter"
   }));
 }
 
-function bottleRowFromPackaging(
-  row: PackagingBottleRow,
-  idx: number
+export function bottleRowFromPackaging(
+  row: PackagingBottleRow
 ): BottleRow {
   const matchingSize = Object.entries(BOTTLE_SIZES_L).find(
-    ([label, liters]) =>
-      label === row.label || Math.abs(liters - row.sizeLiters) < 0.0005
+    ([, liters]) => Math.abs(liters - row.sizeLiters) < 0.0000005
   )?.[0] as BottleSizeKey | undefined;
 
   const size = matchingSize ?? "custom";
@@ -106,9 +105,9 @@ function bottleRowFromPackaging(
   return {
     size,
     quantity,
-    id: `saved-${idx}-${row.label}`,
+    id: row.id ?? crypto.randomUUID(),
     totalVolumeL: sizeLiters * safeFloat(quantity),
-    customSizeValue: size === "custom" ? formatInputNumber(sizeLiters) : "",
+    customSizeValue: size === "custom" ? formatInputNumber(sizeLiters, 6) : "",
     customSizeUnits: "liter"
   };
 }
@@ -180,7 +179,7 @@ export function useBottlingRows(defaultTotalVolume = "5") {
       {
         size: "custom",
         quantity: "",
-        id: `custom-${Date.now()}`,
+        id: crypto.randomUUID(),
         totalVolumeL: 0,
         customSizeValue: "",
         customSizeUnits: "liter"
@@ -296,11 +295,12 @@ export function getPackagingBottleRows(
   return bottleRows
     .map((row): PackagingBottleRow | null => {
       const quantity = safeFloat(row.quantity);
-      const sizeLiters = getPerBottleLiters(row);
+      const sizeLiters = Math.round(getPerBottleLiters(row) * 1e6) / 1e6;
       if (!Number.isFinite(quantity) || quantity <= 0) return null;
       if (!Number.isFinite(sizeLiters) || sizeLiters <= 0) return null;
 
       return {
+        id: row.id,
         label: row.size === "custom" ? "Custom" : row.size,
         quantity,
         sizeLiters,

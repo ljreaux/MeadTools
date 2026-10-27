@@ -1,4 +1,5 @@
 "use client";
+import { BottlingSourceChanges } from "./BottlingSourceChanges";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Wine, History } from "lucide-react";
@@ -50,6 +51,7 @@ export function FinishedMeadsWorkspace() {
       <div className="space-y-2"><h2 className="text-xl font-semibold">{t("inventory.meads.title")}</h2><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.meads.description")}</p></div>
       {data.can_manage ? <Button onClick={() => open(null)}><Plus aria-hidden className="mr-2 h-4 w-4" />{t("inventory.meads.add")}</Button> : null}
     </div>
+    <BottlingSourceChanges />
     <InventoryViewControls view={view} setView={setView} organization={organization.overview.data} meads />
     <PremiumCollectionNotice key={String(data.can_manage)} canManage={data.can_manage} description={t("inventory.readOnly")}>
       {visible.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visible.map((mead) => {

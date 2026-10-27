@@ -1788,6 +1788,46 @@
         ],
         "additionalProperties": false
       },
+      "AcknowledgeBottlingChangeRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expected_revision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "confirmed_on_hand": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "operation_id",
+          "expected_revision",
+          "confirmed_on_hand"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryOrganizationMutationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
       "FinishedMeadHistoryResponse": {
         "type": "object",
         "properties": {
@@ -1867,6 +1907,36 @@
                 "kind": {
                   "type": "string"
                 },
+                "source": {
+                  "default": null,
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "brew_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "entry_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "removed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "brew_id",
+                    "entry_id",
+                    "removed"
+                  ],
+                  "additionalProperties": false
+                },
                 "size_liters": {
                   "type": "number",
                   "minimum": 0,
@@ -1896,6 +1966,7 @@
               "required": [
                 "id",
                 "kind",
+                "source",
                 "size_liters",
                 "delta",
                 "balance_after",
@@ -2218,6 +2289,51 @@
       "InventoryOrganizationResponse": {
         "type": "object",
         "properties": {
+          "bottling_changes": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "brew_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "source_name": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "stock_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "source_missing": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "brew_id",
+                "source_name",
+                "revision",
+                "stock_ids",
+                "source_missing"
+              ],
+              "additionalProperties": false
+            }
+          },
           "can_manage": {
             "type": "boolean"
           },
@@ -2429,6 +2545,7 @@
           }
         },
         "required": [
+          "bottling_changes",
           "can_manage",
           "labels",
           "locations",
@@ -2675,20 +2792,6 @@
             "additionalProperties": false
           }
         ]
-      },
-      "InventoryOrganizationMutationResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
       },
       "InventoryOverviewResponse": {
         "type": "object",
@@ -5383,6 +5486,9 @@
                 "$ref": "#/components/schemas/BrewInventorySelection"
               }
             ]
+          },
+          "bottling": {
+            "type": "object"
           }
         }
       },
@@ -5666,6 +5772,9 @@
       "CreateBrewEntryRequestBody": {
         "type": "object",
         "properties": {
+          "bottling": {
+            "type": "object"
+          },
           "datetime": {
             "type": "string"
           },
@@ -6020,6 +6129,85 @@
       "BrewInventoryContextResponse": {
         "type": "object",
         "properties": {
+          "bottlings": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "entry_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "revision": {
+                  "type": "string"
+                },
+                "reconciliation_required": {
+                  "type": "boolean"
+                },
+                "source_name": {
+                  "type": "string"
+                },
+                "outputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "row_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "stock_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "mead_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "size_liters": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "row_id",
+                      "stock_id",
+                      "mead_id",
+                      "name",
+                      "quantity",
+                      "size_liters"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "entry_id",
+                "revision",
+                "reconciliation_required",
+                "source_name",
+                "outputs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "brew_name": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
           "can_manage": {
             "type": "boolean"
           },
@@ -6257,6 +6445,8 @@
           }
         },
         "required": [
+          "bottlings",
+          "brew_name",
           "can_manage",
           "tracked_entry_ids",
           "usages",
@@ -9325,6 +9515,13 @@
       "brewEntryMutationObjectSchema": {
         "type": "object",
         "properties": {
+          "bottling": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewBottlingSelection"
+              }
+            ]
+          },
           "datetime": {
             "type": "string"
           },
@@ -10467,6 +10664,9 @@
         "required": [
           "error"
         ]
+      },
+      "BrewBottlingSelection": {
+        "$ref": "#/components/schemas/bottlingSelectionSchema"
       },
       "BrewContainerChange": {
         "type": "object",
@@ -16744,7 +16944,7 @@
       "post": {
         "operationId": "post-brews-{brew_id}-entries",
         "summary": "Create brew entry",
-        "description": "Adds a timeline entry to a brew. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.",
+        "description": "Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.",
         "tags": [
           "Brews"
         ],
@@ -16904,7 +17104,7 @@
       "patch": {
         "operationId": "patch-brews-{brew_id}-entries-{entry_id}",
         "summary": "Update brew entry",
-        "description": "Updates a timeline entry for a brew. Stage change entries only allow datetime and note edits.",
+        "description": "Updates a timeline entry for a brew. Bottling corrections require a reviewed production revision and apply output differences while preserving later use and moves. Reconciliation retains reviewed physical counts without receipts. Private selections are never stored in public timeline JSON. Stage change entries only allow datetime and note edits.",
         "tags": [
           "Brews"
         ],
@@ -17018,7 +17218,7 @@
       "delete": {
         "operationId": "delete-brews-{brew_id}-entries-{entry_id}",
         "summary": "Delete brew entry",
-        "description": "Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.",
+        "description": "Deletes a timeline entry for a brew. A tracked bottling requires an explicit reviewed selection to resolve finished output and packaging use atomically. Expired tracking preserves counts and flags the removed source for reconciliation. Stage change entries cannot be deleted through this endpoint.",
         "tags": [
           "Brews"
         ],
@@ -20636,7 +20836,7 @@
       "get": {
         "operationId": "get-brews-{brew_id}-inventory",
         "summary": "Read private brew inventory context",
-        "description": "Returns owned linked deductions and the latest 50 vessel changes for active premium accounts. Free or expired accounts receive can_manage false and empty arrays. This context is never included in public brew responses.",
+        "description": "Returns owned linked deductions and the latest 50 vessel changes for active premium accounts. Includes private bottling revisions and production links for correction review. Free or expired accounts receive can_manage false and empty deduction/equipment arrays, while retaining owned bottling provenance and reconciliation warnings. This context is never included in public brew responses.",
         "tags": [
           "Inventory"
         ],
@@ -20693,6 +20893,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/bottlings/{bottling_id}": {
+      "patch": {
+        "operationId": "patch-account-inventory-bottlings-{bottling_id}",
+        "summary": "Acknowledge a removed bottling source after physical inventory review",
+        "description": "Premium-only acknowledgement for an owned, changed bottling whose source entry was removed. Requires a reviewed revision, retry UUID and explicit physical-count confirmation. Keeps all stock, allocations and source snapshots; never creates a receipt or restores an entry. Source changes with an existing entry must be reviewed through bottling instead.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgeBottlingChangeRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryOrganizationMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
                 }
               }
             }

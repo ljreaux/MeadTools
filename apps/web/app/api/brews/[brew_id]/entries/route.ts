@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Create brew entry
- * @description Adds a timeline entry to a brew. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.
+ * @description Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.
  * @pathParams BrewPathParams
  * @body CreateBrewEntryRequestBody
  * @response 201:CreateBrewEntryResponse

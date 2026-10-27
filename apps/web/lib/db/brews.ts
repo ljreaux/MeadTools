@@ -5,7 +5,7 @@ import { createInventoryOperation } from "./inventory";
 import { replaceBrewContainers } from "./equipment";
 import prisma from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
-import type { BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import type { BrewBottlingSelection, BrewInventoryOutcome, BrewInventorySelection } from "@meadtools/api-contract/contracts";
 import { mutateBrewEntryWithInventory } from "@/lib/brews/inventoryMutation";
 import { InventoryWriteError } from "@/lib/db/inventory";
 import { releaseEquipmentForBrew } from "@/lib/db/equipment";
@@ -120,6 +120,7 @@ export type CreateBrewEntryInput = {
   type: brew_entry_type;
   client_entry_id?: string;
   inventory?: BrewInventorySelection;
+  bottling?: BrewBottlingSelection;
 
   datetime?: string | Date;
   title?: string | null;
@@ -137,6 +138,7 @@ export type CreateBrewEntryInput = {
 
 export type PatchBrewEntryInput = {
   inventory?: BrewInventorySelection;
+  bottling?: BrewBottlingSelection;
   datetime?: string | Date;
   title?: string | null;
   note?: string | null;
@@ -1339,6 +1341,7 @@ export async function createBrewEntryForApp(
   brewId: string,
   input: CreateBrewEntryInput
 ): Promise<{ brew: BrewForApp; inventory: BrewInventoryOutcome }> {
+  if (input.bottling && (!input.client_entry_id || input.type !== "PACKAGING")) throw new InventoryWriteError("ENTRY_MISMATCH");
   if (input.inventory && input.inventory.mode !== "untracked" && (!input.client_entry_id || !["ADDITION","PACKAGING"].includes(input.type))) {
     throw new InventoryWriteError("ENTRY_MISMATCH");
   }
@@ -1363,11 +1366,11 @@ export async function createBrewEntryForApp(
 
   const entryId = input.client_entry_id ?? randomUUID();
   const inventory = await mutateBrewEntryWithInventory(userId, {
-    brewId, entryId, kind: "create", selection: input.inventory,
+    brewId, entryId, kind: "create", selection: input.inventory, bottling: input.bottling,
     entryMutation: JSON.parse(JSON.stringify(input)),
   }, async (tx) => {
     await writeCreatedBrewEntry(tx,userId,brewId,entryId,input);
-  });
+  }, tx => syncEstimatedAbvEntry(tx,brewId,userId));
 
   // consistent return
   return { brew: await getBrewForApp(userId, brewId), inventory };
@@ -1379,7 +1382,7 @@ export async function patchBrewEntryForApp(
   input: PatchBrewEntryInput
 ) {
   const inventory = await mutateBrewEntryWithInventory(userId, {
-    brewId, entryId, kind: "edit", selection: input.inventory,
+    brewId, entryId, kind: "edit", selection: input.inventory, bottling: input.bottling,
     entryMutation: JSON.parse(JSON.stringify(input)),
   }, async (tx) => {
     // 1) ownership check (entry must belong to brew, brew must belong to user)
@@ -1479,7 +1482,7 @@ export async function patchBrewEntryForApp(
       await syncCurrentVolume(tx, brewId);
     }
 
-  });
+  }, tx => syncEstimatedAbvEntry(tx,brewId,userId));
   const entry = await prisma.brew_entries.findFirst({
     where: { id: entryId, brew_id: brewId, brews: { user_id: userId } },
     select: {
@@ -1494,10 +1497,10 @@ export async function deleteBrewEntryForApp(
   userId: number,
   brewId: string,
   entryId: string,
-  input: { inventory?: BrewInventorySelection } = {},
+  input: { inventory?: BrewInventorySelection; bottling?: BrewBottlingSelection } = {},
 ) {
   const inventory = await mutateBrewEntryWithInventory(userId, {
-    brewId, entryId, kind: "remove", selection: input.inventory,
+    brewId, entryId, kind: "remove", selection: input.inventory, bottling: input.bottling,
     entryMutation: JSON.parse(JSON.stringify(input)),
   }, async (tx) => {
     const entry = await tx.brew_entries.findFirst({
@@ -1511,7 +1514,7 @@ export async function deleteBrewEntryForApp(
     await syncLatestGravity(tx, brewId);
     if (shouldSyncEstimatedAbvForEntry(entry)) await syncEstimatedAbvEntry(tx, brewId, userId);
     if (entry.type === brew_entry_type.VOLUME) await syncCurrentVolume(tx, brewId);
-  });
+  }, tx => syncEstimatedAbvEntry(tx,brewId,userId));
   return { message: "Entry deleted successfully." as const, inventory };
 }
 

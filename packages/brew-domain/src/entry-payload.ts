@@ -84,6 +84,7 @@ export type BrewVolumeData = {
 };
 
 export type PackagingBottleRow = {
+  id?: string;
   label: string;
   quantity: number;
   sizeLiters: number;
@@ -97,7 +98,7 @@ export type BrewPackagingData = {
   displayValue?: number;
   displayUnit?: string;
   bottleRows?: PackagingBottleRow[];
-  closures?: Array<{name:string;quantity:number}>;
+  closures?: Array<{id?:string;name:string;quantity:number}>;
 };
 
 export type CreateBrewEntryPayload =
@@ -309,7 +310,7 @@ export const entryPayload = {
     displayValue?: number;
     displayUnit?: string;
     bottleRows?: PackagingBottleRow[];
-  closures?: Array<{name:string;quantity:number}>;
+  closures?: Array<{id?:string;name:string;quantity:number}>;
     note?: string | null;
     datetime?: string;
   }): PackagingEntryPayload {

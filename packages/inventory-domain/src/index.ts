@@ -11,3 +11,5 @@ export * from './catalog';
 export * from './stock-transfer';
 export * from './finished-mead';
 export * from './organization';
+
+export * from "./bottling";

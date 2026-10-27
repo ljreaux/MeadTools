@@ -1,7 +1,14 @@
 "use client";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, ArrowUp, X, Search } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  X,
+  Search,
+  Filter,
+  ChevronDown,
+} from "lucide-react";
 import {
   defaultInventoryView,
   inventorySortFieldSchema,
@@ -10,6 +17,11 @@ import {
 import type { InventoryOrganizationResponse } from "@meadtools/api-contract/contracts";
 import DragList from "@/components/ui/DragList";
 import SearchableInput from "@/components/ui/SearchableInput";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,6 +55,7 @@ export function InventoryViewControls({
   const id = useId();
   const [filterQuery, setFilterQuery] = useState("");
   const [filterKey, setFilterKey] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   function filter(value: string) {
     const [kind, item] = value.split(":");
     if (kind === "label")
@@ -126,86 +139,111 @@ export function InventoryViewControls({
     })),
   ];
   return (
-    <div className="space-y-4 rounded-lg border p-3 sm:p-4">
-      <InputGroup className="w-full sm:max-w-md">
-        <InputGroupInput
-          type="search"
-          maxLength={500}
-          value={view.search}
-          onChange={(event) => setView({ ...view, search: event.target.value })}
-          aria-label={t("inventory.search")}
-          placeholder={t("inventory.organization.search")}
-        />
-        <InputGroupAddon>
-          <Search aria-hidden />
-        </InputGroupAddon>
-        {view.search ? (
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              aria-label={t("clear")}
-              onClick={() => setView({ ...view, search: "" })}
-            >
-              <X aria-hidden />
-            </InputGroupButton>
-          </InputGroupAddon>
-        ) : null}
-      </InputGroup>
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Label htmlFor={`${id}-filter`}>
-          {t("inventory.organization.filters")}
-        </Label>
-        <div className="w-full sm:max-w-sm">
-          <SearchableInput
-            openOnFocus={false}
-            key={filterKey}
-            id={`${id}-filter`}
-            items={filterOptions}
-            keyName="name"
-            query={filterQuery}
-            setQuery={setFilterQuery}
-            placeholder={t("inventory.organization.addFilter")}
-            onSelect={(option) => {
-              filter(option.value);
-              setFilterQuery("");
-              setFilterKey((key) => key + 1);
-            }}
-          />
-        </div>
-        {pills.map((pill) => (
-          <Button
-            key={pill.key}
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="h-auto max-w-full gap-1 whitespace-normal rounded-full py-1.5 text-left"
-            onClick={pill.remove}
-            aria-label={t("inventory.organization.removeFilter", {
-              name: pill.label,
-            })}
-          >
-            {pill.label}
-            <X aria-hidden className="h-3 w-3 shrink-0" />
-          </Button>
-        ))}
-        {pills.length || view.search ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() =>
-              setView({
-                ...view,
-                search: "",
-                labels: [],
-                locations: [],
-                types: [],
-                availability: "all",
-              })
+        <InputGroup className="w-full sm:w-auto sm:min-w-64 sm:max-w-md sm:flex-1">
+          <InputGroupInput
+            type="search"
+            maxLength={500}
+            value={view.search}
+            onChange={(event) =>
+              setView({ ...view, search: event.target.value })
             }
+            aria-label={t("inventory.search")}
+            placeholder={t("inventory.organization.search")}
+          />
+          <InputGroupAddon>
+            <Search aria-hidden />
+          </InputGroupAddon>
+          {view.search ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                aria-label={t("clear")}
+                onClick={() => setView({ ...view, search: "" })}
+              >
+                <X aria-hidden />
+              </InputGroupButton>
+            </InputGroupAddon>
+          ) : null}
+        </InputGroup>
+        <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="h-9">
+              <Filter aria-hidden className="size-3.5" />
+              {t("inventory.organization.filters")}
+              {pills.length ? (
+                <span className="tabular-nums text-muted-foreground">
+                  ({pills.length})
+                </span>
+              ) : null}
+              <ChevronDown aria-hidden className="size-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="w-80 max-w-[calc(100vw-2rem)] space-y-2 p-3"
           >
-            {t("brews.filters.clear")}
-          </Button>
-        ) : null}
+            <Label htmlFor={`${id}-filter`}>
+              {t("inventory.organization.addFilter")}
+            </Label>
+            <SearchableInput
+              openOnFocus={false}
+              dropdownPortal
+              key={filterKey}
+              id={`${id}-filter`}
+              items={filterOptions}
+              keyName="name"
+              query={filterQuery}
+              setQuery={setFilterQuery}
+              placeholder={t("inventory.organization.addFilter")}
+              onSelect={(option) => {
+                filter(option.value);
+                setFilterQuery("");
+                setFilterKey((key) => key + 1);
+                setFiltersOpen(false);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
+      {pills.length || view.search ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {pills.map((pill) => (
+            <Button
+              key={pill.key}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-auto min-h-8 max-w-full gap-2 whitespace-normal text-left"
+              onClick={pill.remove}
+              aria-label={t("inventory.organization.removeFilter", {
+                name: pill.label,
+              })}
+            >
+              {pill.label}
+              <X aria-hidden className="h-3 w-3 shrink-0" />
+            </Button>
+          ))}
+          {pills.length || view.search ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                setView({
+                  ...view,
+                  search: "",
+                  labels: [],
+                  locations: [],
+                  types: [],
+                  availability: "all",
+                })
+              }
+            >
+              {t("brews.filters.clear")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {view.labels.length > 1 ? (
         <div className="flex flex-wrap items-center gap-2">
           <Label htmlFor={`${id}-match`}>
@@ -231,7 +269,7 @@ export function InventoryViewControls({
           </Select>
         </div>
       ) : null}
-      <div className="space-y-2">
+      <div className="space-y-2 border-t pt-3">
         <div className="flex flex-wrap items-center gap-2">
           <Label htmlFor={`${id}-sort`}>
             {t("inventory.organization.sort")}
@@ -248,7 +286,10 @@ export function InventoryViewControls({
                 })
               }
             >
-              <SelectTrigger id={`${id}-sort`} className="w-auto min-w-40">
+              <SelectTrigger
+                id={`${id}-sort`}
+                className="h-8 w-auto min-w-40 text-sm"
+              >
                 <SelectValue
                   placeholder={t("inventory.organization.addSort")}
                 />
@@ -291,7 +332,7 @@ export function InventoryViewControls({
           getId={(sort) => sort.field}
           setItems={(sorts) => setView({ ...view, sorts })}
           renderItem={(sort, index) => (
-            <div className="flex flex-wrap items-center gap-1 rounded-full border px-2 py-1 text-sm">
+            <div className="flex flex-wrap items-center gap-1 rounded-md border px-2 py-1 text-sm">
               <span className="mr-1">
                 {index + 1}.{" "}
                 {t(`inventory.organization.sortFields.${sort.field}`)}
@@ -379,9 +420,7 @@ export function InventoryViewControls({
             </div>
           )}
         />
-        <p className="text-xs text-muted-foreground">
-          {t("inventory.organization.sortHelp")}
-        </p>
+        <p className="sr-only">{t("inventory.organization.sortHelp")}</p>
       </div>
     </div>
   );

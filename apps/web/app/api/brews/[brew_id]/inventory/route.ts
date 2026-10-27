@@ -6,7 +6,7 @@ import { inventoryRouteError } from "@/lib/brews/inventoryRouteError";
 
 /**
  * Read private brew inventory context
- * @description Returns owned linked deductions and the latest 50 vessel changes for active premium accounts. Free or expired accounts receive can_manage false and empty arrays. This context is never included in public brew responses.
+ * @description Returns owned linked deductions and the latest 50 vessel changes for active premium accounts. Includes private bottling revisions and production links for correction review. Free or expired accounts receive can_manage false and empty deduction/equipment arrays, while retaining owned bottling provenance and reconciliation warnings. This context is never included in public brew responses.
  * @pathParams BrewInventoryPathParams
  * @response 200:BrewInventoryContextResponse
  * @responseSet none
