@@ -15,3 +15,13 @@ test("finished counts require whole bottles, positive capacities and distinct si
     assert.equal(finishedMeadInputSchema.safeParse({ name: "Traditional", bottles }).success, false);
   assert.ok(finishedMeadInputSchema.safeParse({ name: "Waiting for more bottles", bottles: [{ size_liters: 0.75, quantity: 0 }] }).success);
 });
+test("entered bottle amounts and units must agree with canonical capacity", () => {
+  const bottles = [
+    { size_liters: .354882, display_size: { value: 12, unit: "fl_oz" }, quantity: 6 },
+    { size_liters: .75, display_size: { value: 750, unit: "mL" }, quantity: 4 },
+  ];
+  const input = { name: "Mixed bottles", bottles };
+  assert.equal(finishedMeadInputSchema.safeParse(input).success, true);
+  assert.equal(finishedMeadInputSchema.safeParse({ ...input, bottles: [{ ...bottles[0], display_size: { value: 750, unit: "mL" } }] }).success, false);
+  assert.equal(finishedMeadInputSchema.safeParse({ ...input, bottles: [{ ...bottles[0], display_size: { value: 12, unit: "g" } }] }).success, false);
+});

@@ -337,3 +337,16 @@ available to active owners after premium expiry. Internal scheduled cleanup is
 excluded from public OpenAPI. Runtime normalization preserves image schemas'
 strictness, formats and byte limits. Only the two new paths are excluded from
 historical path parity; existing endpoints remain unchanged.
+
+
+Finished bottle sizes retain optional `display_size: {value, unit}` on create
+and receipt (mL, L, fl_oz or gal), alongside canonical `size_liters`. New input
+must describe the same capacity; established calculator presets retain their
+nominal labels. Count corrections and use cannot relabel bottle sizes. A
+receipt into an existing capacity retains that stock row's first display size.
+Finished-mead overview/history, organization stock, and private bottling outputs
+return nullable display_size; null denotes older records whose entered units
+were not retained. Clients display their canonical liters as a fallback, without
+inventing an original unit. Private stock metadata remains outside public brew
+entries. The existing undeployed finished-mead migration adds two scalar fields
+and enforces paired positive display values with volume units.

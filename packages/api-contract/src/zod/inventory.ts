@@ -9,6 +9,8 @@ import {
   finishedMeadDetailsSchema,
   finishedMeadInputSchema,
   bottleCountSchema,
+  bottleDisplaySizeSchema,
+  bottleDisplayMatches,
   bottleSizeLitersSchema,
 } from "@meadtools/inventory-domain";
 import {
@@ -132,6 +134,7 @@ export const inventoryStockUnexpectedErrorResponseSchema = z.object({
 export const finishedMeadBottleSchema = z.object({
   id: z.string().uuid(),
   size_liters: bottleSizeLitersSchema,
+  display_size: bottleDisplaySizeSchema.nullable().default(null),
   quantity: bottleCountSchema,
 });
 export const finishedMeadItemSchema = z.object({
@@ -159,10 +162,14 @@ export const updateFinishedMeadRequestBodySchema = z.discriminatedUnion("action"
   finishedMeadChangeBase.extend({
     action: z.enum(["receipt", "manual_use", "correction"]),
     size_liters: bottleSizeLitersSchema,
+    display_size: bottleDisplaySizeSchema.optional(),
     quantity: bottleCountSchema,
     note: z.string().max(5000).nullable().default(null),
     storage_source: inventoryStorageSourceSchema.optional(),
-  }).strict().refine((value) => value.action === "correction" || value.quantity > 0, {
+  }).strict().refine((value) => value.display_size === undefined ||
+    (value.action === "receipt" && bottleDisplayMatches(value.size_liters, value.display_size)), {
+    path: ["display_size"], message: "Bottle size is supplied only for a matching receipt",
+  }).refine((value) => value.action === "correction" || value.quantity > 0, {
     path: ["quantity"], message: "Enter a positive bottle count",
   }).refine((value) => value.storage_source === undefined || value.action === "manual_use", { message: "A storage source is only used for manual use" }),
   finishedMeadChangeBase.extend({ action: z.literal("archive") }).strict(),
@@ -174,6 +181,7 @@ export const finishedMeadHistoryResponseSchema = z.object({
     kind: z.string(),
     source: z.object({name:z.string(),brew_id:z.string().uuid(),entry_id:z.string().uuid(),removed:z.boolean()}).nullable().default(null),
     size_liters: bottleSizeLitersSchema,
+    display_size: bottleDisplaySizeSchema.nullable().default(null),
     delta: z.number().int(),
     balance_after: bottleCountSchema,
     note: z.string().nullable(),
@@ -189,7 +197,7 @@ export const inventoryAllocationSchema = z.object({
 }).strict();
 export const inventoryOrganizedStockSchema = z.object({
   id: z.string().uuid(), name: z.string(), mead_id: z.string().uuid().nullable(),
-  bottle_size_liters: z.number().nullable(), quantity: quantitySchema,
+  bottle_size_liters: z.number().nullable(), display_size: bottleDisplaySizeSchema.nullable().default(null), quantity: quantitySchema,
   revision: z.string().regex(/^[a-f0-9]{64}$/), allocations: z.array(inventoryAllocationSchema),
 });
 export const acknowledgeBottlingChangeRequestBodySchema = z.object({operation_id:z.string().uuid(),expected_revision:z.string().regex(/^[a-f0-9]{64}$/),confirmed_on_hand:z.literal(true)}).strict();
@@ -223,7 +231,7 @@ export const inventoryStorageHistoryResponseSchema = z.object({
 /** Private brew-tracker context. Unavailable premium access returns no stock links or equipment history. */
 export const brewBottlingContextSchema = z.object({
   entry_id: z.string().uuid(), revision: z.string(), reconciliation_required: z.boolean(), source_name: z.string(),
-  outputs: z.array(z.object({row_id:z.string().uuid(),stock_id:z.string().uuid(),mead_id:z.string().uuid(),name:z.string(),quantity:z.number().int(),size_liters:z.number()})),
+  outputs: z.array(z.object({row_id:z.string().uuid(),stock_id:z.string().uuid(),mead_id:z.string().uuid(),name:z.string(),quantity:z.number().int(),size_liters:z.number(),display_size:bottleDisplaySizeSchema.nullable().default(null)})),
 });
 export const brewInventoryContextResponseSchema = z.object({
   bottlings: z.array(brewBottlingContextSchema).default([]),

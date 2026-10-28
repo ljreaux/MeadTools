@@ -1,3 +1,4 @@
+import { storedBottleDisplaySize } from "./inventory-bottle-size";
 import "server-only";
 import { createHash } from "node:crypto";
 import type { Prisma, inventory_stock } from "@prisma/client";
@@ -40,6 +41,7 @@ export function organizedStock(row: StockWithStorage) {
     name: row.name,
     mead_id: row.mead_id,
     bottle_size_liters: row.bottle_size_liters?.toNumber() ?? null,
+    display_size: storedBottleDisplaySize(row),
     quantity,
     revision,
     allocations,

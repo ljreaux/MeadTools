@@ -1,4 +1,5 @@
 "use client";
+import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { BottlingSourceChanges } from "./BottlingSourceChanges";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +30,6 @@ export function FinishedMeadsWorkspace() {
   const [editor, setEditor] = useState<{ item: FinishedMeadItem | null; action: FinishedMeadAction } | null>(null);
   const [history, setHistory] = useState<FinishedMeadItem | null>(null);
   const [removing, setRemoving] = useState<FinishedMeadItem | null>(null);
-  const format = (value: number) => new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 3 }).format(value);
   const errorCode = mutation.error instanceof InventoryRequestError ? mutation.error.code : "FAILED";
   const error = mutation.error ? t(`inventory.meads.errors.${errorCode}`, t(`inventory.errors.${errorCode}`, t("inventory.saveError"))) : "";
   function open(item: FinishedMeadItem | null, action: FinishedMeadAction = "receipt") { mutation.reset(); setEditor({ item, action }); }
@@ -59,8 +59,8 @@ export function FinishedMeadsWorkspace() {
         return <Card key={mead.id} className="flex min-w-0 flex-col">
           <CardHeader><CardTitle className="break-words text-base">{mead.name}</CardTitle></CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4">
-            <div><p className="text-2xl font-semibold tabular-nums">{t("inventory.meads.bottleCount", { count: totals.bottles })}</p><p className="text-sm text-muted-foreground">{t("inventory.meads.totalVolume", { volume: format(totals.liters) })}</p></div>
-            <ul className="space-y-2">{mead.bottles.map((bottle) => <li key={bottle.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 text-sm"><span>{format(bottle.size_liters * 1000)} mL</span><span className="tabular-nums">{t("inventory.meads.remaining", { count: bottle.quantity })}</span></li>)}</ul>
+            <div><p className="text-2xl font-semibold tabular-nums">{t("inventory.meads.bottleCount", { count: totals.bottles })}</p><p className="text-sm text-muted-foreground">{t("inventory.meads.totalVolume", { volume: new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 3 }).format(totals.liters) })}</p></div>
+            <ul className="space-y-2">{mead.bottles.map((bottle) => <li key={bottle.id} className="flex flex-wrap justify-between gap-2 border-b pb-2 text-sm"><span>{formatStoredBottleSize(bottle, i18n.language)}</span><span className="tabular-nums">{t("inventory.meads.remaining", { count: bottle.quantity })}</span></li>)}</ul>
             <InventoryOrganizationSummary kind="mead" id={mead.id} />
             {mead.notes ? <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">{mead.notes}</p> : null}
             <div className="mt-auto flex flex-wrap gap-2">

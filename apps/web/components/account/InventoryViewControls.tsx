@@ -10,13 +10,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import {
-  defaultInventoryView,
   inventorySortFieldSchema,
   type InventoryView,
 } from "@meadtools/inventory-domain";
 import type { InventoryOrganizationResponse } from "@meadtools/api-contract/contracts";
-import DragList from "@/components/ui/DragList";
-import SearchableInput from "@/components/ui/SearchableInput";
+import { Checkbox } from "@/components/ui/Checkbox";
 import {
   Popover,
   PopoverContent,
@@ -53,19 +51,12 @@ export function InventoryViewControls({
 }) {
   const { t } = useTranslation();
   const id = useId();
-  const [filterQuery, setFilterQuery] = useState("");
-  const [filterKey, setFilterKey] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  function filter(value: string) {
-    const [kind, item] = value.split(":");
-    if (kind === "label")
-      setView({ ...view, labels: [...new Set([...view.labels, item])] });
-    if (kind === "location")
-      setView({ ...view, locations: [...new Set([...view.locations, item])] });
-    if (kind === "type")
-      setView({ ...view, types: [...new Set([...view.types, item])] });
-    if (kind === "availability")
-      setView({ ...view, availability: item as InventoryView["availability"] });
+  function toggle(key: "labels" | "locations" | "types", value: string) {
+    const selected = view[key];
+    setView({ ...view, [key]: selected.includes(value)
+      ? selected.filter((item) => item !== value)
+      : [...selected, value] });
   }
   const pills = [
     ...view.labels.map((value) => ({
@@ -112,32 +103,16 @@ export function InventoryViewControls({
   const fields = inventorySortFieldSchema.options.filter(
     (field) => meads || !["volume", "bottle_size"].includes(field),
   );
-  const filterOptions = [
-    ...(view.labels.length < 50 ? (organization?.labels ?? []) : [])
-      .filter((row) => !view.labels.includes(row.id))
-      .map((row) => ({
-        value: `label:${row.id}`,
-        name: t("inventory.organization.filterCategory", { name: row.name }),
-      })),
-    ...(view.locations.length < 50 ? (organization?.locations ?? []) : [])
-      .filter((row) => !view.locations.includes(row.id))
-      .map((row) => ({
-        value: `location:${row.id}`,
-        name: t("inventory.organization.filterLocation", { name: row.path }),
-      })),
-    ...types
-      .filter((type) => !view.types.includes(type))
-      .map((type) => ({
-        value: `type:${type}`,
-        name: t("inventory.organization.filterType", {
-          name: t(`inventory.categories.${type}`),
-        }),
-      })),
-    ...(["in_stock", "empty"] as const).map((value) => ({
-      value: `availability:${value}`,
-      name: t(`inventory.organization.${value}`),
-    })),
+  const groups = [
+    { key: "types" as const, title: t("inventory.organization.itemType"),
+      options: types.map((value) => ({ value, name: t(`inventory.categories.${value}`) })) },
+    { key: "labels" as const, title: t("inventory.organization.categories"),
+      options: (organization?.labels ?? []).map((row) => ({ value: row.id, name: row.name })) },
+    { key: "locations" as const, title: t("inventory.organization.locations"),
+      options: (organization?.locations ?? []).map((row) => ({ value: row.id, name: row.path })) },
   ];
+  const sort = view.sorts[0] && fields.includes(view.sorts[0].field)
+    ? view.sorts[0] : { field: "name" as const, direction: "asc" as const };
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -181,30 +156,44 @@ export function InventoryViewControls({
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="w-80 max-w-[calc(100vw-2rem)] space-y-2 p-3"
+            className="w-80 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto space-y-4 p-4"
           >
-            <Label htmlFor={`${id}-filter`}>
-              {t("inventory.organization.addFilter")}
-            </Label>
-            <SearchableInput
-              openOnFocus={false}
-              dropdownPortal
-              key={filterKey}
-              id={`${id}-filter`}
-              items={filterOptions}
-              keyName="name"
-              query={filterQuery}
-              setQuery={setFilterQuery}
-              placeholder={t("inventory.organization.addFilter")}
-              onSelect={(option) => {
-                filter(option.value);
-                setFilterQuery("");
-                setFilterKey((key) => key + 1);
-                setFiltersOpen(false);
-              }}
-            />
+            {groups.filter((group) => group.options.length).map((group) => (
+              <fieldset key={group.key} className="space-y-2 border-b pb-3 last:border-0">
+                <legend className="mb-2 text-sm font-medium">{group.title}</legend>
+                <div className="max-h-40 space-y-1 overflow-y-auto">
+                  {group.options.map((option) => (
+                    <Label key={option.value} className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 font-normal hover:bg-accent">
+                      <Checkbox checked={view[group.key].includes(option.value)}
+                        disabled={!view[group.key].includes(option.value) && view[group.key].length >= (group.key === "types" ? 10 : 50)}
+                        onCheckedChange={() => toggle(group.key, option.value)} />
+                      <span className="min-w-0 break-words">{option.name}</span>
+                    </Label>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+            <div className="space-y-2">
+              <Label htmlFor={`${id}-availability`}>{t("inventory.organization.availability")}</Label>
+              <Select value={view.availability} onValueChange={(availability: InventoryView["availability"]) => setView({ ...view, availability })}>
+                <SelectTrigger id={`${id}-availability`}><SelectValue /></SelectTrigger>
+                <SelectContent>{(["all", "in_stock", "empty"] as const).map((value) => <SelectItem key={value} value={value}>{t(`inventory.organization.${value}`)}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </PopoverContent>
         </Popover>
+      <div className="flex flex-wrap items-center gap-2">
+        <Label htmlFor={`${id}-sort`}>{t("inventory.organization.sort")}</Label>
+        <Select value={sort.field} onValueChange={(field: typeof sort.field) => setView({ ...view, sorts: [{ field, direction: sort.direction }] })}>
+          <SelectTrigger id={`${id}-sort`} className="h-9 w-auto min-w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>{fields.map((field) => <SelectItem key={field} value={field}>{t(`inventory.organization.sortFields.${field}`)}</SelectItem>)}</SelectContent>
+        </Select>
+        <Button type="button" size="sm" variant="ghost" aria-label={`${t(`inventory.organization.${sort.direction}`)}. ${t("inventory.organization.reverseSort")}`}
+          onClick={() => setView({ ...view, sorts: [{ ...sort, direction: sort.direction === "asc" ? "desc" : "asc" }] })}>
+          {sort.direction === "asc" ? <ArrowUp aria-hidden className="size-4" /> : <ArrowDown aria-hidden className="size-4" />}
+          {t(`inventory.organization.${sort.direction}`)}
+        </Button>
+      </div>
       </div>
       {pills.length || view.search ? (
         <div className="flex flex-wrap items-center gap-2">
@@ -269,159 +258,7 @@ export function InventoryViewControls({
           </Select>
         </div>
       ) : null}
-      <div className="space-y-2 border-t pt-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Label htmlFor={`${id}-sort`}>
-            {t("inventory.organization.sort")}
-          </Label>
-          {fields.some(
-            (field) => !view.sorts.some((sort) => sort.field === field),
-          ) ? (
-            <Select
-              value=""
-              onValueChange={(field: InventoryView["sorts"][number]["field"]) =>
-                setView({
-                  ...view,
-                  sorts: [...view.sorts, { field, direction: "asc" }],
-                })
-              }
-            >
-              <SelectTrigger
-                id={`${id}-sort`}
-                className="h-8 w-auto min-w-40 text-sm"
-              >
-                <SelectValue
-                  placeholder={t("inventory.organization.addSort")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {fields
-                  .filter(
-                    (field) => !view.sorts.some((sort) => sort.field === field),
-                  )
-                  .map((field) => (
-                    <SelectItem key={field} value={field}>
-                      {t(`inventory.organization.sortFields.${field}`)}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              setView({
-                ...view,
-                sorts: structuredClone(defaultInventoryView.sorts),
-              })
-            }
-          >
-            {t("inventory.organization.resetSort")}
-          </Button>
-        </div>
-        <DragList
-          layout="wrapped"
-          getDragLabel={(sort) =>
-            t("inventory.organization.dragRule", {
-              name: t(`inventory.organization.sortFields.${sort.field}`),
-            })
-          }
-          dragInstructions={t("inventory.organization.dragInstructions")}
-          items={view.sorts}
-          getId={(sort) => sort.field}
-          setItems={(sorts) => setView({ ...view, sorts })}
-          renderItem={(sort, index) => (
-            <div className="flex flex-wrap items-center gap-1 rounded-md border px-2 py-1 text-sm">
-              <span className="mr-1">
-                {index + 1}.{" "}
-                {t(`inventory.organization.sortFields.${sort.field}`)}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label={t("inventory.organization.toggleDirection", {
-                  name: t(`inventory.organization.sortFields.${sort.field}`),
-                })}
-                onClick={() =>
-                  setView({
-                    ...view,
-                    sorts: view.sorts.map((row) =>
-                      row.field === sort.field
-                        ? {
-                            ...row,
-                            direction: row.direction === "asc" ? "desc" : "asc",
-                          }
-                        : row,
-                    ),
-                  })
-                }
-              >
-                {sort.direction === "asc" ? (
-                  <ArrowUp aria-hidden className="h-4 w-4" />
-                ) : (
-                  <ArrowDown aria-hidden className="h-4 w-4" />
-                )}
-                <span className="text-xs">
-                  {t(`inventory.organization.${sort.direction}`)}
-                </span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={index === 0}
-                aria-label={t("inventory.organization.moveEarlier", {
-                  name: t(`inventory.organization.sortFields.${sort.field}`),
-                })}
-                onClick={() => {
-                  const sorts = [...view.sorts];
-                  [sorts[index - 1], sorts[index]] = [
-                    sorts[index],
-                    sorts[index - 1],
-                  ];
-                  setView({ ...view, sorts });
-                }}
-              >
-                <ArrowUp aria-hidden className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={index === view.sorts.length - 1}
-                aria-label={t("inventory.organization.moveLater", {
-                  name: t(`inventory.organization.sortFields.${sort.field}`),
-                })}
-                onClick={() => {
-                  const sorts = [...view.sorts];
-                  [sorts[index], sorts[index + 1]] = [
-                    sorts[index + 1],
-                    sorts[index],
-                  ];
-                  setView({ ...view, sorts });
-                }}
-              >
-                <ArrowDown aria-hidden className="h-3 w-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                aria-label={t("inventory.organization.removeSort", {
-                  name: t(`inventory.organization.sortFields.${sort.field}`),
-                })}
-                onClick={() =>
-                  setView({
-                    ...view,
-                    sorts: view.sorts.filter((row) => row.field !== sort.field),
-                  })
-                }
-              >
-                <X aria-hidden className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-        />
-        <p className="sr-only">{t("inventory.organization.sortHelp")}</p>
-      </div>
+
     </div>
   );
 }

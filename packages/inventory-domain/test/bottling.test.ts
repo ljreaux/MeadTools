@@ -85,3 +85,11 @@ test("bottle and closure row identities survive reordering while legacy keys rem
     "closure:0",
   );
 });
+
+test("packaging inventory lines retain selected bottle units", () => {
+  const data = { bottleRows: [{ id: row, label: "12oz", quantity: 2, sizeLiters: 0.355 },
+    { id: mead, label: "Custom", quantity: 1, sizeLiters: 0.710086, customSizeValue: 24, customSizeUnits: "fl_oz" }] };
+  assert.equal(inventoryEntryLines("PACKAGING", data)[0].name, "12 fl oz bottles");
+  assert.equal(inventoryEntryLines("PACKAGING", data)[1].name, "24 fl oz bottles");
+  assert.equal(productionBottleRows(data)[1].customSizeUnits, "fl_oz");
+});

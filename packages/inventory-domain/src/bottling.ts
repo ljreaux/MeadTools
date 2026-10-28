@@ -7,6 +7,8 @@ export const productionBottleRowSchema = z.object({
   label: z.string().max(200),
   quantity: z.number().int().positive().max(1_000_000_000),
   sizeLiters: bottleSizeLitersSchema,
+  customSizeValue: z.number().finite().positive().optional(),
+  customSizeUnits: z.enum(["fl_oz", "ml", "liter", "gallon"]).optional(),
 });
 export const bottlingOutputSchema = z
   .object({

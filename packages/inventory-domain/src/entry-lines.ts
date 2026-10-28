@@ -36,6 +36,8 @@ const packagingSchema = z.object({
       z.object({
         id: z.string().uuid().optional(),
         label: z.string().optional(),
+        customSizeValue: z.number().positive().optional(),
+        customSizeUnits: z.enum(["fl_oz", "ml", "liter", "gallon"]).optional(),
         quantity: count,
         sizeLiters: z.number().positive(),
       }),
@@ -57,7 +59,10 @@ export function inventoryEntryLines(
     return [
       ...value.bottleRows.map((row, index) => ({
         key: `bottle:${row.id ?? index}`,
-        name: `${Number((row.sizeLiters * 1000).toFixed(3))} mL bottles`,
+        name: `${row.customSizeValue && row.customSizeUnits
+          ? `${row.customSizeValue} ${{ fl_oz: "fl oz", ml: "mL", liter: "L", gallon: "gal" }[row.customSizeUnits]}`
+          : row.label && row.label !== "Custom" ? row.label.replace(/(\d)(oz|ml|L|gal)$/, (_, amount, unit) => `${amount} ${unit === "oz" ? "fl oz" : unit === "ml" ? "mL" : unit}`)
+          : `${Number((row.sizeLiters * 1000).toFixed(3))} mL`} bottles`,
         kind: "PACKAGING",
         quantity: { value: row.quantity, unit: "units" as const },
       })),

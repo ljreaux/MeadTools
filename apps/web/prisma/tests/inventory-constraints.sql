@@ -133,6 +133,12 @@ SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_stock
   (user_id, name, category, quantity, unit, mead_id, bottle_size_liters)
   SELECT user_id, name, category, quantity, unit, mead_id, bottle_size_liters FROM inventory_stock WHERE category = 'mead' $q$, '23505');
 
+-- Display size metadata is paired and restricted to finished bottle stock.
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12, bottle_size_unit = 'g' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12, bottle_size_unit = 'fl_oz' WHERE category <> 'mead' $q$, '23514');
+UPDATE inventory_stock SET bottle_size_value = 750, bottle_size_unit = 'mL' WHERE category = 'mead';
+
 INSERT INTO inventory_labels (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000013', -471, 'Competition');
 INSERT INTO inventory_locations (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000014', -471, 'Cellar');
 INSERT INTO inventory_locations (id, user_id, name, parent_id) VALUES

@@ -17,7 +17,7 @@ export async function seedFinishedMeads(database: PrismaClient, userId: number) 
     for (const [size, count] of [[0.75, 12], [0.375, 6]]) {
       const stock = await tx.inventory_stock.create({ data: {
         user_id: userId, mead_id: mead.id, name: mead.name,
-        category: "mead", bottle_size_liters: size, quantity: 0, unit: "units",
+        category: "mead", bottle_size_liters: size, bottle_size_value: size * 1000, bottle_size_unit: "mL", quantity: 0, unit: "units",
       } });
       await writeInventoryBalance(tx, userId, operation.id, stock,
         { balance: { value: count, unit: "units" }, adjustment: count }, "receipt", null, "Initial local test bottles");

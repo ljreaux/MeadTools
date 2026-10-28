@@ -43,11 +43,13 @@ export function useInventoryView(scope: "consumables" | "meads") {
   const raw = useSyncExternalStore(subscribe, read, () => initial);
   const view = useMemo(() => {
     try {
-      return inventoryViewSchema.parse(JSON.parse(raw));
+      const parsed = inventoryViewSchema.parse(JSON.parse(raw));
+      const sorts = parsed.sorts.filter((sort) => scope === "meads" || !["volume", "bottle_size"].includes(sort.field)).slice(0, 1);
+      return { ...parsed, sorts: sorts.length ? sorts : structuredClone(defaultInventoryView.sorts) };
     } catch {
       return structuredClone(defaultInventoryView);
     }
-  }, [raw]);
+  }, [raw, scope]);
   const setView = useCallback(
     (next: InventoryView) => {
       const serialized = JSON.stringify(inventoryViewSchema.parse(next));

@@ -214,6 +214,8 @@ model inventory_stock {
   updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
   mead_id         String? @db.Uuid
   bottle_size_liters Decimal? @db.Decimal(16, 6)
+  bottle_size_value Decimal? @db.Decimal(16, 6)
+  bottle_size_unit inventory_quantity_unit?
   storage_version Int @default(0)
 
   user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)

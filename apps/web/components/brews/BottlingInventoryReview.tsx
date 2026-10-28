@@ -1,10 +1,12 @@
 "use client";
+import { formatBottleSize, formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   bottlingSelectionSchema,
   productionBottleRows,
+  productionBottleDisplaySize,
   validateBottlingOutputs,
   type BottlingSelection,
 } from "@meadtools/inventory-domain";
@@ -89,6 +91,11 @@ export function BottlingInventoryReview({
   } catch {
     invalid = true;
   }
+  const formatSize = (liters: number, rowId?: string) => {
+    const row = rows.find((row) => rowId ? row.id === rowId : row.sizeLiters === liters);
+    return row ? formatBottleSize(productionBottleDisplaySize(row), i18n.language)
+      : formatStoredBottleSize({ size_liters: liters, display_size: source?.outputs.find((output) => rowId ? output.row_id === rowId : output.size_liters === liters)?.display_size }, i18n.language);
+  };
   const [track, setTrack] = useState(!!source?.outputs.length);
   const [newName, setNewName] = useState(
     name.trim().slice(0, 200) || t("bottlingInventory.defaultName"),
@@ -395,7 +402,7 @@ export function BottlingInventoryReview({
                 {source?.outputs.map((output, index) => (
                   <li key={index} className="text-sm">
                     {output.name} · {number(output.quantity)} ×{" "}
-                    {number(output.size_liters * 1000)} mL
+                    {formatSize(output.size_liters, output.row_id)}
                   </li>
                 ))}
               </ul>
@@ -424,8 +431,7 @@ export function BottlingInventoryReview({
                     className="space-y-3 rounded-lg border p-3"
                   >
                     <legend className="px-1 text-sm font-medium">
-                      {number(row.quantity)} × {number(row.sizeLiters * 1000)}{" "}
-                      mL
+                      {number(row.quantity)} × {formatSize(row.sizeLiters, row.id)}
                     </legend>
                     {drafts
                       .filter((draft) => draft.row_id === row.id)
@@ -585,7 +591,7 @@ export function BottlingInventoryReview({
                       mode === "reconcile" ? 0 : row.next - row.previous;
                     return (
                       <li key={key}>
-                        {row.name} · {number(row.size * 1000)} mL
+                        {row.name} · {formatSize(row.size)}
                         <br />
                         {t("bottlingInventory.balanceLine", {
                           before: before === undefined ? "—" : number(before),

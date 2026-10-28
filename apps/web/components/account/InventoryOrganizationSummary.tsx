@@ -1,4 +1,5 @@
 "use client";
+import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import type {
@@ -37,6 +38,7 @@ export function organizationMetadata(
       ...allocation,
       unit: row.quantity.unit,
       size: row.bottle_size_liters,
+      display_size: row.display_size,
     })),
   );
   const directIds = [...new Set(allocations.map((row) => row.location_id))];
@@ -128,7 +130,7 @@ export function InventoryOrganizationSummary({
                   ? "inventory.meads.bottlesUnit"
                   : `inventory.units.${row.unit}`,
               )}
-              {row.size ? ` (${number(row.size * 1000)} mL)` : ""}
+              {row.size ? ` (${formatStoredBottleSize({ size_liters: row.size, display_size: row.display_size }, i18n.language)})` : ""}
             </li>
           ))}
           {metadata.allocations.length > 3 ? (

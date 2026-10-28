@@ -70,9 +70,8 @@ the collection's total? Phase 3 bottling integration is described below.
 
 Experience: give consumables and finished meads multiple custom labels, place
 stock in meaningful storage areas and boxes, and find it using removable filter
-pills. Apply several ordered sorting rules, each with its own direction, and
-retain those preferences between visits. Support keyboard reordering as well as
-pointer interactions.
+pills. Retain those preferences between visits. The October 28 corrective review
+simplifies sorting to one field and direction after user review of multiple rules.
 
 Keep underlying stock types separate from user-defined categories/tags. Define
 explicit any/all matching for selected labels. Storage areas support parents and
@@ -92,8 +91,7 @@ box-coordinate format is imposed.
 Consumables and finished meads have separate account-scoped browser preferences.
 Search covers names, notes, categories and location paths. Filters include stock
 type, multiple categories with any/all matching, parent or individual locations,
-and availability. Ordered sorting pills support direction changes, pointer drag,
-keyboard drag and explicit earlier/later buttons. Amount sorting converts
+and availability. Sorting now uses a single shared Select and a direction toggle. Amount sorting converts
 compatible units and keeps mass, volume and counts in separate groups.
 
 Storage edits replace a reviewed allocation snapshot atomically without changing
@@ -204,3 +202,45 @@ expiry, and restore. Retain private stock/location data outside public brew-entr
 JSON. Update API contracts, OpenAPI, seeds, migrations, and documentation together.
 
 Cost tracking and arbitrary custom fields are separate follow-ups.
+
+
+## Corrective review: simpler controls, bottle units and storage audit
+
+October 28, 2026: replace the searchable filter picker with grouped checkbox
+sections for item type, categories and locations, plus availability. Active
+filter pills and category any/all matching remain. Sorting is one select and
+one direction toggle; previously saved multi-sort browser preferences are
+normalized so invisible secondary rules cannot affect the list.
+
+Packaging review and supply-use labels retain selected preset/custom units.
+Custom bottle edits restore their original amount/unit when those agree with
+the saved canonical liters. Manual entries and bottling outputs retain the
+entered amount/unit on the existing stock row. Inventory, history and storage
+render that size directly; there is no display-unit selector or unit preference.
+Mixed units coexist within one collection. Existing capacity merges retain the
+first size label, while older records with no entered-size metadata show their
+canonical liters. The two nullable scalar fields are added to the undeployed
+finished-mead migration in place. No new table or migration is added.
+
+The [storage audit](../reviews/inventory-storage-audit.md) covers all 14
+inventory/equipment tables, growth drivers, retry/history retention, and the
+limits of a code-only audit. History now selects only the source metadata it
+renders instead of reading complete bottling snapshots. No table consolidation
+or additional migration file is justified by this review alone. Feature migrations are
+undeployed, per the owner, and may be edited in place if the schema changes;
+the finished-mead migration is updated in place. No local reset or migration was run; schema push preserved existing local data.
+
+Verification: 46 inventory-domain, 100 PostgreSQL integration, 58 API-contract,
+5 bottle-format/edit and 3 translation tests passed (212 total). The edited
+migration and full inventory constraints passed on disposable schemas. Targeted
+lint and web/domain/contract type checks passed. Desktop and 390px mobile filter/sort keyboard checks
+passed, including Escape focus return and no horizontal overflow. After the user
+restarted their server, the preview verified a mixed collection of 12 fl oz and
+750 mL bottles, retained receipt/use selectors, successful bottle use, history,
+and storage choices. A separate review brew verified both selected sizes in
+the bottling confirmation, its after-save preview, and the saved inventory
+collection. No private server was
+started. Local review examples are named Mixed bottle sizes — review and
+Bottling sizes — review.
+Previous seed changes remain separate, uncommitted work.
+Imports/exports remain the next planned phase.

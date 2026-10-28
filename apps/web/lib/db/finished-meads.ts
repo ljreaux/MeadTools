@@ -1,7 +1,8 @@
+import { storedBottleDisplaySize } from "./inventory-bottle-size";
 import "server-only";
 import { createHash } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { InventoryError, finishedMeadInputSchema, planStockChange } from "@meadtools/inventory-domain";
+import { InventoryError, finishedMeadInputSchema, planStockChange, type BottleDisplaySize } from "@meadtools/inventory-domain";
 import {
   finishedMeadItemSchema,
   finishedMeadMutationResponseSchema,
@@ -18,6 +19,7 @@ function item(row: MeadRow) {
     id: stock.id,
     size_liters: stock.bottle_size_liters!.toNumber(),
     quantity: stock.quantity.toNumber(),
+    display_size: storedBottleDisplaySize(stock),
   })).sort((a, b) => a.size_liters - b.size_liters);
   // The counter invalidates old forms even if a change is later reversed,
   // including multiple writes within one timestamp's precision.
@@ -57,7 +59,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
       const mead = await owned(tx, userId, id);
       const changes = await tx.inventory_adjustments.findMany({
         where: { user_id: userId, stock: { mead_id: id } },
-        include: { stock: { select: { bottle_size_liters: true } }, bottling: true },
+        include: { stock: { select: { bottle_size_liters: true, bottle_size_value: true, bottle_size_unit: true } }, bottling: { select: { source_name: true, brew_id: true, entry_id: true, removed_at: true } } },
         orderBy: [{ created_at: "desc" }, { id: "desc" }], take: 101,
       });
       const sourceEntries=await tx.brew_entries.findMany({where:{user_id:userId,id:{in:changes.flatMap(change=>change.bottling?[change.bottling.entry_id]:[])}},select:{id:true,brew_id:true}});
@@ -67,6 +69,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
           id: change.id, kind: change.kind,
           source: change.bottling ? {name:change.bottling.source_name,brew_id:change.bottling.brew_id,entry_id:change.bottling.entry_id,removed:!!change.bottling.removed_at || !sourceEntries.some(entry=>entry.id===change.bottling!.entry_id&&entry.brew_id===change.bottling!.brew_id)} : null,
           size_liters: change.stock.bottle_size_liters!.toNumber(),
+          display_size: storedBottleDisplaySize(change.stock),
           delta: change.delta.toNumber(), balance_after: change.balance_after.toNumber(),
           note: change.note, created_at: change.created_at.toISOString(),
         })),
@@ -74,10 +77,10 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
     }, { isolationLevel: "RepeatableRead" });
   }
   async function addBottles(tx: Prisma.TransactionClient, userId: number, operationId: string,
-    mead: { id: string; name: string }, size: number, count: number, note: string | null = null) {
+    mead: { id: string; name: string }, size: number, count: number, note: string | null = null, displaySize?: BottleDisplaySize) {
     const stock = await tx.inventory_stock.create({ data: {
       user_id: userId, mead_id: mead.id, name: mead.name, category: "mead",
-      bottle_size_liters: size, unit: "units", quantity: 0,
+      bottle_size_liters: size, bottle_size_value: displaySize?.value ?? null, bottle_size_unit: displaySize?.unit ?? null, unit: "units", quantity: 0,
     } });
     await changeBalance(tx, userId, operationId, stock, "receipt", count, note);
   }
@@ -97,7 +100,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
       (value) => finishedMeadMutationResponseSchema.parse(value), async (tx, operationId) => {
         const mead = await tx.inventory_meads.create({ data: { user_id: userId, name: parsed.name, notes: parsed.notes } });
         for (const bottle of parsed.bottles)
-          await addBottles(tx, userId, operationId, mead, bottle.size_liters, bottle.quantity);
+          await addBottles(tx, userId, operationId, mead, bottle.size_liters, bottle.quantity, null, bottle.display_size);
         return { mead_id: mead.id };
       });
   }
@@ -121,7 +124,7 @@ export function createFinishedMeadService(database: PrismaClient = prisma) {
           if (!stock) {
             if (parsed.action !== "receipt") throw new InventoryError("NOT_FOUND");
             if (mead.stock.length >= 50) throw new InventoryError("INVALID_QUANTITY");
-            await addBottles(tx, userId, operationId, mead, parsed.size_liters, parsed.quantity, parsed.note);
+            await addBottles(tx, userId, operationId, mead, parsed.size_liters, parsed.quantity, parsed.note, parsed.display_size);
           } else {
             await changeBalance(tx, userId, operationId, stock, parsed.action, parsed.quantity, parsed.note, parsed.storage_source);
           }

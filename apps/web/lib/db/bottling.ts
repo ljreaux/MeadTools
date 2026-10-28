@@ -1,9 +1,11 @@
+import { storedBottleDisplaySize } from "./inventory-bottle-size";
 import "server-only";
 import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import {
   bottlingSelectionSchema,
   productionBottleRows,
+  productionBottleDisplaySize,
   validateBottlingOutputs,
   productionDifference,
   toQuantityTicks,
@@ -60,6 +62,7 @@ export async function readBottlings(tx: Tx, userId: number, brewId: string) {
       name: output.stock.mead?.name ?? output.stock.name,
       quantity: output.quantity,
       size_liters: output.stock.bottle_size_liters!.toNumber(),
+      display_size: storedBottleDisplaySize(output.stock),
     })),
   }));
 }
@@ -253,6 +256,7 @@ export async function applyBottling(
         user_id: userId,
       },
     });
+    const displaySize = productionBottleDisplaySize(row);
     if (!stock) {
       if (parsed.mode === "reconcile")
         throw new InventoryWriteError("RECONCILIATION_REQUIRED");
@@ -267,6 +271,8 @@ export async function applyBottling(
           name: mead.name,
           category: "mead",
           bottle_size_liters: row.sizeLiters,
+          bottle_size_value: displaySize.value,
+          bottle_size_unit: displaySize.unit,
           quantity: 0,
           unit: "units",
         },

@@ -8,6 +8,8 @@ import {
 import {
   acknowledgeBottlingChangeRequestBodySchema,
   brewInventoryContextResponseSchema,
+  createFinishedMeadRequestBodySchema,
+  updateFinishedMeadRequestBodySchema,
 } from "../src/zod/inventory";
 const uuid = "00000000-0000-4000-8000-000000000001";
 test("legacy packaging writes remain valid and private bottling selections stay outside timeline data", () => {
@@ -70,4 +72,14 @@ test("older brew contexts can be read while new contexts retain explicit bottlin
     brew_name: null,
     bottlings: [],
   });
+});
+
+test("finished bottle contracts retain entered size and disallow relabeling during count corrections", () => {
+  const mead = { name: "Mixed bottles", bottles: [{ size_liters: .354882, quantity: 6,
+    display_size: { value: 12, unit: "fl_oz" } }] };
+  assert.deepEqual(createFinishedMeadRequestBodySchema.parse({ operation_id: uuid, mead }).mead.bottles, mead.bottles);
+  const change = { operation_id: uuid, expected_revision: "a".repeat(64), action: "receipt",
+    size_liters: .354882, quantity: 2, display_size: { value: 12, unit: "fl_oz" } };
+  assert.equal(updateFinishedMeadRequestBodySchema.safeParse(change).success, true);
+  assert.equal(updateFinishedMeadRequestBodySchema.safeParse({ ...change, action: "correction" }).success, false);
 });

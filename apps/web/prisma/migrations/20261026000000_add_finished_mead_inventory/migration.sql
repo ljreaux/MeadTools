@@ -19,6 +19,14 @@ CREATE INDEX "inventory_meads_user_id_archived_at_idx" ON "inventory_meads"("use
 ALTER TABLE "inventory_stock"
   ADD COLUMN "mead_id" UUID,
   ADD COLUMN "bottle_size_liters" DECIMAL(16,6),
+  ADD COLUMN "bottle_size_value" DECIMAL(16,6),
+  ADD COLUMN "bottle_size_unit" "inventory_quantity_unit",
+  ADD CONSTRAINT "inventory_stock_bottle_display_check" CHECK (
+    ("bottle_size_value" IS NULL AND "bottle_size_unit" IS NULL)
+    OR ("category"::text = 'mead' AND "bottle_size_value" IS NOT NULL
+      AND "bottle_size_value" > 0 AND "bottle_size_value" <= 1000000000
+      AND "bottle_size_unit" IS NOT NULL AND "bottle_size_unit" IN ('mL', 'L', 'fl_oz', 'gal'))
+  ),
   ADD CONSTRAINT "inventory_stock_mead_id_user_id_fkey" FOREIGN KEY ("mead_id", "user_id") REFERENCES "inventory_meads"("id", "user_id") ON DELETE RESTRICT ON UPDATE RESTRICT,
   ADD CONSTRAINT "inventory_stock_finished_mead_check" CHECK (
     ("category"::text = 'mead' AND "mead_id" IS NOT NULL

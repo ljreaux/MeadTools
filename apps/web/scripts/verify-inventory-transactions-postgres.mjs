@@ -1572,3 +1572,48 @@ test('retained source snapshots preserve the bottling date and an explicitly cle
  const source=await prisma.inventory_bottlings.findUniqueOrThrow({where:{entry_id:input.client_entry_id}});
  assert.equal(source.source_snapshot.note,null);assert.equal(source.source_snapshot.datetime,'2026-01-03T00:00:00.000Z');assert.equal(await balance((await productionStock(f,input)).id),3);
 });
+
+test('entered bottle sizes survive mixed collections, use, receipts and history without display conversion', async () => {
+  const userId = await owner();
+  const input = { operation_id: randomUUID(), mead: { name: 'Mixed bottle units', bottles: [
+    { size_liters: .354882, quantity: 12, display_size: { value: 12, unit: 'fl_oz' } },
+    { size_liters: .75, quantity: 4, display_size: { value: 750, unit: 'mL' } },
+  ] } };
+  const created = await meadRequest('POST', userId, input);
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.mead_id;
+  const read = async () => (await meadRequest('GET', userId, undefined, id)).body;
+  let snapshot = await read();
+  const expected = snapshot.mead.bottles.map(row => row.display_size);
+  assert.deepEqual(expected, [{ value: 12, unit: 'fl_oz' }, { value: 750, unit: 'mL' }]);
+  for (const action of ['manual_use', 'correction', 'receipt']) {
+    const result = await meadRequest('PATCH', userId, { action, operation_id: randomUUID(), expected_revision: snapshot.mead.revision,
+      size_liters: .354882, quantity: 2, ...(action === "receipt" ? { display_size: { value: .354882, unit: "L" } } : {}) }, id);
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    snapshot = await read();
+    assert.deepEqual(snapshot.mead.bottles.map(row => row.display_size), expected);
+  }
+  assert.ok(snapshot.adjustments.filter(row => row.size_liters === .354882)
+    .every(row => row.display_size.value === 12 && row.display_size.unit === 'fl_oz'));
+  const organization = (await organizationRequest(userId)).body;
+  assert.deepEqual(organization.stock.filter(row => row.mead_id === id).map(row => row.display_size)
+    .sort((a,b) => a.value-b.value), expected);
+  const invalid = structuredClone(input); invalid.operation_id = randomUUID();
+  invalid.mead.bottles[0].display_size.value = 750;
+  assert.equal((await meadRequest('POST', userId, invalid)).status, 400);
+});
+
+test('bottling retains selected US and metric row sizes in private stock and source context', async () => {
+  const f = await fixture(), input = bottlingInput(4);
+  input.data.bottleRows[0].label = '12oz'; input.data.bottleRows[0].sizeLiters = .355;
+  input.data.bottleRows[0].totalLiters = 1.42;
+  assert.equal((await route('POST', f, input)).status, 201);
+  let stock = await productionStock(f, input);
+  assert.equal(stock.bottle_size_value.toNumber(), 12); assert.equal(stock.bottle_size_unit, 'fl_oz');
+  let context = await bottlingContext(f.userId, f.brewId);
+  assert.deepEqual(context.bottlings[0].outputs[0].display_size, { value: 12, unit: 'fl_oz' });
+  const edit = productionEdit(input, context.bottlings[0], 3);
+  assert.equal((await route('PATCH', f, edit, input.client_entry_id)).status, 200);
+  stock = await productionStock(f, input);
+  assert.equal(stock.bottle_size_value.toNumber(), 12); assert.equal(stock.bottle_size_unit, 'fl_oz');
+});

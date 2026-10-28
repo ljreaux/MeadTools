@@ -98,7 +98,9 @@ export function bottleRowFromPackaging(
     ([, liters]) => Math.abs(liters - row.sizeLiters) < 0.0000005
   )?.[0] as BottleSizeKey | undefined;
 
-  const size = matchingSize ?? "custom";
+  const savedCustom = row.customSizeValue && row.customSizeUnits &&
+    Math.abs(toLiters(row.customSizeValue, row.customSizeUnits) - row.sizeLiters) <= 0.0000005;
+  const size = savedCustom ? "custom" : matchingSize ?? "custom";
   const quantity = Number.isFinite(row.quantity) ? String(row.quantity) : "";
   const sizeLiters = Number.isFinite(row.sizeLiters) ? row.sizeLiters : 0;
 
@@ -107,8 +109,8 @@ export function bottleRowFromPackaging(
     quantity,
     id: row.id ?? crypto.randomUUID(),
     totalVolumeL: sizeLiters * safeFloat(quantity),
-    customSizeValue: size === "custom" ? formatInputNumber(sizeLiters, 6) : "",
-    customSizeUnits: "liter"
+    customSizeValue: size === "custom" ? formatInputNumber(savedCustom ? row.customSizeValue! : sizeLiters, 6) : "",
+    customSizeUnits: savedCustom ? row.customSizeUnits! : "liter"
   };
 }
 

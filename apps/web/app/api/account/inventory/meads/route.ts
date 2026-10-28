@@ -7,7 +7,7 @@ import { createFinishedMeadRequestBodySchema } from "@meadtools/api-contract/inv
 const service = createFinishedMeadService();
 /**
  * List finished meads
- * @description Returns owned finished-mead entries with bottle counts by size. Active accounts retain read-only access after premium expiry.
+ * @description Returns owned finished-mead entries with bottle counts and the originally entered amount/unit for each size. Active accounts retain read-only access after premium expiry.
  * @response 200:FinishedMeadOverviewResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 }
 /**
  * Add a finished mead
- * @description Creates a user-named entry with one or more bottle sizes and atomic initial quantity history. Requires premium and a stable operation UUID for retries. No brew or lot is required.
+ * @description Creates a user-named entry with one or more bottle sizes and atomic initial quantity history. Requires premium and a stable operation UUID for retries. Bottle sizes retain display_size (entered amount/unit) alongside canonical size_liters. No brew or lot is required.
  * @body CreateFinishedMeadRequestBody
  * @response 201:FinishedMeadMutationResponse
  * @responseSet none

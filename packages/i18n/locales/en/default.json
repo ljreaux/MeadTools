@@ -3073,7 +3073,10 @@
       "filterLocation": "Location: {{name}}",
       "filterType": "Stock type: {{name}}",
       "dragRule": "Reorder {{name}}",
-      "dragInstructions": "Press Space to pick up this rule, use arrow keys to move it, and press Space to drop it. Press Escape to cancel."
+      "dragInstructions": "Press Space to pick up this rule, use arrow keys to move it, and press Space to drop it. Press Escape to cancel.",
+      "itemType": "Item type",
+      "all": "All items",
+      "reverseSort": "Reverse sort direction"
     }
   },
   "brewInventory": {

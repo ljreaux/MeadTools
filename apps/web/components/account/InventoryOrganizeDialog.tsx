@@ -1,4 +1,5 @@
 "use client";
+import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
@@ -178,10 +179,7 @@ function StockChoice({
         <SelectContent>
           {stocks.map((stock) => (
             <SelectItem key={stock.id} value={stock.id}>
-              {new Intl.NumberFormat(i18n.language).format(
-                (stock.bottle_size_liters ?? 0) * 1000,
-              )}{" "}
-              mL · {stock.quantity.value} {t("inventory.meads.bottlesUnit")}
+              {formatStoredBottleSize({ size_liters: stock.bottle_size_liters ?? 0, display_size: stock.display_size }, i18n.language)} · {stock.quantity.value} {t("inventory.meads.bottlesUnit")}
             </SelectItem>
           ))}
         </SelectContent>
