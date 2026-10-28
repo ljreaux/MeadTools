@@ -113,6 +113,13 @@ If you prefer to run steps individually:
 
 ## Database
 
+The [database ERD and data dictionary](docs/database/README.md) cover every
+Prisma table, column, key and declared relationship. Open
+[the offline interactive viewer](docs/database/erd.html) locally in a browser
+for table search, zoom and focused diagrams, or view the committed SVGs on
+GitHub. Regenerate with `npm run db:erd`; verify with `npm run db:erd:check`.
+
+
 MeadTools uses PostgreSQL locally via Docker.
 
 - The database is fully disposable

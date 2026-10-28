@@ -483,14 +483,32 @@ test("equipment seed creates recipe-linked examples and a six-bucket pool for on
   const recipe = await prisma.recipes.findFirstOrThrow({ where: { name: "Key Lime Pie" } });
   const existing = await prisma.brews.create({ data: { user_id: userId, recipe_id: recipe.id, name: "Planning Test Brew" } });
   await seedEquipment(prisma, userId);
-  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 16);
+  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 28);
   assert.equal(await prisma.equipment.count({ where: { user_id: otherId } }), 0);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: { not: null } } }), 2);
-  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 9);
+  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 11);
   assert.equal(await prisma.equipment_assignment_events.count(), 2);
   assert.equal(await prisma.brews.count(), 2);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: existing.id } }), 1);
   assert.equal(await prisma.inventory_consumptions.count(), 0);
+  const ingredients = recipe.dataV2.ingredients;
+  const volumeGal = (secondary) => ingredients.filter((row) => secondary || !row.secondary)
+    .reduce((total, row) => {
+      assert.equal(row.amounts.volume.unit, "gal");
+      return total + Number(row.amounts.volume.value);
+    }, 0);
+  const equipment = await prisma.equipment.findMany({ where: { user_id: userId } });
+  for (const [name, requiredGal] of [
+    ["Key Lime Pie primary fermenter", volumeGal(false)],
+    ["Key Lime Pie secondary carboy", volumeGal(true)],
+    ["Bottling bucket with spigot", volumeGal(true)],
+  ]) {
+    const vessel = equipment.find((item) => item.name === name);
+    assert.equal(vessel.capacity_unit, "gal");
+    assert.ok(vessel.capacity.toNumber() > requiredGal, `${name} needs room for the recipe`);
+  }
+  assert.ok(equipment.filter((item) => item.capacity_unit === "gal").length >
+    equipment.filter((item) => item.capacity_unit === "L").length);
   const result = await equipmentRequest("GET", userId);
   assert.equal(result.status, 200);
   equipmentContract.equipmentOverviewResponseSchema.parse(result.body);
@@ -692,14 +710,48 @@ test("inventory seed creates owned ingredient and packaging stock with matching 
   const otherId = await owner();
   await seedInventory(prisma, userId);
   const list = (await stockRequest("GET", userId)).body.stock;
-  assert.equal(list.length, 19);
-  assert.equal(list.filter((row) => row.category === "packaging").length, 4);
+  assert.equal(list.length, 31);
+  assert.equal(list.filter((row) => row.category === "packaging").length, 8);
+  const { readFile } = await import("node:fs/promises");
+  const recipe = JSON.parse(await readFile(new URL("../prisma/seed-data/recipes_rows.json", import.meta.url), "utf8"))
+    .find((row) => row.name === "Key Lime Pie");
+  const volumeGal = JSON.parse(recipe.dataV2).ingredients
+    .reduce((total, row) => total + Number(row.amounts.volume.value), 0);
+  for (const sizeOz of [12, 22, 32]) {
+    const bottles = list.find((row) => row.name.startsWith(`${sizeOz} fl oz`));
+    assert.ok(bottles.quantity.value * sizeOz / 128 >= volumeGal,
+      `${sizeOz} fl oz bottles should hold the full recipe`);
+  }
+  const cappedBottles = list.filter((row) => /^(12 fl oz|22 fl oz|330 mL)/.test(row.name))
+    .reduce((total, row) => total + row.quantity.value, 0);
+  assert.ok(list.find((row) => row.name === "Crown caps").quantity.value >= cappedBottles);
+  // Exercise the real tracker path: pantry ingredients and juice must be
+  // selectable, convertible and sufficient across both recipe stages.
+  const { inventoryEntryLines, matchInventoryStock } = await import("@meadtools/inventory-domain");
+  const data = JSON.parse(recipe.dataV2);
+  const brew = await prisma.brews.create({ data: { user_id: userId } });
+  const additions = [
+    ...data.ingredients.map((row) => ({ kind: "INGREDIENT", name: row.name,
+      amount: Number(row.amounts[row.amounts.basis].value), unit: row.amounts[row.amounts.basis].unit })),
+    ...data.additives.map((row) => ({ kind: "OTHER", name: row.name, amount: Number(row.amount), unit: row.unit })),
+  ];
+  for (const data of additions) {
+    const line = inventoryEntryLines("ADDITION", data)[0];
+    const match = matchInventoryStock(list, line).stock;
+    assert.ok(match, `Missing usable seed stock for ${data.name}`);
+    assert.equal(match.name.toLowerCase(), data.name === "Honey" ? "wildflower honey" : data.name.toLowerCase());
+    const response = await route("POST", { userId, brewId: brew.id }, {
+      type: "ADDITION", client_entry_id: randomUUID(), data,
+      inventory: { mode: "deduct", operation_id: randomUUID(), stock_id: match.id, expected: null },
+    });
+    assert.equal(response.status, 201, `Cannot use seed stock for ${data.name}: ${JSON.stringify(response.body)}`);
+  }
   assert.equal((await stockRequest("GET", otherId)).body.stock.length, 0);
   for (const row of list) {
     const history = (await stockRequest("GET", userId, undefined, row.id)).body.adjustments;
-    assert.equal(history.length, 1);
-    assert.equal(history[0].delta, row.quantity.value);
-    assert.equal(history[0].balance_after.unit, row.quantity.unit);
+    const receipt = history.find((adjustment) => adjustment.kind === "receipt");
+    assert.equal(receipt.delta, row.quantity.value);
+    assert.equal(receipt.balance_after.unit, row.quantity.unit);
   }
 });
 

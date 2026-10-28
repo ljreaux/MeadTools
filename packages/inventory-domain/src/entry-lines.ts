@@ -146,7 +146,8 @@ export function lineCategories(
   if (line.kind === "PACKAGING") return ["packaging"];
   if (line.kind === "YEAST") return ["yeast"];
   if (line.kind === "NUTRIENT" || line.kind === "OTHER") return ["additive"];
-  return /\bhoney\b/i.test(line.name) ? ["honey"] : ["honey", "fruit"];
+  // Pantry ingredients such as sugar and brewing water use additive stock too.
+  return /\bhoney\b/i.test(line.name) ? ["honey"] : ["honey", "fruit", "additive"];
 }
 /** Return previous uses, then deduct all new uses in stock units. Shared stock is checked once. */
 export function planEntryInventory(input: {

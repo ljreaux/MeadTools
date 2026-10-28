@@ -29,20 +29,32 @@ export async function seedEquipment(database: PrismaClient, userId: number) {
     const bucketGroup = randomUUID();
     for (let i=0;i<6;i++) await tx.equipment.create({data:{user_id:userId,group_id:bucketGroup,name:"Brew bucket",type:"vessel",capacity:5,capacity_unit:"gal",label:i===0?"Blue lid":null,notes:"Six interchangeable five-gallon buckets; labels are optional."}});
     const fixtures = [
-      { name: "Key Lime Pie primary fermenter", type: "vessel", capacity: { value: 30, unit: "L" },
-        notes: "Headspace for the roughly five-gallon Key Lime Pie batch.", recipe: "Key Lime Pie" },
-      { name: "Key Lime Pie secondary carboy", type: "vessel", capacity: { value: 23, unit: "L" },
-        notes: "Available for the juice and secondary additions." },
+      { name: "Key Lime Pie primary fermenter", type: "vessel", capacity: { value: 7.5, unit: "gal" },
+        notes: "US gallons. Headspace above the recipe's roughly five-gallon primary volume.", recipe: "Key Lime Pie" },
+      { name: "Key Lime Pie secondary carboy", type: "vessel", capacity: { value: 6, unit: "gal" },
+        notes: "US gallons. Available for the roughly five-and-a-half gallons after juice and syrup additions." },
       { name: "Traditional primary fermenter", type: "vessel", capacity: { value: 6, unit: "L" },
         notes: "Headspace for the four-liter Mead Wiki traditional recipe.", recipe: "Mead Wiki Simple Trad Metric" },
       { name: "Traditional aging carboy", type: "vessel", capacity: { value: 5, unit: "L" },
         notes: "Available for racking and aging the traditional batch." },
-      { name: "Spare fermentation bucket", type: "vessel", capacity: { value: 12, unit: "L" }, notes: "Clean and available." },
+      { name: "Spare fermentation bucket", type: "vessel", capacity: { value: 3, unit: "gal" }, notes: "US gallons. Clean and available for split batches." },
+      { name: "One-gallon test jug", type: "vessel", capacity: { value: 1, unit: "gal" }, notes: "US gallon. Available for a small test batch or leftover mead." },
+      { name: "Bottling bucket with spigot", type: "vessel", capacity: { value: 6.5, unit: "gal" }, notes: "US gallons. Enough room to package the full Key Lime Pie batch." },
       { name: "Auto-siphon and tubing", type: "other", notes: "For transfers between primary and secondary containers." },
       { name: "Hydrometer and test jar", type: "other", notes: "For original and final gravity readings." },
       { name: "Digital scale", type: "other", notes: "For honey, yeast, nutrients and small additions." },
       { name: "Airlocks and bungs", type: "other", notes: "Spare airlocks and bungs for both recipes." },
-      { name: "Bottle filler and capper", type: "other", notes: "Extra equipment for packaging day." },
+      { name: "Spring-tip bottling wand", type: "other", notes: "Connects to the bottling bucket or siphon tubing." },
+      { name: "Bench capper", type: "other", notes: "For the seeded pry-off beer bottles and 26 mm crown caps." },
+      { name: "Floor corker", type: "other", notes: "For the seeded wine bottles and wine corks." },
+      { name: "Long-handled mixing spoon", type: "other", notes: "For mixing honey into primary and blending secondary syrup." },
+      { name: "Two-gallon syrup pot", type: "other", notes: "US gallons. Kitchen pot for the lime juice, honey, brown sugar and lactose syrup; not a fermentation vessel." },
+      { name: "Citrus zester and juicer", type: "other", notes: "For the recipe's fifteen limes." },
+      { name: "Fine-mesh straining bag", type: "other", notes: "For containing lime zest, vanilla beans and cinnamon sticks." },
+      { name: "Thermometer", type: "other", notes: "Reads Fahrenheit and Celsius for rehydration and fermentation checks." },
+      { name: "Funnel", type: "other", notes: "For adding cooled syrup and juice to the secondary carboy." },
+      { name: "Bottle brush and drying rack", type: "other", notes: "For cleaning and draining bottles before sanitizing and filling." },
+      { name: "Sanitizing bucket and spray bottle", type: "other", notes: "For preparing sanitizer and wetting equipment on transfer and bottling days." },
     ];
     for (const fixture of fixtures) {
       const { recipe, ...input } = fixture;

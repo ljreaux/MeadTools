@@ -242,5 +242,25 @@ the bottling confirmation, its after-save preview, and the saved inventory
 collection. No private server was
 started. Local review examples are named Mixed bottle sizes — review and
 Bottling sizes — review.
-Previous seed changes remain separate, uncommitted work.
+The seed follow-up below is complete.
 Imports/exports remain the next planned phase.
+
+
+## ERD and seed follow-up
+
+The repository now contains a generated [complete database ERD](../database/README.md),
+offline searchable viewer, and focused SVG diagrams. All 68 tables, 570 columns,
+78 declared foreign keys, and 19 enums are included. `npm run db:erd:check`
+checks schema and migration fingerprints; CI detects stale artifacts. The local,
+ignored AGENTS.md requires regenerating the ERD for new or edited migrations and
+editing existing migrations in place when they have not been pushed to GitHub.
+
+The guarded seed now supplies the Key Lime Pie ingredients, US-sized primary,
+secondary and bottling vessels, reusable tools, and sufficient 12/22/32 fl oz
+bottles with matching closures. Metric examples remain available. Juice is
+tracked by weight to match recipe deductions, and pantry ingredients can use
+additive stock. Seed integration checks exercise all recipe ingredient/additive
+uses through the real API and confirm vessel/bottle capacity and receipt history.
+The development database has not been reset or reseeded by this follow-up.
+
+Imports/exports and the final cross-flow review remain Phase 4.

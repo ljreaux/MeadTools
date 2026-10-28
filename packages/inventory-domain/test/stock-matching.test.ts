@@ -33,6 +33,21 @@ const item = (
   catalogReference: reference ?? null,
   reconciliation_required: false,
 });
+test("pantry ingredients use additive stock while honey, yeast and packaging keep their categories", () => {
+  const stock = { ...item("sugar", "Brown Sugar"), quantity: { value: 4, unit: "lb" as const } };
+  const line = inventoryEntryLines("ADDITION", { kind: "INGREDIENT", name: "Brown Sugar", amount: 1, unit: "lbs" })[0];
+  assert.equal(matchInventoryStock([stock], line).stock?.id, stock.id);
+  const result = planEntryInventory({ stocks: [stock], lines: [line],
+    bindings: [{ line_key: line.key, stock_id: stock.id }], previous: [] });
+  assert.equal(result.balances[0].quantity.value, 3);
+  for (const restricted of [
+    { ...line, name: "Honey" }, { ...line, kind: "YEAST" }, { ...line, kind: "PACKAGING" },
+  ]) {
+    assert.equal(matchInventoryStock([stock], restricted).choices.length, 0);
+    assert.throws(() => planEntryInventory({ stocks: [stock], lines: [restricted],
+      bindings: [{ line_key: line.key, stock_id: stock.id }], previous: [] }), /LINK_MISMATCH/);
+  }
+});
 test("fractional yeast packets match count stock and corrections restore previous usage", () => {
   const line = inventoryEntryLines("ADDITION", {
     kind: "YEAST", name: "Lalvin D-47", amount: 0.5, unit: "units",

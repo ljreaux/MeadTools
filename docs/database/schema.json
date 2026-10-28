@@ -1,7 +1,7 @@
 {
   "fingerprint": {
-    "schema": "7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec",
-    "migrations": "e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f"
+    "schema": "81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a",
+    "migrations": "32fd1efe422ae5e3ae183e8e3991f39b6bc47308f3d63c230080d2fb7cdebefa"
   },
   "migrations": [
     {
@@ -153,12 +153,16 @@
       "sha256": "7a700ac648e2f61ecfd247b04844ea06822e94447d5a2c5d7a84b3c40e4a40dd"
     },
     {
-      "name": "20261101010000_harden_server_only_database",
-      "sha256": "f82e7537b504b374e8fe8d7bcf5ce726029ad98a7f216742a6865a1a8eed60ed"
+      "name": "20261026000000_add_finished_mead_inventory",
+      "sha256": "969bb485032a35e2a2d1c24453f989faa4c9ef2d264b3df878794c74c0dc3387"
     },
     {
-      "name": "20261101020000_remove_unused_pgjwt",
-      "sha256": "cf4076cf2d1015e9d7649e76737e6f7db18cc22463bb13fdbba87706ebfcc93f"
+      "name": "20261026010000_add_inventory_organization",
+      "sha256": "ae9f9f879691cc0850a4819ff337e5a276a70026813a34f2c446c26faf30f614"
+    },
+    {
+      "name": "20261027000000_add_bottling_production",
+      "sha256": "2bde2dbf446296c9a7ab2e7f6a8136e4368b0bd00c92f62dc2c02698c46acc2a"
     }
   ],
   "models": [
@@ -5713,6 +5717,7 @@
           "updatedAt": false,
           "documentation": null,
           "foreignKeys": [
+            "inventory_adjustments_bottling",
             "inventory_adjustments_consumption",
             "inventory_adjustments_operation",
             "inventory_adjustments_stock"
@@ -5777,6 +5782,23 @@
           "documentation": null,
           "foreignKeys": [
             "inventory_adjustments_consumption"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "bottling_id",
+          "column": "bottling_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_adjustments_bottling"
           ],
           "uniqueGroups": []
         },
@@ -5890,9 +5912,360 @@
         ]
       ],
       "indexes": [
+        "@@index([bottling_id])",
         "@@unique([operation_id, stock_id])",
         "@@index([user_id, stock_id, created_at])",
         "@@index([consumption_id])"
+      ]
+    },
+    {
+      "name": "inventory_allocations",
+      "table": "inventory_allocations",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_allocations_location",
+            "inventory_allocations_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "stock_id",
+          "column": "stock_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_allocations_stock"
+          ],
+          "uniqueGroups": [
+            [
+              "stock_id",
+              "location_id",
+              "position"
+            ]
+          ]
+        },
+        {
+          "name": "unit",
+          "column": "unit",
+          "type": "inventory_quantity_unit",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": true,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_allocations_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "location_id",
+          "column": "location_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_allocations_location"
+          ],
+          "uniqueGroups": [
+            [
+              "stock_id",
+              "location_id",
+              "position"
+            ]
+          ]
+        },
+        {
+          "name": "position",
+          "column": "position",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": "",
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "stock_id",
+              "location_id",
+              "position"
+            ]
+          ]
+        },
+        {
+          "name": "quantity",
+          "column": "quantity",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "stock_id",
+          "location_id",
+          "position"
+        ]
+      ],
+      "indexes": [
+        "@@unique([stock_id, location_id, position])",
+        "@@index([user_id, location_id])"
+      ]
+    },
+    {
+      "name": "inventory_bottlings",
+      "table": "inventory_bottlings",
+      "area": "inventory",
+      "documentation": "Private production provenance survives source entry/brew deletion.\\nSource IDs deliberately have no cascading FK; source_snapshot retains context.",
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_bottlings_user"
+          ],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "brew_id",
+          "column": "brew_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "entry_id",
+          "column": "entry_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": true,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "entry_id"
+            ]
+          ]
+        },
+        {
+          "name": "source_name",
+          "column": "source_name",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "source_snapshot",
+          "column": "source_snapshot",
+          "type": "Json",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "version",
+          "column": "version",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "reconciliation_required",
+          "column": "reconciliation_required",
+          "type": "Boolean",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "removed_at",
+          "column": "removed_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "entry_id"
+        ],
+        [
+          "id",
+          "user_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([id, user_id])",
+        "@@index([user_id, brew_id])"
       ]
     },
     {
@@ -6168,6 +6541,570 @@
       ]
     },
     {
+      "name": "inventory_label_links",
+      "table": "inventory_label_links",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_label_links_label",
+            "inventory_label_links_mead",
+            "inventory_label_links_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "label_id",
+          "column": "label_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_label_links_label"
+          ],
+          "uniqueGroups": [
+            [
+              "label_id",
+              "stock_id"
+            ],
+            [
+              "label_id",
+              "mead_id"
+            ]
+          ]
+        },
+        {
+          "name": "stock_id",
+          "column": "stock_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_label_links_stock"
+          ],
+          "uniqueGroups": [
+            [
+              "label_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "mead_id",
+          "column": "mead_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_label_links_mead"
+          ],
+          "uniqueGroups": [
+            [
+              "label_id",
+              "mead_id"
+            ]
+          ]
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "label_id",
+          "stock_id"
+        ],
+        [
+          "label_id",
+          "mead_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([label_id, stock_id])",
+        "@@unique([label_id, mead_id])",
+        "@@index([user_id])"
+      ]
+    },
+    {
+      "name": "inventory_labels",
+      "table": "inventory_labels",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_labels_user"
+          ],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "name",
+          "column": "name",
+          "type": "String",
+          "nativeType": "VarChar(100)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "version",
+          "column": "version",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "archived_at",
+          "column": "archived_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "id",
+          "user_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([id, user_id])",
+        "@@index([user_id, archived_at])"
+      ]
+    },
+    {
+      "name": "inventory_locations",
+      "table": "inventory_locations",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_locations_parent",
+            "inventory_locations_user"
+          ],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "name",
+          "column": "name",
+          "type": "String",
+          "nativeType": "VarChar(100)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "parent_id",
+          "column": "parent_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_locations_parent"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "version",
+          "column": "version",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "archived_at",
+          "column": "archived_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "id",
+          "user_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([id, user_id])",
+        "@@index([user_id, archived_at])"
+      ]
+    },
+    {
+      "name": "inventory_meads",
+      "table": "inventory_meads",
+      "area": "inventory",
+      "documentation": "User-defined finished-mead entry. A single entry may contain several bottle\\nsizes and receive stock from multiple bottlings; it is not a required lot.",
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_meads_user"
+          ],
+          "uniqueGroups": [
+            [
+              "id",
+              "user_id"
+            ]
+          ]
+        },
+        {
+          "name": "name",
+          "column": "name",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "notes",
+          "column": "notes",
+          "type": "String",
+          "nativeType": "VarChar(5000)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "version",
+          "column": "version",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "archived_at",
+          "column": "archived_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "created_at",
+          "column": "created_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": {
+            "name": "now",
+            "args": []
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "updated_at",
+          "column": "updated_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": {
+            "name": "now",
+            "args": []
+          },
+          "updatedAt": true,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "id",
+          "user_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([id, user_id])",
+        "@@index([user_id, archived_at])"
+      ]
+    },
+    {
       "name": "inventory_operations",
       "table": "inventory_operations",
       "area": "inventory",
@@ -6317,6 +7254,152 @@
       ]
     },
     {
+      "name": "inventory_productions",
+      "table": "inventory_productions",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_productions_bottling",
+            "inventory_productions_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "bottling_id",
+          "column": "bottling_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_productions_bottling"
+          ],
+          "uniqueGroups": [
+            [
+              "bottling_id",
+              "row_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "stock_id",
+          "column": "stock_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_productions_stock"
+          ],
+          "uniqueGroups": [
+            [
+              "bottling_id",
+              "row_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "row_id",
+          "column": "row_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "bottling_id",
+              "row_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "quantity",
+          "column": "quantity",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "bottling_id",
+          "row_id",
+          "stock_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([bottling_id, row_id, stock_id])",
+        "@@index([user_id, stock_id])"
+      ]
+    },
+    {
       "name": "inventory_stock",
       "table": "inventory_stock",
       "area": "inventory",
@@ -6346,6 +7429,10 @@
               "id",
               "user_id",
               "unit"
+            ],
+            [
+              "id",
+              "user_id"
             ]
           ]
         },
@@ -6362,6 +7449,7 @@
           "updatedAt": false,
           "documentation": null,
           "foreignKeys": [
+            "inventory_stock_mead",
             "inventory_stock_user"
           ],
           "uniqueGroups": [
@@ -6369,6 +7457,10 @@
               "id",
               "user_id",
               "unit"
+            ],
+            [
+              "id",
+              "user_id"
             ]
           ]
         },
@@ -6551,6 +7643,94 @@
           "documentation": null,
           "foreignKeys": [],
           "uniqueGroups": []
+        },
+        {
+          "name": "mead_id",
+          "column": "mead_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_stock_mead"
+          ],
+          "uniqueGroups": [
+            [
+              "mead_id",
+              "bottle_size_liters"
+            ]
+          ]
+        },
+        {
+          "name": "bottle_size_liters",
+          "column": "bottle_size_liters",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "mead_id",
+              "bottle_size_liters"
+            ]
+          ]
+        },
+        {
+          "name": "bottle_size_value",
+          "column": "bottle_size_value",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "bottle_size_unit",
+          "column": "bottle_size_unit",
+          "type": "inventory_quantity_unit",
+          "nativeType": null,
+          "nullable": true,
+          "list": false,
+          "enum": true,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "storage_version",
+          "column": "storage_version",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
         }
       ],
       "primaryKey": [
@@ -6564,12 +7744,225 @@
           "id",
           "user_id",
           "unit"
+        ],
+        [
+          "id",
+          "user_id"
+        ],
+        [
+          "mead_id",
+          "bottle_size_liters"
         ]
       ],
       "indexes": [
         "@@unique([id, user_id, unit])",
+        "@@unique([id, user_id])",
         "@@index([user_id, archived_at])",
-        "@@index([user_id, catalog, catalog_id])"
+        "@@index([user_id, catalog, catalog_id])",
+        "@@unique([mead_id, bottle_size_liters])"
+      ]
+    },
+    {
+      "name": "inventory_storage_events",
+      "table": "inventory_storage_events",
+      "area": "inventory",
+      "documentation": null,
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_storage_events_operation",
+            "inventory_storage_events_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "stock_id",
+          "column": "stock_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_storage_events_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "unit",
+          "column": "unit",
+          "type": "inventory_quantity_unit",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": true,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_storage_events_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "operation_id",
+          "column": "operation_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_storage_events_operation"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "location_path",
+          "column": "location_path",
+          "type": "String",
+          "nativeType": "VarChar(5000)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "position",
+          "column": "position",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "delta",
+          "column": "delta",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "balance_after",
+          "column": "balance_after",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "reason",
+          "column": "reason",
+          "type": "String",
+          "nativeType": "VarChar(32)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "created_at",
+          "column": "created_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": {
+            "name": "now",
+            "args": []
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ]
+      ],
+      "indexes": [
+        "@@index([user_id, stock_id, created_at])"
       ]
     },
     {
@@ -10792,6 +12185,24 @@
       "onUpdate": "Cascade (Prisma default)"
     },
     {
+      "id": "inventory_adjustments_bottling",
+      "child": "inventory_adjustments",
+      "parent": "inventory_bottlings",
+      "name": "inventory_adjustmentsToinventory_bottlings",
+      "from": [
+        "bottling_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
       "id": "inventory_adjustments_consumption",
       "child": "inventory_adjustments",
       "parent": "inventory_consumptions",
@@ -10848,6 +12259,60 @@
       "onUpdate": "Restrict"
     },
     {
+      "id": "inventory_allocations_location",
+      "child": "inventory_allocations",
+      "parent": "inventory_locations",
+      "name": "inventory_allocationsToinventory_locations",
+      "from": [
+        "location_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_allocations_stock",
+      "child": "inventory_allocations",
+      "parent": "inventory_stock",
+      "name": "inventory_allocationsToinventory_stock",
+      "from": [
+        "stock_id",
+        "user_id",
+        "unit"
+      ],
+      "to": [
+        "id",
+        "user_id",
+        "unit"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_bottlings_user",
+      "child": "inventory_bottlings",
+      "parent": "users",
+      "name": "inventory_bottlingsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
       "id": "inventory_consumptions_stock",
       "child": "inventory_consumptions",
       "parent": "inventory_stock",
@@ -10868,6 +12333,126 @@
       "onUpdate": "Restrict"
     },
     {
+      "id": "inventory_label_links_label",
+      "child": "inventory_label_links",
+      "parent": "inventory_labels",
+      "name": "inventory_label_linksToinventory_labels",
+      "from": [
+        "label_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_label_links_mead",
+      "child": "inventory_label_links",
+      "parent": "inventory_meads",
+      "name": "inventory_label_linksToinventory_meads",
+      "from": [
+        "mead_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_label_links_stock",
+      "child": "inventory_label_links",
+      "parent": "inventory_stock",
+      "name": "inventory_label_linksToinventory_stock",
+      "from": [
+        "stock_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_labels_user",
+      "child": "inventory_labels",
+      "parent": "users",
+      "name": "inventory_labelsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "inventory_locations_parent",
+      "child": "inventory_locations",
+      "parent": "inventory_locations",
+      "name": "location_tree",
+      "from": [
+        "parent_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_locations_user",
+      "child": "inventory_locations",
+      "parent": "users",
+      "name": "inventory_locationsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "inventory_meads_user",
+      "child": "inventory_meads",
+      "parent": "users",
+      "name": "inventory_meadsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
       "id": "inventory_operations_user",
       "child": "inventory_operations",
       "parent": "users",
@@ -10884,6 +12469,60 @@
       "onUpdate": "Cascade (Prisma default)"
     },
     {
+      "id": "inventory_productions_bottling",
+      "child": "inventory_productions",
+      "parent": "inventory_bottlings",
+      "name": "inventory_bottlingsToinventory_productions",
+      "from": [
+        "bottling_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_productions_stock",
+      "child": "inventory_productions",
+      "parent": "inventory_stock",
+      "name": "inventory_productionsToinventory_stock",
+      "from": [
+        "stock_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_stock_mead",
+      "child": "inventory_stock",
+      "parent": "inventory_meads",
+      "name": "inventory_meadsToinventory_stock",
+      "from": [
+        "mead_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
       "id": "inventory_stock_user",
       "child": "inventory_stock",
       "parent": "users",
@@ -10898,6 +12537,44 @@
       "childCardinality": "0..N",
       "onDelete": "Restrict",
       "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "inventory_storage_events_operation",
+      "child": "inventory_storage_events",
+      "parent": "inventory_operations",
+      "name": "inventory_operationsToinventory_storage_events",
+      "from": [
+        "operation_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_storage_events_stock",
+      "child": "inventory_storage_events",
+      "parent": "inventory_stock",
+      "name": "inventory_stockToinventory_storage_events",
+      "from": [
+        "stock_id",
+        "user_id",
+        "unit"
+      ],
+      "to": [
+        "id",
+        "user_id",
+        "unit"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
     },
     {
       "id": "logs_brews",
@@ -11258,6 +12935,10 @@
         },
         {
           "name": "packaging",
+          "dbName": null
+        },
+        {
+          "name": "mead",
           "dbName": null
         }
       ],
