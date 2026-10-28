@@ -4,8 +4,25 @@ import { zipSync, unzipSync, strFromU8, strToU8 } from "fflate";
 import {
   inspectInventoryFile,
   exportInventoryFile,
+  exportCollectionFile,
+  emptyInventoryCollection,
 } from "./inventorySpreadsheet";
-import { transferHeaders } from "@meadtools/inventory-domain";
+import { transferHeaders, collectionFromSheets } from "@meadtools/inventory-domain";
+
+test("collection XLSX preserves literal text and mixed bottle metadata without formulas", async () => {
+  const data = emptyInventoryCollection();
+  data.meads.push({ key: "pie", name: "=Pie", notes: "'Notes\nCafé", bottles: [
+    { key: "us", size_liters: 0.355, quantity: 12, display_size: { value: 12, unit: "fl_oz" } },
+    { key: "metric", size_liters: 0.75, quantity: 3, display_size: { value: 750, unit: "mL" } },
+    { key: "legacy", size_liters: 0.375, quantity: 0 },
+  ] });
+  data.locations.push({ key: "cellar", name: "Cellar", parent_key: null });
+  data.allocations.push({ stock_key: "us", location_key: "cellar", position: "@A1", quantity: 2 });
+  const file = await exportCollectionFile(data);
+  assert.deepEqual(collectionFromSheets(await inspectInventoryFile(file.filename, Buffer.from(file.content, "base64"))), data);
+  const template = await exportCollectionFile(emptyInventoryCollection(), true);
+  assert.deepEqual(collectionFromSheets(await inspectInventoryFile(template.filename, Buffer.from(template.content, "base64"))), emptyInventoryCollection());
+});
 const fixture = {
   id: "8cabf4e2-3e98-4d38-bc92-710ee044c6f7",
   name: "=Wildflower honey",

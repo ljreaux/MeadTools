@@ -194,6 +194,59 @@ renewal never silently backfills inventory.
 
 ## Phase 4: transfer and complete the full experience
 
+Implemented for review on October 28, 2026. Inventory now has a collection-wide
+Import & export section above its tabs. A template or current-stock XLSX workbook
+contains consumables, finished-mead groups, entered bottle sizes/units, custom
+categories, nested locations, category assignments and storage positions. Existing
+consumables CSV/XLSX transfers retain their formats and update behavior.
+
+The review shows entry names, notes, quantities, sizes, categories and storage
+before confirmation. Imports create separate new entries, including same-name
+collections; portable keys never authorize updates to existing stock. An explicit
+acknowledgment explains that another import can add duplicate stock. Category
+names and sibling location names are reused within the destination account.
+New collection entry only needs bottle size, unit and count; canonical liters
+are calculated if omitted. Exports retain canonical capacity and entered labels
+to preserve existing and nominal bottle sizes on restore.
+
+One account-serialized operation creates the complete collection, receipts,
+allocations and movement events atomically. Retry preserves the reviewed operation
+identity; changed content cannot reuse the same operation. Bulk writes keep the
+1,000-stock import/export fixture below one second on the disposable local DB.
+Validation rejects dangling references, hierarchy cycles, duplicate keys/capacities/
+positions, mismatched bottle labels, fractional bottle counts and allocations
+beyond on-hand stock. File expansion/formula/external-link protections remain in
+force. No schema change, table, migration or app-database reset was required.
+
+This is a current active-stock transfer: archived entries, old adjustment history,
+equipment, brew/bottling links and browser preferences are excluded and explained
+before confirmation. Imports start new receipt/movement history without replaying
+past production or deductions. Export/templates remain available after expiry;
+inspection/import require premium. Public brew data remains unchanged.
+
+Validation: 54 inventory-domain, 107 PostgreSQL transaction/route, 60 API-contract,
+9 spreadsheet/bottle-format and 3 translation tests passed (233 total). Existing
+transaction tests cover manual stock, production corrections, moves, use, source
+removal, expiry and reconciliation; new tests cover cross-account restoration,
+fresh identities, organization reuse, operation replay/conflict, a 1,000-row
+collection round trip, invalid references and rollback after a late storage-audit
+failure. Inventory-domain, contract and web typechecks, targeted lint and package
+boundaries passed. Generated contracts/OpenAPI were reviewed with the updated
+baseline. There are no schema/migration changes or generated ERD changes.
+
+The user's existing local server verified file selection, review, keyboard
+confirmation, focus return, a successful mixed-size import and a 390px dialog
+without horizontal overflow. The local Phase 4 — collection review example has
+five 12 fl oz and four 750 mL bottles after one normal use; three US bottles
+remain in Phase 4 — cellar → Box A. Its receipt/use history retains the sizes.
+The companion pantry honey retains 2.5 lb, with 1.5 lb at Shelf 1. The actual
+browser-downloaded workbook was read back and verified against those saved
+balances, categories and allocations. No private server was started.
+
+Review focus: does the collection workbook preserve your chosen groupings and
+organization, and does the add-new-entry review make the import's effect clear?
+See [collection workbook guide](../domain/inventory-transfers.md).
+
 Experience: import an existing collection or export a useful backup containing
 finished-mead details, labels, and storage allocations alongside consumables.
 Preserve current consumables file compatibility. Complete end-to-end checks
@@ -243,7 +296,8 @@ collection. No private server was
 started. Local review examples are named Mixed bottle sizes — review and
 Bottling sizes — review.
 The seed follow-up below is complete.
-Imports/exports remain the next planned phase.
+At this checkpoint, imports/exports were the next planned phase; Phase 4 above
+records their subsequent implementation and verification.
 
 
 ## ERD and seed follow-up
@@ -263,4 +317,4 @@ additive stock. Seed integration checks exercise all recipe ingredient/additive
 uses through the real API and confirm vessel/bottle capacity and receipt history.
 The development database has not been reset or reseeded by this follow-up.
 
-Imports/exports and the final cross-flow review remain Phase 4.
+Phase 4 above records the completed transfers and final cross-flow verification.

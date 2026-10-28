@@ -10,6 +10,7 @@ import { InventoryOrganizeDialog } from "./InventoryOrganizeDialog";
 import { InventoryOrganizationSummary, organizedItem } from "./InventoryOrganizationSummary";
 import { InventoryReconcileDialog } from "./InventoryReconcileDialog";
 import { InventoryTransferActions } from "./InventoryTransferActions";
+import { InventoryCollectionTransfer } from "./InventoryCollectionTransfer";
 import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { FinishedMeadsWorkspace } from "./FinishedMeadsWorkspace";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -32,6 +33,7 @@ function InventoryWorkspaceContent() {
   const { t } = useTranslation();
   return <div className="space-y-6 pt-2 sm:pt-10">
     <header className="space-y-2"><h1 className="text-3xl font-bold tracking-tight">{t("inventory.title")}</h1><p className="max-w-xl text-sm text-muted-foreground">{t("inventory.description")}</p></header>
+    <InventoryCollectionTransfer />
     <Tabs defaultValue="consumables">
       <TabsList aria-label={t("inventory.title")} className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:w-auto"><TabsTrigger className="h-full whitespace-normal px-2 text-center text-xs sm:px-3 sm:text-sm" value="consumables">{t("inventory.consumables")}</TabsTrigger><TabsTrigger className="h-full whitespace-normal px-2 text-center text-xs sm:px-3 sm:text-sm" value="meads">{t("inventory.meads.title")}</TabsTrigger><TabsTrigger className="h-full whitespace-normal px-2 text-center text-xs sm:px-3 sm:text-sm" value="organization">{t("inventory.organization.manage")}</TabsTrigger></TabsList>
       <TabsContent value="consumables"><ConsumablesWorkspace /></TabsContent>

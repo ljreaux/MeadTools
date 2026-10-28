@@ -114,6 +114,15 @@ export function createInventoryOperation(database: PrismaClient = prisma) {
   return operation;
 }
 
+export async function validateInventoryCatalog(tx: Prisma.TransactionClient, category: string, reference?: CatalogReference | null) {
+    if (!reference) return;
+    const compatible = reference.catalog === 'ingredient' ? ['honey','fruit'].includes(category) : reference.catalog === 'yeast' ? category === 'yeast' : category === 'additive';
+    if (!compatible) throw new InventoryError('LINK_MISMATCH');
+    const id = Number(reference.id);
+    const exists = reference.catalog === 'nutrient' ? Boolean(nutrientReference(reference.id)) : reference.catalog === 'additive' ? stabilizerCatalog.some(item=>item.id===reference.id) || z.string().uuid().safeParse(reference.id).success && await tx.additives.findFirst({where:{id:reference.id},select:{id:true}}) : Number.isSafeInteger(id) && id > 0 ? reference.catalog === 'ingredient' ? await tx.ingredients.findUnique({where:{id},select:{id:true}}) : await tx.yeasts.findUnique({where:{id},select:{id:true}}) : null;
+    if (!exists) throw new InventoryError('LINK_MISMATCH');
+  }
+
 export function createInventoryService(database: PrismaClient = prisma) {
   const operation = createInventoryOperation(database);
 
@@ -137,20 +146,12 @@ export function createInventoryService(database: PrismaClient = prisma) {
     return writeInventoryBalance(tx, userId, operationId, stock, plan, kind, consumptionId, note);
   }
 
-  async function validateCatalog(tx: Tx, category: string, reference?: CatalogReference | null) {
-    if (!reference) return;
-    const compatible = reference.catalog === 'ingredient' ? ['honey','fruit'].includes(category) : reference.catalog === 'yeast' ? category === 'yeast' : category === 'additive';
-    if (!compatible) throw new InventoryError('LINK_MISMATCH');
-    const id = Number(reference.id);
-    const exists = reference.catalog === 'nutrient' ? Boolean(nutrientReference(reference.id)) : reference.catalog === 'additive' ? stabilizerCatalog.some(item=>item.id===reference.id) || z.string().uuid().safeParse(reference.id).success && await tx.additives.findFirst({where:{id:reference.id},select:{id:true}}) : Number.isSafeInteger(id) && id > 0 ? reference.catalog === 'ingredient' ? await tx.ingredients.findUnique({where:{id},select:{id:true}}) : await tx.yeasts.findUnique({where:{id},select:{id:true}}) : null;
-    if (!exists) throw new InventoryError('LINK_MISMATCH');
-  }
   async function editStock(userId: number, operationKey: string, input: {stockId:string;name:string;catalogReference?:CatalogReference|null;notes?:string|null}):Promise<StockResult> {
     const details = z.object({name:stockInputSchema.shape.name,catalogReference:stockInputSchema.shape.catalogReference,notes:stockInputSchema.shape.notes}).parse(input);
     return operation(userId,operationKey,{kind:'stock_details',stockId:input.stockId,details},result=>stockResultSchema.parse(result),async(tx)=>{
       const stock=(await lockStock(tx,userId,[uuid.parse(input.stockId)])).get(input.stockId)!;
       if(stock.archived_at)throw new InventoryWriteError('STOCK_ARCHIVED');
-      await validateCatalog(tx,stock.category,details.catalogReference);
+      await validateInventoryCatalog(tx,stock.category,details.catalogReference);
       await tx.inventory_stock.update({where:{id:stock.id},data:{name:details.name,catalog:details.catalogReference?.catalog??null,catalog_id:details.catalogReference?.id??null,notes:details.notes}});
       return {stockId:stock.id,balance:{value:stock.quantity.toNumber(),unit:stock.unit}};
     });
@@ -162,7 +163,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     const parsed = stockInputSchema.parse(input);
     return operation(userId, operationKey, { kind: "create_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
-        await validateCatalog(tx, parsed.category, parsed.catalogReference);
+        await validateInventoryCatalog(tx, parsed.category, parsed.catalogReference);
         const stock = await tx.inventory_stock.create({ data: {
           user_id: userId, name: parsed.name, category: parsed.category,
           catalog: parsed.catalogReference?.catalog ?? null,
@@ -203,7 +204,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
               row.stock.catalogReference,
             ]);
             if (!references.has(key)) {
-              await validateCatalog(
+              await validateInventoryCatalog(
                 tx,
                 row.stock.category,
                 row.stock.catalogReference,

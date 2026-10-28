@@ -2783,7 +2783,7 @@
     "transfer": {
       "import": "Import",
       "export": "Export",
-      "sectionTitle": "Import and export",
+      "sectionTitle": "Import & export consumables",
       "importHelp": "Bring stock from another platform using an Excel or CSV file. Map your columns and review quantities and catalog links before saving.",
       "importPremiumHelp": "Importing stock from an Excel or CSV file is available with Premium.",
       "exportHelp": "Export your current inventory as Excel or CSV. To start a spreadsheet from scratch, choose the blank Excel template in the Export menu.",
@@ -3077,6 +3077,76 @@
       "itemType": "Item type",
       "all": "All items",
       "reverseSort": "Reverse sort direction"
+    },
+    "collectionTransfer": {
+      "title": "Import & export collection",
+      "help": "Move an existing collection into MeadTools or save a workbook of current consumables, finished meads, custom categories, and storage. Use the template to enter a collection you already own.",
+      "import": "Import collection",
+      "export": "Export collection",
+      "template": "Download collection template",
+      "review": "Review collection import",
+      "scope": "This workbook contains current stock and organization. Import creates new entries; it does not restore adjustment history, archived items, equipment, or links to brews and bottling records.",
+      "summary": "Consumables: {{stock}} · Finished meads: {{meads}} · Categories: {{labels}} · Locations: {{locations}} · Storage positions: {{allocations}}",
+      "reuse": "Matching category names and storage paths are reused. Existing stock is kept as it is.",
+      "locations": "Storage locations",
+      "acknowledge": "Add these as new entries. I understand that importing a collection already on hand creates additional stock, even when names match.",
+      "confirm": "Add collection",
+      "fileHelp": "Choose a collection XLSX workbook up to 5 MB. Keep the template sheet names and headers. Use up to 1,000 stock rows, 1,000 categories, 1,000 locations, 1,000 category assignments, and 1,000 storage positions.",
+      "invalidWorkbook": "This workbook needs changes. Use the collection template and keep its six sheet names and headers. Check unique keys, matching references, consistent mead names and notes, positive bottle sizes, whole bottle counts, and storage quantities within the stock on hand. Numbers use a decimal point.",
+      "workbookInstructions": [
+        [
+          "MeadTools collection workbook — version 1"
+        ],
+        [
+          "Scope",
+          "Current active consumables, finished meads, categories and storage only. Not adjustment history, archived items, equipment, brew links or bottling provenance."
+        ],
+        [
+          "Import",
+          "Creates NEW stock entries. Existing stock is never updated, merged or removed. Importing the same collection again adds duplicate stock. Review before confirming."
+        ],
+        [
+          "Keys",
+          "Use any unique text key, such as mead-1, bottle-1, honey-1, cellar-1. Keys connect workbook rows; they never grant access to existing records."
+        ],
+        [
+          "Consumables",
+          "One row per item. Category: honey, fruit, yeast, additive or packaging. Packaging must use whole units. Catalog type and ID are optional; a linked catalog must exist in the destination."
+        ],
+        [
+          "Finished meads",
+          "One row per bottle size. Repeat the same Mead key, name and notes for all sizes in one entry. Different keys keep collections separate even with identical names."
+        ],
+        [
+          "Bottle sizes",
+          "Enter Bottle size, Size unit (mL, L, fl_oz or gal) and Bottle count. Size in liters may be blank; MeadTools calculates it. For example, 750, mL, 12 bottles. Exports include canonical Size in liters to preserve existing capacities and nominal presets; retain it when restoring. Both label cells may be blank for older data with canonical liters. Counts are whole bottles including zero. Combine rows of the same capacity within one mead."
+        ],
+        [
+          "Categories",
+          "One row per custom category. Assignments use Kind stock or mead, the item key and category key. Category names are reused if already present."
+        ],
+        [
+          "Locations",
+          "One row per location. Parent key is blank for a top-level location, or refers to another Location key. Matching names under the same parent are reused."
+        ],
+        [
+          "Storage",
+          "Stock key refers to a consumable or Bottle key. Quantity uses the consumable row unit or whole bottles. Position is optional. Allocated quantity must not exceed stock; the remainder is unlocated."
+        ],
+        [
+          "Limits",
+          "5 MB; 1000 total stock rows; 50 sizes per mead; 1000 rows per organization sheet; 50 category assignments per entry; 100 storage positions per stock row."
+        ],
+        [
+          "Format",
+          "Keep all six data sheet names and headers, including empty sheets. Use literal values, decimal points, and no formulas, macros or external workbook links."
+        ],
+        [
+          "Privacy",
+          "This file includes private notes and storage information. Share it intentionally."
+        ]
+      ],
+      "invalidRow": "Check {{sheet}}, row {{row}}."
     }
   },
   "brewInventory": {

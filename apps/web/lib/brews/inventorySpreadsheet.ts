@@ -13,6 +13,9 @@ import {
   nutrientCatalog,
   stabilizerCatalog,
   quantityUnitSchema,
+  collectionToSheets,
+  inventoryCollectionSchema,
+  type InventoryCollection,
 } from "@meadtools/inventory-domain";
 import type { InventoryStockItem } from "@meadtools/api-contract/contracts";
 
@@ -23,6 +26,22 @@ export class InventoryFileError extends Error {
   ) {
     super(code);
   }
+}
+
+export async function exportCollectionFile(collection: InventoryCollection, template = false) {
+  const data = collectionToSheets(collection);
+  const instructions = z.object({ inventory: z.object({ collectionTransfer: z.object({ workbookInstructions: z.array(z.array(z.string())) }) }) })
+    .parse(await loadTranslationResource("en", "default")).inventory.collectionTransfer.workbookInstructions;
+  const buffer = await writeXlsxFile([
+    ...data.map(sheet => ({ sheet: sheet.name, stickyRowsCount: 1, columns: sheet.rows[0].map(() => ({ width: 26 })), data: sheet.rows.map((row, index) => row.map(cell => ({ value: cell, type: typeof cell === "number" ? Number : String, ...(index === 0 ? { fontWeight: "bold" as const } : {}) }))) })),
+    { sheet: "Instructions", data: instructions },
+  ]).toBuffer();
+  if (buffer.length > FILE_BYTE_LIMIT) throw new InventoryFileError("IMPORT_LIMIT");
+  return { filename: template ? "meadtools-collection-template.xlsx" : "meadtools-collection.xlsx", media_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content: buffer.toString("base64") };
+}
+
+export function emptyInventoryCollection(): InventoryCollection {
+  return inventoryCollectionSchema.parse({ version: 1, consumables: [], meads: [], labels: [], locations: [], assignments: [], allocations: [] });
 }
 export type InventorySheet = { name: string; rows: string[][] };
 function checkedSheets(sheets: InventorySheet[]): InventorySheet[] {

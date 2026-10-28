@@ -13,3 +13,5 @@ export * from './finished-mead';
 export * from './organization';
 
 export * from "./bottling";
+
+export * from "./collection-transfer";

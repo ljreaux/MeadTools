@@ -316,6 +316,21 @@ Responses include sheet data, a base64 file or import counts. Row failures ident
 the source row; file limits use HTTP 413. The route is excluded from historical
 path parity and documented using runtime schemas and generated contracts.
 
+The same route now accepts `export_collection` (optional `template`) and
+`import_collection` (`operation_id`, `collection`). Version 1 collections contain
+consumables, finished-mead groups and bottle rows, categories, hierarchical
+locations, label assignments and per-stock storage positions. Portable keys
+connect workbook rows; they never select records to update. Imports create new
+stock and receipt/movement history in one account-serialized, replay-safe
+transaction, reuse matching owned category names and sibling locations, and do
+not replay brewing/bottling events or restore source links. Existing stock and
+public brew JSON are untouched. The workbook is a current active-stock snapshot,
+not an archive of histories or equipment. Export/template access survives expiry;
+inspection and import require premium. Existing consumables actions and file
+formats remain unchanged. Shared validation checks references, cycles, duplicate
+keys/capacities/positions, bottle display metadata, whole counts and allocation
+totals; bounded XLSX parsing still rejects formulas and external links.
+
 Stock history includes an optional revision-bound reconciliation review for
 flagged stock owned by a premium account. PATCH `/account/inventory/{stock_id}`
 accepts `action: reconcile`, the reviewed revision, an absolute physical quantity

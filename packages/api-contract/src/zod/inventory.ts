@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   stockTransferImportSchema,
+  inventoryCollectionSchema,
   SHEET_COLUMN_LIMIT,
   SHEET_ROW_LIMIT,
   stockInputSchema,
@@ -299,6 +300,8 @@ export const inventoryTransferRequestBodySchema = z.discriminatedUnion(
       })
       .strict(),
     z.object({ ...stockTransferImportSchema.shape }).strict(),
+    z.object({ action: z.literal("import_collection"), operation_id: z.string().uuid(), collection: inventoryCollectionSchema }).strict(),
+    z.object({ action: z.literal("export_collection"), template: z.boolean().default(false) }).strict(),
     z
       .object({
         action: z.literal("export"),

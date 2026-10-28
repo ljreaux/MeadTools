@@ -1669,3 +1669,114 @@ test('bottling retains selected US and metric row sizes in private stock and sou
   stock = await productionStock(f, input);
   assert.equal(stock.bottle_size_value.toNumber(), 12); assert.equal(stock.bottle_size_unit, 'fl_oz');
 });
+
+const collectionFixture = () => ({ version: 1,
+  consumables: [{ key: 'honey', stock: { name: 'Honey', category: 'honey', quantity: kg(2), notes: null, catalogReference: null } }],
+  meads: [{ key: 'pie', name: 'Key lime pie', notes: 'Summer', bottles: [
+    { key: 'us', size_liters: 0.355, quantity: 6, display_size: { value: 12, unit: 'fl_oz' } },
+    { key: 'metric', size_liters: 0.75, quantity: 3, display_size: { value: 750, unit: 'mL' } },
+    { key: 'legacy', size_liters: 0.375, quantity: 0 },
+  ] }],
+  labels: [{ key: 'ready', name: 'Ready' }],
+  locations: [{ key: 'box', name: 'Box A', parent_key: 'cellar' }, { key: 'cellar', name: 'Cellar', parent_key: null }],
+  assignments: [{ kind: 'mead', key: 'pie', label_key: 'ready' }, { kind: 'stock', key: 'honey', label_key: 'ready' }],
+  allocations: [{ stock_key: 'us', location_key: 'box', position: 'A1', quantity: 3 }, { stock_key: 'honey', location_key: 'cellar', position: '', quantity: 1 }],
+});
+const { createInventoryCollectionService } = await import('../lib/db/inventory-collection.ts');
+const collectionService = createInventoryCollectionService(prisma);
+const { inspectInventoryFile: inspectCollectionWorkbook } = await import('../lib/brews/inventorySpreadsheet.ts');
+const { collectionFromSheets } = await import('@meadtools/inventory-domain');
+
+test('collection import creates mixed units, categories, nested storage and receipts atomically; retries cannot double stock', async () => {
+  const userId = await owner();
+  const input = { action: 'import_collection', operation_id: randomUUID(), collection: collectionFixture() };
+  const result = await transferRequest(userId, input);
+  assert.equal(result.status, 200); assert.equal(result.body.created, 2);
+  assert.deepEqual((await transferRequest(userId, input)).body, result.body);
+  assert.equal(await prisma.inventory_stock.count(), 4);
+  assert.equal(await prisma.inventory_adjustments.count(), 3);
+  assert.equal(await prisma.inventory_storage_events.count(), 2);
+  assert.equal(await prisma.inventory_bottlings.count(), 0);
+  const snapshot = await collectionService.snapshot(userId);
+  assert.deepEqual(snapshot.meads[0].bottles.map(row => row.display_size ?? null).sort((a,b) => (a?.value ?? 0) - (b?.value ?? 0)), [null, { value:12, unit:'fl_oz' }, { value:750, unit:'mL' }]);
+  assert.equal(snapshot.allocations.length, 2);
+  const conflict = await transferRequest(userId, { ...input, collection: { ...input.collection, meads: [] } });
+  assert.equal(conflict.status, 400); // broken workbook references fail before operation replay
+  const changed = structuredClone(input); changed.collection.meads[0].name = 'Changed';
+  assert.equal((await transferRequest(userId, changed)).body.code, 'OPERATION_CONFLICT');
+});
+
+test('exported collection restores into another account with fresh identities and no foreign brew links', async () => {
+  const first = await owner(), second = await owner();
+  await collectionService.restore(first, randomUUID(), collectionFixture());
+  const exported = await transferRequest(first, { action:'export_collection' });
+  assert.equal(exported.status, 200);
+  const data = collectionFromSheets(await inspectCollectionWorkbook(exported.body.filename, Buffer.from(exported.body.content,'base64')));
+  assert.equal((await transferRequest(second, { action:'import_collection', operation_id:randomUUID(), collection:data })).status, 200);
+  const restored = await collectionService.snapshot(second);
+  assert.equal(restored.meads[0].name, data.meads[0].name);
+  assert.equal(restored.meads[0].bottles.reduce((n,row)=>n+row.quantity,0),9);
+  assert.ok(restored.consumables.every(row=>!data.consumables.some(old=>old.key===row.key)));
+  assert.equal(restored.labels.length,1); assert.equal(restored.locations.length,2); assert.equal(restored.allocations.length,2);
+  const firstStock = data.consumables[0].key;
+  assert.equal(await balance(firstStock),2);
+  // The same owner's explicit copy also adds fresh stock, while organization is reused.
+  await collectionService.restore(first,randomUUID(),data);
+  assert.equal(await prisma.inventory_meads.count({where:{user_id:first}}),2);
+  assert.equal(await prisma.inventory_labels.count({where:{user_id:first}}),1);
+  assert.equal(await prisma.inventory_locations.count({where:{user_id:first}}),2);
+});
+
+test('collection import rolls back organization, balances and operation receipt when a later catalog link fails', async () => {
+  const userId = await owner(); const data = collectionFixture();
+  data.consumables[0].stock.catalogReference = { catalog:'ingredient', id:'2147483647' };
+  const result = await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data});
+  assert.equal(result.status,400);
+  for (const table of ['inventory_stock','inventory_meads','inventory_labels','inventory_locations','inventory_allocations','inventory_storage_events','inventory_operations']) assert.equal(await prisma[table].count(),0,table);
+});
+
+test('collection export and template remain available after expiry; imports fail and existing consumables exports remain compatible',async()=>{
+  const userId=await owner(); await collectionService.restore(userId,randomUUID(),collectionFixture());
+  await prisma.premium_memberships.deleteMany({where:{user_id:userId}});
+  assert.equal((await transferRequest(userId,{action:'export_collection'})).status,200);
+  const template=await transferRequest(userId,{action:'export_collection',template:true});
+  assert.equal(template.status,200);
+  assert.equal(collectionFromSheets(await inspectCollectionWorkbook(template.body.filename,Buffer.from(template.body.content,'base64'))).meads.length,0);
+  assert.equal((await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:collectionFixture()})).body.code,'PREMIUM_REQUIRED');
+  const legacy=await transferRequest(userId,{action:'export',format:'csv'});
+  assert.equal(legacy.status,200);
+  const sheets=await inspectCollectionWorkbook(legacy.body.filename,Buffer.from(legacy.body.content,'base64'));
+  assert.equal(sheets[0].rows.length,2); assert.equal(sheets[0].rows[1][0],'Honey');
+});
+
+test('collection invalid allocations and foreign-only references fail before any writes',async()=>{
+  const userId=await owner();
+  for(const mutate of [data=>{data.allocations[0].quantity=7},data=>{data.allocations[0].quantity=1.5},data=>{data.allocations[0].stock_key=randomUUID()},data=>{data.locations[1].parent_key='box'}]){
+    const data=collectionFixture();mutate(data);
+    assert.equal((await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data})).status,400);
+  }
+  assert.equal(await prisma.inventory_stock.count(),0);assert.equal(await prisma.inventory_operations.count(),0);
+});
+
+test('a full 1000-stock collection import uses bulk writes and produces a complete restorable workbook',async()=>{
+  const userId=await owner();const data=collectionFixture();data.meads=[];data.allocations=[];data.assignments=[];
+  data.consumables=Array.from({length:1000},(_,index)=>({key:`stock-${index}`,stock:transferStock(`Collection ${index}`,1)}));
+  const started=Date.now();const saved=await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data});
+  assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(saved.body.created,1000);
+  assert.equal(await prisma.inventory_adjustments.count(),1000);
+  const exported=await transferRequest(userId,{action:'export_collection'});assert.equal(exported.status,200);
+  const restored=collectionFromSheets(await inspectCollectionWorkbook(exported.body.filename,Buffer.from(exported.body.content,'base64')));
+  assert.equal(restored.consumables.length,1000);
+  console.log(`1000-stock collection import/export completed in ${Date.now()-started}ms`);
+});
+
+test('a late collection storage audit failure rolls back every imported object and operation',async()=>{
+  const userId=await owner();
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_collection_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture audit failure'; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_collection_audit_failure BEFORE INSERT ON inventory_storage_events FOR EACH ROW EXECUTE FUNCTION fixture_collection_audit_failure()');
+  try{
+    const result=await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:collectionFixture()});
+    assert.equal(result.status,500);
+    for(const table of ['inventory_stock','inventory_meads','inventory_labels','inventory_label_links','inventory_locations','inventory_allocations','inventory_storage_events','inventory_adjustments','inventory_operations'])assert.equal(await prisma[table].count(),0,table);
+  }finally{await prisma.$executeRawUnsafe('DROP TRIGGER fixture_collection_audit_failure ON inventory_storage_events');await prisma.$executeRawUnsafe('DROP FUNCTION fixture_collection_audit_failure()');}
+});
