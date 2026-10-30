@@ -1,0 +1,18 @@
+{
+  "title": "November 2026 release candidate (internal draft)",
+  "summary": "Proposed Web improvements and a beta Chat assistant update. This is an internal candidate only; production availability, final product scope, and a separate publication approval remain pending.",
+  "products": {
+    "web": {
+      "items": [
+        "Proposed: optional, editable recipe and brew loss estimates with documented assumptions; recorded brew volumes remain measurements.",
+        "Proposed: create a brew directly from a newly saved, owned, or public recipe, with source attribution and an explicit snapshot-refresh action.",
+        "Proposed: four additional visual themes for the website."
+      ]
+    },
+    "chat": {
+      "items": [
+        "Proposed beta update: a streamlined brewing assistant using shared tools, clearer progress reporting, and sensor-history summaries with measurement provenance."
+      ]
+    }
+  }
+}
