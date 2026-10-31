@@ -30,6 +30,9 @@ export type BannerInput = {
 
   /** defaults to true */
   dismissible?: boolean;
+  /** Called only when the user closes the banner, not when its owner unmounts. */
+  onDismiss?: () => void;
+  dismissLabel?: string;
 };
 
 type BannerItem = BannerInput & {
@@ -188,7 +191,10 @@ export function BannerStack({
           <Banner
             key={b.id}
             banner={b}
-            onDismiss={() => requestDismiss(b.id)}
+            onDismiss={() => {
+              b.onDismiss?.();
+              requestDismiss(b.id);
+            }}
             className={className}
           />
         ))}
@@ -257,7 +263,7 @@ function Banner({
           variant="ghost"
           size="icon"
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label={banner.dismissLabel ?? "Dismiss"}
           className="absolute right-2 top-2"
         >
           <X className="h-4 w-4" />

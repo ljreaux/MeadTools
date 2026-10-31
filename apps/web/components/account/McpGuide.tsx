@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
-import type { PremiumAccessResponse } from "@meadtools/api-contract/contracts";
+import { usePremiumAccess } from "@/hooks/reactQuery/usePremiumAccess";
 import {
   mcpTokenCreateResponseSchema,
   mcpTokenListResponseSchema
@@ -82,20 +82,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
     [token]
   );
 
-  const premiumQuery = useQuery({
-    queryKey: ["premium-access", token ? "bearer" : "session"],
-    queryFn: async () => {
-      const response = await fetch("/api/account/premium", {
-        headers: headers(),
-        cache: "no-store"
-      });
-      if (!response.ok) throw new Error("Premium status request failed");
-      return (await response.json()) as PremiumAccessResponse;
-    },
-    enabled: signedIn,
-    retry: false,
-    staleTime: 5_000
-  });
+  const premiumQuery = usePremiumAccess();
 
   const connectionsQuery = useQuery({
     queryKey: ["premium-mcp-tokens", token ? "bearer" : "session"],
