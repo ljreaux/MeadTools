@@ -1,17 +1,23 @@
 {
   "title": "November 2026 release candidate (internal draft)",
-  "summary": "Proposed Web improvements and a beta Chat assistant update. This is an internal candidate only; production availability, final product scope, and a separate publication approval remain pending.",
+  "summary": "Proposed Web improvements, a beta Chat assistant update, and the November 2 code deployment for the November 9 premium launch. Premium subscriptions and the new premium bundle remain inactive until separately verified and activated on November 9.",
   "products": {
     "web": {
       "items": [
         "Proposed: optional, editable recipe and brew loss estimates with documented assumptions; recorded brew volumes remain measurements.",
         "Proposed: create a brew directly from a newly saved, owned, or public recipe, with source attribution and an explicit snapshot-refresh action.",
-        "Proposed: four additional visual themes for the website."
+        "Proposed: four additional visual themes for the website.",
+        "Code deployment for the November 9 premium launch: ingredient inventory and equipment management with brew-linked stock deductions, brew image attachments, and downloadable QR links. These premium features are not a November 2 public availability claim; activation and launch verification remain pending."
       ]
     },
     "chat": {
       "items": [
-        "Proposed beta update: a streamlined brewing assistant using shared tools, clearer progress reporting, and sensor-history summaries with measurement provenance."
+        "Proposed beta update: a streamlined brewing assistant using shared tools, clearer progress reporting, and sensor-history summaries with measurement provenance. Hosted chat remains in beta through November 8, with general eligible-account activation planned for November 9 after verification."
+      ]
+    },
+    "api": {
+      "items": [
+        "Code deployment for the November 9 premium launch includes the existing premium/MCP access foundation and calculator/tool integrations. Paid premium access and public MCP bundle availability remain pending separate November 9 activation and verification."
       ]
     }
   }
