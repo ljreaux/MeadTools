@@ -2379,8 +2379,8 @@
     },
     "premium": {
         "title": "Premium-Zugang",
-        "description": "Premium bietet für $5 pro Monat mehr Werkzeuge für deinen Ansatz, einschließlich 1.000 Credits für gehostete Chat-Prompts pro bezahlten Monat. Neue Abonnements sind noch nicht verfügbar.",
-        "descriptionReady": "Du erhältst die unten aufgeführten Premium-Tools fürs Brauen, MCP-Zugang und 1.000 Guthaben für gehostete Chat-Prompts pro bezahltem Monat — alles für 5 $ pro Monat.",
+        "description": "Premium bietet für $5 pro Monat zusätzliche Funktionen für deine Brauausrüstung, darunter 1.000 Credits für gehostete Chats pro bezahltem Monat. Neue Abonnements sind noch nicht verfügbar.",
+        "descriptionReady": "Sichere dir die unten aufgeführten Premium-Funktionen fürs Brauen, MCP-Zugang und 1.000 Credits für gehostete Chats pro bezahltem Monat für $5 pro Monat.",
         "active": "Premium ist aktiv bis {{date}}.",
         "inactive": "Mit diesem Konto ist kein aktives Premium-Abonnement verknüpft.",
         "pendingLaunch": "Deine Mitgliedschaft ist erfasst. Premium-Vorteile werden freigeschaltet, wenn Premium startet.",
@@ -2414,7 +2414,47 @@
         "mcpConsentBasicChoice": "Kataloge, Wiki, Berechnungen und nicht gespeicherte Rezeptentwürfe verwenden.",
         "mcpConsentAccountChoice": "Basis-Tools plus Lesezugriff auf privates Konto",
         "mcpConsentBasicOnly": "Dieser Client hat nur Basis-Tools angefordert. Um hier Lesezugriff auf das private Konto auszuwählen, muss der Client diese Berechtigung auch beim erneuten Verbinden anfordern.",
-        "mcpConsentAccountRead": "Erlaube Lesezugriff auf deine eigenen Ansätze, die Ansatz-Historie und Notizen sowie gespeicherte Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten, wenn er diese Tools nutzt."
+        "mcpConsentAccountRead": "Erlaube Lesezugriff auf deine eigenen Ansätze, die Ansatz-Historie und Notizen sowie gespeicherte Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten, wenn er diese Tools nutzt.",
+        "bundleComingSoon": "Premium bietet mehr Tools für dein Brau-Setup für $5 pro Monat, inklusive 1,000 Hosted-Chat-Prompt-Credits pro bezahltem Monat. Neue Abos sind noch nicht verfügbar.",
+        "bundleAvailable": "Hol dir die unten aufgeführten Premium-Tools fürs Brauen, MCP-Zugang und 1,000 Hosted-Chat-Prompt-Credits pro bezahltem Monat – alles für $5 pro Monat.",
+        "benefits": {
+            "title": "Im Premium-Abo enthalten",
+            "inventory": {
+                "title": "Zutatenbestand",
+                "description": "Verfolge deine Zutaten und Verpackungen, importiere oder exportiere deinen Bestand und ziehe Vorräte ab, wenn du ihre Nutzung in einem Ansatz erfasst."
+            },
+            "equipment": {
+                "title": "Ausrüstungsverwaltung",
+                "description": "Lege eine Ausrüstungsliste an, erfasse Behälterkapazitäten und sieh, welcher Ansatz welches Gefäß nutzt."
+            },
+            "images": {
+                "title": "Ansatzfotos",
+                "description": "Füge Fotos zu Ansätzen und Timeline-Einträgen hinzu, versehe sie mit Bildunterschriften und durchstöbere deine Ansatz-Galerie. Enthält 250 MiB Bildspeicher und bis zu 20 Fotos pro Ansatz. JPEG, PNG und WebP werden unterstützt."
+            },
+            "qr": {
+                "title": "Druckbare QR-Codes für Ansätze",
+                "description": "Lade einen QR-Code für einen Gärbehälter oder eine Flasche herunter. Beim Scannen öffnet sich der Ansatz unter Beachtung seiner aktuellen Freigabeeinstellungen."
+            },
+            "credits": {
+                "title": "1.000 Credits pro Monat",
+                "description": "Jeder bezahlte Monat enthält 1.000 Credits für gehostete Chats. Der Verbrauch hängt vom benötigten Modellaufwand jeder Anfrage ab; 1.000 Credits entsprechen nicht 1.000 Nachrichten."
+            },
+            "mcp": {
+                "title": "Verbinde deinen KI-Assistenten",
+                "description": "Verbinde kompatible KI-Clients mit den Katalogen, Rechnern, dem Wiki, Rezeptentwürfen von MeadTools und optionaler Leseberechtigung für deine eigenen Ansätze und Rezepte. MCP-Toolaufrufe verbrauchen keine Credits für gehostete Chats; dein KI-Anbieter kann separat Gebühren berechnen."
+            },
+            "free": "Rezepterstellung, Rechner, Ansatzverfolgung und Teilen behalten ihre bestehenden kostenlosen Funktionen bei.",
+            "creditsHelp": "Premium ist nicht erforderlich, um gehostete Chats zu nutzen, wenn Chat für dein Konto verfügbar ist. Alle Chat-Prompts nutzen dein Credit-Guthaben; der Kauf eines Credit-Pakets beinhaltet kein Premium.",
+            "retention": "Wenn Premium abläuft, bleiben dein Bestand und deine Ausrüstung weiterhin einsehbar, und das kostenlose Protokollieren von Ansätzen läuft weiter. Bestehende Fotos können weiterhin angezeigt, mit Bildunterschriften versehen oder entfernt werden. Gedruckte QR-Links folgen weiterhin den Freigabeeinstellungen des Ansatzes. Bestands- und Ausrüstungsverwaltung, das Hinzufügen von Fotos und das Erstellen neuer QR-Codes erfordern aktives Premium."
+        },
+        "banner": {
+            "title": "MeadTools Premium kennenlernen",
+            "description": "Verwalte Zutaten und Ausrüstung, füge Ansatzfotos hinzu, drucke QR-Codes für Ansätze und erhalte MCP-Zugang sowie 1.000 monatliche Prompt-Credits für $5/Monat.",
+            "link": "Premium entdecken",
+            "dismiss": "Premium-Ankündigung schließen"
+        },
+        "bundleSummary": "Premium bietet mehr Werkzeuge für deinen Ansatz, MCP-Zugang und 1.000 gehostete Chat-Prompt-Credits für jeden bezahlten Monat – für $5/Monat.",
+        "supporterLinkHelp": "Unterstützt du MeadTools bereits monatlich auf Ko-fi? Gib die E-Mail-Adresse des Zahlers ein, um deine Unterstützung mit diesem Konto zu verknüpfen. Bestehende monatliche Unterstützer behalten ihren aktuellen Betrag."
     },
     "mcpGuide": {
         "title": "MeadTools mit einem KI-Assistenten verbinden",
