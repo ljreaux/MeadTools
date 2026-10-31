@@ -2379,8 +2379,8 @@
     },
     "premium": {
         "title": "Premium-Zugang",
-        "description": "Das geplante Premium-Bundle kostet $5 pro Monat und enthält 1.000 Prompt-Credits, MCP-Zugang und weitere Funktionen. Neue Abos sind während der Chat-Beta nicht möglich.",
-        "descriptionReady": "Premium kostet $5 pro Monat und enthält 1.000 Prompt-Credits pro bezahltem Monat. Weitere Vorteile, einschließlich MCP-Zugang, werden noch entwickelt.",
+        "description": "Premium bietet für $5 pro Monat mehr Werkzeuge für deinen Ansatz, einschließlich 1.000 Credits für gehostete Chat-Prompts pro bezahlten Monat. Neue Abonnements sind noch nicht verfügbar.",
+        "descriptionReady": "Du erhältst die unten aufgeführten Premium-Tools fürs Brauen, MCP-Zugang und 1.000 Guthaben für gehostete Chat-Prompts pro bezahltem Monat — alles für 5 $ pro Monat.",
         "active": "Premium ist aktiv bis {{date}}.",
         "inactive": "Mit diesem Konto ist kein aktives Premium-Abonnement verknüpft.",
         "pendingLaunch": "Deine Mitgliedschaft ist erfasst. Premium-Vorteile werden freigeschaltet, wenn Premium startet.",
