@@ -86,3 +86,29 @@ test("allows only the reviewed initial promotion to carry an internal draft", ()
     false,
   );
 });
+
+test("monthly internal notes require a changed draft, monthly PR, valid products, and review", () => {
+  const args = {
+    baseEntries: {},
+    headEntries: {},
+    labels: ["release-ready"],
+    body: "",
+    monthlyRelease: true,
+    monthlyDraftChanged: true,
+    monthlyDraft: entry,
+  };
+  assert.equal(evaluateNoteGate(args).ok, true);
+  for (const change of [
+    { monthlyRelease: false },
+    { monthlyDraftChanged: false },
+    { labels: [] },
+    { monthlyDraft: { ...entry, products: {} } },
+    {
+      monthlyDraft: {
+        ...entry,
+        products: { mobilePreview: { items: ["Preview only"] } },
+      },
+    },
+  ])
+    assert.equal(evaluateNoteGate({ ...args, ...change }).ok, false);
+});

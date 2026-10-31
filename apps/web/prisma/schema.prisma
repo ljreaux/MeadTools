@@ -31,17 +31,21 @@ model brews {
   gravity_unit_preference gravity_unit @default(SG)
 
   // relations
+  images brew_images[]
   entries brew_entries[]
   recipes recipes?       @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users   users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   devices devices[]
   logs    logs[]
+  equipment equipment[]
 
+  @@unique([id, user_id])
   @@index([user_id, start_date])
   @@index([recipe_id])
 }
 
 model brew_entries {
+  images brew_images[]
   id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   brew_id  String   @db.Uuid
   user_id  Int?
@@ -107,6 +111,8 @@ model logs {
   // leaving logs alone if a brew is deleted:
   brews   brews?   @relation(fields: [brew_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   devices devices? @relation(fields: [device_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([brew_id, datetime, id])
 }
 
 model recipes {
@@ -157,6 +163,7 @@ model users {
   /// Claimed before SMTP to keep automated sends at most once per release.
   product_updates_last_emailed_date DateTime? @db.Date
 
+  brew_images              brew_images[]
   brews                    brews[]
   brew_entries             brew_entries[]
   devices                  devices[]
@@ -169,6 +176,421 @@ model users {
   credit_account           credit_accounts?
   credit_checkout_sessions credit_checkout_sessions[]
   resolved_payment_recoveries credit_payment_recoveries[] @relation("credit_payment_recoveries_resolved_by")
+  premium_memberships      premium_memberships[]
+  kofi_link                premium_kofi_links?
+  kofi_link_challenges     premium_kofi_link_challenges[]
+  premium_stripe_checkout premium_stripe_checkouts?
+  premium_stripe_subscription premium_stripe_subscriptions?
+  premium_stripe_invoices  premium_stripe_invoices[]
+  mcp_access_tokens       mcp_access_tokens[]
+  mcp_oauth_codes         mcp_oauth_codes[]
+  mcp_oauth_sessions      mcp_oauth_sessions[]
+  mcp_rate_buckets        mcp_rate_buckets?
+  mcp_tool_leases         mcp_tool_leases[]
+  mcp_tool_usage          mcp_tool_usage[]
+  inventory_stock        inventory_stock[]
+  inventory_operations   inventory_operations[]
+  equipment              equipment[]
+}
+
+/// Archive referenced stock; preserve quantities and audit records after expiry.
+model inventory_stock {
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         Int
+  name            String @db.VarChar(200)
+  category        inventory_stock_category
+  catalog         String? @db.VarChar(32)
+  catalog_id      String? @db.VarChar(200)
+  quantity        Decimal @db.Decimal(16, 6)
+  unit            inventory_quantity_unit
+  notes           String? @db.VarChar(5000)
+  archived_at     DateTime? @db.Timestamptz(6)
+  reconciliation_required Boolean @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  consumptions inventory_consumptions[]
+  adjustments  inventory_adjustments[]
+
+  // The compound key enforces ownership and preserves the historical stock unit.
+  @@unique([id, user_id, unit])
+  @@index([user_id, archived_at])
+  @@index([user_id, catalog, catalog_id])
+}
+
+/// One request identity per account, including a saved response for retries.
+model inventory_operations {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       Int
+  operation_key String @db.Uuid
+  request_hash  String @db.VarChar(64)
+  result        Json
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  user        users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  adjustments inventory_adjustments[]
+
+  @@unique([user_id, operation_key])
+  @@unique([id, user_id])
+}
+
+/// Retain the physical-use identity and deduction after entry/brew deletion.
+/// Brew and entry IDs are historical snapshots, deliberately not cascading FKs.
+model inventory_consumptions {
+  line_key       String @default("addition") @db.VarChar(200)
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        Int
+  stock_id       String @db.Uuid
+  brew_id        String @db.Uuid
+  entry_id       String @db.Uuid
+  use_key        String @db.Uuid
+  deducted       Decimal @db.Decimal(16, 6)
+  unit           inventory_quantity_unit
+  reversed_at    DateTime? @db.Timestamptz(6)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  stock       inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
+  adjustments inventory_adjustments[]
+
+  @@unique([user_id, use_key])
+  @@unique([user_id, entry_id, line_key])
+  @@unique([id, user_id])
+  @@index([user_id, brew_id, entry_id])
+}
+
+/// Append-only audit rows; write with balance, operation and consumption in one transaction.
+model inventory_adjustments {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        Int
+  stock_id       String @db.Uuid
+  operation_id   String @db.Uuid
+  consumption_id String? @db.Uuid
+  kind           String @db.VarChar(32)
+  delta          Decimal @db.Decimal(16, 6)
+  balance_after  Decimal @db.Decimal(16, 6)
+  unit           inventory_quantity_unit
+  note           String? @db.VarChar(5000)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  stock       inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
+  operation   inventory_operations @relation(fields: [operation_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+  // Audit stock/unit stays unchanged when a use is corrected to a different item.
+  consumption inventory_consumptions? @relation(fields: [consumption_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([operation_id, stock_id])
+  @@index([user_id, stock_id, created_at])
+  @@index([consumption_id])
+}
+
+model equipment {
+  group_id        String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label           String? @db.VarChar(100)
+  id              String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         Int
+  name            String @db.VarChar(200)
+  type            equipment_type
+  capacity        Decimal? @db.Decimal(16, 6)
+  capacity_unit   inventory_quantity_unit?
+  notes           String? @db.VarChar(5000)
+  current_brew_id String? @db.Uuid
+  archived_at     DateTime? @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  // Release explicitly in the brew completion/deletion transaction.
+  brew brews? @relation(fields: [current_brew_id, user_id], references: [id, user_id], onDelete: NoAction, onUpdate: Restrict)
+  assignment_events equipment_assignment_events[]
+
+  @@unique([id, user_id])
+  @@index([user_id, archived_at])
+  @@index([current_brew_id, user_id])
+  @@index([user_id, group_id])
+}
+
+/// Historical brew IDs survive deletion; one event per retried assignment request.
+model equipment_assignment_events {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       Int
+  equipment_id  String @db.Uuid
+  operation_key String @db.Uuid
+  from_brew_id  String? @db.Uuid
+  to_brew_id    String? @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  equipment equipment @relation(fields: [equipment_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([user_id, operation_key, equipment_id])
+  @@index([user_id, equipment_id, created_at])
+}
+
+enum inventory_stock_category {
+  honey
+  fruit
+  yeast
+  additive
+  packaging
+}
+
+enum equipment_type {
+  vessel
+  other
+}
+
+enum inventory_quantity_unit {
+  kg
+  g
+  mg
+  lb
+  oz
+  L
+  mL
+  gal
+  qt
+  pt
+  fl_oz
+  imp_gal
+  imp_qt
+  imp_pt
+  imp_fl_oz
+  tsp
+  tbsp
+  units
+}
+
+/// Account-scoped premium access from a paid period or an operator grant.
+/// Source records remain separate so Ko-fi, Stripe, and manual grants can
+/// expire or be revoked independently.
+model premium_memberships {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            Int
+  source             String    @db.VarChar(32)
+  external_reference String?   @db.VarChar(255)
+  paid_through       DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@unique([user_id, source])
+  @@unique([source, external_reference])
+  @@index([user_id, paid_through])
+}
+
+/// A verified account link to the Ko-fi payer email. The email itself is not
+/// persisted; a keyed digest prevents a database leak from listing supporters.
+model premium_kofi_links {
+  user_id       Int      @id
+  email_digest  String   @unique @db.VarChar(64)
+  grandfathered Boolean @default(true)
+  verified_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// One-time proof sent to the payer email before it can claim Ko-fi payments.
+model premium_kofi_link_challenges {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     Int
+  email_digest String  @db.VarChar(64)
+  token_hash  String    @unique @db.VarChar(64)
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// One verified Ko-fi recurring payment. The message and transaction IDs
+/// deduplicate retries; no raw webhook payload or payer email is retained.
+model premium_kofi_payments {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id     String    @unique @db.VarChar(128)
+  transaction_id String    @unique @db.VarChar(128)
+  email_digest   String    @db.VarChar(64)
+  paid_at        DateTime  @db.Timestamptz(6)
+  amount_cents   Int
+  currency       String    @db.VarChar(3)
+  applied_user_id Int?
+  applied_at     DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email_digest, paid_at])
+}
+
+/// Durable Checkout reservation; Stripe requests reuse the persisted attempt and parameters.
+model premium_stripe_checkouts {
+  user_id Int @id
+  attempt_id String @unique @db.Uuid
+  params Json
+  session_id String? @unique @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// Stripe customer and subscription identity for account billing management.
+model premium_stripe_subscriptions {
+  user_id              Int      @id
+  customer_id          String   @unique @db.VarChar(255)
+  subscription_id      String   @unique @db.VarChar(255)
+  status               String   @db.VarChar(32)
+  cancel_at_period_end Boolean  @default(false)
+  created_at           DateTime @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// One paid Stripe invoice per premium allowance. The invoice ID makes
+/// webhook retries and out-of-order delivery safe to replay.
+model premium_stripe_invoices {
+  invoice_id        String   @id @db.VarChar(255)
+  user_id           Int
+  subscription_id   String   @db.VarChar(255)
+  paid_at           DateTime @db.Timestamptz(6)
+  paid_through      DateTime @db.Timestamptz(6)
+  amount_paid_cents Int
+  refunded_amount_cents Int @default(0)
+  payments premium_stripe_payments[]
+  payment_recoveries credit_payment_recoveries[]
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, paid_at])
+  @@index([subscription_id, paid_at])
+}
+
+/// Verified invoice-to-payment mapping for subscription refunds and disputes.
+model premium_stripe_payments {
+  payment_intent_id String @id @db.VarChar(255)
+  invoice_id String @db.VarChar(255)
+  invoice premium_stripe_invoices @relation(fields: [invoice_id], references: [invoice_id], onDelete: Restrict)
+  @@index([invoice_id])
+}
+
+/// Revocable account-scoped MCP credentials. Only a SHA-256 digest is stored.
+model mcp_access_tokens {
+  scope        String    @default("mcp:tools") @db.VarChar(128)
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      Int
+  label        String    @db.VarChar(80)
+  token_hash   String    @unique @db.VarChar(64)
+  expires_at   DateTime  @db.Timestamptz(6)
+  revoked_at   DateTime? @db.Timestamptz(6)
+  last_used_at DateTime? @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, revoked_at])
+}
+
+/// Public OAuth clients registered by supported remote MCP clients.
+model mcp_oauth_clients {
+  client_id     String   @id @db.VarChar(128)
+  client_name   String   @db.VarChar(100)
+  redirect_uris String[]
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// Single-use authorization codes, bound to a user, client, resource and PKCE challenge.
+model mcp_oauth_codes {
+  code_hash      String    @id @db.VarChar(64)
+  consent_hash   String    @unique @db.VarChar(64)
+  user_id        Int
+  client_id      String    @db.VarChar(128)
+  redirect_uri   String    @db.VarChar(2048)
+  code_challenge String    @db.VarChar(128)
+  resource       String    @db.VarChar(512)
+  scope          String    @db.VarChar(128)
+  expires_at     DateTime  @db.Timestamptz(6)
+  consumed_at    DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// Revocable OAuth connection; access tokens expire quickly and refresh tokens rotate.
+model mcp_oauth_sessions {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            Int
+  client_id          String    @db.VarChar(128)
+  label              String    @db.VarChar(100)
+  access_token_hash  String    @unique @db.VarChar(64)
+  refresh_token_hash String    @unique @db.VarChar(64)
+  resource           String    @db.VarChar(512)
+  scope              String    @db.VarChar(128)
+  access_expires_at  DateTime  @db.Timestamptz(6)
+  refresh_expires_at DateTime  @db.Timestamptz(6)
+  revoked_at         DateTime? @db.Timestamptz(6)
+  last_used_at       DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  consumed_refresh_tokens mcp_oauth_consumed_refresh_tokens[]
+  @@index([user_id, revoked_at])
+}
+
+/// Hash-only token history identifies replay of a rotated refresh token.
+model mcp_oauth_consumed_refresh_tokens {
+  token_hash String @id @db.VarChar(64)
+  session_id String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  session mcp_oauth_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  @@index([session_id])
+}
+
+/// A global admission budget bounds anonymous registration across instances.
+model mcp_registration_budget {
+  id Boolean @id @default(true)
+  window_start DateTime @db.Timestamptz(6)
+  call_count Int
+}
+
+/// One rolling minute counter per account; no tool arguments are stored.
+model mcp_rate_buckets {
+  user_id      Int      @id
+  window_start DateTime @db.Timestamptz(6)
+  call_count   Int
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+}
+
+/// Expiring concurrency slots survive serverless instances and crashes.
+model mcp_tool_leases {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    Int
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, expires_at])
+}
+
+/// Metadata only: never store tool arguments, results or credentials here.
+model mcp_tool_usage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      Int
+  tool_name    String   @db.VarChar(80)
+  result_class String   @db.VarChar(40)
+  duration_ms  Int
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@index([user_id, created_at])
 }
 
 /// The single rollout policy for private chatbot access. It is intentionally
@@ -307,12 +729,13 @@ model credit_checkout_sessions {
   @@index([user_id, status, created_at])
 }
 
-/// A Stripe refund or dispute that affects a prepaid credit purchase. The
+/// A Stripe refund or dispute that affects a credit purchase or premium invoice. The
 /// provider amount is retained for audit; the ledger remains the source of
 /// truth for credit changes.
 model credit_payment_recoveries {
   id                      String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  checkout_id             String                          @db.Uuid
+  checkout_id             String?                         @db.Uuid
+  premium_invoice_id      String?                         @db.VarChar(255)
   recovery_kind           credit_payment_recovery_kind
   status                  credit_payment_recovery_status
   external_reference      String                          @unique @db.VarChar(255)
@@ -326,11 +749,13 @@ model credit_payment_recoveries {
   created_at              DateTime                        @default(now()) @db.Timestamptz(6)
   updated_at              DateTime                        @default(now()) @updatedAt @db.Timestamptz(6)
 
-  checkout         credit_checkout_sessions @relation(fields: [checkout_id], references: [id], onDelete: Restrict)
+  premium_invoice  premium_stripe_invoices? @relation(fields: [premium_invoice_id], references: [invoice_id], onDelete: Restrict)
+  checkout         credit_checkout_sessions? @relation(fields: [checkout_id], references: [id], onDelete: Restrict)
   resolved_by_user users?                   @relation("credit_payment_recoveries_resolved_by", fields: [resolved_by_user_id], references: [id], onDelete: SetNull)
 
   @@index([status, created_at])
   @@index([checkout_id])
+  @@index([premium_invoice_id])
 }
 
 /// Deduplicates verified payment provider webhooks. This audit record contains
@@ -785,4 +1210,35 @@ enum credit_stripe_refund_event_status {
 enum chat_access_mode {
   beta_allowlist
   all_active_users
+}
+
+/// Durable upload reservations and cleanup survive brew deletion.
+model brew_images {
+  id String @id @db.Uuid
+  brew_id String? @db.Uuid
+  original_brew_id String @db.Uuid
+  entry_id String? @db.Uuid
+  original_entry_id String? @db.Uuid
+  user_id Int
+  status String @db.VarChar(16)
+  request_hash String @db.VarChar(64)
+  image_key String
+  thumbnail_key String
+  caption String @default("") @db.VarChar(500)
+  width Int @default(0)
+  height Int @default(0)
+  size_bytes Int @default(0)
+  reserved_bytes Int
+  attempts Int @default(1)
+  removed Boolean @default(false)
+  cleanup_after DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  entry brew_entries? @relation(fields: [entry_id], references: [id], onDelete: SetNull)
+  brew brews? @relation(fields: [brew_id], references: [id], onDelete: SetNull)
+  user users @relation(fields: [user_id], references: [id], onDelete: NoAction)
+  @@index([user_id, status])
+  @@index([brew_id, status])
+  @@index([entry_id, status])
+  @@index([status, cleanup_after])
 }

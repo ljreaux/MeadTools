@@ -179,6 +179,17 @@ export type RecipeData = {
   notes: Notes;
 
   nutrients?: NutrientData; // ✅ add this
+  /** Omitted on existing recipes; omission means loss adjustment is off. */
+  lossAdjustment?: {
+    enabled: boolean;
+    mode: "estimated" | "manual";
+    percentage: number;
+    /** Optional manual allowance for volume lost after secondary additions. */
+    secondary?: {
+      enabled: boolean;
+      percentage: number;
+    };
+  };
   /** Room for future flags without breaking parsing */
   flags?: {
     advanced?: boolean;

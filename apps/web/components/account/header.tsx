@@ -1,10 +1,6 @@
 "use client";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { usePathname } from "next/navigation";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import {
@@ -14,6 +10,11 @@ import {
   Settings,
   NotebookPen,
   MessageCircle,
+  Crown,
+  Plug,
+  Wrench,
+  Package,
+  ChevronDown,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "@/hooks/reactQuery/useLogout";
@@ -29,7 +30,7 @@ import {
 import { useEffect, useState } from "react";
 import { useUpdatePublicUsername } from "@/hooks/reactQuery/useUpdatePublicUsername";
 import { useUpdateShowGoogleAvatar } from "@/hooks/reactQuery/useUpdateShowGoogleAvatar";
-import { ModeToggle } from "../ui/mode-toggle";
+import { DesignThemeSwitcher } from "../ui/design-theme-switcher";
 import LanguageSwitcher from "../ui/language-switcher";
 import {
   Select,
@@ -49,7 +50,8 @@ import { useChatAccess } from "@/hooks/reactQuery/useChatAccess";
 import { ReleaseEmailPreferences } from "./ReleaseEmailPreferences";
 
 function Header() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const pathname = usePathname();
   const { logout } = useLogout();
   const { data, isLoading, isError, error } = useAccountInfo();
   const { data: chatAccess } = useChatAccess();
@@ -64,78 +66,57 @@ function Header() {
     );
   }
   const { user } = data;
+  const brewingLinks = [
+    { href: "/account", label: t("savedRecipes"), icon: NotebookPen },
+    { href: "/account/brews", label: t("brews.title"), icon: Beer },
+    { href: "/account/inventory", label: t("inventory.title", "Inventory"), icon: Package },
+    { href: "/account/equipment", label: t("equipment.title"), icon: Wrench },
+    { href: "/account/hydrometer", label: t("iSpindelDashboard.label"), icon: Droplets },
+  ];
+  const accountLinks = [
+    ...(chatAccess?.chatEnabled || chatAccess?.paymentRestricted
+      ? [{ href: "/account/chat", label: t("chatbotPopup.open"), icon: MessageCircle }] : []),
+    { href: "/account/premium", label: t("premium.title"), icon: Crown },
+    { href: "/integrations/mcp", label: t("account.navigation.mcp", "MCP setup"), icon: Plug },
+  ];
+  const locale = i18n.resolvedLanguage || "en";
+  const prefix = locale === "en" ? "" : `/${locale}`;
+  const currentPath = pathname?.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/";
+  const active = [...brewingLinks, ...accountLinks]
+    .sort((left, right) => right.href.length - left.href.length)
+    .find((link) => currentPath === link.href || (link.href !== "/account" && currentPath.startsWith(`${link.href}/`)));
+
   return (
-    <div className="absolute right-4 top-4 flex items-center sm:gap-1">
+    <nav aria-label={t("account.navigation.label", "Account navigation")} className="relative mb-4 flex w-full min-w-0 items-center justify-end gap-2 sm:absolute sm:right-4 sm:top-4 sm:mb-0 sm:w-auto">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="max-w-[min(70vw,20rem)] gap-2" aria-label={t("account.navigation.label", "Account navigation")}>
+            <span className="truncate">{active?.label ?? t("account.label")}</span><ChevronDown aria-hidden className="h-4 w-4 shrink-0" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72 max-w-[calc(100vw-2rem)]">
+          {[{ label: t("account.navigation.brewing", "Brewing"), links: brewingLinks }, { label: t("account.navigation.tools", "Account & tools"), links: accountLinks }].map((group, index) => (
+            <DropdownMenuGroup key={group.label}>
+              {index ? <DropdownMenuSeparator /> : null}
+              <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+              {group.links.map(({ href, label, icon: Icon }) => <DropdownMenuItem key={href} asChild className={active?.href === href ? "bg-accent font-medium" : undefined}>
+                <Link href={`${prefix}${href}`} aria-current={active?.href === href ? "page" : undefined}><Icon aria-hidden /><span>{label}</span></Link>
+              </DropdownMenuItem>)}
+            </DropdownMenuGroup>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={logout}><LogOut aria-hidden /><span>{t("logout", "Log Out")}</span></DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <SettingsDialog
         username={user.public_username}
         isGoogleUser={user.isGoogleUser}
         showGoogleAvatar={user.show_google_avatar}
       />
-
-      {/* Saved recipes and Brew Tracker */}
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon">
-              <Link href="/account" aria-label={t("savedRecipes")}>
-                <NotebookPen className="h-5 w-5" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("savedRecipes")}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon">
-              <Link href="/account/brews" aria-label={t("brews.title")}>
-                <Beer className="h-5 w-5" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("brews.title")}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {/* Hydrometer Dashboard */}
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon">
-              <Link
-                href="/account/hydrometer"
-                aria-label={t("iSpindelDashboard.label")}
-              >
-                <Droplets className="h-5 w-5" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("iSpindelDashboard.label")}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {chatAccess?.chatEnabled || chatAccess?.paymentRestricted ? (
-        <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button asChild variant="ghost" size="icon">
-                <Link href="/account/chat" aria-label={t("chatbotPopup.open")}>
-                  <MessageCircle className="h-5 w-5" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("chatbotPopup.open")}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : null}
-
-      {/* Logout */}
-      <Button onClick={logout} variant="ghost" size="icon">
-        <span className="sr-only">{t("logout", "Log Out")}</span>
-        <LogOut className="h-5 w-5" />
-      </Button>
-    </div>
+    </nav>
   );
 }
+
 export default Header;
 
 const SettingsDialog = ({
@@ -179,7 +160,11 @@ const SettingsDialog = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("account.accountSettings")}
+        >
           <Settings />
         </Button>
       </DialogTrigger>
@@ -192,7 +177,7 @@ const SettingsDialog = ({
         <div className="w-full grid gap-4">
           <label className="w-full flex gap-4 items-center p-1">
             {t("accountPage.theme.title")}
-            <ModeToggle />
+            <DesignThemeSwitcher />
           </label>
 
           <label className="w-full p-1">

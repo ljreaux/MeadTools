@@ -1,4 +1,6 @@
 "use client";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -33,6 +35,7 @@ import {
 } from "./StagePanelShared";
 import {
   getBrewItemLabel,
+  getUnitLabel,
   getPlannedIngredientAmounts,
   PlannedAdditionDialog,
   type PlannedAdditionDialogItem
@@ -320,7 +323,7 @@ export function PrimaryStagePanel({
             "Log Go-Ferm or mark it not used before nutrient additions."
           )
         : null;
-  const actualYeastAmountG = ctx.recipe.actual.yeastAddition?.amount;
+  const actualYeastAmountG = loggedYeastAmountG(ctx.recipe.actual.yeastAddition);
   const yeastRowTitle =
     ctx.recipe.actual.yeastAddition?.name ||
     [ctx.recipe.yeast?.brand, ctx.recipe.yeast?.strain]
@@ -328,7 +331,7 @@ export function PrimaryStagePanel({
       .join(" ");
   const yeastRowAmount =
     typeof ctx.recipe.actual.yeastAddition?.amount === "number"
-      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${ctx.recipe.actual.yeastAddition.unit || "g"}`
+      ? `${fmtNumber(ctx.recipe.actual.yeastAddition.amount)} ${getUnitLabel(t, ctx.recipe.actual.yeastAddition.unit || "g")}`
       : typeof ctx.recipe.yeast?.plannedAmountG === "number"
         ? `${fmtNumber(ctx.recipe.yeast.plannedAmountG)} g`
         : null;
@@ -355,13 +358,13 @@ export function PrimaryStagePanel({
       ? "0 g"
       : typeof loggedGoFerm?.amount === "number"
         ? `${fmtNumber(loggedGoFerm.amount)} ${loggedGoFerm.unit || "g"}`
-        : `${fmtNumber(ctx.recipe.nutrientPlan?.derived.goFerm.amount)} g`;
+        : `${fmtNumber(defaultGoFermAmount)} g`;
   const goFermRowDetail =
     loggedGoFerm && !loggedGoFermUsed
       ? t("brews.primary.goFermNotUsed", "Go-Ferm not used.")
       : typeof loggedGoFermWater === "number"
         ? `${fmtNumber(loggedGoFermWater, 0)} mL ${t("water", "water")}`
-        : `${fmtNumber(ctx.recipe.nutrientPlan?.derived.goFerm.water, 0)} mL ${t("water", "water")}`;
+        : `${fmtNumber(defaultGoFermWater, 0)} mL ${t("water", "water")}`;
   const logGoFerm = () =>
     setAdditionDialog({
       title: t("brews.primary.logGoFerm", "Log Go-Ferm"),
@@ -372,6 +375,7 @@ export function PrimaryStagePanel({
       unit: "g",
       meta: {
         goFerm: true,
+        nutrientKey:plannedGoFermType==='protect'?'goFermProtect':plannedGoFermType==='sterol-flash'?'goFermSterolFlash':'goFerm',
         goFermUsed: true,
         actualYeastAmount: actualYeastAmountG,
         actualYeastUnit: actualYeastAmountG != null ? "g" : undefined,
@@ -415,6 +419,7 @@ export function PrimaryStagePanel({
       note: t("brews.primary.goFermNotUsed", "Go-Ferm not used."),
       meta: {
         goFerm: true,
+        nutrientKey:plannedGoFermType==='protect'?'goFermProtect':plannedGoFermType==='sterol-flash'?'goFermSterolFlash':'goFerm',
         goFermUsed: false,
         plannedAmount: goFerm?.amount,
         plannedUnit: "g",
@@ -436,10 +441,12 @@ export function PrimaryStagePanel({
             unit,
             recipeIngredientId: String(item.line.lineId),
             source: "recipe_ingredient" as const,
-            meta: { plannedAmount: amount, plannedUnit: unit }
+            meta: { plannedAmount: amount, plannedUnit: unit, catalogReference:item.line.ref.kind==='catalog'?{catalog:'ingredient',id:String(item.line.ref.ingredientId)}:undefined }
           };
         })
       );
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setLoggingMissingIngredients(false);
     }
@@ -526,6 +533,23 @@ export function PrimaryStagePanel({
           tone={ctx.recipe.actual.yeastAddition ? "ok" : "warn"}
         />
       </div>
+
+      {ctx.recipe.recipeData?.lossAdjustment?.enabled && ctx.recipe.derived ? (
+        <div className="rounded-md border border-border bg-background/40 px-3 py-3 text-sm">
+          <div className="font-medium">
+            {t("brews.primary.plannedTransferVolume")}: {fmtVolume(ctx.recipe.derived.volume.postLossPrimaryL)}
+            {" · "}{ctx.recipe.derived.volume.lossPercentage}%
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("brews.primary.lossDisclaimer")}
+          </p>
+          {hasLoggedSecondaryVolume ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("brews.primary.measuredVolumeUsed")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="rounded-md border border-border bg-background/40 px-3 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -781,7 +805,7 @@ export function PrimaryStagePanel({
                             unit,
                             ...getPlannedIngredientAmounts(item.line),
                             recipeIngredientId: String(item.line.lineId),
-                            meta: { plannedAmount: amount, plannedUnit: unit }
+                            meta: { plannedAmount: amount, plannedUnit: unit, catalogReference:item.line.ref.kind==='catalog'?{catalog:'ingredient',id:String(item.line.ref.ingredientId)}:undefined }
                           })
                         }
                       />

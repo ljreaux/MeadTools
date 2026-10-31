@@ -65,13 +65,17 @@ import {
   formatChatSessionMarkdown,
   type ChatSessionMessage,
 } from "@/lib/ai/chat-export";
-import type { ChatTurnEvent } from "@/lib/ai/chat-service";
+import type { ChatToolEvent } from "@/lib/ai/chat-service";
 import {
   buildRecipeDraftInputSchema,
   defaultRecipeDraftName,
   type BuildRecipeDraftInput,
 } from "@meadtools/recipe-workflows";
 import {
+  chatAnswerEventSchema,
+  chatProgress,
+  chatToolProgressDetailSchema,
+  type ChatToolProgressDetail,
   CHAT_TURN_CREDIT_WARNING_CREDITS,
   CHAT_TURN_PREAUTHORIZATION_CREDITS,
 } from "@meadtools/chat-domain";
@@ -86,7 +90,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Archive,
-  CircleAlert,
   Copy,
   CopyCheck,
   Download,
@@ -150,6 +153,7 @@ type ToolActivity = {
   id: string;
   name: string;
   status: "running" | "ok" | "error";
+  detail?: ChatToolProgressDetail;
 };
 
 type ChatContextOption =
@@ -241,6 +245,7 @@ export default function RecipeChat({
   const [deletingConversation, setDeletingConversation] =
     useState<ChatConversation>();
   const [isUpdatingConversation, setIsUpdatingConversation] = useState(false);
+  const [answerPreview, setAnswerPreview] = useState("");
   const [toolActivity, setToolActivity] = useState<ToolActivity[]>([]);
   const [activeRecipeData, setActiveRecipeData] = useState<RecipeDataV2>();
   const [recipeDraftInput, setRecipeDraftInput] =
@@ -399,6 +404,16 @@ export default function RecipeChat({
     connection,
     queue: "drop",
     onCustomEvent: (eventType, data) => {
+      if (eventType === "recipe.answer") {
+        const preview = chatAnswerEventSchema.safeParse(data);
+        if (!preview.success) return;
+        if (preview.data.type === "answer_reset") setAnswerPreview("");
+        else {
+          const delta = preview.data.delta;
+          setAnswerPreview(current => current + delta);
+        }
+        return;
+      }
       if (eventType === "recipe.tool" && isChatTurnEvent(data)) {
         applyToolEvent(data, setToolActivity);
         return;
@@ -432,10 +447,12 @@ export default function RecipeChat({
           return { ...current, title: conversationTitle };
         });
       }
+      setAnswerPreview("");
       setModel(result.usage.model);
       setTurnResults((current) => ({ ...current, [messageId]: result }));
     },
     onError: () => {
+      setAnswerPreview("");
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
         return;
@@ -455,7 +472,7 @@ export default function RecipeChat({
       setError(t("chatbotTest.errors.requestFailed"));
     },
     onFinish: () => {
-      setToolActivity([]);
+      setAnswerPreview("");
       void queryClient.invalidateQueries({ queryKey: qk.creditAccount });
     },
   });
@@ -474,6 +491,7 @@ export default function RecipeChat({
   }
 
   async function loadChatThread(id: string) {
+    setToolActivity([]);
     setIsLoadingThread(true);
     setError(undefined);
     try {
@@ -615,6 +633,7 @@ export default function RecipeChat({
 
   function startNewConversation() {
     if (isSubmitting) return;
+    setToolActivity([]);
     conversationIdRef.current = undefined;
     setConversationId(undefined);
     setActiveConversationSummary(undefined);
@@ -813,6 +832,7 @@ export default function RecipeChat({
     setThreadAtCapacity(false);
     threadAtCapacityRef.current = false;
     capacityToastShownRef.current = false;
+    setAnswerPreview("");
     setToolActivity([]);
     try {
       await ensureConversation();
@@ -848,6 +868,7 @@ export default function RecipeChat({
 
   function cancelRequest() {
     stop();
+    setAnswerPreview("");
     setToolActivity([]);
   }
 
@@ -979,7 +1000,7 @@ export default function RecipeChat({
     <main
       className={
         fullscreen
-          ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 sm:p-6 sm:pt-24"
+          ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 pb-20 sm:p-6 sm:pt-24 sm:pb-20"
           : compact
             ? "flex h-[min(40rem,calc(100vh-6rem))] w-full min-w-0 flex-col rounded-xl bg-card p-3"
             : embedded
@@ -1303,9 +1324,21 @@ export default function RecipeChat({
                         })
                       )}
 
+                      {isSubmitting && answerPreview ? (
+                        <MessageScrollerItem messageId="recipe-answer-preview">
+                          <Bubble align="start" variant="outline">
+                            <BubbleContent><MessageResponse>{answerPreview}</MessageResponse></BubbleContent>
+                          </Bubble>
+                        </MessageScrollerItem>
+                      ) : null}
                       {isSubmitting ? (
                         <MessageScrollerItem messageId="recipe-research-status">
-                          <ToolActivityMarker tools={toolActivity} t={t} />
+                          <ToolActivityMarker tools={toolActivity} hasAnswerPreview={Boolean(answerPreview)} t={t} />
+                        </MessageScrollerItem>
+                      ) : null}
+                      {toolActivity.length > 0 ? (
+                        <MessageScrollerItem messageId="recipe-activity-details">
+                          <ToolActivitySteps tools={toolActivity} t={t} />
                         </MessageScrollerItem>
                       ) : null}
                     </MessageScrollerContent>
@@ -2112,36 +2145,36 @@ function BrewActionProposalCard({
 
 function ToolActivityMarker({
   tools,
+  hasAnswerPreview,
   t,
 }: {
   tools: ToolActivity[];
-  t: (key: string) => string;
+  hasAnswerPreview: boolean;
+  t: (key: string, values?: Record<string, string | number>) => string;
 }) {
-  const hasError = tools.some((tool) => tool.status === "error");
-  const isChecking =
-    tools.length === 0 || tools.some((tool) => tool.status === "running");
-  const message = hasError
-    ? t("chatbotTest.toolActivityError")
-    : isChecking
-      ? t("chatbotTest.toolActivityRunning")
-      : t("chatbotTest.toolActivityWriting");
+  const progress = chatProgress(tools, hasAnswerPreview);
+  const activityKey = progress.phase === "working" ? toolActivityKey(progress.toolName) : undefined;
+  const message = activityKey
+    ? t(`chatbotTest.${activityKey}`)
+    : progress.phase === "recovering"
+      ? t("chatbotTest.toolActivityRecovering")
+      : progress.phase === "writing"
+        ? t("chatbotTest.toolActivityWriting")
+        : t("chatbotTest.toolActivityRunning");
 
+  const current = [...tools].reverse().find(tool => tool.status === "running") ?? tools.at(-1);
+  const specific = current?.detail?.subject
+    ? t("chatbotTest.progressSubject", { activity: message, subject: current.detail.subject }) : message;
   return (
     <Bubble align="start" variant="outline">
       <BubbleContent className="px-3 py-2">
-        <Marker
-          className={hasError ? "text-destructive" : "text-foreground"}
-          role="status"
-        >
-          {hasError ? (
-            <CircleAlert />
-          ) : (
-            <LoaderCircle className="animate-spin" />
-          )}
-          <MarkerContent className={hasError ? undefined : "shimmer"}>
-            {message}
-          </MarkerContent>
+        <Marker className="text-foreground" role="status">
+          <LoaderCircle className="animate-spin" />
+          <MarkerContent className="shimmer">{specific}</MarkerContent>
         </Marker>
+        {progress.phase === "recovering" && current?.detail?.issue ? (
+          <p className="mt-1 text-sm">{t(`chatbotTest.progressIssue_${current.detail.issue}`, { status: current.detail.httpStatus ?? "" })}</p>
+        ) : null}
       </BubbleContent>
     </Bubble>
   );
@@ -2265,7 +2298,7 @@ function brewActionEntryInput(
   } as CreateBrewEntryInput;
 }
 
-function isChatTurnEvent(value: unknown): value is ChatTurnEvent {
+function isChatTurnEvent(value: unknown): value is ChatToolEvent {
   return (
     isRecord(value) &&
     (value.type === "tool_call" || value.type === "tool_result") &&
@@ -2275,20 +2308,22 @@ function isChatTurnEvent(value: unknown): value is ChatTurnEvent {
 }
 
 function applyToolEvent(
-  event: ChatTurnEvent,
+  event: ChatToolEvent,
   setToolActivity: (
     action: (current: ToolActivity[]) => ToolActivity[],
   ) => void,
 ) {
+  const parsedDetail = chatToolProgressDetailSchema.safeParse(event.detail);
+  const detail = parsedDetail.success ? parsedDetail.data : undefined;
   if (event.type === "tool_call") {
     setToolActivity((current) => [
       ...current,
-      { id: crypto.randomUUID(), name: event.toolName, status: "running" },
+      { id: crypto.randomUUID(), name: event.toolName, status: "running", detail },
     ]);
     return;
   }
   setToolActivity((current) =>
-    markToolComplete(current, event.toolName, event.status),
+    markToolComplete(current, event.toolName, event.status, detail),
   );
 }
 
@@ -2296,13 +2331,14 @@ function markToolComplete(
   tools: ToolActivity[],
   toolName: string,
   status: unknown,
+  detail?: ChatToolProgressDetail,
 ): ToolActivity[] {
   const nextStatus: ToolActivity["status"] = status === "ok" ? "ok" : "error";
   const toolIndex = tools.map((tool) => tool.name).lastIndexOf(toolName);
   if (toolIndex === -1) return tools;
 
   return tools.map((tool, index) =>
-    index === toolIndex ? { ...tool, status: nextStatus } : tool,
+    index === toolIndex ? { ...tool, status: nextStatus, detail: { ...tool.detail, ...detail } } : tool,
   );
 }
 
@@ -2337,4 +2373,37 @@ function recipeDataFrom(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+
+function toolActivityKey(name: string): string | undefined {
+  if (["list_recipes", "get_recipe"].includes(name)) return "progressRecipe";
+  if (["list_brews", "get_brew", "get_brew_timeline", "get_brew_sensor_history", "summarize_brew_sensor_history"].includes(name)) return "progressBrew";
+  if (["build_recipe_draft", "calculate_gravity_target", "explain_recipe"].includes(name)) return "progressCalculation";
+  if (["search_wiki", "fetch_wiki_page"].includes(name)) return "progressSources";
+  if (["search_ingredients", "search_additives", "search_yeasts"].includes(name)) return "progressCatalog";
+  if (name === "record_recipe_plan") return "progressPlan";
+  if (name === "prepare_brew_action") return "progressProposal";
+  return undefined;
+}
+
+
+function ToolActivitySteps({ tools, t }: { tools: ToolActivity[]; t: (key: string, values?: Record<string, string | number>) => string }) {
+  return (
+    <details className="rounded-md border px-3 py-2 text-sm">
+      <summary className="cursor-pointer">{t("chatbotTest.progressDetailsTitle")}</summary>
+      <ol className="mt-2 space-y-3">
+        {tools.map(tool => (
+          <li key={tool.id}>
+            <p className="font-medium">{t(`chatbotTest.${toolActivityKey(tool.name) ?? "toolActivityRunning"}`)}</p>
+            {tool.detail?.subject ? <p>{tool.detail.subject}</p> : null}
+            <p className="text-xs text-muted-foreground">{t(`chatbotTest.${tool.detail?.cached ? "progressReused" : tool.status === "running" ? "progressInFlight" : tool.status === "error" ? "progressIssue" : "progressComplete"}`)}</p>
+            {tool.detail?.count !== undefined ? <p>{t("chatbotTest.progressResultCount", { count: tool.detail.count })}</p> : null}
+            {tool.detail?.issue ? <p>{t(`chatbotTest.progressIssue_${tool.detail.issue}`, { status: tool.detail.httpStatus ?? "" })}</p> : null}
+            {tool.detail?.missing?.length ? <p>{t("chatbotTest.progressMissing", { fields: tool.detail.missing.map(field => t(`chatbotTest.progressField_${field}`)).join(", ") })}</p> : null}
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
 }

@@ -6,6 +6,8 @@ import RECIPES from "./seed-data/recipes_rows.json";
 import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
+import { seedInventory } from "./seed-inventory";
+import { seedEquipment } from "./seed-equipment";
 import bcrypt from "bcrypt";
 import { randomUUID as uuid } from "crypto";
 import ShortUniqueId from "short-unique-id";
@@ -21,6 +23,7 @@ import {
   currentCreditFeePolicy,
   initialFireworksDeepseekV4FlashPricing,
   initialOpenAIGpt54MiniPricing,
+  initialOpenAIGpt56LunaPricing,
 } from "@/lib/billing/credit-pricing";
 
 if (process.env.NODE_ENV === "production") {
@@ -67,6 +70,27 @@ async function main() {
   });
 
   console.log("Users seeded");
+
+  // Grant both local test accounts one calendar month of premium on each seed.
+  const premiumPaidThrough = new Date();
+  const seedDay = premiumPaidThrough.getUTCDate();
+  premiumPaidThrough.setUTCDate(1);
+  premiumPaidThrough.setUTCMonth(premiumPaidThrough.getUTCMonth() + 1);
+  const lastDayOfMonth = new Date(Date.UTC(
+    premiumPaidThrough.getUTCFullYear(),
+    premiumPaidThrough.getUTCMonth() + 1,
+    0,
+  )).getUTCDate();
+  premiumPaidThrough.setUTCDate(Math.min(seedDay, lastDayOfMonth));
+  await prisma.premium_memberships.createMany({
+    data: users.map((user) => ({
+      user_id: user.id,
+      source: "manual",
+      paid_through: premiumPaidThrough,
+    })),
+  });
+  console.log("One month of premium seeded for both test users");
+
   const localChatTestUser =
     users.find((user) => user.role === "user") ?? users[0];
   if (localChatTestUser) {
@@ -213,6 +237,10 @@ async function main() {
 
   await generateLogs();
   await generateBrewEntries();
+  await seedEquipment(prisma, hydrometerSeedUser.id);
+  await seedInventory(prisma, hydrometerSeedUser.id);
+  console.log("Ingredient and packaging stock seeded for the user account");
+  console.log("Equipment seeded for Key Lime Pie, traditional mead and spare supplies");
 }
 
 main()
@@ -386,7 +414,32 @@ async function createHydrometerLogSeries({
 }
 
 async function clearDb() {
+  await prisma.brew_images.deleteMany();
   // Order matters because of FKs
+  await prisma.equipment_assignment_events.deleteMany();
+  await prisma.equipment.deleteMany();
+  await prisma.inventory_adjustments.deleteMany();
+  await prisma.inventory_consumptions.deleteMany();
+  await prisma.inventory_operations.deleteMany();
+  await prisma.inventory_stock.deleteMany();
+  await prisma.credit_payment_recoveries.deleteMany();
+  await prisma.mcp_tool_usage.deleteMany();
+  await prisma.mcp_tool_leases.deleteMany();
+  await prisma.mcp_rate_buckets.deleteMany();
+  await prisma.mcp_oauth_consumed_refresh_tokens.deleteMany();
+  await prisma.mcp_registration_budget.deleteMany();
+  await prisma.mcp_oauth_sessions.deleteMany();
+  await prisma.mcp_oauth_codes.deleteMany();
+  await prisma.mcp_oauth_clients.deleteMany();
+  await prisma.mcp_access_tokens.deleteMany();
+  await prisma.premium_stripe_checkouts.deleteMany();
+  await prisma.premium_stripe_payments.deleteMany();
+  await prisma.premium_stripe_invoices.deleteMany();
+  await prisma.premium_stripe_subscriptions.deleteMany();
+  await prisma.premium_kofi_link_challenges.deleteMany();
+  await prisma.premium_kofi_links.deleteMany();
+  await prisma.premium_kofi_payments.deleteMany();
+  await prisma.premium_memberships.deleteMany();
   await prisma.chat_access_grants.deleteMany();
   await prisma.chat_access_settings.deleteMany();
   await prisma.credit_payment_webhook_events.deleteMany();
@@ -420,6 +473,7 @@ async function seedCreditBillingDefaults() {
   for (const pricing of [
     initialFireworksDeepseekV4FlashPricing,
     initialOpenAIGpt54MiniPricing,
+    initialOpenAIGpt56LunaPricing,
   ]) {
     await prisma.credit_pricing_versions.upsert({
       where: {

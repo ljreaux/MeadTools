@@ -30,6 +30,7 @@ import {
 import { calcABV, toSG } from "@meadtools/core/gravity";
 import { parseNumber } from "@/lib/utils/validateInput";
 import { getMeasuredSecondaryVolumeState } from "@/lib/brews/stabilizerVolume";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
 
 type RecipeDerivedApiResponse = CoreRecipeDerivedApiResponse<RecipeData>;
 
@@ -40,6 +41,9 @@ export type BrewRecipeSnapshot = {
   dataV2: RecipeData | null;
   snapshottedAt: string;
   source?: string;
+  sourceUserId?: number | null;
+  sourceUsername?: string | null;
+  previousSnapshots?: Array<Omit<BrewRecipeSnapshot, "previousSnapshots">>;
 };
 
 export type BrewRecipeStageData = {
@@ -513,9 +517,10 @@ function buildActualizedNutrientPlan(args: {
       : args.nutrientData.inputs.goFermType
     : "none";
   const yeastMeta = args.yeastAddition?.meta ?? {};
+  const yeastAmountG = loggedYeastAmountG(args.yeastAddition);
   const actualYeastAmount =
-    typeof args.yeastAddition?.amount === "number" && Number.isFinite(args.yeastAddition.amount)
-      ? String(args.yeastAddition.amount)
+    yeastAmountG != null
+      ? String(yeastAmountG)
       : args.nutrientData.inputs.yeastAmountG;
 
   const actualizedData: NutrientData = {
@@ -527,7 +532,7 @@ function buildActualizedNutrientPlan(args: {
       sg: fmt(args.nutrientBasis.basis.fermentableSg),
       goFermType: goFermType as NutrientData["inputs"]["goFermType"],
       yeastAmountG: actualYeastAmount,
-      yeastAmountTouched: Boolean(args.yeastAddition?.amount)
+      yeastAmountTouched: yeastAmountG != null || args.nutrientData.inputs.yeastAmountTouched
     },
     selected: {
       ...args.nutrientData.selected,

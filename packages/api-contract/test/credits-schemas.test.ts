@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { CREDIT_PACK_IDS } from "@meadtools/credit-accounting";
 import {
   creditActivityQuerySchema,
@@ -7,6 +8,45 @@ import {
   createCreditCheckoutRequestBodySchema,
   creditBalanceResponseSchema,
 } from "../src/zod/credits";
+
+test("credit history accepts existing hash-derived Premium operation IDs", () => {
+  for (const source of [
+    "stripe-premium:in_test_premium_allowance",
+    "kofi-premium:test-email-digest:2026-10",
+  ]) {
+    const hex = createHash("sha256").update(source).digest("hex").slice(0, 32);
+    const operationId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    const wallet = {
+      availableCredits: 1_000,
+      purchasesEnabled: true,
+      activities: [{
+        operationId,
+        occurredAt: "2026-10-12T12:00:00.000Z",
+        creditsDelta: 1_000,
+        kind: "grant",
+        entryTypes: ["grant"],
+        paymentAmountCents: null,
+        paymentCurrency: null,
+      }],
+      nextCursor: null,
+    };
+    assert.deepEqual(creditActivityResponseSchema.parse(wallet), wallet);
+  }
+});
+
+test("credit history still rejects malformed operation IDs", () => {
+  const operationIdSchema = creditActivityResponseSchema.shape.activities.element.shape.operationId;
+  for (const operationId of ["not-an-id", "123", "g9523da9-7c2c-4a5f-a55a-b7451ef20d1f"])
+    assert.equal(operationIdSchema.safeParse(operationId).success, false);
+});
+
+test("credit history grant source is optional and limited to public grant categories", () => {
+  const source = creditActivityResponseSchema.shape.activities.element.shape.grantSource;
+  for (const value of [undefined, null, "premium", "beta"])
+    assert.equal(source.safeParse(value).success, true);
+  for (const value of ["stripe-premium", "kofi-premium", "unknown", 1])
+    assert.equal(source.safeParse(value).success, false);
+});
 
 test("credit balances use whole integer prompt credits", () => {
   assert.deepEqual(

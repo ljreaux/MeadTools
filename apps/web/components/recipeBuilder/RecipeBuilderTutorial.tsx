@@ -18,6 +18,7 @@ import Units from "./Units";
 import DesiredBatchDetails from "./DesiredBatchDetails";
 import Ingredients from "./Ingredients";
 import IngredientResults from "./Results";
+import LossAdjustment from "./LossAdjustment";
 import ScaleRecipeForm from "./ScaleRecipeForm";
 import Stabilizers from "./Stabilizers";
 import Additives from "./Additives";
@@ -59,6 +60,7 @@ const buildCardConfig = (isRecipeHydrated: boolean): CardConfig[] => [
       <Units key="units" />,
       <DesiredBatchDetails key="DesiredBatchDetails" />,
       <Ingredients key="ingredients" />,
+      <LossAdjustment key="lossAdjustment" />,
       <IngredientResults key="ingredientResults" />,
       <ScaleRecipeForm key="scaleIngredientsForm" />
     ]

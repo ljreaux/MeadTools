@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -45,6 +45,7 @@ export default function NewBrewClient() {
 
   const { data: accountInfo, isLoading, isError, error } = useAccountInfo();
   const createMutation = useCreateAccountBrew();
+  const createInFlight = useRef(false);
 
   const recipes: RecipeRow[] = useMemo(() => {
     const list = accountInfo?.recipes ?? [];
@@ -92,7 +93,8 @@ export default function NewBrewClient() {
   };
 
   const createSelectedBrew = async () => {
-    if (!selectedRecipe) return;
+    if (!selectedRecipe || createInFlight.current) return;
+    createInFlight.current = true;
 
     try {
       const brew = await createMutation.mutateAsync({
@@ -108,6 +110,8 @@ export default function NewBrewClient() {
         description: t("error", "Something went wrong."),
         variant: "destructive"
       });
+    } finally {
+      createInFlight.current = false;
     }
   };
 

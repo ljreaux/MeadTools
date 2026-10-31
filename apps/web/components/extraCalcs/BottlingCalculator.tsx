@@ -31,25 +31,15 @@ import {
   parseNumber
 } from "@/lib/utils/validateInput";
 
-export const L_PER_GAL = 3.78541;
-export const FL_OZ_PER_L = 33.814;
-
-export const BOTTLE_SIZES_L: Record<string, number> = {
-  "12oz": 0.355,
-  "187ml": 0.187,
-  "330ml": 0.33,
-  "375ml": 0.375,
-  "500ml": 0.5,
-  "22oz": 0.65,
-  "750ml": 0.75,
-  "1L": 1,
-  "1.5L": 1.5,
-  "3L": 3,
-  "5gal": 18.9271,
-  "Oxebar 20L": 20,
-  "Oxebar 8L": 8,
-  "Oxebar 4L": 4
-};
+import {
+  L_PER_GAL,
+  FL_OZ_PER_L,
+  BOTTLE_SIZES_L,
+  bottleVolumeLiters,
+  bottlesToFill,
+  bottleTotals
+} from "@meadtools/core/extra-calculators";
+export { L_PER_GAL, FL_OZ_PER_L, BOTTLE_SIZES_L };
 
 export type BottleSizeKey = keyof typeof BOTTLE_SIZES_L | "custom";
 export type CustomUnit = "fl_oz" | "ml" | "liter" | "gallon";
@@ -86,10 +76,7 @@ function formatInputNumber(value: number) {
 
 export function toLiters(value: string | number, unit: CustomUnit) {
   const n = typeof value === "number" ? value : safeFloat(value);
-  if (unit === "liter") return n;
-  if (unit === "ml") return n / 1000;
-  if (unit === "gallon") return n * L_PER_GAL;
-  return n / FL_OZ_PER_L;
+  return bottleVolumeLiters(n, unit);
 }
 
 function createInitialBottleRows(): BottleRow[] {
@@ -103,11 +90,13 @@ function createInitialBottleRows(): BottleRow[] {
   }));
 }
 
-function bottleRowFromPackaging(row: PackagingBottleRow, idx: number): BottleRow {
+function bottleRowFromPackaging(
+  row: PackagingBottleRow,
+  idx: number
+): BottleRow {
   const matchingSize = Object.entries(BOTTLE_SIZES_L).find(
     ([label, liters]) =>
-      label === row.label ||
-      Math.abs(liters - row.sizeLiters) < 0.0005
+      label === row.label || Math.abs(liters - row.sizeLiters) < 0.0005
   )?.[0] as BottleSizeKey | undefined;
 
   const size = matchingSize ?? "custom";
@@ -129,8 +118,9 @@ export function useBottlingRows(defaultTotalVolume = "5") {
   const [volumeUnits, setVolumeUnits] =
     React.useState<BottlingVolumeUnit>("gallons");
 
-  const [bottleRows, setBottleRows] =
-    React.useState<BottleRow[]>(createInitialBottleRows);
+  const [bottleRows, setBottleRows] = React.useState<BottleRow[]>(
+    createInitialBottleRows
+  );
 
   const perBottleLiters = React.useCallback((row: BottleRow) => {
     return row.size === "custom"
@@ -139,7 +129,8 @@ export function useBottlingRows(defaultTotalVolume = "5") {
   }, []);
 
   const calculateTotalL = React.useCallback(
-    (row: BottleRow, quantity: string) => perBottleLiters(row) * safeFloat(quantity),
+    (row: BottleRow, quantity: string) =>
+      perBottleLiters(row) * safeFloat(quantity),
     [perBottleLiters]
   );
 
@@ -208,17 +199,18 @@ export function useBottlingRows(defaultTotalVolume = "5") {
     setBottleRows([...savedRows, ...emptyRows]);
   }, []);
 
-  const totalVolumeBottledL = bottleRows.reduce(
-    (sum, row) => sum + row.totalVolumeL,
-    0
-  );
-
   const totalTargetVolumeL =
     volumeUnits === "gallons"
       ? safeFloat(totalVolume) * L_PER_GAL
       : safeFloat(totalVolume);
 
-  const remainingVolumeL = totalTargetVolumeL - totalVolumeBottledL;
+  const {
+    totalBottledLiters: totalVolumeBottledL,
+    remainingLiters: remainingVolumeL
+  } = bottleTotals(
+    totalTargetVolumeL,
+    bottleRows.map((row) => row.totalVolumeL)
+  );
 
   const fillRowToTarget = (id: string) => {
     setBottleRows((prev) => {
@@ -238,7 +230,7 @@ export function useBottlingRows(defaultTotalVolume = "5") {
         );
       }
 
-      const qty = Math.ceil(neededL / perBottleL);
+      const qty = bottlesToFill(neededL, perBottleL);
 
       return prev.map((r) =>
         r.id === id
@@ -315,8 +307,7 @@ export function getPackagingBottleRows(
         totalLiters: row.totalVolumeL,
         customSizeValue:
           row.size === "custom" ? safeFloat(row.customSizeValue) : undefined,
-        customSizeUnits:
-          row.size === "custom" ? row.customSizeUnits : undefined
+        customSizeUnits: row.size === "custom" ? row.customSizeUnits : undefined
       };
     })
     .filter((row): row is PackagingBottleRow => Boolean(row));
@@ -388,7 +379,13 @@ export function BottlingCalculator({
   const numberCellClass = "tabular-nums whitespace-nowrap";
 
   return (
-    <div className={compact ? "flex flex-col gap-4" : "flex flex-col gap-8 h-full w-full max-w-3xl mx-auto"}>
+    <div
+      className={
+        compact
+          ? "flex flex-col gap-4"
+          : "flex flex-col gap-8 h-full w-full max-w-3xl mx-auto"
+      }
+    >
       {showTitle ? (
         <h1 className="sm:text-3xl text-xl text-center">
           {t("bottlingCalculator.title")}
@@ -504,7 +501,7 @@ export function BottlingCalculator({
 
               const remainingBottles =
                 perBottleL > 0 && neededL > 0
-                  ? Math.ceil(neededL / perBottleL)
+                  ? bottlesToFill(neededL, perBottleL)
                   : 0;
               return (
                 <TableRow key={row.id}>

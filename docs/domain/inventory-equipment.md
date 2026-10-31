@@ -1,0 +1,387 @@
+# Inventory and equipment — issue 471
+
+Tracking: [#471](https://github.com/ljreaux/MeadTools/issues/471), launch integration
+[#474](https://github.com/ljreaux/MeadTools/issues/474).
+
+## Implementation status
+
+The first implementation adds `@meadtools/inventory-domain`: shared stock and
+equipment input schemas, quantity conversions, owned catalog matching, stock
+receipt/manual use/correction calculations, linked-consumption difference and
+reversal calculations, vessel occupancy transitions, and access capabilities.
+Deterministic tests exercise these calculations without a database or provider.
+
+The next slice adds Prisma models and migration
+`20261024000000_add_inventory_equipment` for stock, account-scoped retry
+operations, consumption links/tombstones, adjustment history, equipment and
+assignment history. Seed cleanup removes those records in foreign-key order.
+PostgreSQL regression checks apply the migration to a disposable database built
+from the prior Prisma schema and verify quantity/capacity checks, ownership,
+retry uniqueness, historical retention and deletion restrictions.
+
+The stock transaction adapter now supports stock creation with an initial receipt,
+receipts/manual use/absolute corrections, and linked ADDITION creation, correction,
+stock reassignment and erroneous-use removal. PostgreSQL tests exercise actual
+concurrent transactions, request replay, rollback at the audit write, shortages,
+ownership, entitlement, stale edits, tombstones and historical brew deletion.
+
+The brew-entry POST/PATCH/DELETE routes now call the inventory gateway. Optional
+`inventory` selections choose a specific stock deduction or an untracked use;
+legacy requests remain valid for untracked entries. Responses include an optional
+inventory outcome beside the existing brew/entry/message, never in public entry
+data. The full API contract and generated OpenAPI describe these choices, typed
+errors and the optional DELETE body. Handler/database tests cover this wiring
+with only the account authentication boundary stubbed.
+
+The equipment slice adds authenticated list/create/edit/archive and vessel
+assignment APIs plus `/account/equipment`. Premium accounts can search/filter
+items, record capacity and notes, and explicitly assign or reassign vessels.
+Expired accounts retain read-only equipment. Regular and hydrometer brew
+completion/deletion release occupancy while preserving assignment history and
+ingredient balances. Assignment/completion races are covered by PostgreSQL tests.
+
+The original seed adds ten equipment items to the regular test user: vessels for Key
+Lime Pie and Mead Wiki Simple Trad Metric, a spare bucket, and common tools. Two
+primary vessels start assigned to ongoing brews for those recipes; an existing
+ongoing brew is reused. The fixture test verifies recipe linkage and account
+isolation. The main seed has since been run successfully against local development
+after fixing its server-module startup conditions; it includes both premium test
+accounts and the equipment fixtures. The stock-management seed now adds ten stock
+items to the regular user only: honey, key lime juice, D47, US-05, Fermaid O,
+potassium metabisulfite, 48 wine bottles (750 mL), 24 beer bottles (330 mL), 50
+corks and 100 caps. Each has an atomic initial receipt/history entry. The grouped-container revision rebuilds the local seed with the authorized reset and adds six interchangeable buckets.
+
+Browser checks on the shared local preview covered add/edit, assignment/release,
+search/filter and removal at mobile and desktop sizes. Temporary equipment was
+archived afterward. The stock-management slice now adds `/account/inventory` and
+authenticated list/create/change/history APIs. Premium users can add manually
+named stock, record receipts or manual use, correct the absolute quantity, inspect
+the latest 100 adjustments, and archive stock without reversing consumption or
+deleting history. Changes carry expected balances and account-scoped retry IDs.
+Expired accounts retain owned reads; inactive/foreign accounts cannot retrieve
+stock. Catalog selection and reconciliation controls remain upcoming. Packaging stock covers bottles, caps and corks
+using whole `units` only. Names identify the bottle size/type; capacities do not
+convert to bottle counts. The complete Preview flow remains unverified. Larry
+reset and seeded local development and confirmed the new tables on October 24; the
+production migration remains unapplied to hosted environments. This slice adds the
+`packaging` stock category and whole-unit constraint. Larry confirmed the original
+inventory migration has not been applied anywhere and authorized amending it; the
+existing migration now includes those additions. The amended migration and
+constraint checks pass against a fresh disposable baseline database. Local
+development was updated with schema push, not migration history, without resetting
+data.
+
+### Brew tracker integration
+
+Stock selection is part of the original addition and correction forms. There is
+no follow-up inventory dialog. Entry kind limits compatible categories (yeast,
+nutrients/additives, or ingredients); units must be convertible without guessing
+density or packet size. A unique name match is selected by default. Ambiguous or
+missing matches default to logging without changing stock. The form previews the
+rounded deduction and remaining balance and lets the user choose untracked use.
+Linked corrections retain the original expected deduction; removing an erroneous
+entry reverses its recorded amount through the existing delete confirmation.
+Stock controls and container controls are hidden on the tracker for unavailable
+premium access. Free logging continues and clearly reports unchanged inventory.
+
+Containers can be recorded in groups, such as six identical five-gallon buckets.
+Each physical unit has a stable identity, shared `group_id`, and optional label;
+users manage quantities and availability rather than inventing unique names. This
+preserves occupancy and history for an individually labeled bucket while unnamed
+buckets remain interchangeable. Account equipment cards show one group with its
+total, available count, per-brew allocations and optional individual labels.
+Group creation/resizing, labeling and allocation use account-scoped retry IDs.
+Resizing/removal cannot discard occupied units. Removed units retain their history.
+
+The existing stage-change forms offer container changes by default. They show the
+current allocation and a searchable choice for adding other container types;
+quantities and optional labels stay in the same form. Keeping the current setup
+requires no equipment write. An explicit change sends the expected current unit
+IDs and desired IDs in `containers` with the metadata request. The stage change,
+occupancy changes, assignment events and retry response commit atomically under
+the existing account/brew locking order. An occupied or stale choice rolls back
+the whole operation. Completion releases current containers without restoring
+ingredients. Containers can also be changed independently between stages.
+
+The private `GET /brews/{brew_id}/inventory` context supplies owned deductions and
+up to 50 recent changes grouped by operation, container group and label for
+display. Whole operations are loaded before grouping so large allocations retain
+their correct quantities. It returns empty arrays and `can_manage: false` when premium is
+unavailable. These details are separate from public brew responses. Expired
+linked corrections preserve stock and require reconciliation. Every mutation
+checks current access again.
+
+One physical use per ADDITION is supported; blended nutrient normalization and
+multi-row bottle/cap/cork deductions remain a following slice. The local schema
+and original unapplied inventory migration now include group identity and optional
+labels. The seed includes six five-gallon brew buckets (one labeled Blue lid),
+in addition to the earlier ten items. The local seed was rebuilt with Larry's
+explicit authorization. Regression checks cover category/default matching, pooled
+occupancy, optional labels, retries, concurrent overbooking, stage/assignment
+atomicity, ownership, stale forms, and premium expiry.
+
+### Stock transaction adapter
+
+`apps/web/lib/db/inventory.ts` exposes a server-only service. Each operation locks
+the account row with `FOR NO KEY UPDATE`, checks the existing account premium decision within the same
+transaction, and then locks the owned brew/entry and stock in order. Account
+serialization protects both existing rows and absent retry/use identities; this
+deliberately trades per-account parallelism for simple, reliable local ordering.
+It must be used by every inventory mutation; direct Prisma writes bypass it.
+Equipment mutations share this operation helper. `NO KEY UPDATE` serializes
+account operations while allowing foreign-key key-share checks during ordinary
+brew completion; a stronger account lock can deadlock with the locked brew.
+Assignments lock the target brew before equipment. Lifecycle release updates
+only equipment still assigned to that brew, so a concurrent reassignment cannot
+be cleared accidentally.
+
+The account + operation key identifies a request. The adapter hashes the complete
+normalized request with sorted JSON keys and stores its response with the ledger
+write. A replay returns that saved response without running the entry writer;
+reusing the key with changed content fails. A failed transaction saves no retry
+record and may be retried after the shortage/failure is resolved. A replay returns
+the historical operation response, so clients should refresh current stock after
+later operations. Absolute corrections require the expected prior balance, and
+usage edits/removal require the expected prior stock/deduction to reject stale
+forms rather than overwriting intervening changes.
+
+For linked usage, the server caller supplies the complete entry mutation for
+fingerprinting and a trusted writer callback that uses the supplied transaction
+to create/update/delete the entry and its derived brew data. The adapter checks
+the persisted ADDITION identity and amount against the intended deduction before
+committing. Callback, balance, consumption/tombstone, operation and audit writes
+commit together or all roll back. No network work belongs inside the callback.
+The first supported path has one confirmed physical use per ADDITION, with entry
+ID as the stable use key; summary events and multi-use entries still need explicit
+normalization during brew integration. Do not call it in addition to an existing
+independently committed entry mutation.
+
+Archived stock cannot receive new consumption or manual changes; an erroneous
+existing use may still be reversed to that archived stock. Audit rows are only
+inserted, never edited, and a zero stock movement creates no audit row. Stock
+selection is explicit here; the usage UI must use shared matching and resolve
+ambiguity/untracked uses before invoking the adapter. Expired/free logging uses
+the gateway's non-deduction path; explicitly requesting a premium deduction is
+rejected rather than silently pretending a deduction occurred.
+
+### Stock management API and UI
+
+`GET/POST /account/inventory` list retained active stock and create stock with an
+initial recorded quantity. `GET /account/inventory/{stock_id}` returns an owned
+item and its latest 100 immutable quantity changes, newest first, with `has_more`
+when older entries exist. History remains readable after archival. PATCH uses
+`receipt`, `manual_use`, `correction` or `archive`; balance changes include
+`expected_balance`, and every mutation includes `operation_id`. The existing
+transaction adapter applies compatible-unit conversion, shortage guards and
+stale-balance checks. The UI records subsequent changes in the stock's saved
+unit. Corrections replace the balance, rather than adding to it. Archive keeps
+the recorded quantity, consumption links and adjustment history unchanged.
+
+Packaging quantities are validated on creation, manual balance changes and
+linked usage, with the same guard in production SQL. The page reuses the brew-list
+category dropdown and clear-filter pattern, search input groups, and amount/unit
+fields with grouped weight/volume/count menus,
+selects, loading buttons, dialogs and removal confirmation. A reconciliation
+warning is retained after manual quantity changes; this page does not resolve
+past untracked brew changes. The database fixture covers route parsing,
+ownership, replay, compatible-unit changes, competing stale requests, shortage
+rollback, archival retention, premium expiry and inactive accounts.
+
+### Brew-entry API integration
+
+`inventory: {mode: "deduct", operation_id, stock_id, expected}` is opt-in.
+Creates require a client-generated `client_entry_id` and an ADDITION amount/unit.
+Edits submit the complete replacement addition data and the prior stock/deducted
+quantity in `expected`; erroneous-use deletion submits the same expected state
+in its optional JSON body. `operation_id` must remain stable across a request's
+retries and change for a new edit. Existing logging unit aliases (`lbs`, `liters`,
+`ml`, `quarts`, `fl oz`) normalize through shared logic. One ADDITION is one
+physical use; quantities in summary event types do not independently deduct.
+
+Omitting inventory or selecting `{mode: "untracked"}` keeps new/untracked uses
+free of stock changes. An active premium account must explicitly confirm the
+expected deduction when replacing a linked entry's data or deleting it; an old
+client cannot bypass this with an untracked request. Metadata-only changes remain
+available without a new inventory selection. The existing derived gravity,
+volume and ABV writes execute inside the same transaction callback.
+
+After expiry/payment restriction/feature disablement, ordinary brew edits and
+deletion remain available. Editing/removing a previously linked use keeps its
+recorded balance and link unchanged, sets the stock's reconciliation flag and
+returns `reconciliation_required`. A missing entry with a retained link cannot
+be recreated by a legacy retry. On renewal, flagged stock rejects deductions
+with HTTP 409 instead of silently backfilling offline changes. Premium owners can
+use Review stock to confirm the physical amount on hand and review retained brew
+links. The revision-bound reconciliation snapshot includes
+stock and entry data, rejecting confirmations after either changes. Confirmation
+sets the absolute balance and rebases compatible links to their current logged
+quantities without another deduction. Missing/incompatible lines are closed
+without returning stock; additions logged untracked remain untracked. A normal
+manual quantity adjustment does not silently clear the flag. Reconciliation is
+atomic and replay-safe, with quantity changes retained as correction history.
+
+HTTP 400 represents malformed requests/units or incompatible selections; 403
+denies explicit deductions without premium; 404 hides unavailable owned records;
+409 covers shortages, stale expectations, retry conflicts and required review.
+Shortage errors expose only the missing amount/unit. Unexpected persistence
+errors remain generic server failures. The route tests exercise these responses,
+request parsing, legacy bodyless DELETE and PostgreSQL writes without a server,
+provider calls or application env files.
+
+Run the deterministic adapter fixture using
+`npm run test:inventory-transactions-postgres --workspace @meadtools/web` with an
+explicit connection to the disposable local
+`meadtools_inventory_transactions_test` database, initialized with the prior
+schema and the inventory migration. The script rejects other database names,
+does not load application env files and truncates only that test database.
+
+### Database verification and limits
+
+`apps/web/prisma/tests/inventory-constraints.sql` requires the dedicated
+`meadtools_inventory_schema_test` database and rolls back its fixture data.
+After provisioning that disposable database and applying the baseline schema
+plus the new migration, run it using `psql -X -v ON_ERROR_STOP=1` with `-f`
+pointing to that file. It must never be run against the development database.
+
+Production migration SQL includes CHECK constraints Prisma cannot express. A
+local `db:push` creates the modeled types, tables, foreign keys and unique
+indexes; shared validation must enforce the extra checks locally. Do not switch
+the development database to migration-history setup to obtain these constraints.
+PostgreSQL rounds numeric input to six places; callers must validate precision
+before writing, using the shared schemas.
+
+Consumption brew/entry IDs and assignment event brew IDs are historical
+snapshots without cascading foreign keys. Live equipment assignment uses a
+compound brew/owner foreign key. The stock adapter verifies and locks an owned
+brew/entry before creating consumption. Brew integration must explicitly release
+equipment before deleting a brew. Reversed consumption rows remain as tombstones; do not
+delete and recreate them on retries. When changing the matched stock, adjustments
+retain their original stock/unit while the consumption link records the new
+deduction. Referenced stock units cannot be changed in place.
+
+The schema permits only one current brew per equipment row. Completed-brew
+checks and explicit conflict/reassignment checks remain equipment adapter
+responsibilities. Append-only audit behavior, stock balance/adjustment consistency
+and request hash comparisons are enforced by the stock adapter. Database
+uniqueness alone does not implement them.
+
+## Agreed access policy
+
+Confirmed with Larry on October 24, 2026: after premium expiry, retain inventory,
+equipment and history as read-only. Existing free brew access and logging continue
+without deductions. Every new usage must visibly indicate that inventory was not
+updated. Never silently delete retained records or backfill deductions on renewal.
+
+Use the existing `getPremiumAccessStatus` account decision, including account
+activity, payment restrictions and `PREMIUM_ACCESS_ENABLED`. Domain capabilities
+consume that resolved decision; they do not create another entitlement system.
+Reads still require authenticated ownership and an active account. Every stock,
+equipment and assignment mutation requires `canManage` at the server boundary.
+Completion/deletion may release vessel occupancy as part of a free brew operation.
+
+Keep the balance history accurate about what was actually recorded: usage while
+inventory is unavailable has no stock adjustment. The UI must distinguish a
+recorded balance from physical stock that needs reconciliation after untracked
+usage. Corrections of previously linked uses during expiry must not silently
+modify retained balances; integration must retain the original link/audit snapshot
+and mark the record for reconciliation. Do not replay these changes on renewal.
+The exact reconciliation UI is still part of integration work.
+
+## Quantity and matching rules
+
+- Share existing core mass/volume conversion factors; US and imperial volumes
+  remain distinct. Add mg, US teaspoons/tablespoons and unit counts. No mass to
+  volume, packet to grams, or density-based conversion. The adapter must normalize
+  existing spellings such as `lbs`, `liters`, `ml` and `quarts` explicitly.
+- Quantities range from zero through one billion with six fractional digits in
+  the stock item's chosen unit. Conversion rounds once to that precision. A
+  nonzero use that would round to zero requires a finer stock unit or explicit
+  logging without deduction. Show the rounded deduction before confirmation.
+- Store the amount actually deducted in the stock unit on the link. Reversal
+  uses that snapshot, not a recipe or recalculated conversion. Do not change a
+  stock item's unit while it has linked consumption/history without an explicit
+  atomic migration of all quantities.
+- Match only owned catalog namespace + ID. A recipe line ID is not a catalog ID.
+  Multiple stock records with the same identity require selection. Missing catalog
+  identities fall back to Fuse name matching on unlinked stock only, with warnings
+  for weak or close matches. An item linked to another catalog identity is never
+  an automatic fallback. Category and quantity compatibility remain hard filters.
+- Insufficient stock fails the entire linked usage write. Show the shortage and
+  allow adding/correcting stock or explicitly logging without deduction. No
+  automatic negative balance or partial deduction.
+
+## Existing usage paths audited
+
+- `apps/web/app/[locale]/account/brews/[brew_id]/page.tsx`: `addAddition`
+  creates `ADDITION` with kind `INGREDIENT`, `NUTRIENT`, `YEAST` or `OTHER`.
+  Premium `addAdditions` reviews stock once and commits the batch atomically.
+  Each entry retains a stable client ID across retries, and the batch operation
+  saves a receipt. Free logging continues without stock writes.
+- `PrimaryStagePanel.tsx` records recipe nutrients, Go-Ferm and manual nutrients
+  through those additions. Subsequent ingredient/additive panels use the same
+  addition callback. Preserve catalog identity separately from recipe line IDs.
+- The entry enum/API also accepts `NUTRIENT`, `STABILIZATION` and
+  `BACKSWEETENING`. These must normalize into the same confirmed-use representation
+  before deductions; never deduct both a summary event and its child additions.
+  Define a stable use ID per physical use if more than one entry represents it.
+- `createBrewEntryForApp` already uses `client_entry_id` with insert-once behavior.
+  Its callback currently returns identity without whether insertion occurred.
+  Stock adjustment must use the persisted link and stored entry, not blindly
+  apply the retry's request payload after `skipDuplicates`.
+- `patchBrewEntryForApp` replaces entry data; apply only the change from the
+  persisted deduction. `deleteBrewEntryForApp` corrects an erroneous use and must
+  reverse once inside its transaction. Preserve a tombstone/idempotency record
+  so retrying a deleted entry cannot recreate the original deduction.
+- `createBrewForApp`, recipe edits, snapshot refresh and stage metadata changes
+  do not represent physical ingredient use. They must not deduct stock.
+- `deleteBrewForApp` deletes the historical brew. Preserve consumption audit
+  snapshots and balances while releasing occupancy; deleting a historical brew
+  must not call the erroneous-use reversal operation.
+
+## Persistence and integration requirements
+
+1. Add account-owned stock, immutable adjustments, consumption links, equipment,
+   and reviewed Prisma migration SQL. Use decimal quantities matching the shared
+   precision, database nonnegative constraints and owned foreign keys. Archive
+   referenced stock rather than cascading away adjustment history.
+2. Give receipts/manual adjustments/corrections stable operation IDs with unique
+   account-scoped constraints. Retain request fingerprints to reject reuse of an
+   operation ID with a different request. Bind consumption to stable physical-use
+   identity; retain deletion tombstones. Retried creates return the saved result.
+3. In a transaction, lock the owned brew/entry, affected stock and consumption
+   rows in a consistent order. Read current state under those locks, calculate
+   with this package, and persist entry, link, balance and immutable adjustment
+   together. Roll back all changes on shortage or any other failed write. Use a
+   deterministic lock order when switching stock; atomically reverse the old
+   link and create the new one. Never independently commit either side.
+4. Lock equipment and brew consistently for assignment/completion/deletion.
+   Each vessel has at most one current brew; a brew may occupy multiple vessels.
+   Reassignment must be explicit. Completion/deletion releases all owned vessels;
+   historical timeline changes alone do not consume stock. Assignment to a
+   completed brew is rejected. Preserve assignment history in the adapter.
+5. Wire authenticated APIs to ownership + entitlement checks, then generate and
+   review contracts/OpenAPI per `docs/domain/api-contract.md`. Add PostgreSQL
+   regression tests for duplicate/concurrent requests, failure rollback, expiry,
+   entry correction/deletion, historical brew deletion and vessel conflicts.
+6. Add English UI strings in Git, inventory/equipment management and matching/
+   deduction confirmation to every confirmed-use path. Verify the complete flow
+   on Preview with premium/free/expired/foreign/public accounts. Keep new paid
+   subscriptions closed through the November 2 deployment; activation remains
+   November 9 under #474.
+
+## Component and packaging integration
+
+`inventoryEntryLines` derives physical lines from recorded addition components,
+bottle rows, and optional closures. Nutrient component keys and built-in additive
+IDs distinguish all supported nutrients and stabilizers, including potassium and
+sodium sulfite and their Campden forms. Tablets normalize to unit counts and may
+include partial tablets; bottle and closure counts must be whole numbers. Never
+convert tablets to powder weight or infer bottle counts from packaged volume.
+
+The stabilization dialog reviews both stock choices inline. Bulk missing additions
+and supplemental stabilizers use one batch review. All entries, consumption lines,
+and deductions commit together. A batch aggregates one audit row per stock; its
+consumption reference is null when the adjustment covers multiple uses. Individual
+consumption records retain the entry, line key, stock, quantity and unit snapshots.
+Edits and removal return those exact snapshots before applying new quantities.
+Stock detail changes can rename or relink catalog items without changing balances.

@@ -7,8 +7,8 @@ description: Prepare and coordinate MeadTools monthly releases, including produc
 
 Work from a current MeadTools checkout and follow its AGENTS.md. The release
 target is the first Monday of each month; preparation is the preceding Friday.
-Both reminders are for 9:00 a.m. America/Chicago, and the GitHub release gate
-opens no earlier than 9:15 a.m. on that Monday. A date never justifies
+Preparation runs at 9:00 a.m. America/Chicago; Monday follow-up runs at 10:00 a.m.
+The GitHub monthly gate opens from 9:15 a.m. until noon on that Monday. A date never justifies
 publishing unready work. Track rollout in
 [issue #413](https://github.com/ljreaux/MeadTools/issues/413).
 
@@ -54,8 +54,11 @@ and include/defer/no-change decisions for Web, Mobile, Chat, and API. Check
 deployed behavior, feature availability, migration readiness, and store status
 before describing a change as shipped. Web is not the default product.
 
-Prepare the dated website entry, GitHub Release draft, and an internal
-checklist. Note features, improvements,
+Prepare internal product notes in `docs/releases/YYYY-MM.json`, GitHub Release
+draft text, and a record copied from [the monthly template](../../../docs/releases/monthly-record-template.md).
+Use the product-note JSON shape in the authoring guide; do not put unverified
+dated entries in public locale files. Merge the internal notes into `preview`
+through a reviewed preparation PR before final release-SHA approval. Note features, improvements,
 fixes, and limitations with links to source PRs. Never publish a future or
 unverified claim. If there is no eligible shipped work, record a no-change
 month internally and create no public note, GitHub Release, email batch, or
@@ -68,6 +71,7 @@ the exact head/base SHAs. Record these lines in the PR body:
 Release-ready head: <full 40-character preview head SHA>
 Release-ready base: <full 40-character main base SHA>
 Mobile production build: run|skip
+Release-note draft: docs/releases/YYYY-MM.json
 ```
 
 Use the `build-mobile-production` label exactly when the decision is `run`.
@@ -96,10 +100,11 @@ duplicate announcement. Verify required checks and bypass actors on `main`.
 
 ## Monday follow-up
 
-At 9:00 a.m. Chicago the 9:15 gate is still pending. After its window, verify
+At 10:00 a.m. Chicago, inspect the actual gate run and verify
 the intended SHA merged. If blocked, leave `main` unchanged and report the
 specific blocker. Verify each selected deployment or store rollout before
-publishing notes or a GitHub Release. Dispatch a production Mobile build only
+requesting publication approval for notes or a GitHub Release. Code-promotion
+approval alone does not authorize publication, which triggers email. Dispatch a production Mobile build only
 for the reviewed `run` decision and exact merged SHA, and check for an existing
 run before dispatching. A skipped Mobile build makes no new Mobile
 availability claim.
@@ -113,7 +118,10 @@ links and outcomes for website notes, GitHub Release, Mobile build, and the
 combined email. If nothing shipped,
 record the no-change decision and send no announcement.
 
-Cross-device reminders are coordination only; they do not execute this skill
-or authorize merge, publication, or email. See
-[reminder setup](../../../docs/monthly-release-reminders.md) when adjusting
-their schedule or delivery.
+The existing cloud jobs execute this procedure with connected GitHub tools;
+see [job setup and access evidence](../../../docs/monthly-release-reminders.md).
+Read the current skill from `preview`; a cloud run does not inherit a local
+checkout. Report missing capabilities explicitly. Preparation requires Larry
+Reaux’s exact-SHA approval before arming auto-merge. Publication requires
+separate approval. Keep a blocked or delayed run visible without bypassing
+checks; the first live monthly cycle remains to be verified.

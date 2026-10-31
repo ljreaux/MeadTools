@@ -21,10 +21,14 @@ export const creditActivityResponseSchema = z.object({
   purchasesEnabled: z.boolean(),
   activities: z.array(
     z.object({
-      operationId: z.string().uuid(),
+      // Ledger IDs include hash-derived PostgreSQL UUIDs without RFC version bits.
+      operationId: z.string().regex(
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+      ),
       occurredAt: z.string().datetime(),
       creditsDelta: z.number().int(),
       kind: z.enum(["purchase", "grant", "usage", "refund", "adjustment"]),
+      grantSource: z.enum(["premium", "beta"]).nullable().optional(),
       entryTypes: z.array(z.string()),
       paymentAmountCents: z.number().int().nullable(),
       paymentCurrency: z.string().length(3).nullable(),

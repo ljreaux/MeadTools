@@ -27,3 +27,21 @@ test("credit Checkout uses Managed Payments dynamic payment methods", () => {
     MEADTOOLS_PROMPT_CREDITS_TAX_CODE,
   );
 });
+
+test("production Checkout uses each fixed live catalog price", () => {
+  for (const pack of CREDIT_PACKS) {
+    const priceId = `price_${pack.id}`;
+    const session = buildCreditCheckoutSessionParams({
+      checkoutId: "d5bc59f1-2c72-4c8d-b2c1-2348400ad069",
+      pack,
+      priceId,
+      successUrl: "https://meadtools.test/account/chat?tab=credits",
+      cancelUrl: "https://meadtools.test/account/chat?tab=credits",
+      userId: 2,
+    });
+    assert.equal(session.line_items?.[0]?.price, priceId);
+    assert.equal(session.line_items?.[0]?.price_data, undefined);
+    assert.equal(session.managed_payments?.enabled, true);
+    assert.equal(session.metadata?.credit_pack_id, pack.id);
+  }
+});

@@ -30,6 +30,9 @@ export type BannerInput = {
 
   /** defaults to true */
   dismissible?: boolean;
+  /** Called only when the user closes the banner, not when its owner unmounts. */
+  onDismiss?: () => void;
+  dismissLabel?: string;
 };
 
 type BannerItem = BannerInput & {
@@ -188,7 +191,10 @@ export function BannerStack({
           <Banner
             key={b.id}
             banner={b}
-            onDismiss={() => requestDismiss(b.id)}
+            onDismiss={() => {
+              b.onDismiss?.();
+              requestDismiss(b.id);
+            }}
             className={className}
           />
         ))}
@@ -235,6 +241,8 @@ function Banner({
   return (
     <div
       role="status"
+      data-slot="banner"
+      data-variant={variant}
       className={cn(
         "w-full relative px-4 py-3 flex flex-col gap-2 border-y rounded-none z-[var(--z-banner)]",
         variantClasses[variant],
@@ -255,7 +263,7 @@ function Banner({
           variant="ghost"
           size="icon"
           onClick={onDismiss}
-          aria-label="Dismiss"
+          aria-label={banner.dismissLabel ?? "Dismiss"}
           className="absolute right-2 top-2"
         >
           <X className="h-4 w-4" />
@@ -307,5 +315,30 @@ function Banner({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Keep fixed announcement banners from obscuring page content. */
+export function BannerRegion({ children }: { children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [height, setHeight] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setHeight(Math.ceil(element.getBoundingClientRect().height));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div ref={ref} className="fixed inset-x-0 top-20 z-[var(--z-banner)]">
+        {children}
+      </div>
+      <div aria-hidden="true" style={{ height }} />
+    </>
   );
 }

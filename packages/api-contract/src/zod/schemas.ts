@@ -1,10 +1,15 @@
+export * from "./brew-images";
+export * from "./inventory";
 export { nutrientDataV2Schema, recipeDataV2Schema } from "@meadtools/schemas";
 export * from "./catalog";
 export * from "./chat";
 export * from "./credits";
+export * from "./premium";
+export * from "./mcp";
 export * from "./auth";
 export * from "./recipes";
 export * from "./brews";
+export * from "./equipment";
 export * from "./admin";
 export * from "./hydrometers";
 export * from "./foundation";
@@ -32,8 +37,14 @@ export const recipeDerivedStateResponseSchema = z.object({
     secondary: z.number(),
     total: z.number(),
     primaryL: z.number(),
+    postLossPrimaryL: z.number(),
+    lossL: z.number(),
+    lossPercentage: z.number(),
     secondaryL: z.number(),
     totalL: z.number(),
+    secondaryLossL: z.number(),
+    secondaryLossPercentage: z.number(),
+    bottlingL: z.number(),
   }),
   alcohol: z.object({
     abv: z.number(),

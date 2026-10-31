@@ -1,3 +1,4 @@
+import { entryMutationError } from "@/lib/brews/entryMutationError";
 import {
   deleteBrewForApp,
   getBrewForApp,
@@ -56,9 +57,11 @@ export async function GET(
  * @body UpdateBrewRequestBody
  * @response 200:UpdateBrewResponse
  * @responseSet none
- * @add 400:BrewValidationErrorResponse
+ * @add 400:BrewMetadataValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
+ * @add 404:BrewEntryNotFoundErrorResponse
+ * @add 403:BrewMetadataInventoryErrorResponse
+ * @add 409:BrewMetadataInventoryErrorResponse
  * @add 500:BrewUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -84,6 +87,25 @@ export async function PATCH(
     const updated = await patchBrewMetadata(userId, brew_id, body);
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
+    const inventoryError = entryMutationError(err);
+    if (inventoryError) return inventoryError;
+    if (err instanceof Error) {
+      if (err.message === "Recipe not available") {
+        return NextResponse.json({ error: err.message }, { status: 403 });
+      }
+      if (
+        err.message === "Brew snapshot changed; review it again" ||
+        err.message === "Recipe changed; review it again"
+      ) {
+        return NextResponse.json({ error: err.message }, { status: 409 });
+      }
+      if (
+        err.message === "Only ongoing brews can update their recipe snapshot" ||
+        err.message === "Recipe snapshot not found"
+      ) {
+        return NextResponse.json({ error: err.message }, { status: 400 });
+      }
+    }
     console.error("Error updating brew:", err);
     return NextResponse.json(
       { error: "Failed to update brew." },

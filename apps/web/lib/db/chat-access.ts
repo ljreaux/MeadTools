@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { chat_access_mode } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { recordCreditGrant } from "@/lib/db/credit-accounting";
+import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 
 export type ChatAccessMode = "beta_allowlist" | "all_active_users";
 
@@ -17,7 +18,7 @@ export type ChatAccessStatus = {
 export async function getChatAccessStatus(
   userId: number,
 ): Promise<ChatAccessStatus> {
-  const [settings, user] = await Promise.all([
+  const [settings, user, premium] = await Promise.all([
     prisma.chat_access_settings.findUnique({
       where: { id: true },
       select: { mode: true },
@@ -30,6 +31,7 @@ export async function getChatAccessStatus(
         credit_account: { select: { payment_restricted_at: true } },
       },
     }),
+    getPremiumAccessStatus(userId),
   ]);
   const mode = settings?.mode ?? chat_access_mode.beta_allowlist;
   const granted = user?.chat_access_grant?.revoked_at === null;
@@ -41,7 +43,7 @@ export async function getChatAccessStatus(
     chatEnabled:
       Boolean(user?.active) &&
       !paymentRestricted &&
-      (mode === chat_access_mode.all_active_users || granted),
+      (mode === chat_access_mode.all_active_users || granted || premium.premiumEnabled),
     granted,
     paymentRestricted,
   };

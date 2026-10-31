@@ -1,6 +1,9 @@
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { NextRequest, NextResponse } from "next/server";
 import { patchBrewEntryForApp, deleteBrewEntryForApp } from "@/lib/db/brews";
+import type { PatchBrewEntryInput } from "@/lib/db/brews";
+import { entryMutationError } from "@/lib/brews/entryMutationError";
+import { updateBrewEntryRequestBodySchema, deleteBrewEntryRequestBodySchema } from "@meadtools/api-contract/brews";
 
 /**
  * Update brew entry
@@ -9,9 +12,11 @@ import { patchBrewEntryForApp, deleteBrewEntryForApp } from "@/lib/db/brews";
  * @body UpdateBrewEntryRequestBody
  * @response 200:UpdateBrewEntryResponse
  * @responseSet none
- * @add 400:BrewValidationErrorResponse
+ * @add 400:BrewEntryBadRequestErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
+ * @add 403:BrewInventoryErrorResponse
+ * @add 404:BrewEntryNotFoundErrorResponse
+ * @add 409:BrewInventoryErrorResponse
  * @add 500:BrewEntryUpdateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -41,10 +46,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const parsed = updateBrewEntryRequestBodySchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid entry request" }, { status: 400 });
   try {
-    const entry = await patchBrewEntryForApp(userId, brew_id, entry_id, body);
-    return NextResponse.json({ entry }, { status: 200 });
+    const result = await patchBrewEntryForApp(userId, brew_id, entry_id, parsed.data as PatchBrewEntryInput);
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
+    const response = entryMutationError(err);
+    if (response) return response;
     console.error("POST /api/brews/[brew_id]/entries/[entry_id] failed:", err);
     return NextResponse.json(
       { error: "Failed to update entry." },
@@ -57,11 +66,14 @@ export async function PATCH(
  * Delete brew entry
  * @description Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.
  * @pathParams BrewEntryPathParams
+ * @body DeleteBrewEntryRequestBody
  * @response 200:DeleteBrewEntrySuccessResponse
  * @responseSet none
- * @add 400:BrewValidationErrorResponse
+ * @add 400:BrewEntryBadRequestErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
+ * @add 403:BrewInventoryErrorResponse
+ * @add 404:BrewEntryNotFoundErrorResponse
+ * @add 409:BrewInventoryErrorResponse
  * @add 500:BrewEntryDeleteErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -84,13 +96,21 @@ export async function DELETE(
     return NextResponse.json({ error: "Missing entry_id" }, { status: 400 });
   }
 
+  const text = await req.text();
+  let body: unknown = {};
   try {
-    await deleteBrewEntryForApp(userId, brew_id, entry_id);
-    return NextResponse.json(
-      { message: "Entry deleted successfully." },
-      { status: 200 }
-    );
+    if (text.trim()) body = JSON.parse(text);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const parsed = deleteBrewEntryRequestBodySchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid entry request" }, { status: 400 });
+  try {
+    const result = await deleteBrewEntryForApp(userId, brew_id, entry_id, parsed.data);
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
+    const response = entryMutationError(err);
+    if (response) return response;
     console.error(
       "DELETE /api/brews/[brew_id]/entries/[entry_id] failed:",
       err

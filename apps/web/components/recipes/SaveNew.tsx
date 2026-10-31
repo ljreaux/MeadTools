@@ -45,7 +45,8 @@ function SaveNew() {
       stabilizers,
       additives,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     }
   } = useRecipe();
 
@@ -64,6 +65,7 @@ function SaveNew() {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       flags: {
         private: checked
       }
@@ -76,6 +78,7 @@ function SaveNew() {
       stabilizers,
       notes,
       nutrients,
+      lossAdjustment,
       checked
     ]
   );

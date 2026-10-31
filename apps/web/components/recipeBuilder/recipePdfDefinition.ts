@@ -56,17 +56,102 @@ function recipeTable(
 function ingredientTable(
   model: RecipePdfModel,
   label: string,
-  ingredients: RecipePdfModel["primaryIngredients"]
+  ingredients: RecipePdfModel["primaryIngredients"],
+  summary: RecipePdfModel["lossSummary"] = null
 ): Content {
-  return recipeTable(
+  const rows: TableCell[][] = ingredients.map((ingredient, index) => [
+    bodyCell(`${index + 1}. ${ingredient.name}`),
+    bodyCell(ingredient.weight),
+    bodyCell(ingredient.volume)
+  ]);
+  if (summary) {
+    rows.push([
+      { text: " ", colSpan: 3, margin: [0, 2, 0, 2] },
+      {},
+      {}
+    ]);
+    for (const [index, item] of [
+      summary.primary,
+      summary.lost,
+      summary.after
+    ].entries()) {
+      const finalRow = index === 2;
+      const emphasis = finalRow
+        ? { bold: true, fillColor: "#f3f4f6" }
+        : {};
+      rows.push([
+        {
+          text: item.label,
+          colSpan: 2,
+          margin: [3, 3, 3, 3],
+          ...emphasis
+        },
+        {},
+        {
+          text: item.value,
+          margin: [3, 3, 3, 3],
+          ...emphasis
+        }
+      ]);
+    }
+  }
+
+  const table = recipeTable(
     [label, model.labels.weight, model.labels.volume],
-    ingredients.map((ingredient, index) => [
-      bodyCell(`${index + 1}. ${ingredient.name}`),
-      bodyCell(ingredient.weight),
-      bodyCell(ingredient.volume)
-    ]),
-    toPercentageWidths(RECIPE_PDF_COLUMN_WIDTHS.ingredients)
+    rows,
+    toPercentageWidths(
+      summary
+        ? RECIPE_PDF_COLUMN_WIDTHS.ingredientsWithTransfer
+        : RECIPE_PDF_COLUMN_WIDTHS.ingredients
+    )
   );
+
+  if (!summary) return table;
+  return {
+    stack: [
+      table,
+      {
+        text: summary.caveat,
+        fontSize: 7.5,
+        italics: true,
+        color: "#6b7280",
+        margin: [3, 4, 0, 0]
+      }
+    ]
+  };
+}
+
+function bottlingSummaryTable(model: RecipePdfModel): Content | null {
+  const summary = model.bottlingSummary;
+  if (!summary) return null;
+
+  const rows: TableCell[][] = [summary.primary, summary.lost, summary.after].map(
+    (item, index) => {
+      const emphasis = index === 2
+        ? { bold: true, fillColor: "#f3f4f6" }
+        : {};
+      return [
+        { text: item.label, margin: [3, 3, 3, 3], ...emphasis },
+        { text: item.value, margin: [3, 3, 3, 3], ...emphasis }
+      ];
+    }
+  );
+  return {
+    stack: [
+      recipeTable(
+        [model.labels.bottlingEstimate, model.labels.volume],
+        rows,
+        toPercentageWidths([85, 15])
+      ),
+      {
+        text: summary.caveat,
+        fontSize: 7.5,
+        italics: true,
+        color: "#6b7280",
+        margin: [3, 4, 0, 0]
+      }
+    ]
+  };
 }
 
 function notesTable(
@@ -154,7 +239,8 @@ export function createRecipePdfDefinition({
     ingredientTable(
       model,
       model.labels.primaryIngredients,
-      model.primaryIngredients
+      model.primaryIngredients,
+      model.lossSummary
     )
   );
 
@@ -162,6 +248,11 @@ export function createRecipePdfDefinition({
     content.push(
       notesTable(model, model.labels.primaryNotes, model.primaryNotes)
     );
+  }
+
+  if (!model.secondaryIngredients.length) {
+    const bottlingSummary = bottlingSummaryTable(model);
+    if (bottlingSummary) content.push(bottlingSummary);
   }
 
   if (model.showPageTwo) {
@@ -180,7 +271,8 @@ export function createRecipePdfDefinition({
         ingredientTable(
           model,
           model.labels.secondaryIngredients,
-          model.secondaryIngredients
+          model.secondaryIngredients,
+          model.bottlingSummary
         )
       );
     }

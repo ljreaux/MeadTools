@@ -16,7 +16,8 @@ export function useLocalRecipeStorage({ key }: Options) {
       stabilizers,
       additives,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     },
     meta: { hydrate }
   } = useRecipe();
@@ -83,7 +84,8 @@ export function useLocalRecipeStorage({ key }: Options) {
           stabilizers: parsed.stabilizers,
           additives: parsed.additives,
           notes: parsed.notes,
-          nutrients: parsed.nutrients
+          nutrients: parsed.nutrients,
+          lossAdjustment: parsed.lossAdjustment
         });
 
         setDidHydrate(true);
@@ -108,7 +110,8 @@ export function useLocalRecipeStorage({ key }: Options) {
           stabilizers,
           additives,
           notes,
-          nutrients
+          nutrients,
+          lossAdjustment
         })
       );
     } catch {
@@ -123,7 +126,8 @@ export function useLocalRecipeStorage({ key }: Options) {
     stabilizers,
     additives,
     notes,
-    nutrients
+    nutrients,
+    lossAdjustment
   ]);
 
   return { didInit, didHydrate };

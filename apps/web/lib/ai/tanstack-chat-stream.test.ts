@@ -76,3 +76,31 @@ test("keeps provider transport details out of a streamed chat error", async () =
     "The recipe assistant is temporarily unavailable. Your balance may include a temporary hold while we verify this request; please try again later.",
   );
 });
+
+test("answer previews reach the client before persistence/title work finishes", async () => {
+  let release!: () => void;
+  const wait = new Promise<void>(resolve => { release = resolve; });
+  const stream = streamRecipeChatTurn({ model: "offline", runId: "live", threadId: "test", run: async onEvent => {
+    onEvent({ type: "answer_delta", delta: "Early text" });
+    await wait;
+    return { answer: "Early text", toolResults: [], usage: { provider: "openai", model: "offline", requestIds: [], inputTokens: 1, cachedInputTokens: 0, outputTokens: 1, totalTokens: 2, toolCalls: 0, latencyMs: 1 } };
+  } })[Symbol.asyncIterator]();
+  assert.equal((await stream.next()).value.type, EventType.RUN_STARTED);
+  const preview = (await stream.next()).value;
+  assert.equal(preview.type, EventType.CUSTOM);
+  assert.equal(preview.name, "recipe.answer");
+  release();
+  while (!(await stream.next()).done) { /* finish the local fixture */ }
+});
+
+test("specific step details survive the progress transport", async () => {
+  const chunks = [];
+  for await (const chunk of streamRecipeChatTurn({ model: "offline", runId: "details", threadId: "details", run: async onEvent => {
+    onEvent({ type: "tool_call", toolName: "search_yeasts", detail: { subject: "Lalvin EC1118" } });
+    onEvent({ type: "tool_result", toolName: "search_yeasts", status: "ok", detail: { subject: "Lalvin EC1118", count: 1 } });
+    return { answer: "Found the requested yeast.", toolResults: [], usage: { provider: "openai", model: "offline", requestIds: [], inputTokens: 1, cachedInputTokens: 0, outputTokens: 1, totalTokens: 2, toolCalls: 1, latencyMs: 1 } };
+  } })) chunks.push(chunk);
+  const result = chunks.find(c => c.type === EventType.CUSTOM && c.name === "recipe.tool" && (c.value as {type:string}).type === "tool_result");
+  assert.ok(result?.type === EventType.CUSTOM);
+  assert.deepEqual(result.value, { type: "tool_result", toolName: "search_yeasts", status: "ok", detail: { subject: "Lalvin EC1118", count: 1 } });
+});

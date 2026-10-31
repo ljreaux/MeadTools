@@ -1,3 +1,4 @@
+import { isMobileQualityAffected, readQualitySnapshot } from "./quality-impact.mjs";
 import { existsSync } from "node:fs";
 import { appendFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
@@ -188,10 +189,10 @@ export async function shouldSkipVercelWebPreview(
   }
 }
 
-function readChangedPaths(base, head) {
+export function readChangedPaths(base, head) {
   const result = spawnSync(
     "git",
-    ["diff", "--name-only", "--diff-filter=ACMRD", base, head],
+    ["diff", "--no-renames", "--name-only", "--diff-filter=ACMRD", base, head],
     { encoding: "utf8" },
   );
 
@@ -275,11 +276,19 @@ async function run() {
 
   try {
     changedPaths = readChangedPaths(base, head);
-    impact = classifyAppImpact(changedPaths, {
-      buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
-      deferForWeblate: isPreviewBranch(),
-      isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
-    });
+    if (process.argv.includes("--quality")) {
+      // Quality validates the source now, independently of release deferral.
+      impact = classifyAppImpact(changedPaths);
+      impact.mobile = isMobileQualityAffected(
+        changedPaths, readQualitySnapshot(base), readQualitySnapshot(head),
+      );
+    } else {
+      impact = classifyAppImpact(changedPaths, {
+        buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
+        deferForWeblate: isPreviewBranch(),
+        isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
+      });
+    }
 
     if (target === "web" && (await shouldSkipVercelWebPreview())) {
       impact.web = false;
