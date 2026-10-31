@@ -3,6 +3,7 @@ import TutorialDialog from "./TutorialDialog";
 import TaplistReleaseBanner from "./TaplistDialog";
 import BrewTrackerDialog from "./BrewTrackerDialog";
 import RaptCloudUpdateBanner from "./RaptCloudUpdateBanner";
+import PremiumLaunchBanner from "@/components/account/PremiumLaunchBanner";
 
 function Dialogs() {
   return (
@@ -12,6 +13,7 @@ function Dialogs() {
       <TutorialDialog />
       <BrewTrackerDialog />
       <RaptCloudUpdateBanner />
+      <PremiumLaunchBanner />
     </>
   );
 }

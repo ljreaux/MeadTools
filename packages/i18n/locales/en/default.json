@@ -162,8 +162,8 @@
   },
   "premium": {
     "title": "Premium access",
-    "description": "The planned premium bundle is $5 per month with 1,000 prompt credits, MCP access, and more features. New subscriptions are not open while chat is in beta.",
-    "descriptionReady": "Premium is $5 per month with 1,000 prompt credits per paid month. Additional benefits, including MCP access, are still being built.",
+    "description": "Premium brings more tools for your brewing setup for $5 per month, including 1,000 hosted-chat prompt credits per paid month. New subscriptions are not open yet.",
+    "descriptionReady": "Get the premium brewing tools below, MCP access, and 1,000 hosted-chat prompt credits per paid month for $5 per month.",
     "active": "Premium is active through {{date}}.",
     "inactive": "No active premium membership is linked to this account.",
     "pendingLaunch": "Your membership is recorded. Premium benefits will unlock when premium launches.",
@@ -197,7 +197,47 @@
     "mcpConsentAllow": "Allow connection",
     "mcpConsentDeny": "Deny",
     "mcpConsentLoading": "Checking your connection request…",
-    "mcpConsentFailed": "Could not complete this connection. Return to your AI client and try again."
+    "mcpConsentFailed": "Could not complete this connection. Return to your AI client and try again.",
+    "bundleComingSoon": "Premium brings more tools for your brewing setup for $5 per month, including 1,000 hosted-chat prompt credits per paid month. New subscriptions are not open yet.",
+    "bundleAvailable": "Get the premium brewing tools below, MCP access, and 1,000 hosted-chat prompt credits per paid month for $5 per month.",
+    "benefits": {
+      "title": "Included with premium",
+      "inventory": {
+        "title": "Ingredient inventory",
+        "description": "Track your ingredients and packaging, import or export your stock, and deduct supplies as you record their use in a brew."
+      },
+      "equipment": {
+        "title": "Equipment management",
+        "description": "Keep an equipment list, record container capacities, and see which brew is using each vessel."
+      },
+      "images": {
+        "title": "Brew photos",
+        "description": "Attach photos to brews and timeline entries, add captions, and browse your brew gallery. Includes 250 MiB of image storage and up to 20 photos per brew. JPEG, PNG, and WebP are supported."
+      },
+      "qr": {
+        "title": "Printable brew QR codes",
+        "description": "Download a QR code for a fermenter or bottle. Scanning opens the brew while respecting its current sharing settings."
+      },
+      "credits": {
+        "title": "1,000 monthly prompt credits",
+        "description": "Each paid month includes 1,000 credits for hosted chat. Credit use depends on the model work needed for each request; 1,000 credits does not mean 1,000 messages."
+      },
+      "mcp": {
+        "title": "Connect your AI assistant",
+        "description": "Connect compatible AI clients to MeadTools catalogs, calculators, wiki, recipe drafts, and optional read access to your own brews and recipes. MCP tool calls do not spend hosted-chat credits; your AI provider may charge separately."
+      },
+      "free": "Recipe building, calculators, brew tracking, and sharing keep their existing free functionality.",
+      "creditsHelp": "Premium is not required for hosted chat when chat is available to your account. All chat prompts use your credit balance; buying a credit pack does not include premium.",
+      "retention": "If premium expires, your inventory and equipment remain available to view, and free brew logging continues. Existing photos can still be viewed, captioned, or removed. Printed QR links continue to follow the brew’s sharing settings. Managing stock and equipment, adding photos, and generating new QR codes require active premium."
+    },
+    "banner": {
+      "title": "Meet MeadTools Premium",
+      "description": "Manage ingredients and equipment, add brew photos, print brew QR codes, and get MCP access plus 1,000 monthly prompt credits for $5/month.",
+      "link": "Explore premium",
+      "dismiss": "Dismiss premium announcement"
+    },
+    "bundleSummary": "Premium brings more tools for your brewing setup, MCP access, and 1,000 hosted-chat prompt credits per paid month for $5 per month.",
+    "supporterLinkHelp": "Already support MeadTools monthly on Ko-fi? Enter your payer email to link your support to this account. Existing monthly supporters keep their current amount."
   },
   "mcpGuide": {
     "accountReadEnabled": "Tools and private account reads",

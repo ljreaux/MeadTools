@@ -4,10 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { useAuthToken } from "@/hooks/auth/useAuthToken";
-import type { PremiumAccessResponse } from "@meadtools/api-contract/contracts";
+import { usePremiumAccess } from "@/hooks/reactQuery/usePremiumAccess";
 import Header from "./header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +14,6 @@ export function PremiumAccount() {
   const { t, i18n } = useTranslation();
   const searchParams = useSearchParams();
   const token = useAuthToken();
-  const { status: sessionStatus } = useSession();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -30,22 +27,7 @@ export function PremiumAccount() {
     [token]
   );
 
-  const refresh = useCallback(async () => {
-    const response = await fetch("/api/account/premium", {
-      headers: headers(),
-      cache: "no-store"
-    });
-    if (!response.ok) throw new Error("Premium status request failed");
-    return (await response.json()) as PremiumAccessResponse;
-  }, [headers]);
-
-  const premiumQuery = useQuery({
-    queryKey: ["premium-access", token ? "bearer" : "session"],
-    queryFn: refresh,
-    enabled: Boolean(token) || sessionStatus === "authenticated",
-    retry: false,
-    staleTime: 5_000
-  });
+  const premiumQuery = usePremiumAccess();
   const status = premiumQuery.data ?? null;
   const { refetch } = premiumQuery;
 
@@ -127,9 +109,9 @@ export function PremiumAccount() {
       <h1 className="text-2xl font-semibold sm:pt-10">{t("premium.title")}</h1>
       <p className="text-muted-foreground">
         {t(
-          status?.subscriptionsEnabled
-            ? "premium.descriptionReady"
-            : "premium.description"
+          status ? (status.subscriptionsEnabled
+            ? "premium.bundleAvailable"
+            : "premium.bundleComingSoon") : "premium.bundleSummary"
         )}
       </p>
       {status && (
@@ -185,12 +167,26 @@ export function PremiumAccount() {
             )}
           </div>
         )}
+      <section aria-labelledby="premium-benefits-title" className="space-y-3">
+        <h2 id="premium-benefits-title" className="text-xl font-semibold">{t("premium.benefits.title")}</h2>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {(["inventory", "equipment", "images", "qr", "credits", "mcp"] as const).map((benefit) => (
+            <li key={benefit} className="rounded-lg border p-4 space-y-1">
+              <h3 className="font-medium">{t(`premium.benefits.${benefit}.title`)}</h3>
+              <p className="text-sm text-muted-foreground">{t(`premium.benefits.${benefit}.description`)}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-muted-foreground">{t("premium.benefits.free")}</p>
+        <p className="text-sm text-muted-foreground">{t("premium.benefits.creditsHelp")}</p>
+        <p className="text-sm text-muted-foreground">{t("premium.benefits.retention")}</p>
+      </section>
       {status?.kofiLinked ? (
         <p>{t("premium.kofiLinked")}</p>
       ) : status ? (
         <form onSubmit={sendLink} className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {t("premium.linkHelp")}
+            {t("premium.supporterLinkHelp")}
           </p>
           <label
             htmlFor="kofi-payer-email"
