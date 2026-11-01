@@ -17,7 +17,8 @@
     },
     "api": {
       "items": [
-        "Code deployment for the November 9 premium launch includes the existing premium/MCP access foundation and calculator/tool integrations. Paid premium access and public MCP bundle availability remain pending separate November 9 activation and verification."
+        "Code deployment for the November 9 premium launch includes the existing premium/MCP access foundation and calculator/tool integrations. Paid premium access and public MCP bundle availability remain pending separate November 9 activation and verification.",
+        "Proposed November 2 reliability and database hardening: repair interrupted-chat credit reconciliation, restrict direct Data API role access to application tables, and remove the unused pgjwt extension to prepare for a separately scheduled Postgres upgrade. Backup verification and fresh release approval remain required."
       ]
     }
   }

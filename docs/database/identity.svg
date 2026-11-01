@@ -1,0 +1,478 @@
+<svg width="985pt" height="1823pt"
+ viewBox="0.00 0.00 985.00 1823.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Identity, authentication &amp; MCP"><metadata>{&quot;schema&quot;:&quot;7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec&quot;,&quot;migrations&quot;:&quot;e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1793.8)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1793.8 956.01,-1793.8 956.01,28.8 -28.8,28.8"/>
+<!-- Account&#45;&gt;User -->
+<g id="fk_Account_user" class="edge">
+<title>Account:f_userId&#45;&gt;User:f_id</title>
+<g id="a_fk_Account_user"><a xlink:title="Account (userId) &#45;&gt; User (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M35.7,-210.4C35.7,-210.4 342.54,-210.4 342.54,-210.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="342.54,-212.68 349.04,-210.4 342.54,-208.13 342.54,-212.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="332.43" y="-216.15" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="53.82" y="-199.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_access_tokens&#45;&gt;users -->
+<g id="fk_mcp_access_tokens_user" class="edge">
+<title>mcp_access_tokens:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_access_tokens_user"><a xlink:title="mcp_access_tokens (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M336.95,-1638C344.47,-1638 826.21,-1638 826.21,-1638 826.21,-1638 826.21,-924.15 826.21,-924.15"/>
+<polygon fill="#64748b" stroke="#64748b" points="828.49,-924.15 826.21,-917.65 823.94,-924.15 828.49,-924.15"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="834.66" y="-931.56" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="355.07" y="-1626.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_oauth_codes&#45;&gt;users -->
+<g id="fk_mcp_oauth_codes_user" class="edge">
+<title>mcp_oauth_codes:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_oauth_codes_user"><a xlink:title="mcp_oauth_codes (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M329.59,-1334C335.67,-1334 725.21,-1334 725.21,-1334 725.21,-1334 725.21,-924.09 725.21,-924.09"/>
+<polygon fill="#64748b" stroke="#64748b" points="727.49,-924.09 725.21,-917.59 722.94,-924.09 727.49,-924.09"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="733.66" y="-931.5" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="347.71" y="-1322.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_oauth_consumed_refresh_tokens&#45;&gt;mcp_oauth_sessions -->
+<g id="fk_mcp_oauth_consumed_refresh_tokens_session" class="edge">
+<title>mcp_oauth_consumed_refresh_tokens:f_session_id&#45;&gt;mcp_oauth_sessions:f_id</title>
+<g id="a_fk_mcp_oauth_consumed_refresh_tokens_session"><a xlink:title="mcp_oauth_consumed_refresh_tokens (session_id) &#45;&gt; mcp_oauth_sessions (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M38.55,-1117.5C38.55,-1117.5 298.05,-1117.5 298.05,-1117.5"/>
+<polygon fill="#64748b" stroke="#64748b" points="298.05,-1119.78 304.55,-1117.5 298.05,-1115.23 298.05,-1119.78"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="287.94" y="-1123.25" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="56.68" y="-1106.35" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_oauth_sessions&#45;&gt;users -->
+<g id="fk_mcp_oauth_sessions_user" class="edge">
+<title>mcp_oauth_sessions:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_oauth_sessions_user"><a xlink:title="mcp_oauth_sessions (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M319.49,-878.2C319.49,-878.2 630.39,-878.2 630.39,-878.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="630.39,-880.48 636.89,-878.2 630.39,-875.93 630.39,-880.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="620.28" y="-883.95" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="337.61" y="-867.05" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_rate_buckets&#45;&gt;users -->
+<g id="fk_mcp_rate_buckets_user" class="edge">
+<title>mcp_rate_buckets:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_rate_buckets_user"><a xlink:title="mcp_rate_buckets (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M339.06,-713C339.06,-713 630.39,-713 630.39,-713"/>
+<polygon fill="#64748b" stroke="#64748b" points="630.39,-715.28 636.89,-713 630.39,-710.73 630.39,-715.28"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="620.28" y="-718.75" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="357.19" y="-701.85" font-family="Arial" font-size="9.00">0..1</text>
+</g>
+<!-- mcp_tool_leases&#45;&gt;users -->
+<g id="fk_mcp_tool_leases_user" class="edge">
+<title>mcp_tool_leases:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_tool_leases_user"><a xlink:title="mcp_tool_leases (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M421.21,-560.06C421.21,-562.39 421.21,-637.1 421.21,-637.1 421.21,-637.1 630.29,-637.1 630.29,-637.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="630.29,-639.38 636.79,-637.1 630.29,-634.83 630.29,-639.38"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="620.18" y="-642.85" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="429.66" y="-575.48" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- mcp_tool_usage&#45;&gt;users -->
+<g id="fk_mcp_tool_usage_user" class="edge">
+<title>mcp_tool_usage:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_mcp_tool_usage_user"><a xlink:title="mcp_tool_usage (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M340.92,-382C347.6,-382 775.21,-382 775.21,-382 775.21,-382 775.21,-907.89 775.21,-907.89"/>
+<polygon fill="#64748b" stroke="#64748b" points="772.94,-907.89 775.21,-914.39 777.49,-907.89 772.94,-907.89"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="766.76" y="-895.08" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="359.04" y="-370.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- Session&#45;&gt;User -->
+<g id="fk_Session_user" class="edge">
+<title>Session:f_userId&#45;&gt;User:f_id</title>
+<g id="a_fk_Session_user"><a xlink:title="Session (userId) &#45;&gt; User (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M39.68,-121.2C39.68,-121.2 342.54,-121.2 342.54,-121.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="342.54,-123.48 349.04,-121.2 342.54,-118.93 342.54,-123.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="332.43" y="-126.95" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="57.8" y="-110.05" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- Account -->
+<g id="table_Account" class="node">
+<title>Account</title>
+<g id="a_table_Account"><a xlink:title="Account — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="21,-153.2 21,-482.8 197.79,-482.8 197.79,-153.2 21,-153.2"/>
+<polygon fill="none" stroke="#94a3b8" points="21,-153.2 21,-482.8 197.79,-482.8 197.79,-153.2 21,-153.2"/>
+<polygon fill="#ffe4e6" stroke="none" points="22,-456.6 22,-481.8 196.79,-481.8 196.79,-456.6 22,-456.6"/>
+<text xml:space="preserve" text-anchor="start" x="87.39" y="-466.9" font-family="Arial" font-weight="bold" font-size="11.00">Account</text>
+<text xml:space="preserve" text-anchor="start" x="28" y="-439.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-439.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-439.6" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="28" y="-414.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-414.4" font-family="Arial" font-size="11.00">userId</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-414.4" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-389.2" font-family="Arial" font-size="11.00">type</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-389.2" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="28" y="-364" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-364" font-family="Arial" font-size="11.00">provider</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-364" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="28" y="-338.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-338.8" font-family="Arial" font-size="11.00">providerAccountId</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-338.8" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-313.6" font-family="Arial" font-size="11.00">refresh_token</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-313.6" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-288.4" font-family="Arial" font-size="11.00">access_token</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-288.4" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-263.2" font-family="Arial" font-size="11.00">expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-263.2" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-238" font-family="Arial" font-size="11.00">token_type</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-238" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-212.8" font-family="Arial" font-size="11.00">scope</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-212.8" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-187.6" font-family="Arial" font-size="11.00">id_token</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-187.6" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="55.28" y="-162.4" font-family="Arial" font-size="11.00">session_state</text>
+<text xml:space="preserve" text-anchor="start" x="155.94" y="-162.4" font-family="Arial" font-size="11.00">String?</text>
+</a>
+</g>
+</g>
+<!-- mcp_access_tokens -->
+<g id="table_mcp_access_tokens" class="node">
+<title>mcp_access_tokens</title>
+<g id="a_table_mcp_access_tokens"><a xlink:title="mcp_access_tokens — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="322.22,-1511 322.22,-1765 520.39,-1765 520.39,-1511 322.22,-1511"/>
+<polygon fill="none" stroke="#94a3b8" points="322.22,-1511 322.22,-1765 520.39,-1765 520.39,-1511 322.22,-1511"/>
+<polygon fill="#ffe4e6" stroke="none" points="323.22,-1738.8 323.22,-1764 519.39,-1764 519.39,-1738.8 323.22,-1738.8"/>
+<text xml:space="preserve" text-anchor="start" x="367.8" y="-1749.1" font-family="Arial" font-weight="bold" font-size="11.00">mcp_access_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1721.8" font-family="Arial" font-size="11.00">scope</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1721.8" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="329.22" y="-1696.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1696.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1696.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="329.22" y="-1671.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1671.4" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1671.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1646.2" font-family="Arial" font-size="11.00">label</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1646.2" font-family="Arial" font-size="11.00">VarChar(80)</text>
+<text xml:space="preserve" text-anchor="start" x="329.22" y="-1621" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1621" font-family="Arial" font-size="11.00">token_hash</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1621" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1595.8" font-family="Arial" font-size="11.00">expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1595.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1570.6" font-family="Arial" font-size="11.00">revoked_at</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1570.6" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1545.4" font-family="Arial" font-size="11.00">last_used_at</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1545.4" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="356.5" y="-1520.2" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="430.88" y="-1520.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_oauth_clients -->
+<g id="table_mcp_oauth_clients" class="node">
+<title>mcp_oauth_clients</title>
+<g id="a_table_mcp_oauth_clients"><a xlink:title="mcp_oauth_clients — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="14.6,-1206 14.6,-1334 204.19,-1334 204.19,-1206 14.6,-1206"/>
+<polygon fill="none" stroke="#94a3b8" points="14.6,-1206 14.6,-1334 204.19,-1334 204.19,-1206 14.6,-1206"/>
+<polygon fill="#ffe4e6" stroke="none" points="15.6,-1307.8 15.6,-1333 203.19,-1333 203.19,-1307.8 15.6,-1307.8"/>
+<text xml:space="preserve" text-anchor="start" x="59.57" y="-1318.1" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_clients</text>
+<text xml:space="preserve" text-anchor="start" x="21.6" y="-1290.8" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="48.27" y="-1290.8" font-family="Arial" font-size="11.00">client_id</text>
+<text xml:space="preserve" text-anchor="start" x="120.79" y="-1290.8" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="48.27" y="-1265.6" font-family="Arial" font-size="11.00">client_name</text>
+<text xml:space="preserve" text-anchor="start" x="120.79" y="-1265.6" font-family="Arial" font-size="11.00">VarChar(100)</text>
+<text xml:space="preserve" text-anchor="start" x="48.27" y="-1240.4" font-family="Arial" font-size="11.00">redirect_uris</text>
+<text xml:space="preserve" text-anchor="start" x="120.79" y="-1240.4" font-family="Arial" font-size="11.00">String[]</text>
+<text xml:space="preserve" text-anchor="start" x="48.27" y="-1215.2" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="120.79" y="-1215.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_oauth_codes -->
+<g id="table_mcp_oauth_codes" class="node">
+<title>mcp_oauth_codes</title>
+<g id="a_table_mcp_oauth_codes"><a xlink:title="mcp_oauth_codes — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="314.87,-1181.8 314.87,-1486.2 527.73,-1486.2 527.73,-1181.8 314.87,-1181.8"/>
+<polygon fill="none" stroke="#94a3b8" points="314.87,-1181.8 314.87,-1486.2 527.73,-1486.2 527.73,-1181.8 314.87,-1181.8"/>
+<polygon fill="#ffe4e6" stroke="none" points="315.87,-1460 315.87,-1485.2 526.73,-1485.2 526.73,-1460 315.87,-1460"/>
+<text xml:space="preserve" text-anchor="start" x="373.01" y="-1470.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_codes</text>
+<text xml:space="preserve" text-anchor="start" x="321.87" y="-1443" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1443" font-family="Arial" font-size="11.00">code_hash</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1443" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="321.87" y="-1417.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1417.8" font-family="Arial" font-size="11.00">consent_hash</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1417.8" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="321.87" y="-1392.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1392.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1392.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1367.4" font-family="Arial" font-size="11.00">client_id</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1367.4" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1342.2" font-family="Arial" font-size="11.00">redirect_uri</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1342.2" font-family="Arial" font-size="11.00">VarChar(2048)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1317" font-family="Arial" font-size="11.00">code_challenge</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1317" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1291.8" font-family="Arial" font-size="11.00">resource</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1291.8" font-family="Arial" font-size="11.00">VarChar(512)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1266.6" font-family="Arial" font-size="11.00">scope</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1266.6" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1241.4" font-family="Arial" font-size="11.00">expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1241.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1216.2" font-family="Arial" font-size="11.00">consumed_at</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1216.2" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="349.15" y="-1191" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="438.22" y="-1191" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_oauth_consumed_refresh_tokens -->
+<g id="table_mcp_oauth_consumed_refresh_tokens" class="node">
+<title>mcp_oauth_consumed_refresh_tokens</title>
+<g id="a_table_mcp_oauth_consumed_refresh_tokens"><a xlink:title="mcp_oauth_consumed_refresh_tokens — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="0,-1078.6 0,-1181.4 218.79,-1181.4 218.79,-1078.6 0,-1078.6"/>
+<polygon fill="none" stroke="#94a3b8" points="0,-1078.6 0,-1181.4 218.79,-1181.4 218.79,-1078.6 0,-1078.6"/>
+<polygon fill="#ffe4e6" stroke="none" points="1,-1155.2 1,-1180.4 217.79,-1180.4 217.79,-1155.2 1,-1155.2"/>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1165.5" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_consumed_refresh_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1138.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="44.62" y="-1138.2" font-family="Arial" font-size="11.00">token_hash</text>
+<text xml:space="preserve" text-anchor="start" x="124.44" y="-1138.2" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1113" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="44.62" y="-1113" font-family="Arial" font-size="11.00">session_id</text>
+<text xml:space="preserve" text-anchor="start" x="124.44" y="-1113" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="44.62" y="-1087.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="124.44" y="-1087.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_oauth_sessions -->
+<g id="table_mcp_oauth_sessions" class="node">
+<title>mcp_oauth_sessions</title>
+<g id="a_table_mcp_oauth_sessions"><a xlink:title="mcp_oauth_sessions — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="304.79,-801.6 304.79,-1156.4 537.82,-1156.4 537.82,-801.6 304.79,-801.6"/>
+<polygon fill="none" stroke="#94a3b8" points="304.79,-801.6 304.79,-1156.4 537.82,-1156.4 537.82,-801.6 304.79,-801.6"/>
+<polygon fill="#ffe4e6" stroke="none" points="305.79,-1130.2 305.79,-1155.4 536.82,-1155.4 536.82,-1130.2 305.79,-1130.2"/>
+<text xml:space="preserve" text-anchor="start" x="365.37" y="-1140.5" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_sessions</text>
+<text xml:space="preserve" text-anchor="start" x="311.79" y="-1113.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-1113.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-1113.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="311.79" y="-1088" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-1088" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-1088" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-1062.8" font-family="Arial" font-size="11.00">client_id</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-1062.8" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-1037.6" font-family="Arial" font-size="11.00">label</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-1037.6" font-family="Arial" font-size="11.00">VarChar(100)</text>
+<text xml:space="preserve" text-anchor="start" x="311.79" y="-1012.4" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-1012.4" font-family="Arial" font-size="11.00">access_token_hash</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-1012.4" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="311.79" y="-987.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-987.2" font-family="Arial" font-size="11.00">refresh_token_hash</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-987.2" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-962" font-family="Arial" font-size="11.00">resource</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-962" font-family="Arial" font-size="11.00">VarChar(512)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-936.8" font-family="Arial" font-size="11.00">scope</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-936.8" font-family="Arial" font-size="11.00">VarChar(128)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-911.6" font-family="Arial" font-size="11.00">access_expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-911.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-886.4" font-family="Arial" font-size="11.00">refresh_expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-886.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-861.2" font-family="Arial" font-size="11.00">revoked_at</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-861.2" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-836" font-family="Arial" font-size="11.00">last_used_at</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-836" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="339.07" y="-810.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="448.3" y="-810.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_rate_buckets -->
+<g id="table_mcp_rate_buckets" class="node">
+<title>mcp_rate_buckets</title>
+<g id="a_table_mcp_rate_buckets"><a xlink:title="mcp_rate_buckets — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="314.59,-649 314.59,-777 528.02,-777 528.02,-649 314.59,-649"/>
+<polygon fill="none" stroke="#94a3b8" points="314.59,-649 314.59,-777 528.02,-777 528.02,-649 314.59,-649"/>
+<polygon fill="#ffe4e6" stroke="none" points="315.59,-750.8 315.59,-776 527.02,-776 527.02,-750.8 315.59,-750.8"/>
+<text xml:space="preserve" text-anchor="start" x="373" y="-761.1" font-family="Arial" font-weight="bold" font-size="11.00">mcp_rate_buckets</text>
+<text xml:space="preserve" text-anchor="start" x="321.59" y="-733.8" font-family="Arial" font-size="11.00">PK, FK</text>
+<text xml:space="preserve" text-anchor="start" x="368.43" y="-733.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="444.62" y="-733.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="368.43" y="-708.6" font-family="Arial" font-size="11.00">window_start</text>
+<text xml:space="preserve" text-anchor="start" x="444.62" y="-708.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="368.43" y="-683.4" font-family="Arial" font-size="11.00">call_count</text>
+<text xml:space="preserve" text-anchor="start" x="444.62" y="-683.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="368.43" y="-658.2" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="444.62" y="-658.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_registration_budget -->
+<g id="table_mcp_registration_budget" class="node">
+<title>mcp_registration_budget</title>
+<g id="a_table_mcp_registration_budget"><a xlink:title="mcp_registration_budget — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="12.76,-1358.6 12.76,-1461.4 206.03,-1461.4 206.03,-1358.6 12.76,-1358.6"/>
+<polygon fill="none" stroke="#94a3b8" points="12.76,-1358.6 12.76,-1461.4 206.03,-1461.4 206.03,-1358.6 12.76,-1358.6"/>
+<polygon fill="#ffe4e6" stroke="none" points="13.76,-1435.2 13.76,-1460.4 205.03,-1460.4 205.03,-1435.2 13.76,-1435.2"/>
+<text xml:space="preserve" text-anchor="start" x="43.38" y="-1445.5" font-family="Arial" font-weight="bold" font-size="11.00">mcp_registration_budget</text>
+<text xml:space="preserve" text-anchor="start" x="19.76" y="-1418.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="46.43" y="-1418.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="122.63" y="-1418.2" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="46.43" y="-1393" font-family="Arial" font-size="11.00">window_start</text>
+<text xml:space="preserve" text-anchor="start" x="122.63" y="-1393" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="46.43" y="-1367.8" font-family="Arial" font-size="11.00">call_count</text>
+<text xml:space="preserve" text-anchor="start" x="122.63" y="-1367.8" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+<!-- mcp_tool_leases -->
+<g id="table_mcp_tool_leases" class="node">
+<title>mcp_tool_leases</title>
+<g id="a_table_mcp_tool_leases"><a xlink:title="mcp_tool_leases — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="330.78,-496 330.78,-624 511.83,-624 511.83,-496 330.78,-496"/>
+<polygon fill="none" stroke="#94a3b8" points="330.78,-496 330.78,-624 511.83,-624 511.83,-496 330.78,-496"/>
+<polygon fill="#ffe4e6" stroke="none" points="331.78,-597.8 331.78,-623 510.83,-623 510.83,-597.8 331.78,-597.8"/>
+<text xml:space="preserve" text-anchor="start" x="376.98" y="-608.1" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_leases</text>
+<text xml:space="preserve" text-anchor="start" x="337.78" y="-580.8" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="364.45" y="-580.8" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="428.43" y="-580.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="337.78" y="-555.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="364.45" y="-555.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="428.43" y="-555.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.45" y="-530.4" font-family="Arial" font-size="11.00">expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="428.43" y="-530.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="364.45" y="-505.2" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="428.43" y="-505.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- mcp_tool_usage -->
+<g id="table_mcp_tool_usage" class="node">
+<title>mcp_tool_usage</title>
+<g id="a_table_mcp_tool_usage"><a xlink:title="mcp_tool_usage — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="326.5,-292.8 326.5,-471.2 516.11,-471.2 516.11,-292.8 326.5,-292.8"/>
+<polygon fill="none" stroke="#94a3b8" points="326.5,-292.8 326.5,-471.2 516.11,-471.2 516.11,-292.8 326.5,-292.8"/>
+<polygon fill="#ffe4e6" stroke="none" points="327.5,-445 327.5,-470.2 515.11,-470.2 515.11,-445 327.5,-445"/>
+<text xml:space="preserve" text-anchor="start" x="377.9" y="-455.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_usage</text>
+<text xml:space="preserve" text-anchor="start" x="333.5" y="-428" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-428" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-428" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="333.5" y="-402.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-402.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-402.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-377.6" font-family="Arial" font-size="11.00">tool_name</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-377.6" font-family="Arial" font-size="11.00">VarChar(80)</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-352.4" font-family="Arial" font-size="11.00">result_class</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-352.4" font-family="Arial" font-size="11.00">VarChar(40)</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-327.2" font-family="Arial" font-size="11.00">duration_ms</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-327.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="360.18" y="-302" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="432.71" y="-302" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- Session -->
+<g id="table_Session" class="node">
+<title>Session</title>
+<g id="a_table_Session"><a xlink:title="Session — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="24.98,0 24.98,-128 193.81,-128 193.81,0 24.98,0"/>
+<polygon fill="none" stroke="#94a3b8" points="24.98,0 24.98,-128 193.81,-128 193.81,0 24.98,0"/>
+<polygon fill="#ffe4e6" stroke="none" points="25.98,-101.8 25.98,-127 192.81,-127 192.81,-101.8 25.98,-101.8"/>
+<text xml:space="preserve" text-anchor="start" x="88.3" y="-112.1" font-family="Arial" font-weight="bold" font-size="11.00">Session</text>
+<text xml:space="preserve" text-anchor="start" x="31.98" y="-84.8" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="59.26" y="-84.8" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="139.13" y="-84.8" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="31.98" y="-59.6" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="59.26" y="-59.6" font-family="Arial" font-size="11.00">sessionToken</text>
+<text xml:space="preserve" text-anchor="start" x="139.13" y="-59.6" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="31.98" y="-34.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="59.26" y="-34.4" font-family="Arial" font-size="11.00">userId</text>
+<text xml:space="preserve" text-anchor="start" x="139.13" y="-34.4" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="59.26" y="-9.2" font-family="Arial" font-size="11.00">expires</text>
+<text xml:space="preserve" text-anchor="start" x="139.13" y="-9.2" font-family="Arial" font-size="11.00">DateTime</text>
+</a>
+</g>
+</g>
+<!-- User -->
+<g id="table_User" class="node">
+<title>User</title>
+<g id="a_table_User"><a xlink:title="User — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="335.97,-114.4 335.97,-267.6 506.63,-267.6 506.63,-114.4 335.97,-114.4"/>
+<polygon fill="none" stroke="#94a3b8" points="335.97,-114.4 335.97,-267.6 506.63,-267.6 506.63,-114.4 335.97,-114.4"/>
+<polygon fill="#ffe4e6" stroke="none" points="336.97,-241.4 336.97,-266.6 505.63,-266.6 505.63,-241.4 336.97,-241.4"/>
+<text xml:space="preserve" text-anchor="start" x="409.07" y="-251.7" font-family="Arial" font-weight="bold" font-size="11.00">User</text>
+<text xml:space="preserve" text-anchor="start" x="342.97" y="-224.4" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="370.25" y="-224.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="445.84" y="-224.4" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="342.97" y="-199.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="370.25" y="-199.2" font-family="Arial" font-size="11.00">email</text>
+<text xml:space="preserve" text-anchor="start" x="445.84" y="-199.2" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="370.25" y="-174" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="445.84" y="-174" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="370.25" y="-148.8" font-family="Arial" font-size="11.00">emailVerified</text>
+<text xml:space="preserve" text-anchor="start" x="445.84" y="-148.8" font-family="Arial" font-size="11.00">DateTime?</text>
+<text xml:space="preserve" text-anchor="start" x="370.25" y="-123.6" font-family="Arial" font-size="11.00">image</text>
+<text xml:space="preserve" text-anchor="start" x="445.84" y="-123.6" font-family="Arial" font-size="11.00">String?</text>
+</a>
+</g>
+</g>
+<!-- users -->
+<g id="table_users" class="node">
+<title>users</title>
+<g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="623.82,-625.2 623.82,-954.8 927.21,-954.8 927.21,-625.2 623.82,-625.2"/>
+<polygon fill="none" stroke="#94a3b8" points="623.82,-625.2 623.82,-954.8 927.21,-954.8 927.21,-625.2 623.82,-625.2"/>
+<polygon fill="#ffe4e6" stroke="none" points="624.82,-928.6 624.82,-953.8 926.21,-953.8 926.21,-928.6 624.82,-928.6"/>
+<text xml:space="preserve" text-anchor="start" x="760.84" y="-938.9" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<text xml:space="preserve" text-anchor="start" x="630.82" y="-911.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-911.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-911.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="630.82" y="-886.4" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-886.4" font-family="Arial" font-size="11.00">email</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-886.4" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-861.2" font-family="Arial" font-size="11.00">password</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-861.2" font-family="Arial" font-size="11.00">VarChar(255)?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-836" font-family="Arial" font-size="11.00">google_id</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-836" font-family="Arial" font-size="11.00">VarChar(255)?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-810.8" font-family="Arial" font-size="11.00">role</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-810.8" font-family="Arial" font-size="11.00">VarChar(255)?</text>
+<text xml:space="preserve" text-anchor="start" x="630.82" y="-785.6" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-785.6" font-family="Arial" font-size="11.00">hydro_token</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-785.6" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-760.4" font-family="Arial" font-size="11.00">public_username</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-760.4" font-family="Arial" font-size="11.00">VarChar(50)?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-735.2" font-family="Arial" font-size="11.00">google_avatar_url</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-735.2" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-710" font-family="Arial" font-size="11.00">show_google_avatar</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-710" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-684.8" font-family="Arial" font-size="11.00">active</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-684.8" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-659.6" font-family="Arial" font-size="11.00">product_updates_opt_in</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-659.6" font-family="Arial" font-size="11.00">Boolean?</text>
+<text xml:space="preserve" text-anchor="start" x="658.1" y="-634.4" font-family="Arial" font-size="11.00">product_updates_last_emailed_date</text>
+<text xml:space="preserve" text-anchor="start" x="847.45" y="-634.4" font-family="Arial" font-size="11.00">Date?</text>
+</a>
+</g>
+</g>
+<!-- VerificationToken -->
+<g id="table_VerificationToken" class="node">
+<title>VerificationToken</title>
+<g id="a_table_VerificationToken"><a xlink:title="VerificationToken — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="38.13,-1486.6 38.13,-1589.4 180.66,-1589.4 180.66,-1486.6 38.13,-1486.6"/>
+<polygon fill="none" stroke="#94a3b8" points="38.13,-1486.6 38.13,-1589.4 180.66,-1589.4 180.66,-1486.6 38.13,-1486.6"/>
+<polygon fill="#ffe4e6" stroke="none" points="39.13,-1563.2 39.13,-1588.4 179.66,-1588.4 179.66,-1563.2 39.13,-1563.2"/>
+<text xml:space="preserve" text-anchor="start" x="63.25" y="-1573.5" font-family="Arial" font-weight="bold" font-size="11.00">VerificationToken</text>
+<text xml:space="preserve" text-anchor="start" x="45.13" y="-1546.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="72.41" y="-1546.2" font-family="Arial" font-size="11.00">identifier</text>
+<text xml:space="preserve" text-anchor="start" x="125.98" y="-1546.2" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="45.13" y="-1521" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="72.41" y="-1521" font-family="Arial" font-size="11.00">token</text>
+<text xml:space="preserve" text-anchor="start" x="125.98" y="-1521" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="72.41" y="-1495.8" font-family="Arial" font-size="11.00">expires</text>
+<text xml:space="preserve" text-anchor="start" x="125.98" y="-1495.8" font-family="Arial" font-size="11.00">DateTime</text>
+</a>
+</g>
+</g>
+</g>
+</svg>

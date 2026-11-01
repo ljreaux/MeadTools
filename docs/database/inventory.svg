@@ -1,0 +1,354 @@
+<svg width="1267pt" height="1021pt"
+ viewBox="0.00 0.00 1267.00 1021.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Inventory &amp; equipment"><metadata>{&quot;schema&quot;:&quot;7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec&quot;,&quot;migrations&quot;:&quot;e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 992.4)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-992.4 1237.96,-992.4 1237.96,28.8 -28.8,28.8"/>
+<!-- equipment&#45;&gt;brews -->
+<g id="fk_equipment_brew" class="edge">
+<title>equipment:f_current_brew_id&#45;&gt;brews:f_id</title>
+<g id="a_fk_equipment_brew"><a xlink:title="equipment (current_brew_id, user_id) &#45;&gt; brews (id, user_id); 0..N child / 0..1 parent; delete: NoAction; update: Restrict">
+<path fill="none" stroke="#64748b" d="M748.45,-89.4C748.45,-89.4 1069.42,-89.4 1069.42,-89.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="1069.42,-91.68 1075.92,-89.4 1069.42,-87.13 1069.42,-91.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1059.3" y="-95.15" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="766.58" y="-78.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- equipment&#45;&gt;users -->
+<g id="fk_equipment_user" class="edge">
+<title>equipment:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_equipment_user"><a xlink:title="equipment (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M958.16,-240.45C958.16,-244.34 958.16,-493.3 958.16,-493.3 958.16,-493.3 1079.38,-493.3 1079.38,-493.3"/>
+<polygon fill="#64748b" stroke="#64748b" points="1079.38,-495.58 1085.88,-493.3 1079.38,-491.03 1079.38,-495.58"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1069.27" y="-499.05" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="966.61" y="-255.87" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- equipment_assignment_events&#45;&gt;equipment -->
+<g id="fk_equipment_assignment_events_equipment" class="edge">
+<title>equipment_assignment_events:f_equipment_id&#45;&gt;equipment:f_id</title>
+<g id="a_fk_equipment_assignment_events_equipment"><a xlink:title="equipment_assignment_events (equipment_id, user_id) &#45;&gt; equipment (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
+<path fill="none" stroke="#64748b" d="M411.22,-252.4C411.22,-252.4 716.54,-252.4 716.54,-252.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="716.54,-254.68 723.04,-252.4 716.54,-250.13 716.54,-254.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="706.42" y="-258.15" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="429.35" y="-241.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_adjustments&#45;&gt;inventory_consumptions -->
+<g id="fk_inventory_adjustments_consumption" class="edge">
+<title>inventory_adjustments:f_consumption_id&#45;&gt;inventory_consumptions:f_id</title>
+<g id="a_fk_inventory_adjustments_consumption"><a xlink:title="inventory_adjustments (consumption_id, user_id) &#45;&gt; inventory_consumptions (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
+<path fill="none" stroke="#64748b" d="M24.79,-734.7C24.79,-734.7 342.68,-734.7 342.68,-734.7"/>
+<polygon fill="#64748b" stroke="#64748b" points="342.68,-736.98 349.18,-734.7 342.68,-732.43 342.68,-736.98"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="332.56" y="-740.45" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="42.91" y="-723.55" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_adjustments&#45;&gt;inventory_operations -->
+<g id="fk_inventory_adjustments_operation" class="edge">
+<title>inventory_adjustments:f_operation_id&#45;&gt;inventory_operations:f_id</title>
+<g id="a_fk_inventory_adjustments_operation"><a xlink:title="inventory_adjustments (operation_id, user_id) &#45;&gt; inventory_operations (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
+<path fill="none" stroke="#64748b" d="M132.16,-849.12C132.16,-842.68 132.16,-430.4 132.16,-430.4 132.16,-430.4 742.78,-430.4 742.78,-430.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="742.78,-432.68 749.28,-430.4 742.78,-428.13 742.78,-432.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="732.66" y="-436.15" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="123.71" y="-828.3" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_adjustments&#45;&gt;inventory_stock -->
+<g id="fk_inventory_adjustments_stock" class="edge">
+<title>inventory_adjustments:f_stock_id&#45;&gt;inventory_stock:f_id</title>
+<g id="a_fk_inventory_adjustments_stock"><a xlink:title="inventory_adjustments (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
+<path fill="none" stroke="#64748b" d="M48.17,-874.5C48.17,-874.5 697.84,-874.5 697.84,-874.5"/>
+<polygon fill="#64748b" stroke="#64748b" points="697.84,-876.78 704.34,-874.5 697.84,-872.23 697.84,-876.78"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="687.72" y="-880.25" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="66.3" y="-863.35" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_consumptions&#45;&gt;inventory_stock -->
+<g id="fk_inventory_consumptions_stock" class="edge">
+<title>inventory_consumptions:f_stock_id&#45;&gt;inventory_stock:f_id</title>
+<g id="a_fk_inventory_consumptions_stock"><a xlink:title="inventory_consumptions (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
+<path fill="none" stroke="#64748b" d="M398.49,-697.1C398.49,-697.1 697.77,-697.1 697.77,-697.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="697.77,-699.38 704.27,-697.1 697.77,-694.83 697.77,-699.38"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="687.65" y="-702.85" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="416.61" y="-685.95" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_operations&#45;&gt;users -->
+<g id="fk_inventory_operations_user" class="edge">
+<title>inventory_operations:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_inventory_operations_user"><a xlink:title="inventory_operations (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M774.83,-506.4C774.83,-506.4 1079.39,-506.4 1079.39,-506.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="1079.39,-508.68 1085.89,-506.4 1079.39,-504.13 1079.39,-508.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1069.28" y="-512.15" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="792.96" y="-495.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- inventory_stock&#45;&gt;users -->
+<g id="fk_inventory_stock_user" class="edge">
+<title>inventory_stock:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_inventory_stock_user"><a xlink:title="inventory_stock (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M981.16,-874.74C981.16,-869.27 981.16,-519.5 981.16,-519.5 981.16,-519.5 1099.08,-519.5 1099.08,-519.5"/>
+<polygon fill="#64748b" stroke="#64748b" points="1099.08,-521.78 1105.58,-519.5 1099.08,-517.23 1099.08,-521.78"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1088.97" y="-525.25" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="972.71" y="-853.91" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brews -->
+<g id="table_brews" class="node">
+<title>brews</title>
+<g id="a_table_brews"><a xlink:title="brews — Brewing &amp; hydrometers (related table; keys only)">
+<polygon fill="white" stroke="none" points="1076.39,-50.6 1076.39,-128.2 1209.16,-128.2 1209.16,-50.6 1076.39,-50.6"/>
+<polygon fill="none" stroke="#94a3b8" points="1076.39,-50.6 1076.39,-128.2 1209.16,-128.2 1209.16,-50.6 1076.39,-50.6"/>
+<polygon fill="#e0f2fe" stroke="none" points="1077.39,-102 1077.39,-127.2 1208.16,-127.2 1208.16,-102 1077.39,-102"/>
+<text xml:space="preserve" text-anchor="start" x="1092.04" y="-112.3" font-family="Arial" font-weight="bold" font-size="11.00">brews</text>
+<text xml:space="preserve" text-anchor="start" x="1123.83" y="-112.3" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="1083.39" y="-85" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="1131.46" y="-85" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1179.54" y="-85" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="1083.39" y="-59.8" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="1131.46" y="-59.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="1179.54" y="-59.8" font-family="Arial" font-size="11.00">Int?</text>
+</a>
+</g>
+</g>
+<!-- equipment -->
+<g id="table_equipment" class="node">
+<title>equipment</title>
+<g id="a_table_equipment"><a xlink:title="equipment — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="699.56,0 699.56,-354.8 971.75,-354.8 971.75,0 699.56,0"/>
+<polygon fill="none" stroke="#94a3b8" points="699.56,0 699.56,-354.8 971.75,-354.8 971.75,0 699.56,0"/>
+<polygon fill="#dcfce7" stroke="none" points="700.56,-328.6 700.56,-353.8 970.75,-353.8 970.75,-328.6 700.56,-328.6"/>
+<text xml:space="preserve" text-anchor="start" x="807.85" y="-338.9" font-family="Arial" font-weight="bold" font-size="11.00">equipment</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-311.6" font-family="Arial" font-size="11.00">group_id</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-311.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-286.4" font-family="Arial" font-size="11.00">label</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-286.4" font-family="Arial" font-size="11.00">VarChar(100)?</text>
+<text xml:space="preserve" text-anchor="start" x="706.56" y="-261.2" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-261.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-261.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="706.56" y="-236" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-236" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-236" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-210.8" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-210.8" font-family="Arial" font-size="11.00">VarChar(200)</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-185.6" font-family="Arial" font-size="11.00">type</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-185.6" font-family="Arial" font-size="11.00">equipment_type</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-160.4" font-family="Arial" font-size="11.00">capacity</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-160.4" font-family="Arial" font-size="11.00">Decimal(16,6)?</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-135.2" font-family="Arial" font-size="11.00">capacity_unit</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-135.2" font-family="Arial" font-size="11.00">inventory_quantity_unit?</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-110" font-family="Arial" font-size="11.00">notes</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-110" font-family="Arial" font-size="11.00">VarChar(5000)?</text>
+<text xml:space="preserve" text-anchor="start" x="706.56" y="-84.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-84.8" font-family="Arial" font-size="11.00">current_brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-84.8" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-59.6" font-family="Arial" font-size="11.00">archived_at</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-59.6" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-34.4" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-34.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="754.63" y="-9.2" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="845.5" y="-9.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- equipment_assignment_events -->
+<g id="table_equipment_assignment_events" class="node">
+<title>equipment_assignment_events</title>
+<g id="a_table_equipment_assignment_events"><a xlink:title="equipment_assignment_events — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="362.8,-150.6 362.8,-354.2 581.75,-354.2 581.75,-150.6 362.8,-150.6"/>
+<polygon fill="none" stroke="#94a3b8" points="362.8,-150.6 362.8,-354.2 581.75,-354.2 581.75,-150.6 362.8,-150.6"/>
+<polygon fill="#dcfce7" stroke="none" points="363.8,-328 363.8,-353.2 580.75,-353.2 580.75,-328 363.8,-328"/>
+<text xml:space="preserve" text-anchor="start" x="390.36" y="-338.3" font-family="Arial" font-weight="bold" font-size="11.00">equipment_assignment_events</text>
+<text xml:space="preserve" text-anchor="start" x="369.8" y="-311" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-311" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-311" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="369.8" y="-285.8" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-285.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-285.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="369.8" y="-260.6" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-260.6" font-family="Arial" font-size="11.00">equipment_id</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-260.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="369.8" y="-235.4" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-235.4" font-family="Arial" font-size="11.00">operation_key</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-235.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-210.2" font-family="Arial" font-size="11.00">from_brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-210.2" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-185" font-family="Arial" font-size="11.00">to_brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-185" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="417.25" y="-159.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="498.35" y="-159.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- inventory_adjustments -->
+<g id="table_inventory_adjustments" class="node">
+<title>inventory_adjustments</title>
+<g id="a_table_inventory_adjustments"><a xlink:title="inventory_adjustments — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="0,-659.2 0,-963.6 263.63,-963.6 263.63,-659.2 0,-659.2"/>
+<polygon fill="none" stroke="#94a3b8" points="0,-659.2 0,-963.6 263.63,-963.6 263.63,-659.2 0,-659.2"/>
+<polygon fill="#dcfce7" stroke="none" points="1,-937.4 1,-962.6 262.63,-962.6 262.63,-937.4 1,-937.4"/>
+<text xml:space="preserve" text-anchor="start" x="71.6" y="-947.7" font-family="Arial" font-weight="bold" font-size="11.00">inventory_adjustments</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-920.4" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-920.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-920.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-895.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-895.2" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-895.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-870" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-870" font-family="Arial" font-size="11.00">stock_id</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-870" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-844.8" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-844.8" font-family="Arial" font-size="11.00">operation_id</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-844.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-819.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-819.6" font-family="Arial" font-size="11.00">consumption_id</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-819.6" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-794.4" font-family="Arial" font-size="11.00">kind</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-794.4" font-family="Arial" font-size="11.00">VarChar(32)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-769.2" font-family="Arial" font-size="11.00">delta</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-769.2" font-family="Arial" font-size="11.00">Decimal(16,6)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-744" font-family="Arial" font-size="11.00">balance_after</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-744" font-family="Arial" font-size="11.00">Decimal(16,6)</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-718.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-718.8" font-family="Arial" font-size="11.00">unit</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-718.8" font-family="Arial" font-size="11.00">inventory_quantity_unit</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-693.6" font-family="Arial" font-size="11.00">note</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-693.6" font-family="Arial" font-size="11.00">VarChar(5000)?</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-668.4" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="143.5" y="-668.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- inventory_consumptions -->
+<g id="table_inventory_consumptions" class="node">
+<title>inventory_consumptions</title>
+<g id="a_table_inventory_consumptions"><a xlink:title="inventory_consumptions — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="349.63,-480.6 349.63,-810.2 594.92,-810.2 594.92,-480.6 349.63,-480.6"/>
+<polygon fill="none" stroke="#94a3b8" points="349.63,-480.6 349.63,-810.2 594.92,-810.2 594.92,-480.6 349.63,-480.6"/>
+<polygon fill="#dcfce7" stroke="none" points="350.63,-784 350.63,-809.2 593.92,-809.2 593.92,-784 350.63,-784"/>
+<text xml:space="preserve" text-anchor="start" x="406.87" y="-794.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_consumptions</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-767" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-767" font-family="Arial" font-size="11.00">line_key</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-767" font-family="Arial" font-size="11.00">VarChar(200)</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-741.8" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-741.8" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-741.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-716.6" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-716.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-716.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-691.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-691.4" font-family="Arial" font-size="11.00">stock_id</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-691.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-666.2" font-family="Arial" font-size="11.00">brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-666.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-641" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-641" font-family="Arial" font-size="11.00">entry_id</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-641" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-615.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-615.8" font-family="Arial" font-size="11.00">use_key</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-615.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-590.6" font-family="Arial" font-size="11.00">deducted</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-590.6" font-family="Arial" font-size="11.00">Decimal(16,6)</text>
+<text xml:space="preserve" text-anchor="start" x="356.63" y="-565.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-565.4" font-family="Arial" font-size="11.00">unit</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-565.4" font-family="Arial" font-size="11.00">inventory_quantity_unit</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-540.2" font-family="Arial" font-size="11.00">reversed_at</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-540.2" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-515" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-515" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="404.7" y="-489.8" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="474.78" y="-489.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- inventory_operations -->
+<g id="table_inventory_operations" class="node">
+<title>inventory_operations</title>
+<g id="a_table_inventory_operations"><a xlink:title="inventory_operations — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="725.87,-380.2 725.87,-558.6 945.44,-558.6 945.44,-380.2 725.87,-380.2"/>
+<polygon fill="none" stroke="#94a3b8" points="725.87,-380.2 725.87,-558.6 945.44,-558.6 945.44,-380.2 725.87,-380.2"/>
+<polygon fill="#dcfce7" stroke="none" points="726.87,-532.4 726.87,-557.6 944.44,-557.6 944.44,-532.4 726.87,-532.4"/>
+<text xml:space="preserve" text-anchor="start" x="779.72" y="-542.7" font-family="Arial" font-weight="bold" font-size="11.00">inventory_operations</text>
+<text xml:space="preserve" text-anchor="start" x="732.87" y="-515.4" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-515.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-515.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="732.87" y="-490.2" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-490.2" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-490.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="732.87" y="-465" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-465" font-family="Arial" font-size="11.00">operation_key</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-465" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-439.8" font-family="Arial" font-size="11.00">request_hash</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-439.8" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-414.6" font-family="Arial" font-size="11.00">result</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-414.6" font-family="Arial" font-size="11.00">Json</text>
+<text xml:space="preserve" text-anchor="start" x="780.94" y="-389.4" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="862.04" y="-389.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- inventory_stock -->
+<g id="table_inventory_stock" class="node">
+<title>inventory_stock</title>
+<g id="a_table_inventory_stock"><a xlink:title="inventory_stock — Inventory &amp; equipment">
+<polygon fill="white" stroke="none" points="680.92,-584 680.92,-938.8 990.39,-938.8 990.39,-584 680.92,-584"/>
+<polygon fill="none" stroke="#94a3b8" points="680.92,-584 680.92,-938.8 990.39,-938.8 990.39,-584 680.92,-584"/>
+<polygon fill="#dcfce7" stroke="none" points="681.92,-912.6 681.92,-937.8 989.39,-937.8 989.39,-912.6 681.92,-912.6"/>
+<text xml:space="preserve" text-anchor="start" x="793.47" y="-922.9" font-family="Arial" font-weight="bold" font-size="11.00">inventory_stock</text>
+<text xml:space="preserve" text-anchor="start" x="687.92" y="-895.6" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-895.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-895.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="687.92" y="-870.4" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-870.4" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-870.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-845.2" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-845.2" font-family="Arial" font-size="11.00">VarChar(200)</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-820" font-family="Arial" font-size="11.00">category</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-820" font-family="Arial" font-size="11.00">inventory_stock_category</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-794.8" font-family="Arial" font-size="11.00">catalog</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-794.8" font-family="Arial" font-size="11.00">VarChar(32)?</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-769.6" font-family="Arial" font-size="11.00">catalog_id</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-769.6" font-family="Arial" font-size="11.00">VarChar(200)?</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-744.4" font-family="Arial" font-size="11.00">quantity</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-744.4" font-family="Arial" font-size="11.00">Decimal(16,6)</text>
+<text xml:space="preserve" text-anchor="start" x="687.92" y="-719.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-719.2" font-family="Arial" font-size="11.00">unit</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-719.2" font-family="Arial" font-size="11.00">inventory_quantity_unit</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-694" font-family="Arial" font-size="11.00">notes</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-694" font-family="Arial" font-size="11.00">VarChar(5000)?</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-668.8" font-family="Arial" font-size="11.00">archived_at</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-668.8" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-643.6" font-family="Arial" font-size="11.00">reconciliation_required</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-643.6" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-618.4" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-618.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="735.98" y="-593.2" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="858.66" y="-593.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- users -->
+<g id="table_users" class="node">
+<title>users</title>
+<g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP (related table; keys only)">
+<polygon fill="white" stroke="none" points="1086.25,-480.2 1086.25,-532.6 1199.3,-532.6 1199.3,-480.2 1086.25,-480.2"/>
+<polygon fill="none" stroke="#94a3b8" points="1086.25,-480.2 1086.25,-532.6 1199.3,-532.6 1199.3,-480.2 1086.25,-480.2"/>
+<polygon fill="#ffe4e6" stroke="none" points="1087.25,-506.4 1087.25,-531.6 1198.3,-531.6 1198.3,-506.4 1087.25,-506.4"/>
+<text xml:space="preserve" text-anchor="start" x="1093.25" y="-516.7" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<text xml:space="preserve" text-anchor="start" x="1122.61" y="-516.7" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="1093.25" y="-489.4" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1133.12" y="-489.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1166.87" y="-489.4" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+</g>
+</svg>

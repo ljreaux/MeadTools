@@ -1,0 +1,368 @@
+<svg width="1120pt" height="918pt"
+ viewBox="0.00 0.00 1120.00 918.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Brewing &amp; hydrometers"><metadata>{&quot;schema&quot;:&quot;7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec&quot;,&quot;migrations&quot;:&quot;e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 889.6)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-889.6 1090.98,-889.6 1090.98,28.8 -28.8,28.8"/>
+<!-- brew_entries&#45;&gt;brews -->
+<g id="fk_brew_entries_brews" class="edge">
+<title>brew_entries:f_brew_id&#45;&gt;brews:f_id</title>
+<g id="a_fk_brew_entries_brews"><a xlink:title="brew_entries (brew_id) &#45;&gt; brews (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M317.51,-396.7C317.51,-396.7 599.39,-396.7 599.39,-396.7"/>
+<polygon fill="#64748b" stroke="#64748b" points="599.39,-398.98 605.89,-396.7 599.39,-394.43 599.39,-398.98"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="589.28" y="-402.45" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="335.64" y="-385.55" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brew_entries&#45;&gt;users -->
+<g id="fk_brew_entries_users" class="edge">
+<title>brew_entries:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_brew_entries_users"><a xlink:title="brew_entries (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M317.58,-579.3C317.58,-579.3 957.36,-579.3 957.36,-579.3"/>
+<polygon fill="#64748b" stroke="#64748b" points="957.36,-581.58 963.86,-579.3 957.36,-577.03 957.36,-581.58"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="947.24" y="-585.05" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="335.7" y="-568.15" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brew_images&#45;&gt;brew_entries -->
+<g id="fk_brew_images_entry" class="edge">
+<title>brew_images:f_entry_id&#45;&gt;brew_entries:f_id</title>
+<g id="a_fk_brew_images_entry"><a xlink:title="brew_images (entry_id) &#45;&gt; brew_entries (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M18.06,-468C18.06,-468 309.39,-468 309.39,-468"/>
+<polygon fill="#64748b" stroke="#64748b" points="309.39,-470.28 315.89,-468 309.39,-465.73 309.39,-470.28"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="299.28" y="-473.75" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="36.18" y="-456.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brew_images&#45;&gt;brews -->
+<g id="fk_brew_images_brew" class="edge">
+<title>brew_images:f_brew_id&#45;&gt;brews:f_id</title>
+<g id="a_fk_brew_images_brew"><a xlink:title="brew_images (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M18.12,-691.2C28.2,-691.2 673.18,-691.2 673.18,-691.2 673.18,-691.2 673.18,-460.66 673.18,-460.66"/>
+<polygon fill="#64748b" stroke="#64748b" points="675.46,-460.66 673.18,-454.16 670.91,-460.66 675.46,-460.66"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="681.64" y="-468.07" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="36.25" y="-680.05" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brew_images&#45;&gt;users -->
+<g id="fk_brew_images_user" class="edge">
+<title>brew_images:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_brew_images_user"><a xlink:title="brew_images (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: NoAction; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M18.05,-776C25.67,-776 1001.18,-776 1001.18,-776 1001.18,-776 1001.18,-561.77 1001.18,-561.77"/>
+<polygon fill="#64748b" stroke="#64748b" points="1003.46,-561.77 1001.18,-555.27 998.91,-561.77 1003.46,-561.77"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1009.64" y="-569.19" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="36.17" y="-764.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brews&#45;&gt;recipes -->
+<g id="fk_brews_recipes" class="edge">
+<title>brews:f_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_brews_recipes"><a xlink:title="brews (recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M607.52,-186.2C607.52,-186.2 933.06,-186.2 933.06,-186.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="933.06,-188.48 939.56,-186.2 933.06,-183.93 933.06,-188.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="922.95" y="-191.95" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="625.65" y="-175.05" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brews&#45;&gt;users -->
+<g id="fk_brews_users" class="edge">
+<title>brews:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_brews_users"><a xlink:title="brews (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M763.18,-377.13C763.18,-382.46 763.18,-553.1 763.18,-553.1 763.18,-553.1 937.71,-553.1 937.71,-553.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="937.71,-555.38 944.21,-553.1 937.71,-550.83 937.71,-555.38"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="927.59" y="-558.85" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="771.64" y="-392.55" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- devices&#45;&gt;brews -->
+<g id="fk_devices_brews" class="edge">
+<title>devices:f_brew_id&#45;&gt;brews:f_id</title>
+<g id="a_fk_devices_brews"><a xlink:title="devices (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M337.68,-146.47C337.68,-146.47 599.4,-146.47 599.4,-146.47"/>
+<polygon fill="#64748b" stroke="#64748b" points="599.4,-148.74 605.9,-146.47 599.4,-144.19 599.4,-148.74"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="589.28" y="-152.22" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="355.81" y="-135.31" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- devices&#45;&gt;recipes -->
+<g id="fk_devices_recipes" class="edge">
+<title>devices:f_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_devices_recipes"><a xlink:title="devices (recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M400.18,-176.09C400.18,-171.68 400.18,-30.5 400.18,-30.5 400.18,-30.5 1001.18,-30.5 1001.18,-30.5 1001.18,-30.5 1001.18,-165.48 1001.18,-165.48"/>
+<polygon fill="#64748b" stroke="#64748b" points="998.91,-165.48 1001.18,-171.98 1003.46,-165.48 998.91,-165.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="992.73" y="-152.67" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="391.73" y="-155.27" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- devices&#45;&gt;users -->
+<g id="fk_devices_users" class="edge">
+<title>devices:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_devices_users"><a xlink:title="devices (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M337.78,-205.93C343.88,-205.93 539.18,-205.93 539.18,-205.93 539.18,-205.93 539.18,-566.2 539.18,-566.2 539.18,-566.2 937.77,-566.2 937.77,-566.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="937.77,-568.48 944.27,-566.2 937.77,-563.93 937.77,-568.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="927.65" y="-571.95" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="355.9" y="-194.78" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- logs&#45;&gt;brews -->
+<g id="fk_logs_brews" class="edge">
+<title>logs:f_brew_id&#45;&gt;brews:f_id</title>
+<g id="a_fk_logs_brews"><a xlink:title="logs (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M14.44,-74C14.44,-74 599.34,-74 599.34,-74"/>
+<polygon fill="#64748b" stroke="#64748b" points="599.34,-76.28 605.84,-74 599.34,-71.73 599.34,-76.28"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="589.23" y="-79.75" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="32.57" y="-62.85" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- logs&#45;&gt;devices -->
+<g id="fk_logs_devices" class="edge">
+<title>logs:f_device_id&#45;&gt;devices:f_id</title>
+<g id="a_fk_logs_devices"><a xlink:title="logs (device_id) &#45;&gt; devices (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
+<path fill="none" stroke="#64748b" d="M14.4,-176.2C14.4,-176.2 329.56,-176.2 329.56,-176.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="329.56,-178.48 336.06,-176.2 329.56,-173.93 329.56,-178.48"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="319.45" y="-181.95" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="32.52" y="-165.05" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- brew_entries -->
+<g id="table_brew_entries" class="node">
+<title>brew_entries</title>
+<g id="a_table_brew_entries"><a xlink:title="brew_entries — Brewing &amp; hydrometers">
+<polygon fill="white" stroke="none" points="303.12,-302 303.12,-606.4 496.43,-606.4 496.43,-302 303.12,-302"/>
+<polygon fill="none" stroke="#94a3b8" points="303.12,-302 303.12,-606.4 496.43,-606.4 496.43,-302 303.12,-302"/>
+<polygon fill="#e0f2fe" stroke="none" points="304.12,-580.2 304.12,-605.4 495.43,-605.4 495.43,-580.2 304.12,-580.2"/>
+<text xml:space="preserve" text-anchor="start" x="365.84" y="-590.5" font-family="Arial" font-weight="bold" font-size="11.00">brew_entries</text>
+<text xml:space="preserve" text-anchor="start" x="310.12" y="-563.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-563.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-563.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="310.12" y="-538" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-538" font-family="Arial" font-size="11.00">brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-538" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="310.12" y="-512.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-512.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-512.8" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-487.6" font-family="Arial" font-size="11.00">datetime</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-487.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-462.4" font-family="Arial" font-size="11.00">type</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-462.4" font-family="Arial" font-size="11.00">brew_entry_type</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-437.2" font-family="Arial" font-size="11.00">title</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-437.2" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-412" font-family="Arial" font-size="11.00">note</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-412" font-family="Arial" font-size="11.00">Text?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-386.8" font-family="Arial" font-size="11.00">gravity</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-386.8" font-family="Arial" font-size="11.00">Real?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-361.6" font-family="Arial" font-size="11.00">temperature</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-361.6" font-family="Arial" font-size="11.00">Real?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-336.4" font-family="Arial" font-size="11.00">temp_units</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-336.4" font-family="Arial" font-size="11.00">temp_units?</text>
+<text xml:space="preserve" text-anchor="start" x="336.79" y="-311.2" font-family="Arial" font-size="11.00">data</text>
+<text xml:space="preserve" text-anchor="start" x="408.1" y="-311.2" font-family="Arial" font-size="11.00">Json?</text>
+</a>
+</g>
+</g>
+<!-- brew_images -->
+<g id="table_brew_images" class="node">
+<title>brew_images</title>
+<g id="a_table_brew_images"><a xlink:title="brew_images — Brewing &amp; hydrometers">
+<polygon fill="white" stroke="none" points="3.67,-329.6 3.67,-860.8 213.45,-860.8 213.45,-329.6 3.67,-329.6"/>
+<polygon fill="none" stroke="#94a3b8" points="3.67,-329.6 3.67,-860.8 213.45,-860.8 213.45,-329.6 3.67,-329.6"/>
+<polygon fill="#e0f2fe" stroke="none" points="4.67,-834.6 4.67,-859.8 212.45,-859.8 212.45,-834.6 4.67,-834.6"/>
+<text xml:space="preserve" text-anchor="start" x="73.71" y="-844.9" font-family="Arial" font-weight="bold" font-size="11.00">brew_images</text>
+<text xml:space="preserve" text-anchor="start" x="10.67" y="-817.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-817.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-817.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="10.67" y="-792.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-792.4" font-family="Arial" font-size="11.00">brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-792.4" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-767.2" font-family="Arial" font-size="11.00">original_brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-767.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="10.67" y="-742" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-742" font-family="Arial" font-size="11.00">entry_id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-742" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-716.8" font-family="Arial" font-size="11.00">original_entry_id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-716.8" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="10.67" y="-691.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-691.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-691.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-666.4" font-family="Arial" font-size="11.00">status</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-666.4" font-family="Arial" font-size="11.00">VarChar(16)</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-641.2" font-family="Arial" font-size="11.00">request_hash</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-641.2" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-616" font-family="Arial" font-size="11.00">image_key</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-616" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-590.8" font-family="Arial" font-size="11.00">thumbnail_key</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-590.8" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-565.6" font-family="Arial" font-size="11.00">caption</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-565.6" font-family="Arial" font-size="11.00">VarChar(500)</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-540.4" font-family="Arial" font-size="11.00">width</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-540.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-515.2" font-family="Arial" font-size="11.00">height</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-515.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-490" font-family="Arial" font-size="11.00">size_bytes</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-490" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-464.8" font-family="Arial" font-size="11.00">reserved_bytes</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-464.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-439.6" font-family="Arial" font-size="11.00">attempts</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-439.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-414.4" font-family="Arial" font-size="11.00">removed</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-414.4" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-389.2" font-family="Arial" font-size="11.00">cleanup_after</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-389.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-364" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-364" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="37.34" y="-338.8" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="130.06" y="-338.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- brews -->
+<g id="table_brews" class="node">
+<title>brews</title>
+<g id="a_table_brews"><a xlink:title="brews — Brewing &amp; hydrometers">
+<polygon fill="white" stroke="none" points="582.43,-61 582.43,-491.4 853.97,-491.4 853.97,-61 582.43,-61"/>
+<polygon fill="none" stroke="#94a3b8" points="582.43,-61 582.43,-491.4 853.97,-491.4 853.97,-61 582.43,-61"/>
+<polygon fill="#e0f2fe" stroke="none" points="583.43,-465.2 583.43,-490.4 852.97,-490.4 852.97,-465.2 583.43,-465.2"/>
+<text xml:space="preserve" text-anchor="start" x="702.3" y="-475.5" font-family="Arial" font-weight="bold" font-size="11.00">brews</text>
+<text xml:space="preserve" text-anchor="start" x="589.43" y="-448.2" font-family="Arial" font-size="11.00">PK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-448.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-448.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-423" font-family="Arial" font-size="11.00">start_date</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-423" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-397.8" font-family="Arial" font-size="11.00">end_date</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-397.8" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="589.43" y="-372.6" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-372.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-372.6" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-347.4" font-family="Arial" font-size="11.00">latest_gravity</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-347.4" font-family="Arial" font-size="11.00">Real?</text>
+<text xml:space="preserve" text-anchor="start" x="589.43" y="-322.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-322.2" font-family="Arial" font-size="11.00">recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-322.2" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-297" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-297" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-271.8" font-family="Arial" font-size="11.00">requested_email_alerts</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-271.8" font-family="Arial" font-size="11.00">Boolean?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-246.6" font-family="Arial" font-size="11.00">sb_alert_sent</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-246.6" font-family="Arial" font-size="11.00">Boolean?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-221.4" font-family="Arial" font-size="11.00">fg_alert_sent</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-221.4" font-family="Arial" font-size="11.00">Boolean?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-196.2" font-family="Arial" font-size="11.00">public</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-196.2" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-171" font-family="Arial" font-size="11.00">stage</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-171" font-family="Arial" font-size="11.00">brew_stage</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-145.8" font-family="Arial" font-size="11.00">batch_number</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-145.8" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-120.6" font-family="Arial" font-size="11.00">current_volume_liters</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-120.6" font-family="Arial" font-size="11.00">Real?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-95.4" font-family="Arial" font-size="11.00">recipe_snapshot</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-95.4" font-family="Arial" font-size="11.00">Json?</text>
+<text xml:space="preserve" text-anchor="start" x="637.49" y="-70.2" font-family="Arial" font-size="11.00">gravity_unit_preference</text>
+<text xml:space="preserve" text-anchor="start" x="764.45" y="-70.2" font-family="Arial" font-size="11.00">gravity_unit</text>
+</a>
+</g>
+</g>
+<!-- devices -->
+<g id="table_devices" class="node">
+<title>devices</title>
+<g id="a_table_devices"><a xlink:title="devices — Brewing &amp; hydrometers">
+<polygon fill="white" stroke="none" points="323.29,-87 323.29,-265.4 476.25,-265.4 476.25,-87 323.29,-87"/>
+<polygon fill="none" stroke="#94a3b8" points="323.29,-87 323.29,-265.4 476.25,-265.4 476.25,-87 323.29,-87"/>
+<polygon fill="#e0f2fe" stroke="none" points="324.29,-239.2 324.29,-264.4 475.25,-264.4 475.25,-239.2 324.29,-239.2"/>
+<text xml:space="preserve" text-anchor="start" x="379.59" y="-249.5" font-family="Arial" font-weight="bold" font-size="11.00">devices</text>
+<text xml:space="preserve" text-anchor="start" x="330.29" y="-222.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-222.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-222.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-197" font-family="Arial" font-size="11.00">device_name</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-197" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="330.29" y="-171.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-171.8" font-family="Arial" font-size="11.00">recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-171.8" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="330.29" y="-146.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-146.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-146.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-121.4" font-family="Arial" font-size="11.00">coefficients</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-121.4" font-family="Arial" font-size="11.00">Real[]</text>
+<text xml:space="preserve" text-anchor="start" x="330.29" y="-96.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="356.97" y="-96.2" font-family="Arial" font-size="11.00">brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="434.4" y="-96.2" font-family="Arial" font-size="11.00">Uuid?</text>
+</a>
+</g>
+</g>
+<!-- logs -->
+<g id="table_logs" class="node">
+<title>logs</title>
+<g id="a_table_logs"><a xlink:title="logs — Brewing &amp; hydrometers">
+<polygon fill="white" stroke="none" points="0,0 0,-304.4 217.12,-304.4 217.12,0 0,0"/>
+<polygon fill="none" stroke="#94a3b8" points="0,0 0,-304.4 217.12,-304.4 217.12,0 0,0"/>
+<polygon fill="#e0f2fe" stroke="none" points="1,-278.2 1,-303.4 216.12,-303.4 216.12,-278.2 1,-278.2"/>
+<text xml:space="preserve" text-anchor="start" x="97.25" y="-288.5" font-family="Arial" font-weight="bold" font-size="11.00">logs</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-261.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-261.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-261.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-236" font-family="Arial" font-size="11.00">datetime</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-236" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-210.8" font-family="Arial" font-size="11.00">angle</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-210.8" font-family="Arial" font-size="11.00">Real</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-185.6" font-family="Arial" font-size="11.00">temperature</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-185.6" font-family="Arial" font-size="11.00">Real</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-160.4" font-family="Arial" font-size="11.00">temp_units</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-160.4" font-family="Arial" font-size="11.00">temp_units</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-135.2" font-family="Arial" font-size="11.00">battery</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-135.2" font-family="Arial" font-size="11.00">Real</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-110" font-family="Arial" font-size="11.00">gravity</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-110" font-family="Arial" font-size="11.00">Real</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-84.8" font-family="Arial" font-size="11.00">interval</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-84.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-59.6" font-family="Arial" font-size="11.00">calculated_gravity</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-59.6" font-family="Arial" font-size="11.00">Real?</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-34.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-34.4" font-family="Arial" font-size="11.00">device_id</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-34.4" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-9.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="33.67" y="-9.2" font-family="Arial" font-size="11.00">brew_id</text>
+<text xml:space="preserve" text-anchor="start" x="133.72" y="-9.2" font-family="Arial" font-size="11.00">Uuid?</text>
+</a>
+</g>
+</g>
+<!-- recipes -->
+<g id="table_recipes" class="node">
+<title>recipes</title>
+<g id="a_table_recipes"><a xlink:title="recipes — Recipes, catalog &amp; community (related table; keys only)">
+<polygon fill="white" stroke="none" points="939.97,-160 939.97,-212.4 1062.18,-212.4 1062.18,-160 939.97,-160"/>
+<polygon fill="none" stroke="#94a3b8" points="939.97,-160 939.97,-212.4 1062.18,-212.4 1062.18,-160 939.97,-160"/>
+<polygon fill="#ffedd5" stroke="none" points="940.97,-186.2 940.97,-211.4 1061.18,-211.4 1061.18,-186.2 940.97,-186.2"/>
+<text xml:space="preserve" text-anchor="start" x="946.97" y="-196.5" font-family="Arial" font-weight="bold" font-size="11.00">recipes</text>
+<text xml:space="preserve" text-anchor="start" x="985.49" y="-196.5" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="946.97" y="-169.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="989.89" y="-169.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1026.7" y="-169.2" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+<!-- users -->
+<g id="table_users" class="node">
+<title>users</title>
+<g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP (related table; keys only)">
+<polygon fill="white" stroke="none" points="944.55,-540 944.55,-592.4 1057.6,-592.4 1057.6,-540 944.55,-540"/>
+<polygon fill="none" stroke="#94a3b8" points="944.55,-540 944.55,-592.4 1057.6,-592.4 1057.6,-540 944.55,-540"/>
+<polygon fill="#ffe4e6" stroke="none" points="945.55,-566.2 945.55,-591.4 1056.6,-591.4 1056.6,-566.2 945.55,-566.2"/>
+<text xml:space="preserve" text-anchor="start" x="951.55" y="-576.5" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<text xml:space="preserve" text-anchor="start" x="980.91" y="-576.5" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="951.55" y="-549.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="991.42" y="-549.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1025.17" y="-549.2" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+</g>
+</svg>

@@ -116,7 +116,7 @@ export async function reverseAbandonedCreditReservations(options?: {
     FROM "credit_ledger_entries" AS "reservations"
     INNER JOIN "credit_accounts" AS "accounts"
       ON "accounts"."id" = "reservations"."account_id"
-    WHERE "reservations"."entry_type" = ${credit_ledger_entry_type.reservation}
+    WHERE "reservations"."entry_type" = ${credit_ledger_entry_type.reservation}::"credit_ledger_entry_type"
       AND "reservations"."created_at" <= ${olderThan}
       AND NOT EXISTS (
         SELECT 1
@@ -124,8 +124,8 @@ export async function reverseAbandonedCreditReservations(options?: {
         WHERE "final_entries"."account_id" = "reservations"."account_id"
           AND "final_entries"."operation_id" = "reservations"."operation_id"
           AND "final_entries"."entry_type" IN (
-            ${credit_ledger_entry_type.settlement},
-            ${credit_ledger_entry_type.reversal}
+            ${credit_ledger_entry_type.settlement}::"credit_ledger_entry_type",
+            ${credit_ledger_entry_type.reversal}::"credit_ledger_entry_type"
           )
       )
     ORDER BY "reservations"."created_at" ASC
@@ -268,8 +268,8 @@ export async function reconcileFinalizedChatbotUsageEvents(options?: {
         FROM "credit_ledger_entries" AS "final_entries"
         WHERE "final_entries"."operation_id" = "events"."request_id"
           AND "final_entries"."entry_type" IN (
-            ${credit_ledger_entry_type.settlement},
-            ${credit_ledger_entry_type.reversal}
+            ${credit_ledger_entry_type.settlement}::"credit_ledger_entry_type",
+            ${credit_ledger_entry_type.reversal}::"credit_ledger_entry_type"
           )
       )
     ORDER BY "events"."created_at" ASC

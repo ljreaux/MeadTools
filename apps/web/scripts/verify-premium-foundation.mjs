@@ -29,6 +29,8 @@ const { getStripeClient } = await import("../lib/billing/stripe.ts");
 const { getPremiumAccessStatus } = await import("../lib/db/premium-access.ts");
 const { recordCreditGrant, recordCreditAdjustmentInTransaction } =
   await import("../lib/db/credit-accounting.ts");
+const { reverseAbandonedCreditReservations, reconcileFinalizedChatbotUsageEvents } =
+  await import("../lib/db/credit-accounting.ts");
 const stripe = getStripeClient();
 stripe._requestSender.request = () => {
   throw new Error("Unmocked Stripe request in offline database fixture");
@@ -62,6 +64,40 @@ after(async () => {
 });
 const user = () =>
   prisma.users.create({ data: { email: `${randomUUID()}@fixture.invalid` } });
+test("credit reconciliation binds enum parameters and repairs each stale operation once", async () => {
+  const u = await user();
+  await recordCreditGrant({ userId: u.id, operationId: randomUUID(),
+    idempotencyKey: randomUUID(), creditAmount: 100 });
+  const account = await prisma.credit_accounts.findUniqueOrThrow({ where: { user_id: u.id } });
+  const abandoned = randomUUID();
+  const settled = randomUUID();
+  const created_at = new Date("2026-01-01T00:00:00Z");
+  await prisma.credit_ledger_entries.createMany({ data: [
+    { account_id: account.id, operation_id: abandoned, idempotency_key: randomUUID(),
+      entry_type: "reservation", credits_delta: -10, created_at },
+    { account_id: account.id, operation_id: settled, idempotency_key: randomUUID(),
+      entry_type: "reservation", credits_delta: -10, created_at },
+    { account_id: account.id, operation_id: settled, idempotency_key: randomUUID(),
+      entry_type: "settlement", credits_delta: 3, created_at },
+  ] });
+  await prisma.chatbot_usage_events.create({ data: {
+    user_id: u.id, request_id: settled, environment: "test", model: "offline-fixture",
+    status: "reserved", created_at,
+  } });
+  const now = new Date("2026-01-03T00:00:00Z");
+  assert.deepEqual(await reverseAbandonedCreditReservations({ now }),
+    { reversed: 1, settled: 0, skipped: 0 });
+  assert.deepEqual(await reverseAbandonedCreditReservations({ now }),
+    { reversed: 0, settled: 0, skipped: 0 });
+  assert.deepEqual(await reconcileFinalizedChatbotUsageEvents({ now, olderThan: now }),
+    { finalized: 1, skipped: 0 });
+  assert.deepEqual(await reconcileFinalizedChatbotUsageEvents({ now, olderThan: now }),
+    { finalized: 0, skipped: 0 });
+  assert.equal(await balance(u.id), 93);
+  assert.equal(await prisma.credit_ledger_entries.count({ where: {
+    operation_id: abandoned, entry_type: "reversal",
+  } }), 1);
+});
 const future = () => new Date(Date.now() + 30 * 86400_000);
 async function premiumUser() {
   const u = await user();
