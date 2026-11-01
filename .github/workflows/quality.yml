@@ -90,6 +90,9 @@ jobs:
       - name: Verify shared package boundaries
         run: npm run check:package-boundaries
 
+      - name: Verify database diagrams and migration fingerprint
+        run: npm run db:erd:check && npm run test:erd
+
       - name: Run test suites
         run: npm test
 
@@ -102,6 +105,7 @@ jobs:
           npx prisma migrate deploy --config prisma.test.config.ts
           npm run test:premium-foundation
           npm run test:mcp-account-reads-postgres
+          node scripts/verify-supabase-hardening-postgres.mjs
 
       - name: Verify brew image quota, privacy, and cleanup on disposable PostgreSQL
         env:

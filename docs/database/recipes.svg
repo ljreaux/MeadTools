@@ -1,0 +1,343 @@
+<svg width="814pt" height="1658pt"
+ viewBox="0.00 0.00 814.00 1658.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Recipes, catalog &amp; community"><metadata>{&quot;schema&quot;:&quot;7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec&quot;,&quot;migrations&quot;:&quot;e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1629.2)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1629.2 785.21,-1629.2 785.21,28.8 -28.8,28.8"/>
+<!-- comments&#45;&gt;comments -->
+<g id="fk_comments_parent" class="edge">
+<title>comments:f_parent_id&#45;&gt;comments:f_id</title>
+<g id="a_fk_comments_parent"><a xlink:title="comments (parent_id) &#45;&gt; comments (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M26.38,-901.6C20.3,-901.6 14.41,-901.6 14.41,-901.6 14.41,-901.6 14.41,-774.5 14.41,-774.5 14.41,-774.5 220.41,-774.5 220.41,-774.5 220.41,-774.5 220.41,-821.07 220.41,-821.07 220.41,-821.07 47.67,-821.07 47.67,-821.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="47.67,-818.79 41.17,-821.07 47.67,-823.34 47.67,-818.79"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="57.78" y="-809.91" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="8.25" y="-907.35" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- comments&#45;&gt;recipes -->
+<g id="fk_comments_recipe" class="edge">
+<title>comments:f_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_comments_recipe"><a xlink:title="comments (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: NoAction">
+<path fill="none" stroke="#64748b" d="M39.58,-854.93C39.58,-854.93 308.49,-854.93 308.49,-854.93"/>
+<polygon fill="#64748b" stroke="#64748b" points="308.49,-857.21 314.99,-854.93 308.49,-852.66 308.49,-857.21"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="298.38" y="-860.69" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="57.7" y="-843.78" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- comments&#45;&gt;users -->
+<g id="fk_comments_author" class="edge">
+<title>comments:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_comments_author"><a xlink:title="comments (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: NoAction">
+<path fill="none" stroke="#64748b" d="M39.64,-952.4C49.79,-952.4 699.41,-952.4 699.41,-952.4 699.41,-952.4 699.41,-832.11 699.41,-832.11"/>
+<polygon fill="#64748b" stroke="#64748b" points="701.69,-832.11 699.41,-825.61 697.14,-832.11 701.69,-832.11"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="707.86" y="-839.52" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="57.77" y="-941.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- recipe_daily_activity&#45;&gt;recipes -->
+<g id="fk_recipe_daily_activity_recipe" class="edge">
+<title>recipe_daily_activity:f_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_recipe_daily_activity_recipe"><a xlink:title="recipe_daily_activity (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M30.73,-672.6C30.73,-672.6 321.46,-672.6 321.46,-672.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="321.46,-674.88 327.96,-672.6 321.46,-670.33 321.46,-674.88"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="311.34" y="-678.35" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="48.85" y="-661.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- recipe_ratings&#45;&gt;recipes -->
+<g id="fk_recipe_ratings_recipe" class="edge">
+<title>recipe_ratings:f_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_recipe_ratings_recipe"><a xlink:title="recipe_ratings (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M39.58,-496.6C39.58,-496.6 321.46,-496.6 321.46,-496.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="321.46,-498.88 327.96,-496.6 321.46,-494.33 321.46,-498.88"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="311.35" y="-502.35" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="57.7" y="-485.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- recipe_ratings&#45;&gt;users -->
+<g id="fk_recipe_ratings_user" class="edge">
+<title>recipe_ratings:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_recipe_ratings_user"><a xlink:title="recipe_ratings (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M39.64,-407.4C49.79,-407.4 699.41,-407.4 699.41,-407.4 699.41,-407.4 699.41,-815.91 699.41,-815.91"/>
+<polygon fill="#64748b" stroke="#64748b" points="697.14,-815.91 699.41,-822.41 701.69,-815.91 697.14,-815.91"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="690.96" y="-803.1" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="57.77" y="-396.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- recipes&#45;&gt;users -->
+<g id="fk_recipes_users" class="edge">
+<title>recipes:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_recipes_users"><a xlink:title="recipes (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull (Prisma default); update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M342.65,-836.6C342.65,-836.6 636.47,-836.6 636.47,-836.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="636.47,-838.88 642.97,-836.6 636.47,-834.33 636.47,-838.88"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="626.36" y="-842.35" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="360.77" y="-825.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- additives -->
+<g id="table_additives" class="node">
+<title>additives</title>
+<g id="a_table_additives"><a xlink:title="additives — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="26.72,0 26.72,-153.2 207.78,-153.2 207.78,0 26.72,0"/>
+<polygon fill="none" stroke="#94a3b8" points="26.72,0 26.72,-153.2 207.78,-153.2 207.78,0 26.72,0"/>
+<polygon fill="#ffedd5" stroke="none" points="27.72,-127 27.72,-152.2 206.78,-152.2 206.78,-127 27.72,-127"/>
+<text xml:space="preserve" text-anchor="start" x="93.41" y="-137.3" font-family="Arial" font-weight="bold" font-size="11.00">additives</text>
+<text xml:space="preserve" text-anchor="start" x="33.72" y="-110" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-110" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="124.38" y="-110" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-84.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="124.38" y="-84.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-59.6" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="124.38" y="-59.6" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-34.4" font-family="Arial" font-size="11.00">dosage</text>
+<text xml:space="preserve" text-anchor="start" x="124.38" y="-34.4" font-family="Arial" font-size="11.00">Float</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-9.2" font-family="Arial" font-size="11.00">unit</text>
+<text xml:space="preserve" text-anchor="start" x="124.38" y="-9.2" font-family="Arial" font-size="11.00">additive_unit</text>
+</a>
+</g>
+</g>
+<!-- BjcpIngredient -->
+<g id="table_BjcpIngredient" class="node">
+<title>BjcpIngredient</title>
+<g id="a_table_BjcpIngredient"><a xlink:title="bjcp&#45;ingredients — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="26.42,-178 26.42,-331.2 208.08,-331.2 208.08,-178 26.42,-178"/>
+<polygon fill="none" stroke="#94a3b8" points="26.42,-178 26.42,-331.2 208.08,-331.2 208.08,-178 26.42,-178"/>
+<polygon fill="#ffedd5" stroke="none" points="27.42,-305 27.42,-330.2 207.08,-330.2 207.08,-305 27.42,-305"/>
+<text xml:space="preserve" text-anchor="start" x="74.47" y="-315.3" font-family="Arial" font-weight="bold" font-size="11.00">bjcp&#45;ingredients</text>
+<text xml:space="preserve" text-anchor="start" x="33.42" y="-288" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="60.7" y="-288" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="124.68" y="-288" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="60.7" y="-262.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="124.68" y="-262.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="33.42" y="-237.6" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.7" y="-237.6" font-family="Arial" font-size="11.00">label</text>
+<text xml:space="preserve" text-anchor="start" x="124.68" y="-237.6" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="60.7" y="-212.4" font-family="Arial" font-size="11.00">category</text>
+<text xml:space="preserve" text-anchor="start" x="124.68" y="-212.4" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="33.42" y="-187.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.7" y="-187.2" font-family="Arial" font-size="11.00">value</text>
+<text xml:space="preserve" text-anchor="start" x="124.68" y="-187.2" font-family="Arial" font-size="11.00">String?</text>
+</a>
+</g>
+</g>
+<!-- comments -->
+<g id="table_comments" class="node">
+<title>comments</title>
+<g id="a_table_comments"><a xlink:title="comments — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="25.19,-787.2 25.19,-1016 209.31,-1016 209.31,-787.2 25.19,-787.2"/>
+<polygon fill="none" stroke="#94a3b8" points="25.19,-787.2 25.19,-1016 209.31,-1016 209.31,-787.2 25.19,-787.2"/>
+<polygon fill="#ffedd5" stroke="none" points="26.19,-989.8 26.19,-1015 208.31,-1015 208.31,-989.8 26.19,-989.8"/>
+<text xml:space="preserve" text-anchor="start" x="89.74" y="-1000.1" font-family="Arial" font-weight="bold" font-size="11.00">comments</text>
+<text xml:space="preserve" text-anchor="start" x="32.19" y="-972.8" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-972.8" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-972.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="32.19" y="-947.6" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-947.6" font-family="Arial" font-size="11.00">recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-947.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="32.19" y="-922.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-922.4" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-922.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="32.19" y="-897.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-897.2" font-family="Arial" font-size="11.00">parent_id</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-897.2" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-872" font-family="Arial" font-size="11.00">comment</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-872" font-family="Arial" font-size="11.00">Text</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-846.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-846.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-821.6" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-821.6" font-family="Arial" font-size="11.00">DateTime</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-796.4" font-family="Arial" font-size="11.00">deleted_at</text>
+<text xml:space="preserve" text-anchor="start" x="125.91" y="-796.4" font-family="Arial" font-size="11.00">DateTime?</text>
+</a>
+</g>
+</g>
+<!-- ingredients -->
+<g id="table_ingredients" class="node">
+<title>ingredients</title>
+<g id="a_table_ingredients"><a xlink:title="ingredients — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="22.73,-1041 22.73,-1194.2 211.76,-1194.2 211.76,-1041 22.73,-1041"/>
+<polygon fill="none" stroke="#94a3b8" points="22.73,-1041 22.73,-1194.2 211.76,-1194.2 211.76,-1041 22.73,-1041"/>
+<polygon fill="#ffedd5" stroke="none" points="23.73,-1168 23.73,-1193.2 210.76,-1193.2 210.76,-1168 23.73,-1168"/>
+<text xml:space="preserve" text-anchor="start" x="87.61" y="-1178.3" font-family="Arial" font-weight="bold" font-size="11.00">ingredients</text>
+<text xml:space="preserve" text-anchor="start" x="29.73" y="-1151" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="56.41" y="-1151" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="138.12" y="-1151" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="56.41" y="-1125.8" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="138.12" y="-1125.8" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="56.41" y="-1100.6" font-family="Arial" font-size="11.00">sugar_content</text>
+<text xml:space="preserve" text-anchor="start" x="138.12" y="-1100.6" font-family="Arial" font-size="11.00">Decimal</text>
+<text xml:space="preserve" text-anchor="start" x="56.41" y="-1075.4" font-family="Arial" font-size="11.00">water_content</text>
+<text xml:space="preserve" text-anchor="start" x="138.12" y="-1075.4" font-family="Arial" font-size="11.00">Decimal</text>
+<text xml:space="preserve" text-anchor="start" x="56.41" y="-1050.2" font-family="Arial" font-size="11.00">category</text>
+<text xml:space="preserve" text-anchor="start" x="138.12" y="-1050.2" font-family="Arial" font-size="11.00">VarChar(255)</text>
+</a>
+</g>
+</g>
+<!-- nutrient_presets -->
+<g id="table_nutrient_presets" class="node">
+<title>nutrient_presets</title>
+<g id="a_table_nutrient_presets"><a xlink:title="nutrient_presets — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="26.39,-1219 26.39,-1372.2 208.11,-1372.2 208.11,-1219 26.39,-1219"/>
+<polygon fill="none" stroke="#94a3b8" points="26.39,-1219 26.39,-1372.2 208.11,-1372.2 208.11,-1219 26.39,-1219"/>
+<polygon fill="#ffedd5" stroke="none" points="27.39,-1346 27.39,-1371.2 207.11,-1371.2 207.11,-1346 27.39,-1346"/>
+<text xml:space="preserve" text-anchor="start" x="74.15" y="-1356.3" font-family="Arial" font-weight="bold" font-size="11.00">nutrient_presets</text>
+<text xml:space="preserve" text-anchor="start" x="33.39" y="-1329" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="60.67" y="-1329" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="160.74" y="-1329" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="33.39" y="-1303.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.67" y="-1303.8" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="160.74" y="-1303.8" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="60.67" y="-1278.6" font-family="Arial" font-size="11.00">yan_ppm_per_gpl</text>
+<text xml:space="preserve" text-anchor="start" x="160.74" y="-1278.6" font-family="Arial" font-size="11.00">Float</text>
+<text xml:space="preserve" text-anchor="start" x="60.67" y="-1253.4" font-family="Arial" font-size="11.00">max_gpl</text>
+<text xml:space="preserve" text-anchor="start" x="160.74" y="-1253.4" font-family="Arial" font-size="11.00">Float?</text>
+<text xml:space="preserve" text-anchor="start" x="60.67" y="-1228.2" font-family="Arial" font-size="11.00">organic_multiplier</text>
+<text xml:space="preserve" text-anchor="start" x="160.74" y="-1228.2" font-family="Arial" font-size="11.00">Boolean</text>
+</a>
+</g>
+</g>
+<!-- recipe_daily_activity -->
+<g id="table_recipe_daily_activity" class="node">
+<title>recipe_daily_activity</title>
+<g id="a_table_recipe_daily_activity"><a xlink:title="recipe_daily_activity — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="5.95,-583.4 5.95,-761.8 228.55,-761.8 228.55,-583.4 5.95,-583.4"/>
+<polygon fill="none" stroke="#94a3b8" points="5.95,-583.4 5.95,-761.8 228.55,-761.8 228.55,-583.4 5.95,-583.4"/>
+<polygon fill="#ffedd5" stroke="none" points="6.95,-735.6 6.95,-760.8 227.55,-760.8 227.55,-735.6 6.95,-735.6"/>
+<text xml:space="preserve" text-anchor="start" x="63.44" y="-745.9" font-family="Arial" font-weight="bold" font-size="11.00">recipe_daily_activity</text>
+<text xml:space="preserve" text-anchor="start" x="12.95" y="-718.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-718.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-718.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="12.95" y="-693.4" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-693.4" font-family="Arial" font-size="11.00">recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-693.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="12.95" y="-668.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-668.2" font-family="Arial" font-size="11.00">summary_date</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-668.2" font-family="Arial" font-size="11.00">Date</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-643" font-family="Arial" font-size="11.00">changes</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-643" font-family="Arial" font-size="11.00">Json?</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-617.8" font-family="Arial" font-size="11.00">emailed</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-617.8" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="60.4" y="-592.6" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="145.15" y="-592.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- recipe_ratings -->
+<g id="table_recipe_ratings" class="node">
+<title>recipe_ratings</title>
+<g id="a_table_recipe_ratings"><a xlink:title="recipe_ratings — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="14.8,-356.4 14.8,-534.8 219.7,-534.8 219.7,-356.4 14.8,-356.4"/>
+<polygon fill="none" stroke="#94a3b8" points="14.8,-356.4 14.8,-534.8 219.7,-534.8 219.7,-356.4 14.8,-356.4"/>
+<polygon fill="#ffedd5" stroke="none" points="15.8,-508.6 15.8,-533.8 218.7,-533.8 218.7,-508.6 15.8,-508.6"/>
+<text xml:space="preserve" text-anchor="start" x="79.65" y="-518.9" font-family="Arial" font-weight="bold" font-size="11.00">recipe_ratings</text>
+<text xml:space="preserve" text-anchor="start" x="21.8" y="-491.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-491.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-491.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="21.8" y="-466.4" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-466.4" font-family="Arial" font-size="11.00">recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-466.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="21.8" y="-441.2" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-441.2" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-441.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-416" font-family="Arial" font-size="11.00">rating</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-416" font-family="Arial" font-size="11.00">SmallInt</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-390.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-390.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="69.25" y="-365.6" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="136.3" y="-365.6" font-family="Arial" font-size="11.00">DateTime</text>
+</a>
+</g>
+</g>
+<!-- recipes -->
+<g id="table_recipes" class="node">
+<title>recipes</title>
+<g id="a_table_recipes"><a xlink:title="recipes — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="315.19,-458.4 315.19,-888.8 557.37,-888.8 557.37,-458.4 315.19,-458.4"/>
+<polygon fill="none" stroke="#94a3b8" points="315.19,-458.4 315.19,-888.8 557.37,-888.8 557.37,-458.4 315.19,-458.4"/>
+<polygon fill="#ffedd5" stroke="none" points="316.19,-862.6 316.19,-887.8 556.37,-887.8 556.37,-862.6 316.19,-862.6"/>
+<text xml:space="preserve" text-anchor="start" x="417.01" y="-872.9" font-family="Arial" font-weight="bold" font-size="11.00">recipes</text>
+<text xml:space="preserve" text-anchor="start" x="322.19" y="-845.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-845.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-845.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="322.19" y="-820.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-820.4" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-820.4" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-795.2" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-795.2" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-770" font-family="Arial" font-size="11.00">recipeData</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-770" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-744.8" font-family="Arial" font-size="11.00">yanFromSource</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-744.8" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-719.6" font-family="Arial" font-size="11.00">yanContribution</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-719.6" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-694.4" font-family="Arial" font-size="11.00">nutrientData</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-694.4" font-family="Arial" font-size="11.00">String</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-669.2" font-family="Arial" font-size="11.00">advanced</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-669.2" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-644" font-family="Arial" font-size="11.00">nuteInfo</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-644" font-family="Arial" font-size="11.00">String?</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-618.8" font-family="Arial" font-size="11.00">primaryNotes</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-618.8" font-family="Arial" font-size="11.00">String[]</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-593.6" font-family="Arial" font-size="11.00">secondaryNotes</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-593.6" font-family="Arial" font-size="11.00">String[]</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-568.4" font-family="Arial" font-size="11.00">dataV2</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-568.4" font-family="Arial" font-size="11.00">Json?</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-543.2" font-family="Arial" font-size="11.00">version</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-543.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-518" font-family="Arial" font-size="11.00">private</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-518" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-492.8" font-family="Arial" font-size="11.00">lastActivityEmailAt</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-492.8" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+<text xml:space="preserve" text-anchor="start" x="348.86" y="-467.6" font-family="Arial" font-size="11.00">activityEmailsEnabled</text>
+<text xml:space="preserve" text-anchor="start" x="467.85" y="-467.6" font-family="Arial" font-size="11.00">Boolean</text>
+</a>
+</g>
+</g>
+<!-- users -->
+<g id="table_users" class="node">
+<title>users</title>
+<g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP (related table; keys only)">
+<polygon fill="white" stroke="none" points="643.37,-810.4 643.37,-862.8 756.41,-862.8 756.41,-810.4 643.37,-810.4"/>
+<polygon fill="none" stroke="#94a3b8" points="643.37,-810.4 643.37,-862.8 756.41,-862.8 756.41,-810.4 643.37,-810.4"/>
+<polygon fill="#ffe4e6" stroke="none" points="644.37,-836.6 644.37,-861.8 755.41,-861.8 755.41,-836.6 644.37,-836.6"/>
+<text xml:space="preserve" text-anchor="start" x="650.37" y="-846.9" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<text xml:space="preserve" text-anchor="start" x="679.72" y="-846.9" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="650.37" y="-819.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="690.24" y="-819.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="723.99" y="-819.6" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+<!-- yeasts -->
+<g id="table_yeasts" class="node">
+<title>yeasts</title>
+<g id="a_table_yeasts"><a xlink:title="yeasts — Recipes, catalog &amp; community">
+<polygon fill="white" stroke="none" points="5.31,-1396.8 5.31,-1600.4 229.19,-1600.4 229.19,-1396.8 5.31,-1396.8"/>
+<polygon fill="none" stroke="#94a3b8" points="5.31,-1396.8 5.31,-1600.4 229.19,-1600.4 229.19,-1396.8 5.31,-1396.8"/>
+<polygon fill="#ffedd5" stroke="none" points="6.31,-1574.2 6.31,-1599.4 228.19,-1599.4 228.19,-1574.2 6.31,-1574.2"/>
+<text xml:space="preserve" text-anchor="start" x="100.12" y="-1584.5" font-family="Arial" font-weight="bold" font-size="11.00">yeasts</text>
+<text xml:space="preserve" text-anchor="start" x="12.31" y="-1557.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1557.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1557.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1532" font-family="Arial" font-size="11.00">brand</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1532" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1506.8" font-family="Arial" font-size="11.00">name</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1506.8" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1481.6" font-family="Arial" font-size="11.00">nitrogen_requirement</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1481.6" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1456.4" font-family="Arial" font-size="11.00">tolerance</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1456.4" font-family="Arial" font-size="11.00">Decimal</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1431.2" font-family="Arial" font-size="11.00">low_temp</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1431.2" font-family="Arial" font-size="11.00">Decimal</text>
+<text xml:space="preserve" text-anchor="start" x="38.98" y="-1406" font-family="Arial" font-size="11.00">high_temp</text>
+<text xml:space="preserve" text-anchor="start" x="155.55" y="-1406" font-family="Arial" font-size="11.00">Decimal</text>
+</a>
+</g>
+</g>
+</g>
+</svg>

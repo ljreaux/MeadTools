@@ -60,11 +60,15 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait && npm run db:push --workspace @meadtools/web && ALLOW_DB_RESET=true npm run db:seed --workspace @meadtools/web",
     "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,invoice.paid,customer.subscription.updated,customer.subscription.deleted,refund.created,refund.updated,charge.dispute.created,charge.dispute.funds_withdrawn --forward-to http://localhost:3000/api/webhooks/stripe",
-    "test:inventory-domain": "npm test --workspace @meadtools/inventory-domain"
+    "test:inventory-domain": "npm test --workspace @meadtools/inventory-domain",
+    "db:erd": "npm run prisma:generate --workspace @meadtools/web && node scripts/generate-database-erd.mjs",
+    "db:erd:check": "npm run prisma:generate --workspace @meadtools/web && node scripts/generate-database-erd.mjs --check",
+    "test:erd": "node --test scripts/generate-database-erd.test.mjs"
   },
   "devDependencies": {
     "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@viz-js/viz": "3.31.0",
     "expo": "~57.0.30",
     "expo-router": "~57.0.28",
     "prisma": "6.19.3",
