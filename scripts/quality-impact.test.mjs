@@ -71,7 +71,7 @@ test("lockfile compares the mobile dependency closure even alongside web manifes
 test("existing impact job gates all mobile validation and always tests classification", () => {
   const workflow = readFileSync(".github/workflows/quality.yml", "utf8");
   assert.match(workflow, /node scripts\/app-impact.mjs --quality --github-output/);
-  assert.match(workflow, /node --test scripts\/app-impact.test.mjs scripts\/quality-impact.test.mjs/);
+  assert.match(workflow, /npm run test:workflows/);
   const mobile = workflow.slice(workflow.indexOf("\n  mobile:"));
   assert.match(mobile, /needs: impact/);
   assert.match(mobile, /if: needs.impact.outputs.mobile == 'true'/);

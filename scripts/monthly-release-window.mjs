@@ -1,4 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { isDeepStrictEqual } from "node:util";
+import { evaluateNoteGate } from "./check-pr-release-notes.mjs";
 import { pathToFileURL } from "node:url";
 
 const context = "monthly-release-gate";
@@ -39,7 +41,7 @@ export function releaseApproval(pr, mode, expectedHead) {
     pr.draft ||
     pr.base.ref !== "main" ||
     (mode !== "hotfix" && pr.head.ref !== "preview") ||
-    pr.head.repo.full_name !== repository()
+    pr.head.repo?.full_name !== repository()
   ) {
     return "Only an open, non-draft same-repository main PR can be armed.";
   }
@@ -67,9 +69,70 @@ export function releaseApproval(pr, mode, expectedHead) {
   ) {
     return "A hotfix needs hotfix-ready and bug-fix-only labels.";
   }
-  if (mode === "monthly" && !pr.auto_merge)
+  if (mode === "publication") {
+    if (!expectedHead || !labels.has("publication-ready"))
+      return "Publication requires an expected head SHA and publication-ready label.";
+    if (build !== "skip" || labels.has("bug-fix-only") || labels.has("hotfix-ready") || labels.has("initial-release-ready"))
+      return "Publication requires Mobile skip and no promotion/exemption labels.";
+    if (!/^Publication approval: Larry Reaux approved publication after production verification\.\s*$/m.test(body))
+      return "Explicit post-deployment publication approval is missing.";
+    if (!/^Publication date: \d{4}-\d{2}-\d{2}\s*$/m.test(body))
+      return "Publication date is missing.";
+  }
+  if ((mode === "monthly" || mode === "publication") && !pr.auto_merge)
     return "Native GitHub auto-merge is not armed.";
   return null;
+}
+
+// Publication may add exactly one approved date, with no application or unrelated
+// locale changes. Compare full JSON objects rather than trusting paths or patches.
+export function publicationDiffPassed(pr, files, now = new Date()) {
+  const date = (pr.body ?? "").match(/^Publication date: (\d{4}-\d{2}-\d{2})\s*$/m)?.[1];
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(now);
+  if (!date || date > today || !Array.isArray(files) || !files.length) return false;
+  const notesPath = "packages/i18n/locales/en/default.json";
+  if (!files.some(({ path }) => path === notesPath)) return false;
+  for (const file of files) {
+    if (file.path === `docs/releases/${date.slice(0, 7)}.md` && ["added", "modified"].includes(file.status)) continue;
+    if (!/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(file.path) || file.status !== "modified") return false;
+    try {
+      const before = JSON.parse(file.before);
+      const after = JSON.parse(file.after);
+      const oldEntries = before.releaseNotes?.entries ?? {};
+      const newEntries = after.releaseNotes?.entries ?? {};
+      if (Object.hasOwn(oldEntries, date) || !Object.hasOwn(newEntries, date)) return false;
+      const entry = newEntries[date];
+      if (entry.products?.mobile || entry.products?.mobilePreview) return false;
+      if (!evaluateNoteGate({ baseEntries: {}, headEntries: { [date]: entry }, labels: [], body: "" }).ok) return false;
+      delete newEntries[date];
+      if (!isDeepStrictEqual(before, after)) return false;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+function publicationFiles(pr) {
+  const files = [];
+  for (let page = 1; ; page++) {
+    const batch = api(`pulls/${pr.number}/files?per_page=100&page=${page}`);
+    files.push(...batch);
+    if (batch.length < 100) break;
+    if (files.length >= 3000) throw new Error("Publication diff exceeds GitHub's file limit.");
+  }
+  if (files.length !== pr.changed_files) throw new Error("Incomplete publication diff.");
+  return files.map((file) => {
+    const path = file.filename;
+    if (!/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(path) || file.status !== "modified")
+      return { path, status: file.status };
+    const read = (sha) => {
+      const content = api(`contents/${path}?ref=${sha}`);
+      if (content.encoding !== "base64") throw new Error("Cannot read full locale content.");
+      return Buffer.from(content.content, "base64").toString("utf8");
+    };
+    return { path, status: file.status, before: read(pr.base.sha), after: read(pr.head.sha) };
+  });
 }
 
 function api(path, method = "GET", data) {
@@ -109,7 +172,7 @@ export function releaseChecksPassed(checks) {
   );
 }
 
-function allChecksPassed(number) {
+function allChecksPassed(number, mode) {
   const result = spawnSync(
     "gh",
     [
@@ -129,7 +192,21 @@ function allChecksPassed(number) {
     throw new Error(
       `Could not read checks for PR #${number}: ${result.stderr}`,
     );
-  return releaseChecksPassed(JSON.parse(result.stdout));
+  if (!releaseChecksPassed(JSON.parse(result.stdout))) return false;
+  if (mode !== "publication") return true;
+  // Required checks must also pass, including any required Expo check that the
+  // normal promotion policy excludes from its visible-check scan.
+  const required = spawnSync("gh", ["pr", "checks", String(number), "--repo", repository(), "--required", "--json", "name,bucket"], { encoding: "utf8" });
+  // gh exits 8 while our own gate is pending. Read the JSON, but reject API errors.
+  if (![0, 1, 8].includes(required.status) || !required.stdout)
+    throw new Error("Could not read required publication checks.");
+  return publicationRequiredChecksPassed(JSON.parse(required.stdout));
+}
+
+export function publicationRequiredChecksPassed(required) {
+  const checks = required.filter(({ name }) => name !== context);
+  return checks.some(({ name, bucket }) => name === "Release notes or reviewed bug fix" && bucket === "pass") &&
+    checks.every(({ bucket }) => bucket === "pass");
 }
 
 export function releaseReviewPassed(decision) {
@@ -175,6 +252,7 @@ const live = {
   listPRs: openMainPRs,
   getPR: (number) => api(`pulls/${number}`),
   checksPassed: allChecksPassed,
+  publicationPassed: (pr, now) => publicationDiffPassed(pr, publicationFiles(pr), now),
   reviewPassed,
   getStatus: gateStatus,
   postStatus,
@@ -183,10 +261,12 @@ const live = {
 
 async function holdMonthlyGate(pr, description, io) {
   const status = await io.getStatus(pr.head.sha);
-  // Do not revoke an independently approved initial promotion or hotfix.
+  // Preserve valid independent approvals, but revoke stale publication approval.
   if (
     status?.state === "success" &&
-    status.description?.startsWith("monthly release approved")
+    (status.description?.startsWith("monthly release approved") ||
+      (status.description?.startsWith("publication release approved") &&
+        releaseApproval(pr, "publication", pr.head.sha)))
   ) {
     await io.postStatus(pr.head.sha, "pending", description);
   }
@@ -202,14 +282,21 @@ export async function openGate(
   const pr = await io.getPR(number);
   const hold = async (reason) => {
     if (mode === "monthly") await holdMonthlyGate(pr, reason, io);
+    if (mode === "publication") {
+      const status = await io.getStatus(pr.head.sha);
+      if (status?.state === "success" && status.description?.startsWith("publication release approved"))
+        await io.postStatus(pr.head.sha, "pending", reason);
+    }
     io.log(`PR #${number}: ${reason}`);
     return false;
   };
   const reason = releaseApproval(pr, mode, expectedHead);
   if (reason) return hold(reason);
-  if (!(await io.checksPassed(number)) || !(await io.reviewPassed(number))) {
+  if (!(await io.checksPassed(number, mode)) || !(await io.reviewPassed(number))) {
     return hold("CI, release notes, or required review is not passing.");
   }
+  if (mode === "publication" && !(await io.publicationPassed(pr, now())))
+    return hold("Publication diff is not limited to the approved dated notes and record.");
   const latest = await io.getPR(number);
   if (!sameApproval(pr, latest))
     return hold("PR changed while checks were evaluated; gate remains closed.");
@@ -316,6 +403,7 @@ async function main() {
     mode !== "monthly" &&
     mode !== "initial" &&
     mode !== "hotfix" &&
+    mode !== "publication" &&
     mode !== "close"
   ) {
     throw new Error("Unknown release mode.");
@@ -327,6 +415,8 @@ async function main() {
   ) {
     throw new Error("Manual release requires the exact expected head SHA.");
   }
+  if (mode === "publication" && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch")
+    throw new Error("Publication requires a reviewed manual dispatch.");
   const number = Number(process.env.RELEASE_PR_NUMBER);
   if (
     mode !== "monthly" &&

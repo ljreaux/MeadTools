@@ -31,7 +31,7 @@ jobs:
           fetch-depth: 0
 
       - name: Test impact and workflow regression rules
-        run: node --test scripts/app-impact.test.mjs scripts/quality-impact.test.mjs
+        run: npm run test:workflows
 
       - name: Classify changed paths
         id: impact
