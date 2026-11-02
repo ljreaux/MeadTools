@@ -112,3 +112,77 @@ test("monthly internal notes require a changed draft, monthly PR, valid products
   ])
     assert.equal(evaluateNoteGate({ ...args, ...change }).ok, false);
 });
+
+test("policy note check validates real git diff, exact approval, and excludes public/app changes", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import(
+    "node:fs"
+  );
+  const { tmpdir } = await import("node:os");
+  const { join, resolve } = await import("node:path");
+  const { execFileSync, spawnSync } = await import("node:child_process");
+  const dir = mkdtempSync(join(tmpdir(), "meadtools-policy-"));
+  const git = (...args) =>
+    execFileSync("git", args, { cwd: dir, encoding: "utf8" }).trim();
+  try {
+    git("init", "-q");
+    git("config", "user.name", "Policy test");
+    git("config", "user.email", "test@example.invalid");
+    mkdirSync(join(dir, "scripts"));
+    writeFileSync(join(dir, "scripts/release-policy.mjs"), "// original\n");
+    git("add", ".");
+    git("commit", "-qm", "base");
+    const base = git("rev-parse", "HEAD");
+    writeFileSync(
+      join(dir, "scripts/release-policy.mjs"),
+      "// reviewed policy\n",
+    );
+    git("add", ".");
+    git("commit", "-qm", "policy");
+    const head = git("rev-parse", "HEAD");
+    const pr = {
+      state: "open",
+      draft: false,
+      base: {
+        ref: "main",
+        sha: base,
+        repo: { full_name: "ljreaux/MeadTools" },
+      },
+      head: {
+        ref: "release/policy-test",
+        sha: head,
+        repo: { full_name: "ljreaux/MeadTools" },
+      },
+      labels: [{ name: "release-ready" }, { name: "policy-ready" }],
+      body: `Release-ready head: ${head}\nRelease-ready base: ${base}\nMobile production build: skip\nPolicy approval: Larry Reaux approved this workflow policy change.`,
+    };
+    const eventPath = join(dir, "event.json");
+    const run = () => {
+      writeFileSync(eventPath, JSON.stringify({ pull_request: pr }));
+      return spawnSync(
+        process.execPath,
+        [resolve("scripts/check-pr-release-notes.mjs")],
+        {
+          cwd: dir,
+          env: { ...process.env, GITHUB_EVENT_PATH: eventPath },
+          encoding: "utf8",
+        },
+      );
+    };
+    assert.equal(run().status, 0);
+    pr.body = pr.body.replace("Policy approval:", "Unapproved:");
+    assert.notEqual(run().status, 0);
+    pr.body = pr.body.replace("Unapproved:", "Policy approval:");
+    writeFileSync(
+      join(dir, "application.js"),
+      "// forbidden application change\n",
+    );
+    git("add", "application.js");
+    git("commit", "-qm", "application");
+    const mixed = git("rev-parse", "HEAD");
+    pr.head.sha = mixed;
+    pr.body = pr.body.replace(head, mixed);
+    assert.notEqual(run().status, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
