@@ -148,14 +148,25 @@ if (
   if (!pr || pr.base.ref !== "main")
     throw new Error("Expected a pull request into main.");
   if (pr.labels.some(({ name }) => name === "policy-ready")) {
-    const files = execFileSync("git", ["diff", "--name-status", "--no-renames", pr.base.sha, pr.head.sha], { encoding: "utf8" })
-      .trim().split("\n").filter(Boolean).map(line => {
+    const files = execFileSync(
+      "git",
+      ["diff", "--name-status", "--no-renames", pr.base.sha, pr.head.sha],
+      { encoding: "utf8" },
+    )
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
         const [status, path] = line.split("\t");
         return { path, status: { A: "added", M: "modified" }[status] };
       });
     if (!policyApproval(pr) || !policyDiffPassed(files))
-      throw new Error("Policy maintenance requires exact-SHA approval and a release-policy-only diff.");
-    console.log("Reviewed release-policy maintenance; no application or public-note changes.");
+      throw new Error(
+        "Policy maintenance requires exact-SHA approval and a release-policy-only diff.",
+      );
+    console.log(
+      "Reviewed release-policy maintenance; no application or public-note changes.",
+    );
     process.exit(0);
   }
   const monthlyRelease =
