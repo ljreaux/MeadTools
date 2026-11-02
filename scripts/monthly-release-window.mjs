@@ -306,7 +306,10 @@ function openMainPRs() {
   for (let page = 1; ; page++) {
     const prs = api(`pulls?state=open&base=main&per_page=100&page=${page}`);
     result.push(...prs);
-    if (prs.length < 100) return result;
+    if (prs.length < 100) {
+      const base = api("git/ref/heads/main").object.sha;
+      return result.map((pr) => ({ ...pr, base: { ...pr.base, sha: base } }));
+    }
   }
 }
 
@@ -315,9 +318,19 @@ function gateStatus(sha) {
   return result.statuses.find((status) => status.context === context);
 }
 
+// Pull-request snapshots may retain the old base SHA after main advances.
+// Bind authorization to the live target ref on every read, including the final
+// read before writing success, rather than accepting that cached snapshot.
+export function currentMainPR(number, read = api) {
+  const pr = read(`pulls/${number}`);
+  if (pr.base.ref === "main")
+    pr.base.sha = read("git/ref/heads/main").object.sha;
+  return pr;
+}
+
 const live = {
   listPRs: openMainPRs,
-  getPR: (number) => api(`pulls/${number}`),
+  getPR: currentMainPR,
   checksPassed: allChecksPassed,
   policyPassed: (pr) =>
     policyDiffPassed(
