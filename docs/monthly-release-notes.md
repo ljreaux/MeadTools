@@ -56,6 +56,9 @@ release approval. Final approval must follow all preparation/Weblate commits.
 
 After production verification and publication approval, copy only verified
 items into the actual dated public entry. Put the publication through a
-reviewed PR and the monthly gate before noon; if the window or a prerequisite
-is missed, leave the public draft unpublished and report the blocker. A public
+reviewed publication-only `preview` → `main` PR using the manual `publication`
+mode in [the gate procedure](monthly-release-gate.md#post-deployment-publication).
+This mode can run after noon with exact head/base, `release-ready` and
+`publication-ready`, Mobile skip, explicit publication approval, and green
+checks/reviews. If any prerequisite is missing, retain the draft and report it. A public
 entry starts automatic email, so do not use it as a Friday placeholder.

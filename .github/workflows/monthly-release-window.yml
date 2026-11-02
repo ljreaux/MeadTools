@@ -26,16 +26,16 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "monthly retry, close expired gate, initial promotion, or hotfix"
+        description: "monthly retry, close expired gate, initial promotion, hotfix, publication, or policy"
         type: choice
-        options: [monthly, close, initial, hotfix]
+        options: [monthly, close, initial, hotfix, publication, policy]
         required: true
       pr_number:
-        description: "PR number for initial promotion or hotfix"
+        description: "PR number for initial promotion, hotfix, publication, or policy"
         type: number
         required: false
       expected_head_sha:
-        description: "Exact approved head SHA for initial promotion or hotfix"
+        description: "Exact approved head SHA for initial promotion, hotfix, publication, or policy"
         type: string
         required: false
 
