@@ -506,6 +506,32 @@
             ]
           }
         }
+      },
+      "2026-11-02": {
+        "title": "November 2026",
+        "summary": "This release adds new recipe and brew planning tools, more website themes, and a major update to the beta MeadTools assistant. MeadTools Premium is now visible in production ahead of its November 9 launch; new premium subscriptions will open on November 9.",
+        "products": {
+          "web": {
+            "items": [
+              "Plan recipe and brew losses with optional editable loss estimates while keeping recorded brew volumes as actual measurements.",
+              "Create a brew directly from a newly saved, owned, or public recipe, with source attribution and an explicit option to refresh the recipe snapshot.",
+              "Choose from four additional visual themes for MeadTools.",
+              "Preview the MeadTools Premium offering ahead of its November 9 launch, including ingredient inventory, equipment management, brew photos, printable brew QR codes, MCP access, and monthly hosted-chat credits. New premium subscriptions are not yet available."
+            ]
+          },
+          "chat": {
+            "items": [
+              "The beta MeadTools assistant now runs on a newer, more capable model for improved brewing guidance and recipe help.",
+              "The assistant now uses shared MeadTools brewing tools with clearer progress reporting and sensor-history summaries that retain measurement provenance."
+            ]
+          },
+          "api": {
+            "items": [
+              "Improved interrupted-chat credit reconciliation and hardened application database access for server-only data.",
+              "Removed the unused pgjwt extension as part of database maintenance preparation."
+            ]
+          }
+        }
       }
     }
   },
