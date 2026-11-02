@@ -64,8 +64,7 @@ jobs:
           fi
 
           if git merge-base --is-ancestor origin/main origin/preview; then
-            echo "Fast-forwarding main to preview."
-            git push origin "$preview_sha:refs/heads/main"
+            echo "Preview already contains main with identical files; no production promotion is needed."
             exit 0
           fi
 
