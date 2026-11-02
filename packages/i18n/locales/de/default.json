@@ -2356,6 +2356,32 @@
                         ]
                     }
                 }
+            },
+            "2026-11-02": {
+                "title": "November 2026",
+                "summary": "Diese Version fügt neue Planungswerkzeuge für Rezepte und Ansätze, weitere Website-Themes und ein größeres Update des Beta-MeadTools-Assistenten hinzu. MeadTools Premium ist in der Produktion bereits vor dem Start am 9. November sichtbar; neue Premium-Abonnements werden am 9. November verfügbar sein.",
+                "products": {
+                    "web": {
+                        "items": [
+                            "Plane Rezept- und Ansatzverluste mit optional bearbeitbaren Verlustschätzungen, während aufgezeichnete Ansatzvolumina als tatsächliche Messwerte erhalten bleiben.",
+                            "Erstelle einen Ansatz direkt aus einem neu gespeicherten, eigenen oder öffentlichen Rezept, mit Quellenangabe und einer expliziten Option, den Rezept-Snapshot zu aktualisieren.",
+                            "Wähle aus vier zusätzlichen visuellen Themes für MeadTools.",
+                            "Sieh dir das MeadTools Premium-Angebot vor dem Start am 9. November an, inklusive Zutatenbestand, Geräteverwaltung, Ansatzfotos, druckbaren Ansatz-QR-Codes, MCP-Zugang und monatlichen Guthaben für gehostete Chats. Neue Premium-Abonnements sind noch nicht verfügbar."
+                        ]
+                    },
+                    "chat": {
+                        "items": [
+                            "Der Beta-MeadTools-Assistent läuft jetzt auf einem neueren, leistungsfähigeren Modell und bietet verbesserte Unterstützung beim Brauen und bei Rezepten.",
+                            "Der Assistent nutzt jetzt gemeinsame MeadTools-Brauwerkzeuge mit klarerer Fortschrittsanzeige und Zusammenfassungen des Sensorverlaufs, die die Herkunft der Messwerte beibehalten."
+                        ]
+                    },
+                    "api": {
+                        "items": [
+                            "Verbesserte Abrechnung unterbrochener Chat-Credits und robusterer Zugriff auf die Anwendungsdatenbank für serverseitige Daten.",
+                            "Die ungenutzte pgjwt-Erweiterung wurde im Zuge der Datenbankwartung entfernt."
+                        ]
+                    }
+                }
             }
         }
     },
