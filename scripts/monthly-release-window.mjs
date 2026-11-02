@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { policyApproval, policyDiffPassed } from "./release-policy.mjs";
 import { isDeepStrictEqual } from "node:util";
 import { evaluateNoteGate } from "./check-pr-release-notes.mjs";
 import { pathToFileURL } from "node:url";
@@ -40,7 +41,7 @@ export function releaseApproval(pr, mode, expectedHead) {
     pr.state !== "open" ||
     pr.draft ||
     pr.base.ref !== "main" ||
-    (mode !== "hotfix" && pr.head.ref !== "preview") ||
+    (!["hotfix", "policy"].includes(mode) && pr.head.ref !== "preview") ||
     pr.head.repo?.full_name !== repository()
   ) {
     return "Only an open, non-draft same-repository main PR can be armed.";
@@ -69,17 +70,19 @@ export function releaseApproval(pr, mode, expectedHead) {
   ) {
     return "A hotfix needs hotfix-ready and bug-fix-only labels.";
   }
+  if (mode === "policy" && (!expectedHead || !policyApproval(pr, expectedHead)))
+    return "Policy maintenance requires reviewed exact-SHA policy-ready authorization.";
   if (mode === "publication") {
     if (!expectedHead || !labels.has("publication-ready"))
       return "Publication requires an expected head SHA and publication-ready label.";
-    if (build !== "skip" || labels.has("bug-fix-only") || labels.has("hotfix-ready") || labels.has("initial-release-ready"))
+    if (build !== "skip" || labels.has("bug-fix-only") || labels.has("hotfix-ready") || labels.has("initial-release-ready") || labels.has("policy-ready"))
       return "Publication requires Mobile skip and no promotion/exemption labels.";
     if (!/^Publication approval: Larry Reaux approved publication after production verification\.\s*$/m.test(body))
       return "Explicit post-deployment publication approval is missing.";
     if (!/^Publication date: \d{4}-\d{2}-\d{2}\s*$/m.test(body))
       return "Publication date is missing.";
   }
-  if ((mode === "monthly" || mode === "publication") && !pr.auto_merge)
+  if (["monthly", "publication", "policy"].includes(mode) && !pr.auto_merge)
     return "Native GitHub auto-merge is not armed.";
   return null;
 }
@@ -113,16 +116,20 @@ export function publicationDiffPassed(pr, files, now = new Date()) {
   return true;
 }
 
-function publicationFiles(pr) {
+function changedFiles(pr) {
   const files = [];
   for (let page = 1; ; page++) {
     const batch = api(`pulls/${pr.number}/files?per_page=100&page=${page}`);
     files.push(...batch);
     if (batch.length < 100) break;
-    if (files.length >= 3000) throw new Error("Publication diff exceeds GitHub's file limit.");
+    if (files.length >= 3000) throw new Error("Release diff exceeds GitHub's file limit.");
   }
-  if (files.length !== pr.changed_files) throw new Error("Incomplete publication diff.");
-  return files.map((file) => {
+  if (files.length !== pr.changed_files) throw new Error("Incomplete release diff.");
+  return files;
+}
+
+function publicationFiles(pr) {
+  return changedFiles(pr).map((file) => {
     const path = file.filename;
     if (!/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(path) || file.status !== "modified")
       return { path, status: file.status };
@@ -193,7 +200,7 @@ function allChecksPassed(number, mode) {
       `Could not read checks for PR #${number}: ${result.stderr}`,
     );
   if (!releaseChecksPassed(JSON.parse(result.stdout))) return false;
-  if (mode !== "publication") return true;
+  if (!["publication", "policy"].includes(mode)) return true;
   // Required checks must also pass, including any required Expo check that the
   // normal promotion policy excludes from its visible-check scan.
   const required = spawnSync("gh", ["pr", "checks", String(number), "--repo", repository(), "--required", "--json", "name,bucket"], { encoding: "utf8" });
@@ -252,6 +259,7 @@ const live = {
   listPRs: openMainPRs,
   getPR: (number) => api(`pulls/${number}`),
   checksPassed: allChecksPassed,
+  policyPassed: (pr) => policyDiffPassed(changedFiles(pr).map(file => ({ path: file.filename, status: file.status }))),
   publicationPassed: (pr, now) => publicationDiffPassed(pr, publicationFiles(pr), now),
   reviewPassed,
   getStatus: gateStatus,
@@ -261,12 +269,14 @@ const live = {
 
 async function holdMonthlyGate(pr, description, io) {
   const status = await io.getStatus(pr.head.sha);
-  // Preserve valid independent approvals, but revoke stale publication approval.
+  // Preserve valid independent approvals; revoke stale publication/policy approval.
   if (
     status?.state === "success" &&
     (status.description?.startsWith("monthly release approved") ||
       (status.description?.startsWith("publication release approved") &&
-        releaseApproval(pr, "publication", pr.head.sha)))
+        releaseApproval(pr, "publication", pr.head.sha)) ||
+      (status.description?.startsWith("policy release approved") &&
+        releaseApproval(pr, "policy", pr.head.sha)))
   ) {
     await io.postStatus(pr.head.sha, "pending", description);
   }
@@ -282,9 +292,9 @@ export async function openGate(
   const pr = await io.getPR(number);
   const hold = async (reason) => {
     if (mode === "monthly") await holdMonthlyGate(pr, reason, io);
-    if (mode === "publication") {
+    if (["publication", "policy"].includes(mode)) {
       const status = await io.getStatus(pr.head.sha);
-      if (status?.state === "success" && status.description?.startsWith("publication release approved"))
+      if (status?.state === "success" && status.description?.startsWith(`${mode} release approved`))
         await io.postStatus(pr.head.sha, "pending", reason);
     }
     io.log(`PR #${number}: ${reason}`);
@@ -297,6 +307,8 @@ export async function openGate(
   }
   if (mode === "publication" && !(await io.publicationPassed(pr, now())))
     return hold("Publication diff is not limited to the approved dated notes and record.");
+  if (mode === "policy" && !(await io.policyPassed(pr)))
+    return hold("Policy diff includes files outside the reviewed release-policy allowlist.");
   const latest = await io.getPR(number);
   if (!sameApproval(pr, latest))
     return hold("PR changed while checks were evaluated; gate remains closed.");
@@ -404,6 +416,7 @@ async function main() {
     mode !== "initial" &&
     mode !== "hotfix" &&
     mode !== "publication" &&
+    mode !== "policy" &&
     mode !== "close"
   ) {
     throw new Error("Unknown release mode.");
@@ -415,7 +428,7 @@ async function main() {
   ) {
     throw new Error("Manual release requires the exact expected head SHA.");
   }
-  if (mode === "publication" && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch")
+  if (["publication", "policy"].includes(mode) && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch")
     throw new Error("Publication requires a reviewed manual dispatch.");
   const number = Number(process.env.RELEASE_PR_NUMBER);
   if (
