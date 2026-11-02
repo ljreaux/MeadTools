@@ -676,3 +676,24 @@ test("policy diff allowlist excludes application files, public notes, records an
     );
   }
 });
+
+
+test("live main ref overrides stale PR base snapshots before authorization", async () => {
+  const { currentMainPR } = await import("./monthly-release-window.mjs");
+  const f = publicationFixture();
+  const newerBase = "c".repeat(40);
+  const reads = [];
+  const read = (path) => {
+    reads.push(path);
+    if (path === "pulls/1") return structuredClone(f.pr);
+    if (path === "git/ref/heads/main") return { object: { sha: newerBase } };
+    throw new Error("Unexpected API read");
+  };
+  const current = currentMainPR(1, read);
+  assert.equal(current.base.sha, newerBase);
+  assert.match(releaseApproval(current, "publication", head), /SHA/);
+  assert.deepEqual(reads, ["pulls/1", "git/ref/heads/main"]);
+  f.io.getPR = () => currentMainPR(1, read);
+  assert.equal(await openGate(1, "publication", head, f.io, outside), false);
+  assert.equal(f.posts.length, 0);
+});
