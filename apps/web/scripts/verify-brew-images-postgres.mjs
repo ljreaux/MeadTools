@@ -157,18 +157,23 @@ test("actual concurrent reservations cannot oversubscribe account allowance", as
   hold = new Promise((resolve) => {
     release = resolve;
   });
-  const requests = [
+  // Observe both requests immediately: the expected quota rejection can arrive
+  // while the accepted upload is still held at the storage boundary.
+  const settled = Promise.allSettled([
     service.upload(f.userId, f.brewId, payload()),
     service.upload(f.userId, f.brewId, payload()),
-  ];
+  ]);
   // Wait for the accepted request to reach the storage boundary before releasing it.
-  for (let i = 0; i < 100; i++) {
-    if (await db.brew_images.count({ where: { status: "pending" } })) break;
-    await new Promise((resolve) => setTimeout(resolve, 5));
+  try {
+    for (let i = 0; i < 100; i++) {
+      if (await db.brew_images.count({ where: { status: "pending" } })) break;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  } finally {
+    release();
+    hold = null;
   }
-  release();
-  hold = null;
-  const results = await Promise.allSettled(requests);
+  const results = await settled;
   assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
   assert.ok(
     results.some(
