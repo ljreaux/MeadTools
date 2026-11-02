@@ -106,6 +106,7 @@ jobs:
           npm run test:premium-foundation
           npm run test:mcp-account-reads-postgres
           node scripts/verify-supabase-hardening-postgres.mjs
+          node scripts/verify-hardening-recovery-postgres.mjs
 
       - name: Verify brew image quota, privacy, and cleanup on disposable PostgreSQL
         env:
