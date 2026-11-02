@@ -75,9 +75,19 @@ export function releaseApproval(pr, mode, expectedHead) {
   if (mode === "publication") {
     if (!expectedHead || !labels.has("publication-ready"))
       return "Publication requires an expected head SHA and publication-ready label.";
-    if (build !== "skip" || labels.has("bug-fix-only") || labels.has("hotfix-ready") || labels.has("initial-release-ready") || labels.has("policy-ready"))
+    if (
+      build !== "skip" ||
+      labels.has("bug-fix-only") ||
+      labels.has("hotfix-ready") ||
+      labels.has("initial-release-ready") ||
+      labels.has("policy-ready")
+    )
       return "Publication requires Mobile skip and no promotion/exemption labels.";
-    if (!/^Publication approval: Larry Reaux approved publication after production verification\.\s*$/m.test(body))
+    if (
+      !/^Publication approval: Larry Reaux approved publication after production verification\.\s*$/m.test(
+        body,
+      )
+    )
       return "Explicit post-deployment publication approval is missing.";
     if (!/^Publication date: \d{4}-\d{2}-\d{2}\s*$/m.test(body))
       return "Publication date is missing.";
@@ -90,23 +100,45 @@ export function releaseApproval(pr, mode, expectedHead) {
 // Publication may add exactly one approved date, with no application or unrelated
 // locale changes. Compare full JSON objects rather than trusting paths or patches.
 export function publicationDiffPassed(pr, files, now = new Date()) {
-  const date = (pr.body ?? "").match(/^Publication date: (\d{4}-\d{2}-\d{2})\s*$/m)?.[1];
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(now);
-  if (!date || date > today || !Array.isArray(files) || !files.length) return false;
+  const date = (pr.body ?? "").match(
+    /^Publication date: (\d{4}-\d{2}-\d{2})\s*$/m,
+  )?.[1];
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+  }).format(now);
+  if (!date || date > today || !Array.isArray(files) || !files.length)
+    return false;
   const notesPath = "packages/i18n/locales/en/default.json";
   if (!files.some(({ path }) => path === notesPath)) return false;
   for (const file of files) {
-    if (file.path === `docs/releases/${date.slice(0, 7)}.md` && ["added", "modified"].includes(file.status)) continue;
-    if (!/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(file.path) || file.status !== "modified") return false;
+    if (
+      file.path === `docs/releases/${date.slice(0, 7)}.md` &&
+      ["added", "modified"].includes(file.status)
+    )
+      continue;
+    if (
+      !/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(file.path) ||
+      file.status !== "modified"
+    )
+      return false;
     try {
       const before = JSON.parse(file.before);
       const after = JSON.parse(file.after);
       const oldEntries = before.releaseNotes?.entries ?? {};
       const newEntries = after.releaseNotes?.entries ?? {};
-      if (Object.hasOwn(oldEntries, date) || !Object.hasOwn(newEntries, date)) return false;
+      if (Object.hasOwn(oldEntries, date) || !Object.hasOwn(newEntries, date))
+        return false;
       const entry = newEntries[date];
       if (entry.products?.mobile || entry.products?.mobilePreview) return false;
-      if (!evaluateNoteGate({ baseEntries: {}, headEntries: { [date]: entry }, labels: [], body: "" }).ok) return false;
+      if (
+        !evaluateNoteGate({
+          baseEntries: {},
+          headEntries: { [date]: entry },
+          labels: [],
+          body: "",
+        }).ok
+      )
+        return false;
       delete newEntries[date];
       if (!isDeepStrictEqual(before, after)) return false;
     } catch {
@@ -122,23 +154,34 @@ function changedFiles(pr) {
     const batch = api(`pulls/${pr.number}/files?per_page=100&page=${page}`);
     files.push(...batch);
     if (batch.length < 100) break;
-    if (files.length >= 3000) throw new Error("Release diff exceeds GitHub's file limit.");
+    if (files.length >= 3000)
+      throw new Error("Release diff exceeds GitHub's file limit.");
   }
-  if (files.length !== pr.changed_files) throw new Error("Incomplete release diff.");
+  if (files.length !== pr.changed_files)
+    throw new Error("Incomplete release diff.");
   return files;
 }
 
 function publicationFiles(pr) {
   return changedFiles(pr).map((file) => {
     const path = file.filename;
-    if (!/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(path) || file.status !== "modified")
+    if (
+      !/^packages\/i18n\/locales\/(en|de)\/default\.json$/.test(path) ||
+      file.status !== "modified"
+    )
       return { path, status: file.status };
     const read = (sha) => {
       const content = api(`contents/${path}?ref=${sha}`);
-      if (content.encoding !== "base64") throw new Error("Cannot read full locale content.");
+      if (content.encoding !== "base64")
+        throw new Error("Cannot read full locale content.");
       return Buffer.from(content.content, "base64").toString("utf8");
     };
-    return { path, status: file.status, before: read(pr.base.sha), after: read(pr.head.sha) };
+    return {
+      path,
+      status: file.status,
+      before: read(pr.base.sha),
+      after: read(pr.head.sha),
+    };
   });
 }
 
@@ -203,7 +246,20 @@ function allChecksPassed(number, mode) {
   if (!["publication", "policy"].includes(mode)) return true;
   // Required checks must also pass, including any required Expo check that the
   // normal promotion policy excludes from its visible-check scan.
-  const required = spawnSync("gh", ["pr", "checks", String(number), "--repo", repository(), "--required", "--json", "name,bucket"], { encoding: "utf8" });
+  const required = spawnSync(
+    "gh",
+    [
+      "pr",
+      "checks",
+      String(number),
+      "--repo",
+      repository(),
+      "--required",
+      "--json",
+      "name,bucket",
+    ],
+    { encoding: "utf8" },
+  );
   // gh exits 8 while our own gate is pending. Read the JSON, but reject API errors.
   if (![0, 1, 8].includes(required.status) || !required.stdout)
     throw new Error("Could not read required publication checks.");
@@ -212,8 +268,12 @@ function allChecksPassed(number, mode) {
 
 export function publicationRequiredChecksPassed(required) {
   const checks = required.filter(({ name }) => name !== context);
-  return checks.some(({ name, bucket }) => name === "Release notes or reviewed bug fix" && bucket === "pass") &&
-    checks.every(({ bucket }) => bucket === "pass");
+  return (
+    checks.some(
+      ({ name, bucket }) =>
+        name === "Release notes or reviewed bug fix" && bucket === "pass",
+    ) && checks.every(({ bucket }) => bucket === "pass")
+  );
 }
 
 export function releaseReviewPassed(decision) {
@@ -259,8 +319,15 @@ const live = {
   listPRs: openMainPRs,
   getPR: (number) => api(`pulls/${number}`),
   checksPassed: allChecksPassed,
-  policyPassed: (pr) => policyDiffPassed(changedFiles(pr).map(file => ({ path: file.filename, status: file.status }))),
-  publicationPassed: (pr, now) => publicationDiffPassed(pr, publicationFiles(pr), now),
+  policyPassed: (pr) =>
+    policyDiffPassed(
+      changedFiles(pr).map((file) => ({
+        path: file.filename,
+        status: file.status,
+      })),
+    ),
+  publicationPassed: (pr, now) =>
+    publicationDiffPassed(pr, publicationFiles(pr), now),
   reviewPassed,
   getStatus: gateStatus,
   postStatus,
@@ -294,7 +361,10 @@ export async function openGate(
     if (mode === "monthly") await holdMonthlyGate(pr, reason, io);
     if (["publication", "policy"].includes(mode)) {
       const status = await io.getStatus(pr.head.sha);
-      if (status?.state === "success" && status.description?.startsWith(`${mode} release approved`))
+      if (
+        status?.state === "success" &&
+        status.description?.startsWith(`${mode} release approved`)
+      )
         await io.postStatus(pr.head.sha, "pending", reason);
     }
     io.log(`PR #${number}: ${reason}`);
@@ -302,13 +372,20 @@ export async function openGate(
   };
   const reason = releaseApproval(pr, mode, expectedHead);
   if (reason) return hold(reason);
-  if (!(await io.checksPassed(number, mode)) || !(await io.reviewPassed(number))) {
+  if (
+    !(await io.checksPassed(number, mode)) ||
+    !(await io.reviewPassed(number))
+  ) {
     return hold("CI, release notes, or required review is not passing.");
   }
   if (mode === "publication" && !(await io.publicationPassed(pr, now())))
-    return hold("Publication diff is not limited to the approved dated notes and record.");
+    return hold(
+      "Publication diff is not limited to the approved dated notes and record.",
+    );
   if (mode === "policy" && !(await io.policyPassed(pr)))
-    return hold("Policy diff includes files outside the reviewed release-policy allowlist.");
+    return hold(
+      "Policy diff includes files outside the reviewed release-policy allowlist.",
+    );
   const latest = await io.getPR(number);
   if (!sameApproval(pr, latest))
     return hold("PR changed while checks were evaluated; gate remains closed.");
@@ -428,7 +505,10 @@ async function main() {
   ) {
     throw new Error("Manual release requires the exact expected head SHA.");
   }
-  if (["publication", "policy"].includes(mode) && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch")
+  if (
+    ["publication", "policy"].includes(mode) &&
+    process.env.GITHUB_EVENT_NAME !== "workflow_dispatch"
+  )
     throw new Error("Publication requires a reviewed manual dispatch.");
   const number = Number(process.env.RELEASE_PR_NUMBER);
   if (
