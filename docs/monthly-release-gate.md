@@ -107,7 +107,10 @@ Dispatch from the trusted default branch only after the workflow change itself
 has been reviewed and merged. The runner checks out that default branch; never
 run a proposed PR's script with status-write permission. The mode verifies the
 whole file contents at immutable PR head/base SHAs and rechecks authorization
-before writing success. Native GitHub auto-merge then publishes the notes. No
+before writing success. Every PR read binds the base SHA to the live `main`
+ref because GitHub PR snapshots can retain an older base after main advances.
+Close-only scans also use the live main ref to revoke stale approvals.
+Native GitHub auto-merge then publishes the notes. No
 manual success status, ruleset bypass, bug-only exemption, or Mobile dispatch is
 part of publication. Noon closure preserves valid publication approval; stale
 head/base or revoked authorization closes it. PR edits/review events reset it.
