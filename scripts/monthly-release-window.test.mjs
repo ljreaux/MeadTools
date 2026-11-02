@@ -324,3 +324,119 @@ test("reviewed hotfix can open outside monthly window only for the approved SHA"
   assert.equal(await openGate(1, "hotfix", head, f.io, outside), true);
   assert.equal(f.posts[0].state, "success");
 });
+
+const { openGate, publicationDiffPassed } = await import("./monthly-release-window.mjs");
+const outside = () => new Date("2026-11-03T18:00:00Z");
+function publicationFixture() {
+  const f = fixture();
+  f.pr.labels.push({ name: "publication-ready" });
+  f.pr.body += "\nPublication date: 2026-11-02\nPublication approval: Larry Reaux approved publication after production verification.";
+  f.io.publicationPassed = () => true;
+  return f;
+}
+const entry = { title: "November", summary: "Verified release", products: { web: { items: ["Shipped feature"] } } };
+function publicationFilesFixture() {
+  return [{
+    path: "packages/i18n/locales/en/default.json", status: "modified",
+    before: JSON.stringify({ other: "unchanged", releaseNotes: { entries: {} } }),
+    after: JSON.stringify({ other: "unchanged", releaseNotes: { entries: { "2026-11-02": entry } } }),
+  }];
+}
+
+test("publication opens outside the monthly window, is idempotent, and survives close-only", async () => {
+  const f = publicationFixture();
+  assert.equal(await openGate(1, "publication", head, f.io, outside), true);
+  assert.equal(await openGate(1, "publication", head, f.io, outside), true);
+  await runMonthlyGate(f.io, outside, true);
+  assert.equal(f.posts.length, 1);
+  assert.equal(f.posts[0].description, "publication release approved for the exact reviewed commit");
+});
+
+test("publication requires exact approval, labels, Mobile skip, native auto-merge, checks and review", async () => {
+  for (const mutate of [
+    f => { f.pr.labels = [{ name: "release-ready" }]; },
+    f => { f.pr.labels = [{ name: "publication-ready" }]; },
+    f => { f.pr.labels.push({ name: "bug-fix-only" }); },
+    f => { f.pr.labels.push({ name: "initial-release-ready" }); },
+    f => { f.pr.labels.push({ name: "skip-mobile-check" }); },
+    f => { f.pr.head.ref = "other"; },
+    f => { f.pr.head.repo.full_name = "other/repo"; },
+    f => { f.pr.base.sha = "c".repeat(40); },
+    f => { f.pr.draft = true; },
+    f => { f.pr.auto_merge = null; },
+    f => { f.pr.body = f.pr.body.replace("Mobile production build: skip", "Mobile production build: run"); f.pr.labels.push({ name: "build-mobile-production" }); },
+    f => { f.pr.body = f.pr.body.replace("Publication approval:", "Unapproved:"); },
+    f => { f.pr.body = f.pr.body.replace("Publication date:", "Other date:"); },
+    f => { f.io.checksPassed = () => false; },
+    f => { f.io.reviewPassed = () => false; },
+    f => { f.io.publicationPassed = () => false; },
+  ]) {
+    const f = publicationFixture(); mutate(f);
+    assert.equal(await openGate(1, "publication", head, f.io, outside), false);
+    assert.equal(f.posts.length, 0);
+  }
+  const f = publicationFixture();
+  assert.equal(await openGate(1, "publication", undefined, f.io, outside), false);
+  assert.equal(await openGate(1, "publication", "c".repeat(40), f.io, outside), false);
+});
+
+test("publication validates complete locale objects, date, product scope, and path allowlist", () => {
+  const { pr } = publicationFixture();
+  assert.equal(publicationDiffPassed(pr, publicationFilesFixture(), outside()), true);
+  const translated = publicationFilesFixture();
+  translated.push({ ...translated[0], path: "packages/i18n/locales/de/default.json" });
+  translated.push({ path: "docs/releases/2026-11.md", status: "modified" });
+  assert.equal(publicationDiffPassed(pr, translated, outside()), true);
+  for (const mutate of [
+    files => files.push({ path: ".github/workflows/anything.yml", status: "modified" }),
+    files => files.push({ path: "apps/web/app/page.tsx", status: "modified" }),
+    files => files.push({ path: "docs/releases/2026-11.json", status: "modified" }),
+    files => { files[0].status = "renamed"; },
+    files => { files[0].after = "invalid"; },
+    files => { const json = JSON.parse(files[0].after); json.other = "changed"; files[0].after = JSON.stringify(json); },
+    files => { files[0].before = files[0].after; },
+    files => { const json = JSON.parse(files[0].after); json.releaseNotes.entries["2026-10-01"] = entry; files[0].after = JSON.stringify(json); },
+    files => { const json = JSON.parse(files[0].after); json.releaseNotes.entries["2026-11-02"].products.mobile = { items: ["Not authorized"] }; files[0].after = JSON.stringify(json); },
+    files => { const json = JSON.parse(files[0].after); json.releaseNotes.entries["2026-11-02"].summary = ""; files[0].after = JSON.stringify(json); },
+  ]) {
+    const files = publicationFilesFixture(); mutate(files);
+    assert.equal(publicationDiffPassed(pr, files, outside()), false);
+  }
+  assert.equal(publicationDiffPassed(pr, [], outside()), false);
+  assert.equal(publicationDiffPassed(pr, publicationFilesFixture(), new Date("2026-11-01T18:00:00Z")), false);
+  pr.body = pr.body.replaceAll("2026-11-02", "2026-02-30");
+  assert.equal(publicationDiffPassed(pr, publicationFilesFixture(), outside()), false);
+});
+
+test("publication rechecks authorization after diff inspection and before writing", async () => {
+  for (const phase of ["publicationPassed", "getStatus"]) {
+    const f = publicationFixture();
+    f.io[phase] = () => { f.pr.base.sha = "c".repeat(40); return true; };
+    assert.equal(await openGate(1, "publication", head, f.io, outside), false);
+    assert.equal(f.posts.length, 0);
+  }
+});
+
+test("stale publication approval and a failed retry revoke prior publication success", async () => {
+  const f = publicationFixture();
+  await openGate(1, "publication", head, f.io, outside);
+  f.pr.base.sha = "c".repeat(40);
+  await runMonthlyGate(f.io, outside, true);
+  assert.deepEqual(f.posts.map(({state}) => state), ["success", "pending"]);
+  const retry = publicationFixture();
+  await openGate(1, "publication", head, retry.io, outside);
+  retry.io.checksPassed = () => false;
+  await openGate(1, "publication", head, retry.io, outside);
+  assert.deepEqual(retry.posts.map(({state}) => state), ["success", "pending"]);
+});
+
+test("publication required checks cannot use the normal preview queue or skip exclusions", async () => {
+  const { publicationRequiredChecksPassed } = await import("./monthly-release-window.mjs");
+  const notes = { name: "Release notes or reviewed bug fix", bucket: "pass" };
+  const gate = { name: "monthly-release-gate", bucket: "pending" };
+  assert.equal(publicationRequiredChecksPassed([notes, gate]), true);
+  for (const bucket of ["pending", "skipping", "fail", "cancel"]) {
+    assert.equal(publicationRequiredChecksPassed([notes, gate, { name: "Create Preview Builds / required", bucket }]), false);
+  }
+  assert.equal(publicationRequiredChecksPassed([gate]), false);
+});

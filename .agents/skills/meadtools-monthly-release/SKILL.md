@@ -109,6 +109,14 @@ for the reviewed `run` decision and exact merged SHA, and check for an existing
 run before dispatching. A skipped Mobile build makes no new Mobile
 availability claim.
 
+After separate publication approval, use the reviewed manual `publication` mode
+from the gate procedure for a publication-only `preview` → `main` PR, including
+after noon. Require the complete exact head/base diff, Mobile skip, valid dated
+notes, `release-ready` plus `publication-ready`, explicit post-deployment approval
+in the PR body, green checks/reviews, and native auto-merge. Workflow/code changes
+cannot use this mode. Policy rollout must use an existing authorized promotion
+path; stop on a bootstrap blocker without using a bug-only exemption or bypass.
+
 Publishing a dated entry to production automatically starts the opted-in email
 batch when the postal address and existing sender configuration are present.
 Verify the entry and its product scope before it reaches production. The cron

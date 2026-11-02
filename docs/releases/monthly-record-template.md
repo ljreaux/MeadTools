@@ -20,6 +20,8 @@ approval under the translation workflow.
 - Smoke checks: sign-in, recipes, brew tracking, changed features, release notes:
 - Production Mobile build/store evidence, or skipped:
 - Publication approval link (website publication starts opted-in email):
+- Publication date / exact publication head and base / explicit post-deployment approval:
+- Publication-only diff review / publication-ready label / manual gate run:
 - Dated website notes URL and publication PR:
 - GitHub tag `release-YYYY-MM-DD`, release URL, verified deployment SHA:
 - Aggregate email outcome / ambiguous failures requiring manual review:
@@ -30,5 +32,5 @@ Order: prepare internal drafts → review and approve exact promotion scope/SHA 
 arm auto-merge → GitHub gate → merge/deploy → smoke checks and availability →
 publication approval → reviewed dated-note publication → GitHub Release → verify
 automatic email outcome. Never send a second manual email because the delivery
-outcome is uncertain. Complete publication through the documented gate/window;
+outcome is uncertain. Complete publication through the reviewed manual publication gate;
 if blocked, retain drafts and report it rather than bypassing controls.
