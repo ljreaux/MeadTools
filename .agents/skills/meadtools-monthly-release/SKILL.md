@@ -114,8 +114,9 @@ from the gate procedure for a publication-only `preview` → `main` PR, includin
 after noon. Require the complete exact head/base diff, Mobile skip, valid dated
 notes, `release-ready` plus `publication-ready`, explicit post-deployment approval
 in the PR body, green checks/reviews, and native auto-merge. Workflow/code changes
-cannot use this mode. Policy rollout must use an existing authorized promotion
-path; stop on a bootstrap blocker without using a bug-only exemption or bypass.
+cannot use this mode. Policy rollout uses the separate reviewed manual `policy` path with its explicit
+file allowlist, exact-SHA approval, `policy-ready`, and all required checks.
+Policy approval never authorizes publication; never use a bug-only exemption or bypass.
 
 Publishing a dated entry to production automatically starts the opted-in email
 batch when the postal address and existing sender configuration are present.

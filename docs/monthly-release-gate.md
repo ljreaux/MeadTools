@@ -112,16 +112,38 @@ manual success status, ruleset bypass, bug-only exemption, or Mobile dispatch is
 part of publication. Noon closure preserves valid publication approval; stale
 head/base or revoked authorization closes it. PR edits/review events reset it.
 
-### Rolling out a gate policy change
+### Reviewed release-policy maintenance
 
-Merge policy changes into trusted `preview` through a reviewed preparation PR.
-They are workflow changes, so a promotion containing them cannot qualify as
-publication-only. Promote them to `main` through an already-authorized code
-promotion path before arming a separate publication-only PR. If no existing
-path can pass its required checks, stop and record that bootstrap blocker;
-do not call policy code publication-only, claim an initial promotion, invent a
-bug-fix exemption, or set the required status manually. This publication mode
-does not authorize its own policy rollout or relax any existing main rule.
+The separate manual `mode=policy` promotes a reviewed gate-policy change, not
+application code or announcements. Use a same-repository `release/policy-*`
+branch targeting `main`, with only added/modified files in the explicit
+`scripts/release-policy.mjs` allowlist. Dependencies, application files, public
+locale notes, cycle records, arbitrary workflows/scripts, deletions and renames
+are rejected. Review changes to this allowlist and gate logic as policy changes.
+
+Merge and verify the preparation PR on trusted default `preview` first. Then
+prepare an isolated main policy PR with no public-note content. Record the exact
+head/base SHA lines, Mobile skip, and (only after Larry approves that exact pair):
+
+```text
+Policy approval: Larry Reaux approved this workflow policy change.
+```
+
+Add `release-ready` plus `policy-ready`, keep all publication, initial/hotfix,
+bug-only, Mobile-build, and quality-skip labels absent, and enable native
+auto-merge. The existing release-note check recognizes this narrowly scoped,
+separately approved maintenance case; it does not require inventing public
+release notes for workflow-only changes. The trusted gate independently validates
+the full path/status list, exact approval, other required checks and reviews
+before setting the same required status. Dispatch `mode=policy` with the PR
+number and exact head SHA. This mode is never scheduled. PR changes invalidate
+approval. No ruleset edit or manually posted status is involved.
+
+After main adopts the policy, reconcile main into preview through a normal
+reviewed PR if needed so the subsequent preview → main diff contains only the
+approved dated notes and cycle record. Re-read the final publication head/base,
+obtain publication approval for that exact pair, then use `mode=publication`.
+Policy approval never authorizes publication or vice versa.
 
 ## Initial promotion and urgent fixes
 

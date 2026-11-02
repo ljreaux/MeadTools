@@ -440,3 +440,60 @@ test("publication required checks cannot use the normal preview queue or skip ex
   }
   assert.equal(publicationRequiredChecksPassed([gate]), false);
 });
+
+const { policyApproval, policyDiffPassed, policyPaths } = await import("./release-policy.mjs");
+function policyFixture() {
+  const f = fixture();
+  f.pr.head.ref = "release/policy-publication-gate";
+  f.pr.base.repo = { full_name: "ljreaux/MeadTools" };
+  f.pr.labels.push({ name: "policy-ready" });
+  f.pr.body += "\nPolicy approval: Larry Reaux approved this workflow policy change.";
+  f.io.policyPassed = () => true;
+  return f;
+}
+
+test("reviewed policy maintenance opens the same gate outside the monthly window", async () => {
+  const f = policyFixture();
+  assert.equal(policyApproval(f.pr, head), true);
+  assert.equal(await openGate(1, "policy", head, f.io, outside), true);
+  assert.equal(f.posts[0].description, "policy release approved for the exact reviewed commit");
+  await runMonthlyGate(f.io, outside, true);
+  assert.equal(f.posts.length, 1);
+  f.pr.base.sha = "c".repeat(40);
+  await runMonthlyGate(f.io, outside, true);
+  assert.equal(f.posts[1].state, "pending");
+});
+
+test("policy maintenance requires separate exact-SHA approval and complete checks/review", async () => {
+  for (const mutate of [
+    f => { f.pr.labels = [{ name: "release-ready" }]; },
+    f => { f.pr.labels.push({ name: "publication-ready" }); },
+    f => { f.pr.labels.push({ name: "bug-fix-only" }); },
+    f => { f.pr.head.ref = "preview"; },
+    f => { f.pr.body = f.pr.body.replace("Policy approval:", "Unapproved:"); },
+    f => { f.pr.head.sha = "c".repeat(40); },
+    f => { f.pr.base.sha = "c".repeat(40); },
+    f => { f.pr.auto_merge = null; },
+    f => { f.io.policyPassed = () => false; },
+    f => { f.io.checksPassed = () => false; },
+    f => { f.io.reviewPassed = () => false; },
+    f => { f.io.policyPassed = () => { f.pr.body += "changed"; return true; }; },
+  ]) {
+    const f = policyFixture(); mutate(f);
+    assert.equal(await openGate(1, "policy", head, f.io, outside), false);
+    assert.equal(f.posts.length, 0);
+  }
+  const f = policyFixture();
+  assert.equal(await openGate(1, "policy", undefined, f.io, outside), false);
+});
+
+test("policy diff allowlist excludes application files, public notes, records and dependencies", () => {
+  assert.equal(policyDiffPassed([...policyPaths].map(path => ({ path, status: "modified" }))), true);
+  assert.equal(policyDiffPassed([]), false);
+  for (const path of ["packages/i18n/locales/en/default.json", "docs/releases/2026-11.md", "package.json", "package-lock.json", "apps/web/app/page.tsx", ".github/workflows/unreviewed.yml", "scripts/unreviewed.mjs"]) {
+    assert.equal(policyDiffPassed([{ path, status: "modified" }]), false);
+  }
+  for (const status of ["removed", "renamed", undefined]) {
+    assert.equal(policyDiffPassed([{ path: "scripts/monthly-release-window.mjs", status }]), false);
+  }
+});
