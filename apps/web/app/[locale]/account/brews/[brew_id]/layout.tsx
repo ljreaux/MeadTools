@@ -1,16 +1,21 @@
 "use client";
 
+import { BrewInventoryProvider } from "@/components/brews/BrewInventoryProvider";
 import { NutrientProvider } from "@/components/providers/NutrientProvider";
 import {
   RecipeProvider,
   useRecipe
 } from "@/components/providers/RecipeProvider";
+import { useParams } from "next/navigation";
 import { ReactNode } from "react";
 
 function BrewLayout({ children }: { children: ReactNode }) {
+  const { brew_id: brewId } = useParams<{ brew_id: string }>();
   return (
     <RecipeProvider>
-      <Nutrients>{children}</Nutrients>
+      <Nutrients>
+        <BrewInventoryProvider key={brewId}>{children}</BrewInventoryProvider>
+      </Nutrients>
     </RecipeProvider>
   );
 }

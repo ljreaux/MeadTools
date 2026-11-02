@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/credit-accounting";
 import { getStripeClient } from "./stripe";
 import { buildCreditCheckoutSessionParams } from "./credit-checkout-session";
+import { getCreditPackPriceId } from "./credit-purchase-config";
 import {
   isPaidCreditCheckoutEvent,
   isTerminalCreditCheckoutEvent,
@@ -54,6 +55,8 @@ export async function createCreditCheckout(options: {
 
   const pack = creditPackForId(options.packId);
   if (!pack) throw new UnknownCreditPackError();
+  const priceId = getCreditPackPriceId(pack.id);
+  if (priceId === null) throw new CreditCheckoutUnavailableError();
 
   const checkout = await prisma.credit_checkout_sessions.create({
     data: {
@@ -73,6 +76,7 @@ export async function createCreditCheckout(options: {
         successUrl: options.successUrl,
         cancelUrl: options.cancelUrl,
         userId: options.userId,
+        priceId,
       }),
       { idempotencyKey: `credit-checkout:${checkout.id}` },
     );

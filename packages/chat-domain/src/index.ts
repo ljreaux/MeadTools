@@ -175,3 +175,42 @@ export function failedProviderReservationAction(options: {
   }
   return options.checkpointedProviderCallCount > 0 ? "settle" : "reverse";
 }
+
+
+/** Transient answer previews are never durable messages or save authorization. */
+export const chatAnswerEventSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("answer_delta"), delta: z.string().max(CHAT_THREAD_ASSISTANT_RESERVATION_BYTES) }).strict(),
+  z.object({ type: z.literal("answer_reset") }).strict(),
+]);
+export type ChatAnswerEvent = z.infer<typeof chatAnswerEventSchema>;
+
+export type ChatProgress =
+  | { phase: "checking" }
+  | { phase: "working"; toolName: string }
+  | { phase: "recovering" }
+  | { phase: "writing" };
+
+/** Progress for an in-flight request. A failed tool can be recovered by the
+ * agent; only the request's terminal error should be shown as a failed chat. */
+export function chatProgress(
+  tools: ReadonlyArray<{ name: string; status: "running" | "ok" | "error" }>,
+  hasAnswerPreview = false,
+): ChatProgress {
+  const active = [...tools].reverse().find(tool => tool.status === "running");
+  if (active) return { phase: "working", toolName: active.name };
+  if (hasAnswerPreview) return { phase: "writing" };
+  if (tools.at(-1)?.status === "error") return { phase: "recovering" };
+  return { phase: tools.length ? "writing" : "checking" };
+}
+
+/** Allowlisted display details, never raw tool arguments or exception text. */
+export const chatToolProgressDetailSchema = z.object({
+  cached: z.boolean().optional(),
+  httpStatus: z.number().int().min(400).max(599).optional(),
+  subject: z.string().max(120).optional(),
+  count: z.number().int().min(0).max(100_000).optional(),
+  issue: z.enum(["invalid_input", "missing_inputs", "volume_conflict", "calculation_failed", "not_found", "unavailable", "source_unavailable", "source_not_approved", "source_http_error", "lookup_failed"]).optional(),
+  missing: z.array(z.enum(["batch_size", "fermentation_gravity", "sweetness", "ingredients", "yeast", "nutrients", "ingredient_amount", "additive_amount"])).max(8).optional(),
+}).strict();
+export type ChatToolProgressDetail = z.infer<typeof chatToolProgressDetailSchema>;
+export { describeChatToolProgress } from "./tool-progress";

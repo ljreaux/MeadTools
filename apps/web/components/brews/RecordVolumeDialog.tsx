@@ -68,6 +68,7 @@ export function RecordVolumeDialog({
   currentVolumeLiters,
   defaultVolumeUnit,
   intent = "current",
+  suggestedVolumeLiters,
   onSave
 }: {
   t: TFunction;
@@ -76,6 +77,7 @@ export function RecordVolumeDialog({
   currentVolumeLiters: number | null;
   defaultVolumeUnit?: DialogVolumeUnit;
   intent?: "current" | "secondaryVolume";
+  suggestedVolumeLiters?: number | null;
   onSave: (
     currentVolumeLiters: number,
     meta: {
@@ -114,14 +116,24 @@ export function RecordVolumeDialog({
 
   React.useEffect(() => {
     if (open) {
-      setVolumeValue("");
+      const suggested = intent === "secondaryVolume" &&
+        typeof suggestedVolumeLiters === "number" &&
+        Number.isFinite(suggestedVolumeLiters) &&
+        suggestedVolumeLiters > 0
+          ? suggestedVolumeLiters * L_TO_VOLUME[preferredUnit]
+          : null;
+      setVolumeValue(suggested === null ? "" : String(Number(suggested.toFixed(2))));
       setVolumeUnit(preferredUnit);
       setDatetime(new Date());
     }
-  }, [open, preferredUnit]);
+  }, [open, preferredUnit, intent, suggestedVolumeLiters]);
 
   const parsed = Number(volumeValue);
   const isSecondaryVolume = intent === "secondaryVolume";
+  const hasSuggestedVolume = isSecondaryVolume &&
+    typeof suggestedVolumeLiters === "number" &&
+    Number.isFinite(suggestedVolumeLiters) &&
+    suggestedVolumeLiters > 0;
   const hasStartingVolume =
     typeof currentVolumeLiters === "number" &&
     Number.isFinite(currentVolumeLiters) &&
@@ -271,6 +283,14 @@ export function RecordVolumeDialog({
                 </Select>
               </InputGroupAddon>
             </InputGroup>
+            {hasSuggestedVolume ? (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "brews.primary.transferVolumePrefilled",
+                  "Prefilled from the recipe estimate. Replace it with your measured volume before saving."
+                )}
+              </p>
+            ) : null}
             {isSecondaryVolume && hasStartingVolume && Number.isFinite(parsed) && parsed > 0 ? (
               <div className="text-xs text-muted-foreground">
                 {t("brews.primary.volumeChange", "Volume change")}:{" "}

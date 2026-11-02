@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { quantitySchema, quantityUnitSchema } from "@meadtools/inventory-domain";
 
 export const brewStageResponseSchema = z.enum([
   "PLANNED",
@@ -57,7 +58,7 @@ export const brewListItemResponseSchema = brewListItemObjectSchema;
 export const brewsResponseSchema = z.object({
   brews: z.array(brewListItemResponseSchema),
 });
-export const brewRecipeSnapshotResponseSchema = z.object({
+const brewRecipeSnapshotBaseResponseSchema = z.object({
   // Existing brews can contain snapshots created before these fields existed.
   // Consumers validate dataV2 before deriving recipe targets.
   id: z.number().optional(),
@@ -65,6 +66,11 @@ export const brewRecipeSnapshotResponseSchema = z.object({
   version: z.number().optional(),
   dataV2: z.unknown().optional(),
   snapshottedAt: z.string().optional(),
+  sourceUserId: z.number().nullable().optional(),
+  sourceUsername: z.string().nullable().optional(),
+});
+export const brewRecipeSnapshotResponseSchema = brewRecipeSnapshotBaseResponseSchema.extend({
+  previousSnapshots: z.array(brewRecipeSnapshotBaseResponseSchema).optional(),
 });
 const brewEntryObjectSchema = z.object({
   id: z.string(),
@@ -109,7 +115,10 @@ const brewMutationResponseObjectSchema = brewListItemObjectSchema
 export const createBrewResponseSchema = z.object({
   brew: brewMutationResponseObjectSchema,
 });
+export const brewContainerChangeSchema = z.object({ operation_id: z.string().uuid(), expected_ids: z.array(z.string().uuid()).max(100), equipment_ids: z.array(z.string().uuid()).max(100) }).strict();
 export const updateBrewRequestBodySchema = z.object({
+  containers: brewContainerChangeSchema.optional(),
+  stage_change_datetime: z.string().datetime().optional(),
   name: z.string().nullable().optional(),
   stage: brewStageResponseSchema.optional(),
   current_volume_liters: z.number().nullable().optional(),
@@ -117,6 +126,9 @@ export const updateBrewRequestBodySchema = z.object({
   gravity_unit_preference: gravityUnitResponseSchema.optional(),
   public: z.boolean().optional(),
   end_date: z.string().nullable().optional(),
+  update_recipe_snapshot: z.boolean().optional(),
+  expected_snapshotted_at: z.string().nullable().optional(),
+  expected_recipe_content_key: z.string().optional(),
 });
 export const updateBrewResponseSchema = brewMutationResponseObjectSchema
   .omit({ entry_count: true })
@@ -176,6 +188,34 @@ export const publicBrewFetchErrorResponseSchema = z.object({
   ]),
 });
 
+export const brewInventoryUseSchema=z.object({line_key:z.string().min(1).max(200),stock_id:z.string().uuid(),deducted:quantitySchema}).strict();
+export const brewInventoryItemsSchema=z.object({mode:z.literal("items"),operation_id:z.string().uuid(),items:z.array(z.object({line_key:z.string().min(1).max(200),stock_id:z.string().uuid().nullable()}).strict()).max(100),expected:z.array(brewInventoryUseSchema).max(100)}).strict();
+export const brewInventorySelectionSchema = z.discriminatedUnion("mode", [
+  brewInventoryItemsSchema,
+  z.object({
+    mode: z.literal("deduct"),
+    operation_id: z.string().uuid(),
+    stock_id: z.string().uuid(),
+    expected: z.object({ stock_id: z.string().uuid(), deducted: quantitySchema }).strict().nullable().default(null),
+  }).strict(),
+  z.object({ mode: z.literal("untracked") }).strict(),
+]);
+export const brewInventoryOutcomeSchema = z.object({
+  status: z.enum(["untracked", "deducted", "premium_unavailable", "reconciliation_required"]),
+  balances: z.array(z.object({ stock_id: z.string().uuid(), quantity: quantitySchema })).optional(),
+});
+export const brewInventoryErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.enum([
+    "INCOMPATIBLE_UNITS", "QUANTITY_PRECISION", "INVALID_QUANTITY", "INSUFFICIENT_STOCK",
+    "NOT_FOUND", "LINK_MISMATCH", "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "STALE_USAGE",
+    "USAGE_REMOVED", "ENTRY_MISMATCH", "STOCK_ARCHIVED", "STALE_STOCK", "SELECTION_REQUIRED",
+    "INVALID_INVENTORY_REQUEST", "RECONCILIATION_REQUIRED",
+  ]),
+  shortage: z.number().nonnegative().optional(),
+  unit: quantityUnitSchema.optional(),
+});
+
 const brewEntryMutationObjectSchema = z.object({
   datetime: z.string().optional(),
   title: z.string().nullable().optional(),
@@ -184,6 +224,7 @@ const brewEntryMutationObjectSchema = z.object({
   temperature: z.number().nullable().optional(),
   temp_units: temperatureUnitResponseSchema.nullable().optional(),
   data: jsonObjectSchema.nullable().optional(),
+  inventory: brewInventorySelectionSchema.optional(),
 });
 export const createBrewEntryRequestBodySchema =
   brewEntryMutationObjectSchema.extend({
@@ -191,8 +232,13 @@ export const createBrewEntryRequestBodySchema =
     stage_to: brewStageResponseSchema.optional(),
     client_entry_id: z.string().uuid().optional(),
   });
+export const createBrewEntryBatchRequestBodySchema=z.object({
+ operation_id:z.string().uuid(),
+ entries:z.array(createBrewEntryRequestBodySchema.extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
+}).strict().refine(value=>new Set(value.entries.map(entry=>entry.client_entry_id)).size===value.entries.length,{message:'Entry IDs must be unique'});
 export const createBrewEntryResponseSchema = z.object({
   brew: brewResponseSchema,
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
 export const brewEntryIdConflictErrorResponseSchema = z.object({
   error: z.literal("Entry ID is already in use"),
@@ -200,12 +246,15 @@ export const brewEntryIdConflictErrorResponseSchema = z.object({
 export const updateBrewEntryRequestBodySchema = brewEntryMutationObjectSchema;
 export const updateBrewEntryResponseSchema = z.object({
   entry: brewEntryWithBrewIdResponseSchema.nullable(),
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
+export const deleteBrewEntryRequestBodySchema = z.object({ inventory: brewInventorySelectionSchema.optional() }).strict();
 export const deleteBrewSuccessResponseSchema = z.object({
   message: z.literal("Brew deleted successfully."),
 });
 export const deleteBrewEntrySuccessResponseSchema = z.object({
   message: z.literal("Entry deleted successfully."),
+  inventory: brewInventoryOutcomeSchema.optional(),
 });
 export const attachDeviceToBrewRequestBodySchema = z.object({
   device_id: z.string(),
@@ -245,6 +294,20 @@ export const brewValidationErrorResponseSchema = errorEnum([
   "Missing brew_id",
   "Missing entry_id",
   "Invalid client_entry_id",
+  "Invalid entry request",
+  "Invalid recipe_id",
+  "Only ongoing brews can update their recipe snapshot",
+  "Recipe snapshot not found",
+]);
+export const brewEntryBadRequestErrorResponseSchema = z.union([
+  brewValidationErrorResponseSchema, brewInventoryErrorResponseSchema,
+]);
+export const brewEntryConflictErrorResponseSchema = z.union([
+  brewEntryIdConflictErrorResponseSchema, brewInventoryErrorResponseSchema,
+]);
+export const brewEntryNotFoundErrorResponseSchema = z.union([
+  authenticatedRouteErrorResponseSchema, brewInventoryErrorResponseSchema,
+  z.object({ error: z.enum(["Brew not found", "Entry not found"]) }),
 ]);
 export const brewFetchErrorResponseSchema = errorEnum([
   "Failed to fetch brews.",
@@ -258,6 +321,14 @@ export const brewDetailNotFoundErrorResponseSchema = errorEnum([
 export const brewCreateErrorResponseSchema = errorEnum([
   "Failed to create brew.",
   "Server misconfiguration",
+]);
+export const brewRecipeNotFoundErrorResponseSchema = errorEnum(["Recipe not found"]);
+export const brewSnapshotUpdateErrorResponseSchema = errorEnum([
+  "Only ongoing brews can update their recipe snapshot",
+  "Recipe snapshot not found",
+  "Recipe not available",
+  "Brew snapshot changed; review it again",
+  "Recipe changed; review it again",
 ]);
 export const brewUpdateErrorResponseSchema = errorEnum([
   "Failed to update brew.",

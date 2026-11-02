@@ -14,17 +14,20 @@ import { useRecipe } from "../providers/RecipeProvider";
 import SaveRecipeCopy from "./SaveRecipeCopy";
 import { cn } from "@/lib/utils";
 import { usePublicRecipeBrews } from "@/hooks/reactQuery/usePublicRecipeBrews";
+import { CreateBrewButton } from "@/components/brews/CreateBrewButton";
 
 export type RecipeViewCapabilities = {
   canSaveCopy: boolean;
   canRate: boolean;
   canComment: boolean;
+  canCreateBrew: boolean;
 };
 
 const PUBLIC_RECIPE_CAPABILITIES: RecipeViewCapabilities = {
   canSaveCopy: true,
   canRate: true,
-  canComment: true
+  canComment: true,
+  canCreateBrew: true
 };
 
 function PublicRecipe({
@@ -62,7 +65,12 @@ function PublicRecipe({
           !embedded && "w-11/12 rounded-xl bg-background p-8 sm:p-12"
         )}
       >
-        {capabilities.canSaveCopy ? <SaveRecipeCopy /> : null}
+        <div className="flex flex-wrap justify-end gap-2">
+          {capabilities.canSaveCopy ? <SaveRecipeCopy /> : null}
+          {capabilities.canCreateBrew && !recipe.private ? (
+            <CreateBrewButton recipeId={recipe.id} recipeName={recipe.name} />
+          ) : null}
+        </div>
         <h1 className="text-3xl text-center">{recipe.name}</h1>
 
         <p className="w-full text-right">

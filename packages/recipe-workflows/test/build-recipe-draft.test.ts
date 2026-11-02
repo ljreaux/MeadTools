@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import { recipeDataV2Schema } from "@meadtools/schemas";
+import { toSG } from "@meadtools/core/gravity";
 import {
   buildRecipeDraft,
   defaultRecipeDraftName,
@@ -16,6 +17,71 @@ const nutrientPlan = {
   numberOfAdditions: 4,
   goFermType: "Go-Ferm" as const,
 };
+
+for (const [fruit, pounds, brix] of [["Blueberry", 1, 9.36], ["Cherry, Tart", 0.5, 8.2]] as const) {
+  test(`${fruit} draft identifies fixed top-up water instead of blaming the fruit load`, () => {
+    const input = {
+      batchVolume: { value: 1, unit: "gal" }, targetAbv: 10,
+      fermentationFinalGravity: 1.01,
+      ingredients: [
+        { name: "Honey", category: "sugar", brix: 79.6, role: "adjustable_fermentable", amount: { kind: "weight", value: 2.55, unit: "lb" } },
+        { name: fruit, category: "fruit", brix, secondary: true, role: "fixed", amount: { kind: "weight", value: pounds, unit: "lb" } },
+        { name: "Water", category: "water", brix: 0, role: "fill_liquid", amount: { kind: "volume", value: 1, unit: "gal" } },
+      ],
+      nutrients: nutrientPlan, stabilizers: { enabled: false },
+    };
+    const conflict = buildRecipeDraft(input);
+    assert.equal(conflict.status, "error");
+    if (conflict.status !== "error") return;
+    assert.match(conflict.message, /Water.*explicit amount/i);
+    assert.match(conflict.message, /omit.*amount/i);
+    assert.match(conflict.message, /preserve/i);
+    assert.doesNotMatch(conflict.message, /fruit load.*fills?|fruit load.*contributes enough/i);
+
+    // A genuinely adjustable fill leaves the fruit amount intact.
+    const fill = structuredClone(input);
+    delete (fill.ingredients[2] as { amount?: unknown }).amount;
+    const calculated = buildRecipeDraft(fill);
+    assert.equal(calculated.status, "recipe");
+    if (calculated.status !== "recipe") return;
+    const fruitLine = calculated.recipeData.ingredients.find(line => line.name === fruit);
+    assert.equal(fruitLine?.amounts.weight.value, String(pounds));
+  });
+}
+
+test("mixed fixed water and fruit are not reported as a fruit-only volume conflict", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" }, targetAbv: 10,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Water", category: "water", brix: 0, role: "fixed", amount: { kind: "volume", value: 0.95, unit: "gal" } },
+      { name: "Blueberry", category: "fruit", brix: 9.36, amount: { kind: "weight", value: 0.5, unit: "lb" } },
+    ],
+    nutrients: nutrientPlan, stabilizers: { enabled: false },
+  });
+  assert.equal(result.status, "error");
+  if (result.status !== "error") return;
+  assert.match(result.message, /Water.*Blueberry/);
+  assert.doesNotMatch(result.message, /stated primary fruit load|already uses? the requested/i);
+});
+
+test("a target-ABV draft asks for missing fermentation gravity only once", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" },
+    targetAbv: 10,
+    ingredients: [{ name: "Honey", role: "adjustable_fermentable" }],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+
+  assert.equal(result.status, "needs_input");
+  if (result.status !== "needs_input") return;
+  assert.deepEqual(
+    result.questions.filter((question) => question.field === "fermentationFinalGravity").map((question) => question.id),
+    ["fermentation_final_gravity"],
+  );
+});
 
 test("general recipe intake asks for recipe composition instead of assuming a style", () => {
   const result = buildRecipeDraft({
@@ -351,7 +417,7 @@ test("general recipe drafting solves honey and water around explicit fruit input
   );
 });
 
-test("recipe drafts round calculated ingredient amounts to practical precision", () => {
+test("recipe drafts retain calculation precision in their authoritative measurement basis", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 5, unit: "gal" },
     targetOriginalGravity: 1.12,
@@ -379,17 +445,10 @@ test("recipe drafts round calculated ingredient amounts to practical precision",
     (ingredient) => ingredient.name === "Water",
   );
   assert.equal(honey?.amounts.basis, "weight");
-  assert.equal(honey?.amounts.weight.value, "13.9");
+  assert.ok(Number(honey?.amounts.weight.value) > 13.9);
   assert.equal(water?.amounts.basis, "volume");
-  assert.equal(water?.amounts.volume.value, "1.5");
-  for (const ingredient of result.recipeData.ingredients) {
-    const measured =
-      ingredient.amounts.basis === "weight"
-        ? ingredient.amounts.weight.value
-        : ingredient.amounts.volume.value;
-    assert.match(measured, /^\d+(?:\.\d)?$/);
-  }
-  assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.12) < 0.002);
+  assert.ok(Math.abs(result.derived.volume.total - 5) < 0.00001);
+  assert.ok(Math.abs(result.derived.gravity.ogPrimary - 1.12) < 0.00001);
 });
 
 test("a named honey varietal can be the adjustable fermentable", () => {
@@ -569,7 +628,7 @@ test("a mistakenly retained dynamic role cannot hide a fixed-volume conflict", (
 
   assert.equal(result.status, "error");
   if (result.status !== "error") return;
-  assert.match(result.message, /fixed ingredients/i);
+  assert.match(result.message, /Apple Juice.*explicit amount/i);
   assert.match(result.message, /larger finished batch volume/i);
 });
 
@@ -772,8 +831,8 @@ test("a full-volume juice base explains why a gravity-targeted cyser cannot fit"
   assert.equal(result.status, "error");
   if (result.status !== "error") return;
   assert.match(result.message, /Apple Juice.*requested 1 gal/i);
-  assert.match(result.message, /no room left for Wildflower Honey and water/i);
-  assert.match(result.message, /larger batch/i);
+  assert.match(result.message, /no room for Wildflower Honey and water/i);
+  assert.match(result.message, /larger (?:finished )?batch/i);
 });
 
 test("a target ABV gravity includes fixed secondary fruit in the final blend", () => {
@@ -1040,4 +1099,84 @@ test("a secondary volume that leaves no primary must returns a recipe feasibilit
   assert.equal(result.status, "error");
   if (result.status !== "error") return;
   assert.match(result.message, /finished batch volume is too small/i);
+});
+
+
+for (const volume of [4.219, 3 + 1.725 / toSG(79.6)]) {
+  test(`a fully fixed saved-recipe revision fits its ${volume} L target without relaxing water`, () => {
+    const result = buildRecipeDraft({
+      batchVolume: { value: volume, unit: "L" },
+      fermentationFinalGravity: 0.996,
+      ingredients: [
+        { name: "Water", category: "water", brix: 0, role: "fixed", amount: { kind: "volume", value: 3, unit: "L" } },
+        { name: "Honey", category: "sugar", brix: 79.6, role: "fixed", amount: { kind: "weight", value: 1.5, unit: "kg" } },
+        { name: "Honey", category: "water", brix: 79.6, secondary: true, role: "fixed", amount: { kind: "weight", value: 225, unit: "g" } },
+      ],
+      nutrients: { ...nutrientPlan, yeastStrain: "EC1118", nitrogenRequirement: "Low" },
+      stabilizers: { enabled: true, type: "kmeta", phReading: 3.6 },
+      additives: [{ name: "Bentonite", amount: 6.252, unit: "g" }],
+    });
+    assert.equal(result.status, "recipe");
+    if (result.status !== "recipe") return;
+    assert.equal(result.recipeData.ingredients.length, 3);
+    const [water, primaryHoney, secondaryHoney] = result.recipeData.ingredients;
+    assert.equal(water?.amounts.volume.value, "3");
+    assert.equal(primaryHoney?.amounts.weight.value, "1.5");
+    assert.equal(secondaryHoney?.amounts.weight.value, "0.225");
+    assert.equal(secondaryHoney?.amounts.basis, "weight");
+    assert.ok(Math.abs(result.derived.volume.totalL - (3 + 1.725 / toSG(79.6))) < 0.00001);
+    assert.equal(result.recipeData.additives[0]?.amount, "6.252");
+  });
+}
+
+for (const [fruit, brix, pounds, finishedFg] of [["Blueberry", 9.36, 2, 1.012], ["Cherry, Tart", 8.2, 3, 1.01]] as const) {
+  test(`${fruit} solved amounts preserve finished yield and ABV after serialization`, () => {
+    const result = buildRecipeDraft({
+      batchVolume: { value: 1, unit: "gal" }, targetAbv: 10,
+      fermentationFinalGravity: 0.999,
+      backsweetening: { targetFinalGravity: finishedFg },
+      ingredients: [
+        { name: fruit, category: "fruit", brix, secondary: true, amount: { kind: "weight", value: pounds, unit: "lb" } },
+        { name: "Honey", role: "adjustable_fermentable" },
+        { name: "Water", role: "fill_liquid" },
+      ],
+      nutrients: nutrientPlan,
+    });
+    assert.equal(result.status, "recipe");
+    if (result.status !== "recipe") return;
+    const calculated = calculateRecipeDerivedApiResponse(result.recipeData).derived;
+    assert.ok(Math.abs(calculated.volume.total - 1) < 0.00001, `finished volume: ${calculated.volume.total}`);
+    assert.ok(Math.abs(calculated.alcohol.abv - 10) < 0.001, `finished ABV: ${calculated.alcohol.abv}`);
+    assert.equal(result.recipeData.ingredients[0]?.amounts.weight.value, String(pounds));
+  });
+}
+
+test("a real fixed overfill remains a conflict beyond the display-volume tolerance", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 4.209, unit: "L" }, fermentationFinalGravity: 0.996,
+    ingredients: [
+      { name: "Water", amount: { kind: "volume", value: 3, unit: "L" } },
+      { name: "Honey", brix: 79.6, amount: { kind: "weight", value: 1.725, unit: "kg" } },
+    ],
+    nutrients: nutrientPlan,
+  });
+  assert.equal(result.status, "error");
+});
+
+test("a supplied fermentable amount remains fixed even beside an adjustable role", () => {
+  const result = buildRecipeDraft({
+    batchVolume: { value: 1, unit: "gal" }, targetAbv: 10,
+    fermentationFinalGravity: 0.999,
+    ingredients: [
+      { name: "Honey", brix: 79.6, role: "adjustable_fermentable", amount: { kind: "weight", value: 3, unit: "lb" } },
+      { name: "Water", role: "fill_liquid" },
+    ],
+    nutrients: nutrientPlan,
+  });
+  assert.equal(result.status, "recipe");
+  if (result.status !== "recipe") return;
+  const honey = result.recipeData.ingredients.find(ingredient => ingredient.name === "Honey");
+  assert.equal(honey?.amounts.weight.value, "3");
+  assert.ok(Math.abs(result.derived.volume.total - 1) < 0.00001);
+  assert.ok(result.warnings.some(warning => warning.includes("kept the stated amounts unchanged")));
 });

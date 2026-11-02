@@ -39,7 +39,11 @@
       "name": "status",
       "schema": {
         "type": "string",
-        "enum": ["completed", "failed", "reserved"]
+        "enum": [
+          "completed",
+          "failed",
+          "reserved"
+        ]
       },
       "required": false
     },
@@ -669,7 +673,10 @@
       "name": "order",
       "schema": {
         "type": "string",
-        "enum": ["asc", "desc"]
+        "enum": [
+          "asc",
+          "desc"
+        ]
       },
       "required": false
     },
@@ -705,7 +712,10 @@
       "name": "order",
       "schema": {
         "type": "string",
-        "enum": ["asc", "desc"]
+        "enum": [
+          "asc",
+          "desc"
+        ]
       },
       "required": false
     },
@@ -796,6 +806,182 @@
       },
       "required": false,
       "description": "Hydrometer token; required unless supplied in the body."
+    }
+  ],
+  "PATCH /account/equipment/{equipment_id}": [
+    {
+      "in": "path",
+      "name": "equipment_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "GET /account/inventory/{stock_id}": [
+    {
+      "in": "path",
+      "name": "stock_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "PATCH /account/inventory/{stock_id}": [
+    {
+      "in": "path",
+      "name": "stock_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "GET /brews/{brew_id}/inventory": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "POST /brews/{brew_id}/entries/batch": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string"
+      },
+      "required": true,
+      "example": "123"
+    }
+  ],
+  "GET /brews/{brew_id}/images": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    },
+    {
+      "in": "query",
+      "name": "public",
+      "schema": {
+        "type": "string",
+        "enum": [
+          "true",
+          "false"
+        ]
+      },
+      "required": false,
+      "description": "Use public visibility checks instead of authenticated owner access."
+    }
+  ],
+  "POST /brews/{brew_id}/images": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "GET /brews/{brew_id}/images/{image_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    },
+    {
+      "in": "path",
+      "name": "image_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    },
+    {
+      "in": "query",
+      "name": "public",
+      "schema": {
+        "type": "string",
+        "enum": [
+          "true",
+          "false"
+        ]
+      },
+      "required": false,
+      "description": "Use public visibility checks instead of authenticated owner access."
+    },
+    {
+      "in": "query",
+      "name": "variant",
+      "schema": {
+        "type": "string",
+        "enum": [
+          "image",
+          "thumbnail"
+        ],
+        "default": "image"
+      },
+      "required": false
+    }
+  ],
+  "PATCH /brews/{brew_id}/images/{image_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    },
+    {
+      "in": "path",
+      "name": "image_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    }
+  ],
+  "DELETE /brews/{brew_id}/images/{image_id}": [
+    {
+      "in": "path",
+      "name": "brew_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
+    },
+    {
+      "in": "path",
+      "name": "image_id",
+      "schema": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "required": true
     }
   ]
 }

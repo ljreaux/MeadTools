@@ -1,4 +1,4 @@
-import { toSG } from "@meadtools/core/gravity";
+import { juiceLabelEstimate } from "@meadtools/core/extra-calculators";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
@@ -18,43 +18,21 @@ export default function useJuice() {
     return next.toString();
   }, []);
 
-  // Derived brix
-  const brix = useMemo(() => {
-    const sugarMultiplier = sugarUnits === "mg" ? 0.001 : 1;
-    const servingMultiplier = servingSizeUnits === "floz" ? 29.5735 : 1;
-
-    const sugarNum = parseNumber(sugar) * sugarMultiplier;
-    const servingNum = parseNumber(servingSize) * servingMultiplier;
-
-    if (
-      !Number.isFinite(sugarNum) ||
-      !Number.isFinite(servingNum) ||
-      servingNum <= 0
-    ) {
-      return 0;
-    }
-
-    const calculated = Math.round((sugarNum / servingNum) * 100 * 1000) / 1000;
-
-    if (!Number.isFinite(calculated) || calculated > 1000) return 0;
-    return calculated;
-  }, [sugar, sugarUnits, servingSize, servingSizeUnits]);
-
-  // Derived SG
-  const sg = useMemo(() => Math.round(toSG(brix) * 1000) / 1000, [brix]);
-
-  // Total sugar (per container)
-  const totalSugar = useMemo(() => {
-    const sugarNum = parseNumber(sugar);
-    const servingsNum = parseNumber(servings);
-
-    if (!Number.isFinite(sugarNum) || !Number.isFinite(servingsNum)) {
-      return 0;
-    }
-
-    const calculated = Math.round(sugarNum * servingsNum * 1000) / 1000;
-    return Number.isFinite(calculated) ? calculated : 0;
-  }, [sugar, servings]);
+  const {
+    brix,
+    specificGravity: sg,
+    totalSugar
+  } = useMemo(
+    () =>
+      juiceLabelEstimate(
+        parseNumber(sugar),
+        sugarUnits === "mg" ? "mg" : "g",
+        parseNumber(servingSize),
+        servingSizeUnits === "floz" ? "floz" : "ml",
+        parseNumber(servings)
+      ),
+    [sugar, sugarUnits, servingSize, servingSizeUnits, servings]
+  );
 
   // Unit conversions – keep the same behavior, but safe
   useEffect(() => {

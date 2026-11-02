@@ -31,6 +31,12 @@ import {
   shouldConvertAdditiveAmount,
   nextAdditiveAmountDimOnUnitChange
 } from "@meadtools/core/recipe";
+import { normalizeIngredientLine } from "@meadtools/core/recipe";
+import {
+  estimatePrimaryLossPercentage,
+  estimateSecondaryLossPercentage,
+  isValidLossPercentage
+} from "@meadtools/core/loss";
 import {
   calculateRecipeDerivedState,
   calculateRecipeStabilizerResults,
@@ -62,6 +68,7 @@ type HydratePayload = Pick<
   | "notes"
   | "stabilizers"
   | "nutrients"
+  | "lossAdjustment"
 >;
 
 type RecipeContextValue = {
@@ -74,9 +81,20 @@ type RecipeContextValue = {
     | "additives"
     | "notes"
     | "nutrients"
+    | "lossAdjustment"
   >;
 
   derived: RecipeDerivedState;
+
+  loss: {
+    estimatedPercentage: number | null;
+    secondaryEstimatedPercentage: number | null;
+    setEnabled: (enabled: boolean) => void;
+    setMode: (mode: "estimated" | "manual") => void;
+    setManualPercentage: (percentage: number) => void;
+    setSecondaryEnabled: (enabled: boolean) => void;
+    setSecondaryPercentage: (percentage: number) => void;
+  };
 
   ingredient: {
     add: () => void;
@@ -231,6 +249,32 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
   const [nutrients, setNutrients] = useState<NutrientData>(
     initialNutrientData()
   );
+  const [lossInput, setLossInput] = useState<NonNullable<RecipeData["lossAdjustment"]>>({
+    enabled: false,
+    mode: "estimated",
+    percentage: 0
+  });
+  const [savedEstimate, setSavedEstimate] = useState<{
+    ingredientSignature: string;
+    percentage: number;
+  } | null>(null);
+  const ingredientSignature = useMemo(() => JSON.stringify(ingredients), [ingredients]);
+  const estimatedLossPercentage = useMemo(
+    () => estimatePrimaryLossPercentage(ingredients.map(normalizeIngredientLine)),
+    [ingredients]
+  );
+  const lossAdjustment = useMemo<NonNullable<RecipeData["lossAdjustment"]>>(
+    () => ({
+      ...lossInput,
+      percentage: lossInput.mode === "estimated"
+        ? savedEstimate?.ingredientSignature === ingredientSignature &&
+            isValidLossPercentage(savedEstimate.percentage)
+          ? savedEstimate.percentage
+          : estimatedLossPercentage ?? 0
+        : lossInput.percentage
+    }),
+    [lossInput, estimatedLossPercentage, savedEstimate, ingredientSignature]
+  );
 
   // ---- Dirty tracking ----
   const [isDirty, setIsDirty] = useState(false);
@@ -262,6 +306,17 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
           setPhReading(next.stabilizers.phReading);
           setStabilizerType(next.stabilizers.type);
           setNutrients(next.nutrients ?? initialNutrientData());
+          setLossInput(next.lossAdjustment ?? {
+            enabled: false,
+            mode: "estimated",
+            percentage: 0
+          });
+          setSavedEstimate(next.lossAdjustment?.mode === "estimated"
+            ? {
+                ingredientSignature: JSON.stringify(next.ingredients),
+                percentage: next.lossAdjustment.percentage
+              }
+            : null);
           setHydratedRecipeData(next);
 
           setIsDirty(false);
@@ -294,6 +349,8 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         setStabilizerType(fresh.stabilizers.type);
 
         setNutrients(fresh.nutrients ?? initialNutrientData()); // ✅ add
+        setLossInput({ enabled: false, mode: "estimated", percentage: 0 });
+        setSavedEstimate(null);
         setHydratedRecipeData(null);
 
         setIsDirty(false);
@@ -371,7 +428,8 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         type: stabilizerType
       },
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     }),
     [
       unitDefaults,
@@ -383,7 +441,8 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       phReading,
       stabilizerType,
       notes,
-      nutrients
+      nutrients,
+      lossAdjustment
     ]
   );
 
@@ -396,12 +455,17 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     normalized,
     secondaryInputs,
     primaryVolumeL,
+    postLossPrimaryVolumeL,
     secondaryVolumeL,
     totalVolumeL,
     primaryVolume,
     totalVolume,
     abv
   } = derived;
+  const secondaryEstimatedPercentage = useMemo(
+    () => estimateSecondaryLossPercentage(normalized, postLossPrimaryVolumeL),
+    [normalized, postLossPrimaryVolumeL]
+  );
 
   // Secondary blend SG (what V1 called `secondaryVal`)
   const secondarySg = useMemo(
@@ -1070,7 +1134,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
   const adjustSecondaryToTargetBacksweetenedFg = useCallback(
     (targetSg: number) => {
       const fgSg = parseNumber(fg);
-      const P = primaryVolumeL; // liters
+      const P = postLossPrimaryVolumeL; // fermented liters after primary transfer
       const S0 = secondaryVolumeL; // liters
 
       if (!Number.isFinite(targetSg)) return;
@@ -1151,7 +1215,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
         );
       });
     },
-    [fg, primaryVolumeL, secondaryVolumeL, secondarySg, unitDefaults, commit]
+    [fg, postLossPrimaryVolumeL, secondaryVolumeL, secondarySg, unitDefaults, commit]
   );
 
   const setPrimaryTargetsWithRatios = useCallback(
@@ -1351,10 +1415,47 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
           phReading,
           type: stabilizerType
         },
-        nutrients
+        nutrients,
+        lossAdjustment
       },
 
       derived,
+
+      loss: {
+        estimatedPercentage: estimatedLossPercentage == null
+          ? null
+          : lossAdjustment.mode === "estimated"
+            ? lossAdjustment.percentage
+            : estimatedLossPercentage,
+        secondaryEstimatedPercentage,
+        setEnabled: (enabled) => commit(() => setLossInput((prev) => ({ ...prev, enabled }))),
+        setMode: (mode) => commit(() => {
+          if (mode === "estimated") setSavedEstimate(null);
+          setLossInput((prev) => ({
+            ...prev,
+            mode,
+            percentage: mode === "manual" ? lossAdjustment.percentage : prev.percentage
+          }));
+        }),
+        setManualPercentage: (percentage) => {
+          if (!isValidLossPercentage(percentage)) return;
+          commit(() => setLossInput((prev) => ({ ...prev, mode: "manual", percentage })));
+        },
+        setSecondaryEnabled: (enabled) => commit(() => setLossInput((prev) => ({
+          ...prev,
+          secondary: {
+            enabled,
+            percentage: prev.secondary?.percentage ?? 0
+          }
+        }))),
+        setSecondaryPercentage: (percentage) => {
+          if (!isValidLossPercentage(percentage)) return;
+          commit(() => setLossInput((prev) => ({
+            ...prev,
+            secondary: { enabled: true, percentage }
+          })));
+        }
+      },
 
       ingredient: ingredientApi,
 
@@ -1514,6 +1615,9 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       isDirty,
       hydratedRecipeData,
       nutrients,
+      lossAdjustment,
+      estimatedLossPercentage,
+      secondaryEstimatedPercentage,
       additiveList,
       loadingAdditives,
       reset,
@@ -1542,6 +1646,7 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
       toggleTakingPh,
       updatePhReading,
       stabilizerResults,
+      adjustSecondaryToTargetBacksweetenedFg,
       ingredientList,
       loadingIngredients,
       markSaved,

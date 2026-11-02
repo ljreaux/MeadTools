@@ -47,24 +47,50 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewContainerChangeSchema,
+  brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
   brewDeleteErrorResponseSchema,
   brewDetailNotFoundErrorResponseSchema,
   brewDeviceActionErrorResponseSchema,
   brewEntriesByStageResponseSchema,
+  brewEntryBadRequestErrorResponseSchema,
+  brewEntryConflictErrorResponseSchema,
   brewEntryCreateErrorResponseSchema,
   brewEntryDeleteErrorResponseSchema,
   brewEntryIdConflictErrorResponseSchema,
+  brewEntryNotFoundErrorResponseSchema,
   brewEntryPathParamsSchema,
   brewEntryResponseSchema,
   brewEntryTypeResponseSchema,
   brewEntryUpdateErrorResponseSchema,
   brewEntryWithBrewIdResponseSchema,
   brewFetchErrorResponseSchema,
+  brewImageAccessQueryParamsSchema,
+  brewImageAccessResponseSchema,
+  brewImageErrorResponseSchema,
+  brewImageMutationResponseSchema,
+  brewImagePathParamsSchema,
+  brewImageRemovedResponseSchema,
+  brewImageResponseSchema,
+  brewImagesPathParamsSchema,
+  brewImagesQueryParamsSchema,
+  brewImagesResponseSchema,
+  brewInventoryContextResponseSchema,
+  brewInventoryErrorResponseSchema,
+  brewInventoryItemsSchema,
+  brewInventoryOutcomeSchema,
+  brewInventoryPathParamsSchema,
+  brewInventorySelectionSchema,
+  brewInventoryUseSchema,
   brewListItemResponseSchema,
+  brewMetadataInventoryErrorResponseSchema,
+  brewMetadataValidationErrorResponseSchema,
   brewPathParamsSchema,
+  brewRecipeNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
   brewResponseSchema,
+  brewSnapshotUpdateErrorResponseSchema,
   brewStageResponseSchema,
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
@@ -100,8 +126,10 @@ import {
   createAdditiveValidationErrorResponseSchema,
   createBjcpIngredientFailureErrorResponseSchema,
   createBjcpIngredientRequestBodySchema,
+  createBrewEntryBatchRequestBodySchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
+  createBrewImageRequestBodySchema,
   createBrewRequestBodySchema,
   createBrewResponseSchema,
   createChatAccessGrantRequestBodySchema,
@@ -112,8 +140,10 @@ import {
   createChatCreditGrantResponseSchema,
   createCreditCheckoutRequestBodySchema,
   createCreditCheckoutResponseSchema,
+  createEquipmentRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
+  createInventoryStockRequestBodySchema,
   createRecipeCommentFailureErrorResponseSchema,
   createRecipeCommentRequestBodySchema,
   createRecipeCommentResponseSchema,
@@ -141,6 +171,7 @@ import {
   deleteAdditiveFailureErrorResponseSchema,
   deleteAdditiveSuccessResponseSchema,
   deleteAdminUserSuccessResponseSchema,
+  deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   deleteChatAccessGrantResponseSchema,
@@ -158,6 +189,14 @@ import {
   deleteYeastFailureErrorResponseSchema,
   deleteYeastSuccessResponseSchema,
   endHydrometerBrewResponseSchema,
+  equipmentBrewSummarySchema,
+  equipmentErrorResponseSchema,
+  equipmentItemSchema,
+  equipmentMutationResponseSchema,
+  equipmentNotFoundErrorResponseSchema,
+  equipmentOverviewResponseSchema,
+  equipmentPathParamsSchema,
+  equipmentUnexpectedErrorResponseSchema,
   getRecipeResponseSchema,
   goFermTypeSchema,
   gravityUnitResponseSchema,
@@ -196,6 +235,23 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  inventoryOverviewResponseSchema,
+  inventoryStockErrorResponseSchema,
+  inventoryStockHistoryResponseSchema,
+  inventoryStockItemSchema,
+  inventoryStockMutationResponseSchema,
+  inventoryStockNotFoundResponseSchema,
+  inventoryStockPathParamsSchema,
+  inventoryStockReconciliationSchema,
+  inventoryStockUnexpectedErrorResponseSchema,
+  inventoryTransferErrorResponseSchema,
+  inventoryTransferRequestBodySchema,
+  inventoryTransferResponseSchema,
+  kofiLinkClaimRequestBodySchema,
+  kofiLinkClaimResponseSchema,
+  kofiLinkRequestBodySchema,
+  kofiLinkRequestResponseSchema,
+  kofiWebhookReceiptResponseSchema,
   linkRecipeToHydrometerBrewRequestBodySchema,
   linkRecipeToHydrometerBrewResponseSchema,
   loginFailureErrorResponseSchema,
@@ -203,6 +259,12 @@ import {
   loginMissingCredentialsErrorResponseSchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
+  mcpErrorResponseSchema,
+  mcpTokenCreateBodySchema,
+  mcpTokenCreateResponseSchema,
+  mcpTokenListResponseSchema,
+  mcpTokenRevokeResponseSchema,
+  mcpTokenSchema,
   nitrogenRequirementSchema,
   noteLineResponseSchema,
   notesResponseSchema,
@@ -217,10 +279,15 @@ import {
   nutrientSelectedResponseSchema,
   nutrientSettingsResponseSchema,
   nutrientVolumeUnitSchema,
+  premiumAccessResponseSchema,
+  premiumCheckoutResponseSchema,
+  premiumErrorResponseSchema,
+  premiumPortalResponseSchema,
   publicBrewDetailResponseSchema,
   publicBrewEntriesByStageResponseSchema,
   publicBrewEntryResponseSchema,
   publicBrewFetchErrorResponseSchema,
+  publicBrewImagesResponseSchema,
   publicBrewListItemResponseSchema,
   publicBrewLogResponseSchema,
   publicBrewNotFoundErrorResponseSchema,
@@ -311,11 +378,13 @@ import {
   updateAdminUserRequestBodySchema,
   updateBrewEntryRequestBodySchema,
   updateBrewEntryResponseSchema,
+  updateBrewImageRequestBodySchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateChatAccessAdministrationRequestBodySchema,
   updateChatConversationRequestBodySchema,
   updateChatConversationResponseSchema,
+  updateEquipmentRequestBodySchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -323,6 +392,7 @@ import {
   updateHydrometerLogRequestBodySchema,
   updateIngredientFailureErrorResponseSchema,
   updateIngredientRequestBodySchema,
+  updateInventoryStockRequestBodySchema,
   updateRecipeCommentFailureErrorResponseSchema,
   updateRecipeCommentRequestBodySchema,
   updateRecipeCommentResponseSchema,
@@ -402,24 +472,50 @@ export const AuthenticatedRouteErrorResponse = authenticatedRouteErrorResponseSc
 export const BjcpIngredientResponse = bjcpIngredientResponseSchema;
 export const BjcpIngredientsFetchErrorResponse = bjcpIngredientsFetchErrorResponseSchema;
 export const BjcpIngredientsResponse = bjcpIngredientsResponseSchema;
+export const BrewContainerChange = brewContainerChangeSchema;
+export const BrewContainerErrorResponse = brewContainerErrorResponseSchema;
 export const BrewCreateErrorResponse = brewCreateErrorResponseSchema;
 export const BrewDeleteErrorResponse = brewDeleteErrorResponseSchema;
 export const BrewDetailNotFoundErrorResponse = brewDetailNotFoundErrorResponseSchema;
 export const BrewDeviceActionErrorResponse = brewDeviceActionErrorResponseSchema;
 export const BrewEntriesByStageResponse = brewEntriesByStageResponseSchema;
+export const BrewEntryBadRequestErrorResponse = brewEntryBadRequestErrorResponseSchema;
+export const BrewEntryConflictErrorResponse = brewEntryConflictErrorResponseSchema;
 export const BrewEntryCreateErrorResponse = brewEntryCreateErrorResponseSchema;
 export const BrewEntryDeleteErrorResponse = brewEntryDeleteErrorResponseSchema;
 export const BrewEntryIdConflictErrorResponse = brewEntryIdConflictErrorResponseSchema;
+export const BrewEntryNotFoundErrorResponse = brewEntryNotFoundErrorResponseSchema;
 export const BrewEntryPathParams = brewEntryPathParamsSchema;
 export const BrewEntryResponse = brewEntryResponseSchema;
 export const BrewEntryTypeResponse = brewEntryTypeResponseSchema;
 export const BrewEntryUpdateErrorResponse = brewEntryUpdateErrorResponseSchema;
 export const BrewEntryWithBrewIdResponse = brewEntryWithBrewIdResponseSchema;
 export const BrewFetchErrorResponse = brewFetchErrorResponseSchema;
+export const BrewImageAccessQueryParams = brewImageAccessQueryParamsSchema;
+export const BrewImageAccessResponse = brewImageAccessResponseSchema;
+export const BrewImageErrorResponse = brewImageErrorResponseSchema;
+export const BrewImageMutationResponse = brewImageMutationResponseSchema;
+export const BrewImagePathParams = brewImagePathParamsSchema;
+export const BrewImageRemovedResponse = brewImageRemovedResponseSchema;
+export const BrewImageResponse = brewImageResponseSchema;
+export const BrewImagesPathParams = brewImagesPathParamsSchema;
+export const BrewImagesQueryParams = brewImagesQueryParamsSchema;
+export const BrewImagesResponse = brewImagesResponseSchema;
+export const BrewInventoryContextResponse = brewInventoryContextResponseSchema;
+export const BrewInventoryErrorResponse = brewInventoryErrorResponseSchema;
+export const BrewInventoryItems = brewInventoryItemsSchema;
+export const BrewInventoryOutcome = brewInventoryOutcomeSchema;
+export const BrewInventoryPathParams = brewInventoryPathParamsSchema;
+export const BrewInventorySelection = brewInventorySelectionSchema;
+export const BrewInventoryUse = brewInventoryUseSchema;
 export const BrewListItemResponse = brewListItemResponseSchema;
+export const BrewMetadataInventoryErrorResponse = brewMetadataInventoryErrorResponseSchema;
+export const BrewMetadataValidationErrorResponse = brewMetadataValidationErrorResponseSchema;
 export const BrewPathParams = brewPathParamsSchema;
+export const BrewRecipeNotFoundErrorResponse = brewRecipeNotFoundErrorResponseSchema;
 export const BrewRecipeSnapshotResponse = brewRecipeSnapshotResponseSchema;
 export const BrewResponse = brewResponseSchema;
+export const BrewSnapshotUpdateErrorResponse = brewSnapshotUpdateErrorResponseSchema;
 export const BrewsResponse = brewsResponseSchema;
 export const BrewStageResponse = brewStageResponseSchema;
 export const BrewUpdateErrorResponse = brewUpdateErrorResponseSchema;
@@ -455,8 +551,10 @@ export const CreateAdditiveRequestBody = createAdditiveRequestBodySchema;
 export const CreateAdditiveValidationErrorResponse = createAdditiveValidationErrorResponseSchema;
 export const CreateBjcpIngredientFailureErrorResponse = createBjcpIngredientFailureErrorResponseSchema;
 export const CreateBjcpIngredientRequestBody = createBjcpIngredientRequestBodySchema;
+export const CreateBrewEntryBatchRequestBody = createBrewEntryBatchRequestBodySchema;
 export const CreateBrewEntryRequestBody = createBrewEntryRequestBodySchema;
 export const CreateBrewEntryResponse = createBrewEntryResponseSchema;
+export const CreateBrewImageRequestBody = createBrewImageRequestBodySchema;
 export const CreateBrewRequestBody = createBrewRequestBodySchema;
 export const CreateBrewResponse = createBrewResponseSchema;
 export const CreateChatAccessGrantRequestBody = createChatAccessGrantRequestBodySchema;
@@ -467,8 +565,10 @@ export const CreateChatCreditGrantRequestBody = createChatCreditGrantRequestBody
 export const CreateChatCreditGrantResponse = createChatCreditGrantResponseSchema;
 export const CreateCreditCheckoutRequestBody = createCreditCheckoutRequestBodySchema;
 export const CreateCreditCheckoutResponse = createCreditCheckoutResponseSchema;
+export const CreateEquipmentRequestBody = createEquipmentRequestBodySchema;
 export const CreateIngredientFailureErrorResponse = createIngredientFailureErrorResponseSchema;
 export const CreateIngredientRequestBody = createIngredientRequestBodySchema;
+export const CreateInventoryStockRequestBody = createInventoryStockRequestBodySchema;
 export const CreateRecipeCommentFailureErrorResponse = createRecipeCommentFailureErrorResponseSchema;
 export const CreateRecipeCommentRequestBody = createRecipeCommentRequestBodySchema;
 export const CreateRecipeCommentResponse = createRecipeCommentResponseSchema;
@@ -496,6 +596,7 @@ export const CreditPaymentRecoveryStatus = creditPaymentRecoveryStatusSchema;
 export const DeleteAdditiveFailureErrorResponse = deleteAdditiveFailureErrorResponseSchema;
 export const DeleteAdditiveSuccessResponse = deleteAdditiveSuccessResponseSchema;
 export const DeleteAdminUserSuccessResponse = deleteAdminUserSuccessResponseSchema;
+export const DeleteBrewEntryRequestBody = deleteBrewEntryRequestBodySchema;
 export const DeleteBrewEntrySuccessResponse = deleteBrewEntrySuccessResponseSchema;
 export const DeleteBrewSuccessResponse = deleteBrewSuccessResponseSchema;
 export const DeleteChatAccessGrantResponse = deleteChatAccessGrantResponseSchema;
@@ -513,6 +614,14 @@ export const DeleteRecipeSuccessResponse = deleteRecipeSuccessResponseSchema;
 export const DeleteYeastFailureErrorResponse = deleteYeastFailureErrorResponseSchema;
 export const DeleteYeastSuccessResponse = deleteYeastSuccessResponseSchema;
 export const EndHydrometerBrewResponse = endHydrometerBrewResponseSchema;
+export const EquipmentBrewSummary = equipmentBrewSummarySchema;
+export const EquipmentErrorResponse = equipmentErrorResponseSchema;
+export const EquipmentItem = equipmentItemSchema;
+export const EquipmentMutationResponse = equipmentMutationResponseSchema;
+export const EquipmentNotFoundErrorResponse = equipmentNotFoundErrorResponseSchema;
+export const EquipmentOverviewResponse = equipmentOverviewResponseSchema;
+export const EquipmentPathParams = equipmentPathParamsSchema;
+export const EquipmentUnexpectedErrorResponse = equipmentUnexpectedErrorResponseSchema;
 export const GetRecipeResponse = getRecipeResponseSchema;
 export const GoFermType = goFermTypeSchema;
 export const GravityUnitResponse = gravityUnitResponseSchema;
@@ -551,6 +660,23 @@ export const IngredientResponse = ingredientResponseSchema;
 export const IngredientsFetchErrorResponse = ingredientsFetchErrorResponseSchema;
 export const IngredientsResponse = ingredientsResponseSchema;
 export const InvalidRecipeIdErrorResponse = invalidRecipeIdErrorResponseSchema;
+export const InventoryOverviewResponse = inventoryOverviewResponseSchema;
+export const InventoryStockErrorResponse = inventoryStockErrorResponseSchema;
+export const InventoryStockHistoryResponse = inventoryStockHistoryResponseSchema;
+export const InventoryStockItem = inventoryStockItemSchema;
+export const InventoryStockMutationResponse = inventoryStockMutationResponseSchema;
+export const InventoryStockNotFoundResponse = inventoryStockNotFoundResponseSchema;
+export const InventoryStockPathParams = inventoryStockPathParamsSchema;
+export const InventoryStockReconciliation = inventoryStockReconciliationSchema;
+export const InventoryStockUnexpectedErrorResponse = inventoryStockUnexpectedErrorResponseSchema;
+export const InventoryTransferErrorResponse = inventoryTransferErrorResponseSchema;
+export const InventoryTransferRequestBody = inventoryTransferRequestBodySchema;
+export const InventoryTransferResponse = inventoryTransferResponseSchema;
+export const KofiLinkClaimRequestBody = kofiLinkClaimRequestBodySchema;
+export const KofiLinkClaimResponse = kofiLinkClaimResponseSchema;
+export const KofiLinkRequestBody = kofiLinkRequestBodySchema;
+export const KofiLinkRequestResponse = kofiLinkRequestResponseSchema;
+export const KofiWebhookReceiptResponse = kofiWebhookReceiptResponseSchema;
 export const LinkRecipeToHydrometerBrewRequestBody = linkRecipeToHydrometerBrewRequestBodySchema;
 export const LinkRecipeToHydrometerBrewResponse = linkRecipeToHydrometerBrewResponseSchema;
 export const LoginFailureErrorResponse = loginFailureErrorResponseSchema;
@@ -558,6 +684,12 @@ export const LoginInvalidCredentialsErrorResponse = loginInvalidCredentialsError
 export const LoginMissingCredentialsErrorResponse = loginMissingCredentialsErrorResponseSchema;
 export const LoginRequestBody = loginRequestBodySchema;
 export const LoginSuccessResponse = loginSuccessResponseSchema;
+export const McpErrorResponse = mcpErrorResponseSchema;
+export const McpToken = mcpTokenSchema;
+export const McpTokenCreateBody = mcpTokenCreateBodySchema;
+export const McpTokenCreateResponse = mcpTokenCreateResponseSchema;
+export const McpTokenListResponse = mcpTokenListResponseSchema;
+export const McpTokenRevokeResponse = mcpTokenRevokeResponseSchema;
 export const NitrogenRequirement = nitrogenRequirementSchema;
 export const NoteLineResponse = noteLineResponseSchema;
 export const NotesResponse = notesResponseSchema;
@@ -572,10 +704,15 @@ export const NutrientScheduleType = nutrientScheduleTypeSchema;
 export const NutrientSelectedResponse = nutrientSelectedResponseSchema;
 export const NutrientSettingsResponse = nutrientSettingsResponseSchema;
 export const NutrientVolumeUnit = nutrientVolumeUnitSchema;
+export const PremiumAccessResponse = premiumAccessResponseSchema;
+export const PremiumCheckoutResponse = premiumCheckoutResponseSchema;
+export const PremiumErrorResponse = premiumErrorResponseSchema;
+export const PremiumPortalResponse = premiumPortalResponseSchema;
 export const PublicBrewDetailResponse = publicBrewDetailResponseSchema;
 export const PublicBrewEntriesByStageResponse = publicBrewEntriesByStageResponseSchema;
 export const PublicBrewEntryResponse = publicBrewEntryResponseSchema;
 export const PublicBrewFetchErrorResponse = publicBrewFetchErrorResponseSchema;
+export const PublicBrewImagesResponse = publicBrewImagesResponseSchema;
 export const PublicBrewListItemResponse = publicBrewListItemResponseSchema;
 export const PublicBrewLogResponse = publicBrewLogResponseSchema;
 export const PublicBrewNotFoundErrorResponse = publicBrewNotFoundErrorResponseSchema;
@@ -666,11 +803,13 @@ export const UpdateAdditiveRequestBody = updateAdditiveRequestBodySchema;
 export const UpdateAdminUserRequestBody = updateAdminUserRequestBodySchema;
 export const UpdateBrewEntryRequestBody = updateBrewEntryRequestBodySchema;
 export const UpdateBrewEntryResponse = updateBrewEntryResponseSchema;
+export const UpdateBrewImageRequestBody = updateBrewImageRequestBodySchema;
 export const UpdateBrewRequestBody = updateBrewRequestBodySchema;
 export const UpdateBrewResponse = updateBrewResponseSchema;
 export const UpdateChatAccessAdministrationRequestBody = updateChatAccessAdministrationRequestBodySchema;
 export const UpdateChatConversationRequestBody = updateChatConversationRequestBodySchema;
 export const UpdateChatConversationResponse = updateChatConversationResponseSchema;
+export const UpdateEquipmentRequestBody = updateEquipmentRequestBodySchema;
 export const UpdateHydrometerBrewRecipeOrAlertsResponse = updateHydrometerBrewRecipeOrAlertsResponseSchema;
 export const UpdateHydrometerBrewRequestBody = updateHydrometerBrewRequestBodySchema;
 export const UpdateHydrometerBrewResponse = updateHydrometerBrewResponseSchema;
@@ -678,6 +817,7 @@ export const UpdateHydrometerDeviceRequestBody = updateHydrometerDeviceRequestBo
 export const UpdateHydrometerLogRequestBody = updateHydrometerLogRequestBodySchema;
 export const UpdateIngredientFailureErrorResponse = updateIngredientFailureErrorResponseSchema;
 export const UpdateIngredientRequestBody = updateIngredientRequestBodySchema;
+export const UpdateInventoryStockRequestBody = updateInventoryStockRequestBodySchema;
 export const UpdateRecipeCommentFailureErrorResponse = updateRecipeCommentFailureErrorResponseSchema;
 export const UpdateRecipeCommentRequestBody = updateRecipeCommentRequestBodySchema;
 export const UpdateRecipeCommentResponse = updateRecipeCommentResponseSchema;

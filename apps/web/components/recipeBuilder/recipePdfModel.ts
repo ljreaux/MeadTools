@@ -43,6 +43,13 @@ type PdfAdditive = {
   amount: string;
 };
 
+type PdfVolumeSummary = {
+  primary: { label: string; value: string };
+  lost: { label: string; value: string };
+  after: { label: string; value: string };
+  caveat: string;
+};
+
 export type RecipePdfModel = {
   title: string;
   byline: string;
@@ -50,6 +57,8 @@ export type RecipePdfModel = {
     totalVolume: string[];
     yeast: string[];
   };
+  lossSummary: PdfVolumeSummary | null;
+  bottlingSummary: PdfVolumeSummary | null;
   metrics: {
     key: string;
     label: string;
@@ -71,6 +80,7 @@ export type RecipePdfModel = {
   showPageTwo: boolean;
   labels: {
     totalVolume: string;
+    bottlingEstimate: string;
     yeast: string;
     nutrient: string;
     numberOfAdditions: string;
@@ -134,6 +144,8 @@ export function createRecipePdfModel({
 
   const formatQuantity = (value: unknown, digits = 3) =>
     formatRecipePdfNumber(value, digits, locale, { minimum: 0 });
+  const formatTransferVolume = (value: unknown) =>
+    formatRecipePdfNumber(value, 3, locale, { minimum: 0, fixed: true });
   const formatDose = (value: unknown) => formatQuantity(value, 2);
   const formatGravity = (value: unknown) => {
     const parsed =
@@ -290,6 +302,54 @@ export function createRecipePdfModel({
         temperatureRange
       ]
     },
+    lossSummary: recipe.data.lossAdjustment?.enabled
+      ? {
+          primary: {
+            label: t("recipeBuilder.loss.pdfPrimary"),
+            value: `${formatTransferVolume(recipe.derived.primaryVolume)} ${unitDefaults.volume}`
+          },
+          lost: {
+            label: t("recipeBuilder.loss.pdfLoss", {
+              percentage: recipe.derived.lossPercentage
+            }),
+            value: t("recipeBuilder.loss.pdfLossValue", {
+              volume: formatTransferVolume(
+                recipe.derived.primaryVolume - recipe.derived.postLossPrimaryVolume
+              ),
+              unit: unitDefaults.volume
+            })
+          },
+          after: {
+            label: t("recipeBuilder.loss.pdfAfter"),
+            value: `${formatTransferVolume(recipe.derived.postLossPrimaryVolume)} ${unitDefaults.volume}`
+          },
+          caveat: t("recipeBuilder.loss.pdfDisclaimer")
+        }
+      : null,
+    bottlingSummary: recipe.data.lossAdjustment?.secondary?.enabled
+      ? {
+          primary: {
+            label: t("recipeBuilder.loss.pdfBeforeBottling"),
+            value: `${formatTransferVolume(recipe.derived.totalVolume)} ${unitDefaults.volume}`
+          },
+          lost: {
+            label: t("recipeBuilder.loss.pdfSecondaryLoss", {
+              percentage: recipe.derived.secondaryLossPercentage
+            }),
+            value: t("recipeBuilder.loss.pdfLossValue", {
+              volume: formatTransferVolume(
+                recipe.derived.totalVolume - recipe.derived.bottlingVolume
+              ),
+              unit: unitDefaults.volume
+            })
+          },
+          after: {
+            label: t("recipeBuilder.loss.pdfBottling"),
+            value: `${formatTransferVolume(recipe.derived.bottlingVolume)} ${unitDefaults.volume}`
+          },
+          caveat: t("recipeBuilder.loss.pdfSecondaryDisclaimer")
+        }
+      : null,
     metrics: [
       {
         key: "estimated-og",
@@ -364,7 +424,13 @@ export function createRecipePdfModel({
       additives.length > 0 ||
       secondaryNotes.length > 0,
     labels: {
-      totalVolume: t("PDF.totalVolume"),
+      totalVolume: t(
+        recipe.data.lossAdjustment?.enabled ||
+        recipe.data.lossAdjustment?.secondary?.enabled
+          ? "PDF.estimatedTotalVolume"
+          : "PDF.totalVolume"
+      ),
+      bottlingEstimate: t("recipeBuilder.loss.pdfBottlingEstimate"),
       yeast: t("PDF.yeast"),
       nutrient: t("PDF.nutrient"),
       numberOfAdditions: t("PDF.numberOfAdditions"),

@@ -1,4 +1,13 @@
 "use client";
+import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
+import { loggedYeastAmountG } from "@meadtools/brew-domain";
+import { BrewImages } from "@/components/brews/BrewImages";
+import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
+import { BrewQrDialog } from "@/components/brews/BrewQrDialog";
+import {useCreateBrewEntryBatch} from "@/hooks/reactQuery/useCreateBrewEntry";
+import type { BrewInventorySelection } from "@meadtools/api-contract/contracts";
+import { useBrewStockChoice } from "@/components/brews/BrewStockField";
+import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +30,9 @@ import { toast } from "@/hooks/use-toast";
 
 import AddBrewEntryDialog, { EntryType, OpenAddEntryArgs } from "@/components/brews/AddBrewEntryDialog";
 import { BREW_TRACKER_DIALOG_CONTENT_CLASS, BREW_TRACKER_DIALOG_FOOTER_CLASS } from "@/components/brews/brewTrackerDialog";
+import { BrewVessels } from "@/components/brews/BrewVessels";
 import { BrewTimelineCharts } from "@/components/brews/BrewTimelineCharts";
+import { UpdateRecipeSnapshot } from "@/components/brews/UpdateRecipeSnapshot";
 import { RecordVolumeDialog } from "@/components/brews/RecordVolumeDialog";
 import { useRecipe } from "@/components/providers/RecipeProvider";
 import { BrewStagePath } from "@/components/brews/BrewStagePath";
@@ -68,7 +79,7 @@ import {
   type AdditionBasis
 } from "@/components/brews/stages/additionDialogShared";
 
-type HistoryView = "stages" | "metrics" | "charts";
+type HistoryView = "stages" | "metrics" | "charts" | "photos";
 type HistoryFilter = "readings" | "additions" | "volume" | "notes" | "stageChanges" | "packaging";
 type HistorySortOrder = "oldest" | "newest";
 type BrewT = ReturnType<typeof useTranslation>["t"];
@@ -772,7 +783,10 @@ export default function BrewPageClient() {
     );
   }
 
-  async function addAddition(input: {
+  const brewInventory=useBrewInventory();
+  const createBatch=useCreateBrewEntryBatch();
+  function buildAddition(input: {
+    inventory?: BrewInventorySelection;
     name: string;
     recipeIngredientId?: string;
     recipeAdditiveId?: string;
@@ -794,12 +808,12 @@ export default function BrewPageClient() {
     const nameKey =
       typeof input.meta?.nameKey === "string" ? input.meta.nameKey : getBrewItemKey(input.meta?.plannedName ?? input.name);
     const displayName = nameKey ? t(nameKey, getBrewItemLabel(t, input.name)) : getBrewItemLabel(t, input.name);
-    await addEntry(
-      entryPayload.addition({
+    return (
+      { ...entryPayload.addition({
         name: displayName,
         recipeIngredientId: input.recipeIngredientId,
         recipeAdditiveId: input.recipeAdditiveId,
-        amount: input.amount,
+        amount: input.amount == null ? input.amount : Number(input.amount.toFixed(6)),
         unit: input.unit,
         note: input.note ?? null,
         kind: input.kind,
@@ -810,12 +824,15 @@ export default function BrewPageClient() {
           plannedName: input.meta?.plannedName ?? input.name
         },
         datetime: input.datetime
-      })
+      }), inventory: input.inventory }
     );
   }
 
+  async function addAddition(input:Parameters<typeof buildAddition>[0]) {await addEntry(buildAddition(input));}
+
   async function addAdditions(
     inputs: Array<{
+      inventory?: BrewInventorySelection;
       name: string;
       recipeIngredientId?: string;
       recipeAdditiveId?: string;
@@ -835,17 +852,25 @@ export default function BrewPageClient() {
       datetime?: string;
     }>
   ) {
-    // simplest approach: fire sequentially so you don’t DDOS your own API
-    for (const x of inputs) {
-      await addAddition(x);
-    }
+    const entries=inputs.map(buildAddition);
+    const save=async(reviewed:CreateBrewEntryInput[],operationId:string)=>{
+      if(operationId&&reviewed.every(entry=>entry.inventory?.mode==='items')){await createBatch.mutateAsync({brewId,entries:reviewed,operationId});return;}
+      for(const entry of reviewed)await addEntry({...entry,inventory:undefined});
+    };
+    if(brewInventory?.canManage&&entries.every(entry=>entry.inventory?.mode==='items')) {
+      const first=entries[0].inventory;
+      await save(entries,first?.mode==='items'?first.operation_id:crypto.randomUUID());
+    }else if(brewInventory)await brewInventory.reviewBatch(entries,save);else await save(entries,'');
   }
 
   if (isLoading) return <BrewPageSkeleton />;
 
   if (isError || !brew) {
-    console.error(error);
-    return <div className="text-center my-4">{t("brews.error.loadDetail", "Something went wrong loading this brew.")}</div>;
+    const unavailable = (error as { status?: number } | null)?.status === 404;
+    if (!unavailable) console.error(error);
+    return <div className="text-center my-4">{unavailable
+      ? t("brews.qr.unavailable")
+      : t("brews.error.loadDetail", "Something went wrong loading this brew.")}</div>;
   }
 
   const historyFilterOptions: Array<{ value: HistoryFilter; label: string }> = [
@@ -922,6 +947,7 @@ export default function BrewPageClient() {
             ))}
           </div>
         ) : null}
+        <BrewImages brewId={brew.id} entryId={entry.id} compact />
       </div>
     );
   };
@@ -973,9 +999,16 @@ export default function BrewPageClient() {
               {brew.recipe_id ? (
                 <span>
                   {t("brews.recipe", "Recipe")}:{" "}
-                  <Link className="text-foreground underline" href={`/recipes/${brew.recipe_id}`}>
-                    {brew.recipe_name ?? t("recipe", "Recipe")}
-                  </Link>
+                  {brew.recipe_private === false ? (
+                    <Link className="text-foreground underline" href={`/recipes/${brew.recipe_id}`}>
+                      {brew.recipe_name ?? t("recipe", "Recipe")}
+                    </Link>
+                  ) : (
+                    brew.recipe_snapshot?.name ?? brew.recipe_name ?? t("recipe", "Recipe")
+                  )}
+                  {brew.recipe_snapshot?.sourceUsername
+                    ? ` · ${t("byUser", { public_username: brew.recipe_snapshot.sourceUsername })}`
+                    : null}
                 </span>
               ) : (
                 t("noRecipe", "No recipe linked.")
@@ -983,6 +1016,7 @@ export default function BrewPageClient() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <BrewQrDialog key={brew.id} brewId={brew.id} />
             {brew.public &&
             brew.recipe_id &&
             brew.recipe_private === false ? (
@@ -1150,6 +1184,10 @@ export default function BrewPageClient() {
         </div>
       </div>
 
+      <BrewVessels stage={brew.stage} brewId={brew.id} completed={brew.stage === "COMPLETE" || Boolean(brew.end_date)} />
+
+      {brew.recipe_snapshot ? <UpdateRecipeSnapshot brew={brew} /> : null}
+
       <Accordion type="single" defaultValue="stage-panel" collapsible>
         <AccordionItem value="stage-panel">
           <AccordionTrigger>
@@ -1160,8 +1198,8 @@ export default function BrewPageClient() {
               brewId={brew.id}
               stage={brew.stage}
               entries={allEntries}
-              onMoveToStage={async (to, datetime) => {
-                await saveMetadata({ stage: to, stage_change_datetime: datetime });
+              onMoveToStage={async (to, datetime, containers) => {
+                await saveMetadata({ stage: to, stage_change_datetime: datetime, containers });
               }}
               openAddEntry={openAddEntry}
               addAddition={addAddition}
@@ -1256,6 +1294,7 @@ export default function BrewPageClient() {
               <TabsTrigger value="charts" className="h-6 px-2">
                 {t("brews.history.views.charts", "Charts")}
               </TabsTrigger>
+              <TabsTrigger value="photos" className="h-6 px-2">{t("brewImages.title")}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1455,6 +1494,7 @@ export default function BrewPageClient() {
             volumeUnit={recipeVolumeUnit}
           />
         </TabsContent>
+        <TabsContent value="photos" className="mt-0"><BrewImages brewId={brew.id} brewPublic={brew.public} /></TabsContent>
       </Tabs>
       <EditBrewEntryDialog
         entry={editingEntry}
@@ -1468,8 +1508,8 @@ export default function BrewPageClient() {
           toast({ description: t("saved", "Saved.") });
           setEditingEntry(null);
         }}
-        onDelete={async (entryId) => {
-          await deleteEntry({ brewId: brew.id, entryId });
+        onDelete={async (entryId, inventory) => {
+          await deleteEntry({ brewId: brew.id, entryId, inventory });
           toast({ description: t("deleted", "Deleted.") });
           setEditingEntry(null);
         }}
@@ -1527,7 +1567,7 @@ function EditBrewEntryDialog({
     temp_units?: any | null;
     data?: any | null;
   }) => Promise<void>;
-  onDelete: (entryId: string) => Promise<void>;
+  onDelete: (entryId: string, inventory?: BrewInventorySelection) => Promise<void>;
 }) {
   const { t, i18n } = useTranslation();
   const [datetime, setDatetime] = useState<Date>(new Date());
@@ -1543,6 +1583,13 @@ function EditBrewEntryDialog({
   const [additionName, setAdditionName] = useState("");
   const [additionAmount, setAdditionAmount] = useState("");
   const [additionUnit, setAdditionUnit] = useState("");
+  const [packetWeightG, setPacketWeightG] = useState("");
+  const isPacketYeast = entry?.type === BREW_ENTRY_TYPE.ADDITION &&
+    (entry.data as Partial<BrewAdditionData> | null)?.kind === "YEAST" && additionUnit === "units";
+  const validPacketWeight = !isPacketYeast || (loggedYeastAmountG({
+    amount: parseNumber(additionAmount), unit: additionUnit,
+    meta: { packetWeightG: parseNumber(packetWeightG) },
+  }) ?? 0) > 0;
   const [additionBasis, setAdditionBasis] = useState<AdditionBasis>("other");
   const [additionComponents, setAdditionComponents] = useState<Array<{ key: string; name: string; amount: string; unit: string }>>([]);
   const [volume, setVolume] = useState("");
@@ -1551,6 +1598,8 @@ function EditBrewEntryDialog({
     Array<{ label: string; quantity: string; sizeLiters: string }>
   >([]);
   const [isSaving, setIsSaving] = useState(false);
+  const stockChoice = useBrewStockChoice(entry?.type === BREW_ENTRY_TYPE.ADDITION ? { ...(entry.data as object), name: additionName, amount: additionComponents.length ? additionComponents.reduce((sum,c)=>sum+parseNumber(c.amount),0) : parseNumber(additionAmount), unit: additionUnit, meta: { ...((entry.data as any)?.meta ?? {}), components: additionComponents.map(component=>({...component,amount:parseNumber(component.amount)})) } } : entry?.type === BREW_ENTRY_TYPE.PACKAGING ? { ...(entry.data as object), bottleRows: packagingRows.map(row=>({...row,quantity:parseNumber(row.quantity),sizeLiters:parseNumber(row.sizeLiters)})) } : null, entry?.id, entry?.type);
+
 
   useEffect(() => {
     if (!entry) return;
@@ -1585,6 +1634,7 @@ function EditBrewEntryDialog({
     setAdditionName(addition?.name ? getBrewItemLabel(t, addition.name) : entry.title ? translateTimelineTitle(t, entry.title) : "");
     setAdditionAmount(typeof addition?.amount === "number" ? String(addition.amount) : "");
     setAdditionUnit(addition?.unit ?? "");
+    setPacketWeightG(typeof addition?.meta?.packetWeightG === "number" ? String(addition.meta.packetWeightG) : "");
     setAdditionBasis(inferAdditionBasis(addition?.unit ?? ""));
     setAdditionComponents(
       Array.isArray(addition?.meta?.components)
@@ -1653,6 +1703,7 @@ function EditBrewEntryDialog({
 
   const buildPatch = () => {
     const patch: {
+      inventory?: BrewInventorySelection;
       datetime?: string;
       title?: string | null;
       note?: string | null;
@@ -1744,6 +1795,7 @@ function EditBrewEntryDialog({
       const amount = additionComponents.length ? componentTotal : additionAmount.trim() ? parseNumber(additionAmount) : undefined;
       if (amount !== undefined && !Number.isFinite(amount)) throw new Error("Invalid amount");
       const existingMeta = ((entry.data as any) ?? {}).meta ?? {};
+      if (!validPacketWeight) throw new Error(t("brews.yeast.packetWeightRequired"));
       const nextNameKey =
         typeof existingMeta.nameKey === "string" ? existingMeta.nameKey : getBrewItemKey(existingMeta.plannedName ?? additionName);
       const nextData = {
@@ -1760,11 +1812,13 @@ function EditBrewEntryDialog({
               }
             : {
                 ...existingMeta,
-                nameKey: nextNameKey ?? undefined
+                nameKey: nextNameKey ?? undefined,
+                packetWeightG: isPacketYeast ? parseNumber(packetWeightG) : undefined
               }
       };
       patch.title = additionName.trim() || entry.title;
       patch.data = nextData;
+      patch.inventory = stockChoice.selection();
       return patch;
     }
 
@@ -1820,8 +1874,10 @@ function EditBrewEntryDialog({
             : previous.packagedVolumeLiters,
         displayValue: n,
         displayUnit: volumeUnit || previousUnit,
+        closures: previous.closures,
         bottleRows: nextRows
       };
+      patch.inventory=stockChoice.selection();
       return patch;
     }
 
@@ -1833,6 +1889,8 @@ function EditBrewEntryDialog({
     setIsSaving(true);
     try {
       await onSave(entry.id, buildPatch());
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -1841,7 +1899,9 @@ function EditBrewEntryDialog({
   const remove = async () => {
     setIsSaving(true);
     try {
-      await onDelete(entry.id);
+      await onDelete(entry.id, stockChoice.removalSelection());
+    } catch (error) {
+      reportBrewInventoryError(error, t);
     } finally {
       setIsSaving(false);
     }
@@ -2050,6 +2110,8 @@ function EditBrewEntryDialog({
                         <AdditiveUnitSelect
                           value={additionUnit}
                           onValueChange={(value) => {
+                            if ((entry.data as Partial<BrewAdditionData> | null)?.kind === "YEAST" &&
+                              (value === "units") !== (additionUnit === "units")) setAdditionAmount("");
                             setAdditionUnit(value);
                             setAdditionBasis(inferAdditionBasis(value));
                           }}
@@ -2059,6 +2121,7 @@ function EditBrewEntryDialog({
                   )}
                 </div>
               )}
+              {isPacketYeast ? <YeastPacketWeightField value={packetWeightG} amount={additionAmount} onChange={setPacketWeightG} /> : null}
             </div>
           ) : null}
 
@@ -2197,6 +2260,7 @@ function EditBrewEntryDialog({
 
         </div>
 
+        {stockChoice.field}
         <DialogFooter className={`${BREW_TRACKER_DIALOG_FOOTER_CLASS} sm:justify-between`}>
           {canDelete ? (
             <AlertDialog>
@@ -2213,7 +2277,7 @@ function EditBrewEntryDialog({
                     {t(
                       "brews.deleteEntryDescription",
                       "This removes the entry from the brew timeline. This action cannot be undone."
-                    )}
+                    )}{stockChoice.removalNotice ? ` ${stockChoice.removalNotice}` : ""}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className={BREW_TRACKER_DIALOG_FOOTER_CLASS}>
@@ -2238,7 +2302,7 @@ function EditBrewEntryDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={isSaving}>
               {t("cancel", "Cancel")}
             </Button>
-            <Button onClick={save} disabled={isSaving}>
+            <Button onClick={save} disabled={isSaving || !stockChoice.valid || !validPacketWeight}>
               {t("save", "Save")}
             </Button>
           </div>

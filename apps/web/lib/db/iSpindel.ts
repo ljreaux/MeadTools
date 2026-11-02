@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import ShortUniqueId from "short-unique-id";
 import { escapeHtml, sendEmail } from "./emailHelpers";
 import { Prisma } from "@prisma/client";
+import { releaseEquipmentForBrew } from "./equipment";
 
 export type LogType = {
   id?: string;
@@ -622,6 +623,7 @@ export async function endBrew(id: string, brew_id: string, user_id: number) {
         where: { id: brew_id, user_id },
         data: { end_date: new Date() }
       });
+      await releaseEquipmentForBrew(tx, user_id, brew_id);
 
       const detachedDevice = await tx.devices.update({
         where: { id: device.id },
@@ -719,49 +721,56 @@ export async function receiveBrewAlerts(
 
 export async function deleteBrew(brew_id: string, user_id: number) {
   try {
-    // Check if a device is associated with the brew and the user
-    const device = await prisma.devices.findFirst({
-      where: {
-        user_id,
-        brew_id
-      }
-    });
-
-    if (device) {
-      // Detach the device from the brew
-      await prisma.devices.update({
-        where: { id: device.id, user_id },
-        data: { brew_id: null }
-      });
-
-      // Delete logs associated with this brew and device
-      await prisma.logs.deleteMany({
+    return await prisma.$transaction(async (tx) => {
+      const owned = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM brews WHERE id = ${brew_id}::uuid AND user_id = ${user_id} FOR UPDATE
+      `;
+      if (!owned.length) throw new Error("Brew not found.");
+      await releaseEquipmentForBrew(tx, user_id, brew_id);
+      // Check if a device is associated with the brew and the user
+      const device = await tx.devices.findFirst({
         where: {
-          brew_id,
-          device_id: device.id
+          user_id,
+          brew_id
         }
       });
-    } else {
-      // Delete logs associated with this brew only
-      await prisma.logs.deleteMany({
-        where: { brew_id }
+
+      if (device) {
+        // Detach the device from the brew
+        await tx.devices.update({
+          where: { id: device.id, user_id },
+          data: { brew_id: null }
+        });
+
+        // Delete logs associated with this brew and device
+        await tx.logs.deleteMany({
+          where: {
+            brew_id,
+            device_id: device.id
+          }
+        });
+      } else {
+        // Delete logs associated with this brew only
+        await tx.logs.deleteMany({
+          where: { brew_id }
+        });
+      }
+
+      // Delete the brew
+      const deleted_brew = await tx.brews.delete({
+        where: { id: brew_id, user_id }
       });
-    }
 
-    // Delete the brew
-    const deleted_brew = await prisma.brews.delete({
-      where: { id: brew_id, user_id }
+      if (!deleted_brew) {
+        throw new Error("Brew not found.");
+      }
+
+      return {
+        message: `Your brew "${
+          deleted_brew.name || deleted_brew.id
+        }" has been successfully deleted along with all of its logs.`
+      };
     });
-
-    if (!deleted_brew) {
-      throw new Error("Brew not found.");
-    }
-
-    return {
-      message: `Your brew "${
-        deleted_brew.name || deleted_brew.id
-      }" has been successfully deleted along with all of its logs.`
-    };
   } catch (error) {
     console.error("Error deleting brew:", error);
     throw new Error("Failed to delete brew.");

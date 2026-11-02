@@ -23,6 +23,8 @@ import {
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import { sulfiteAddition } from "@meadtools/core/extra-calculators";
+
 type StabilizerType = "kMeta" | "naMeta";
 type Units = "gallons" | "liter";
 
@@ -47,8 +49,6 @@ function Sulfite() {
     setPpm(e.target.value);
   };
 
-  const multiplier = stabilizerType === "kMeta" ? 570 : 674;
-
   // parse only for math (allows "12." to exist in state)
   const batchSizeNum = useMemo(
     () => parseNumber(batchSize || "0"),
@@ -56,17 +56,16 @@ function Sulfite() {
   );
   const ppmNum = useMemo(() => parseNumber(ppm || "0"), [ppm]);
 
-  const sulfiteAmount = useMemo(() => {
-    return units === "gallons"
-      ? (batchSizeNum * 3.785 * ppmNum) / multiplier
-      : (batchSizeNum * ppmNum) / multiplier;
-  }, [units, batchSizeNum, ppmNum, multiplier]);
-
-  const campden = useMemo(() => {
-    return units !== "gallons"
-      ? (ppmNum / 75) * (batchSizeNum / 3.785)
-      : (ppmNum / 75) * batchSizeNum;
-  }, [units, ppmNum, batchSizeNum]);
+  const { sulfiteGrams: sulfiteAmount, campdenTablets: campden } = useMemo(
+    () =>
+      sulfiteAddition(
+        batchSizeNum,
+        units === "gallons" ? "gal" : "lit",
+        ppmNum,
+        stabilizerType
+      ),
+    [units, batchSizeNum, ppmNum, stabilizerType]
+  );
 
   const sulfiteAmountDisplay = normalizeNumberString(
     sulfiteAmount,

@@ -1,4 +1,5 @@
 "use client";
+import { BrewImages } from "./BrewImages";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -61,6 +62,7 @@ export function BrewViewer({
   capabilities = READ_ONLY_BREW_CAPABILITIES,
   backHref,
   recipeHref,
+  showPhotos = false,
   backLabelKey = "back"
 }: {
   brew: BrewViewDetail;
@@ -68,8 +70,10 @@ export function BrewViewer({
   backHref: string;
   recipeHref?: string | null;
   backLabelKey?: string;
+  showPhotos?: boolean;
 }) {
   const { t, i18n } = useTranslation();
+  const [historyView, setHistoryView] = useState("stages");
   const [filters, setFilters] = useState<HistoryFilter[]>([]);
   const [newestFirst, setNewestFirst] = useState(true);
   const readOnly = !Object.values(capabilities).some(Boolean);
@@ -290,7 +294,7 @@ export function BrewViewer({
         </AccordionItem>
       </Accordion>
 
-      <Tabs defaultValue="stages" className="space-y-4">
+      <Tabs value={historyView} onValueChange={setHistoryView} className="space-y-4">
         <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="stages">
@@ -302,8 +306,9 @@ export function BrewViewer({
             <TabsTrigger value="charts">
               {t("brews.history.charts", "Charts")}
             </TabsTrigger>
+            {showPhotos && <TabsTrigger value="photos">{t("brewImages.title")}</TabsTrigger>}
           </TabsList>
-          <div className="flex flex-wrap items-center gap-2">
+          {historyView !== "photos" && <div className="flex flex-wrap items-center gap-2">
             <ToggleGroup
               type="multiple"
               value={filters}
@@ -345,7 +350,7 @@ export function BrewViewer({
             >
               {newestFirst ? t("newest", "Newest") : t("oldest", "Oldest")}
             </Button>
-          </div>
+          </div>}
         </div>
 
         <TabsContent value="stages" className="mt-0">
@@ -379,6 +384,8 @@ export function BrewViewer({
                       <EntryCard
                         key={entry.id}
                         entry={entry}
+                        brewId={brew.id}
+                        showPhotos={showPhotos}
                         stage={bucket.stage}
                         formatDate={formatDate}
                       />
@@ -410,6 +417,8 @@ export function BrewViewer({
                       <EntryCard
                         key={entry.id}
                         entry={entry}
+                        brewId={brew.id}
+                        showPhotos={showPhotos}
                         stage={findEntryStage(brew, entry.id)}
                         formatDate={formatDate}
                       />
@@ -430,6 +439,7 @@ export function BrewViewer({
             volumeUnit={recipeUnit}
           />
         </TabsContent>
+        {showPhotos && <TabsContent value="photos" className="mt-0"><BrewImages brewId={brew.id} publicView /></TabsContent>}
       </Tabs>
     </div>
   );
@@ -462,10 +472,14 @@ function SummarySection({
 }
 
 function EntryCard({
+  brewId,
+  showPhotos,
   entry,
   stage,
   formatDate
 }: {
+  brewId: string;
+  showPhotos: boolean;
   entry: BrewViewEntry;
   stage: BrewStage;
   formatDate: (value: string | null) => string;
@@ -506,6 +520,7 @@ function EntryCard({
           {entry.note}
         </p>
       ) : null}
+      {showPhotos && <BrewImages brewId={brewId} entryId={entry.id} compact publicView />}
     </article>
   );
 }

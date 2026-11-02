@@ -38,6 +38,20 @@ export const initialOpenAIGpt54MiniPricing = {
   sourceUrl: "https://openai.com/api/pricing/",
 } as const;
 
+/** Standard short-context pricing checked on 2026-10-18 for the Luna evaluation. */
+export const initialOpenAIGpt56LunaPricing = {
+  provider: "openai",
+  model: "gpt-5.6-luna",
+  version: "openai-gpt-5.6-luna-standard-2026-10-18",
+  pricing: {
+    uncachedInputPicousdPerMillionTokens: BigInt(200_000_000_000),
+    cachedInputPicousdPerMillionTokens: BigInt(20_000_000_000),
+    outputPicousdPerMillionTokens: BigInt(1_200_000_000_000),
+  } satisfies ModelTokenPricing,
+  effectiveAt: new Date("2026-10-18T00:00:00.000Z"),
+  sourceUrl: "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+} as const;
+
 /**
  * Stable customer-facing credit burn policy for beta and paid launch. Changes
  * receive a new immutable version so every settled chat turn remains auditable.

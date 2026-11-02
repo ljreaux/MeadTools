@@ -1,6 +1,38 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { OpenAIChatClient } from "./openai";
+import { hostedAgentToolDefinitions } from "@meadtools/recipe-agent";
+
+test("Responses preserves optional account cursors instead of normalizing them into required inputs", async () => {
+  let body: Record<string, unknown> | undefined;
+  const client = new OpenAIChatClient({
+    apiKey: "test-key",
+    model: "gpt-5.4-mini-2026-03-17",
+    fetcher: async (_input, init) => {
+      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return Response.json(completedTextResponse("Done"));
+    },
+  });
+  const tools = hostedAgentToolDefinitions
+    .filter((tool) => ["list_recipes", "list_brews", "get_brew_timeline"].includes(tool.name))
+    .map((tool) => ({ type: "function" as const, function: tool }));
+  assert.equal(tools.length, 3);
+  await client.complete({
+    userId: 2,
+    maxOutputTokens: 64,
+    messages: [{ role: "user", content: "Find my saved recipe" }],
+    tools,
+  });
+  const sent = body?.tools as Array<{
+    strict?: boolean;
+    parameters: { required?: string[]; properties: Record<string, unknown> };
+  }>;
+  for (const tool of sent) {
+    assert.ok(tool.parameters.properties.cursor);
+    assert.ok(!tool.parameters.required?.includes("cursor"));
+    assert.equal(tool.strict, false, "Responses must not make optional cursors mandatory");
+  }
+});
 
 test("OpenAI client uses Responses with manual state and does not store content", async () => {
   let request: Request | undefined;
@@ -139,6 +171,7 @@ test("OpenAI client maps forced function calls and subsequent tool output to Res
       name: "lookup",
       description: "Lookup",
       parameters: { type: "object" },
+      strict: false,
     },
   ]);
   assert.deepEqual(body?.tool_choice, { type: "function", name: "lookup" });

@@ -1,29 +1,28 @@
 /**
- * This dated model ID is intentionally pinned. A model upgrade is a reviewed
- * profile/pricing change followed by validation, never an alias
- * update hidden behind a deployment.
+ * This profile was selected after the hosted comparison. Luna currently has
+ * an undated model identifier, so its pricing and model notices need periodic
+ * review; the immutable billing snapshot does not lock the provider's rates.
  */
-export const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini-2026-03-17";
+export const DEFAULT_OPENAI_MODEL = "gpt-5.6-luna";
 /** Per-turn output bound for recipe drafting and process guidance. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
-export const DEFAULT_MAX_TOOL_CALLS = 7;
+export const DEFAULT_MAX_TOOL_CALLS = 12;
 /** A turn may use tools, but cannot run an unbounded provider loop. */
-// A full recipe draft can legitimately use the compact ingredient, additive,
-// yeast, plan, calculation, and draft tools before it produces its final
-// response. Leave room for that final response without making the loop
-// unbounded.
-export const DEFAULT_MAX_PROVIDER_CALLS = 10;
+// A two-brew comparison can use list, two details, two manual histories, two
+// sensor histories, search and fetch, plus an input repair and a final answer.
+export const DEFAULT_MAX_PROVIDER_CALLS = 14;
 /** Bounds combined model output across tool calls and the final response. */
 export const DEFAULT_MAX_TOTAL_OUTPUT_TOKENS = 8_000;
 /** Limits the serialized provider context for every completion request. */
 export const DEFAULT_MAX_PROVIDER_INPUT_CHARACTERS = 60_000;
 /** Stops a turn once cumulative provider-reported token usage becomes excessive. */
-export const DEFAULT_MAX_TOTAL_PROVIDER_TOKENS = 60_000;
+export const DEFAULT_MAX_TOTAL_PROVIDER_TOKENS = 100_000;
 
 export type ChatbotConfig = {
   provider: "openai";
   apiKey: string;
   model: string;
+  reasoningEffort: "low" | "medium";
   maxOutputTokens: number;
   maxToolCalls: number;
   maxProviderCalls: number;
@@ -50,6 +49,8 @@ export function getChatbotConfig(
     provider: "openai",
     apiKey,
     model: environment.CHATBOT_OPENAI_MODEL?.trim() || DEFAULT_OPENAI_MODEL,
+    reasoningEffort:
+      environment.CHATBOT_REASONING_EFFORT === "low" ? "low" : "medium",
     maxOutputTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_OUTPUT_TOKENS,
       DEFAULT_MAX_OUTPUT_TOKENS,
@@ -60,13 +61,13 @@ export function getChatbotConfig(
       environment.CHATBOT_MAX_TOOL_CALLS,
       DEFAULT_MAX_TOOL_CALLS,
       1,
-      8,
+      12,
     ),
     maxProviderCalls: parseBoundedInteger(
       environment.CHATBOT_MAX_PROVIDER_CALLS,
       DEFAULT_MAX_PROVIDER_CALLS,
       1,
-      12,
+      14,
     ),
     maxTotalOutputTokens: parseBoundedInteger(
       environment.CHATBOT_MAX_TOTAL_OUTPUT_TOKENS,

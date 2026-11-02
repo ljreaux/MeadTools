@@ -8,10 +8,12 @@
     "./blend": "./src/blend.ts",
     "./derived": "./src/derived.ts",
     "./gravity": "./src/gravity.ts",
+    "./loss": "./src/loss.ts",
     "./nutrients": "./src/nutrients.ts",
     "./numeric": "./src/numeric.ts",
     "./recipe": "./src/recipe.ts",
-    "./temperature": "./src/temperature.ts"
+    "./temperature": "./src/temperature.ts",
+    "./extra-calculators": "./src/extra-calculators.ts"
   },
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",

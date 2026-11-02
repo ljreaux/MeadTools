@@ -22,6 +22,7 @@ export type BlendInput = {
 
 export type IngredientLineInput = {
   lineId: string;
+  name?: string;
   secondary: boolean;
   category: string;
   brix: string;
@@ -39,6 +40,7 @@ export type IngredientLineInput = {
 
 export type NormalizedIngredientLine = {
   lineId: string;
+  name?: string;
   secondary: boolean;
   category: string;
   sg: number;
@@ -97,6 +99,7 @@ export function normalizeIngredientLine(
 
   return {
     lineId: line.lineId,
+    name: line.name,
     secondary: line.secondary,
     category: line.category,
     brix,

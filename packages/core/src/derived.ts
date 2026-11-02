@@ -7,6 +7,7 @@ import {
   type NutrientDerivedState,
 } from "./nutrients";
 import { parseNumber } from "./numeric";
+import { isValidLossPercentage } from "./loss";
 import {
   calculateOriginalGravity,
   calculateVolume,
@@ -35,6 +36,15 @@ export type RecipeDerivedInput = {
     type: "kmeta" | "nameta";
   };
   nutrients?: NutrientData;
+  lossAdjustment?: {
+    enabled: boolean;
+    mode: "estimated" | "manual";
+    percentage: number;
+    secondary?: {
+      enabled: boolean;
+      percentage: number;
+    };
+  };
 };
 
 export type RecipeDerivedState = {
@@ -43,11 +53,19 @@ export type RecipeDerivedState = {
   secondaryInputs: BlendInput[];
   ogPrimary: number;
   primaryVolumeL: number;
+  postLossPrimaryVolumeL: number;
+  lossVolumeL: number;
+  lossPercentage: number;
   secondaryVolumeL: number;
   totalVolumeL: number;
+  secondaryLossVolumeL: number;
+  secondaryLossPercentage: number;
+  bottlingVolumeL: number;
   primaryVolume: number;
+  postLossPrimaryVolume: number;
   secondaryVolume: number;
   totalVolume: number;
+  bottlingVolume: number;
   volumeUnit: VolumeUnit;
   totalForAbv: number;
   backsweetenedFg: number;
@@ -114,20 +132,38 @@ export function calculateRecipeDerivedState(
   const ogPrimary = calculateOriginalGravity(primaryInputs);
   const primaryVolumeL = calculateVolume(primaryInputs);
   const secondaryVolumeL = calculateVolume(secondaryInputs);
-  const totalVolumeL = primaryVolumeL + secondaryVolumeL;
+  const configuredLossPercentage = recipeData.lossAdjustment?.enabled
+    ? recipeData.lossAdjustment.percentage
+    : 0;
+  // A malformed legacy snapshot must not propagate NaN or a negative volume.
+  const lossPercentage = isValidLossPercentage(configuredLossPercentage)
+    ? configuredLossPercentage
+    : 0;
+  const lossVolumeL = primaryVolumeL * lossPercentage / 100;
+  const postLossPrimaryVolumeL = primaryVolumeL - lossVolumeL;
+  const totalVolumeL = postLossPrimaryVolumeL + secondaryVolumeL;
+  const configuredSecondaryLossPercentage = recipeData.lossAdjustment?.secondary?.enabled
+    ? recipeData.lossAdjustment.secondary.percentage
+    : 0;
+  const secondaryLossPercentage = isValidLossPercentage(configuredSecondaryLossPercentage)
+    ? configuredSecondaryLossPercentage
+    : 0;
+  const secondaryLossVolumeL = totalVolumeL * secondaryLossPercentage / 100;
+  const bottlingVolumeL = totalVolumeL - secondaryLossVolumeL;
   const volumeFactor = L_TO_VOLUME[recipeData.unitDefaults.volume];
-  const totalForAbv = calculateOriginalGravity([
-    ...primaryInputs,
-    ...secondaryInputs,
-  ]);
+  const totalForAbv = calculateOriginalGravity(
+    lossPercentage === 0
+      ? [...primaryInputs, ...secondaryInputs]
+      : [{ sg: ogPrimary, volumeL: postLossPrimaryVolumeL }, ...secondaryInputs],
+  );
   const secondarySg = calculateOriginalGravity(secondaryInputs);
   const backsweetenedFg = calculateOriginalGravity([
-    { sg: parseNumber(recipeData.fg), volumeL: primaryVolumeL },
+    { sg: parseNumber(recipeData.fg), volumeL: postLossPrimaryVolumeL },
     { sg: secondarySg, volumeL: secondaryVolumeL },
   ]);
   const primaryAbv = calcABV(ogPrimary, parseNumber(recipeData.fg));
   const abv =
-    totalVolumeL > 0 ? (primaryAbv * primaryVolumeL) / totalVolumeL : 0;
+    totalVolumeL > 0 ? (primaryAbv * postLossPrimaryVolumeL) / totalVolumeL : 0;
   const nutrients = recipeData.nutrients ?? initialNutrientData();
   const fgSg = parseNumber(recipeData.fg);
   const nutrientSg =
@@ -141,11 +177,19 @@ export function calculateRecipeDerivedState(
     secondaryInputs,
     ogPrimary,
     primaryVolumeL,
+    postLossPrimaryVolumeL,
+    lossVolumeL,
+    lossPercentage,
     secondaryVolumeL,
     totalVolumeL,
+    secondaryLossVolumeL,
+    secondaryLossPercentage,
+    bottlingVolumeL,
     primaryVolume: primaryVolumeL * volumeFactor,
+    postLossPrimaryVolume: postLossPrimaryVolumeL * volumeFactor,
     secondaryVolume: secondaryVolumeL * volumeFactor,
     totalVolume: totalVolumeL * volumeFactor,
+    bottlingVolume: bottlingVolumeL * volumeFactor,
     volumeUnit: recipeData.unitDefaults.volume,
     totalForAbv,
     backsweetenedFg,
@@ -177,8 +221,14 @@ export type RecipeDerivedApiResponse<T extends RecipeDerivedInput> = {
       secondary: number;
       total: number;
       primaryL: number;
+      postLossPrimaryL: number;
+      lossL: number;
+      lossPercentage: number;
       secondaryL: number;
       totalL: number;
+      secondaryLossL: number;
+      secondaryLossPercentage: number;
+      bottlingL: number;
     };
     alcohol: {
       abv: number;
@@ -211,8 +261,14 @@ export function calculateRecipeDerivedApiResponse<T extends RecipeDerivedInput>(
         secondary: derived.secondaryVolume,
         total: derived.totalVolume,
         primaryL: derived.primaryVolumeL,
+        postLossPrimaryL: derived.postLossPrimaryVolumeL,
+        lossL: derived.lossVolumeL,
+        lossPercentage: derived.lossPercentage,
         secondaryL: derived.secondaryVolumeL,
         totalL: derived.totalVolumeL,
+        secondaryLossL: derived.secondaryLossVolumeL,
+        secondaryLossPercentage: derived.secondaryLossPercentage,
+        bottlingL: derived.bottlingVolumeL,
       },
       alcohol: {
         abv: derived.abv,

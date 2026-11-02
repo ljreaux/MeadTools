@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 
-import { calcABV, toBrix } from "@meadtools/core/gravity";
+import { standaloneAlcohol } from "@meadtools/core/extra-calculators";
 import { parseNumber } from "@/lib/utils/validateInput";
-
-function normalizeNumber(n: number): number {
-  // Kill negative zero and tiny float noise
-  if (Object.is(n, -0) || Math.abs(n) < 1e-10) return 0;
-  if (!Number.isFinite(n)) return 0;
-  return n;
-}
 
 export default function useAbv(OG: string, FG: string) {
   const [abv, setAbv] = useState<{ ABV: number; delle: number }>({
@@ -26,13 +19,8 @@ export default function useAbv(OG: string, FG: string) {
       return;
     }
 
-    const rawABV = calcABV(og, fg);
-    const rawDelle = toBrix(fg) + 4.5 * rawABV;
-
-    setAbv({
-      ABV: normalizeNumber(rawABV),
-      delle: normalizeNumber(rawDelle)
-    });
+    const result = standaloneAlcohol(og, fg);
+    setAbv({ ABV: result.abvPercent, delle: result.delle });
   }, [OG, FG]);
 
   return abv;

@@ -1,3 +1,4 @@
+import { queueBrewImageRemoval } from "./brew-images";
 import prisma from "@/lib/prisma";
 
 // Get all users
@@ -73,8 +74,9 @@ export async function deleteUser(id: number) {
   if (id === 1) {
     throw new Error("Cannot Delete MeadTools Admin");
   }
-  return await prisma.users.update({
-    where: { id },
-    data: { active: false }
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${id} FOR NO KEY UPDATE`;
+    await queueBrewImageRemoval(tx, { user_id: id });
+    return tx.users.update({ where: { id }, data: { active: false } });
   });
 }

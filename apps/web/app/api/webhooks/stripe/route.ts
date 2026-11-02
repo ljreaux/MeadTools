@@ -14,6 +14,7 @@ import {
   isTerminalCreditCheckoutEvent,
 } from "@/lib/billing/credit-checkout-events";
 import { getStripeClient, getStripeWebhookSecret } from "@/lib/billing/stripe";
+import { handlePremiumStripeEvent } from "@/lib/billing/stripe-premium";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,7 +61,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (isStripeRefundEvent(event.type)) {
+    const premiumHandled = await handlePremiumStripeEvent(event);
+    if (premiumHandled) {
+      // Premium lifecycle events share this signed endpoint with credit packs.
+    } else if (isStripeRefundEvent(event.type)) {
       await reconcileStripeRefund({
         eventId: event.id,
         eventType: event.type,
@@ -72,7 +76,10 @@ export async function POST(request: NextRequest) {
         eventType: event.type,
         dispute: event.data.object as Stripe.Dispute,
       });
-    } else if (isTerminalCreditCheckoutEvent(event.type)) {
+    } else if (
+      isTerminalCreditCheckoutEvent(event.type) &&
+      (event.data.object as Stripe.Checkout.Session).mode === "payment"
+    ) {
       await finalizeCreditCheckoutTerminalEvent(event);
     } else {
       await fulfillCreditCheckoutFromStripeEvent(event);

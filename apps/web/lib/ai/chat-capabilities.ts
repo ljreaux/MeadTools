@@ -7,7 +7,7 @@
  */
 export const assistantCapabilitiesAnswer = [
   "I can help you build and refine MeadTools recipe drafts, answer MeadTools brewing-process and troubleshooting questions, and point you to the right MeadTools calculator for exact calculations.",
-  "You can also attach one of your saved recipes or active brews for read-only, batch-specific guidance. I will only save a recipe or propose a brew action after you explicitly review it.",
+  "I can find and read your saved recipes and brews by name, review their calculations and recorded brew history, and help revise an unsaved draft. Attaching a record is optional. Saving a recipe or logging a brew change requires your review and confirmation.",
   "I am not a general-purpose assistant, so I will keep the conversation focused on mead and MeadTools.",
 ].join("\n\n");
 

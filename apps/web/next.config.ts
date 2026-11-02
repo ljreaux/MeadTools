@@ -3,8 +3,33 @@ import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
 import { fileURLToPath } from "node:url";
 
+// Preview builds also use NODE_ENV=production. Only the deployed production
+// environment should initialize Sentry or generate/upload its source maps.
+const sentryEnabled =
+  process.env.VERCEL_ENV === "production" &&
+  process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: {
+    // This non-secret, build-time flag is shared by browser and server code.
+    NEXT_PUBLIC_SENTRY_ENABLED: String(sentryEnabled),
+  },
+  // OAuth testing through a tunnel loads dev assets from the public app host.
+  allowedDevOrigins:
+    process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_BASE_URL
+      ? [new URL(process.env.NEXT_PUBLIC_BASE_URL).hostname]
+      : undefined,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      },
+    ];
+  },
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   pageExtensions: ["md", "mdx", "ts", "tsx"],
   transpilePackages: [
@@ -16,6 +41,7 @@ const nextConfig: NextConfig = {
     "@meadtools/schemas",
     "@meadtools/recipe-workflows",
     "@meadtools/recipe-agent",
+    "@meadtools/premium-domain",
     "@meadtools/wiki-knowledge",
   ],
 };
@@ -36,7 +62,9 @@ const withMDX = createMDX({
   },
 });
 
-export default withSentryConfig(withMDX(nextConfig), {
+const appConfig = withMDX(nextConfig);
+
+export default sentryEnabled ? withSentryConfig(appConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -72,4 +100,4 @@ export default withSentryConfig(withMDX(nextConfig), {
       removeDebugLogging: true,
     },
   },
-});
+}) : appConfig;

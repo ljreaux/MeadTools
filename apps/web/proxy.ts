@@ -8,5 +8,8 @@ export function proxy(request: NextRequest) {
 
 // applies this middleware only to files in the app directory
 export const config = {
-  matcher: "/((?!api|static|.*\\..*|_next).*)",
+  matcher: [
+    "/oauth/connect/:path*",
+    "/((?!api|mcp|oauth|static|.*\\..*|_next).*)",
+  ],
 };

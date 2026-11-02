@@ -1,0 +1,433 @@
+<svg width="1511pt" height="1172pt"
+ viewBox="0.00 0.00 1511.00 1172.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Chat &amp; model usage"><metadata>{&quot;schema&quot;:&quot;7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec&quot;,&quot;migrations&quot;:&quot;e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1143.2)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1143.2 1482.17,-1143.2 1482.17,28.8 -28.8,28.8"/>
+<!-- chat_access_grants&#45;&gt;users -->
+<g id="fk_chat_access_grants_user" class="edge">
+<title>chat_access_grants:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_chat_access_grants_user"><a xlink:title="chat_access_grants (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M1049.31,-964.6C1130.75,-964.6 1396.37,-964.6 1396.37,-964.6 1396.37,-964.6 1396.37,-757.17 1396.37,-757.17"/>
+<polygon fill="#64748b" stroke="#64748b" points="1398.64,-757.17 1396.37,-750.67 1394.09,-757.17 1398.64,-757.17"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1404.82" y="-764.58" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="1067.43" y="-953.45" font-family="Arial" font-size="9.00">0..1</text>
+</g>
+<!-- chat_access_settings&#45;&gt;users -->
+<g id="fk_chat_access_settings_updated_by" class="edge">
+<title>chat_access_settings:f_updated_by_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_chat_access_settings_updated_by"><a xlink:title="chat_access_settings (updated_by_user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M1018.55,-761.6C1018.55,-761.6 1333.63,-761.6 1333.63,-761.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="1333.63,-763.88 1340.13,-761.6 1333.63,-759.33 1333.63,-763.88"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1323.52" y="-767.35" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="1036.68" y="-750.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_conversations&#45;&gt;users -->
+<g id="fk_chat_conversations_user" class="edge">
+<title>chat_conversations:f_user_id&#45;&gt;users:f_id</title>
+<g id="a_fk_chat_conversations_user"><a xlink:title="chat_conversations (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M1017.34,-557.6C1023.17,-557.6 1396.37,-557.6 1396.37,-557.6 1396.37,-557.6 1396.37,-740.85 1396.37,-740.85"/>
+<polygon fill="#64748b" stroke="#64748b" points="1394.09,-740.85 1396.37,-747.35 1398.64,-740.85 1394.09,-740.85"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1387.92" y="-728.04" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="1035.47" y="-546.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_drafts&#45;&gt;chat_conversations -->
+<g id="fk_chat_drafts_conversation" class="edge">
+<title>chat_drafts:f_conversation_id&#45;&gt;chat_conversations:f_id</title>
+<g id="a_fk_chat_drafts_conversation"><a xlink:title="chat_drafts (conversation_id) &#45;&gt; chat_conversations (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M725.64,-469.4C725.64,-469.4 1009.1,-469.4 1009.1,-469.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="1009.1,-471.68 1015.6,-469.4 1009.1,-467.13 1009.1,-471.68"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="998.99" y="-475.15" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="743.77" y="-458.25" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_drafts&#45;&gt;recipes -->
+<g id="fk_chat_drafts_saved_recipe" class="edge">
+<title>chat_drafts:f_saved_recipe_id&#45;&gt;recipes:f_id</title>
+<g id="a_fk_chat_drafts_saved_recipe"><a xlink:title="chat_drafts (saved_recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M702.01,-355.3C702.01,-355.3 1080.99,-355.3 1080.99,-355.3"/>
+<polygon fill="#64748b" stroke="#64748b" points="1080.99,-357.58 1087.49,-355.3 1080.99,-353.03 1080.99,-357.58"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="1070.88" y="-361.05" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="720.14" y="-344.15" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_generations&#45;&gt;chat_messages -->
+<g id="fk_chat_generations_message" class="edge">
+<title>chat_generations:f_message_id&#45;&gt;chat_messages:f_id</title>
+<g id="a_fk_chat_generations_message"><a xlink:title="chat_generations (message_id) &#45;&gt; chat_messages (id); 0..1 child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M24.79,-468.5C24.79,-468.5 336.3,-468.5 336.3,-468.5"/>
+<polygon fill="#64748b" stroke="#64748b" points="336.3,-470.78 342.8,-468.5 336.3,-466.23 336.3,-470.78"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="326.19" y="-474.25" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="42.91" y="-457.35" font-family="Arial" font-size="9.00">0..1</text>
+</g>
+<!-- chat_generations&#45;&gt;chatbot_usage_events -->
+<g id="fk_chat_generations_usage_event" class="edge">
+<title>chat_generations:f_usage_event_id&#45;&gt;chatbot_usage_events:f_id</title>
+<g id="a_fk_chat_generations_usage_event"><a xlink:title="chat_generations (usage_event_id) &#45;&gt; chatbot_usage_events (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M24.79,-328.9C24.79,-328.9 336.32,-328.9 336.32,-328.9"/>
+<polygon fill="#64748b" stroke="#64748b" points="336.32,-331.18 342.82,-328.9 336.32,-326.63 336.32,-331.18"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="326.2" y="-334.65" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="42.91" y="-317.75" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_message_contexts&#45;&gt;chat_messages -->
+<g id="fk_chat_message_contexts_message" class="edge">
+<title>chat_message_contexts:f_message_id&#45;&gt;chat_messages:f_id</title>
+<g id="a_fk_chat_message_contexts_message"><a xlink:title="chat_message_contexts (message_id) &#45;&gt; chat_messages (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M30.89,-658.1C30.89,-658.1 336.3,-658.1 336.3,-658.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="336.3,-660.38 342.8,-658.1 336.3,-655.83 336.3,-660.38"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="326.19" y="-663.85" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="49.01" y="-646.95" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_messages&#45;&gt;chat_conversations -->
+<g id="fk_chat_messages_conversation" class="edge">
+<title>chat_messages:f_conversation_id&#45;&gt;chat_conversations:f_id</title>
+<g id="a_fk_chat_messages_conversation"><a xlink:title="chat_messages (conversation_id) &#45;&gt; chat_conversations (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M344.49,-621.6C344.49,-621.6 1009.14,-621.6 1009.14,-621.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="1009.14,-623.88 1015.64,-621.6 1009.14,-619.33 1009.14,-623.88"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="999.02" y="-627.35" font-family="Arial" font-size="9.00">1</text>
+<text xml:space="preserve" text-anchor="middle" x="362.62" y="-610.45" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_messages&#45;&gt;chat_drafts -->
+<g id="fk_chat_messages_draft" class="edge">
+<title>chat_messages:f_draft_id&#45;&gt;chat_drafts:f_id</title>
+<g id="a_fk_chat_messages_draft"><a xlink:title="chat_messages (draft_id) &#45;&gt; chat_drafts (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M367.83,-481.9C367.83,-481.9 693.88,-481.9 693.88,-481.9"/>
+<polygon fill="#64748b" stroke="#64748b" points="693.88,-484.18 700.38,-481.9 693.88,-479.63 693.88,-484.18"/>
+</a>
+</g>
+<text xml:space="preserve" text-anchor="middle" x="683.77" y="-487.65" font-family="Arial" font-size="9.00">0..1</text>
+<text xml:space="preserve" text-anchor="middle" x="385.96" y="-470.75" font-family="Arial" font-size="9.00">0..N</text>
+</g>
+<!-- chat_access_grants -->
+<g id="table_chat_access_grants" class="node">
+<title>chat_access_grants</title>
+<g id="a_table_chat_access_grants"><a xlink:title="chat_access_grants — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="1001.12,-888 1001.12,-1041.2 1254.33,-1041.2 1254.33,-888 1001.12,-888"/>
+<polygon fill="none" stroke="#94a3b8" points="1001.12,-888 1001.12,-1041.2 1254.33,-1041.2 1254.33,-888 1001.12,-888"/>
+<polygon fill="#f3e8ff" stroke="none" points="1002.12,-1015 1002.12,-1040.2 1253.33,-1040.2 1253.33,-1015 1002.12,-1015"/>
+<text xml:space="preserve" text-anchor="start" x="1075.14" y="-1025.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_grants</text>
+<text xml:space="preserve" text-anchor="start" x="1008.12" y="-998" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1055.57" y="-998" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1164.81" y="-998" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="1008.12" y="-972.8" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="1055.57" y="-972.8" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="1164.81" y="-972.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1055.57" y="-947.6" font-family="Arial" font-size="11.00">granted_at</text>
+<text xml:space="preserve" text-anchor="start" x="1164.81" y="-947.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="1055.57" y="-922.4" font-family="Arial" font-size="11.00">granted_by_user_id</text>
+<text xml:space="preserve" text-anchor="start" x="1164.81" y="-922.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1055.57" y="-897.2" font-family="Arial" font-size="11.00">revoked_at</text>
+<text xml:space="preserve" text-anchor="start" x="1164.81" y="-897.2" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+</a>
+</g>
+</g>
+<!-- chat_access_settings -->
+<g id="table_chat_access_settings" class="node">
+<title>chat_access_settings</title>
+<g id="a_table_chat_access_settings"><a xlink:title="chat_access_settings — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="1004.15,-734.6 1004.15,-862.6 1251.3,-862.6 1251.3,-734.6 1004.15,-734.6"/>
+<polygon fill="none" stroke="#94a3b8" points="1004.15,-734.6 1004.15,-862.6 1251.3,-862.6 1251.3,-734.6 1004.15,-734.6"/>
+<polygon fill="#f3e8ff" stroke="none" points="1005.15,-836.4 1005.15,-861.6 1250.3,-861.6 1250.3,-836.4 1005.15,-836.4"/>
+<text xml:space="preserve" text-anchor="start" x="1070.86" y="-846.7" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_settings</text>
+<text xml:space="preserve" text-anchor="start" x="1011.15" y="-819.4" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1037.82" y="-819.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1149.52" y="-819.4" font-family="Arial" font-size="11.00">Boolean</text>
+<text xml:space="preserve" text-anchor="start" x="1037.82" y="-794.2" font-family="Arial" font-size="11.00">mode</text>
+<text xml:space="preserve" text-anchor="start" x="1149.52" y="-794.2" font-family="Arial" font-size="11.00">chat_access_mode</text>
+<text xml:space="preserve" text-anchor="start" x="1037.82" y="-769" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="1149.52" y="-769" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="1011.15" y="-743.8" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="1037.82" y="-743.8" font-family="Arial" font-size="11.00">updated_by_user_id</text>
+<text xml:space="preserve" text-anchor="start" x="1149.52" y="-743.8" font-family="Arial" font-size="11.00">Int?</text>
+</a>
+</g>
+</g>
+<!-- chat_conversations -->
+<g id="table_chat_conversations" class="node">
+<title>chat_conversations</title>
+<g id="a_table_chat_conversations"><a xlink:title="chat_conversations — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="1002.93,-405.4 1002.93,-709.8 1252.51,-709.8 1252.51,-405.4 1002.93,-405.4"/>
+<polygon fill="none" stroke="#94a3b8" points="1002.93,-405.4 1002.93,-709.8 1252.51,-709.8 1252.51,-405.4 1002.93,-405.4"/>
+<polygon fill="#f3e8ff" stroke="none" points="1003.93,-683.6 1003.93,-708.8 1251.51,-708.8 1251.51,-683.6 1003.93,-683.6"/>
+<text xml:space="preserve" text-anchor="start" x="1076.06" y="-693.9" font-family="Arial" font-weight="bold" font-size="11.00">chat_conversations</text>
+<text xml:space="preserve" text-anchor="start" x="1009.93" y="-666.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-666.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-666.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="1009.93" y="-641.4" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-641.4" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-641.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-616.2" font-family="Arial" font-size="11.00">title</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-616.2" font-family="Arial" font-size="11.00">VarChar(160)</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-591" font-family="Arial" font-size="11.00">state</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-591" font-family="Arial" font-size="11.00">chat_conversation_state</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-565.8" font-family="Arial" font-size="11.00">next_sequence</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-565.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-540.6" font-family="Arial" font-size="11.00">message_count</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-540.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-515.4" font-family="Arial" font-size="11.00">content_bytes</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-515.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-490.2" font-family="Arial" font-size="11.00">last_activity_at</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-490.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-465" font-family="Arial" font-size="11.00">expires_at</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-465" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-439.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-439.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="1036.61" y="-414.6" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="1126.27" y="-414.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- chat_drafts -->
+<g id="table_chat_drafts" class="node">
+<title>chat_drafts</title>
+<g id="a_table_chat_drafts"><a xlink:title="chat_drafts — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="677.21,-329.8 677.21,-533.4 915.12,-533.4 915.12,-329.8 677.21,-329.8"/>
+<polygon fill="none" stroke="#94a3b8" points="677.21,-329.8 677.21,-533.4 915.12,-533.4 915.12,-329.8 677.21,-329.8"/>
+<polygon fill="#f3e8ff" stroke="none" points="678.21,-507.2 678.21,-532.4 914.12,-532.4 914.12,-507.2 678.21,-507.2"/>
+<text xml:space="preserve" text-anchor="start" x="766.52" y="-517.5" font-family="Arial" font-weight="bold" font-size="11.00">chat_drafts</text>
+<text xml:space="preserve" text-anchor="start" x="684.21" y="-490.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-490.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-490.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="684.21" y="-465" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-465" font-family="Arial" font-size="11.00">conversation_id</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-465" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="684.21" y="-439.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-439.8" font-family="Arial" font-size="11.00">revision</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-439.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-414.6" font-family="Arial" font-size="11.00">recipe_draft_input</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-414.6" font-family="Arial" font-size="11.00">Json?</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-389.4" font-family="Arial" font-size="11.00">recipe_data</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-389.4" font-family="Arial" font-size="11.00">Json?</text>
+<text xml:space="preserve" text-anchor="start" x="684.21" y="-364.2" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-364.2" font-family="Arial" font-size="11.00">saved_recipe_id</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-364.2" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="731.66" y="-339" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="831.72" y="-339" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- chat_generations -->
+<g id="table_chat_generations" class="node">
+<title>chat_generations</title>
+<g id="a_table_chat_generations"><a xlink:title="chat_generations — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="0,-252.6 0,-506.6 233.64,-506.6 233.64,-252.6 0,-252.6"/>
+<polygon fill="none" stroke="#94a3b8" points="0,-252.6 0,-506.6 233.64,-506.6 233.64,-252.6 0,-252.6"/>
+<polygon fill="#f3e8ff" stroke="none" points="1,-480.4 1,-505.6 232.64,-505.6 232.64,-480.4 1,-480.4"/>
+<text xml:space="preserve" text-anchor="start" x="71.28" y="-490.7" font-family="Arial" font-weight="bold" font-size="11.00">chat_generations</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-463.4" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-463.4" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-463.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-438.2" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-438.2" font-family="Arial" font-size="11.00">message_id</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-438.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-413" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-413" font-family="Arial" font-size="11.00">usage_event_id</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-413" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-387.8" font-family="Arial" font-size="11.00">provider</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-387.8" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-362.6" font-family="Arial" font-size="11.00">model</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-362.6" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-337.4" font-family="Arial" font-size="11.00">status</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-337.4" font-family="Arial" font-size="11.00">VarChar(16)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-312.2" font-family="Arial" font-size="11.00">latency_ms</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-312.2" font-family="Arial" font-size="11.00">Int?</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-287" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-287" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="54.45" y="-261.8" font-family="Arial" font-size="11.00">completed_at</text>
+<text xml:space="preserve" text-anchor="start" x="144.13" y="-261.8" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+</a>
+</g>
+</g>
+<!-- chat_message_contexts -->
+<g id="table_chat_message_contexts" class="node">
+<title>chat_message_contexts</title>
+<g id="a_table_chat_message_contexts"><a xlink:title="chat_message_contexts — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="6.11,-581.4 6.11,-759.8 227.54,-759.8 227.54,-581.4 6.11,-581.4"/>
+<polygon fill="none" stroke="#94a3b8" points="6.11,-581.4 6.11,-759.8 227.54,-759.8 227.54,-581.4 6.11,-581.4"/>
+<polygon fill="#f3e8ff" stroke="none" points="7.11,-733.6 7.11,-758.8 226.54,-758.8 226.54,-733.6 7.11,-733.6"/>
+<text xml:space="preserve" text-anchor="start" x="53.24" y="-743.9" font-family="Arial" font-weight="bold" font-size="11.00">chat_message_contexts</text>
+<text xml:space="preserve" text-anchor="start" x="13.11" y="-716.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-716.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-716.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="13.11" y="-691.4" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-691.4" font-family="Arial" font-size="11.00">message_id</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-691.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="13.11" y="-666.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-666.2" font-family="Arial" font-size="11.00">kind</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-666.2" font-family="Arial" font-size="11.00">chat_context_kind</text>
+<text xml:space="preserve" text-anchor="start" x="13.11" y="-641" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-641" font-family="Arial" font-size="11.00">record_id</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-641" font-family="Arial" font-size="11.00">VarChar(64)</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-615.8" font-family="Arial" font-size="11.00">label</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-615.8" font-family="Arial" font-size="11.00">VarChar(240)</text>
+<text xml:space="preserve" text-anchor="start" x="60.56" y="-590.6" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="131.87" y="-590.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- chat_messages -->
+<g id="table_chat_messages" class="node">
+<title>chat_messages</title>
+<g id="a_table_chat_messages"><a xlink:title="chat_messages — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="319.65,-430.4 319.65,-734.8 591.21,-734.8 591.21,-430.4 319.65,-430.4"/>
+<polygon fill="none" stroke="#94a3b8" points="319.65,-430.4 319.65,-734.8 591.21,-734.8 591.21,-430.4 319.65,-430.4"/>
+<polygon fill="#f3e8ff" stroke="none" points="320.65,-708.6 320.65,-733.8 590.21,-733.8 590.21,-708.6 320.65,-708.6"/>
+<text xml:space="preserve" text-anchor="start" x="414.46" y="-718.9" font-family="Arial" font-weight="bold" font-size="11.00">chat_messages</text>
+<text xml:space="preserve" text-anchor="start" x="326.65" y="-691.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-691.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-691.6" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="326.65" y="-666.4" font-family="Arial" font-size="11.00">FK, UK</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-666.4" font-family="Arial" font-size="11.00">conversation_id</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-666.4" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="326.65" y="-641.2" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-641.2" font-family="Arial" font-size="11.00">sequence</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-641.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="326.65" y="-616" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-616" font-family="Arial" font-size="11.00">client_message_id</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-616" font-family="Arial" font-size="11.00">VarChar(128)?</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-590.8" font-family="Arial" font-size="11.00">role</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-590.8" font-family="Arial" font-size="11.00">chat_message_role</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-565.6" font-family="Arial" font-size="11.00">status</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-565.6" font-family="Arial" font-size="11.00">chat_message_status</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-540.4" font-family="Arial" font-size="11.00">content</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-540.4" font-family="Arial" font-size="11.00">Text</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-515.2" font-family="Arial" font-size="11.00">citations</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-515.2" font-family="Arial" font-size="11.00">JsonB?</text>
+<text xml:space="preserve" text-anchor="start" x="326.65" y="-490" font-family="Arial" font-size="11.00">FK</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-490" font-family="Arial" font-size="11.00">draft_id</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-490" font-family="Arial" font-size="11.00">Uuid?</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-464.8" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-464.8" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="374.1" y="-439.6" font-family="Arial" font-size="11.00">completed_at</text>
+<text xml:space="preserve" text-anchor="start" x="477.21" y="-439.6" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+</a>
+</g>
+</g>
+<!-- chatbot_usage_events -->
+<g id="table_chatbot_usage_events" class="node">
+<title>chatbot_usage_events</title>
+<g id="a_table_chatbot_usage_events"><a xlink:title="chatbot_usage_events — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="329.75,0 329.75,-405.2 581.11,-405.2 581.11,0 329.75,0"/>
+<polygon fill="none" stroke="#94a3b8" points="329.75,0 329.75,-405.2 581.11,-405.2 581.11,0 329.75,0"/>
+<polygon fill="#f3e8ff" stroke="none" points="330.75,-379 330.75,-404.2 580.11,-404.2 580.11,-379 330.75,-379"/>
+<text xml:space="preserve" text-anchor="start" x="396.13" y="-389.3" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_events</text>
+<text xml:space="preserve" text-anchor="start" x="336.75" y="-362" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-362" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-362" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="336.75" y="-336.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-336.8" font-family="Arial" font-size="11.00">request_id</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-336.8" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-311.6" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-311.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-286.4" font-family="Arial" font-size="11.00">environment</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-286.4" font-family="Arial" font-size="11.00">VarChar(32)</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-261.2" font-family="Arial" font-size="11.00">model</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-261.2" font-family="Arial" font-size="11.00">VarChar(255)</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-236" font-family="Arial" font-size="11.00">status</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-236" font-family="Arial" font-size="11.00">VarChar(16)</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-210.8" font-family="Arial" font-size="11.00">provider_calls</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-210.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-185.6" font-family="Arial" font-size="11.00">input_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-185.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-160.4" font-family="Arial" font-size="11.00">cached_input_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-160.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-135.2" font-family="Arial" font-size="11.00">output_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-135.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-110" font-family="Arial" font-size="11.00">total_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-110" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-84.8" font-family="Arial" font-size="11.00">provider_request_ids</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-84.8" font-family="Arial" font-size="11.00">String[]</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-59.6" font-family="Arial" font-size="11.00">provider_attempt_count</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-59.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-34.4" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-34.4" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="364.03" y="-9.2" font-family="Arial" font-size="11.00">completed_at</text>
+<text xml:space="preserve" text-anchor="start" x="491.6" y="-9.2" font-family="Arial" font-size="11.00">Timestamptz(6)?</text>
+</a>
+</g>
+</g>
+<!-- chatbot_usage_windows -->
+<g id="table_chatbot_usage_windows" class="node">
+<title>chatbot_usage_windows</title>
+<g id="a_table_chatbot_usage_windows"><a xlink:title="chatbot_usage_windows — Chat &amp; model usage">
+<polygon fill="white" stroke="none" points="0,-784.8 0,-1114.4 233.65,-1114.4 233.65,-784.8 0,-784.8"/>
+<polygon fill="none" stroke="#94a3b8" points="0,-784.8 0,-1114.4 233.65,-1114.4 233.65,-784.8 0,-784.8"/>
+<polygon fill="#f3e8ff" stroke="none" points="1,-1088.2 1,-1113.4 232.65,-1113.4 232.65,-1088.2 1,-1088.2"/>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1098.5" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_windows</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1071.2" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-1071.2" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-1071.2" font-family="Arial" font-size="11.00">Uuid</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1046" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-1046" font-family="Arial" font-size="11.00">user_id</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-1046" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1020.8" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-1020.8" font-family="Arial" font-size="11.00">window</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-1020.8" font-family="Arial" font-size="11.00">VarChar(8)</text>
+<text xml:space="preserve" text-anchor="start" x="7" y="-995.6" font-family="Arial" font-size="11.00">UK</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-995.6" font-family="Arial" font-size="11.00">window_start</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-995.6" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-970.4" font-family="Arial" font-size="11.00">request_count</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-970.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-945.2" font-family="Arial" font-size="11.00">provider_calls</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-945.2" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-920" font-family="Arial" font-size="11.00">input_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-920" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-894.8" font-family="Arial" font-size="11.00">cached_input_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-894.8" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-869.6" font-family="Arial" font-size="11.00">output_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-869.6" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-844.4" font-family="Arial" font-size="11.00">total_tokens</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-844.4" font-family="Arial" font-size="11.00">Int</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-819.2" font-family="Arial" font-size="11.00">created_at</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-819.2" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+<text xml:space="preserve" text-anchor="start" x="34.28" y="-794" font-family="Arial" font-size="11.00">updated_at</text>
+<text xml:space="preserve" text-anchor="start" x="150.25" y="-794" font-family="Arial" font-size="11.00">Timestamptz(6)</text>
+</a>
+</g>
+</g>
+<!-- recipes -->
+<g id="table_recipes" class="node">
+<title>recipes</title>
+<g id="a_table_recipes"><a xlink:title="recipes — Recipes, catalog &amp; community (related table; keys only)">
+<polygon fill="white" stroke="none" points="1066.61,-328.4 1066.61,-380.8 1188.83,-380.8 1188.83,-328.4 1066.61,-328.4"/>
+<polygon fill="none" stroke="#94a3b8" points="1066.61,-328.4 1066.61,-380.8 1188.83,-380.8 1188.83,-328.4 1066.61,-328.4"/>
+<polygon fill="#ffedd5" stroke="none" points="1067.61,-354.6 1067.61,-379.8 1187.83,-379.8 1187.83,-354.6 1067.61,-354.6"/>
+<text xml:space="preserve" text-anchor="start" x="1073.61" y="-364.9" font-family="Arial" font-weight="bold" font-size="11.00">recipes</text>
+<text xml:space="preserve" text-anchor="start" x="1112.14" y="-364.9" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="1073.61" y="-337.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1116.54" y="-337.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1153.35" y="-337.6" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+<!-- users -->
+<g id="table_users" class="node">
+<title>users</title>
+<g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP (related table; keys only)">
+<polygon fill="white" stroke="none" points="1340.33,-735.4 1340.33,-787.8 1453.37,-787.8 1453.37,-735.4 1340.33,-735.4"/>
+<polygon fill="none" stroke="#94a3b8" points="1340.33,-735.4 1340.33,-787.8 1453.37,-787.8 1453.37,-735.4 1340.33,-735.4"/>
+<polygon fill="#ffe4e6" stroke="none" points="1341.33,-761.6 1341.33,-786.8 1452.37,-786.8 1452.37,-761.6 1341.33,-761.6"/>
+<text xml:space="preserve" text-anchor="start" x="1347.33" y="-771.9" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<text xml:space="preserve" text-anchor="start" x="1376.68" y="-771.9" font-family="Arial" font-size="11.00"> (related keys)</text>
+<text xml:space="preserve" text-anchor="start" x="1347.33" y="-744.6" font-family="Arial" font-size="11.00">PK</text>
+<text xml:space="preserve" text-anchor="start" x="1387.19" y="-744.6" font-family="Arial" font-size="11.00">id</text>
+<text xml:space="preserve" text-anchor="start" x="1420.95" y="-744.6" font-family="Arial" font-size="11.00">Int</text>
+</a>
+</g>
+</g>
+</g>
+</svg>

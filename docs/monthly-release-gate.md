@@ -3,14 +3,18 @@
 Issue #413 tracks the monthly release process. The first Monday of each month
 is the target. The GitHub workflow attempts to open the gate at **9:15 a.m.
 America/Chicago**. GitHub schedules can run late; the workflow checks the local
-date and time before opening anything. A missed or blocked attempt leaves the
+date and time before opening anything. The opening window is **9:15 a.m. to
+noon Chicago**; a noon close-only run revokes any unmerged monthly success.
+GitHub can delay schedules, so verify the close run; it is not a hard real-time
+merge deadline. A reviewed manual `close` dispatch can only close, never open. A missed or blocked attempt leaves the
 gate closed and needs a reviewed manual retry on the same first Monday.
 
 ## Required checks and readiness
 
 Draft main PRs skip the release-note check while their release scope is still
 being reviewed. Marking a PR ready for review reruns the check; it must then
-have dated notes or the applicable reviewed exemption. The monthly release
+have dated notes, a reviewed changed internal monthly draft, or the applicable
+reviewed exemption. See [internal draft authoring](monthly-release-notes.md). The monthly release
 gate remains pending until the release window is explicitly opened.
 
 After `.github/workflows/main-release-notes.yml` and
@@ -27,6 +31,7 @@ the PR body, record the exact reviewed commits and Mobile build decision:
 Release-ready head: <full 40-character preview head SHA>
 Release-ready base: <full 40-character main base SHA>
 Mobile production build: skip
+Release-note draft: docs/releases/YYYY-MM.json
 ```
 
 Use `run` in the last line only when a production Mobile build is intended and
@@ -51,7 +56,17 @@ Monday at or after 9:15 a.m. Chicago, the scheduled workflow checks the open
 ready PR, exact SHAs, labels, Mobile decision, native auto-merge state, and all
 other visible checks. Only then does it set the status to success for that head
 commit. If CI is still running or any check fails, it leaves the gate closed.
-Use a `monthly` manual dispatch later on the **same first Monday** after fixing
+The gate separately checks GitHub’s required review decision. Where GitHub
+requires no review, Larry’s explicit exact-SHA approval, recorded in the release
+record and represented by `release-ready`, remains the authorization. Unknown,
+required, or changes-requested review states cannot open it. More than one
+armed monthly candidate closes all prior monthly successes. Repeated successful
+runs do not duplicate status writes. Review events invalidate readiness status;
+a main push closes unmerged monthly successes so an old base cannot remain armed.
+Close-only runs preserve independent
+hotfix/initial approvals. Runs are serialized.
+
+Use a `monthly` manual dispatch later on the **same first Monday before noon** after fixing
 the blocker. No-change months have no armed PR and open no gate.
 
 ## Initial promotion and urgent fixes
@@ -83,3 +98,37 @@ The release skill is a coordinator. It does not bypass required status checks,
 and it must confirm the ruleset and auto-merge settings before treating the
 gate as enforced. Restrict who can add readiness labels, dispatch the workflow,
 and bypass the main ruleset; inspect the ruleset's bypass actors before launch.
+
+## Ownership, records, and recovery
+
+Larry Reaux approves the exact release scope, head/base, notes, and Mobile build
+decision; the cloud agent prepares and records evidence in
+`docs/releases/YYYY-MM.md` from [the template](releases/monthly-record-template.md).
+The production tag is `release-YYYY-MM-DD` for the actual verified date and SHA.
+Keep promotion, deployment, public availability, publication, and email states
+separate. A skipped product receives no availability claim.
+
+Before arming, inspect the live required checks and review rules, auto-merge,
+and bypass actors. On October 17 the monthly ruleset was enforced with no bypass
+actors; the broader branch ruleset had deploy-key/integration bypasses but those
+did not bypass the separate monthly ruleset. Do not add bypasses to make a
+release pass. Record Larry's explicit approval even when no GitHub review is
+required or the PR author cannot approve their own PR.
+
+For a failed deployment, stop publication, record the deployed/previous SHA and
+migration compatibility, and obtain approval for the concrete rollback or fix.
+Use a reviewed bug-only hotfix for an urgent correction; never force-push main,
+rewrite a published tag, delete a migration, or roll code back across an
+incompatible schema. If rollback is unsafe, prepare a forward fix. Preserve
+published history and add a visible correction with its PR/date. An ambiguous
+SMTP result requires manual review without resetting recipient claims or
+resending a release. A publication-only promotion must still satisfy the notes,
+readiness, exact-SHA approval, CI/review, and monthly-window checks; do not misuse
+a bug-only hotfix exemption to publish an announcement.
+
+The gate tests use mocked GitHub operations and clocks: early/expired windows,
+DST, stale SHA, failed/pending CI, required review, multiple candidates, changes
+during evaluation, no work, repeated runs, closure, and preserved hotfix approval.
+Run `npm run test:workflows`. The first real monthly schedule/deployment and
+notification receipt still need live evidence; deterministic tests are not a
+claim that a production release occurred.

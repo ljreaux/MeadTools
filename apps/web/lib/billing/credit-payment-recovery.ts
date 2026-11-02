@@ -15,18 +15,15 @@ import {
 } from "@/lib/db/credit-accounting";
 import { canReleasePaymentRestrictedChat } from "./credit-payment-recovery-eligibility";
 import { calculateCreditRefundReconciliation } from "./credit-payment-recovery-math";
-import { stripeDashboardDisputeUrl } from "./stripe";
+import { getStripeClient, stripeDashboardDisputeUrl } from "./stripe";
+import { PREMIUM_MONTHLY_CHAT_CREDITS } from "@meadtools/premium-domain";
 import {
   paymentRecoveryCheckoutDisposition,
   shouldReplayStoredDispute,
 } from "./credit-payment-recovery-ordering";
 
 export type CreditPaymentRecoveryResult =
-  | "applied"
-  | "review_required"
-  | "duplicate"
-  | "deferred"
-  | "ignored";
+  "applied" | "review_required" | "duplicate" | "deferred" | "ignored";
 
 export class CreditPaymentRecoveryNotFoundError extends Error {
   constructor() {
@@ -80,11 +77,13 @@ export async function reconcileStripeRefund(options: {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return "duplicate";
+      await ensurePremiumPaymentMapping(paymentIntentId);
+      return processStoredStripeRefundEvent(options.eventId);
     }
     throw error;
   }
 
+  await ensurePremiumPaymentMapping(paymentIntentId);
   return processStoredStripeRefundEvent(options.eventId);
 }
 
@@ -123,7 +122,15 @@ async function processStoredStripeRefundEvent(
     // Before Checkout fulfillment persists its payment-intent mapping there
     // is intentionally no local row to join against yet. Keep the verified
     // refund event deferred; fulfillment replays it once that mapping exists.
-    if (!checkout || checkout.status === "pending") return "deferred" as const;
+    if (!checkout) {
+      const invoice = await findPremiumInvoiceForUpdate(
+        tx,
+        event.stripe_payment_intent_id,
+      );
+      if (!invoice) return "deferred" as const;
+      return processPremiumRefund(tx, event, invoice);
+    }
+    if (checkout.status === "pending") return "deferred" as const;
 
     const existing = await tx.credit_payment_recoveries.findUnique({
       where: { external_reference: event.stripe_refund_id },
@@ -298,11 +305,13 @@ export async function flagStripeDisputeForReview(options: {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return "duplicate";
+      await ensurePremiumPaymentMapping(paymentIntentId);
+      return processStoredStripeDisputeEvent(options.eventId);
     }
     throw error;
   }
 
+  await ensurePremiumPaymentMapping(paymentIntentId);
   return processStoredStripeDisputeEvent(options.eventId);
 }
 
@@ -351,6 +360,40 @@ async function processStoredStripeDisputeEvent(
       tx,
       event.stripe_payment_intent_id,
     );
+    if (!checkout) {
+      const invoice = await findPremiumInvoiceForUpdate(
+        tx,
+        event.stripe_payment_intent_id,
+      );
+      if (!invoice) return "deferred" as const;
+      const existing = await tx.credit_payment_recoveries.findUnique({
+        where: { external_reference: event.stripe_dispute_id },
+      });
+      if (!existing) {
+        await getLockedCreditBalanceInTransaction(tx, invoice.user_id);
+        await tx.credit_payment_recoveries.create({
+          data: {
+            premium_invoice_id: invoice.invoice_id,
+            recovery_kind: "stripe_dispute",
+            status: "review_required",
+            external_reference: event.stripe_dispute_id,
+            amount_cents: event.amount_cents,
+            currency: event.currency,
+          },
+        });
+        await restrictCreditAccount(tx, {
+          userId: invoice.user_id,
+          externalReference: event.stripe_dispute_id,
+          reason:
+            "A premium subscription payment dispute requires administrator review.",
+        });
+      }
+      await tx.credit_stripe_dispute_events.update({
+        where: { id: event.id },
+        data: { status: "processed", processed_at: new Date() },
+      });
+      return existing ? ("duplicate" as const) : ("review_required" as const);
+    }
     const disposition = paymentRecoveryCheckoutDisposition(
       checkout?.status ?? null,
     );
@@ -409,6 +452,19 @@ export async function getCreditPaymentRecoveryAdministration() {
       resolution_note: true,
       created_at: true,
       resolved_at: true,
+      premium_invoice: {
+        select: {
+          user_id: true,
+          invoice_id: true,
+          user: {
+            select: {
+              email: true,
+              public_username: true,
+              credit_account: { select: { payment_restricted_at: true } },
+            },
+          },
+        },
+      },
       checkout: {
         select: {
           user_id: true,
@@ -425,31 +481,38 @@ export async function getCreditPaymentRecoveryAdministration() {
       },
     },
   });
-  return recoveries.map((recovery) => ({
-    id: recovery.id,
-    kind: recovery.recovery_kind,
-    status: recovery.status,
-    externalReference: recovery.external_reference,
-    amountCents: recovery.amount_cents,
-    currency: recovery.currency,
-    creditDelta: recovery.credit_delta,
-    resolutionCreditDelta: recovery.resolution_credit_delta,
-    resolutionNote: recovery.resolution_note,
-    createdAt: recovery.created_at,
-    resolvedAt: recovery.resolved_at,
-    userId: recovery.checkout.user_id,
-    email: recovery.checkout.user.email,
-    publicUsername: recovery.checkout.user.public_username,
-    paymentRestricted: Boolean(
-      recovery.checkout.user.credit_account?.payment_restricted_at,
-    ),
-    stripeDashboardUrl:
-      recovery.recovery_kind === credit_payment_recovery_kind.stripe_dispute
-        ? stripeDashboardDisputeUrl(recovery.external_reference)
-        : null,
-    packId: recovery.checkout.pack_id,
-    packCredits: recovery.checkout.credit_amount,
-  }));
+  return recoveries.map((recovery) => {
+    const source = recovery.checkout ?? recovery.premium_invoice;
+    if (!source) throw new Error("Payment recovery source is missing.");
+    return {
+      id: recovery.id,
+      kind: recovery.recovery_kind,
+      status: recovery.status,
+      externalReference: recovery.external_reference,
+      amountCents: recovery.amount_cents,
+      currency: recovery.currency,
+      creditDelta: recovery.credit_delta,
+      resolutionCreditDelta: recovery.resolution_credit_delta,
+      resolutionNote: recovery.resolution_note,
+      createdAt: recovery.created_at,
+      resolvedAt: recovery.resolved_at,
+      userId: recoveryUserId(recovery),
+      email: source.user.email,
+      publicUsername: source.user.public_username,
+      paymentRestricted: Boolean(
+        source.user.credit_account?.payment_restricted_at,
+      ),
+      stripeDashboardUrl:
+        recovery.recovery_kind === credit_payment_recovery_kind.stripe_dispute
+          ? stripeDashboardDisputeUrl(recovery.external_reference)
+          : null,
+      packId:
+        recovery.checkout?.pack_id ??
+        `premium:${recovery.premium_invoice!.invoice_id}`,
+      packCredits:
+        recovery.checkout?.credit_amount ?? PREMIUM_MONTHLY_CHAT_CREDITS,
+    };
+  });
 }
 
 export async function resolveCreditPaymentRecovery(options: {
@@ -477,7 +540,10 @@ export async function resolveCreditPaymentRecovery(options: {
   return prisma.$transaction(async (tx) => {
     const recovery = await tx.credit_payment_recoveries.findUnique({
       where: { id: options.recoveryId },
-      include: { checkout: { select: { user_id: true } } },
+      include: {
+        checkout: { select: { user_id: true } },
+        premium_invoice: { select: { user_id: true } },
+      },
     });
     if (!recovery) throw new CreditPaymentRecoveryNotFoundError();
     if (recovery.status === credit_payment_recovery_status.resolved) {
@@ -488,12 +554,15 @@ export async function resolveCreditPaymentRecovery(options: {
       }
       const currentBalance = await getLockedCreditBalanceInTransaction(
         tx,
-        recovery.checkout.user_id,
+        recoveryUserId(recovery),
       );
       const unresolved = await tx.credit_payment_recoveries.count({
         where: {
           status: credit_payment_recovery_status.review_required,
-          checkout: { user_id: recovery.checkout.user_id },
+          OR: [
+            { checkout: { user_id: recoveryUserId(recovery) } },
+            { premium_invoice: { user_id: recoveryUserId(recovery) } },
+          ],
         },
       });
       const chatReleased = canReleasePaymentRestrictedChat({
@@ -502,7 +571,7 @@ export async function resolveCreditPaymentRecovery(options: {
         availableCredits: currentBalance.availableCredits,
       });
       if (chatReleased) {
-        await clearCreditPaymentRestriction(tx, recovery.checkout.user_id);
+        await clearCreditPaymentRestriction(tx, recoveryUserId(recovery));
       }
       return {
         resolved: true,
@@ -519,7 +588,7 @@ export async function resolveCreditPaymentRecovery(options: {
     let availableCredits: number | null = null;
     if (options.creditDelta !== 0) {
       const adjustment = await recordCreditAdjustmentInTransaction(tx, {
-        userId: recovery.checkout.user_id,
+        userId: recoveryUserId(recovery),
         operationId: recovery.id,
         idempotencyKey: `payment-recovery-resolution:${recovery.id}`,
         creditsDelta: options.creditDelta,
@@ -536,7 +605,7 @@ export async function resolveCreditPaymentRecovery(options: {
 
     const currentBalance = await getLockedCreditBalanceInTransaction(
       tx,
-      recovery.checkout.user_id,
+      recoveryUserId(recovery),
     );
     availableCredits = currentBalance.availableCredits;
 
@@ -553,7 +622,10 @@ export async function resolveCreditPaymentRecovery(options: {
     const unresolved = await tx.credit_payment_recoveries.count({
       where: {
         status: credit_payment_recovery_status.review_required,
-        checkout: { user_id: recovery.checkout.user_id },
+        OR: [
+          { checkout: { user_id: recoveryUserId(recovery) } },
+          { premium_invoice: { user_id: recoveryUserId(recovery) } },
+        ],
       },
     });
     const chatReleased = canReleasePaymentRestrictedChat({
@@ -562,7 +634,7 @@ export async function resolveCreditPaymentRecovery(options: {
       availableCredits,
     });
     if (chatReleased) {
-      await clearCreditPaymentRestriction(tx, recovery.checkout.user_id);
+      await clearCreditPaymentRestriction(tx, recoveryUserId(recovery));
     }
     return {
       resolved: true,
@@ -622,10 +694,13 @@ async function createReviewRecovery(
       amount_cents: options.amountCents,
       currency: options.currency,
     },
-    include: { checkout: { select: { user_id: true } } },
+    include: {
+      checkout: { select: { user_id: true } },
+      premium_invoice: { select: { user_id: true } },
+    },
   });
   await restrictCreditAccount(tx, {
-    userId: recovery.checkout.user_id,
+    userId: recoveryUserId(recovery),
     externalReference: options.externalReference,
     reason: options.reason,
   });
@@ -650,4 +725,189 @@ function stripeId(
   value: string | { id: string } | null | undefined,
 ): string | null {
   return typeof value === "string" ? value : (value?.id ?? null);
+}
+
+function recoveryUserId(recovery: {
+  checkout: { user_id: number } | null;
+  premium_invoice: { user_id: number } | null;
+}) {
+  const userId =
+    recovery.checkout?.user_id ?? recovery.premium_invoice?.user_id;
+  if (!userId) throw new Error("Payment recovery source is missing.");
+  return userId;
+}
+
+/** Repairs mapping for an older invoice or a receipt delivered before invoice.paid. */
+async function ensurePremiumPaymentMapping(paymentIntentId: string) {
+  if (
+    (await prisma.credit_checkout_sessions.findUnique({
+      where: { stripe_payment_intent_id: paymentIntentId },
+      select: { id: true },
+    })) ||
+    (await prisma.premium_stripe_payments.findUnique({
+      where: { payment_intent_id: paymentIntentId },
+    }))
+  )
+    return;
+  const stripe = getStripeClient();
+  if (!stripe) return;
+  const payments = await stripe.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: paymentIntentId },
+    status: "paid",
+    limit: 2,
+  });
+  if (payments.has_more || payments.data.length > 1)
+    throw new Error("Ambiguous invoice payment mapping.");
+  const invoiceId = stripeId(payments.data[0]?.invoice);
+  if (
+    invoiceId &&
+    (await prisma.premium_stripe_invoices.findUnique({
+      where: { invoice_id: invoiceId },
+    }))
+  ) {
+    await prisma.premium_stripe_payments.createMany({
+      data: { payment_intent_id: paymentIntentId, invoice_id: invoiceId },
+      skipDuplicates: true,
+    });
+  }
+}
+
+async function findPremiumInvoiceForUpdate(
+  tx: Prisma.TransactionClient,
+  paymentIntentId: string,
+) {
+  const payment = await tx.premium_stripe_payments.findUnique({
+    where: { payment_intent_id: paymentIntentId },
+    include: { invoice: true },
+  });
+  if (!payment) return null;
+  await tx.$queryRaw`SELECT id FROM users WHERE id = ${payment.invoice.user_id} FOR UPDATE`;
+  return tx.premium_stripe_invoices.findUniqueOrThrow({
+    where: { invoice_id: payment.invoice_id },
+  });
+}
+
+async function processPremiumRefund(
+  tx: Prisma.TransactionClient,
+  event: {
+    id: string;
+    stripe_refund_id: string;
+    amount_cents: number;
+    currency: string;
+  },
+  invoice: {
+    invoice_id: string;
+    user_id: number;
+    subscription_id: string;
+    amount_paid_cents: number;
+    refunded_amount_cents: number;
+  },
+): Promise<CreditPaymentRecoveryResult> {
+  const existing = await tx.credit_payment_recoveries.findUnique({
+    where: { external_reference: event.stripe_refund_id },
+  });
+  if (existing) {
+    await markStoredRefundProcessed(tx, event.id);
+    return "duplicate";
+  }
+  const prior = await tx.credit_payment_recoveries.aggregate({
+    where: {
+      premium_invoice_id: invoice.invoice_id,
+      recovery_kind: "stripe_refund",
+    },
+    _sum: { amount_cents: true, credit_delta: true },
+  });
+  let reconciliation;
+  try {
+    if (event.currency !== "usd") throw new Error("Refund currency mismatch.");
+    reconciliation = calculateCreditRefundReconciliation({
+      creditAmount: PREMIUM_MONTHLY_CHAT_CREDITS,
+      paymentAmountCents: invoice.amount_paid_cents,
+      priorRefundedAmountCents: prior._sum.amount_cents ?? 0,
+      priorRevokedCredits: Math.max(0, -(prior._sum.credit_delta ?? 0)),
+      refundAmountCents: event.amount_cents,
+    });
+  } catch {
+    await getLockedCreditBalanceInTransaction(tx, invoice.user_id);
+    await tx.credit_payment_recoveries.create({
+      data: {
+        premium_invoice_id: invoice.invoice_id,
+        recovery_kind: "stripe_refund",
+        status: "review_required",
+        external_reference: event.stripe_refund_id,
+        amount_cents: event.amount_cents,
+        currency: event.currency,
+      },
+    });
+    await restrictCreditAccount(tx, {
+      userId: invoice.user_id,
+      externalReference: event.stripe_refund_id,
+      reason: "A premium refund could not be safely reconciled to its invoice.",
+    });
+    await markStoredRefundProcessed(tx, event.id);
+    return "review_required";
+  }
+  const recovery = await tx.credit_payment_recoveries.create({
+    data: {
+      premium_invoice_id: invoice.invoice_id,
+      recovery_kind: "stripe_refund",
+      status: "applied",
+      external_reference: event.stripe_refund_id,
+      amount_cents: event.amount_cents,
+      currency: event.currency,
+      credit_delta: -reconciliation.creditsToRevoke,
+    },
+  });
+  const adjustment =
+    reconciliation.creditsToRevoke > 0
+      ? await recordCreditAdjustmentInTransaction(tx, {
+          userId: invoice.user_id,
+          operationId: recovery.id,
+          idempotencyKey: `stripe-refund:${event.stripe_refund_id}`,
+          creditsDelta: -reconciliation.creditsToRevoke,
+          sourceAmountCents: event.amount_cents,
+          sourceCurrency: event.currency,
+          externalReference: event.stripe_refund_id,
+          entryType: "refund",
+          metadata: {
+            reason: "stripe_premium_refund",
+            invoiceId: invoice.invoice_id,
+          },
+        })
+      : null;
+  await tx.premium_stripe_invoices.update({
+    where: { invoice_id: invoice.invoice_id },
+    data: { refunded_amount_cents: reconciliation.refundedAmountCents },
+  });
+  if (reconciliation.refundedAmountCents === invoice.amount_paid_cents) {
+    // Only the refunded subscription changes; other sources and replacement subscriptions survive.
+    const [remaining] = await tx.$queryRaw<
+      Array<{ paid_through: Date | null }>
+    >`SELECT MAX(paid_through) AS paid_through
+      FROM premium_stripe_invoices WHERE subscription_id = ${invoice.subscription_id} AND refunded_amount_cents < amount_paid_cents`;
+    await tx.premium_memberships.updateMany({
+      where: {
+        user_id: invoice.user_id,
+        source: "stripe",
+        external_reference: invoice.subscription_id,
+      },
+      data: remaining?.paid_through
+        ? { paid_through: remaining.paid_through }
+        : { revoked_at: new Date() },
+    });
+  }
+  const restricted = Boolean(adjustment && adjustment.availableCredits < 0);
+  if (restricted) {
+    await tx.credit_payment_recoveries.update({
+      where: { id: recovery.id },
+      data: { status: "review_required" },
+    });
+    await restrictCreditAccount(tx, {
+      userId: invoice.user_id,
+      externalReference: event.stripe_refund_id,
+      reason: "A premium refund exceeds the available prompt-credit balance.",
+    });
+  }
+  await markStoredRefundProcessed(tx, event.id);
+  return restricted ? "review_required" : "applied";
 }

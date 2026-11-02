@@ -3,7 +3,6 @@ import { EventType } from "@tanstack/ai/client";
 import { ChatProviderRequestError } from "./chat-model";
 import type { ChatTurnEvent, ChatTurnResult } from "./chat-service";
 
-const DISPLAY_CHUNK_SIZE = 48;
 
 export function streamRecipeChatTurn(options: {
   model: string;
@@ -38,7 +37,7 @@ async function* createStream(options: {
     for await (const event of toolEvents) {
       yield {
         type: EventType.CUSTOM,
-        name: "recipe.tool",
+        name: event.type === "answer_delta" || event.type === "answer_reset" ? "recipe.answer" : "recipe.tool",
         value: event,
         model: options.model,
         timestamp: Date.now(),
@@ -62,7 +61,7 @@ async function* createStream(options: {
       timestamp: Date.now(),
     };
 
-    for (const delta of splitForDisplay(result.answer)) {
+    for (const delta of [result.answer || " "]) {
       yield {
         type: EventType.TEXT_MESSAGE_CONTENT,
         messageId,
@@ -70,7 +69,6 @@ async function* createStream(options: {
         model: options.model,
         timestamp: Date.now(),
       };
-      await new Promise((resolve) => setTimeout(resolve, 12));
     }
 
     yield {
@@ -106,14 +104,6 @@ function userFacingChatError(error: unknown): string {
     return "The recipe assistant is temporarily unavailable. Your balance may include a temporary hold while we verify this request; please try again later.";
   }
   return error instanceof Error ? error.message : "Chatbot request failed.";
-}
-
-function splitForDisplay(answer: string): string[] {
-  const chunks: string[] = [];
-  for (let index = 0; index < answer.length; index += DISPLAY_CHUNK_SIZE) {
-    chunks.push(answer.slice(index, index + DISPLAY_CHUNK_SIZE));
-  }
-  return chunks.length > 0 ? chunks : [" "];
 }
 
 class AsyncQueue<T> {

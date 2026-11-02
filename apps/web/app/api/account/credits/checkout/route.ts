@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCreditCheckoutRequestBodySchema } from "@meadtools/api-contract/credits";
 import { verifyUser } from "@/lib/userAccessFunctions";
+import { getChatbotConfig } from "@/lib/ai/chat-config";
+import { getChatAccessStatus } from "@/lib/db/chat-access";
 import {
   CreditCheckoutUnavailableError,
   UnknownCreditPackError,
   createCreditCheckout,
 } from "@/lib/billing/credit-checkout";
 import { CreditPaymentRestrictedError } from "@/lib/db/credit-accounting";
-import { areCreditPurchasesAvailable } from "@/lib/billing/credit-purchase-config";
+import {
+  areCreditPurchasesAvailable,
+  canUserPurchaseCredits,
+} from "@/lib/billing/credit-purchase-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +40,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Credit purchases are not available." },
       { status: 503 },
+    );
+  }
+  const access = await getChatAccessStatus(userId);
+  if (
+    !canUserPurchaseCredits(access.chatEnabled, Boolean(getChatbotConfig()))
+  ) {
+    return NextResponse.json(
+      { error: "Chat access is required to purchase credits." },
+      { status: 403 },
     );
   }
 

@@ -25,6 +25,7 @@ const KofiButton = () => {
   return (
     <a
       href="https://ko-fi.com/meadtools"
+      data-slot="kofi-button"
       target="_blank"
       rel="noopener noreferrer"
       className="fixed left-2 bottom-4 sm:flex items-center justify-center px-4 py-2 bg-[#fcbf47] text-[#323842] font-bold text-sm rounded-full shadow-lg hover:bg-[#323842] hover:text-[#fcbf47] transition-all hidden "

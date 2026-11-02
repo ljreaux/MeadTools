@@ -102,7 +102,7 @@ const RecipePage = ({
           backHref={isAdminReadOnly ? "/admin/recipes" : undefined}
           capabilities={
             isAdminReadOnly
-              ? { canSaveCopy: false, canRate: false, canComment: false }
+              ? { canSaveCopy: false, canRate: false, canComment: false, canCreateBrew: false }
               : undefined
           }
         />

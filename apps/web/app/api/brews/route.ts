@@ -39,13 +39,13 @@ export async function GET(req: NextRequest) {
 
 /**
  * Create brew
- * @description Starts a new brew from one of the authenticated user's recipes and snapshots the current recipe data.
+ * @description Starts a private brew from an owned or public recipe and snapshots its current data.
  * @body CreateBrewRequestBody
  * @response 201:CreateBrewResponse
  * @responseSet none
  * @add 400:BrewValidationErrorResponse
  * @add 401:AuthenticatedRouteErrorResponse
- * @add 404:AuthenticatedRouteErrorResponse
+ * @add 404:BrewRecipeNotFoundErrorResponse
  * @add 500:BrewCreateErrorResponse
  * @auth BearerAuth
  * @tag Brews
@@ -77,6 +77,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ brew }, { status: 201 });
   } catch (err) {
+    if (err instanceof Error && err.message === "Invalid recipe_id") {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    if (err instanceof Error && err.message === "Recipe not found") {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
     console.error("POST /api/brews failed:", err);
     return NextResponse.json(
       { error: "Failed to create brew." },

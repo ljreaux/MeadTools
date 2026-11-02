@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readOpenAIResponseStream } from "./openai-response-stream";
 import { ChatProviderRequestError } from "./chat-model";
 import type {
   ChatCompletion,
@@ -100,6 +101,9 @@ export class OpenAIChatClient implements ChatModelClient {
             name: tool.function.name,
             description: tool.function.description,
             parameters: tool.function.parameters,
+            // Shared tool schemas use omitted optional values. Responses may
+            // otherwise normalize them into required fields (e.g. cursors).
+            strict: false,
           })),
           // Responses accepts tool_choice only alongside a tools array. A
           // title request is deliberately tool-free, so omit both fields.
@@ -113,6 +117,7 @@ export class OpenAIChatClient implements ChatModelClient {
           ...(request.responseFormat ? { text: responseText(request) } : {}),
           max_output_tokens: request.maxOutputTokens,
           store: false,
+          ...(request.onTextDelta ? { stream: true } : {}),
         }),
         signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
       },
@@ -122,7 +127,9 @@ export class OpenAIChatClient implements ChatModelClient {
       throw await openAIRequestError(response);
     }
 
-    const parsed = responseSchema.safeParse(await response.json());
+    const parsed = responseSchema.safeParse(request.onTextDelta
+      ? await readOpenAIResponseStream(response, request.onTextDelta, request.onTextReset)
+      : await response.json());
     if (!parsed.success) {
       throw new Error("OpenAI returned an unexpected Responses API shape.");
     }

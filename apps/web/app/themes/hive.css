@@ -1,0 +1,1111 @@
+/* Design theme: hive. Scoped to html[data-design="hive"].
+ *
+ * Golden honeycomb: beeswax/cream surfaces on a faint hex lattice, honey-amber
+ * gradients, propolis-brown ink, hexagon motifs on small controls, and a honey
+ * drip under the navbar. Dark variant: inside the hive at dusk.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Tokens                                                              */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] {
+  --background: 43 78% 96%;
+  --foreground: 24 48% 14%;
+  --card: 44 85% 97%;
+  --card-foreground: 24 48% 14%;
+  --popover: 44 88% 97%;
+  --popover-foreground: 24 48% 14%;
+  --primary: 37 88% 50%;
+  --primary-foreground: 24 60% 10%;
+  --secondary: 41 80% 88%;
+  --secondary-foreground: 24 48% 14%;
+  --muted: 40 55% 90%;
+  --muted-foreground: 27 30% 33%;
+  --accent: 41 90% 84%;
+  --accent-foreground: 24 52% 13%;
+  --destructive: 5 72% 45%;
+  --destructive-foreground: 40 80% 97%;
+  --warning: 44 96% 56%;
+  --warning-foreground: 24 60% 10%;
+  --border: 36 52% 78%;
+  --input: 34 46% 70%;
+  --ring: 30 90% 40%;
+  --radius: 1rem;
+  --chart-1: 38 88% 50%;
+  --chart-2: 24 70% 38%;
+  --chart-3: 88 32% 40%;
+  --chart-4: 345 52% 42%;
+  --chart-5: 46 92% 66%;
+
+  /* Theme-private helpers */
+  --hive-honey: 38 90% 56%;
+  --hive-honey-deep: 30 88% 44%;
+  --hive-wax: 42 82% 90%;
+  --hive-shadow: 30 70% 30%;
+  --hive-hex: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
+  --hive-hex-v: polygon(50% 0%, 96% 25%, 96% 75%, 50% 100%, 4% 75%, 4% 25%);
+  --hive-ease: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --hive-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 28 49'%3E%3Cpath fill='%23b0731a' fill-opacity='0.085' fill-rule='evenodd' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E");
+  --hive-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='56' viewBox='0 0 64 56'%3E%3Cg fill='%23e0a12c'%3E%3Cpath fill-opacity='0.55' d='M48 2l12 7v14l-12 7-12-7V9z'/%3E%3Cpath fill-opacity='0.3' d='M30 18l9 5.2v10.4L30 39l-9-5.4V23.2z'/%3E%3Cpath fill-opacity='0.2' d='M50 34l7 4v8l-7 4-7-4v-8z'/%3E%3C/g%3E%3C/svg%3E");
+  --hive-drip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='16' viewBox='0 0 160 16' preserveAspectRatio='none'%3E%3Cpath fill='%23e3a33a' d='M0 0h160v3c-6 0-8 2-10 2s-3 9-7 9-4-9-8-9-14 1-22 1-8 4-12 4-4-4-10-4-12-2-19-2-5 6-9 6-4-6-9-6S34 4 26 4s-5 3-9 3-5-4-10-4S2 3 0 3z'/%3E%3C/svg%3E");
+
+  color-scheme: light;
+  --font-body: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  --font-heading: var(--font-young-serif), Georgia, serif;
+  --page: 42 70% 90%;
+  --page-image: radial-gradient(ellipse 80% 55% at 50% -10%, hsl(42 95% 80% / 0.75), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, hsl(34 90% 72% / 0.35), transparent 70%),
+    var(--hive-pattern);
+  --page-image-size: auto, auto, 56px 98px;
+  --shadow-sm: 0 1px 3px hsl(var(--hive-shadow) / 0.15);
+  --shadow: 0 4px 14px -4px hsl(var(--hive-shadow) / 0.25);
+  --shadow-md: 0 8px 24px -8px hsl(var(--hive-shadow) / 0.3);
+  --shadow-lg: 0 16px 40px -12px hsl(var(--hive-shadow) / 0.4);
+}
+
+html.dark[data-design="hive"] {
+  --background: 28 34% 10%;
+  --foreground: 40 62% 88%;
+  --card: 28 36% 11%;
+  --card-foreground: 40 62% 88%;
+  --popover: 28 36% 12%;
+  --popover-foreground: 40 62% 88%;
+  --primary: 40 92% 58%;
+  --primary-foreground: 25 60% 8%;
+  --secondary: 30 30% 18%;
+  --secondary-foreground: 40 62% 88%;
+  --muted: 30 24% 17%;
+  --muted-foreground: 38 32% 68%;
+  --accent: 34 46% 22%;
+  --accent-foreground: 43 90% 80%;
+  --destructive: 4 66% 52%;
+  --destructive-foreground: 40 80% 97%;
+  --warning: 42 92% 50%;
+  --warning-foreground: 25 60% 8%;
+  --border: 32 34% 23%;
+  --input: 33 34% 28%;
+  --ring: 42 95% 60%;
+  --chart-1: 40 92% 58%;
+  --chart-2: 26 80% 52%;
+  --chart-3: 88 36% 52%;
+  --chart-4: 345 60% 60%;
+  --chart-5: 50 95% 72%;
+
+  --hive-honey: 40 95% 58%;
+  --hive-honey-deep: 32 92% 46%;
+  --hive-wax: 30 32% 16%;
+  --hive-shadow: 30 90% 2%;
+  --hive-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 28 49'%3E%3Cpath fill='%23f0b23c' fill-opacity='0.05' fill-rule='evenodd' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E");
+  --hive-corner: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='56' viewBox='0 0 64 56'%3E%3Cg fill='%23f4b53f'%3E%3Cpath fill-opacity='0.42' d='M48 2l12 7v14l-12 7-12-7V9z'/%3E%3Cpath fill-opacity='0.22' d='M30 18l9 5.2v10.4L30 39l-9-5.4V23.2z'/%3E%3Cpath fill-opacity='0.14' d='M50 34l7 4v8l-7 4-7-4v-8z'/%3E%3C/g%3E%3C/svg%3E");
+  --hive-drip: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='16' viewBox='0 0 160 16' preserveAspectRatio='none'%3E%3Cpath fill='%23d99a2b' d='M0 0h160v3c-6 0-8 2-10 2s-3 9-7 9-4-9-8-9-14 1-22 1-8 4-12 4-4-4-10-4-12-2-19-2-5 6-9 6-4-6-9-6S34 4 26 4s-5 3-9 3-5-4-10-4S2 3 0 3z'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+  --page: 25 38% 6%;
+  --page-image: radial-gradient(ellipse 70% 50% at 50% -5%, hsl(38 90% 45% / 0.22), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 0% 100%, hsl(30 90% 40% / 0.14), transparent 70%),
+    var(--hive-pattern);
+}
+
+/* ------------------------------------------------------------------ */
+/* Page, type                                                          */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] body {
+  font-family: var(--font-nunito), "Nunito", ui-rounded, system-ui, sans-serif;
+  font-feature-settings: "tnum" 0;
+  color: hsl(var(--foreground));
+  background-color: hsl(42 70% 90%);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 50% -10%, hsl(42 95% 80% / 0.75), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, hsl(34 90% 72% / 0.35), transparent 70%),
+    var(--hive-pattern);
+  background-size: auto, auto, 56px 98px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+html.dark[data-design="hive"] body {
+  background-color: hsl(25 38% 6%);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% -5%, hsl(38 90% 45% / 0.22), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 0% 100%, hsl(30 90% 40% / 0.14), transparent 70%),
+    var(--hive-pattern);
+}
+
+html[data-design="hive"] ::selection {
+  background: hsl(var(--hive-honey) / 0.45);
+  color: hsl(var(--foreground));
+}
+
+html[data-design="hive"] h1,
+html[data-design="hive"] h2,
+html[data-design="hive"] h3,
+html[data-design="hive"] [data-slot="card-title"],
+html[data-design="hive"] [data-slot="dialog-title"],
+html[data-design="hive"] [data-slot="alert-dialog-title"],
+html[data-design="hive"] [data-slot="sheet-title"] {
+  font-family: var(--font-young-serif), Georgia, serif;
+  font-weight: 400;
+  color: hsl(var(--foreground));
+}
+
+/* A little honey underline swash under the big step headings. */
+html[data-design="hive"] h1.text-3xl::after,
+html[data-design="hive"] h1.text-2xl.text-center::after {
+  content: "";
+  display: block;
+  width: 4.5rem;
+  height: 6px;
+  margin: 0.6rem auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, hsl(var(--hive-honey) / 0), hsl(var(--hive-honey)) 25%, hsl(var(--hive-honey-deep)) 75%, hsl(var(--hive-honey) / 0));
+}
+
+html[data-design="hive"] a {
+  text-decoration-color: hsl(var(--hive-honey-deep) / 0.6);
+  text-underline-offset: 3px;
+}
+
+html[data-design="hive"] input,
+html[data-design="hive"] textarea,
+html[data-design="hive"] select,
+html[data-design="hive"] button {
+  font-family: inherit;
+}
+
+html[data-design="hive"] * {
+  scrollbar-color: hsl(var(--hive-honey-deep) / 0.6) transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Navbar + honey drip                                                  */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="navbar"] {
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
+  border-bottom: 0;
+  box-shadow: 0 1px 0 hsl(var(--hive-honey-deep) / 0.35), 0 10px 30px -18px hsl(var(--hive-shadow) / 0.6);
+}
+
+html[data-design="hive"] [data-slot="navbar"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 14px;
+  background-image: var(--hive-drip);
+  background-size: 160px 14px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px hsl(var(--hive-shadow) / 0.18));
+}
+
+html[data-design="hive"] [data-slot="navbar-logo"] {
+  border: 0;
+  background: transparent;
+}
+
+html[data-design="hive"] [data-slot="navbar-logo"] > span {
+  border-radius: 1.25rem;
+  background:
+    var(--hive-pattern),
+    linear-gradient(135deg, hsl(44 95% 92%), hsl(38 85% 78%));
+  background-size: 28px 49px, auto;
+  box-shadow: inset 0 0 0 1px hsl(var(--hive-honey-deep) / 0.35), 0 4px 14px -6px hsl(var(--hive-shadow) / 0.5);
+}
+
+@media (max-width: 767px) {
+  html[data-design="hive"] [data-slot="navbar-logo"] > span {
+    border-radius: 0.9rem;
+  }
+}
+
+html.dark[data-design="hive"] [data-slot="navbar-logo"] > span {
+  background:
+    var(--hive-pattern),
+    linear-gradient(135deg, hsl(42 70% 82%), hsl(36 70% 62%));
+  background-size: 28px 49px, auto;
+  box-shadow: 0 0 0 1px hsl(var(--hive-honey) / 0.4), 0 0 24px -6px hsl(var(--hive-honey) / 0.55);
+}
+
+/* Desktop navigation menu panel */
+html[data-design="hive"] [data-slot="navigation-menu-viewport"],
+html[data-design="hive"] [data-slot="navigation-menu-content"] {
+  background-color: hsl(var(--popover));
+  border-radius: 1.25rem;
+}
+
+html[data-design="hive"] [data-slot="navigation-menu-viewport"] {
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 20px 50px -20px hsl(var(--hive-shadow) / 0.55);
+  overflow: hidden;
+}
+
+html[data-design="hive"] [data-slot="nav-link"] {
+  border-radius: 0.85rem;
+  transition: background-color 0.2s ease, transform 0.2s var(--hive-ease);
+}
+
+html[data-design="hive"] [data-slot="nav-link"]:hover {
+  background-color: hsl(var(--accent));
+  transform: translateX(2px);
+}
+
+html[data-design="hive"] [data-slot="navigation-menu-content"] p.font-bold {
+  font-family: var(--font-young-serif), Georgia, serif;
+  font-weight: 400;
+  color: hsl(28 80% 34%);
+}
+
+html.dark[data-design="hive"] [data-slot="navigation-menu-content"] p.font-bold {
+  color: hsl(var(--primary));
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer                                                               */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="bottom-bar"] > div > span > div {
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax)));
+  border: 1px solid hsl(var(--hive-honey-deep) / 0.45);
+  box-shadow: 0 -6px 20px -14px hsl(var(--hive-shadow) / 0.6);
+}
+
+@media (min-width: 640px) {
+  html[data-design="hive"] [data-slot="bottom-bar"] > div > span > div {
+    border-radius: 999px;
+    box-shadow: 0 8px 24px -10px hsl(var(--hive-shadow) / 0.55), inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  }
+  html.dark[data-design="hive"] [data-slot="bottom-bar"] > div > span > div {
+    box-shadow: 0 0 22px -8px hsl(var(--hive-honey) / 0.45);
+  }
+}
+
+html[data-design="hive"] [data-slot="bottom-bar"] [data-slot="social-link"] {
+  color: hsl(var(--foreground) / 0.8);
+}
+
+html[data-design="hive"] [data-slot="bottom-bar"] [data-slot="social-link"]:hover {
+  color: hsl(var(--hive-honey-deep));
+}
+
+html.dark[data-design="hive"] [data-slot="bottom-bar"] [data-slot="social-link"]:hover {
+  color: hsl(var(--primary));
+}
+
+/* ------------------------------------------------------------------ */
+/* Cards & surfaces                                                     */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="card"],
+html[data-design="hive"] :where(.bg-background:is(.rounded-xl, .rounded-2xl)) {
+  position: relative;
+  border-radius: 1.75rem 1.75rem 1.75rem 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  background-image:
+    var(--hive-corner),
+    linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
+  background-repeat: no-repeat;
+  background-position: top 6px right 8px, 0 0;
+  background-size: 64px 56px, auto;
+  box-shadow:
+    0 1px 0 hsl(0 0% 100% / 0.6) inset,
+    0 2px 4px -2px hsl(var(--hive-shadow) / 0.18),
+    0 18px 40px -22px hsl(var(--hive-shadow) / 0.5);
+}
+
+html.dark[data-design="hive"] [data-slot="card"],
+html.dark[data-design="hive"] :where(.bg-background:is(.rounded-xl, .rounded-2xl)) {
+  box-shadow:
+    0 1px 0 hsl(var(--hive-honey) / 0.08) inset,
+    0 0 0 1px hsl(var(--hive-honey) / 0.05),
+    0 24px 50px -24px hsl(0 0% 0% / 0.8),
+    0 0 60px -30px hsl(var(--hive-honey) / 0.35);
+}
+
+/* Nested cards inside the big step card: keep them calmer. */
+html[data-design="hive"] [data-slot="card"] [data-slot="card"],
+html[data-design="hive"] :where(.bg-background:is(.rounded-xl, .rounded-2xl)) [data-slot="card"] {
+  background-image: none;
+  border-radius: 1.25rem;
+  box-shadow: 0 6px 18px -14px hsl(var(--hive-shadow) / 0.5);
+}
+
+html[data-design="hive"] [data-slot="card-description"] {
+  color: hsl(var(--muted-foreground));
+}
+
+html[data-design="hive"] [data-slot="card-footer"] {
+  border-top: 1px dashed hsl(var(--border));
+}
+
+/* Banners */
+html[data-design="hive"] [data-slot="banner"] {
+  border-top: 0;
+  border-bottom: 1px solid hsl(var(--hive-honey-deep) / 0.25);
+  box-shadow: inset 4px 0 0 hsl(var(--hive-honey));
+}
+
+html[data-design="hive"] [data-slot="banner"][data-variant="default"] {
+  background: linear-gradient(90deg, hsl(var(--hive-wax)), hsl(var(--card)) 60%);
+}
+
+/* Ko-fi support button: honey pill, still clearly a support CTA */
+html[data-design="hive"] [data-slot="kofi-button"] {
+  color: hsl(var(--primary-foreground)) !important;
+  background-color: hsl(var(--primary)) !important;
+  background-image: linear-gradient(170deg, hsl(46 98% 66%), hsl(34 90% 50%));
+  border: 1px solid hsl(30 80% 38% / 0.55);
+  font-family: var(--font-nunito), sans-serif;
+  box-shadow: inset 0 1px 0 hsl(50 100% 88% / 0.8), 0 6px 16px -6px hsl(32 90% 35% / 0.6);
+}
+
+html[data-design="hive"] [data-slot="kofi-button"]:hover {
+  color: hsl(44 90% 96%) !important;
+  background-color: hsl(26 70% 30%) !important;
+  background-image: linear-gradient(170deg, hsl(32 82% 42%), hsl(24 72% 28%));
+}
+
+/* Sortable list items */
+html[data-design="hive"] [data-slot="sortable-item"] {
+  border-radius: 0.9rem;
+}
+
+html[data-design="hive"] [data-slot="sortable-item"][data-dragging="true"] {
+  box-shadow: 0 12px 28px -12px hsl(var(--hive-shadow) / 0.6);
+  outline: 2px solid hsl(var(--hive-honey));
+}
+
+html[data-design="hive"] [data-slot="drag-handle"] {
+  border-radius: 0.9rem 0 0 0.9rem;
+  background: linear-gradient(180deg, hsl(var(--hive-wax)), hsl(var(--secondary)));
+  color: hsl(var(--hive-honey-deep));
+}
+
+html[data-design="hive"] [data-slot="drag-handle"]:hover {
+  background: linear-gradient(170deg, hsl(var(--hive-honey)), hsl(var(--hive-honey-deep)));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Recipe builder sidebar */
+html[data-design="hive"] [data-slot="calc-sidebar"] {
+  border-color: hsl(var(--hive-honey-deep) / 0.45) !important;
+  border-radius: 1.25rem 0 0 1.25rem;
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax))) !important;
+  box-shadow: -10px 12px 28px -18px hsl(var(--hive-shadow) / 0.6);
+}
+
+html[data-design="hive"] [data-slot="calc-sidebar"] > .mt-button {
+  border-radius: 999px;
+  border: 1px solid hsl(var(--hive-honey-deep) / 0.45);
+  background: hsl(var(--card));
+}
+
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button {
+  border: 0;
+  clip-path: var(--hive-hex-v);
+  background: linear-gradient(160deg, hsl(var(--hive-wax)), hsl(var(--secondary)));
+  box-shadow: inset 0 0 0 2px hsl(var(--hive-honey-deep) / 0.4);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.25s var(--hive-ease);
+}
+
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:hover,
+html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:focus-visible {
+  background: linear-gradient(160deg, hsl(var(--hive-honey)), hsl(var(--hive-honey-deep)));
+  color: hsl(var(--primary-foreground));
+  transform: scale(1.06);
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                              */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] .mt-button {
+  border-radius: 999px;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    background-position 0.35s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s var(--hive-ease);
+}
+
+html[data-design="hive"] .mt-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+
+html[data-design="hive"] .mt-button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px hsl(var(--hive-honey) / 0.25);
+}
+
+/* Primary: poured honey */
+html[data-design="hive"] .mt-button.mt-button--default {
+  color: hsl(var(--primary-foreground));
+  background-color: hsl(var(--primary));
+  background-image: linear-gradient(170deg, hsl(46 98% 66%) 0%, hsl(38 92% 54%) 45%, hsl(31 88% 46%) 100%);
+  background-size: 100% 160%;
+  background-position: 0 0;
+  border: 1px solid hsl(30 80% 38% / 0.55);
+  box-shadow:
+    inset 0 1px 0 hsl(50 100% 88% / 0.8),
+    inset 0 -2px 0 hsl(28 80% 32% / 0.25),
+    0 4px 12px -4px hsl(32 90% 35% / 0.5);
+}
+
+html[data-design="hive"] .mt-button.mt-button--default:hover {
+  background-position: 0 100%;
+  box-shadow:
+    inset 0 1px 0 hsl(50 100% 88% / 0.8),
+    inset 0 -2px 0 hsl(28 80% 32% / 0.25),
+    0 8px 18px -6px hsl(32 90% 35% / 0.6);
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--default {
+  border-color: hsl(42 90% 62% / 0.6);
+  box-shadow:
+    inset 0 1px 0 hsl(50 100% 85% / 0.7),
+    0 0 18px -4px hsl(40 95% 55% / 0.55);
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--default:hover {
+  box-shadow:
+    inset 0 1px 0 hsl(50 100% 85% / 0.7),
+    0 0 26px -2px hsl(40 95% 55% / 0.7);
+}
+
+/* Emphasis: deeper amber with cream lettering */
+html[data-design="hive"] .mt-button.mt-button--emphasis {
+  color: hsl(44 90% 96%);
+  background-color: hsl(26 70% 30%);
+  background-image: linear-gradient(170deg, hsl(32 82% 42%), hsl(24 72% 28%));
+  border: 1px solid hsl(24 70% 22%);
+  box-shadow: inset 0 1px 0 hsl(40 90% 70% / 0.45), 0 5px 14px -6px hsl(24 80% 20% / 0.7);
+}
+
+html[data-design="hive"] .mt-button.mt-button--emphasis:hover {
+  background-image: linear-gradient(170deg, hsl(34 86% 46%), hsl(26 74% 32%));
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--emphasis {
+  border-color: hsl(36 80% 50% / 0.6);
+  box-shadow: inset 0 1px 0 hsl(40 90% 70% / 0.35), 0 0 18px -6px hsl(36 95% 55% / 0.5);
+}
+
+/* Destructive: propolis red */
+html[data-design="hive"] .mt-button.mt-button--destructive {
+  color: hsl(var(--destructive-foreground));
+  background-color: hsl(var(--destructive));
+  background-image: linear-gradient(170deg, hsl(8 74% 54%), hsl(2 70% 40%));
+  border: 1px solid hsl(2 70% 32% / 0.6);
+  box-shadow: inset 0 1px 0 hsl(10 100% 80% / 0.4), 0 4px 12px -6px hsl(2 80% 30% / 0.6);
+}
+
+html[data-design="hive"] .mt-button.mt-button--destructive:hover {
+  background-image: linear-gradient(170deg, hsl(8 80% 58%), hsl(2 74% 44%));
+}
+
+/* Secondary: waxy outlined pill that fills with honey on hover */
+html[data-design="hive"] .mt-button.mt-button--secondary {
+  color: hsl(var(--foreground));
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax)));
+  border: 1.5px solid hsl(var(--hive-honey-deep) / 0.55);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.6), 0 3px 10px -6px hsl(var(--hive-shadow) / 0.5);
+}
+
+html[data-design="hive"] .mt-button.mt-button--secondary:hover {
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--hive-honey-deep));
+  background: linear-gradient(170deg, hsl(46 98% 68%), hsl(36 90% 52%));
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--secondary {
+  box-shadow: inset 0 1px 0 hsl(var(--hive-honey) / 0.1);
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--secondary:hover {
+  box-shadow: 0 0 18px -6px hsl(var(--hive-honey) / 0.6);
+}
+
+/* Outline */
+html[data-design="hive"] .mt-button.mt-button--outline {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--card) / 0.7);
+  border: 1.5px solid hsl(var(--input));
+}
+
+html[data-design="hive"] .mt-button.mt-button--outline:hover {
+  background-color: hsl(var(--accent));
+  border-color: hsl(var(--hive-honey-deep) / 0.7);
+  color: hsl(var(--accent-foreground));
+}
+
+/* Ghost */
+html[data-design="hive"] .mt-button.mt-button--ghost {
+  color: hsl(var(--foreground));
+}
+
+html[data-design="hive"] .mt-button.mt-button--ghost:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Link */
+html[data-design="hive"] .mt-button.mt-button--link {
+  color: hsl(30 85% 32%);
+  text-decoration-color: hsl(var(--hive-honey));
+  text-decoration-thickness: 2px;
+}
+
+html.dark[data-design="hive"] .mt-button.mt-button--link {
+  color: hsl(var(--primary));
+}
+
+/* Icon buttons become hexagonal cells. The hex is drawn on ::before so the
+ * focus outline stays visible. */
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)),
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)) {
+  isolation: isolate;
+  border-radius: 0.75rem;
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.absolute):not(.fixed):not(.sticky) {
+  position: relative;
+}
+
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link),
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--hive-hex);
+  transition: background 0.2s ease, transform 0.25s var(--hive-ease);
+}
+
+/* ::before = rim, ::after = fill */
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before {
+  inset: -1px -2px;
+  background: hsl(var(--hive-honey-deep) / 0.7);
+}
+
+html[data-design="hive"] .mt-button.mt-button-size--icon:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after,
+html[data-design="hive"] .mt-button.mt-button-size--icon-xs:not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::after {
+  inset: 1px 0;
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--hive-wax)));
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--default::after {
+  background: linear-gradient(170deg, hsl(46 98% 66%), hsl(34 90% 50%)) !important;
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--destructive::before {
+  background: hsl(2 70% 32%) !important;
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--destructive::after {
+  background: linear-gradient(170deg, hsl(8 74% 54%), hsl(2 70% 42%)) !important;
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)).mt-button--emphasis::after {
+  background: linear-gradient(170deg, hsl(32 82% 42%), hsl(24 72% 28%)) !important;
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):not(.mt-button--destructive):not(.mt-button--emphasis):not(.mt-button--default):hover {
+  color: hsl(var(--primary-foreground));
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):not(.mt-button--destructive):not(.mt-button--emphasis):not(.mt-button--default):hover::after {
+  background: linear-gradient(170deg, hsl(46 98% 68%), hsl(36 90% 52%));
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link):hover::before {
+  transform: rotate(0deg) scale(1.04);
+}
+
+html.dark[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):not(.mt-button--ghost):not(.mt-button--link)::before {
+  background: hsl(var(--hive-honey) / 0.55);
+}
+
+html[data-design="hive"] .mt-button:is(.mt-button-size--icon, .mt-button-size--icon-xs):not(:where([data-slot="button-group"] *)):focus-visible {
+  box-shadow: none;
+  border-radius: 0.6rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Form controls                                                        */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="input"],
+html[data-design="hive"] [data-slot="textarea"],
+html[data-design="hive"] [data-slot="select-trigger"],
+html[data-design="hive"] [data-slot="input-group"] {
+  border-radius: 0.9rem;
+  border: 1.5px solid hsl(var(--input));
+  background-color: hsl(0 0% 100% / 0.65);
+  box-shadow: inset 0 2px 4px -2px hsl(var(--hive-shadow) / 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+html.dark[data-design="hive"] [data-slot="input"],
+html.dark[data-design="hive"] [data-slot="textarea"],
+html.dark[data-design="hive"] [data-slot="select-trigger"],
+html.dark[data-design="hive"] [data-slot="input-group"] {
+  background-color: hsl(26 36% 7% / 0.7);
+  box-shadow: inset 0 2px 6px -2px hsl(0 0% 0% / 0.6);
+}
+
+/* Controls embedded in an input-group share its frame. */
+html[data-design="hive"] [data-slot="input-group"] [data-slot="input"],
+html[data-design="hive"] [data-slot="input-group"] [data-slot="input-group-control"],
+html[data-design="hive"] [data-slot="input-group"] [data-slot="select-trigger"] {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-design="hive"] [data-slot="input"]:hover,
+html[data-design="hive"] [data-slot="textarea"]:hover,
+html[data-design="hive"] [data-slot="select-trigger"]:hover,
+html[data-design="hive"] [data-slot="input-group"]:hover {
+  border-color: hsl(var(--hive-honey-deep) / 0.7);
+}
+
+html[data-design="hive"] [data-slot="input"]:focus-visible,
+html[data-design="hive"] [data-slot="textarea"]:focus-visible,
+html[data-design="hive"] [data-slot="select-trigger"]:focus-visible,
+html[data-design="hive"] [data-slot="select-trigger"][data-state="open"],
+html[data-design="hive"] [data-slot="input-group"]:focus-within {
+  outline: none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 4px hsl(var(--hive-honey) / 0.28), inset 0 2px 4px -2px hsl(var(--hive-shadow) / 0.15);
+}
+
+html[data-design="hive"] [data-slot="input-group"] [data-slot="input"]:focus-visible,
+html[data-design="hive"] [data-slot="input-group"] [data-slot="input-group-control"]:focus-visible,
+html[data-design="hive"] [data-slot="input-group"] [data-slot="select-trigger"]:focus-visible {
+  box-shadow: none;
+}
+
+html[data-design="hive"] [data-slot="input-group"] [data-slot="select-trigger"][data-state="open"] {
+  box-shadow: none;
+}
+
+html[data-design="hive"] [data-slot="input-group"]:has([aria-invalid="true"]) {
+  border-color: hsl(var(--destructive));
+}
+
+html[data-design="hive"] [data-slot="input-group"]:has([data-warning="true"]) {
+  border-color: hsl(var(--warning));
+}
+
+html[data-design="hive"] [data-slot="input-group"] [data-slot="separator"] {
+  background-color: hsl(var(--input));
+}
+
+html[data-design="hive"] [data-slot="input"]::placeholder,
+html[data-design="hive"] [data-slot="textarea"]::placeholder {
+  color: hsl(var(--muted-foreground) / 0.8);
+}
+
+html[data-design="hive"] [data-slot="input-group-addon"] {
+  color: hsl(var(--muted-foreground));
+  font-weight: 700;
+}
+
+html[data-design="hive"] [data-slot="label"],
+html[data-design="hive"] label > span.text-sm.font-medium {
+  font-weight: 700;
+  color: hsl(var(--foreground) / 0.9);
+}
+
+html[data-design="hive"] [data-slot="select-trigger"] svg {
+  color: hsl(var(--hive-honey-deep));
+  opacity: 0.9;
+}
+
+html.dark[data-design="hive"] [data-slot="select-trigger"] svg {
+  color: hsl(var(--primary));
+}
+
+/* Popover-ish surfaces */
+html[data-design="hive"] [data-slot="select-content"],
+html[data-design="hive"] [data-slot="dropdown-menu-content"],
+html[data-design="hive"] [data-slot="popover-content"] {
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--popover));
+  box-shadow:
+    0 2px 6px -2px hsl(var(--hive-shadow) / 0.2),
+    0 18px 40px -16px hsl(var(--hive-shadow) / 0.45);
+}
+
+html.dark[data-design="hive"] [data-slot="select-content"],
+html.dark[data-design="hive"] [data-slot="dropdown-menu-content"],
+html.dark[data-design="hive"] [data-slot="popover-content"] {
+  border-color: hsl(var(--hive-honey) / 0.25);
+  box-shadow: 0 20px 44px -16px hsl(0 0% 0% / 0.8), 0 0 30px -18px hsl(var(--hive-honey) / 0.45);
+}
+
+html[data-design="hive"] [data-slot="select-item"],
+html[data-design="hive"] [data-slot="dropdown-menu-item"] {
+  border-radius: 0.65rem;
+  transition: background-color 0.15s ease;
+}
+
+html[data-design="hive"] [data-slot="select-item"][data-highlighted],
+html[data-design="hive"] [data-slot="dropdown-menu-item"][data-highlighted] {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+html[data-design="hive"] [data-slot="select-item"][data-state="checked"] {
+  font-weight: 700;
+}
+
+html[data-design="hive"] [data-slot="tooltip-content"] {
+  border-radius: 0.75rem;
+  background: hsl(24 48% 14%);
+  color: hsl(43 85% 92%);
+  border: 1px solid hsl(var(--hive-honey) / 0.4);
+  box-shadow: 0 8px 20px -10px hsl(var(--hive-shadow) / 0.7);
+  font-family: var(--font-nunito), sans-serif;
+}
+
+html.dark[data-design="hive"] [data-slot="tooltip-content"] {
+  background: hsl(42 85% 88%);
+  color: hsl(24 50% 12%);
+}
+
+/* Switch: honey track, hexagon thumb */
+html[data-design="hive"] [data-slot="switch"] {
+  border: 1.5px solid hsl(var(--input));
+  background-color: hsl(var(--muted));
+  box-shadow: inset 0 2px 4px -1px hsl(var(--hive-shadow) / 0.25);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html[data-design="hive"] [data-slot="switch"][data-state="checked"] {
+  border-color: hsl(var(--hive-honey-deep));
+  background-color: hsl(var(--primary));
+  background-image: linear-gradient(180deg, hsl(44 96% 62%), hsl(34 90% 48%));
+}
+
+html[data-design="hive"] [data-slot="calc-sidebar"] .mt-button[data-active="true"] {
+  background: linear-gradient(160deg, hsl(var(--hive-honey)), hsl(var(--hive-honey-deep)));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Switch thumb */
+html[data-design="hive"] [data-slot="switch-thumb"] {
+  clip-path: var(--hive-hex);
+  border-radius: 0;
+  background: linear-gradient(180deg, hsl(0 0% 100%), hsl(42 60% 88%));
+  transition: transform 0.3s var(--hive-ease), background 0.2s ease;
+}
+
+html[data-design="hive"] [data-slot="switch"][data-state="checked"] > span {
+  transform: translateX(1.2rem) rotate(60deg);
+  background: linear-gradient(180deg, hsl(44 100% 97%), hsl(42 80% 86%));
+}
+
+html.dark[data-design="hive"] [data-slot="switch-thumb"] {
+  background: linear-gradient(180deg, hsl(38 30% 70%), hsl(32 24% 52%));
+}
+
+html.dark[data-design="hive"] [data-slot="switch"][data-state="checked"] > span {
+  background: linear-gradient(180deg, hsl(30 50% 16%), hsl(26 46% 10%));
+}
+
+html[data-design="hive"] [data-slot="switch"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Checkbox: hexagonal cell. Root bg = rim, ::before = inner wax. */
+html[data-design="hive"] [data-slot="checkbox"] {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--hive-hex);
+  background: hsl(var(--hive-honey-deep));
+  box-shadow: none;
+  color: hsl(var(--primary-foreground));
+  transition: background 0.2s ease;
+}
+
+html[data-design="hive"] [data-slot="checkbox"]::before {
+  content: "";
+  position: absolute;
+  inset: 1.5px 2px;
+  z-index: -1;
+  clip-path: var(--hive-hex);
+  background: hsl(var(--card));
+  transition: background 0.2s ease, inset 0.2s ease;
+}
+
+html[data-design="hive"] [data-slot="checkbox"][data-state="checked"] {
+  background: hsl(var(--hive-honey-deep));
+}
+
+html[data-design="hive"] [data-slot="checkbox"][data-state="checked"]::before {
+  background: linear-gradient(180deg, hsl(46 98% 64%), hsl(36 90% 50%));
+}
+
+html[data-design="hive"] [data-slot="checkbox"] svg {
+  stroke-width: 3.5;
+}
+
+html[data-design="hive"] [data-slot="checkbox"]:focus-visible {
+  background: hsl(var(--foreground));
+}
+
+html[data-design="hive"] [data-slot="checkbox"]:focus-visible::before {
+  inset: 3px 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabs                                                                 */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="tabs-list"] {
+  border-radius: 999px;
+  background: hsl(var(--hive-wax));
+  border: 1px solid hsl(var(--border));
+  box-shadow: inset 0 2px 4px -2px hsl(var(--hive-shadow) / 0.25);
+  color: hsl(var(--muted-foreground));
+}
+
+html[data-design="hive"] [data-slot="tabs-trigger"] {
+  border-radius: 999px;
+  font-weight: 700;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html[data-design="hive"] [data-slot="tabs-trigger"]:hover:not([data-state="active"]) {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent) / 0.6);
+}
+
+html[data-design="hive"] [data-slot="tabs-trigger"][data-state="active"] {
+  color: hsl(var(--primary-foreground));
+  background: linear-gradient(170deg, hsl(46 98% 66%), hsl(36 90% 52%));
+  box-shadow: inset 0 1px 0 hsl(50 100% 88% / 0.7), 0 3px 8px -3px hsl(32 90% 35% / 0.55);
+}
+
+html.dark[data-design="hive"] [data-slot="tabs-trigger"][data-state="active"] {
+  box-shadow: 0 0 14px -4px hsl(var(--hive-honey) / 0.7);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                               */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="table"] {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+html[data-design="hive"] [data-slot="table-header"] [data-slot="table-row"] {
+  background: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--hive-wax)));
+  border-bottom: 0;
+}
+
+html[data-design="hive"] [data-slot="table-head"] {
+  color: hsl(var(--foreground));
+  font-weight: 800;
+  border-bottom: 2px solid hsl(var(--hive-honey-deep) / 0.5);
+}
+
+html[data-design="hive"] [data-slot="table-head"]:first-child {
+  border-top-left-radius: 0.9rem;
+}
+
+html[data-design="hive"] [data-slot="table-head"]:last-child {
+  border-top-right-radius: 0.9rem;
+}
+
+html[data-design="hive"] [data-slot="table-row"] {
+  border-color: hsl(var(--border) / 0.7);
+  transition: background-color 0.15s ease;
+}
+
+html[data-design="hive"] [data-slot="table-body"] [data-slot="table-row"]:nth-child(even) {
+  background-color: hsl(var(--hive-wax) / 0.45);
+}
+
+html[data-design="hive"] [data-slot="table-body"] [data-slot="table-row"]:hover {
+  background-color: hsl(var(--accent) / 0.7);
+}
+
+html[data-design="hive"] [data-slot="table-cell"] {
+  border-bottom: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* ------------------------------------------------------------------ */
+/* Accordion, separator, skeleton                                       */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="accordion-item"] {
+  border-bottom: 1px dashed hsl(var(--hive-honey-deep) / 0.4);
+}
+
+html[data-design="hive"] [data-slot="accordion-trigger"] {
+  font-weight: 700;
+  border-radius: 0.75rem;
+}
+
+html[data-design="hive"] [data-slot="accordion-trigger"]:hover {
+  text-decoration-color: hsl(var(--hive-honey));
+  text-decoration-thickness: 2px;
+}
+
+html[data-design="hive"] [data-slot="accordion-trigger"] svg {
+  color: hsl(var(--hive-honey-deep));
+}
+
+html[data-design="hive"] [data-slot="separator"] {
+  background-color: hsl(var(--border));
+}
+
+html[data-design="hive"] [data-slot="separator"][data-orientation="horizontal"] {
+  background: linear-gradient(90deg, transparent, hsl(var(--hive-honey-deep) / 0.45) 15%, hsl(var(--hive-honey-deep) / 0.45) 85%, transparent);
+}
+
+html[data-design="hive"] [data-slot="skeleton"] {
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, hsl(var(--muted)), hsl(var(--hive-honey) / 0.25), hsl(var(--muted)));
+  background-size: 200% 100%;
+  animation: hive-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes hive-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Dialogs, sheets, toasts                                              */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] [data-slot="dialog-overlay"],
+html[data-design="hive"] [data-slot="alert-dialog-overlay"],
+html[data-design="hive"] [data-slot="sheet-overlay"] {
+  background-color: hsl(26 50% 12% / 0.55);
+  backdrop-filter: blur(3px) saturate(1.2);
+}
+
+html[data-design="hive"] [data-slot="dialog-content"],
+html[data-design="hive"] [data-slot="alert-dialog-content"] {
+  border-radius: 1.75rem;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--popover));
+  background-image:
+    var(--hive-corner),
+    linear-gradient(180deg, hsl(var(--hive-honey) / 0.12), transparent 90px);
+  background-repeat: no-repeat;
+  background-position: bottom 6px left 8px, 0 0;
+  background-size: 64px 56px, auto;
+  box-shadow:
+    inset 0 4px 0 hsl(var(--hive-honey)),
+    0 30px 70px -24px hsl(var(--hive-shadow) / 0.6);
+}
+
+html.dark[data-design="hive"] [data-slot="dialog-content"],
+html.dark[data-design="hive"] [data-slot="alert-dialog-content"] {
+  box-shadow:
+    inset 0 3px 0 hsl(var(--hive-honey)),
+    0 30px 70px -24px hsl(0 0% 0% / 0.9),
+    0 0 50px -24px hsl(var(--hive-honey) / 0.5);
+}
+
+html[data-design="hive"] [data-slot="sheet-content"] {
+  background-color: hsl(var(--popover));
+  background-image:
+    linear-gradient(90deg, hsl(var(--popover) / 0.55), hsl(var(--popover) / 0.85)),
+    var(--hive-pattern);
+  background-size: auto, 56px 98px;
+  border-color: hsl(var(--hive-honey-deep) / 0.4);
+  box-shadow: 0 0 50px -18px hsl(var(--hive-shadow) / 0.6);
+}
+
+html[data-design="hive"] [data-slot="sheet-content"][data-side="left"],
+html[data-design="hive"] [data-slot="sheet-content"].left-0 {
+  border-top-right-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+}
+
+html[data-design="hive"] [data-slot="sheet-content"] a {
+  border-radius: 0.75rem;
+}
+
+html[data-design="hive"] [data-slot="toast"] {
+  border-radius: 1.25rem;
+  border: 1px solid hsl(var(--hive-honey-deep) / 0.4);
+  background-color: hsl(var(--popover));
+  box-shadow: inset 5px 0 0 hsl(var(--hive-honey)), 0 16px 40px -16px hsl(var(--hive-shadow) / 0.55);
+}
+
+html[data-design="hive"] [data-slot="toast"].destructive,
+html[data-design="hive"] [data-slot="toast"][data-variant="destructive"] {
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  box-shadow: inset 5px 0 0 hsl(2 70% 30%), 0 16px 40px -16px hsl(2 70% 20% / 0.55);
+}
+
+/* ------------------------------------------------------------------ */
+/* Focus fallbacks                                                      */
+/* ------------------------------------------------------------------ */
+
+html[data-design="hive"] a:focus-visible,
+html[data-design="hive"] [role="tab"]:focus-visible,
+html[data-design="hive"] [data-slot="accordion-trigger"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 0.6rem;
+}
+
+/* Nunito is wider than the base mono font: let long column labels wrap
+ * instead of colliding with neighbouring headers. */
+html[data-design="hive"] [data-slot="table-head"] .uppercase {
+  white-space: normal;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                               */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-design="hive"] *,
+  html[data-design="hive"] *::before,
+  html[data-design="hive"] *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  html[data-design="hive"] .mt-button:active:not(:disabled),
+  html[data-design="hive"] nav[data-slot="calc-sidebar"] .mt-button:hover {
+    transform: none;
+  }
+}

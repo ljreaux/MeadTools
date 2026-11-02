@@ -263,8 +263,14 @@ export const traditionalDerivedGolden = {
     secondary: 0,
     total: 1.0000000001584255,
     primaryL: 3.785411784,
+    postLossPrimaryL: 3.785411784,
+    lossL: 0,
+    lossPercentage: 0,
     secondaryL: 0,
-    totalL: 3.785411784
+    totalL: 3.785411784,
+    secondaryLossL: 0,
+    secondaryLossPercentage: 0,
+    bottlingL: 3.785411784
   },
   alcohol: {
     abv: 13.77420412007451,
@@ -318,8 +324,14 @@ export const backsweetenedMetricDerivedGolden = {
     secondary: 0.75,
     total: 4.75,
     primaryL: 4,
+    postLossPrimaryL: 4,
+    lossL: 0,
+    lossPercentage: 0,
     secondaryL: 0.75,
-    totalL: 4.75
+    totalL: 4.75,
+    secondaryLossL: 0,
+    secondaryLossPercentage: 0,
+    bottlingL: 4.75
   },
   alcohol: {
     abv: 10.493586135756875,
@@ -373,8 +385,14 @@ export const emptyDerivedGolden = {
     secondary: 0,
     total: 0,
     primaryL: 0,
+    postLossPrimaryL: 0,
+    lossL: 0,
+    lossPercentage: 0,
     secondaryL: 0,
-    totalL: 0
+    totalL: 0,
+    secondaryLossL: 0,
+    secondaryLossPercentage: 0,
+    bottlingL: 0
   },
   alcohol: {
     abv: 0,

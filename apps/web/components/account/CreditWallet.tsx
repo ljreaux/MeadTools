@@ -149,6 +149,8 @@ export default function CreditWallet({
           </div>
           {wallet.isLoading ? (
             <Skeleton className="h-10 w-36" />
+          ) : !wallet.data ? (
+            <CardTitle className="text-4xl text-muted-foreground">—</CardTitle>
           ) : (
             <CardTitle
               className={cn(
@@ -266,7 +268,9 @@ function CreditActivityRow({ activity }: { activity: WalletActivity }) {
       : activity.kind === "purchase"
         ? t("credits.activityPurchase")
         : activity.kind === "grant"
-          ? t("credits.activityGrant")
+          ? activity.grantSource === "premium"
+            ? t("credits.activityPremiumGrant")
+            : t("credits.activityGrant")
           : activity.kind === "refund"
             ? t("credits.activityRefund")
             : t("credits.activityAdjustment");

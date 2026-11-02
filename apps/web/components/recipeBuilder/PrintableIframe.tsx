@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Download,
   LoaderCircle,
@@ -50,7 +51,7 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
     setZoomInput(bounded);
   };
 
-  return (
+  const viewer = (
     <div
       className={
         isFullscreen
@@ -59,7 +60,7 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
       }
       aria-busy={isGenerating}
     >
-      <div className="flex shrink-0 justify-end border-b bg-background p-1">
+      <div className="flex min-w-0 shrink-0 flex-wrap justify-end gap-2 border-b bg-background p-1">
         <ButtonGroup className="flex min-w-0 flex-nowrap">
           <Button
             type="button"
@@ -104,6 +105,9 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
             <Plus />
           </Button>
 
+        </ButtonGroup>
+
+        <ButtonGroup>
           <Button
             type="button"
             onClick={() => setIsFullscreen((fullscreen) => !fullscreen)}
@@ -183,6 +187,10 @@ const PrintableIframe: React.FC<PrintableIframeProps> = ({
       </div>
     </div>
   );
+
+  // Theme surfaces can establish containing blocks for fixed descendants.
+  // Fullscreen must be anchored to the viewport, outside those surfaces.
+  return isFullscreen ? createPortal(viewer, document.body) : viewer;
 };
 
 export default PrintableIframe;

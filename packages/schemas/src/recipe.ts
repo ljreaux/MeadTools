@@ -74,6 +74,16 @@ export const notesSchema = z.object({
   secondary: z.array(noteLineSchema)
 });
 
+export const recipeLossAdjustmentSchema = z.object({
+  enabled: z.boolean(),
+  mode: z.enum(["estimated", "manual"]),
+  percentage: z.number().finite().min(0).lt(100),
+  secondary: z.object({
+    enabled: z.boolean(),
+    percentage: z.number().finite().min(0).lt(100)
+  }).optional()
+});
+
 export const recipeDataV2Schema = z.object({
   version: z.literal(2),
   unitDefaults: recipeUnitDefaultsSchema,
@@ -83,6 +93,8 @@ export const recipeDataV2Schema = z.object({
   stabilizers: stabilizersSchema,
   notes: notesSchema,
   nutrients: nutrientDataV2Schema.optional(),
+  // Older recipes and brew snapshots intentionally have no loss setting.
+  lossAdjustment: recipeLossAdjustmentSchema.optional(),
   flags: z
     .object({
       advanced: z.boolean().optional(),

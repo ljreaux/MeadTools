@@ -46,6 +46,9 @@ export function evaluateNoteGate({
   labels,
   body,
   initialDraftChanged = false,
+  monthlyRelease = false,
+  monthlyDraftChanged = false,
+  monthlyDraft,
 }) {
   const changed = Object.entries(headEntries).filter(
     ([date, entry]) =>
@@ -64,6 +67,30 @@ export function evaluateNoteGate({
     return {
       ok: true,
       reason: `Dated release notes changed: ${changed.map(([date]) => date).join(", ")}.`,
+    };
+  }
+  if (monthlyRelease && monthlyDraftChanged) {
+    if (!labels.includes("release-ready")) {
+      return {
+        ok: false,
+        reason:
+          "Monthly draft awaits exact-SHA maintainer approval and release-ready.",
+      };
+    }
+    if (
+      !validEntry(monthlyDraft) ||
+      !Object.keys(monthlyDraft.products).some((key) => key !== "mobilePreview")
+    ) {
+      return {
+        ok: false,
+        reason:
+          "Monthly internal draft needs valid product notes for at least one shipped product.",
+      };
+    }
+    return {
+      ok: true,
+      reason:
+        "Reviewed monthly internal draft; publish dated notes only after production verification.",
     };
   }
   if (initialDraftChanged) {
@@ -119,11 +146,43 @@ if (
   const pr = event.pull_request;
   if (!pr || pr.base.ref !== "main")
     throw new Error("Expected a pull request into main.");
+  const monthlyRelease =
+    pr.head.ref === "preview" &&
+    pr.head.repo.full_name === pr.base.repo.full_name;
+  const monthlyDraftPath = (pr.body ?? "").match(
+    /^Release-note draft:\s*(docs\/releases\/\d{4}-(?:0[1-9]|1[0-2])\.json)\s*$/m,
+  )?.[1];
+  const monthlyDraftChanged = Boolean(
+    monthlyRelease &&
+      monthlyDraftPath &&
+      execFileSync(
+        "git",
+        [
+          "diff",
+          "--name-only",
+          pr.base.sha,
+          pr.head.sha,
+          "--",
+          monthlyDraftPath,
+        ],
+        { encoding: "utf8" },
+      ).trim(),
+  );
+  const monthlyDraft = monthlyDraftChanged
+    ? JSON.parse(
+        execFileSync("git", ["show", `${pr.head.sha}:${monthlyDraftPath}`], {
+          encoding: "utf8",
+        }),
+      )
+    : undefined;
   const result = evaluateNoteGate({
     baseEntries: readEntriesAt(pr.base.sha),
     headEntries: readEntriesAt(pr.head.sha),
     labels: pr.labels.map((label) => label.name),
     body: pr.body ?? "",
+    monthlyRelease,
+    monthlyDraftChanged,
+    monthlyDraft,
     initialDraftChanged:
       pr.head.ref === "preview" &&
       Boolean(

@@ -5,3 +5,4 @@ export * from "./nutrients";
 export * from "./numeric";
 export * from "./recipe";
 export * from "./temperature";
+export * from "./extra-calculators";

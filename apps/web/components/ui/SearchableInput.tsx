@@ -6,6 +6,7 @@ import React, {
   useState,
   KeyboardEvent,
   useMemo,
+  useId,
 } from "react";
 import { Search, X } from "lucide-react";
 import useSuggestions from "@/hooks/useSuggestions";
@@ -23,6 +24,8 @@ import {
 } from "@/components/ui/popover";
 
 type SearchableInputProps<T> = {
+  id?: string;
+  disabled?: boolean;
   items: T[];
   query: string; // canonical value from parent (DB/local state)
   setQuery: (val: string) => void;
@@ -41,6 +44,8 @@ type SearchableInputProps<T> = {
 };
 
 function SearchableInput<T extends Record<string, any>>({
+  id,
+  disabled = false,
   items,
   query,
   setQuery,
@@ -154,12 +159,14 @@ function SearchableInput<T extends Record<string, any>>({
     }
   };
 
-  const listboxId = "searchable-input-listbox";
+  const listboxId = useId();
 
   const inputGroup = (
     <InputGroup className="h-12">
       <InputGroupInput
         ref={inputRef}
+        id={id}
+        disabled={disabled}
         value={inputValue}
         onChange={(e) => {
           const val = e.target.value;
@@ -188,6 +195,7 @@ function SearchableInput<T extends Record<string, any>>({
             size="icon-xs"
             variant="ghost"
             className="rounded-full"
+            disabled={disabled}
             onClick={handleClearOrClose}
             aria-label={inputValue ? "Clear search" : "Close suggestions"}
           >

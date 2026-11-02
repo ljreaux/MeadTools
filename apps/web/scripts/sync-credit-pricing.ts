@@ -3,12 +3,14 @@ import {
   currentCreditFeePolicy,
   initialFireworksDeepseekV4FlashPricing,
   initialOpenAIGpt54MiniPricing,
+  initialOpenAIGpt56LunaPricing,
 } from "../lib/billing/credit-pricing";
 
 async function main() {
   for (const pricing of [
     initialFireworksDeepseekV4FlashPricing,
     initialOpenAIGpt54MiniPricing,
+    initialOpenAIGpt56LunaPricing,
   ]) {
     await prisma.credit_pricing_versions.upsert({
       where: {

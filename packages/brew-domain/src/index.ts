@@ -4,3 +4,4 @@ export * from "./projection";
 export * from "./overview";
 export * from "./timeline";
 export * from "./scaling";
+export * from "./yeast";

@@ -168,3 +168,38 @@ test("recipe schema accepts omitted optional nutrients and flags", () => {
   const { nutrients: _nutrients, flags: _flags, ...minimalRecipe } = recipe;
   assert.equal(recipeDataV2Schema.safeParse(minimalRecipe).success, true);
 });
+
+test("recipe loss remains optional and rejects invalid percentages", () => {
+  assert.equal(recipeDataV2Schema.safeParse(recipe).success, true);
+  assert.equal(recipeDataV2Schema.safeParse({
+    ...recipe,
+    lossAdjustment: { enabled: true, mode: "estimated", percentage: 53 }
+  }).success, true);
+  assert.equal(recipeDataV2Schema.safeParse({
+    ...recipe,
+    lossAdjustment: {
+      enabled: false,
+      mode: "manual",
+      percentage: 0,
+      secondary: { enabled: true, percentage: 20 }
+    }
+  }).success, true);
+
+  for (const percentage of [-1, 100, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.equal(recipeDataV2Schema.safeParse({
+      ...recipe,
+      lossAdjustment: { enabled: true, mode: "manual", percentage }
+    }).success, false);
+  }
+  for (const percentage of [-1, 100, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.equal(recipeDataV2Schema.safeParse({
+      ...recipe,
+      lossAdjustment: {
+        enabled: false,
+        mode: "manual",
+        percentage: 0,
+        secondary: { enabled: true, percentage }
+      }
+    }).success, false);
+  }
+});

@@ -14,7 +14,10 @@
     "@meadtools/brew-domain": "*",
     "@meadtools/recipe-workflows": "*",
     "@meadtools/wiki-knowledge": "*",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@meadtools/core": "*",
+    "@meadtools/schemas": "*",
+    "@meadtools/api-contract": "*"
   },
   "devDependencies": {
     "@types/node": "^20.17.14",

@@ -9,13 +9,16 @@ import {
   getCreditActivityPage,
 } from "@/lib/db/credit-history";
 import { verifyUser } from "@/lib/userAccessFunctions";
-import { areCreditPurchasesAvailable } from "@/lib/billing/credit-purchase-config";
+import { canUserPurchaseCredits } from "@/lib/billing/credit-purchase-config";
+import { getChatbotConfig } from "@/lib/ai/chat-config";
+import { getChatAccessStatus } from "@/lib/db/chat-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Return grouped prepaid-credit activity for the signed-in user's wallet.
+ * Grants identify Premium monthly allowances separately from beta allocations.
  * @params CreditActivityQuery
  * @response 200:CreditActivityResponse
  * @responseSet none
@@ -43,14 +46,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [balance, activity] = await Promise.all([
+    const [balance, activity, access] = await Promise.all([
       getCreditBalance(userId),
       getCreditActivityPage({ userId, ...parsed.data }),
+      getChatAccessStatus(userId),
     ]);
     return NextResponse.json(
       creditActivityResponseSchema.parse({
         availableCredits: balance.availableCredits,
-        purchasesEnabled: areCreditPurchasesAvailable(),
+        purchasesEnabled: canUserPurchaseCredits(
+          access.chatEnabled,
+          Boolean(getChatbotConfig()),
+        ),
         activities: activity.activities.map((item) => ({
           ...item,
           occurredAt: item.occurredAt.toISOString(),
