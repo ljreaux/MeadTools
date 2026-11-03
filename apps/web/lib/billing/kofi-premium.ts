@@ -116,7 +116,9 @@ export async function recordKofiSubscriptionPayment(
       });
       if (
         duplicate && ((duplicate.message_id === payment.messageId &&
-        duplicate.transaction_id === payment.transactionId) ||
+        duplicate.transaction_id === payment.transactionId &&
+        !duplicate.message_id.startsWith("kofi-csv:") &&
+        !payment.messageId.startsWith("kofi-csv:")) ||
         sameImportedKofiPayment(duplicate, payment, digest))
       ) {
         return applyStoredKofiPayment(duplicate, now);
