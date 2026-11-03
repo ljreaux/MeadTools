@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - preview
   workflow_dispatch:
 
 permissions:
@@ -15,7 +16,7 @@ concurrency:
 
 jobs:
   synchronize:
-    name: Fast-forward identical release branches
+    name: Synchronize reviewed release ancestry
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -31,42 +32,9 @@ jobs:
       - name: Check out repository history
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Safely synchronize branch ancestry
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git fetch origin main preview
-
-          main_sha="$(git rev-parse origin/main)"
-          preview_sha="$(git rev-parse origin/preview)"
-          main_tree="$(git rev-parse origin/main^{tree})"
-          preview_tree="$(git rev-parse origin/preview^{tree})"
-
-          if [[ "$main_sha" == "$preview_sha" ]]; then
-            echo "main and preview are already synchronized."
-            exit 0
-          fi
-
-          if [[ "$main_tree" != "$preview_tree" ]]; then
-            echo "::error::main and preview contain different files; refusing to synchronize."
-            exit 1
-          fi
-
-          if git merge-base --is-ancestor origin/preview origin/main; then
-            echo "Fast-forwarding preview to main."
-            git push origin "$main_sha:refs/heads/preview"
-            exit 0
-          fi
-
-          if git merge-base --is-ancestor origin/main origin/preview; then
-            echo "Preview already contains main with identical files; no production promotion is needed."
-            exit 0
-          fi
-
-          echo "::error::Branches have identical files but divergent ancestry; refusing to force-push."
-          exit 1
+        run: node scripts/sync-release-branches.mjs

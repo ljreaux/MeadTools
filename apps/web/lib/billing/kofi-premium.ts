@@ -20,6 +20,7 @@ import {
 import { escapeHtml, sendEmail } from "@/lib/db/emailHelpers";
 import prisma from "@/lib/prisma";
 import { publicAppOrigin } from "@/lib/public-origin";
+import { sameImportedKofiPayment } from "./kofi-import-identity";
 
 export class KofiPremiumUnavailableError extends Error {}
 export class KofiLinkConflictError extends Error {}
@@ -73,7 +74,9 @@ export async function recordKofiSubscriptionPayment(
     where: { message_id: payment.messageId }
   });
   if (existing) {
-    if (existing.transaction_id !== payment.transactionId) {
+    if (existing.transaction_id !== payment.transactionId ||
+        ((existing.message_id.startsWith("kofi-csv:") || payment.messageId.startsWith("kofi-csv:")) &&
+          !sameImportedKofiPayment(existing, payment, digest))) {
       throw new KofiLinkConflictError("Ko-fi event identity was reused.");
     }
     return applyStoredKofiPayment(existing, now);
@@ -112,8 +115,11 @@ export async function recordKofiSubscriptionPayment(
         }
       });
       if (
-        duplicate?.message_id === payment.messageId &&
-        duplicate.transaction_id === payment.transactionId
+        duplicate && ((duplicate.message_id === payment.messageId &&
+        duplicate.transaction_id === payment.transactionId &&
+        !duplicate.message_id.startsWith("kofi-csv:") &&
+        !payment.messageId.startsWith("kofi-csv:")) ||
+        sameImportedKofiPayment(duplicate, payment, digest))
       ) {
         return applyStoredKofiPayment(duplicate, now);
       }
