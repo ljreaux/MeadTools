@@ -131,6 +131,9 @@ export function BottlingInventoryReview({
     setDrafts((current) =>
       current.map((row) => (row.id === key ? { ...row, ...value } : row)),
     );
+  // A new bottling, or older packaging without linked output, has nothing to
+  // correct yet; describe adding its bottles rather than applying a difference.
+  const firstOutput = !source?.outputs.length;
   const needsConfirmation =
     mode === "reconcile" ||
     (kind === "edit" && !source?.outputs.length && track);
@@ -381,7 +384,11 @@ export function BottlingInventoryReview({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sync">
-                      {t("bottlingInventory.applyDifference")}
+                      {t(
+                        firstOutput
+                          ? "bottlingInventory.addOutput"
+                          : "bottlingInventory.applyDifference",
+                      )}
                     </SelectItem>
                     <SelectItem value="reconcile">
                       {t("bottlingInventory.reconcile")}
@@ -392,7 +399,9 @@ export function BottlingInventoryReview({
                   {t(
                     mode === "reconcile"
                       ? "bottlingInventory.reconcileHelp"
-                      : "bottlingInventory.differenceHelp",
+                      : firstOutput
+                        ? "bottlingInventory.addOutputHelp"
+                        : "bottlingInventory.differenceHelp",
                   )}
                 </p>
               </div>
@@ -594,6 +603,7 @@ export function BottlingInventoryReview({
                         {row.name} · {formatSize(row.size)}
                         <br />
                         {t("bottlingInventory.balanceLine", {
+                          count: before === undefined ? 0 : before + delta,
                           before: before === undefined ? "—" : number(before),
                           after:
                             before === undefined ? "—" : number(before + delta),

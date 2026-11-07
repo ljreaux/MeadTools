@@ -129,6 +129,7 @@ export function InventoryOrganizationSummary({
                 kind === "mead"
                   ? "inventory.meads.bottlesUnit"
                   : `inventory.units.${row.unit}`,
+                { count: row.quantity },
               )}
               {row.size ? ` (${formatStoredBottleSize({ size_liters: row.size, display_size: row.display_size }, i18n.language)})` : ""}
             </li>

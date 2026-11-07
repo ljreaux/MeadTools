@@ -1,6 +1,6 @@
 "use client";
 import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { validateAllocationTotal } from "@meadtools/inventory-domain";
@@ -179,7 +179,7 @@ function StockChoice({
         <SelectContent>
           {stocks.map((stock) => (
             <SelectItem key={stock.id} value={stock.id}>
-              {formatStoredBottleSize({ size_liters: stock.bottle_size_liters ?? 0, display_size: stock.display_size }, i18n.language)} · {stock.quantity.value} {t("inventory.meads.bottlesUnit")}
+              {formatStoredBottleSize({ size_liters: stock.bottle_size_liters ?? 0, display_size: stock.display_size }, i18n.language)} · {stock.quantity.value} {t("inventory.meads.bottlesUnit", { count: stock.quantity.value })}
             </SelectItem>
           ))}
         </SelectContent>
@@ -209,6 +209,11 @@ function CategoryEditor({
   const [query, setQuery] = useState("");
   const [fieldKey, setFieldKey] = useState(0);
   const id = useId();
+  // The field remounts after each selection to reset its text; keep keyboard
+  // focus there so several categories can be added in a row.
+  useEffect(() => {
+    if (fieldKey) document.getElementById(id)?.focus();
+  }, [fieldKey, id]);
   const choices =
     overview.data?.labels.filter((label) => !labels.includes(label.id)) ?? [];
   return (
@@ -369,6 +374,7 @@ function StorageEditor({
             snapshot.mead_id
               ? "inventory.meads.bottlesUnit"
               : `inventory.units.${snapshot.quantity.unit}`,
+            { count: snapshot.quantity.value },
           ),
         })}
       </p>
@@ -477,6 +483,7 @@ function StorageEditor({
             snapshot.mead_id
               ? "inventory.meads.bottlesUnit"
               : `inventory.units.${snapshot.quantity.unit}`,
+            { count: unlocated ?? 0 },
           ),
         })}
       </p>
@@ -530,6 +537,7 @@ function StorageHistory({ stock }: { stock: InventoryOrganizedStock }) {
                   stock.mead_id
                     ? "inventory.meads.bottlesUnit"
                     : `inventory.units.${change.unit}`,
+                  { count: Math.abs(change.delta) },
                 )}{" "}
                 ·{" "}
                 {t(
