@@ -141,6 +141,14 @@ export function PackagedStagePanel({
   const locale = i18n.resolvedLanguage;
 
   React.useEffect(() => {
+    if (!latestPackaging) return;
+    // A backdated new session may return to a different, newer saved session.
+    // Hydrate its metadata together with the volume and bottle rows below.
+    setDatetime(new Date(latestPackaging.datetime ?? Date.now()));
+    setNote(latestPackaging.note ?? "");
+  }, [latestPackaging?.id]);
+
+  React.useEffect(() => {
     if (latestPackagingData?.packagedVolumeLiters) {
       const savedDisplayUnit = latestPackagingData.displayUnit;
       const useGallons = savedDisplayUnit === "gal";
@@ -276,7 +284,6 @@ export function PackagedStagePanel({
           }),
         );
       }
-      setNote(packagingInput.note ?? "");
     } catch (error) {
       reportBrewInventoryError(error, t);
     } finally {
