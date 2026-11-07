@@ -24,6 +24,7 @@
     "db:seed": "prisma db seed",
     "db:sync-credit-pricing": "node --env-file-if-exists=.env.local --import tsx scripts/sync-credit-pricing.ts",
     "db:seed:chat-test-data": "tsx prisma/seed-chat-test-data.ts",
+    "db:seed:mcp-public": "node --conditions=react-server --import tsx scripts/seed-mcp-public-local.mjs",
     "premium:kofi:test": "node --env-file=.env.local --import tsx scripts/send-kofi-local-test.ts",
     "test:brew-images-postgres": "node --conditions=react-server --import tsx scripts/verify-brew-images-postgres.mjs"
   },

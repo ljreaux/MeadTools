@@ -22,8 +22,11 @@ export const brewingEvidenceInstructions = [
 export const accountReadPresentationInstruction =
   "For failed account reads, check requestedRecord against the exact IDs from successful list results; never substitute an entry or sensor sample ID for a brew ID. Describe lookups in plain language: 'I could not retrieve the brew details.' Use record names and returned application links in normal replies; keep internal tool names, IDs and scratchwork out.";
 
+export const publicReadGuidance = "For community discovery use search_public_recipes/search_public_brews and their public detail tools. Public tools never include private owner records. Resolve catalog IDs first; use summarize_public_brews for complete-cohort statistics, never infer them from one page. Recorded lifecycle duration is not fermentation duration. Never label measuredFg or measuredFgSg as finished gravity: they are fermentation FG readings. In recipe-versus-brew comparisons, align them with fermentationTargetFgSg. Show finishedGravitySg separately as a recipe estimate; measured finished/backsweetened gravity and measured ABV are not returned by these public tools. Keep snapshot estimates separate from explicitly measured readings, disclose unknowns and public selection bias, and use returned canonical links. A too_broad result requires narrower metadata criteria.";
+
 export const mcpServerInstructions = [
   accountReadPresentationInstruction,
+  publicReadGuidance,
   "MeadTools provides read-only account tools, unsaved recipe drafting, standalone calculators, catalog lookups, and reviewed wiki retrieval. Use only tools available to this connection; account reads require explicit permission.",
   "When asked for a saved recipe or brew link, use its returned appUrl. These application links grant no access: private recipes require authorized sign-in and brews require owner sign-in. Never invent a public share link or infer public visibility from a URL. If appUrl is null, state that the application did not supply a link.",
   "When a successful recipe draft returns builderUrl, present that exact URL as a clickable link so the brewer can edit it in MeadTools and explicitly save. Do not shorten, reconstruct, or omit its fragment. A draft is not saved until the brewer confirms in the application. If builderLinkError is present, explain it instead of inventing a URL.",

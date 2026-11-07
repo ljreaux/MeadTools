@@ -5,7 +5,9 @@ import {
   isExplicitlyUnrelatedBrewingRequest,
   brewActionTargetFromAccountRead,
   isMcpAccountReadTool,
+  isPublicReadTool,
   type AccountReadAdapter,
+  type PublicReadAdapter,
   hostedAgentToolDefinitions,
   type AdditiveLookup,
   type IngredientLookup,
@@ -174,6 +176,7 @@ export async function runChatTurn(options: {
   additiveLookup?: AdditiveLookup;
   yeastLookup?: YeastLookup;
   accountReadAdapter?: AccountReadAdapter;
+  publicReadAdapter?: PublicReadAdapter;
   wikiFetcher?: WikiFetcher;
   onEvent?: (event: ChatTurnEvent) => void;
   /** Called immediately before every provider dispatch. Must fail closed. */
@@ -252,6 +255,7 @@ export async function runChatTurn(options: {
       toolCalls < options.maxToolCalls
         ? hostedAgentToolDefinitions
             .filter((tool) => !isMcpAccountReadTool(tool.name) || options.accountReadAdapter)
+            .filter((tool) => !isPublicReadTool(tool.name) || options.publicReadAdapter)
             .map(({ name, description, parameters }) => ({
               type: "function" as const,
               function: { name, description, parameters },
@@ -322,6 +326,7 @@ export async function runChatTurn(options: {
         call,
         activeRecipeData,
         accountReadAdapter: options.accountReadAdapter,
+        publicReadAdapter: options.publicReadAdapter,
         brewActionTarget,
         ingredientLookup: options.ingredientLookup,
         additiveLookup: options.additiveLookup,
@@ -378,6 +383,7 @@ async function executeToolCall(options: {
   call: ChatToolCall;
   activeRecipeData: RecipeDataV2 | undefined;
   accountReadAdapter: AccountReadAdapter | undefined;
+  publicReadAdapter: PublicReadAdapter | undefined;
   brewActionTarget: ReturnType<typeof brewActionTargetFromAccountRead>;
   ingredientLookup: IngredientLookup | undefined;
   additiveLookup: AdditiveLookup | undefined;
@@ -448,6 +454,7 @@ async function executeToolCall(options: {
     yeastLookup: options.yeastLookup,
     brewActionTarget: options.brewActionTarget,
     accountReadAdapter: options.accountReadAdapter,
+    publicReadAdapter: options.publicReadAdapter,
   });
   return { execution, recipeDraftInput: validatedRecipeDraftInput };
 }

@@ -4,7 +4,10 @@ Seven read-only tools require explicit `mcp:account:read` alongside `mcp:tools`.
 Authentication, premium access and payment restrictions run before the server
 is created. Discovery and direct invocation both enforce the grant. Existing
 credentials retain seven public/stateless tools; an opted-in connection sees
-fourteen. There are no owner/user arguments and no mutation adapter methods.
+fourteen. These original counts exclude standalone calculators and the five
+[public discovery tools](mcp-public-reads.md), which use independent public-only
+projections and do not require account-read consent. There are no owner/user
+arguments and no mutation adapter methods.
 
 | Tool                | Arguments                                                                               | Result                                                                                                                                 |
 | ------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
