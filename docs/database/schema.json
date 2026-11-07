@@ -1,7 +1,7 @@
 {
   "fingerprint": {
-    "schema": "81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a",
-    "migrations": "e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7"
+    "schema": "9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e",
+    "migrations": "e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980"
   },
   "migrations": [
     {
@@ -171,6 +171,10 @@
     {
       "name": "20261107020000_add_bottling_production",
       "sha256": "757759eddeb6a50fdc0c7c259747a8728d7845eab3c24bd2c578d7b5fb0f689f"
+    },
+    {
+      "name": "20261107193000_recipe_and_brew_covers",
+      "sha256": "c7bfb2aa9c8ded3743530bdc39054399e7acd4f789dc00834910f45e2b4541d3"
     }
   ],
   "models": [
@@ -857,7 +861,39 @@
           "column": "original_brew_id",
           "type": "String",
           "nativeType": "Uuid",
-          "nullable": false,
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "recipe_id",
+          "column": "recipe_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "brew_images_recipe"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "original_recipe_id",
+          "column": "original_recipe_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": true,
           "list": false,
           "enum": false,
           "primary": false,
@@ -1146,6 +1182,7 @@
         ]
       ],
       "indexes": [
+        "@@index([recipe_id, status])",
         "@@index([user_id, status])",
         "@@index([brew_id, status])",
         "@@index([entry_id, status])",
@@ -1352,6 +1389,23 @@
           "uniqueGroups": []
         },
         {
+          "name": "cover_image_id",
+          "column": "cover_image_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "brews_cover_image"
+          ],
+          "uniqueGroups": []
+        },
+        {
           "name": "stage",
           "column": "stage",
           "type": "brew_stage",
@@ -1442,6 +1496,7 @@
         ]
       ],
       "indexes": [
+        "@@index([cover_image_id])",
         "@@unique([id, user_id])",
         "@@index([user_id, start_date])",
         "@@index([recipe_id])"
@@ -10994,6 +11049,23 @@
           "documentation": null,
           "foreignKeys": [],
           "uniqueGroups": []
+        },
+        {
+          "name": "cover_image_id",
+          "column": "cover_image_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "recipes_cover_image"
+          ],
+          "uniqueGroups": []
         }
       ],
       "primaryKey": [
@@ -11004,7 +11076,9 @@
           "id"
         ]
       ],
-      "indexes": []
+      "indexes": [
+        "@@index([cover_image_id])"
+      ]
     },
     {
       "name": "Session",
@@ -11680,7 +11754,7 @@
       "id": "brew_images_brew",
       "child": "brew_images",
       "parent": "brews",
-      "name": "brew_imagesTobrews",
+      "name": "BrewImages",
       "from": [
         "brew_id"
       ],
@@ -11709,6 +11783,22 @@
       "onUpdate": "Cascade (Prisma default)"
     },
     {
+      "id": "brew_images_recipe",
+      "child": "brew_images",
+      "parent": "recipes",
+      "name": "RecipeImages",
+      "from": [
+        "recipe_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "SetNull",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
       "id": "brew_images_user",
       "child": "brew_images",
       "parent": "users",
@@ -11722,6 +11812,22 @@
       "parentCardinality": "1",
       "childCardinality": "0..N",
       "onDelete": "NoAction",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "brews_cover_image",
+      "child": "brews",
+      "parent": "brew_images",
+      "name": "BrewCover",
+      "from": [
+        "cover_image_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "SetNull",
       "onUpdate": "Cascade (Prisma default)"
     },
     {
@@ -12886,6 +12992,22 @@
       "parentCardinality": "1",
       "childCardinality": "0..N",
       "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "recipes_cover_image",
+      "child": "recipes",
+      "parent": "brew_images",
+      "name": "RecipeCover",
+      "from": [
+        "cover_image_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "0..1",
+      "childCardinality": "0..N",
+      "onDelete": "SetNull",
       "onUpdate": "Cascade (Prisma default)"
     },
     {

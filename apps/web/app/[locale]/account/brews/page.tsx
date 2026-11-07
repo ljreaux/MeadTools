@@ -332,6 +332,7 @@ export default function AccountBrews() {
           <BrewList
             brews={pageData}
             detailHref={(brewId) => `/account/brews/${brewId}`}
+            showCovers
             loading={isLoading}
             loadingRows={pageSize}
             sort={sort}

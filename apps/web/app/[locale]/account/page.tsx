@@ -1,5 +1,6 @@
 "use client";
 
+import { CoverThumbnail } from "@/components/brews/RecordCover";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -425,9 +426,21 @@ const RecipeCard = ({
           <Trash2 />
         </LoadingButton>
 
-        <CardTitle className="text-base leading-snug text-center line-clamp-2 px-7">
-          {recipe.name}
-        </CardTitle>
+        <div className="flex items-center justify-center gap-3 px-7">
+          <CoverThumbnail
+            id={String(recipe.id)}
+            target="recipes"
+            coverId={recipe.cover_image_id ?? null}
+          />
+          <CardTitle
+            className={cn(
+              "min-w-0 break-words text-base leading-snug line-clamp-2",
+              recipe.cover_image_id ? "text-left" : "text-center"
+            )}
+          >
+            {recipe.name}
+          </CardTitle>
+        </div>
       </CardHeader>
 
       <CardContent className="p-3 pt-0">

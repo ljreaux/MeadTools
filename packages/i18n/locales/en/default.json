@@ -3240,7 +3240,7 @@
       "IMAGE_TOO_LARGE": "This photo is too large. Choose a smaller photo (up to 20 MiB and 40 megapixels).",
       "QUOTA_EXCEEDED": "Your 250 MiB storage allowance is full. Remove photos and allow cleanup to finish before trying again.",
       "BREW_IMAGE_LIMIT": "This brew already has 20 photos, including uploads or photos awaiting cleanup.",
-      "PREMIUM_REQUIRED": "An active premium membership is required to upload new photos.",
+      "PREMIUM_REQUIRED": "Premium is required to upload photos or choose a cover.",
       "NOT_FOUND": "This photo or brew is no longer available.",
       "UPLOAD_IN_PROGRESS": "An upload is still processing or awaiting cleanup. Retry in about 15 minutes.",
       "OPERATION_CONFLICT": "This upload has changed or was removed. Choose the photo again.",
@@ -3255,7 +3255,8 @@
     "brewPhoto": "Brew photo",
     "entryPhoto": "Entry photo",
     "uploadingPhoto": "Uploading photo {{current}} of {{total}}",
-    "selectedPhotoAlt": "Preview of {{name}}"
+    "selectedPhotoAlt": "Preview of {{name}}",
+    "unavailablePhoto": "Photo unavailable"
   },
   "bottlingInventory": {
     "title": "Review bottling",
@@ -3321,5 +3322,26 @@
     "sourceRemoved": "Source record removed",
     "noRows": "Finished output comes from bottle counts. No bottle rows are entered for this save.",
     "producedBottles": "Produced bottles to link"
+  },
+  "coverImages": {
+    "title": "Cover image",
+    "add": "Add cover image",
+    "change": "Change cover image",
+    "view": "View cover image",
+    "remove": "Remove cover",
+    "usePhoto": "Use as cover",
+    "selected": "Current cover",
+    "upload": "Upload photo",
+    "recipeDescription": "Shown across the recipe page. A new upload becomes the cover; earlier photos are kept.",
+    "brewDescription": "Shown across the brew page. Choose any brew or entry photo, or upload a new one.",
+    "publicNotice": "Covers on public records are visible to everyone.",
+    "premiumRequired": "Choosing or uploading a cover requires Premium. You can still remove the current cover.",
+    "premiumLink": "Explore Premium",
+    "emptyUpload": "No photos yet. Upload one to use as the cover.",
+    "photoNumber": "Photo {{number}}",
+    "recipePhoto": "Recipe photo",
+    "recipeLimits": "JPEG, PNG or WebP, up to 20 MiB. Photos are resized automatically. Up to 20 photos per recipe.",
+    "recipeLimit": "This recipe already has 20 photos, including uploads or photos awaiting cleanup.",
+    "recipeRemoveDescription": "The photo will be removed from this recipe. This cannot be undone."
   }
 }

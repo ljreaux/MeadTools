@@ -5,6 +5,7 @@ import {
   BREW_IMAGE_LIMITS as limits,
   BrewImageError,
   canReadBrewImage,
+  canReadRecipeImage,
   checkBrewImageAllowance,
   projectBrewImage,
 } from "@meadtools/brew-domain/images";
@@ -50,6 +51,22 @@ export async function queueBrewImageRemoval(
   tx: Tx,
   where: Prisma.brew_imagesWhereInput,
 ) {
+  // A cover must always reference a live image, so list cover_image_id hints stay truthful.
+  const doomed = await tx.brew_images.findMany({
+    where: { ...where, status: { in: hidden } },
+    select: { id: true },
+  });
+  const ids = doomed.map((image) => image.id);
+  if (ids.length) {
+    await tx.brews.updateMany({
+      where: { cover_image_id: { in: ids } },
+      data: { cover_image_id: null },
+    });
+    await tx.recipes.updateMany({
+      where: { cover_image_id: { in: ids } },
+      data: { cover_image_id: null },
+    });
+  }
   await tx.brew_images.updateMany({
     where: { ...where, status: { in: hidden } },
     data: {
@@ -63,22 +80,59 @@ export async function queueBrewImageRemoval(
 
 export function createBrewImageService(
   options: {
+    target?: "brew" | "recipe";
     database?: PrismaClient;
     storage?: () => BrewImageStorage;
     configured?: () => boolean;
     normalize?: typeof normalizeBrewImage;
   } = {},
 ) {
+  const recipeTarget = options.target === "recipe";
+  const parentWhere = (id: string) =>
+    recipeTarget ? { recipe_id: Number(id) } : { brew_id: id };
+  const originalWhere = (id: string) =>
+    recipeTarget
+      ? { original_recipe_id: Number(id) }
+      : { original_brew_id: id };
+  async function ownedParent(tx: Tx, userId: number, id: string) {
+    if (!recipeTarget) return ownedBrew(tx, userId, id);
+    const rows = await tx.$queryRaw<
+      Array<{ id: number }>
+    >`SELECT id FROM recipes WHERE id = ${Number(id)} AND user_id = ${userId} FOR UPDATE`;
+    if (!rows.length) throw new BrewImageError("NOT_FOUND");
+  }
   const db = options.database ?? prisma;
   const storage = options.storage ?? createR2ImageStorage;
   const configured = options.configured ?? isBrewImageStorageConfigured;
   const normalize = options.normalize ?? normalizeBrewImage;
 
   async function access(brewId: string, userId?: number) {
+    if (recipeTarget) {
+      const recipe = await db.recipes.findUnique({
+        where: { id: Number(brewId) },
+        select: {
+          user_id: true,
+          private: true,
+          cover_image_id: true,
+          users: { select: { active: true } },
+        },
+      });
+      if (
+        !recipe ||
+        !canReadRecipeImage({
+          activeOwner: Boolean(recipe.users?.active),
+          ownsRecipe: recipe.user_id === userId,
+          recipePublic: recipe.private === false,
+        })
+      )
+        throw new BrewImageError("NOT_FOUND");
+      return recipe;
+    }
     const brew = await db.brews.findUnique({
       where: { id: brewId },
       select: {
         user_id: true,
+        cover_image_id: true,
         public: true,
         recipes: { select: { private: true } },
         users: { select: { active: true } },
@@ -100,7 +154,12 @@ export function createBrewImageService(
   async function list(brewId: string, userId?: number) {
     const brew = await access(brewId, userId);
     const images = await db.brew_images.findMany({
-      where: { brew_id: brewId, status: "ready", ...readableImages },
+      where: {
+        ...parentWhere(brewId),
+        status: "ready",
+        removed: false,
+        ...readableImages,
+      },
       include: entryInclude,
       orderBy: [{ created_at: "asc" }, { id: "asc" }],
     });
@@ -138,6 +197,8 @@ export function createBrewImageService(
       .update(
         JSON.stringify({
           brewId,
+          ...(recipeTarget ? { target: "recipe" } : {}),
+          ...(input.set_as_cover ? { setAsCover: true } : {}),
           entryId: input.entry_id ?? null,
           contentType: input.content_type,
           caption: input.caption,
@@ -147,7 +208,7 @@ export function createBrewImageService(
       .digest("hex");
     const reservation = await db.$transaction(async (tx) => {
       await lockAccount(tx, userId);
-      await ownedBrew(tx, userId, brewId);
+      await ownedParent(tx, userId, brewId);
       const status = await getPremiumAccessStatus(userId, new Date(), tx);
       if (!status.premiumEnabled) throw new BrewImageError("PREMIUM_REQUIRED");
       const previous = await tx.brew_images.findUnique({
@@ -157,7 +218,9 @@ export function createBrewImageService(
       if (previous) {
         if (
           previous.user_id !== userId ||
-          previous.original_brew_id !== brewId ||
+          (recipeTarget
+            ? previous.original_recipe_id !== Number(brewId)
+            : previous.original_brew_id !== brewId) ||
           previous.request_hash !== hash ||
           previous.removed ||
           (previous.status === "ready" &&
@@ -170,6 +233,8 @@ export function createBrewImageService(
         if (previous.status !== "failed")
           throw new BrewImageError("UPLOAD_IN_PROGRESS");
       }
+      if (recipeTarget && input.entry_id)
+        throw new BrewImageError("INVALID_IMAGE");
       if (input.entry_id) {
         const entry = await tx.brew_entries.findFirst({
           where: { id: input.entry_id, brew_id: brewId },
@@ -184,6 +249,7 @@ export function createBrewImageService(
           status: true,
           reserved_bytes: true,
           brew_id: true,
+          recipe_id: true,
           attempts: true,
           created_at: true,
           updated_at: true,
@@ -194,7 +260,10 @@ export function createBrewImageService(
           .filter((r) => charged.includes(r.status))
           .reduce((n, r) => n + r.reserved_bytes, 0),
         brewCount: rows.filter(
-          (r) => r.brew_id === brewId && charged.includes(r.status),
+          (r) =>
+            (recipeTarget
+              ? r.recipe_id === Number(brewId)
+              : r.brew_id === brewId) && charged.includes(r.status),
         ).length,
         pendingCount: rows.filter((r) => r.status === "pending").length,
         // Conservatively count all attempts on any record touched in the last day.
@@ -202,8 +271,10 @@ export function createBrewImageService(
           .filter((r) => r.updated_at.getTime() > Date.now() - 86_400_000)
           .reduce((n, r) => n + r.attempts, 0),
       });
-      const entryId = input.entry_id ?? input.operation_id;
-      if (!input.entry_id) {
+      const entryId = recipeTarget
+        ? null
+        : (input.entry_id ?? input.operation_id);
+      if (!recipeTarget && entryId && !input.entry_id) {
         // A direct brew photo uses a dedicated hidden NOTE; retries reuse its stable ID.
         const collision = await tx.brew_entries.findUnique({
           where: { id: entryId },
@@ -227,10 +298,10 @@ export function createBrewImageService(
             },
           });
       }
-      const prefix = `${brewImageStorageEnvironment()}/brews/${brewId}/${input.operation_id}/${randomUUID()}`;
+      const prefix = `${brewImageStorageEnvironment()}/${recipeTarget ? "recipes" : "brews"}/${brewId}/${input.operation_id}/${randomUUID()}`;
       const data = {
-        brew_id: brewId,
-        original_brew_id: brewId,
+        ...parentWhere(brewId),
+        ...originalWhere(brewId),
         entry_id: entryId,
         original_entry_id: entryId,
         user_id: userId,
@@ -264,14 +335,15 @@ export function createBrewImageService(
       await store.put(record.thumbnail_key, output.thumbnail);
       const saved = await db.$transaction(async (tx) => {
         await lockAccount(tx, userId);
-        await ownedBrew(tx, userId, brewId);
+        await ownedParent(tx, userId, brewId);
         const entryExists =
           record.entry_id &&
           (await tx.brew_entries.findFirst({
             where: { id: record.entry_id, brew_id: brewId },
             select: { id: true },
           }));
-        if (!entryExists) throw new BrewImageError("NOT_FOUND");
+        if (!recipeTarget && !entryExists)
+          throw new BrewImageError("NOT_FOUND");
         const status = await getPremiumAccessStatus(userId, new Date(), tx);
         if (!status.premiumEnabled)
           throw new BrewImageError("PREMIUM_REQUIRED");
@@ -291,6 +363,16 @@ export function createBrewImageService(
           },
         });
         if (!updated.count) throw new BrewImageError("OPERATION_CONFLICT");
+        if (recipeTarget)
+          await tx.recipes.update({
+            where: { id: Number(brewId) },
+            data: { cover_image_id: record.id },
+          });
+        else if (input.set_as_cover)
+          await tx.brews.update({
+            where: { id: brewId },
+            data: { cover_image_id: record.id },
+          });
         return tx.brew_images.findUniqueOrThrow({
           where: { id: record.id },
           include: entryInclude,
@@ -320,13 +402,14 @@ export function createBrewImageService(
   ) {
     return db.$transaction(async (tx) => {
       await lockAccount(tx, userId);
-      await ownedBrew(tx, userId, brewId);
+      await ownedParent(tx, userId, brewId);
       const image = await tx.brew_images.findFirst({
         where: {
           id: imageId,
           user_id: userId,
-          brew_id: brewId,
+          ...parentWhere(brewId),
           status: "ready",
+          removed: false,
         },
       });
       if (!image) throw new BrewImageError("NOT_FOUND");
@@ -341,11 +424,19 @@ export function createBrewImageService(
   async function remove(userId: number, brewId: string, imageId: string) {
     await db.$transaction(async (tx) => {
       await lockAccount(tx, userId);
-      await ownedBrew(tx, userId, brewId);
+      await ownedParent(tx, userId, brewId);
       const image = await tx.brew_images.findFirst({
-        where: { id: imageId, user_id: userId, original_brew_id: brewId },
+        where: { id: imageId, user_id: userId, ...originalWhere(brewId) },
       });
       if (!image) throw new BrewImageError("NOT_FOUND");
+      await tx.brews.updateMany({
+        where: { cover_image_id: imageId },
+        data: { cover_image_id: null },
+      });
+      await tx.recipes.updateMany({
+        where: { cover_image_id: imageId },
+        data: { cover_image_id: null },
+      });
       if (["deleted", "failed"].includes(image.status)) {
         await tx.brew_images.update({
           where: { id: image.id },
@@ -372,8 +463,9 @@ export function createBrewImageService(
     const image = await db.brew_images.findFirst({
       where: {
         id: imageId,
-        brew_id: brewId,
+        ...parentWhere(brewId),
         status: "ready",
+        removed: false,
         ...readableImages,
       },
     });
@@ -398,7 +490,8 @@ export function createBrewImageService(
           {
             status: "ready",
             OR: [
-              { brew_id: null },
+              { original_brew_id: { not: null }, brew_id: null },
+              { original_recipe_id: { not: null }, recipe_id: null },
               { user: { active: false } },
               { original_entry_id: { not: null }, entry_id: null },
             ],
@@ -432,7 +525,7 @@ export function createBrewImageService(
               select: { active: true },
             });
             if (
-              row.brew_id &&
+              (row.brew_id || row.recipe_id) &&
               owner?.active &&
               (!row.original_entry_id || row.entry_id)
             )
@@ -497,7 +590,68 @@ export function createBrewImageService(
     });
     return { cleaned, failed };
   }
-  return { list, upload, update, remove, signedRead, cleanup };
+  async function cover(brewId: string, userId?: number) {
+    const parent = await access(brewId, userId);
+    const image = parent.cover_image_id
+      ? await db.brew_images.findFirst({
+          where: {
+            id: parent.cover_image_id,
+            ...parentWhere(brewId),
+            status: "ready",
+            removed: false,
+            ...readableImages,
+          },
+          include: entryInclude,
+        })
+      : null;
+    const status =
+      userId !== undefined && parent.user_id === userId
+        ? await getPremiumAccessStatus(userId, new Date(), db)
+        : null;
+    return {
+      image: image ? projectBrewImage(image) : null,
+      can_set: Boolean(status?.premiumEnabled),
+    };
+  }
+  async function setCover(
+    userId: number,
+    brewId: string,
+    imageId: string | null,
+  ) {
+    await db.$transaction(async (tx) => {
+      await lockAccount(tx, userId);
+      await ownedParent(tx, userId, brewId);
+      // Owners retain removal after expiry, but selecting/replacing requires premium.
+      if (imageId) {
+        const status = await getPremiumAccessStatus(userId, new Date(), tx);
+        if (!status.premiumEnabled)
+          throw new BrewImageError("PREMIUM_REQUIRED");
+        const image = await tx.brew_images.findFirst({
+          where: {
+            id: imageId,
+            user_id: userId,
+            ...parentWhere(brewId),
+            status: "ready",
+            removed: false,
+            ...readableImages,
+          },
+        });
+        if (!image) throw new BrewImageError("NOT_FOUND");
+      }
+      if (recipeTarget)
+        await tx.recipes.update({
+          where: { id: Number(brewId) },
+          data: { cover_image_id: imageId },
+        });
+      else
+        await tx.brews.update({
+          where: { id: brewId },
+          data: { cover_image_id: imageId },
+        });
+    });
+    return cover(brewId, userId);
+  }
+  return { list, upload, update, remove, signedRead, cleanup, cover, setCover };
 }
 
 export type BrewImageRecord = brew_images;

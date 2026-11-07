@@ -38,6 +38,7 @@ export type RecipeApiResponse = {
   averageRating: number | null;
   commentCount: number;
   activityEmailsEnabled: boolean;
+  cover_image_id?: string | null;
 };
 
 type RecipeResponse = { recipe: RecipeApiResponse };

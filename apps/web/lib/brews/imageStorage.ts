@@ -57,7 +57,7 @@ export function createR2ImageStorage(): BrewImageStorage {
   });
   function checkKey(key: string) {
     // The bucket is shared by local/Preview, but their object namespaces are not.
-    if (!key.startsWith(`${environment}/brews/`))
+    if (!key.startsWith(`${environment}/brews/`) && !key.startsWith(`${environment}/recipes/`))
       throw new BrewImageError("STORAGE_UNAVAILABLE");
   }
   return {

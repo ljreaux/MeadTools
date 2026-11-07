@@ -1,5 +1,6 @@
 "use client";
 
+import { CoverThumbnail } from "./RecordCover";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -28,6 +29,7 @@ export type BrewListDisplayItem = {
   recipe_name: string | null;
   entry_count: number;
   owner?: { displayName: string } | null;
+  cover_image_id?: string | null;
 };
 
 export type BrewListSortKey = "start_date" | "end_date";
@@ -37,6 +39,7 @@ export function BrewList({
   brews,
   detailHref,
   recipeHref = (recipeId) => `/recipes/${recipeId}`,
+  showCovers = false,
   loading = false,
   loadingRows = 10,
   showOwner = false,
@@ -49,6 +52,8 @@ export function BrewList({
   brews: BrewListDisplayItem[];
   detailHref: (brewId: string) => string;
   recipeHref?: (recipeId: number) => string;
+  /** Owner lists only: covers are read with the owner's credentials. */
+  showCovers?: boolean;
   loading?: boolean;
   loadingRows?: number;
   showOwner?: boolean;
@@ -64,6 +69,8 @@ export function BrewList({
     timeStyle: "short"
   });
   const formatDate = (date: string | Date) => formatter.format(new Date(date));
+  // Reserve a thumbnail column only when at least one listed brew has a cover.
+  const coverColumn = showCovers && brews.some((brew) => brew.cover_image_id);
   const columnCount =
     6 +
     (showOwner ? 1 : 0) +
@@ -136,13 +143,24 @@ export function BrewList({
             brews.map((brew) => (
               <TableRow key={brew.id}>
                 <TableCell className="sticky left-0 z-10 max-w-64 border-r bg-card font-medium">
-                  <Link
-                    href={detailHref(brew.id)}
-                    className="block truncate underline underline-offset-4"
-                    title={brew.name || brew.id}
-                  >
-                    {brew.name || brew.id}
-                  </Link>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {coverColumn ? (
+                      <CoverThumbnail
+                        id={brew.id}
+                        target="brews"
+                        size="sm"
+                        coverId={brew.cover_image_id ?? null}
+                        placeholder
+                      />
+                    ) : null}
+                    <Link
+                      href={detailHref(brew.id)}
+                      className="min-w-0 truncate underline underline-offset-4"
+                      title={brew.name || brew.id}
+                    >
+                      {brew.name || brew.id}
+                    </Link>
+                  </div>
                 </TableCell>
                 {showOwner ? (
                   <TableCell className="whitespace-nowrap">

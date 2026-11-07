@@ -1,3 +1,4 @@
+import { CoverBanner, CoverThumbnail } from "@/components/brews/RecordCover";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { buttonVariants } from "../ui/button";
@@ -48,6 +49,8 @@ function PublicRecipe({
   const { t } = useTranslation();
   const { id } = useParams();
   const { data: publicBrews = [] } = usePublicRecipeBrews(id as string);
+  // Reserve a thumbnail column only when at least one brew has a cover.
+  const hasBrewCovers = publicBrews.some((brew) => brew.cover_image_id);
   const {
     derived: { nutrientValueForRecipe },
     meta: { setNutrients }
@@ -71,7 +74,7 @@ function PublicRecipe({
             <CreateBrewButton recipeId={recipe.id} recipeName={recipe.name} />
           ) : null}
         </div>
-        <h1 className="text-3xl text-center">{recipe.name}</h1>
+        <h1 className="break-words text-3xl text-center">{recipe.name}</h1>
 
         <p className="w-full text-right">
           {t("byUser", {
@@ -84,6 +87,12 @@ function PublicRecipe({
           numberOfRatings={recipe.numberOfRatings ?? 0}
         />
         {capabilities.canRate ? <RateRecipe userRating={userRating} /> : null}
+        <CoverBanner
+          id={String(recipe.id)}
+          target="recipes"
+          publicView
+          coverId={recipe.cover_image_id}
+        />
         <NutrientProvider
           mode="controlled"
           value={nutrientValueForRecipe}
@@ -115,17 +124,29 @@ function PublicRecipe({
                   key={brew.id}
                   className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">
-                      {brew.name || brew.id}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {t(`brewStage.${brew.stage}`, brew.stage)}
-                      {brew.owner?.displayName
-                        ? ` · ${t("byUser", {
-                            public_username: brew.owner.displayName
-                          })}`
-                        : ""}
+                  <div className="flex min-w-0 items-center gap-3">
+                    {hasBrewCovers ? (
+                      <CoverThumbnail
+                        id={brew.id}
+                        target="brews"
+                        publicView
+                        size="sm"
+                        coverId={brew.cover_image_id}
+                        placeholder
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">
+                        {brew.name || brew.id}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {t(`brewStage.${brew.stage}`, brew.stage)}
+                        {brew.owner?.displayName
+                          ? ` · ${t("byUser", {
+                              public_username: brew.owner.displayName
+                            })}`
+                          : ""}
+                      </div>
                     </div>
                   </div>
                   <Link

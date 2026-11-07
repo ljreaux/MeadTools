@@ -31,6 +31,7 @@ export const createBrewImageRequestBodySchema = z
   .object({
     operation_id: z.string().uuid(),
     entry_id: z.string().uuid().optional(),
+    set_as_cover: z.boolean().optional(),
     caption: z.string().trim().max(500).default(""),
     content_type: z.enum(["image/jpeg", "image/png", "image/webp"]),
     base64: z
@@ -78,3 +79,25 @@ export const brewImageErrorResponseSchema = z.object({
     "RATE_LIMITED",
   ]),
 });
+
+export const recipeImagesPathParamsSchema = z.object({
+  id: z
+    .string()
+    .regex(/^[1-9]\d*$/)
+    .refine(
+      (value) =>
+        Number.isSafeInteger(Number(value)) && Number(value) <= 2147483647,
+    ),
+});
+export const recipeImagePathParamsSchema = recipeImagesPathParamsSchema.extend({
+  image_id: z.string().uuid(),
+});
+export const createRecipeImageRequestBodySchema =
+  createBrewImageRequestBodySchema.omit({ entry_id: true, set_as_cover: true });
+export const coverImageResponseSchema = z.object({
+  image: brewImageResponseSchema.nullable(),
+  can_set: z.boolean(),
+});
+export const setCoverImageRequestBodySchema = z
+  .object({ image_id: z.string().uuid().nullable() })
+  .strict();

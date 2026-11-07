@@ -46,6 +46,7 @@ export type BrewListItem = {
 
   entry_count: number;
   latest_gravity: number | null;
+  cover_image_id: string | null;
 };
 
 export type BrewEntryForApp = {
@@ -82,6 +83,7 @@ export type BrewForApp = {
   public: boolean;
 
   latest_gravity: number | null;
+  cover_image_id: string | null;
 
   recipe_id: number | null;
   recipe_name: string | null;
@@ -169,6 +171,7 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
       gravity_unit_preference: true,
       public: true,
       latest_gravity: true,
+      cover_image_id: true,
       recipe_id: true,
       recipes: { select: { name: true, private: true } },
       _count: { select: { entries: true } }
@@ -193,7 +196,8 @@ export async function getBrewsForApp(userId: number): Promise<BrewListItem[]> {
     recipe_private: b.recipes?.private ?? null,
 
     entry_count: b._count.entries,
-    latest_gravity: b.latest_gravity
+    latest_gravity: b.latest_gravity,
+    cover_image_id: b.cover_image_id
   }));
 }
 
@@ -313,6 +317,7 @@ export async function createBrewForApp(userId: number, input: CreateBrewInput) {
         gravity_unit_preference: true,
         public: true,
         latest_gravity: true,
+        cover_image_id: true,
         recipe_id: true,
         recipes: { select: { name: true, private: true } }
       }
@@ -347,6 +352,7 @@ export async function getBrewForApp(
       gravity_unit_preference: true,
       public: true,
       latest_gravity: true,
+      cover_image_id: true,
 
       recipe_id: true,
       recipe_snapshot: true,
@@ -412,6 +418,7 @@ export async function getBrewForApp(
     public: brew.public ?? false,
 
     latest_gravity: brew.latest_gravity,
+    cover_image_id: brew.cover_image_id,
 
     recipe_id: brew.recipe_id,
     recipe_name: brew.recipes?.name ?? null,
@@ -761,6 +768,7 @@ export async function patchBrewMetadata(
         gravity_unit_preference: true,
         public: true,
         latest_gravity: true,
+        cover_image_id: true,
         recipe_id: true,
         recipes: { select: { name: true, private: true } }
       }
@@ -846,6 +854,7 @@ export async function getPublicBrewsForRecipe(
       gravity_unit_preference: true,
       public: true,
       latest_gravity: true,
+      cover_image_id: true,
       recipe_id: true,
       recipes: { select: { name: true } },
       users: { select: { public_username: true, active: true } },
@@ -888,6 +897,7 @@ export async function getPublicBrewForRecipe(
       gravity_unit_preference: true,
       public: true,
       latest_gravity: true,
+      cover_image_id: true,
       recipe_id: true,
       recipe_snapshot: true,
       recipes: { select: { name: true } },

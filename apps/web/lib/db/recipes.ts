@@ -1,3 +1,4 @@
+import { queueBrewImageRemoval } from "./brew-images";
 type RecipeData = {
   userId: number;
   name: string;
@@ -254,8 +255,12 @@ export async function getRecipeInfo(recipeId: number) {
     throw new Error("Database error");
   }
 }
-export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
+export async function updateRecipe(id: string, rawFields: Partial<RecipeData>) {
   const recipeId = parseInt(id, 10);
+  // Covers change only through the cover endpoints, which enforce premium and
+  // same-recipe ownership; never accept them from a generic recipe update.
+  const fields: Partial<RecipeData> = { ...rawFields };
+  delete (fields as { cover_image_id?: unknown }).cover_image_id;
 
   if (fields.private !== true) {
     return prisma.recipes.update({
@@ -280,7 +285,10 @@ export async function updateRecipe(id: string, fields: Partial<RecipeData>) {
 }
 
 export async function deleteRecipe(id: string) {
-  return prisma.recipes.delete({
-    where: { id: Number(id) }
+  return prisma.$transaction(async tx => {
+    // Same parent-first lock as brew deletion, so in-flight uploads see a consistent parent.
+    await tx.$queryRaw`SELECT id FROM recipes WHERE id = ${Number(id)} FOR UPDATE`;
+    await queueBrewImageRemoval(tx, { recipe_id: Number(id) });
+    return tx.recipes.delete({ where: { id: Number(id) } });
   });
 }

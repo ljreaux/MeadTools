@@ -17,7 +17,8 @@ const recipeRecordSchema = z.object({
   version: z.number(),
   private: z.boolean(),
   lastActivityEmailAt: z.string().nullable(),
-  activityEmailsEnabled: z.boolean()
+  activityEmailsEnabled: z.boolean(),
+  cover_image_id: z.string().uuid().nullable()
 });
 
 const createRecipeRequestObjectSchema = z.object({

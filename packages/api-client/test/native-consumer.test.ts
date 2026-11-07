@@ -46,7 +46,8 @@ const brewListItem = {
   recipe_name: "Traditional",
   recipe_private: true,
   entry_count: 0,
-  latest_gravity: null
+  latest_gravity: null,
+  cover_image_id: null
 };
 
 function brewDetail(entries: unknown[] = []) {

@@ -63,6 +63,15 @@ export function canReadBrewImage(input: {
   );
 }
 
+/** Recipe photos follow recipe visibility independently of linked brews. */
+export function canReadRecipeImage(input: {
+  activeOwner: boolean;
+  ownsRecipe: boolean;
+  recipePublic: boolean;
+}) {
+  return input.activeOwner && (input.ownsRecipe || input.recipePublic);
+}
+
 /** Explicit allowlist so storage credentials and object keys cannot enter a view. */
 export function projectBrewImage(image: {
   id: string;

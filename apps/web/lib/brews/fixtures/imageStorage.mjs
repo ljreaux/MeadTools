@@ -22,6 +22,9 @@ await assert.rejects(
   createR2ImageStorage().signedRead("production/brews/foreign/image.webp"),
   { message: "STORAGE_UNAVAILABLE" },
 );
+const recipeUrl = new URL(await createR2ImageStorage().signedRead("development/recipes/42/fixture/image.webp"));
+assert.equal(recipeUrl.searchParams.get("X-Amz-Expires"), "60");
+await assert.rejects(createR2ImageStorage().signedRead("production/recipes/42/fixture/image.webp"), { message: "STORAGE_UNAVAILABLE" });
 process.env.VERCEL_ENV = "preview";
 await assert.rejects(createR2ImageStorage().signedRead(key), {
   message: "STORAGE_UNAVAILABLE",

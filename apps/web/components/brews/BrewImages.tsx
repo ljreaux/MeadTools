@@ -2,20 +2,18 @@
 
 import { useRef, useState, type MouseEventHandler } from "react";
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import {
-  BREW_IMAGE_LIMITS as limits,
-  BrewImageError,
-} from "@meadtools/brew-domain/images";
+import { useQuery } from "@tanstack/react-query";
+import { ImageOff } from "lucide-react";
+import { BREW_IMAGE_LIMITS as limits } from "@meadtools/brew-domain/images";
 import { brewImageAccessResponseSchema } from "@meadtools/api-contract/brew-images";
-import type {
-  BrewImageResponse,
-  CreateBrewImageRequestBody,
-} from "@meadtools/api-contract/contracts";
-import { uploadBrewImage } from "@/lib/brews/uploadBrewImage";
-import { useBrewImagesOverview } from "@/hooks/reactQuery/useBrewImages";
-import { prepareBrewImage } from "@/lib/brews/prepareBrewImage";
+import type { BrewImageResponse } from "@meadtools/api-contract/contracts";
+import {
+  useBrewImagesOverview,
+  useRecordCover,
+  useRecordImageUpload,
+  type ImageTarget,
+} from "@/hooks/reactQuery/useBrewImages";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrewImageUploadProgress } from "./BrewImageUploadProgress";
@@ -23,6 +21,7 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -44,22 +43,35 @@ import {
 
 type RequestJson = (path: string, init?: RequestInit) => Promise<unknown>;
 
-function Photo({
+/**
+ * Renders one stored image through a short-lived signed URL.
+ * `compact` fills its parent (cover thumbnails and picker tiles): it is
+ * decorative, never interactive, and shows an icon instead of a retry button.
+ */
+export function Photo({
   image,
+  target = "brews",
   brewId,
   publicView,
   full,
+  compact = false,
+  hiRes = false,
   request,
   onOpen,
 }: {
   image: BrewImageResponse;
+  target?: ImageTarget;
   brewId: string;
   publicView: boolean;
   full?: boolean;
+  compact?: boolean;
+  /** Fetch the display image instead of the thumbnail (cover banners). */
+  hiRes?: boolean;
   request: RequestJson;
   onOpen?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const { t } = useTranslation();
+  const previewClass = compact ? "size-full" : "aspect-square w-full";
   const retried = useRef(false);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
@@ -67,15 +79,16 @@ function Photo({
   const access = useQuery({
     queryKey: [
       "brew-image-access",
+      target,
       brewId,
       image.id,
       publicView,
-      Boolean(full),
+      Boolean(full || hiRes),
     ],
     queryFn: async () =>
       brewImageAccessResponseSchema.parse(
         await request(
-          `/api/brews/${brewId}/images/${image.id}?variant=${full ? "image" : "thumbnail"}${publicView ? "&public=true" : ""}`,
+          `/api/${target}/${brewId}/images/${image.id}?variant=${full || hiRes ? "image" : "thumbnail"}${publicView ? "&public=true" : ""}`,
         ),
       ),
     staleTime: 30_000,
@@ -90,13 +103,19 @@ function Photo({
     void access.refetch().then(() => setReadAttempt((attempt) => attempt + 1));
   }
   if (access.isError || imageFailed)
-    return (
+    return compact ? (
+      <div
+        className="flex size-full items-center justify-center bg-muted"
+        role="img"
+        aria-label={t("brewImages.unavailablePhoto")}
+      >
+        <ImageOff className="size-1/3 max-h-6 max-w-6 text-muted-foreground" />
+      </div>
+    ) : (
       <Button
         type="button"
         variant="outline"
-        className={
-          full ? undefined : "aspect-square h-auto w-full whitespace-normal"
-        }
+        className={full ? undefined : "aspect-square h-auto w-full whitespace-normal"}
         onClick={retryRead}
       >
         {t("brewImages.retry")}
@@ -104,23 +123,43 @@ function Photo({
     );
   if (!access.data)
     return (
-      <div role="status" aria-label={t("brewImages.loading")}>
-        <Skeleton className={full ? "h-64 w-full" : "aspect-square w-full"} />
+      <div
+        role="status"
+        aria-label={t("brewImages.loading")}
+        className={compact ? "size-full" : undefined}
+      >
+        <Skeleton
+          className={full ? "h-64 w-full" : cn(previewClass, compact && "rounded-none")}
+        />
       </div>
     );
   // Private short-lived URLs must bypass Next's publicly cached image optimizer.
   const loaded = loadedUrl === access.data.url;
   const content = (
     <div
-      className={full ? "relative min-h-32" : "relative aspect-square"}
+      className={full ? "relative min-h-32" : `relative ${previewClass}`}
       aria-busy={!loaded}
     >
-      {!loaded && <Skeleton className="absolute inset-0" aria-hidden="true" />}
+      {!loaded && (
+        <Skeleton
+          className={cn("absolute inset-0", compact && "rounded-none")}
+          aria-hidden="true"
+        />
+      )}
       <Image
         key={readAttempt}
         unoptimized
         src={access.data.url}
-        alt={image.caption || t("brewImages.photoAlt")}
+        alt={
+          compact
+            ? ""
+            : image.caption ||
+              t(
+                target === "recipes"
+                  ? "coverImages.recipePhoto"
+                  : "brewImages.photoAlt",
+              )
+        }
         width={image.width}
         height={image.height}
         loading={full ? "eager" : "lazy"}
@@ -128,7 +167,7 @@ function Photo({
         className={
           full
             ? "max-h-[65dvh] w-full object-contain"
-            : "aspect-square w-full rounded-md object-cover"
+            : cn(previewClass, "object-cover", !compact && "rounded-md")
         }
         onLoad={() => setLoadedUrl(access.data.url)}
         onError={() => {
@@ -147,7 +186,7 @@ function Photo({
       />
     </div>
   );
-  return full ? (
+  return full || compact || !onOpen ? (
     content
   ) : (
     <button
@@ -161,6 +200,7 @@ function Photo({
   );
 }
 
+/** Brew gallery (Photos tab) and per-entry attachments. Recipe photos live in the cover picker. */
 export function BrewImages({
   brewId,
   publicView = false,
@@ -181,13 +221,16 @@ export function BrewImages({
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [pending, setPending] = useState<CreateBrewImageRequestBody | null>(
-    null,
-  );
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const uploader = useRecordImageUpload({
+    recordId: brewId,
+    target: "brews",
+    token,
+    entryId,
+    onUploaded: () => overview.refetch(),
+  });
+  const { error, setError, showError, fileInput } = uploader;
+  const busy = saving || uploader.busy;
   const photoTrigger = useRef<HTMLButtonElement | null>(null);
   const visibleImages = (overview.data?.images ?? []).filter(
     (image) => !entryId || image.entry_id === entryId,
@@ -195,82 +238,42 @@ export function BrewImages({
   const selected = overview.data?.images.find(
     (image) => image.id === selectedId,
   );
-  function showError(cause: unknown) {
-    const code = cause instanceof BrewImageError ? cause.code : "UPLOAD_FAILED";
-    setError(t(`brewImages.errors.${code}`));
-  }
-  async function upload(body: NonNullable<typeof pending>) {
-    setBusy(true);
+  // Only the owner's open photo needs the cover state; galleries stay one request.
+  const { cover, setCover, refreshCover } = useRecordCover(brewId, "brews", {
+    enabled: !publicView && Boolean(selected),
+  });
+  const isCover = Boolean(selected) && cover.data?.image?.id === selected?.id;
+  async function act(action: () => Promise<unknown>) {
+    setSaving(true);
     setError(null);
-    setProgress(0);
-    setPending(body);
     try {
-      await uploadBrewImage(
-        brewId,
-        { ...body, ...(entryId ? { entry_id: entryId } : {}) },
-        token,
-        setProgress,
-      );
-      setPending(null);
-      await overview.refetch();
+      await action();
     } catch (cause) {
       showError(cause);
     } finally {
-      setBusy(false);
-      setProgress(null);
+      setSaving(false);
     }
   }
-  async function selectFile(file?: File) {
-    if (!file || busy) return;
-    setBusy(true);
-    setError(null);
-    setPending(null);
-    try {
-      const prepared = await prepareBrewImage(file);
-      await upload({
-        ...prepared,
-        operation_id: crypto.randomUUID(),
-        caption: "",
-      });
-    } catch (cause) {
-      showError(cause);
-    } finally {
-      setBusy(false);
-      if (fileInput.current) fileInput.current.value = "";
-    }
-  }
-  async function saveCaption() {
-    if (!selected) return;
-    setBusy(true);
-    setError(null);
-    try {
+  const saveCaption = () =>
+    act(async () => {
+      if (!selected) return;
       await request(`/api/brews/${brewId}/images/${selected.id}`, {
         method: "PATCH",
         body: JSON.stringify({ caption }),
       });
       await overview.refetch();
-    } catch (cause) {
-      showError(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function remove() {
-    if (!selected) return;
-    setBusy(true);
-    setError(null);
-    try {
+    });
+  const remove = () =>
+    act(async () => {
+      if (!selected) return;
       await request(`/api/brews/${brewId}/images/${selected.id}`, {
         method: "DELETE",
       });
       setSelectedId(null);
       await overview.refetch();
-    } catch (cause) {
-      showError(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
+      // Deleting the selected photo clears the cover server-side.
+      if (isCover) await refreshCover();
+    });
   if (publicView && compact && overview.isSuccess && !visibleImages.length)
     return null;
   return (
@@ -288,12 +291,12 @@ export function BrewImages({
         )}
         {!publicView && overview.data?.can_upload && (
           <LoadingButton
-            loading={busy}
+            loading={uploader.busy}
             loadingText={t("brewImages.processing")}
             variant={compact ? "outline" : "default"}
             size={compact ? "sm" : "default"}
             onClick={() => fileInput.current?.click()}
-            disabled={overview.data.images.length >= limits.perBrew}
+            disabled={busy || overview.data.images.length >= limits.perBrew}
           >
             {t("brewImages.add")}
           </LoadingButton>
@@ -315,7 +318,7 @@ export function BrewImages({
             className="hidden"
             disabled={busy || !overview.data?.can_upload}
             onChange={(event) => {
-              void selectFile(event.target.files?.[0]);
+              void uploader.selectFile(event.target.files?.[0]);
             }}
           />
           {!compact && (
@@ -342,23 +345,25 @@ export function BrewImages({
           )}
         </>
       )}
-      {progress !== null && <BrewImageUploadProgress value={progress} />}
-      {error && (
+      {uploader.progress !== null && (
+        <BrewImageUploadProgress value={uploader.progress} />
+      )}
+      {error && !selected && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
-      {pending && !busy && (
+      {uploader.pending && !busy && (
         <Button
           variant="outline"
           onClick={() => {
-            void upload(pending);
+            void uploader.retry();
           }}
         >
           {t("brewImages.retryUpload")}
         </Button>
       )}
-      {overview.isPending && (
+      {overview.isPending && overview.fetchStatus !== "idle" && (
         <div
           role="status"
           aria-label={t("brewImages.loading")}
@@ -445,6 +450,31 @@ export function BrewImages({
             <p className="break-words">{selected?.caption}</p>
           ) : (
             <>
+              {(isCover || cover.data?.can_set) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy || isCover}
+                    onClick={() => {
+                      if (selected && !isCover)
+                        void act(() => setCover(selected.id));
+                    }}
+                  >
+                    {t(isCover ? "coverImages.selected" : "coverImages.usePhoto")}
+                  </Button>
+                  {isCover && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => void act(() => setCover(null))}
+                    >
+                      {t("coverImages.remove")}
+                    </Button>
+                  )}
+                </div>
+              )}
               <Label htmlFor="brew-photo-caption">
                 {t("brewImages.caption")}
               </Label>
@@ -484,7 +514,8 @@ export function BrewImages({
                   </AlertDialogContent>
                 </AlertDialog>
                 <LoadingButton
-                  loading={busy}
+                  loading={saving}
+                  disabled={busy}
                   onClick={() => {
                     void saveCaption();
                   }}

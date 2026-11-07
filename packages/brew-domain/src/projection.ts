@@ -55,6 +55,7 @@ export type BrewViewSource<TData = JsonValue> = {
   current_volume_liters: number | null;
   gravity_unit_preference: string;
   latest_gravity: number | null;
+  cover_image_id?: string | null;
   public?: boolean | null;
   recipe_id: number | null;
   recipe_name: string | null;
@@ -102,6 +103,7 @@ export type BrewViewListItem = {
   current_volume_liters: number | null;
   gravity_unit_preference: GravityUnit;
   latest_gravity: number | null;
+  cover_image_id: string | null;
   public: boolean;
   recipe_id: number | null;
   recipe_name: string | null;
@@ -184,6 +186,7 @@ export function projectBrewViewListItem<TData = JsonValue>(
     current_volume_liters: brew.current_volume_liters,
     gravity_unit_preference: brew.gravity_unit_preference as GravityUnit,
     latest_gravity: brew.latest_gravity,
+    cover_image_id: brew.cover_image_id ?? null,
     public: brew.public ?? false,
     recipe_id: brew.recipe_id,
     recipe_name: brew.recipe_name,

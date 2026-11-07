@@ -64,6 +64,9 @@ const hooks = registerHooks({
 const listRoute = await import("../app/api/brews/[brew_id]/images/route.ts");
 const imageRoute =
   await import("../app/api/brews/[brew_id]/images/[image_id]/route.ts");
+const brewCoverRoute = await import("../app/api/brews/[brew_id]/cover/route.ts");
+const recipeCoverRoute = await import("../app/api/recipes/[id]/cover/route.ts");
+const recipePhotosRoute = await import("../app/api/recipes/[id]/images/route.ts");
 hooks.deregister();
 beforeEach(async () => {
   await db.$executeRawUnsafe("TRUNCATE users CASCADE");
@@ -469,4 +472,191 @@ test("normal entry deletion queues its attachments immediately", async () => {
   assert.equal((await service.list(f.brewId,f.userId)).images.length,0);
   await service.cleanup(future());
   assert.equal(objects.size,0);
+});
+
+const recipeService = createBrewImageService({ target: "recipe", database: db, storage: () => storage, configured: () => true, normalize: normal });
+test("brew covers select existing attachments without storage duplication and reject other records", async () => {
+  const f = await owner();
+  const a = (await service.upload(f.userId, f.brewId, payload())).image;
+  const other = await owner();
+  const b = (await service.upload(other.userId, other.brewId, payload())).image;
+  const writes = puts;
+  assert.equal((await service.setCover(f.userId, f.brewId, a.id)).image.id, a.id);
+  assert.equal(puts, writes);
+  await assert.rejects(service.setCover(f.userId, f.brewId, b.id), code("NOT_FOUND"));
+  await assert.rejects(service.setCover(other.userId, f.brewId, a.id), code("NOT_FOUND"));
+  await assert.rejects(service.cover(f.brewId), code("NOT_FOUND"));
+  const recipeId = await publicBrew(f);
+  assert.equal((await service.cover(f.brewId)).image.id, a.id);
+  await db.recipes.update({ where: { id: recipeId }, data: { private: true } });
+  await assert.rejects(service.cover(f.brewId), code("NOT_FOUND"));
+  await service.remove(f.userId, f.brewId, a.id);
+  assert.equal((await service.cover(f.brewId, f.userId)).image, null);
+});
+test("recipe covers preserve public/private sharing and never expose private linked brew images", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  const id = String(recipeId);
+  await db.brews.update({ where: { id: f.brewId }, data: { public: false } });
+  const brewImage = (await service.upload(f.userId, f.brewId, payload())).image;
+  await assert.rejects(recipeService.setCover(f.userId, id, brewImage.id), code("NOT_FOUND"));
+  const image = (await recipeService.upload(f.userId, id, payload())).image;
+  assert.equal(image.entry_id, null);
+  assert.equal((await recipeService.setCover(f.userId, id, image.id)).image.id, image.id);
+  assert.equal((await recipeService.cover(id)).can_set, false);
+  assert.ok((await recipeService.signedRead(id, image.id, "thumbnail")).url);
+  await assert.rejects(service.signedRead(f.brewId, brewImage.id, "image"), code("NOT_FOUND"));
+  await db.recipes.update({ where: { id: recipeId }, data: { private: true } });
+  await assert.rejects(recipeService.cover(id), code("NOT_FOUND"));
+  await assert.rejects(recipeService.signedRead(id, image.id, "image"), code("NOT_FOUND"));
+  assert.equal((await recipeService.cover(id, f.userId)).image.id, image.id);
+  await db.users.update({ where: { id: f.userId }, data: { active: false } });
+  await assert.rejects(recipeService.cover(id, f.userId), code("NOT_FOUND"));
+});
+test("expiry retains covers, allows removal and blocks selection and uploads", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  for (const [svc, id] of [[service, f.brewId], [recipeService, String(recipeId)]]) {
+    const image = (await svc.upload(f.userId, id, payload())).image;
+    await svc.setCover(f.userId, id, image.id);
+  }
+  await db.premium_memberships.updateMany({ data: { paid_through: new Date("2020-01-01") } });
+  for (const [svc, id] of [[service, f.brewId], [recipeService, String(recipeId)]]) {
+    const cover = await svc.cover(id, f.userId);
+    assert.ok(cover.image);
+    assert.equal(cover.can_set, false);
+    assert.equal((await svc.cover(id)).image.id, cover.image.id);
+    await assert.rejects(svc.setCover(f.userId, id, cover.image.id), code("PREMIUM_REQUIRED"));
+    await assert.rejects(svc.upload(f.userId, id, payload()), code("PREMIUM_REQUIRED"));
+    await svc.setCover(f.userId, id, null);
+    assert.equal((await svc.cover(id, f.userId)).image, null);
+    assert.equal((await svc.list(id, f.userId)).images.length, 1);
+  }
+});
+test("recipe replacement retains old photos and recipe deletion queues durable cleanup", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  const id = String(recipeId);
+  const first = (await recipeService.upload(f.userId, id, payload())).image;
+  const second = (await recipeService.upload(f.userId, id, payload())).image;
+  await recipeService.setCover(f.userId, id, first.id);
+  await recipeService.setCover(f.userId, id, second.id);
+  assert.equal((await recipeService.list(id, f.userId)).images.length, 2);
+  await recipeService.remove(f.userId, id, second.id);
+  assert.equal((await recipeService.cover(id, f.userId)).image, null);
+  await db.brews.update({ where: { id: f.brewId }, data: { recipe_id: null } });
+  const { deleteRecipe } = await import("../lib/db/recipes.ts");
+  await deleteRecipe(id);
+  await service.cleanup(future());
+  assert.equal(objects.size, 0);
+  assert.equal((await db.brew_images.findUniqueOrThrow({ where: { id: first.id } })).reserved_bytes, 0);
+});
+
+test("cover HTTP routes enforce public opt-in, ownership, premium and strict request shape", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  const image = (await recipeService.upload(f.userId, String(recipeId), payload())).image;
+  const ctx = { params: Promise.resolve({id:String(recipeId)}) };
+  const request = (path, init={}) => new NextRequest(`http://localhost/api/${path}`, init);
+  assert.equal((await recipeCoverRoute.GET(request(`recipes/${recipeId}/cover`), ctx)).status, 401);
+  assert.equal((await recipeCoverRoute.GET(request(`recipes/${recipeId}/cover?public=true`), ctx)).status, 200);
+  const patch = body => request(`recipes/${recipeId}/cover`, {method:"PATCH",headers:{"x-fixture-user":String(f.userId),"content-type":"application/json"},body:JSON.stringify(body)});
+  assert.equal((await recipeCoverRoute.PATCH(patch({image_id:image.id,private:false}),ctx)).status,400);
+  assert.equal((await recipeCoverRoute.PATCH(patch({image_id:image.id}),ctx)).status,200);
+  assert.equal((await recipeCoverRoute.PATCH(request(`recipes/${recipeId}/cover`, {method:"PATCH",body:JSON.stringify({image_id:null})}),ctx)).status,401);
+  const publicRead = await recipeCoverRoute.GET(request(`recipes/${recipeId}/cover?public=true`),ctx);
+  assert.equal(publicRead.headers.get("cache-control"), "private, no-store");
+  const body = await publicRead.json();
+  assert.equal(body.image.id,image.id);
+  assert.equal(body.can_set,false);
+  assert.equal("image_key" in body.image,false);
+  assert.equal("user_id" in body.image,false);
+  const usage = await service.list(f.brewId,f.userId);
+  assert.equal(usage.used_bytes,576);
+  assert.equal((await recipeService.list(String(recipeId),f.userId)).used_bytes,usage.used_bytes);
+  await db.brews.update({where:{id:f.brewId},data:{public:false}});
+  assert.equal((await brewCoverRoute.GET(request(`brews/${f.brewId}/cover?public=true`),{params:Promise.resolve({brew_id:f.brewId})})).status,404);
+  await db.recipes.update({where:{id:recipeId},data:{private:true}});
+  assert.equal((await recipePhotosRoute.GET(request(`recipes/${recipeId}/images?public=true`),ctx)).status,404);
+  assert.equal((await recipeCoverRoute.GET(request(`recipes/${recipeId}/cover?public=true`),ctx)).status,404);
+});
+test("starting a brew and copying a recipe never inherit another record's cover", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  const image = (await recipeService.upload(f.userId,String(recipeId),payload())).image;
+  await recipeService.setCover(f.userId,String(recipeId),image.id);
+  const {createRecipe} = await import("../lib/db/recipes.ts");
+  const copy = await createRecipe({userId:f.userId,name:"Copy",recipeData:"{}",yanContribution:"{}",nutrientData:"{}"});
+  assert.equal(copy.cover_image_id,null);
+  const {createBrewForApp} = await import("../lib/db/brews.ts");
+  const brew = await createBrewForApp(f.userId,{recipe_id:recipeId});
+  assert.equal((await service.cover(brew.id,f.userId)).image,null);
+  assert.equal((await recipeService.cover(String(recipeId),f.userId)).image.id,image.id);
+});
+
+test("recipe uploads atomically become the cover, retain earlier photos and preserve later selections on replay", async () => {
+  const f = await owner();
+  const recipeId = await publicBrew(f);
+  const id = String(recipeId);
+  const firstPayload = payload();
+  const first = (await recipeService.upload(f.userId, id, firstPayload)).image;
+  assert.equal((await recipeService.cover(id)).image.id, first.id);
+  const second = (await recipeService.upload(f.userId, id, payload())).image;
+  assert.equal((await recipeService.cover(id)).image.id, second.id);
+  assert.equal((await recipeService.list(id, f.userId)).images.length, 2);
+  await recipeService.upload(f.userId, id, firstPayload);
+  assert.equal((await recipeService.cover(id)).image.id, second.id);
+  failPut = puts + 1;
+  await assert.rejects(recipeService.upload(f.userId, id, payload()), code("UPLOAD_FAILED"));
+  assert.equal((await recipeService.cover(id)).image.id, second.id);
+  await recipeService.setCover(f.userId, id, null);
+  await recipeService.upload(f.userId, id, firstPayload);
+  assert.equal((await recipeService.cover(id)).image, null);
+});
+
+test("brew cover-picker uploads select atomically while gallery and entry uploads preserve the cover", async () => {
+  const f = await owner();
+  const firstPayload = {...payload(),set_as_cover:true};
+  const first = (await service.upload(f.userId,f.brewId,firstPayload)).image;
+  assert.equal((await service.cover(f.brewId,f.userId)).image.id,first.id);
+  const secondPayload = {...payload(),set_as_cover:true};
+  const second = (await service.upload(f.userId,f.brewId,secondPayload)).image;
+  assert.equal((await service.cover(f.brewId,f.userId)).image.id,second.id);
+  await service.upload(f.userId,f.brewId,payload());
+  const entry = await db.brew_entries.create({data:{brew_id:f.brewId,user_id:f.userId,type:"NOTE"}});
+  await service.upload(f.userId,f.brewId,{...payload(),entry_id:entry.id});
+  assert.equal((await service.cover(f.brewId,f.userId)).image.id,second.id);
+  assert.equal((await service.list(f.brewId,f.userId)).images.length,4);
+  await service.upload(f.userId,f.brewId,firstPayload);
+  assert.equal((await service.cover(f.brewId,f.userId)).image.id,second.id);
+  await assert.rejects(service.upload(f.userId,f.brewId,{...secondPayload,set_as_cover:false}),code("OPERATION_CONFLICT"));
+  failPut=puts+1;
+  await assert.rejects(service.upload(f.userId,f.brewId,{...payload(),set_as_cover:true}),code("UPLOAD_FAILED"));
+  assert.equal((await service.cover(f.brewId,f.userId)).image.id,second.id);
+});
+test("cover ids only reference live images, list rows expose them and generic recipe updates cannot set them", async () => {
+  const f = await owner();
+  const entry = await db.brew_entries.create({ data: { brew_id: f.brewId, user_id: f.userId, type: "NOTE" } });
+  const attachment = (await service.upload(f.userId, f.brewId, { ...payload(), entry_id: entry.id })).image;
+  await service.setCover(f.userId, f.brewId, attachment.id);
+  const { getBrewsForApp } = await import("../lib/db/brews.ts");
+  assert.equal((await getBrewsForApp(f.userId)).find((b) => b.id === f.brewId).cover_image_id, attachment.id);
+  assert.equal((await getBrewForApp(f.userId, f.brewId)).cover_image_id, attachment.id);
+  // Deleting the entry queues its attachment and clears the cover in the same transaction.
+  await deleteBrewEntryForApp(f.userId, f.brewId, entry.id);
+  assert.equal((await db.brews.findUniqueOrThrow({ where: { id: f.brewId } })).cover_image_id, null);
+  assert.equal((await getBrewsForApp(f.userId)).find((b) => b.id === f.brewId).cover_image_id, null);
+
+  const recipeId = await publicBrew(f);
+  const id = String(recipeId);
+  const photo = (await recipeService.upload(f.userId, id, payload())).image;
+  await recipeService.setCover(f.userId, id, null);
+  const { updateRecipe } = await import("../lib/db/recipes.ts");
+  const updated = await updateRecipe(id, { name: "Renamed", cover_image_id: photo.id });
+  assert.equal(updated.name, "Renamed");
+  assert.equal(updated.cover_image_id, null);
+  // Account deactivation removes every image, so no cover may keep pointing at one.
+  await recipeService.setCover(f.userId, id, photo.id);
+  await deleteUser(f.userId);
+  assert.equal((await db.recipes.findUniqueOrThrow({ where: { id: recipeId } })).cover_image_id, null);
 });

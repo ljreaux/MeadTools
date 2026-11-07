@@ -34,6 +34,7 @@ export type AccountBrewListItem = {
 
   entry_count: number;
   latest_gravity: number | null;
+  cover_image_id: string | null;
 };
 
 export type AccountBrewEntry = {
@@ -75,6 +76,7 @@ export type AccountBrew = {
   public: boolean;
 
   latest_gravity: number | null;
+  cover_image_id: string | null;
 
   recipe_id: number | null;
   recipe_name: string | null;

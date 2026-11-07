@@ -53,6 +53,8 @@ const brewListItemObjectSchema = z.object({
   recipe_private: z.boolean().nullable(),
   entry_count: z.number(),
   latest_gravity: z.number().nullable(),
+  /** Selected cover; read it through the cover endpoint. Null skips that request. */
+  cover_image_id: z.string().uuid().nullable(),
 });
 export const brewListItemResponseSchema = brewListItemObjectSchema;
 export const brewsResponseSchema = z.object({

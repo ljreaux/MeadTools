@@ -1,5 +1,6 @@
 "use client";
 import { BrewImages } from "./BrewImages";
+import { CoverBanner } from "./RecordCover";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -226,7 +227,7 @@ export function BrewViewer({
             </Link>
           </Button>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="break-words text-2xl font-semibold sm:text-3xl">
+            <h1 className="min-w-0 break-words text-2xl font-semibold sm:text-3xl">
               {brew.name || brew.id}
             </h1>
             <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
@@ -261,6 +262,13 @@ export function BrewViewer({
           </div>
         </div>
       </div>
+
+      <CoverBanner
+        id={brew.id}
+        target="brews"
+        publicView
+        coverId={brew.cover_image_id}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <SummarySection title={t("batchNumber", "Batch")} items={summary} />
