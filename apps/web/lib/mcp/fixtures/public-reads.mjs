@@ -138,6 +138,7 @@ for (const scope of ["mcp:tools", "mcp:tools mcp:account:read"]) {
     assert.equal(tool.annotations.readOnlyHint, true);
     assert.equal(tool.annotations.destructiveHint, false);
     assert.equal(tool.annotations.idempotentHint, true);
+    assert.equal(tool.annotations.openWorldHint, true);
     const result = await client.callTool({
       name,
       arguments:

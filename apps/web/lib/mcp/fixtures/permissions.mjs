@@ -341,8 +341,25 @@ for (const scope of [base, expanded]) {
       ? 7 + calculatorToolNames.length + publicReadToolNames.length
       : 14 + calculatorToolNames.length + publicReadToolNames.length
   );
-  for (const tool of inventory.tools)
+  for (const tool of inventory.tools) {
+    assert.equal(typeof tool.title, "string", `${tool.name} needs a title`);
+    assert.ok(tool.title.trim().length > 0, `${tool.name} needs a readable title`);
+    assert.ok(
+      !tool.title.includes("_"),
+      `${tool.name} exposes a machine name as its title`
+    );
     assert.equal(tool.annotations.readOnlyHint, true);
+    assert.equal(tool.annotations.destructiveHint, false);
+    assert.equal(
+      tool.annotations.openWorldHint,
+      publicReadToolNames.includes(tool.name),
+      `${tool.name} must distinguish public discovery from bounded account/catalog tools`
+    );
+  }
+  assert.equal(
+    inventory.tools.find((tool) => tool.name === "calculate_abv").title,
+    "Calculate ABV"
+  );
   const calculatorSamples = {
     calculate_juice_sugar: { sugar: 24, servingSize: 240 },
     calculate_abv: { originalGravity: 1.1, finalGravity: 1 },

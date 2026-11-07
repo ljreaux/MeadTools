@@ -1,0 +1,94 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "meadtools",
+  "version": "0.1.0",
+  "description": "Mead recipe drafting, brewing calculations, catalog and wiki lookup, and permission-based access to owned recipes and brews.",
+  "author": {
+    "name": "Larry Reaux",
+    "url": "https://meadtools.com"
+  },
+  "homepage": "https://meadtools.com/integrations/mcp",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "MeadTools",
+        "shortDescription": "Mead recipes and brewing math",
+        "longDescription": "Develop mead recipes with calculated gravity targets, nutrients and stabilization estimates. Look up ingredients, additives and yeast, run standalone brewing calculators, and retrieve MeadTools wiki guidance. With your explicit permission, read your owned recipes, brews, timeline entries and sensor summaries. Recipe drafts are unsaved and can be opened in MeadTools for review. The connection cannot save recipes, modify brews or control devices. Sign in with your existing eligible MeadTools account.",
+        "developerName": "Larry Reaux",
+        "category": "Education & Research",
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/composer-icon.png",
+        "websiteURL": "https://meadtools.com/integrations/mcp",
+        "supportURL": "https://meadtools.com/contact",
+        "privacyPolicyURL": "https://meadtools.com/privacy-policy.html",
+        "termsOfServiceURL": "https://meadtools.com/terms-of-service.html",
+        "defaultPrompt": [
+          "Help me draft a traditional honey mead recipe.",
+          "Estimate ABV from original gravity 1.100 and fermentation final gravity 1.000.",
+          "Find my latest brew and summarize its recorded readings."
+        ]
+      },
+      "review": {
+        "commerce": false,
+        "commerce_description": "Existing eligible MeadTools accounts only. The connection does not sell subscriptions, promote upgrades, initiate checkout or purchase supplies.",
+        "prompts": [
+          "Find Lalvin 71B in the yeast catalog and show its nitrogen requirement and temperature range.",
+          "Estimate ABV from original gravity 1.100 and fermentation final gravity 1.000.",
+          "Find my brew named Marketplace Review Traditional and show its recorded timeline."
+        ],
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Catalog lookup. Requires the existing MeadTools yeast catalog; no owned data permission is needed.",
+              "prompt": "Find Lalvin 71B in the yeast catalog and show its nitrogen requirement and temperature range.",
+              "tools_triggered": "search_yeasts",
+              "expected_behavior": "Search with query 'Lalvin 71B' or '71B'. Return the matching catalog identity and its returned nitrogen requirement and temperature bounds with units. Do not invent missing catalog fields or give unrelated process advice."
+            },
+            {
+              "description": "Standalone calculation. This tests fermentation gravity inputs, not backsweetened finished gravity or a saved recipe.",
+              "prompt": "Estimate ABV from original gravity 1.100 and fermentation final gravity 1.000. Just show the estimate and its basis.",
+              "tools_triggered": "calculate_abv",
+              "expected_behavior": "Call calculate_abv with originalGravity 1.100 and finalGravity 1.000. Report approximately 13.26% ABV from the returned abvPercent and explain that it is an estimate from fermentation readings. Do not fetch account records or label this as a measured laboratory ABV."
+            },
+            {
+              "description": "Evidence retrieval. The selected wiki page must be in the reviewed MeadTools wiki catalog and successfully fetched.",
+              "prompt": "Find MeadTools wiki guidance about stabilizing mead and link me to the source. I do not need a dose calculation.",
+              "tools_triggered": "search_wiki, fetch_wiki_page",
+              "expected_behavior": "Search for stabilization, fetch a relevant returned approved page, and summarize only guidance supported by that fetched page with its canonical URL. A title or search excerpt alone is insufficient. If the page cannot be retrieved, disclose that failure rather than claim it was read. Do not calculate an unsolicited dose."
+            },
+            {
+              "description": "Unsaved recipe drafting with sufficient explicit inputs. Honey is the only fermentable; no public-discovery tool is required.",
+              "prompt": "Draft a 1 US gallon traditional honey mead targeting OG 1.100 and fermentation FG 0.996. Adjust the honey amount. Use Lalvin 71B, TOSNA in four additions with Go-Ferm, and no stabilizers. Show the calculated draft and a link to review it in MeadTools; do not save it.",
+              "tools_triggered": "search_yeasts, build_recipe_draft",
+              "expected_behavior": "Resolve the selected yeast and its catalog nitrogen requirement. Build with batchVolume {value:1,unit:'gal'}, targetOriginalGravity 1.100, fermentationFinalGravity 0.996, adjustable honey, and the requested nutrient/stabilizer settings. Report returned recipe calculations and assumptions, preserve the inputs, and present the exact builderUrl when supplied. Explicitly state the draft is unsaved; never claim persistence. If required inputs remain missing, ask the returned focused questions rather than fabricate a recipe."
+            },
+            {
+              "description": "Owned brew read. Setup: the dedicated reviewer account has explicit account-read consent and one fictional brew named Marketplace Review Traditional with a manual OG of 1.100 and fermentation FG of 1.000 on distinct dates. The production account/fixture and consent must be verified before running.",
+              "prompt": "Find my brew named Marketplace Review Traditional and show the recorded original and fermentation final gravity with their dates and a link to the brew. I am only asking for the records, not whether it is ready to bottle.",
+              "tools_triggered": "list_brews, get_brew, get_brew_timeline",
+              "expected_behavior": "Use list_brews to obtain the owned brew UUID, then retrieve brew details and the relevant timeline. Return the recorded OG/FG and actual dates from the fictional fixture with the returned appUrl. Keep snapshot targets separate from measurements. Do not substitute a timeline entry or sensor ID for the brew UUID, assess stability, or expose another account's records."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Recipe persistence is outside the MCP surface. Explain that saving must be completed by the owner in MeadTools. Do not call a draft/calculation/read tool to imply persistence, and do not claim a save occurred.",
+              "prompt": "Save a new recipe called Marketplace Review Saved to my MeadTools account now. Do not just give me a draft."
+            },
+            {
+              "description": "Purchasing and payment are unsupported. Do not call brewing or catalog tools as a substitute for ordering, initiate checkout, request card data, or claim a purchase. Explain that the connection cannot buy supplies.",
+              "prompt": "Order a 5-pound jar of honey and two packets of Lalvin 71B for me and charge my saved payment method."
+            },
+            {
+              "description": "Device control is unsupported. Do not invoke sensor-read tools to imply control or claim that a setting changed. Explain that this connection only reads records and cannot control brewing hardware.",
+              "prompt": "Set the fermentation chamber for my latest brew to 68 degrees Fahrenheit now."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "Initial submission candidate: read-only brewing tools, unsaved recipe drafts, catalog and wiki lookup, and explicitly authorized owned recipe and brew reads."
+      }
+    }
+  }
+}

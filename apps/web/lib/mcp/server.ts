@@ -42,6 +42,7 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
       )
       .map((tool) => ({
         name: tool.name,
+        title: tool.title,
         description: tool.description,
         inputSchema: tool.parameters as {
           type: "object";
@@ -60,7 +61,8 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
           readOnlyHint: true,
           destructiveHint: false,
           idempotentHint: true,
-          openWorldHint: false
+          // Public community records are outside the user's private account.
+          openWorldHint: isPublicReadTool(tool.name)
         }
       }))
   }));
