@@ -381,3 +381,15 @@ test("closures retain name matching without acquiring a bottle size", () => {
   assert.equal(line.sizeLiters, undefined);
   assert.equal(matchInventoryStock([stock], line).stock?.id, "caps");
 });
+
+test("fractional bottle names cannot suggest their denominator as the capacity", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 2 }],
+  });
+  for (const name of ["1/2 L bottles", "1 / 2 L bottles", "1⁄2 L bottles", "1 1/2 L bottles"]) {
+    const stock = { ...item("fraction", name), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+    const result = matchInventoryStock([stock], line);
+    assert.equal(result.stock, undefined, name);
+    assert.equal(result.choices.length, 1, name);
+  }
+});

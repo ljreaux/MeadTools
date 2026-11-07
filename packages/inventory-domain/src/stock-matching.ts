@@ -23,6 +23,8 @@ const normalized = (value: string) =>
 /** Packaging stock has no structured size; only an explicit volume is safe to infer. */
 const packagingSizePattern = /(?:^|[^\w.])([0-9]+(?:[.,][0-9]+)?)\s*(ml|millilit(?:er|re)s?|l|lit(?:er|re)s?|(?:fl[\s._-]*)?oz|fluid\s+ounces?|gal|gallons?)\b/gi;
 function packagingSize(name: string): BottleDisplaySize | undefined {
+  // Fractions are unsupported; never read their denominator as a whole capacity.
+  if (/\d\s*[/⁄]\s*\d/.test(name)) return undefined;
   const sizes = [...name.matchAll(packagingSizePattern)];
   if (sizes.length !== 1) return undefined;
   const [, amount, label] = sizes[0];
