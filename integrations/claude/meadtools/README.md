@@ -1,7 +1,8 @@
 # MeadTools for Claude
 
 Connect Claude to MeadTools for read-only recipe drafting, brewing calculations,
-catalog and wiki lookup, and optional owned recipe and brew reads. Drafts remain
+catalog and wiki lookup, public community recipe and brew discovery, and optional
+owned recipe and brew reads. Drafts remain
 unsaved. This plugin does not write records, control devices, make purchases,
 start checkout or sell subscriptions. It connects to the production MeadTools
 service, not a local development server. Use your own existing MeadTools account

@@ -57,6 +57,13 @@ metadata omitted. It contains no private app binding, reviewer data or secret.
 OpenAI's documented OAuth extension remains incompatible with its published
 portable schema; do not claim the target importer accepts it before testing.
 
+November 7 user follow-up: Larry confirmed that both plugin installs, sign-in,
+tool discovery and invocation work. Record these as user-confirmed successes on
+his accounts; do not request another full MCP test without a relevant change.
+Exact package hashes and client builds were not supplied. This does not establish that
+the OpenAI public-submission portal accepts the documented OAuth extension, or
+that ZIP upload is available to every account.
+
 ## Build and check downloads
 
 Run `npm run mcp:package --workspace @meadtools/web` at the repository root after changing package source.
@@ -74,9 +81,11 @@ Raise versions and update guide links for a new package release.
 The Claude archive was extracted and validated with `claude plugin validate`,
 which parses package structure/configuration without invoking a model. That
 does not prove a web/desktop import, OAuth connection or client tool discovery.
-Both download sections are labeled preview until the new import route is checked
-in its intended client. Existing MCP execution tests are not a reason to rerun
-the entire tool suite for this packaging-only path.
+Both download sections remain labeled preview while December deployment and
+store requirements are finalized. The user-confirmed install/OAuth/tool results
+above supersede the earlier unverified client-flow status. Existing MCP
+execution tests are not a reason to rerun the entire tool suite for this
+packaging-only path.
 
 Local guide verification: both ZIP URLs returned 200 with ZIP bytes; the Claude
 download link completed a browser download. Both host tabs and their optional

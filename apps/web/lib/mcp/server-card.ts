@@ -12,7 +12,7 @@ export function getMcpServerCard() {
     name: "com.meadtools/mcp",
     title: "MeadTools",
     version: "0.1.0",
-    description: "Read-only mead recipe drafts, brewing calculators, ingredient and yeast catalogs, wiki guidance, and optional owned recipe and brew reads with explicit permission.",
+    description: "Read-only mead recipe drafts, brewing calculators, ingredient and yeast catalogs, wiki guidance, public community recipe and brew discovery, and optional owned recipe and brew reads with explicit permission.",
     websiteUrl: mcpOrigin(),
     remotes: [{ type: "streamable-http", url: mcpResource() }],
   };
