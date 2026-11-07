@@ -48,16 +48,21 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# workspace files
+# Personal editor and agent tooling stays untracked. Shared agent instructions
+# (AGENTS.md files and their one-line CLAUDE.md imports) are tracked; put
+# machine-only notes in CLAUDE.local.md. AGENTS.override.md is ignored so a
+# personal Codex override is never committed. Optional tooling worth sharing is
+# listed in docs/agent-tooling.md.
 .vscode/
 .codex/
 .claude/
 .mcp.json
-AGENTS.md
-CLAUDE.md
 .agents/*
 skills-lock.json
+AGENTS.override.md
+CLAUDE.local.md
 # Sentry Config File
 .env.sentry-build-plugin
-# next-agents-md
+# Obsolete local copy of Next.js docs from the old `agents-md` codemod; the
+# installed next package now ships docs in node_modules/next/dist/docs/.
 .next-docs/

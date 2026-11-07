@@ -182,6 +182,9 @@ Contributions are welcome.
 - Follow existing code style (default Prettier config)
 - Document new features
 - Test changes locally before submitting
+- Using an AI coding agent? Repository rules for agents are in
+  [`AGENTS.md`](AGENTS.md); optional skills, plugins and MCP servers that help
+  are listed in [`docs/agent-tooling.md`](docs/agent-tooling.md)
 
 #### MDX Content Pages
 
