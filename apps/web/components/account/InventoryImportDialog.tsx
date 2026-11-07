@@ -1,4 +1,5 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -25,7 +26,6 @@ import { useYeastsQuery } from "@/hooks/reactQuery/useYeastsQuery";
 import { useAdditivesQuery } from "@/hooks/reactQuery/useAdditivesQuery";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,

@@ -1,4 +1,5 @@
 "use client";
+import { InventoryAlertDialogContent as AlertDialogContent, InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 
 import { useState } from "react";
 import { organizeInventory } from "@meadtools/inventory-domain";
@@ -23,8 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 export function InventoryWorkspace() {
   return <InventoryOrganizationProvider><InventoryWorkspaceContent /></InventoryOrganizationProvider>;

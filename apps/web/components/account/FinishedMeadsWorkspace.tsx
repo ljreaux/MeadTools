@@ -1,4 +1,5 @@
 "use client";
+import { InventoryAlertDialogContent as AlertDialogContent } from "./InventoryDialogContent";
 import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { BottlingSourceChanges } from "./BottlingSourceChanges";
 import { useState } from "react";
@@ -19,7 +20,7 @@ import { PremiumCollectionNotice } from "./PremiumCollectionNotice";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 export function FinishedMeadsWorkspace() {
   const { t, i18n } = useTranslation();

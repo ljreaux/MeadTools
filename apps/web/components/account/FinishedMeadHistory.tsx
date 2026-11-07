@@ -1,11 +1,12 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import type { FinishedMeadItem } from "@meadtools/api-contract/contracts";
 import { useFinishedMeadHistory } from "@/hooks/reactQuery/useFinishedMeads";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export function FinishedMeadHistory({ item, onClose }: { item: FinishedMeadItem; onClose: () => void }) {
   const { t, i18n } = useTranslation();

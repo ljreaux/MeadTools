@@ -1,4 +1,5 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { type BottleDisplaySize } from "@meadtools/inventory-domain";
 import { useId, useState, type FormEvent } from "react";
@@ -16,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const bottleDisplayUnits = ["mL", "L", "fl_oz", "gal"] as const;
 

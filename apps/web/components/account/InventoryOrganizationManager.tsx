@@ -1,4 +1,5 @@
 "use client";
+import { InventoryAlertDialogContent as AlertDialogContent, InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -21,7 +22,6 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
-  AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,

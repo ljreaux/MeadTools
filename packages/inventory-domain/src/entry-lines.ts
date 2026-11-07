@@ -15,6 +15,8 @@ export type InventoryLine = {
   name: string;
   kind: string;
   quantity: Quantity;
+  /** Physical bottle volume, independent of the displayed label and unit count. */
+  sizeLiters?: number;
   catalogReference?: CatalogReference | null;
 };
 export type InventoryUse = {
@@ -64,6 +66,7 @@ export function inventoryEntryLines(
           : row.label && row.label !== "Custom" ? row.label.replace(/(\d)(oz|ml|L|gal)$/, (_, amount, unit) => `${amount} ${unit === "oz" ? "fl oz" : unit === "ml" ? "mL" : unit}`)
           : `${Number((row.sizeLiters * 1000).toFixed(3))} mL`} bottles`,
         kind: "PACKAGING",
+        sizeLiters: row.sizeLiters,
         quantity: { value: row.quantity, unit: "units" as const },
       })),
       ...value.closures.map((row, index) => ({

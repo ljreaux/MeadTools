@@ -1,4 +1,5 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { formatStoredBottleSize } from "@/lib/utils/bottleUnits";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +31,6 @@ import {
 } from "@/components/ui/select";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,

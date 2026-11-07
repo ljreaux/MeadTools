@@ -329,3 +329,55 @@ test("all Go-Ferm variants match their built-in identities without database addi
     );
   }
 });
+
+test("bottle suggestions require the physical size while leaving manual choices available", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 0.75 }],
+  });
+  const bottle = (id: string, name: string) => ({
+    ...item(id, name), category: "packaging",
+    quantity: { value: 24, unit: "units" as const },
+  });
+  const wrong = bottle("wrong", "375 mL bottles");
+  const unknown = bottle("unknown", "Wine bottles");
+  const right = bottle("right", "0.75 L wine bottles");
+  assert.equal(line.sizeLiters, 0.75);
+  assert.equal(matchInventoryStock([wrong, unknown, right], line).stock?.id, "right");
+  const unmatched = matchInventoryStock([wrong, unknown], line);
+  assert.equal(unmatched.stock, undefined);
+  assert.equal(unmatched.choices.length, 2);
+  for (const name of ["750mL bottles", "0,75 litre bottles", "750 milliliters bottles"]) {
+    assert.equal(matchInventoryStock([bottle("right", name)], line).stock?.id, "right", name);
+  }
+  // Labels are presentation metadata, not the source of physical size.
+  const [custom] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 0.75, label: "375ml" }],
+  });
+  assert.equal(matchInventoryStock([wrong, right], custom).stock?.id, "right");
+});
+
+test("US customary bottle sizes match equivalent volumes without crossing sizes", () => {
+  for (const [name, sizeLiters] of [
+    ["12 fl oz beer bottles", 0.354882],
+    ["12 fl oz beer bottles", 0.355],
+    ["22oz bomber bottles", 0.650618],
+    ["22oz bomber bottles", 0.65],
+    ["1 gallon bottles", 3.785412],
+  ] as const) {
+    const [line] = inventoryEntryLines("PACKAGING", {
+      bottleRows: [{ quantity: 4, sizeLiters }],
+    });
+    const stock = { ...item("bottle", name), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+    assert.equal(matchInventoryStock([stock], line).stock?.id, "bottle", name);
+    assert.equal(matchInventoryStock([stock], { ...line, sizeLiters: 0.75 }).stock, undefined);
+  }
+});
+
+test("closures retain name matching without acquiring a bottle size", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    closures: [{ name: "26 mm crown caps", quantity: 4 }],
+  });
+  const stock = { ...item("caps", "26 mm crown caps"), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+  assert.equal(line.sizeLiters, undefined);
+  assert.equal(matchInventoryStock([stock], line).stock?.id, "caps");
+});
