@@ -61,7 +61,8 @@ try {
     "meadtools-claude-preparation-draft.zip": [
       ["listing.md", "integrations/claude/listing.md"],
       ["logo.png", "integrations/chatgpt/meadtools/assets/logo.png"],
-      ["review-materials.md", "docs/mcp-marketplace-submission-materials.md"]
+      ["review-materials.md", "docs/mcp-marketplace-submission-materials.md"],
+      ["mcp-marketplace-recording-run-sheet.md", "docs/mcp-marketplace-recording-run-sheet.md"]
     ]
   };
   for (const [name, entries] of Object.entries(inventories)) {

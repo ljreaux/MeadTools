@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "meadtools",
   "version": "0.1.0",
-  "description": "Mead recipe drafting, brewing calculations, catalog and wiki lookup, and permission-based access to owned recipes and brews.",
+  "description": "Mead recipe drafting, brewing calculations, catalog and wiki lookup, public community recipe and brew discovery, and permission-based access to owned recipes and brews.",
   "author": {
     "name": "Larry Reaux",
     "url": "https://meadtools.com"
@@ -13,7 +13,7 @@
       "interface": {
         "displayName": "MeadTools",
         "shortDescription": "Mead recipes and brewing math",
-        "longDescription": "Develop mead recipes with calculated gravity targets, nutrients and stabilization estimates. Look up ingredients, additives and yeast, run standalone brewing calculators, and retrieve MeadTools wiki guidance. With your explicit permission, read your owned recipes, brews, timeline entries and sensor summaries. Recipe drafts are unsaved and can be opened in MeadTools for review. The connection cannot save recipes, modify brews or control devices. Sign in with your existing eligible MeadTools account.",
+        "longDescription": "Develop mead recipes with calculated gravity targets, nutrients and stabilization estimates. Look up ingredients, additives and yeast, run standalone brewing calculators, retrieve MeadTools wiki guidance, and search recipes and brew logs that MeadTools members have chosen to share publicly. With your explicit permission, read your owned recipes, brews, timeline entries and sensor summaries. Recipe drafts are unsaved and can be opened in MeadTools for review. The connection cannot save recipes, modify brews or control devices. Sign in with your existing eligible MeadTools account.",
         "developerName": "Larry Reaux",
         "category": "Education & Research",
         "logo": "./assets/logo.png",

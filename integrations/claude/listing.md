@@ -28,15 +28,26 @@ repository marketplace and directory paths in `docs/mcp-plugin-distribution.md`.
   tool. External AI-provider charges are separate from MeadTools chat credits.
 - **Permissions:** basic tools by default; owned records require explicit
   account-read consent. All tools are read-only; drafts are unsaved.
-- **Categories, permanent slug, company/contact and policy acknowledgments:**
-  select/confirm in the actual portal. Do not infer business verification from
-  this individual-publisher draft or check legal attestations automatically.
+- **Category:** Education (proposed; actual portal option verified November 7).
+- **Slug:** meadtools (proposed; availability unchecked and permanent after submission).
+- **Author name/URL:** Larry Reaux; https://meadtools.com
+- **Ongoing maintenance contact:** Larry Reaux, contact@meadtools.com (confirmed).
+- **Icon handling:** the portal recommends using the server favicon. A custom
+  icon URL is optional; the prepared square PNG is available if needed.
+- **Company/contact and policy acknowledgments:** confirm in the actual portal.
+  Do not infer business verification from this individual-publisher draft or
+  check legal attestations automatically.
+
+November 7 access check: Larry signed into the publishing portal. Its connector
+and listing forms were inspected read-only; no connector was selected or field
+filled, and the dashboard still showed 0 submissions afterward.
 
 ## Description
 
 MeadTools helps meadmakers draft recipes, calculate gravity targets and other
 brewing quantities, look up ingredients, additives and yeast, and retrieve
-brewing guidance from the MeadTools wiki. With explicit permission, the
+brewing guidance from the MeadTools wiki, and search recipes and brew logs
+that MeadTools members have chosen to share publicly. With explicit permission, the
 connection can also read your owned recipes, brews, timelines and sensor
 summaries. Calculated estimates are kept separate from recorded readings.
 Recipe drafts remain unsaved until you review and save them in MeadTools.

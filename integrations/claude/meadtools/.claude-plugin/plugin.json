@@ -2,7 +2,7 @@
   "name": "meadtools",
   "displayName": "MeadTools",
   "version": "0.1.0",
-  "description": "Draft mead recipes, run brewing calculations, look up ingredients and wiki guidance, and read owned recipes and brews with explicit permission. Drafts are unsaved; the connector cannot write records or make purchases.",
+  "description": "Draft mead recipes, run brewing calculations, look up ingredients and wiki guidance, search publicly shared community recipes and brews, and read owned recipes and brews with explicit permission. Drafts are unsaved; the connector cannot write records or make purchases.",
   "author": {
     "name": "Larry Reaux",
     "url": "https://meadtools.com"

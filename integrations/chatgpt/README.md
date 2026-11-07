@@ -6,9 +6,10 @@ does not deploy application code. Larry confirmed December 2026 deployment and
 marketplace submission after that release and production verification; see
 [marketplace readiness](../../docs/mcp-marketplace-readiness.md).
 
-Publisher intent: Larry Reaux, individual (confirmed November 7). Actual OpenAI
-identity verification, owning organization/project, permissions and supported
-data-residency eligibility remain unverified. Larry selected all store-supported
+Publisher: Larry Reaux, individual (confirmed November 7). Larry completed OpenAI
+verification and the organization's settings visibly show Verified. The publishing
+portal is accessible; final project/residency selection, domain verification and
+draft-specific checks remain pending. Larry selected all store-supported
 countries; `publication.countries: []` explicitly removes package country
 restrictions. This does not override a store's regional availability or policies.
 Optional dark icons/colors are not required; no separate variants are selected.
@@ -25,10 +26,10 @@ checkout in the chatbot; the draft declares `commerce: false` with this explanat
 
 - A recorded, reviewer-accessible walkthrough URL. The script is in
   [submission materials](../../docs/mcp-marketplace-submission-materials.md).
-- Review and deployment of the additive MCP wording in
+- Deployment of the owner-approved additive MCP wording in
   [`privacy-policy.html`](../../apps/web/public/privacy-policy.html#mcp).
   It describes the current absence of an automatic deletion schedule; it does
-  not invent a retention deadline. Confirm the wording and set the notice's
+  not invent a retention deadline. Larry approved it November 7; set the notice's
   revision date to its actual publication date during release review.
 - Verified publisher setup and inspection of imported country/commerce settings.
 - Dedicated post-launch reviewer account, sample data, production client case
@@ -68,10 +69,13 @@ The builder also prepares customer preview downloads named
 `meadtools-chatgpt-0.1.0.zip` and `meadtools-claude-0.1.0.zip`, copies them to
 `apps/web/public/downloads/mcp/`, and the existing setup guide links to them.
 The ChatGPT customer copy omits store review/publication materials; its upload
-flow remains permission-dependent and unverified. The Claude copy is a real
+flow remains permission-dependent. Larry confirmed November 7 that both plugin
+installs, sign-in, tool discovery and invocation work. Exact builds/package
+hashes were not supplied. The Claude copy is a real
 plugin archive, distinct from the earlier reviewer preparation kit. Its extracted
-contents pass Anthropic's local validator. Neither result proves target-client
-import or OAuth. See [distribution options](../../docs/mcp-plugin-distribution.md).
+contents pass Anthropic's local validator. Installation and OAuth/tool invocation
+are separate checks; public-submission portal validation remains pending.
+See [distribution options](../../docs/mcp-plugin-distribution.md).
 
 The builder validates image dimensions/type/size and listing/case limits, uses
 explicit file inventories, builds fresh archives, checks ZIP integrity and

@@ -95,3 +95,26 @@ counts. Explain which finished sweetness readings are unavailable through these
 public tools.” Public detail tools intentionally omit timeline
 notes and finished GENERAL readings; inspect those records in the local brew
 page rather than inventing unavailable tool fields or falling back to owner reads.
+
+## Owned-read review fixture (separate account)
+
+Public fixtures never demonstrate private-account reads. For the owned-brew
+review case, a separate additive command creates a synthetic, active, non-admin
+account (`mcp-owned-review-demo@meadtools.test`, label **Synthetic MCP review
+demo**) with a local manual premium grant, one private synthetic recipe and the
+private brew **Marketplace Review Traditional** (measured OG 1.100 on
+September 12, 2026; measured fermentation FG 1.000 on October 10, 2026; a
+synthetic-data note; no sensor history):
+
+```sh
+ALLOW_MCP_OWNED_DEMO_FIXTURE=true npm run db:seed:mcp-owned-demo --workspace @meadtools/web
+```
+
+It uses the application's recipe, brew and entry operations, applies the same
+loopback/database-name guard as the public seed, checks collisions, never
+changes other accounts and is safe to rerun. It generates the password once into
+the private file `~/.local/share/meadtools-mcp/owned-demo-account.local`
+(mode 600) and never prints it. It finishes by verifying `list_brews`,
+`get_brew` and `get_brew_timeline` through the shared account-read adapter.
+The production reviewer fixture is specified in the
+[recording run sheet](mcp-marketplace-recording-run-sheet.md).
