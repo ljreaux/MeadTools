@@ -59,7 +59,7 @@ portable schema; do not claim the target importer accepts it before testing.
 
 ## Build and check downloads
 
-Run `npm run mcp:package` at the repository root after changing package source.
+Run `npm run mcp:package --workspace @meadtools/web` at the repository root after changing package source.
 It builds all draft/review archives in ignored `release-drafts/mcp-marketplaces/`
 and copies just the two customer ZIPs into `apps/web/public/downloads/mcp/`:
 

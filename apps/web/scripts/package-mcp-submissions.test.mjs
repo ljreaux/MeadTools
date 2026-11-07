@@ -5,15 +5,38 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { isMobileQualityAffected, readQualitySnapshot } from "../../../scripts/quality-impact.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+
+test("web MCP packaging changes do not select Mobile quality", () => {
+  // Impact discovery runs at the repository root in CI, while npm workspace
+  // tests start in apps/web. Preserve that context without changing the helper.
+  const previous = process.cwd();
+  let snapshot;
+  try {
+    process.chdir(root);
+    snapshot = readQualitySnapshot("HEAD");
+  } finally {
+    process.chdir(previous);
+  }
+  assert.equal(isMobileQualityAffected([
+    "apps/web/package.json",
+    "apps/web/scripts/package-mcp-submissions.mjs",
+    "apps/web/scripts/package-mcp-submissions.test.mjs",
+    "apps/web/components/account/McpGuide.tsx",
+    "packages/i18n/locales/en/default.json",
+    "packages/recipe-agent/src/index.ts"
+  ], snapshot, snapshot), false);
+  assert.equal(isMobileQualityAffected(["apps/mobile/package.json"], snapshot, snapshot), true);
+});
 
 test("MCP packages are reproducible across timezones and preserve distinct install formats", async () => {
   const temporary = await mkdtemp(path.join(tmpdir(), "meadtools-package-test-"));
   try {
     const outputs = [path.join(temporary, "first"), path.join(temporary, "second")];
     for (const [index, output] of outputs.entries()) {
-      execFileSync(process.execPath, ["scripts/package-mcp-submissions.mjs", output, "--no-public"], {
+      execFileSync(process.execPath, ["apps/web/scripts/package-mcp-submissions.mjs", output, "--no-public"], {
         cwd: root,
         env: { ...process.env, TZ: index === 0 ? "UTC" : "America/Chicago" }
       });

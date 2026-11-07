@@ -52,7 +52,7 @@ included. Separate dark assets remain optional and are not selected.
 From the repository root, run:
 
 ```sh
-node scripts/package-mcp-submissions.mjs
+npm run mcp:package --workspace @meadtools/web
 ```
 
 Output goes to the ignored `release-drafts/mcp-marketplaces/` directory:
@@ -78,7 +78,7 @@ explicit file inventories, builds fresh archives, checks ZIP integrity and
 reopens the saved manifest to verify its exact content. It does not claim portal
 acceptance, record a demo, call a provider or include reviewer credentials.
 Archive entry times, permissions and ZIP timezone are normalized so rebuilding
-unchanged source produces identical bytes. `npm run test:mcp-packages` verifies
+unchanged source produces identical bytes. `npm run test:mcp-packages --workspace @meadtools/web` verifies
 this across two timezones and checks the distinct install formats. Tests use
 temporary output folders with `--no-public`, leaving public downloads untouched.
 

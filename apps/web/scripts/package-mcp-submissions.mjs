@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const args = process.argv.slice(2);
 const copyPublic = !args.includes("--no-public");
 const output = path.resolve(root, args.find((arg) => arg !== "--no-public") ?? "release-drafts/mcp-marketplaces");

@@ -6,7 +6,7 @@ supported by the store; individual publisher intent: Larry Reaux. Confirm the
 portal's publisher/account fields against the verified submission account.
 
 Separately, `integrations/claude/meadtools/` now contains the source for an
-installable plugin ZIP. `npm run mcp:package` generates that archive with its
+installable plugin ZIP. `npm run mcp:package --workspace @meadtools/web` generates that archive with its
 required hidden manifest and MCP configuration. The earlier preparation ZIP is
 still a worksheet/asset kit, not the installable download. Compare the direct ZIP,
 repository marketplace and directory paths in `docs/mcp-plugin-distribution.md`.
