@@ -2544,7 +2544,19 @@
         "accountReadEnabled": "Tools und Lesezugriff auf privates Konto",
         "publicToolsOnly": "Nur sieben öffentliche/zustandslose Tools",
         "accountReadChoice": "Erlaube das Lesen deiner eigenen Ansätze, deiner Historie und Notizen sowie gespeicherter Rezepte, einschließlich privater Rezepte. Der verbundene KI-Dienst kann diese Daten erhalten.",
-        "accountReadHelp": "Lesezugriff auf private Kontodaten erfordert eine separate Berechtigung. Bestehende Verbindungen behalten ihre sieben Tools. Um teilzunehmen, verbinde dich erneut über OAuth und wähle auf der Zustimmungsseite den Lesezugriff auf das private Konto aus, oder erstelle ein neues persönliches Token mit ausgewählten Konto-Leserechten. Widerrufe hier eine Verbindung, um ihren Zugriff zu entfernen. Konto-Tools werden verfügbar, wenn die Einführung des Konto-Lesezugriffs aktiviert ist."
+        "accountReadHelp": "Lesezugriff auf private Kontodaten erfordert eine separate Berechtigung. Bestehende Verbindungen behalten ihre sieben Tools. Um teilzunehmen, verbinde dich erneut über OAuth und wähle auf der Zustimmungsseite den Lesezugriff auf das private Konto aus, oder erstelle ein neues persönliches Token mit ausgewählten Konto-Leserechten. Widerrufe hier eine Verbindung, um ihren Zugriff zu entfernen. Konto-Tools werden verfügbar, wenn die Einführung des Konto-Lesezugriffs aktiviert ist.",
+        "zipTitle": "Optional: Plugin-ZIP installieren",
+        "zipPreview": "Vorschau-Download: Der ZIP-Importablauf wird noch geprüft. Diese Pakete verbinden sich mit meadtools.com, auch wenn sie von einer Entwicklungs- oder Preview-Site heruntergeladen werden. Verwende dein eigenes Konto mit aktivem Premium-Zugang; Anmeldung und Einwilligung sind weiterhin erforderlich. Die oben beschriebenen manuellen Connector-Schritte bleiben verfügbar.",
+        "claudeZipBody": "Bei berechtigten, kostenpflichtigen Claude-Plänen kannst du ein Plugin-ZIP hochladen, statt die Server-URL selbst einzugeben. Deine Organisation kann Uploads einschränken oder verlangen, dass ein Inhaber den Connector hinzufügt.",
+        "claudeZipDownload": "Claude-Plugin-ZIP herunterladen",
+        "claudeZipStep1": "Lade die ZIP herunter und behalte sie gezippt. In Claude (Web oder Desktop) öffne Anpassen → Plugins → Hinzufügen → Plugin hochladen.",
+        "claudeZipStep2": "Wähle die MeadTools-ZIP aus, öffne dann den Connectors-Reiter des installierten Plugins und füge MeadTools hinzu oder verbinde es.",
+        "claudeZipStep3": "Schließe die MeadTools-Anmeldung und die Einwilligung ab. Erlaube private Konto-Leserechte nur, wenn du möchtest, dass Claude deine eigenen Rezepte und Ansatzaufzeichnungen erhält.",
+        "chatgptZipBody": "Nutze diese Option nur, wenn dein ChatGPT-Konto die Berechtigung hat, Plugin-ZIPs hochzuladen. OpenAI dokumentiert dies für berechtigte Workspace-Inhaber und Administratoren; es steht nicht jedem persönlichen Konto zur Verfügung.",
+        "chatgptZipDownload": "ChatGPT-Plugin-ZIP herunterladen",
+        "chatgptZipStep1": "Öffne, falls verfügbar, die Admin-Konsole von ChatGPT, wähle deinen Workspace aus, dann öffne Plugins → Hinzufügen → Plugin hochladen.",
+        "chatgptZipStep2": "Wähle die MeadTools-ZIP und schließe die erforderliche Verbindungs-Einrichtung ab. Installiere das resultierende Plugin, falls es noch nicht installiert ist.",
+        "chatgptZipStep3": "Melde dich bei MeadTools an und prüfe die Einwilligung, dann starte einen neuen Chat. Wenn du keine Upload-Funktion hast, nutze die oben beschriebenen benutzerdefinierten MCP-Verbindungs-Schritte."
     },
     "draftHandoff": {
         "title": "Rezeptentwurf",
