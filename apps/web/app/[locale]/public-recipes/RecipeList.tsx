@@ -1,5 +1,6 @@
 "use client";
 
+import { CoverThumbnail } from "@/components/brews/RecordCover";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/pagination";
 
 import Rating from "@/components/recipes/Rating";
+import { cn } from "@/lib/utils";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import PerPageSelect from "@/components/pagination/PerPageSelect";
 import { parseNumber } from "@/lib/utils/validateInput";
@@ -32,6 +34,7 @@ import type { RecipeData } from "@/types/recipeData";
 
 interface Recipe {
   id: number;
+  cover_image_id?: string | null;
   user_id: number | null; // ✅ was number
   name: string;
 
@@ -273,10 +276,32 @@ export default function RecipeList({
                 key={recipe.id}
                 className="group border-border hover:bg-muted/60 transition-colors"
               >
-                <Link href={`/recipes/${recipe.id}`}>
-                  <CardHeader className="flex flex-row items-start justify-between gap-2 pb-1">
-                    <div className="flex flex-col gap-1 sm:gap-0">
-                      <CardTitle className="text-xl font-semibold text-card-foreground">
+                <Link
+                  href={`/recipes/${recipe.id}`}
+                  className={cn(
+                    recipe.cover_image_id &&
+                      "grid grid-cols-[auto_minmax(0,1fr)]"
+                  )}
+                >
+                  {/* Phones: cover beside the title; desktop: beside the whole card. */}
+                  {recipe.cover_image_id ? (
+                    <CoverThumbnail
+                      id={String(recipe.id)}
+                      target="recipes"
+                      publicView
+                      size="card"
+                      coverId={recipe.cover_image_id}
+                      className="ml-6 mt-6 sm:row-span-2"
+                    />
+                  ) : null}
+                  <CardHeader
+                    className={cn(
+                      "flex min-w-0 flex-row items-start justify-between gap-2 pb-1",
+                      recipe.cover_image_id && "pl-4"
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:gap-0">
+                      <CardTitle className="break-words text-xl font-semibold text-card-foreground">
                         {recipe.name}
                       </CardTitle>
 
@@ -298,7 +323,13 @@ export default function RecipeList({
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-1 text-sm">
+                  <CardContent
+                    className={cn(
+                      "space-y-1 text-sm",
+                      recipe.cover_image_id &&
+                        "col-span-2 sm:col-span-1 sm:col-start-2 sm:pl-4"
+                    )}
+                  >
                     <p className="text-muted-foreground group-hover:text-foreground">
                       {t("byUser", {
                         public_username: !!recipe.public_username

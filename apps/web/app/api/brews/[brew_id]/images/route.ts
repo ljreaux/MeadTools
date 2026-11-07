@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, ctx: Context) {
 }
 /**
  * Upload a brew photo
- * @description Premium owner upload of bounded base64 JPEG, PNG or WebP. The server validates actual content, normalizes orientation, strips metadata and stores a WebP display image and thumbnail. Stable operation IDs make retries idempotent. Quotas include concurrent reservations and pending cleanup. Photos share the brew's public visibility.
+ * @description Premium owner upload of bounded base64 JPEG, PNG or WebP. The server validates actual content, normalizes orientation, strips metadata and stores a WebP display image and thumbnail. Stable operation IDs make retries idempotent. Quotas include concurrent reservations and pending cleanup. Photos share the brew's public visibility. With set_as_cover=true, a successful new upload becomes the brew cover in the same transaction; ordinary uploads preserve the current cover. Replaying an upload does not override a later selection.
  * @pathParams BrewImagesPathParams
  * @body CreateBrewImageRequestBody
  * @response 201:BrewImageMutationResponse

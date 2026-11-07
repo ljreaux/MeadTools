@@ -5889,6 +5889,133 @@
           "brew_id"
         ]
       },
+      "CoverImageResponse": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "caption": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "entry_id": {
+                "nullable": true,
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "entry_title": {
+                "nullable": true,
+                "type": "string"
+              },
+              "entry_datetime": {
+                "nullable": true,
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "entry_hidden": {
+                "type": "boolean"
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "caption",
+              "entry_id",
+              "entry_title",
+              "entry_datetime",
+              "entry_hidden",
+              "width",
+              "height",
+              "size_bytes",
+              "created_at"
+            ],
+            "additionalProperties": false
+          },
+          "can_set": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "image",
+          "can_set"
+        ],
+        "additionalProperties": false
+      },
+      "BrewImageErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_IMAGE",
+              "IMAGE_TOO_LARGE",
+              "QUOTA_EXCEEDED",
+              "BREW_IMAGE_LIMIT",
+              "PREMIUM_REQUIRED",
+              "NOT_FOUND",
+              "UPLOAD_IN_PROGRESS",
+              "OPERATION_CONFLICT",
+              "UPLOAD_FAILED",
+              "STORAGE_UNAVAILABLE",
+              "RATE_LIMITED"
+            ]
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "SetCoverImageRequestBody": {
+        "type": "object",
+        "properties": {
+          "image_id": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "image_id"
+        ],
+        "additionalProperties": false
+      },
       "UpdateBrewEntryRequestBody": {
         "$ref": "#/components/schemas/brewEntryMutationObjectSchema"
       },
@@ -6403,35 +6530,6 @@
         ],
         "additionalProperties": false
       },
-      "BrewImageErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string",
-            "enum": [
-              "INVALID_IMAGE",
-              "IMAGE_TOO_LARGE",
-              "QUOTA_EXCEEDED",
-              "BREW_IMAGE_LIMIT",
-              "PREMIUM_REQUIRED",
-              "NOT_FOUND",
-              "UPLOAD_IN_PROGRESS",
-              "OPERATION_CONFLICT",
-              "UPLOAD_FAILED",
-              "STORAGE_UNAVAILABLE",
-              "RATE_LIMITED"
-            ]
-          }
-        },
-        "required": [
-          "error",
-          "code"
-        ],
-        "additionalProperties": false
-      },
       "UpdateBrewImageRequestBody": {
         "type": "object",
         "properties": {
@@ -6648,6 +6746,9 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "set_as_cover": {
+            "type": "boolean"
           },
           "caption": {
             "default": "",
@@ -7085,6 +7186,11 @@
             "type": "number",
             "nullable": true
           },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "requested_email_alerts": {
             "type": "boolean"
           },
@@ -7123,6 +7229,7 @@
           "recipe_private",
           "entry_count",
           "latest_gravity",
+          "cover_image_id",
           "requested_email_alerts",
           "recipe_snapshot",
           "entries",
@@ -7291,6 +7398,11 @@
             "type": "number",
             "nullable": true
           },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "requested_email_alerts": {
             "type": "boolean",
             "nullable": true
@@ -7310,6 +7422,7 @@
           "recipe_name",
           "recipe_private",
           "latest_gravity",
+          "cover_image_id",
           "requested_email_alerts"
         ]
       },
@@ -8803,6 +8916,41 @@
           "error"
         ]
       },
+      "CreateRecipeImageRequestBody": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "caption": {
+            "default": "",
+            "type": "string",
+            "maxLength": 500
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          },
+          "base64": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 4194304,
+            "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+          }
+        },
+        "required": [
+          "operation_id",
+          "content_type",
+          "base64"
+        ],
+        "additionalProperties": false
+      },
       "RateRecipeRequestBody": {
         "type": "object",
         "properties": {
@@ -9798,6 +9946,11 @@
           },
           "activityEmailsEnabled": {
             "type": "boolean"
+          },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "required": [
@@ -9816,7 +9969,8 @@
           "version",
           "private",
           "lastActivityEmailAt",
-          "activityEmailsEnabled"
+          "activityEmailsEnabled",
+          "cover_image_id"
         ]
       },
       "createRecipeRequestObjectSchema": {
@@ -9984,6 +10138,11 @@
           "latest_gravity": {
             "type": "number",
             "nullable": true
+          },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "required": [
@@ -10001,7 +10160,8 @@
           "recipe_name",
           "recipe_private",
           "entry_count",
-          "latest_gravity"
+          "latest_gravity",
+          "cover_image_id"
         ]
       },
       "brewRecipeSnapshotBaseResponseSchema": {
@@ -10191,6 +10351,11 @@
             "type": "number",
             "nullable": true
           },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "owner": {
             "allOf": [
               {
@@ -10213,6 +10378,7 @@
           "recipe_name",
           "entry_count",
           "latest_gravity",
+          "cover_image_id",
           "owner"
         ]
       },
@@ -10321,6 +10487,11 @@
             "type": "number",
             "nullable": true
           },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "requested_email_alerts": {
             "type": "boolean",
             "nullable": true
@@ -10343,6 +10514,7 @@
           "recipe_name",
           "recipe_private",
           "latest_gravity",
+          "cover_image_id",
           "requested_email_alerts",
           "entry_count"
         ]
@@ -12193,6 +12365,11 @@
             "type": "number",
             "nullable": true
           },
+          "cover_image_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "owner": {
             "allOf": [
               {
@@ -12240,6 +12417,7 @@
           "recipe_name",
           "entry_count",
           "latest_gravity",
+          "cover_image_id",
           "owner",
           "recipe_snapshot",
           "entries",
@@ -16447,7 +16625,7 @@
       "post": {
         "operationId": "post-brews-{brew_id}-images",
         "summary": "Upload a brew photo",
-        "description": "Premium owner upload of bounded base64 JPEG, PNG or WebP. The server validates actual content, normalizes orientation, strips metadata and stores a WebP display image and thumbnail. Stable operation IDs make retries idempotent. Quotas include concurrent reservations and pending cleanup. Photos share the brew's public visibility.",
+        "description": "Premium owner upload of bounded base64 JPEG, PNG or WebP. The server validates actual content, normalizes orientation, strips metadata and stores a WebP display image and thumbnail. Stable operation IDs make retries idempotent. Quotas include concurrent reservations and pending cleanup. Photos share the brew's public visibility. With set_as_cover=true, a successful new upload becomes the brew cover in the same transaction; ordinary uploads preserve the current cover. Replaying an upload does not override a later selection.",
         "tags": [
           "Brew images"
         ],
@@ -18700,6 +18878,368 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactSendErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brews/{brew_id}/cover": {
+      "get": {
+        "operationId": "get-brews-{brew_id}-cover",
+        "summary": "Read the cover image",
+        "description": "Returns the selected ready image, or null. Public reads require current public visibility and an active owner; brew covers also require a public linked recipe. No premium or sign-in is required with public=true. URLs are obtained from the image access endpoint.",
+        "tags": [
+          "Cover images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brew_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "public",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "description": "Use public visibility checks instead of authenticated owner access."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-brews-{brew_id}-cover",
+        "summary": "Choose or remove a cover image",
+        "description": "Premium owners may select a ready photo belonging to this record. Owners may remove the selection after premium expiry. Removing a cover preserves its photo; deleting the photo clears its cover. Copying a recipe or starting a brew does not inherit its cover.",
+        "tags": [
+          "Cover images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "brew_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCoverImageRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{id}/cover": {
+      "get": {
+        "operationId": "get-recipes-{id}-cover",
+        "summary": "Read the cover image",
+        "description": "Returns the selected ready image, or null. Public reads require current public visibility and an active owner; brew covers also require a public linked recipe. No premium or sign-in is required with public=true. URLs are obtained from the image access endpoint.",
+        "tags": [
+          "Cover images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "public",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "description": "Use public visibility checks instead of authenticated owner access."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-recipes-{id}-cover",
+        "summary": "Choose or remove a cover image",
+        "description": "Premium owners may select a ready photo belonging to this record. Owners may remove the selection after premium expiry. Removing a cover preserves its photo; deleting the photo clears its cover. Copying a recipe or starting a brew does not inherit its cover.",
+        "tags": [
+          "Cover images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCoverImageRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
                 }
               }
             }
@@ -21937,6 +22477,524 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/NutrientPresetFetchErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{id}/images": {
+      "get": {
+        "operationId": "get-recipes-{id}-images",
+        "summary": "List recipe photos",
+        "description": "Lists owned photos, or publicly visible photos with public=true. Public reads require an active owner, a public recipe. Expired owners retain read access. No storage keys are exposed.",
+        "tags": [
+          "Recipe images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "public",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "description": "Use public visibility checks instead of authenticated owner access."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImagesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-recipes-{id}-images",
+        "summary": "Upload a recipe photo",
+        "description": "Premium owner upload of bounded base64 JPEG, PNG or WebP. The server validates actual content, normalizes orientation, strips metadata and stores a WebP display image and thumbnail. A successful new upload becomes the recipe cover atomically; earlier photos are retained. Stable operation IDs make retries idempotent without changing a later cover selection. Quotas include concurrent reservations and pending cleanup. Photos share the recipe's public visibility.",
+        "tags": [
+          "Recipe images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecipeImageRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "HTTP 413",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{id}/images/{image_id}": {
+      "get": {
+        "operationId": "get-recipes-{id}-images-{image_id}",
+        "summary": "Get temporary photo access",
+        "description": "Authorizes each request before returning a private R2 URL valid for 60 seconds. public=true requires current public recipe visibility and an active owner. Previously issued URLs may remain usable until expiry. Use variant=thumbnail for the gallery. Do not persist or publicly cache URLs.",
+        "tags": [
+          "Recipe images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "image_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "public",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "description": "Use public visibility checks instead of authenticated owner access."
+          },
+          {
+            "in": "query",
+            "name": "variant",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "image",
+                "thumbnail"
+              ],
+              "default": "image"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageAccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-recipes-{id}-images-{image_id}",
+        "summary": "Caption a recipe photo",
+        "description": "Active owners may edit retained captions after premium expires. Changes are visible wherever the recipe's photos are shared.",
+        "tags": [
+          "Recipe images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "image_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBrewImageRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-recipes-{id}-images-{image_id}",
+        "summary": "Remove a recipe photo",
+        "description": "Active owners may remove retained photos after premium expires. Removal hides the record immediately and queues durable object cleanup. Pending deletion continues to count against storage until physical deletion succeeds. Repeating removal is safe.",
+        "tags": [
+          "Recipe images"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d*$"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "image_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageRemovedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewImageErrorResponse"
                 }
               }
             }

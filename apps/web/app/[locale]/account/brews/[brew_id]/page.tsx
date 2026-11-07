@@ -1,4 +1,5 @@
 "use client";
+import { EditableCover } from "@/components/brews/RecordCover";
 import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
 import { loggedYeastAmountG } from "@meadtools/brew-domain";
 import { BrewImages } from "@/components/brews/BrewImages";
@@ -1037,6 +1038,13 @@ export default function BrewPageClient() {
             />
           </div>
         </div>
+
+        <EditableCover
+          id={brew.id}
+          target="brews"
+          recordPublic={brew.public && brew.recipe_private === false}
+          coverId={brew.cover_image_id}
+        />
 
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="rounded-lg border border-border/70 bg-background/40 p-4 space-y-3">

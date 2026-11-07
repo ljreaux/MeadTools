@@ -23,6 +23,9 @@ model brews {
   fg_alert_sent          Boolean?  @default(false)
   public                 Boolean   @default(false)
 
+  cover_image_id String? @db.Uuid
+  cover_image brew_images? @relation("BrewCover", fields: [cover_image_id], references: [id], onDelete: SetNull)
+
   // brew-tracking additions
   stage                   brew_stage   @default(PLANNED)
   batch_number            Int?
@@ -31,7 +34,7 @@ model brews {
   gravity_unit_preference gravity_unit @default(SG)
 
   // relations
-  images brew_images[]
+  images brew_images[] @relation("BrewImages")
   entries brew_entries[]
   recipes recipes?       @relation(fields: [recipe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users   users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -39,6 +42,7 @@ model brews {
   logs    logs[]
   equipment equipment[]
 
+  @@index([cover_image_id])
   @@unique([id, user_id])
   @@index([user_id, start_date])
   @@index([recipe_id])
@@ -138,6 +142,10 @@ model recipes {
   lastActivityEmailAt   DateTime? @db.Timestamptz(6)
   activityEmailsEnabled Boolean   @default(false)
 
+  cover_image_id String? @db.Uuid
+  cover_image brew_images? @relation("RecipeCover", fields: [cover_image_id], references: [id], onDelete: SetNull)
+  images brew_images[] @relation("RecipeImages")
+
   brews          brews[]
   devices        devices[]
   users          users?                  @relation(fields: [user_id], references: [id])
@@ -145,6 +153,7 @@ model recipes {
   ratings        recipe_ratings[]
   daily_activity recipe_daily_activity[]
   chat_drafts    chat_drafts[]
+  @@index([cover_image_id])
 }
 
 model users {
@@ -1330,7 +1339,9 @@ enum chat_access_mode {
 model brew_images {
   id String @id @db.Uuid
   brew_id String? @db.Uuid
-  original_brew_id String @db.Uuid
+  original_brew_id String? @db.Uuid
+  recipe_id Int?
+  original_recipe_id Int?
   entry_id String? @db.Uuid
   original_entry_id String? @db.Uuid
   user_id Int
@@ -1349,8 +1360,12 @@ model brew_images {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @updatedAt @db.Timestamptz(6)
   entry brew_entries? @relation(fields: [entry_id], references: [id], onDelete: SetNull)
-  brew brews? @relation(fields: [brew_id], references: [id], onDelete: SetNull)
+  brew brews? @relation("BrewImages", fields: [brew_id], references: [id], onDelete: SetNull)
+  recipe recipes? @relation("RecipeImages", fields: [recipe_id], references: [id], onDelete: SetNull)
+  brew_covers brews[] @relation("BrewCover")
+  recipe_covers recipes[] @relation("RecipeCover")
   user users @relation(fields: [user_id], references: [id], onDelete: NoAction)
+  @@index([recipe_id, status])
   @@index([user_id, status])
   @@index([brew_id, status])
   @@index([entry_id, status])

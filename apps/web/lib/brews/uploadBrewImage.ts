@@ -11,11 +11,12 @@ export function uploadBrewImage(
   body: CreateBrewImageRequestBody,
   token: string | null,
   progress: (percent: number) => void,
+  target: "brews" | "recipes" = "brews",
 ) {
   return new Promise<ReturnType<typeof brewImageMutationResponseSchema.parse>>(
     (resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", `/api/brews/${brewId}/images`);
+      xhr.open("POST", `/api/${target}/${brewId}/images`);
       xhr.setRequestHeader("Content-Type", "application/json");
       if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.timeout = 65_000;

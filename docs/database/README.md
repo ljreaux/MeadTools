@@ -2,7 +2,7 @@
 
 Generated from `apps/web/prisma/schema.prisma`; regenerate with `npm run db:erd`. Do not edit generated files by hand.
 
-**68 tables · 570 columns · 78 foreign keys · 19 enums.**
+**68 tables · 574 columns · 81 foreign keys · 19 enums.**
 
 Open [the interactive viewer](./erd.html) locally in your browser for search, zoom, pan, and focused areas. It works offline and contains no account or database data.
 
@@ -29,9 +29,9 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 ## Schema and migration fingerprints
 
-Schema SHA-256: `81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a`
+Schema SHA-256: `9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e`
 
-Migration-set SHA-256: `e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7`
+Migration-set SHA-256: `e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 
@@ -216,7 +216,9 @@ Durable upload reservations and cleanup survive brew deletion.
 | --- | --- | --- | --- |
 | `id` | `Uuid` | PK |  |
 | `brew_id` | `Uuid?` | FK |  |
-| `original_brew_id` | `Uuid` |  |  |
+| `original_brew_id` | `Uuid?` |  |  |
+| `recipe_id` | `Int?` | FK |  |
+| `original_recipe_id` | `Int?` |  |  |
 | `entry_id` | `Uuid?` | FK |  |
 | `original_entry_id` | `Uuid?` |  |  |
 | `user_id` | `Int` | FK |  |
@@ -239,6 +241,7 @@ Primary key: `id`.
 
 Declared table indexes/constraints:
 
+- `@@index([recipe_id, status])`
 - `@@index([user_id, status])`
 - `@@index([brew_id, status])`
 - `@@index([entry_id, status])`
@@ -248,6 +251,7 @@ Foreign keys:
 
 - (`brew_id`) → `brews` (`id`); delete **SetNull**, update **Cascade (Prisma default)**.
 - (`entry_id`) → `brew_entries` (`id`); delete **SetNull**, update **Cascade (Prisma default)**.
+- (`recipe_id`) → `recipes` (`id`); delete **SetNull**, update **Cascade (Prisma default)**.
 - (`user_id`) → `users` (`id`); delete **NoAction**, update **Cascade (Prisma default)**.
 
 <a id="table-brews"></a>
@@ -271,6 +275,7 @@ This model contains row level security and requires additional setup for migrati
 | `sb_alert_sent` | `Boolean?` |  | false |
 | `fg_alert_sent` | `Boolean?` |  | false |
 | `public` | `Boolean` |  | false |
+| `cover_image_id` | `Uuid?` | FK |  |
 | `stage` | `brew_stage` ([enum](#enum-brew_stage)) |  | &quot;PLANNED&quot; |
 | `batch_number` | `Int?` |  |  |
 | `current_volume_liters` | `Real?` |  |  |
@@ -281,12 +286,14 @@ Primary key: `id`.
 
 Declared table indexes/constraints:
 
+- `@@index([cover_image_id])`
 - `@@unique([id, user_id])`
 - `@@index([user_id, start_date])`
 - `@@index([recipe_id])`
 
 Foreign keys:
 
+- (`cover_image_id`) → `brew_images` (`id`); delete **SetNull**, update **Cascade (Prisma default)**.
 - (`recipe_id`) → `recipes` (`id`); delete **NoAction**, update **NoAction**.
 - (`user_id`) → `users` (`id`); delete **NoAction**, update **NoAction**.
 
@@ -1904,11 +1911,17 @@ Prisma model: `recipes`. Area: Recipes, catalog & community.
 | `private` | `Boolean` |  | false |
 | `lastActivityEmailAt` | `Timestamptz(6)?` |  |  |
 | `activityEmailsEnabled` | `Boolean` |  | false |
+| `cover_image_id` | `Uuid?` | FK |  |
 
 Primary key: `id`.
 
+Declared table indexes/constraints:
+
+- `@@index([cover_image_id])`
+
 Foreign keys:
 
+- (`cover_image_id`) → `brew_images` (`id`); delete **SetNull**, update **Cascade (Prisma default)**.
 - (`user_id`) → `users` (`id`); delete **SetNull (Prisma default)**, update **Cascade (Prisma default)**.
 
 <a id="table-session"></a>

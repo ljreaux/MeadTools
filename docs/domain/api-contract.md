@@ -365,3 +365,32 @@ were not retained. Clients display their canonical liters as a fallback, without
 inventing an original unit. Private stock metadata remains outside public brew
 entries. The existing undeployed finished-mead migration adds two scalar fields
 and enforces paired positive display values with volume units.
+
+Cover images (#512) add `GET`/`PATCH` `/brews/{brew_id}/cover` and
+`/recipes/{id}/cover`, plus recipe photo collection/item endpoints mirroring brew
+photos. Selection accepts `{ image_id: UUID | null }`; reads return a bounded
+photo projection or `null` and `can_set`. Public reads explicitly opt in with
+`public=true` and require an active owner and current record visibility; brew
+photos additionally require their linked recipe to be public. Viewing is free,
+including signed-out visitors. New uploads and selection require premium;
+removing a selection or retained photo remains available after expiry. Recipe
+uploads reject `entry_id`. All image authorization responses prohibit caching.
+These four paths are approved additions excluded from historical endpoint parity.
+
+Successful new recipe photo uploads atomically select the uploaded photo as the
+recipe cover while retaining earlier photos. Replaying a successful operation
+does not override a later cover selection; failed uploads preserve the cover.
+
+Brew photo uploads accept optional `set_as_cover: true` for the cover picker.
+New uploads with this flag select the cover atomically; ordinary gallery/entry
+uploads preserve the selection. The flag participates in upload idempotency,
+and a completed-upload replay never overrides a later selection. Recipe uploads
+remain automatic and reject this brew-specific option.
+
+Brew list, detail, mutation and public brew projections, and the recipe record,
+include `cover_image_id` (UUID or `null`). Lists use it to skip cover requests for
+records without a cover; images are still read through the cover endpoint,
+which rechecks visibility. Removing a photo, its entry, its record or the
+owner's account clears any cover that references it in the same transaction, so
+a non-null value always names a live image. The generic recipe update ignores
+`cover_image_id`; covers change only through the cover endpoints.

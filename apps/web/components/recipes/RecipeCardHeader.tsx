@@ -1,5 +1,6 @@
 "use client";
 
+import { EditableCover } from "@/components/brews/RecordCover";
 import { Switch } from "../ui/switch";
 import { Separator } from "../ui/separator";
 import { Pencil, PencilOff } from "lucide-react";
@@ -109,6 +110,14 @@ export default function RecipeCardHeader({
       <Rating
         averageRating={recipe.averageRating ?? 0}
         numberOfRatings={recipe.numberOfRatings ?? 0}
+      />
+
+      {/* Below the name and options so they stay in the first screen on phones. */}
+      <EditableCover
+        id={String(recipe.id)}
+        target="recipes"
+        recordPublic={!isPrivate}
+        coverId={recipe.cover_image_id}
       />
 
       <Separator />

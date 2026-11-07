@@ -124,6 +124,7 @@ import {
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
   contactValidationErrorResponseSchema,
+  coverImageResponseSchema,
   createAdditiveFailureErrorResponseSchema,
   createAdditiveRequestBodySchema,
   createAdditiveValidationErrorResponseSchema,
@@ -153,6 +154,7 @@ import {
   createRecipeCommentResponseSchema,
   createRecipeCommentValidationErrorResponseSchema,
   createRecipeFailureErrorResponseSchema,
+  createRecipeImageRequestBodySchema,
   createRecipeRequestBodySchema,
   createRecipeResponseSchema,
   createRecipeValidationErrorResponseSchema,
@@ -349,6 +351,8 @@ import {
   recipeDetailResponseSchema,
   recipeFetchErrorResponseSchema,
   recipeForbiddenErrorResponseSchema,
+  recipeImagePathParamsSchema,
+  recipeImagesPathParamsSchema,
   recipeNotFoundErrorResponseSchema,
   recipeOwnerResponseSchema,
   recipePathParamsSchema,
@@ -381,6 +385,7 @@ import {
   resolveCreditPaymentRecoveryRequestBodySchema,
   resolveCreditPaymentRecoveryResponseSchema,
   selectedNutrientsResponseSchema,
+  setCoverImageRequestBodySchema,
   stabilizersResponseSchema,
   startHydrometerBrewRequestBodySchema,
   startHydrometerBrewResponseSchema,
@@ -571,6 +576,7 @@ export const ContactRequestBody = contactRequestBodySchema;
 export const ContactSendErrorResponse = contactSendErrorResponseSchema;
 export const ContactSuccessResponse = contactSuccessResponseSchema;
 export const ContactValidationErrorResponse = contactValidationErrorResponseSchema;
+export const CoverImageResponse = coverImageResponseSchema;
 export const CreateAdditiveFailureErrorResponse = createAdditiveFailureErrorResponseSchema;
 export const CreateAdditiveRequestBody = createAdditiveRequestBodySchema;
 export const CreateAdditiveValidationErrorResponse = createAdditiveValidationErrorResponseSchema;
@@ -600,6 +606,7 @@ export const CreateRecipeCommentRequestBody = createRecipeCommentRequestBodySche
 export const CreateRecipeCommentResponse = createRecipeCommentResponseSchema;
 export const CreateRecipeCommentValidationErrorResponse = createRecipeCommentValidationErrorResponseSchema;
 export const CreateRecipeFailureErrorResponse = createRecipeFailureErrorResponseSchema;
+export const CreateRecipeImageRequestBody = createRecipeImageRequestBodySchema;
 export const CreateRecipeRequestBody = createRecipeRequestBodySchema;
 export const CreateRecipeResponse = createRecipeResponseSchema;
 export const CreateRecipeValidationErrorResponse = createRecipeValidationErrorResponseSchema;
@@ -796,6 +803,8 @@ export const RecipeDerivedValidationErrorResponse = recipeDerivedValidationError
 export const RecipeDetailResponse = recipeDetailResponseSchema;
 export const RecipeFetchErrorResponse = recipeFetchErrorResponseSchema;
 export const RecipeForbiddenErrorResponse = recipeForbiddenErrorResponseSchema;
+export const RecipeImagePathParams = recipeImagePathParamsSchema;
+export const RecipeImagesPathParams = recipeImagesPathParamsSchema;
 export const RecipeNotFoundErrorResponse = recipeNotFoundErrorResponseSchema;
 export const RecipeOwnerResponse = recipeOwnerResponseSchema;
 export const RecipePathParams = recipePathParamsSchema;
@@ -828,6 +837,7 @@ export const ResetPasswordValidationErrorResponse = resetPasswordValidationError
 export const ResolveCreditPaymentRecoveryRequestBody = resolveCreditPaymentRecoveryRequestBodySchema;
 export const ResolveCreditPaymentRecoveryResponse = resolveCreditPaymentRecoveryResponseSchema;
 export const SelectedNutrientsResponse = selectedNutrientsResponseSchema;
+export const SetCoverImageRequestBody = setCoverImageRequestBodySchema;
 export const StabilizersResponse = stabilizersResponseSchema;
 export const StartHydrometerBrewRequestBody = startHydrometerBrewRequestBodySchema;
 export const StartHydrometerBrewResponse = startHydrometerBrewResponseSchema;

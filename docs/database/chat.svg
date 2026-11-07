@@ -1,5 +1,5 @@
 <svg width="1511pt" height="1172pt"
- viewBox="0.00 0.00 1511.00 1172.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Chat &amp; model usage"><metadata>{&quot;schema&quot;:&quot;81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a&quot;,&quot;migrations&quot;:&quot;e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7&quot;}</metadata>
+ viewBox="0.00 0.00 1511.00 1172.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Chat &amp; model usage"><metadata>{&quot;schema&quot;:&quot;9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e&quot;,&quot;migrations&quot;:&quot;e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980&quot;}</metadata>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1143.2)">
 <polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1143.2 1482.17,-1143.2 1482.17,28.8 -28.8,28.8"/>
 <!-- chat_access_grants&#45;&gt;users -->

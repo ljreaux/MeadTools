@@ -1,5 +1,6 @@
 "use client";
 
+import { CoverThumbnail } from "@/components/brews/RecordCover";
 import useCards from "@/hooks/useCards";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -315,6 +316,8 @@ function ConnectedBrews({
         }),
     [brews, recipeId]
   );
+  // Reserve a thumbnail column only when at least one linked brew has a cover.
+  const hasBrewCovers = connectedBrews.some((brew) => brew.cover_image_id);
 
   const formatDate = (date?: string | null) =>
     date ? formatter.format(new Date(date)) : "—";
@@ -363,13 +366,23 @@ function ConnectedBrews({
               className="flex flex-col gap-4 rounded-md border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0 space-y-2">
-                <div className="min-w-0">
-                  <h2 className="truncate text-base font-semibold">
-                    {brew.name || brew.id}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {t(`brewStage.${brew.stage}`, brew.stage)}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  {hasBrewCovers ? (
+                    <CoverThumbnail
+                      id={brew.id}
+                      target="brews"
+                      coverId={brew.cover_image_id ?? null}
+                      placeholder
+                    />
+                  ) : null}
+                  <div className="min-w-0">
+                    <h2 className="truncate text-base font-semibold">
+                      {brew.name || brew.id}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {t(`brewStage.${brew.stage}`, brew.stage)}
+                    </p>
+                  </div>
                 </div>
 
                 <dl className="grid gap-2 text-sm sm:grid-cols-3">

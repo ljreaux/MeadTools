@@ -125,6 +125,7 @@ import {
   contactSendErrorResponseSchema,
   contactSuccessResponseSchema,
   contactValidationErrorResponseSchema,
+  coverImageResponseSchema,
   createAdditiveFailureErrorResponseSchema,
   createAdditiveRequestBodySchema,
   createAdditiveValidationErrorResponseSchema,
@@ -154,6 +155,7 @@ import {
   createRecipeCommentResponseSchema,
   createRecipeCommentValidationErrorResponseSchema,
   createRecipeFailureErrorResponseSchema,
+  createRecipeImageRequestBodySchema,
   createRecipeRequestBodySchema,
   createRecipeResponseSchema,
   createRecipeValidationErrorResponseSchema,
@@ -350,6 +352,8 @@ import {
   recipeDetailResponseSchema,
   recipeFetchErrorResponseSchema,
   recipeForbiddenErrorResponseSchema,
+  recipeImagePathParamsSchema,
+  recipeImagesPathParamsSchema,
   recipeNotFoundErrorResponseSchema,
   recipeOwnerResponseSchema,
   recipePathParamsSchema,
@@ -382,6 +386,7 @@ import {
   resolveCreditPaymentRecoveryRequestBodySchema,
   resolveCreditPaymentRecoveryResponseSchema,
   selectedNutrientsResponseSchema,
+  setCoverImageRequestBodySchema,
   stabilizersResponseSchema,
   startHydrometerBrewRequestBodySchema,
   startHydrometerBrewResponseSchema,
@@ -572,6 +577,7 @@ export type ContactRequestBody = z.infer<typeof contactRequestBodySchema>;
 export type ContactSendErrorResponse = z.infer<typeof contactSendErrorResponseSchema>;
 export type ContactSuccessResponse = z.infer<typeof contactSuccessResponseSchema>;
 export type ContactValidationErrorResponse = z.infer<typeof contactValidationErrorResponseSchema>;
+export type CoverImageResponse = z.infer<typeof coverImageResponseSchema>;
 export type CreateAdditiveFailureErrorResponse = z.infer<typeof createAdditiveFailureErrorResponseSchema>;
 export type CreateAdditiveRequestBody = z.infer<typeof createAdditiveRequestBodySchema>;
 export type CreateAdditiveValidationErrorResponse = z.infer<typeof createAdditiveValidationErrorResponseSchema>;
@@ -601,6 +607,7 @@ export type CreateRecipeCommentRequestBody = z.infer<typeof createRecipeCommentR
 export type CreateRecipeCommentResponse = z.infer<typeof createRecipeCommentResponseSchema>;
 export type CreateRecipeCommentValidationErrorResponse = z.infer<typeof createRecipeCommentValidationErrorResponseSchema>;
 export type CreateRecipeFailureErrorResponse = z.infer<typeof createRecipeFailureErrorResponseSchema>;
+export type CreateRecipeImageRequestBody = z.infer<typeof createRecipeImageRequestBodySchema>;
 export type CreateRecipeRequestBody = z.infer<typeof createRecipeRequestBodySchema>;
 export type CreateRecipeResponse = z.infer<typeof createRecipeResponseSchema>;
 export type CreateRecipeValidationErrorResponse = z.infer<typeof createRecipeValidationErrorResponseSchema>;
@@ -797,6 +804,8 @@ export type RecipeDerivedValidationErrorResponse = z.infer<typeof recipeDerivedV
 export type RecipeDetailResponse = z.infer<typeof recipeDetailResponseSchema>;
 export type RecipeFetchErrorResponse = z.infer<typeof recipeFetchErrorResponseSchema>;
 export type RecipeForbiddenErrorResponse = z.infer<typeof recipeForbiddenErrorResponseSchema>;
+export type RecipeImagePathParams = z.infer<typeof recipeImagePathParamsSchema>;
+export type RecipeImagesPathParams = z.infer<typeof recipeImagesPathParamsSchema>;
 export type RecipeNotFoundErrorResponse = z.infer<typeof recipeNotFoundErrorResponseSchema>;
 export type RecipeOwnerResponse = z.infer<typeof recipeOwnerResponseSchema>;
 export type RecipePathParams = z.infer<typeof recipePathParamsSchema>;
@@ -829,6 +838,7 @@ export type ResetPasswordValidationErrorResponse = z.infer<typeof resetPasswordV
 export type ResolveCreditPaymentRecoveryRequestBody = z.infer<typeof resolveCreditPaymentRecoveryRequestBodySchema>;
 export type ResolveCreditPaymentRecoveryResponse = z.infer<typeof resolveCreditPaymentRecoveryResponseSchema>;
 export type SelectedNutrientsResponse = z.infer<typeof selectedNutrientsResponseSchema>;
+export type SetCoverImageRequestBody = z.infer<typeof setCoverImageRequestBodySchema>;
 export type StabilizersResponse = z.infer<typeof stabilizersResponseSchema>;
 export type StartHydrometerBrewRequestBody = z.infer<typeof startHydrometerBrewRequestBodySchema>;
 export type StartHydrometerBrewResponse = z.infer<typeof startHydrometerBrewResponseSchema>;
