@@ -9,7 +9,7 @@ archival, and shared quantity history. Users choose their grouping without a
 required lot, tracked brew, or batch. The existing stock ledger and account
 operation helper protect ownership, premium access, retries, stale forms, and
 rollback. New `inventory_meads` rows group `mead` stock by bottle capacity.
-Production migration `20261026000000_add_finished_mead_inventory` adds ownership
+Production migration `20261107000000_add_finished_mead_inventory` adds ownership
 and whole-bottle/capacity constraints. Existing consumables API and spreadsheet
 operations remain scoped to consumables. Storage, custom labels, multi-rule
 sorting, automatic bottling output, and finished-mead spreadsheet transfers are

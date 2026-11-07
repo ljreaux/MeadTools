@@ -36,3 +36,6 @@ ALTER TABLE "inventory_stock"
     OR ("category"::text <> 'mead' AND "mead_id" IS NULL AND "bottle_size_liters" IS NULL)
   );
 CREATE UNIQUE INDEX "inventory_stock_mead_id_bottle_size_liters_key" ON "inventory_stock"("mead_id", "bottle_size_liters");
+
+-- Server-only access: match 20261101010000_harden_server_only_database.
+ALTER TABLE "inventory_meads" ENABLE ROW LEVEL SECURITY;

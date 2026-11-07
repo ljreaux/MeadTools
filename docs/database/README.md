@@ -31,7 +31,7 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 Schema SHA-256: `81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a`
 
-Migration-set SHA-256: `32fd1efe422ae5e3ae183e8e3991f39b6bc47308f3d63c230080d2fb7cdebefa`
+Migration-set SHA-256: `e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 

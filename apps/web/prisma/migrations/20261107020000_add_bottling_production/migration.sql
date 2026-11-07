@@ -70,3 +70,7 @@ CREATE INDEX "inventory_adjustments_bottling_id_idx" ON "inventory_adjustments"(
 
 -- AddForeignKey
 ALTER TABLE "inventory_adjustments" ADD CONSTRAINT "inventory_adjustments_bottling_id_user_id_fkey" FOREIGN KEY ("bottling_id", "user_id") REFERENCES "inventory_bottlings"("id", "user_id") ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- Server-only access: match 20261101010000_harden_server_only_database.
+ALTER TABLE "inventory_bottlings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "inventory_productions" ENABLE ROW LEVEL SECURITY;

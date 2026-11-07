@@ -1,5 +1,5 @@
 <svg width="1625pt" height="1623pt"
- viewBox="0.00 0.00 1625.00 1623.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Inventory &amp; equipment"><metadata>{&quot;schema&quot;:&quot;81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a&quot;,&quot;migrations&quot;:&quot;32fd1efe422ae5e3ae183e8e3991f39b6bc47308f3d63c230080d2fb7cdebefa&quot;}</metadata>
+ viewBox="0.00 0.00 1625.00 1623.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Inventory &amp; equipment"><metadata>{&quot;schema&quot;:&quot;81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a&quot;,&quot;migrations&quot;:&quot;e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7&quot;}</metadata>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1594.6)">
 <polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1594.6 1596.15,-1594.6 1596.15,28.8 -28.8,28.8"/>
 <!-- equipment&#45;&gt;brews -->

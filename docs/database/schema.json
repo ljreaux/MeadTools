@@ -1,7 +1,7 @@
 {
   "fingerprint": {
     "schema": "81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a",
-    "migrations": "32fd1efe422ae5e3ae183e8e3991f39b6bc47308f3d63c230080d2fb7cdebefa"
+    "migrations": "e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7"
   },
   "migrations": [
     {
@@ -153,16 +153,24 @@
       "sha256": "7a700ac648e2f61ecfd247b04844ea06822e94447d5a2c5d7a84b3c40e4a40dd"
     },
     {
-      "name": "20261026000000_add_finished_mead_inventory",
-      "sha256": "969bb485032a35e2a2d1c24453f989faa4c9ef2d264b3df878794c74c0dc3387"
+      "name": "20261101010000_harden_server_only_database",
+      "sha256": "f82e7537b504b374e8fe8d7bcf5ce726029ad98a7f216742a6865a1a8eed60ed"
     },
     {
-      "name": "20261026010000_add_inventory_organization",
-      "sha256": "ae9f9f879691cc0850a4819ff337e5a276a70026813a34f2c446c26faf30f614"
+      "name": "20261101020000_remove_unused_pgjwt",
+      "sha256": "cf4076cf2d1015e9d7649e76737e6f7db18cc22463bb13fdbba87706ebfcc93f"
     },
     {
-      "name": "20261027000000_add_bottling_production",
-      "sha256": "2bde2dbf446296c9a7ab2e7f6a8136e4368b0bd00c92f62dc2c02698c46acc2a"
+      "name": "20261107000000_add_finished_mead_inventory",
+      "sha256": "4f1856058072fb6e1621a85eee39634c9c7d4f2fbb9dbee770b11da86529d3d7"
+    },
+    {
+      "name": "20261107010000_add_inventory_organization",
+      "sha256": "08d5ad1f4826d4d21b5add7720bdf63005cb1a069bdcc0568880ac008213460f"
+    },
+    {
+      "name": "20261107020000_add_bottling_production",
+      "sha256": "757759eddeb6a50fdc0c7c259747a8728d7845eab3c24bd2c578d7b5fb0f689f"
     }
   ],
   "models": [

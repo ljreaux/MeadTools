@@ -139,3 +139,10 @@ ALTER TABLE "inventory_locations" ADD CONSTRAINT "inventory_location_self_check"
 ALTER TABLE "inventory_labels" ADD CONSTRAINT "inventory_label_name_check" CHECK (length(trim("name")) > 0);
 ALTER TABLE "inventory_storage_events" ADD CONSTRAINT "inventory_storage_event_quantity_check"
   CHECK ("delta" <> 0 AND "balance_after" >= 0 AND "balance_after" <= 1000000000);
+
+-- Server-only access: match 20261101010000_harden_server_only_database.
+ALTER TABLE "inventory_labels" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "inventory_label_links" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "inventory_locations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "inventory_allocations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "inventory_storage_events" ENABLE ROW LEVEL SECURITY;
