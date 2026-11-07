@@ -2722,7 +2722,7 @@
             "FAILED": "Die Bestandsänderung konnte nicht gespeichert werden. Bitte versuche es erneut."
         },
         "title": "Inventar",
-        "description": "Behalte Zutaten und Verpackungsmaterial im Blick, protokolliere Einkäufe und Verbrauch und überprüfe Mengenänderungen.",
+        "description": "Verfolge, welche Zutaten in deine Ansätze hineingehen und welche fertigen Gebräue du vorrätig hast.",
         "add": "Bestand hinzufügen",
         "addDescription": "Gib deiner Zutat oder Verpackung einen Namen und trage ein, wie viel du vorrätig hast.",
         "name": "Name",
@@ -2747,7 +2747,7 @@
         "transfer": {
             "import": "Importieren",
             "export": "Exportieren",
-            "sectionTitle": "Import und Export",
+            "sectionTitle": "Verbrauchsmaterial importieren & exportieren",
             "importHelp": "Importiere Bestände von einer anderen Plattform per Excel- oder CSV-Datei. Ordne deine Spalten zu und überprüfe Mengen und Kataloglinks, bevor du speicherst.",
             "importPremiumHelp": "Der Import von Beständen per Excel- oder CSV-Datei ist mit Premium verfügbar.",
             "rowErrors": {
