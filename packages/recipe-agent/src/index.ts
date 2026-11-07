@@ -714,6 +714,41 @@ export const mcpAgentToolNames = [
 
 export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
 
+/** Human-readable discovery metadata shared by remote MCP adapters. */
+const mcpToolTitles = {
+  calculate_juice_sugar: "Calculate juice sugar",
+  calculate_abv: "Calculate ABV",
+  convert_brix_gravity: "Convert Brix and specific gravity",
+  estimate_original_gravity: "Estimate original gravity",
+  calculate_sulfite: "Calculate sulfite addition",
+  calculate_sorbate: "Calculate sorbate addition",
+  correct_refractometer: "Correct refractometer reading",
+  correct_hydrometer_temperature: "Correct hydrometer temperature",
+  calculate_blend: "Calculate a blend",
+  calculate_priming_sugar: "Calculate priming sugar",
+  calculate_bottling: "Calculate bottling volumes",
+  calculate_bench_trial: "Calculate a bench trial",
+  search_public_recipes: "Search public recipes",
+  get_public_recipe: "Get a public recipe",
+  search_public_brews: "Search public brews",
+  get_public_brew: "Get a public brew",
+  summarize_public_brews: "Summarize public brews",
+  list_brews: "List my brews",
+  get_brew: "Get my brew",
+  get_brew_timeline: "Get my brew timeline",
+  get_brew_sensor_history: "Get my brew sensor history",
+  summarize_brew_sensor_history: "Summarize my brew sensor history",
+  list_recipes: "List my recipes",
+  get_recipe: "Get my recipe",
+  search_ingredients: "Search ingredients",
+  search_additives: "Search additives",
+  search_yeasts: "Search yeasts",
+  search_wiki: "Search the MeadTools wiki",
+  fetch_wiki_page: "Read a MeadTools wiki page",
+  calculate_gravity_target: "Calculate a gravity target",
+  build_recipe_draft: "Build an unsaved recipe draft"
+} satisfies Record<McpAgentToolName, string>;
+
 export const mcpAgentToolDefinitions = [
   ...calculatorToolDefinitions,
   ...publicReadToolDefinitions,
@@ -727,7 +762,7 @@ export const mcpAgentToolDefinitions = [
       !isPublicReadTool(definition.name) &&
       mcpAgentToolNames.some((name) => name === definition.name)
   )
-];
+].map((tool) => ({ ...tool, title: mcpToolTitles[tool.name] }));
 
 /** Keep MCP execution on the same validated domain path as hosted chat. */
 export async function executeMcpAgentTool(

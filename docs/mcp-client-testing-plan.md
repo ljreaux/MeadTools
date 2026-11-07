@@ -1,5 +1,9 @@
 # MCP client compatibility plan (issue #438)
 
+Marketplace preparation, December implementation gaps, submission materials and
+post-launch reviewer gates are tracked in [marketplace readiness](mcp-marketplace-readiness.md).
+Custom-connector results below do not establish marketplace approval.
+
 This is a **Preview-only** manual test plan for PR #447. The stable PR branch
 URL, followed later by `preview.meadtools.com`, is the MCP endpoint under test.
 Premium sales and production MCP access remain off. Passing a protocol fixture

@@ -41,6 +41,31 @@ function Steps({ items }: { items: string[] }) {
   );
 }
 
+function PluginZipInstall({ client }: { client: "claude" | "chatgpt" }) {
+  const { t } = useTranslation();
+  return (
+    <Accordion type="single" collapsible>
+      <AccordionItem value={`${client}-zip`}>
+        <AccordionTrigger>{t("mcpGuide.zipTitle")}</AccordionTrigger>
+        <AccordionContent className="space-y-4">
+          <p>{t(`mcpGuide.${client}ZipBody`)}</p>
+          <Button asChild variant="outline">
+            <a href={`/downloads/mcp/meadtools-${client}-0.1.0.zip`} download>
+              {t(`mcpGuide.${client}ZipDownload`)}
+            </a>
+          </Button>
+          <Steps items={[
+            t(`mcpGuide.${client}ZipStep1`),
+            t(`mcpGuide.${client}ZipStep2`),
+            t(`mcpGuide.${client}ZipStep3`)
+          ]} />
+          <p className="text-sm text-muted-foreground">{t("mcpGuide.zipPreview")}</p>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
 function subscribeOrigin() {
   return () => {};
 }
@@ -283,6 +308,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
               >
                 {t("mcpGuide.chatgptDocs")}
               </a>
+              <PluginZipInstall client="chatgpt" />
             </TabsContent>
             <TabsContent value="claude" className="mt-5 max-w-3xl space-y-4">
               <h3 className="text-lg font-semibold">
@@ -304,6 +330,7 @@ export function McpGuide({ endpoint }: { endpoint: string }) {
               >
                 {t("mcpGuide.claudeDocs")}
               </a>
+              <PluginZipInstall client="claude" />
             </TabsContent>
             <TabsContent value="other" className="mt-5 max-w-3xl space-y-3">
               <h3 className="text-lg font-semibold">

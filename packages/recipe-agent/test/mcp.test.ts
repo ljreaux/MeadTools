@@ -22,6 +22,26 @@ test("MCP calculation uses the same result as hosted chat", async () => {
   );
 });
 
+test("every MCP definition has a readable title with distinct public and owned labels", () => {
+  const titles = mcpAgentToolDefinitions.map((tool) => tool.title);
+  assert.equal(new Set(titles).size, mcpAgentToolNames.length);
+  for (const title of titles) {
+    assert.equal(title, title.trim());
+    assert.ok(title.length > 0 && !title.includes("_"));
+  }
+  for (const [name, title] of [
+    ["calculate_abv", "Calculate ABV"],
+    ["get_public_recipe", "Get a public recipe"],
+    ["get_recipe", "Get my recipe"],
+    ["build_recipe_draft", "Build an unsaved recipe draft"]
+  ]) {
+    assert.equal(
+      mcpAgentToolDefinitions.find((tool) => tool.name === name)?.title,
+      title
+    );
+  }
+});
+
 test("all seven original MCP tools preserve successful shared execution without account access", async () => {
   const options: NonNullable<Parameters<typeof executeMcpAgentTool>[2]> = {
     ingredientLookup: async () => [
