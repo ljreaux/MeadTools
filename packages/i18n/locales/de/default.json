@@ -3238,7 +3238,7 @@
             "IMAGE_TOO_LARGE": "Dieses Foto ist zu groß. Wähle ein kleineres Foto (bis zu 20 MiB und 40 Megapixel).",
             "QUOTA_EXCEEDED": "Dein Speicherplatz von 250 MiB ist voll. Entferne Fotos und warte, bis die Bereinigung abgeschlossen ist, bevor du es erneut versuchst.",
             "BREW_IMAGE_LIMIT": "Dieser Ansatz hat bereits 20 Fotos, einschließlich Uploads oder Fotos, die auf die Bereinigung warten.",
-            "PREMIUM_REQUIRED": "Zum Hochladen neuer Fotos ist eine aktive Premium-Mitgliedschaft erforderlich.",
+            "PREMIUM_REQUIRED": "Für das Hochladen von Fotos oder das Auswählen eines Titelbilds benötigst du Premium.",
             "NOT_FOUND": "Dieses Foto oder dieser Ansatz ist nicht mehr verfügbar.",
             "UPLOAD_IN_PROGRESS": "Ein Upload wird noch verarbeitet oder wartet auf Bereinigung. Versuche es in etwa 15 Minuten erneut.",
             "OPERATION_CONFLICT": "Dieser Upload wurde geändert oder entfernt. Wähle das Foto erneut aus.",
@@ -3253,7 +3253,8 @@
         "brewPhoto": "Ansatzfoto",
         "entryPhoto": "Eintragsfoto",
         "uploadingPhoto": "Lade Foto {{current}} von {{total}} hoch",
-        "selectedPhotoAlt": "Vorschau von {{name}}"
+        "selectedPhotoAlt": "Vorschau von {{name}}",
+        "unavailablePhoto": "Foto nicht verfügbar"
     },
     "bottlingInventory": {
         "title": "Abfüllung überprüfen",
@@ -3319,5 +3320,26 @@
         "sourceRemoved": "Quell-Eintrag entfernt",
         "noRows": "Fertige Ausbeute ergibt sich aus den Flaschenzahlen. Für dieses Speichern werden keine Flaschenzeilen erfasst.",
         "producedBottles": "Produzierte Flaschen zum Verknüpfen"
+    },
+    "coverImages": {
+        "title": "Titelbild",
+        "add": "Titelbild hinzufügen",
+        "change": "Titelbild ändern",
+        "view": "Titelbild ansehen",
+        "remove": "Titelbild entfernen",
+        "usePhoto": "Als Titelbild verwenden",
+        "selected": "Aktuelles Titelbild",
+        "upload": "Foto hochladen",
+        "recipeDescription": "Wird auf der Rezeptseite angezeigt. Ein neu hochgeladenes Foto wird zum Titelbild; frühere Fotos bleiben erhalten.",
+        "brewDescription": "Wird auf der Ansatzseite angezeigt. Wähle ein beliebiges Foto des Ansatzes oder des Eintrags, oder lade ein neues hoch.",
+        "publicNotice": "Titelbilder in öffentlichen Einträgen sind für alle sichtbar.",
+        "premiumRequired": "Das Auswählen oder Hochladen eines Titelbilds erfordert Premium. Du kannst das aktuelle Titelbild trotzdem entfernen.",
+        "premiumLink": "Premium entdecken",
+        "emptyUpload": "Noch keine Fotos. Lade ein Foto hoch, um es als Titelbild zu verwenden.",
+        "photoNumber": "Foto {{number}}",
+        "recipePhoto": "Rezeptfoto",
+        "recipeLimits": "JPEG, PNG oder WebP, bis zu 20 MiB. Fotos werden automatisch skaliert. Bis zu 20 Fotos pro Rezept.",
+        "recipeLimit": "Dieses Rezept hat bereits 20 Fotos, inklusive Uploads oder Fotos, die auf Bereinigung warten.",
+        "recipeRemoveDescription": "Das Foto wird aus diesem Rezept entfernt. Dies kann nicht rückgängig gemacht werden."
     }
 }
