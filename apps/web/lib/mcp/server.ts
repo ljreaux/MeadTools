@@ -11,6 +11,7 @@ import {
   canReadMcpAccount,
   isMcpAccountReadTool,
   isCalculatorTool,
+  isPublicReadTool,
   mcpAgentToolDefinitions,
   mcpAgentToolNames,
   mcpServerInstructions
@@ -131,14 +132,16 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
       isError: execution.status !== "ok",
       content: [{ type: "text" as const, text: JSON.stringify(execution) }],
       ...(isMcpAccountReadTool(request.params.name) ||
+      isPublicReadTool(request.params.name) ||
       (isCalculatorTool(request.params.name) && execution.status === "ok")
         ? { structuredContent: execution }
         : {})
     };
-    // Account and calculator responses include structured content and compatibility text.
+    // Include both structured content and compatibility text in the byte limit.
     const size = Buffer.byteLength(
       JSON.stringify(
         isMcpAccountReadTool(request.params.name) ||
+          isPublicReadTool(request.params.name) ||
           isCalculatorTool(request.params.name)
           ? response
           : execution

@@ -15,7 +15,8 @@ import {
 import { createMeadToolsMcpServer } from "../server.ts";
 import {
   mcpAccountReadToolNames,
-  calculatorToolNames
+  calculatorToolNames,
+  publicReadToolNames
 } from "@meadtools/recipe-agent";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -337,8 +338,8 @@ for (const scope of [base, expanded]) {
   assert.equal(
     inventory.tools.length,
     scope === base
-      ? 7 + calculatorToolNames.length
-      : 14 + calculatorToolNames.length
+      ? 7 + calculatorToolNames.length + publicReadToolNames.length
+      : 14 + calculatorToolNames.length + publicReadToolNames.length
   );
   for (const tool of inventory.tools)
     assert.equal(tool.annotations.readOnlyHint, true);

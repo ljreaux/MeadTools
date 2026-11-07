@@ -1,4 +1,14 @@
 import {
+  publicReadAgentTools,
+  publicReadToolDefinitions,
+  publicReadToolNames,
+  isPublicReadTool,
+  executePublicReadTool,
+  type PublicReadAdapter,
+  type PublicReadName
+} from "./public-reads";
+export * from "./public-reads";
+import {
   calculatorTools,
   calculatorToolDefinitions,
   calculatorToolNames,
@@ -489,10 +499,12 @@ export type HostedAgentTool =
   | typeof additiveSearchAgentTool
   | typeof yeastSearchAgentTool
   | typeof recordRecipePlanAgentTool
-  | (typeof accountReadAgentTools)[number];
+  | (typeof accountReadAgentTools)[number]
+  | (typeof publicReadAgentTools)[number];
 export const hostedAgentTools: readonly HostedAgentTool[] = [
   ...calculatorTools,
   ...accountReadAgentTools,
+  ...publicReadAgentTools,
   recordRecipePlanAgentTool,
   ...recipeAgentTools,
   gravityTargetAgentTool,
@@ -507,6 +519,7 @@ export type HostedAgentToolDefinition = {
   name:
     | CalculatorToolName
     | AccountReadName
+    | PublicReadName
     | RecipeAgentToolName
     | WikiAgentToolName
     | CatalogAgentToolName
@@ -525,6 +538,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
   [
     ...calculatorToolDefinitions,
     ...accountReadToolDefinitions,
+    ...publicReadToolDefinitions,
     {
       name: recordRecipePlanToolName,
       description: descriptionFor(recordRecipePlanToolName),
@@ -688,6 +702,7 @@ export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
 export const mcpAgentToolNames = [
   ...calculatorToolNames,
   ...mcpAccountReadToolNames,
+  ...publicReadToolNames,
   "search_ingredients",
   "search_additives",
   "search_yeasts",
@@ -701,6 +716,7 @@ export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
 
 export const mcpAgentToolDefinitions = [
   ...calculatorToolDefinitions,
+  ...publicReadToolDefinitions,
   ...hostedAgentToolDefinitions.filter(
     (
       definition
@@ -708,6 +724,7 @@ export const mcpAgentToolDefinitions = [
       name: Extract<McpAgentToolName, HostedAgentToolDefinition["name"]>;
     } =>
       !isCalculatorTool(definition.name) &&
+      !isPublicReadTool(definition.name) &&
       mcpAgentToolNames.some((name) => name === definition.name)
   )
 ];
@@ -719,7 +736,10 @@ export async function executeMcpAgentTool(
   options: Pick<
     NonNullable<Parameters<typeof executeHostedAgentTool>[2]>,
     "fetcher" | "ingredientLookup" | "additiveLookup" | "yeastLookup"
-  > & { accountReadAdapter?: AccountReadAdapter } = {}
+  > & {
+    accountReadAdapter?: AccountReadAdapter;
+    publicReadAdapter?: PublicReadAdapter;
+  } = {}
 ): Promise<HostedAgentToolExecution> {
   if (!mcpAgentToolNames.some((name) => name === toolName)) {
     return { status: "unknown_tool", toolName };
@@ -735,7 +755,8 @@ export type HostedAgentToolExecution =
   | BrewActionAgentToolExecution
   | CatalogAgentToolExecution
   | WikiAgentToolExecution
-  | Awaited<ReturnType<typeof executeAccountReadTool>>;
+  | Awaited<ReturnType<typeof executeAccountReadTool>>
+  | Awaited<ReturnType<typeof executePublicReadTool>>;
 
 export async function executeHostedAgentTool(
   toolName: string,
@@ -748,9 +769,13 @@ export async function executeHostedAgentTool(
     yeastLookup?: YeastLookup;
     brewActionTarget?: BrewActionTarget;
     accountReadAdapter?: AccountReadAdapter;
+    publicReadAdapter?: PublicReadAdapter;
   } = {}
 ): Promise<HostedAgentToolExecution> {
   if (isCalculatorTool(toolName)) return executeCalculatorTool(toolName, input);
+  if (isPublicReadTool(toolName)) {
+    return executePublicReadTool(toolName, input, options.publicReadAdapter);
+  }
   if (isMcpAccountReadTool(toolName)) {
     return executeAccountReadTool(
       toolName as AccountReadName,

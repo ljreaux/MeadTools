@@ -1,10 +1,12 @@
 import "server-only";
 
 import type {
+  PublicReadAdapter,
   AdditiveLookup,
   IngredientLookup,
   YeastLookup,
 } from "@meadtools/recipe-agent";
+import { createPublicReadAdapter } from "@/lib/public-read-adapter";
 import { getIngredientCatalogForChat } from "@/lib/db/ingredients";
 import { getAdditiveCatalogForChat } from "@/lib/db/additives";
 import { searchYeastsForChat } from "@/lib/db/yeasts";
@@ -20,10 +22,14 @@ function numberOrUndefined(
 
 /** Shared database adapters for hosted chat and remote MCP tool execution. */
 export const agentCatalogLookups: {
+  publicReadAdapter: PublicReadAdapter;
   ingredientLookup: IngredientLookup;
   additiveLookup: AdditiveLookup;
   yeastLookup: YeastLookup;
 } = {
+  get publicReadAdapter() {
+    return createPublicReadAdapter();
+  },
   ingredientLookup: async () => {
     const ingredients = await getIngredientCatalogForChat();
     return ingredients.flatMap((ingredient) => {
