@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: Context) {
 
 /**
  * Adjust, reconcile or archive inventory stock
- * @description Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. Reconciliation requires a reviewed revision, confirms a physical count and rebases existing brew links without replaying past deductions.
+ * @description Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. Manual use accepts an optional storage source; otherwise unlocated stock is used first, followed by locations in path/position order. Quantity changes update allocations atomically. Stored stock must be moved to unlocated before archival. Reconciliation requires a reviewed revision, confirms a physical count and rebases existing brew links without replaying past deductions.
  * @pathParams InventoryStockPathParams
  * @body UpdateInventoryStockRequestBody
  * @response 200:InventoryStockMutationResponse
@@ -83,6 +83,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
                 quantity: input.quantity,
                 note: input.note,
                 expectedBalance: input.expected_balance,
+                ...(input.storage_source === undefined ? {} : { storageSource: input.storage_source }),
               });
     return NextResponse.json(result);
   } catch (error) {

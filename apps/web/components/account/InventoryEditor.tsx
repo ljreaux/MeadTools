@@ -1,4 +1,5 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +10,8 @@ import {
   stockInputSchema,
   validateStockQuantity,
 } from "@meadtools/inventory-domain";
-import type { InventoryStockItem } from "@meadtools/api-contract/contracts";
+import type { InventoryStockItem, InventoryStorageSource } from "@meadtools/api-contract/contracts";
+import { InventoryUseSource } from "./InventoryOrganizationSummary";
 import type { InventoryCommand } from "@/hooks/reactQuery/useInventory";
 import { InventoryCatalogField } from "./InventoryCatalogField";
 import { AmountUnitField } from "@/components/ui/amount-unit-field";
@@ -30,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -88,6 +89,7 @@ export function InventoryEditor({
     item?.catalogReference ?? null,
   );
   const [invalid, setInvalid] = useState(false);
+  const [source, setSource] = useState<InventoryStorageSource | undefined>(undefined);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (item && action === "details") {
@@ -122,6 +124,7 @@ export function InventoryEditor({
           action,
           quantity: quantity.data,
           expected_balance: item.quantity,
+          ...(action === "manual_use" && source !== undefined ? { storage_source: source } : {}),
           note: notes.trim() || null,
         },
       });
@@ -267,6 +270,7 @@ export function InventoryEditor({
               {t(item ? "inventory.yeastSavedUnitHelp" : "inventory.yeastPacketHelp")}
             </p>
           ) : null}
+          {item && action === "manual_use" ? <InventoryUseSource stockId={item.id} value={source} onChange={setSource} disabled={busy} /> : null}
           <div className="space-y-2">
             <Label htmlFor={`${id}-note`}>{t("inventory.notes")}</Label>
             <Textarea

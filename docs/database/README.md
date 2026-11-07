@@ -2,7 +2,7 @@
 
 Generated from `apps/web/prisma/schema.prisma`; regenerate with `npm run db:erd`. Do not edit generated files by hand.
 
-**60 tables · 507 columns · 62 foreign keys · 19 enums.**
+**68 tables · 570 columns · 78 foreign keys · 19 enums.**
 
 Open [the interactive viewer](./erd.html) locally in your browser for search, zoom, pan, and focused areas. It works offline and contains no account or database data.
 
@@ -29,9 +29,9 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 ## Schema and migration fingerprints
 
-Schema SHA-256: `7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec`
+Schema SHA-256: `81fab8f20ce925b3cb2ce30bbc1e431654318065fb37399b81af45be94b6e99a`
 
-Migration-set SHA-256: `e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f`
+Migration-set SHA-256: `e406a250847fe4a67ef4403a8be933b6e6d494709f31a9e7e2f779ec1a0de6c7`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 
@@ -67,9 +67,17 @@ Both fingerprints are checked by `npm run db:erd:check`; adding or editing a mig
 - [equipment_assignment_events](#table-equipment_assignment_events) — Inventory & equipment
 - [ingredients](#table-ingredients) — Recipes, catalog & community
 - [inventory_adjustments](#table-inventory_adjustments) — Inventory & equipment
+- [inventory_allocations](#table-inventory_allocations) — Inventory & equipment
+- [inventory_bottlings](#table-inventory_bottlings) — Inventory & equipment
 - [inventory_consumptions](#table-inventory_consumptions) — Inventory & equipment
+- [inventory_label_links](#table-inventory_label_links) — Inventory & equipment
+- [inventory_labels](#table-inventory_labels) — Inventory & equipment
+- [inventory_locations](#table-inventory_locations) — Inventory & equipment
+- [inventory_meads](#table-inventory_meads) — Inventory & equipment
 - [inventory_operations](#table-inventory_operations) — Inventory & equipment
+- [inventory_productions](#table-inventory_productions) — Inventory & equipment
 - [inventory_stock](#table-inventory_stock) — Inventory & equipment
+- [inventory_storage_events](#table-inventory_storage_events) — Inventory & equipment
 - [logs](#table-logs) — Brewing & hydrometers
 - [mcp_access_tokens](#table-mcp_access_tokens) — Identity, authentication & MCP
 - [mcp_oauth_clients](#table-mcp_oauth_clients) — Identity, authentication & MCP
@@ -977,6 +985,7 @@ Append-only audit rows; write with balance, operation and consumption in one tra
 | `stock_id` | `Uuid` | FK, UK |  |
 | `operation_id` | `Uuid` | FK, UK |  |
 | `consumption_id` | `Uuid?` | FK |  |
+| `bottling_id` | `Uuid?` | FK |  |
 | `kind` | `VarChar(32)` |  |  |
 | `delta` | `Decimal(16,6)` |  |  |
 | `balance_after` | `Decimal(16,6)` |  |  |
@@ -988,15 +997,76 @@ Primary key: `id`.
 
 Declared table indexes/constraints:
 
+- `@@index([bottling_id])`
 - `@@unique([operation_id, stock_id])`
 - `@@index([user_id, stock_id, created_at])`
 - `@@index([consumption_id])`
 
 Foreign keys:
 
+- (`bottling_id`, `user_id`) → `inventory_bottlings` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
 - (`consumption_id`, `user_id`) → `inventory_consumptions` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
 - (`operation_id`, `user_id`) → `inventory_operations` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
 - (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
+
+<a id="table-inventory_allocations"></a>
+
+### inventory_allocations
+
+Prisma model: `inventory_allocations`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK |  |
+| `stock_id` | `Uuid` | FK, UK |  |
+| `unit` | `inventory_quantity_unit` ([enum](#enum-inventory_quantity_unit)) | FK |  |
+| `location_id` | `Uuid` | FK, UK |  |
+| `position` | `VarChar(200)` | UK | &quot;&quot; |
+| `quantity` | `Decimal(16,6)` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([stock_id, location_id, position])`
+- `@@index([user_id, location_id])`
+
+Foreign keys:
+
+- (`location_id`, `user_id`) → `inventory_locations` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
+
+<a id="table-inventory_bottlings"></a>
+
+### inventory_bottlings
+
+Prisma model: `inventory_bottlings`. Area: Inventory & equipment.
+
+Private production provenance survives source entry/brew deletion.\nSource IDs deliberately have no cascading FK; source_snapshot retains context.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK, UK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK, UK |  |
+| `brew_id` | `Uuid` |  |  |
+| `entry_id` | `Uuid` | UK |  |
+| `source_name` | `VarChar(200)` |  |  |
+| `source_snapshot` | `Json` |  |  |
+| `version` | `Int` |  | 0 |
+| `reconciliation_required` | `Boolean` |  | false |
+| `removed_at` | `Timestamptz(6)?` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([id, user_id])`
+- `@@index([user_id, brew_id])`
+
+Foreign keys:
+
+- (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
 
 <a id="table-inventory_consumptions"></a>
 
@@ -1034,6 +1104,116 @@ Foreign keys:
 
 - (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
 
+<a id="table-inventory_label_links"></a>
+
+### inventory_label_links
+
+Prisma model: `inventory_label_links`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK |  |
+| `label_id` | `Uuid` | FK, UK |  |
+| `stock_id` | `Uuid?` | FK, UK |  |
+| `mead_id` | `Uuid?` | FK, UK |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([label_id, stock_id])`
+- `@@unique([label_id, mead_id])`
+- `@@index([user_id])`
+
+Foreign keys:
+
+- (`label_id`, `user_id`) → `inventory_labels` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`mead_id`, `user_id`) → `inventory_meads` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`stock_id`, `user_id`) → `inventory_stock` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+
+<a id="table-inventory_labels"></a>
+
+### inventory_labels
+
+Prisma model: `inventory_labels`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK, UK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK, UK |  |
+| `name` | `VarChar(100)` |  |  |
+| `version` | `Int` |  | 0 |
+| `archived_at` | `Timestamptz(6)?` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([id, user_id])`
+- `@@index([user_id, archived_at])`
+
+Foreign keys:
+
+- (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
+<a id="table-inventory_locations"></a>
+
+### inventory_locations
+
+Prisma model: `inventory_locations`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK, UK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK, UK |  |
+| `name` | `VarChar(100)` |  |  |
+| `parent_id` | `Uuid?` | FK |  |
+| `version` | `Int` |  | 0 |
+| `archived_at` | `Timestamptz(6)?` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([id, user_id])`
+- `@@index([user_id, archived_at])`
+
+Foreign keys:
+
+- (`parent_id`, `user_id`) → `inventory_locations` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
+<a id="table-inventory_meads"></a>
+
+### inventory_meads
+
+Prisma model: `inventory_meads`. Area: Inventory & equipment.
+
+User-defined finished-mead entry. A single entry may contain several bottle\nsizes and receive stock from multiple bottlings; it is not a required lot.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK, UK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK, UK |  |
+| `name` | `VarChar(200)` |  |  |
+| `notes` | `VarChar(5000)?` |  |  |
+| `version` | `Int` |  | 0 |
+| `archived_at` | `Timestamptz(6)?` |  |  |
+| `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
+| `updated_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} @updatedAt |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([id, user_id])`
+- `@@index([user_id, archived_at])`
+
+Foreign keys:
+
+- (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
 <a id="table-inventory_operations"></a>
 
 ### inventory_operations
@@ -1062,6 +1242,33 @@ Foreign keys:
 
 - (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
 
+<a id="table-inventory_productions"></a>
+
+### inventory_productions
+
+Prisma model: `inventory_productions`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK |  |
+| `bottling_id` | `Uuid` | FK, UK |  |
+| `stock_id` | `Uuid` | FK, UK |  |
+| `row_id` | `Uuid` | UK |  |
+| `quantity` | `Int` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([bottling_id, row_id, stock_id])`
+- `@@index([user_id, stock_id])`
+
+Foreign keys:
+
+- (`bottling_id`, `user_id`) → `inventory_bottlings` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`stock_id`, `user_id`) → `inventory_stock` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+
 <a id="table-inventory_stock"></a>
 
 ### inventory_stock
@@ -1085,18 +1292,57 @@ Archive referenced stock; preserve quantities and audit records after expiry.
 | `reconciliation_required` | `Boolean` |  | false |
 | `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
 | `updated_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} @updatedAt |
+| `mead_id` | `Uuid?` | FK, UK |  |
+| `bottle_size_liters` | `Decimal(16,6)?` | UK |  |
+| `bottle_size_value` | `Decimal(16,6)?` |  |  |
+| `bottle_size_unit` | `inventory_quantity_unit?` ([enum](#enum-inventory_quantity_unit)) |  |  |
+| `storage_version` | `Int` |  | 0 |
 
 Primary key: `id`.
 
 Declared table indexes/constraints:
 
 - `@@unique([id, user_id, unit])`
+- `@@unique([id, user_id])`
 - `@@index([user_id, archived_at])`
 - `@@index([user_id, catalog, catalog_id])`
+- `@@unique([mead_id, bottle_size_liters])`
 
 Foreign keys:
 
+- (`mead_id`, `user_id`) → `inventory_meads` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
 - (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
+<a id="table-inventory_storage_events"></a>
+
+### inventory_storage_events
+
+Prisma model: `inventory_storage_events`. Area: Inventory & equipment.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK |  |
+| `stock_id` | `Uuid` | FK |  |
+| `unit` | `inventory_quantity_unit` ([enum](#enum-inventory_quantity_unit)) | FK |  |
+| `operation_id` | `Uuid` | FK |  |
+| `location_path` | `VarChar(5000)` |  |  |
+| `position` | `VarChar(200)` |  |  |
+| `delta` | `Decimal(16,6)` |  |  |
+| `balance_after` | `Decimal(16,6)` |  |  |
+| `reason` | `VarChar(32)` |  |  |
+| `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@index([user_id, stock_id, created_at])`
+
+Foreign keys:
+
+- (`operation_id`, `user_id`) → `inventory_operations` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
 
 <a id="table-logs"></a>
 
@@ -1765,7 +2011,7 @@ Primary key: `id`.
 
 ### inventory_stock_category
 
-`honey`, `fruit`, `yeast`, `additive`, `packaging`
+`honey`, `fruit`, `yeast`, `additive`, `packaging`, `mead`
 
 <a id="enum-equipment_type"></a>
 

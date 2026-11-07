@@ -7,6 +7,7 @@ import {
   InventoryImportRowError,
 } from "@/lib/db/inventory";
 import { createInventoryAccountReader } from "@/lib/db/inventory-account";
+import { createInventoryCollectionService } from "@/lib/db/inventory-collection";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
 import {
   InventoryError,
@@ -17,11 +18,14 @@ import {
   InventoryFileError,
   inspectInventoryFile,
   exportInventoryFile,
+  exportCollectionFile,
+  emptyInventoryCollection,
 } from "@/lib/brews/inventorySpreadsheet";
 import { inventoryRouteError } from "@/lib/brews/inventoryRouteError";
 import prisma from "@/lib/prisma";
 const reader = createInventoryAccountReader();
 const service = createInventoryService();
+const collectionService = createInventoryCollectionService();
 export const runtime = "nodejs";
 async function boundedBody(req: NextRequest) {
   const chunks: Uint8Array[] = [];
@@ -49,7 +53,7 @@ async function boundedBody(req: NextRequest) {
 }
 /**
  * Import or export inventory spreadsheets
- * @description Export and blank templates remain available to active owners after premium expiry. Inspect and import require premium. Reviewed imports are atomic and replay-safe; update mode uses owned stock IDs and expected snapshots. File content is base64 encoded. Supports XLSX and CSV with bounded file expansion and row limits.
+ * @description Export and blank templates remain available to active owners after premium expiry. Inspect and import require premium. Consumables XLSX/CSV imports support explicit updates with owned stock IDs and expected snapshots. Collection XLSX imports create new consumables and finished-mead groups with entered bottle sizes, categories and storage, atomically and replay-safe; keys are portable references and never update stock or replay brew production. File content is base64 encoded, with bounded expansion and row limits.
  * @body InventoryTransferRequestBody
  * @response 200:InventoryTransferResponse
  * @responseSet none
@@ -73,7 +77,7 @@ export async function POST(req: NextRequest) {
     );
     const status = await getPremiumAccessStatus(user);
     if (!status.activeUser) throw new InventoryError("NOT_FOUND");
-    if (input.action !== "export" && !status.premiumEnabled)
+    if (input.action !== "export" && input.action !== "export_collection" && !status.premiumEnabled)
       throw new InventoryWriteError("PREMIUM_REQUIRED");
     let body;
     if (input.action === "inspect") {
@@ -92,7 +96,11 @@ export async function POST(req: NextRequest) {
           input.delimiter,
         ),
       };
-    } else if (input.action === "import")
+    } else if (input.action === "import_collection")
+      body = { kind: "imported", ...(await collectionService.restore(user, input.operation_id, input.collection)) };
+    else if (input.action === "export_collection")
+      body = { kind: "file", ...(await exportCollectionFile(input.template ? emptyInventoryCollection() : await collectionService.snapshot(user), input.template)) };
+    else if (input.action === "import")
       body = { kind: "imported", ...(await service.importStock(user, input)) };
     else {
       const [overview, ingredients, yeasts, additives] = await Promise.all([

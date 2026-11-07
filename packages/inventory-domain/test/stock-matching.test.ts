@@ -33,6 +33,21 @@ const item = (
   catalogReference: reference ?? null,
   reconciliation_required: false,
 });
+test("pantry ingredients use additive stock while honey, yeast and packaging keep their categories", () => {
+  const stock = { ...item("sugar", "Brown Sugar"), quantity: { value: 4, unit: "lb" as const } };
+  const line = inventoryEntryLines("ADDITION", { kind: "INGREDIENT", name: "Brown Sugar", amount: 1, unit: "lbs" })[0];
+  assert.equal(matchInventoryStock([stock], line).stock?.id, stock.id);
+  const result = planEntryInventory({ stocks: [stock], lines: [line],
+    bindings: [{ line_key: line.key, stock_id: stock.id }], previous: [] });
+  assert.equal(result.balances[0].quantity.value, 3);
+  for (const restricted of [
+    { ...line, name: "Honey" }, { ...line, kind: "YEAST" }, { ...line, kind: "PACKAGING" },
+  ]) {
+    assert.equal(matchInventoryStock([stock], restricted).choices.length, 0);
+    assert.throws(() => planEntryInventory({ stocks: [stock], lines: [restricted],
+      bindings: [{ line_key: line.key, stock_id: stock.id }], previous: [] }), /LINK_MISMATCH/);
+  }
+});
 test("fractional yeast packets match count stock and corrections restore previous usage", () => {
   const line = inventoryEntryLines("ADDITION", {
     kind: "YEAST", name: "Lalvin D-47", amount: 0.5, unit: "units",
@@ -312,5 +327,69 @@ test("all Go-Ferm variants match their built-in identities without database addi
       matchInventoryStock([item("legacy", name)], line).stock?.id,
       "legacy",
     );
+  }
+});
+
+test("bottle suggestions require the physical size while leaving manual choices available", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 0.75 }],
+  });
+  const bottle = (id: string, name: string) => ({
+    ...item(id, name), category: "packaging",
+    quantity: { value: 24, unit: "units" as const },
+  });
+  const wrong = bottle("wrong", "375 mL bottles");
+  const unknown = bottle("unknown", "Wine bottles");
+  const right = bottle("right", "0.75 L wine bottles");
+  assert.equal(line.sizeLiters, 0.75);
+  assert.equal(matchInventoryStock([wrong, unknown, right], line).stock?.id, "right");
+  const unmatched = matchInventoryStock([wrong, unknown], line);
+  assert.equal(unmatched.stock, undefined);
+  assert.equal(unmatched.choices.length, 2);
+  for (const name of ["750mL bottles", "0,75 litre bottles", "750 milliliters bottles"]) {
+    assert.equal(matchInventoryStock([bottle("right", name)], line).stock?.id, "right", name);
+  }
+  // Labels are presentation metadata, not the source of physical size.
+  const [custom] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 0.75, label: "375ml" }],
+  });
+  assert.equal(matchInventoryStock([wrong, right], custom).stock?.id, "right");
+});
+
+test("US customary bottle sizes match equivalent volumes without crossing sizes", () => {
+  for (const [name, sizeLiters] of [
+    ["12 fl oz beer bottles", 0.354882],
+    ["12 fl oz beer bottles", 0.355],
+    ["22oz bomber bottles", 0.650618],
+    ["22oz bomber bottles", 0.65],
+    ["1 gallon bottles", 3.785412],
+  ] as const) {
+    const [line] = inventoryEntryLines("PACKAGING", {
+      bottleRows: [{ quantity: 4, sizeLiters }],
+    });
+    const stock = { ...item("bottle", name), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+    assert.equal(matchInventoryStock([stock], line).stock?.id, "bottle", name);
+    assert.equal(matchInventoryStock([stock], { ...line, sizeLiters: 0.75 }).stock, undefined);
+  }
+});
+
+test("closures retain name matching without acquiring a bottle size", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    closures: [{ name: "26 mm crown caps", quantity: 4 }],
+  });
+  const stock = { ...item("caps", "26 mm crown caps"), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+  assert.equal(line.sizeLiters, undefined);
+  assert.equal(matchInventoryStock([stock], line).stock?.id, "caps");
+});
+
+test("fractional bottle names cannot suggest their denominator as the capacity", () => {
+  const [line] = inventoryEntryLines("PACKAGING", {
+    bottleRows: [{ quantity: 4, sizeLiters: 2 }],
+  });
+  for (const name of ["1/2 L bottles", "1 / 2 L bottles", "1⁄2 L bottles", "1 1/2 L bottles"]) {
+    const stock = { ...item("fraction", name), category: "packaging", quantity: { value: 24, unit: "units" as const } };
+    const result = matchInventoryStock([stock], line);
+    assert.equal(result.stock, undefined, name);
+    assert.equal(result.choices.length, 1, name);
   }
 });

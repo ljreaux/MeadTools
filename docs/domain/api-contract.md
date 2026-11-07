@@ -1,5 +1,48 @@
 # Shared API contract
 
+Finished-mead inventory adds authenticated `GET`/`POST`
+`/account/inventory/meads` and `GET`/`PATCH`
+`/account/inventory/meads/{mead_id}`. Entries are user-defined groups containing
+whole bottle counts by capacity; no brew or lot is required. Reads retain owned
+access after premium expiry. Premium mutations use operation UUIDs and an expected
+entry revision; receipts add existing/new sizes, manual use deducts bottles,
+corrections replace a size's on-hand count, details edit name/notes, and archive
+retains counts/history. History returns the latest 100 quantity changes across
+sizes. Existing consumables endpoints and spreadsheet transfers remain scoped to
+consumables; they cannot alter finished bottle records. These finished-mead paths are approved exclusions from historical endpoint parity.
+
+Inventory organization adds authenticated `GET`/`PATCH`
+`/account/inventory/organization` and `GET`/`PATCH`
+`/account/inventory/storage/{stock_id}` for custom labels, nested locations,
+reviewed allocations and retained movement history. Quantity mutations accept an
+optional manual-use storage source; automatic use draws unlocated stock first.
+The private organization response also reports changed bottling sources.
+
+Bottling adds an optional top-level `bottling` selection to entry create, patch
+and delete requests. It contains an operation UUID, an expected production
+revision, `sync` or `reconcile` mode, explicit on-hand confirmation and output
+splits by bottle-row UUID. A target references an existing owned mead entry or a
+new client-generated entry UUID/name. Storage positions apply only to newly
+added output. Packaging data's bottle rows use stable `id` UUIDs, whole counts
+and `sizeLiters` with six-place precision; closure rows also retain optional
+UUIDs. Older untracked JSON and index-based deduction keys stay readable.
+The addition-only batch endpoint remains scoped to supply deductions.
+
+A reviewed premium operation records packaging, supply deductions, measured
+volume/ABV history, finished-output differences, storage and quantity audit
+atomically. Private selections never enter public timeline JSON. Owned brew
+inventory context retains production revisions after expiry; source changes
+require reconciliation instead of replaying output. Reconciliation links
+reviewed existing counts without receiving bottles. Reconciliation rebases produced
+counts independently of the remaining balance so later uses stay reflected. `PATCH`
+`/account/inventory/bottlings/{bottling_id}` acknowledges an owned removed source
+only with its reviewed revision and explicit physical-count confirmation. It
+preserves counts, allocations and provenance. Finished-mead quantity history
+includes an optional retained source reference and removal state. These approved
+entry descriptions, private endpoints and new component schemas are reviewed
+alongside the generated OpenAPI baseline; historical endpoint parity still
+checks all other route documentation.
+
 `@meadtools/api-contract` owns the stable runtime request and response schemas
 used by MeadTools, the OpenAPI generator, and external TypeScript consumers.
 Zod schemas are the source of truth. Public TypeScript contracts are inferred
@@ -273,6 +316,21 @@ Responses include sheet data, a base64 file or import counts. Row failures ident
 the source row; file limits use HTTP 413. The route is excluded from historical
 path parity and documented using runtime schemas and generated contracts.
 
+The same route now accepts `export_collection` (optional `template`) and
+`import_collection` (`operation_id`, `collection`). Version 1 collections contain
+consumables, finished-mead groups and bottle rows, categories, hierarchical
+locations, label assignments and per-stock storage positions. Portable keys
+connect workbook rows; they never select records to update. Imports create new
+stock and receipt/movement history in one account-serialized, replay-safe
+transaction, reuse matching owned category names and sibling locations, and do
+not replay brewing/bottling events or restore source links. Existing stock and
+public brew JSON are untouched. The workbook is a current active-stock snapshot,
+not an archive of histories or equipment. Export/template access survives expiry;
+inspection and import require premium. Existing consumables actions and file
+formats remain unchanged. Shared validation checks references, cycles, duplicate
+keys/capacities/positions, bottle display metadata, whole counts and allocation
+totals; bounded XLSX parsing still rejects formulas and external links.
+
 Stock history includes an optional revision-bound reconciliation review for
 flagged stock owned by a premium account. PATCH `/account/inventory/{stock_id}`
 accepts `action: reconcile`, the reviewed revision, an absolute physical quantity
@@ -294,3 +352,16 @@ available to active owners after premium expiry. Internal scheduled cleanup is
 excluded from public OpenAPI. Runtime normalization preserves image schemas'
 strictness, formats and byte limits. Only the two new paths are excluded from
 historical path parity; existing endpoints remain unchanged.
+
+
+Finished bottle sizes retain optional `display_size: {value, unit}` on create
+and receipt (mL, L, fl_oz or gal), alongside canonical `size_liters`. New input
+must describe the same capacity; established calculator presets retain their
+nominal labels. Count corrections and use cannot relabel bottle sizes. A
+receipt into an existing capacity retains that stock row's first display size.
+Finished-mead overview/history, organization stock, and private bottling outputs
+return nullable display_size; null denotes older records whose entered units
+were not retained. Clients display their canonical liters as a fallback, without
+inventing an original unit. Private stock metadata remains outside public brew
+entries. The existing undeployed finished-mead migration adds two scalar fields
+and enforces paired positive display values with volume units.

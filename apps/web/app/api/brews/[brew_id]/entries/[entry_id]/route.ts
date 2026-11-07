@@ -7,7 +7,7 @@ import { updateBrewEntryRequestBodySchema, deleteBrewEntryRequestBodySchema } fr
 
 /**
  * Update brew entry
- * @description Updates a timeline entry for a brew. Stage change entries only allow datetime and note edits.
+ * @description Updates a timeline entry for a brew. Bottling corrections require a reviewed production revision and apply output differences while preserving later use and moves. Reconciliation retains reviewed physical counts without receipts. Private selections are never stored in public timeline JSON. Stage change entries only allow datetime and note edits.
  * @pathParams BrewEntryPathParams
  * @body UpdateBrewEntryRequestBody
  * @response 200:UpdateBrewEntryResponse
@@ -64,7 +64,7 @@ export async function PATCH(
 
 /**
  * Delete brew entry
- * @description Deletes a timeline entry for a brew. Stage change entries cannot be deleted through this endpoint.
+ * @description Deletes a timeline entry for a brew. A tracked bottling requires an explicit reviewed selection to resolve finished output and packaging use atomically. Expired tracking preserves counts and flags the removed source for reconciliation. Stage change entries cannot be deleted through this endpoint.
  * @pathParams BrewEntryPathParams
  * @body DeleteBrewEntryRequestBody
  * @response 200:DeleteBrewEntrySuccessResponse

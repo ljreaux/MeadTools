@@ -17,16 +17,16 @@ test("the full ERD includes every table, column and declared FK, including disco
   assert.ok(graph.nodes.some((node) => node.name === "User"));
   assert.ok(graph.nodes.some((node) => node.name === "users"));
   assert.equal(metadata.models.find((model) => model.name === "BjcpIngredient").table, "bjcp-ingredients");
-  assert.ok(metadata.models.find((model) => model.name === "brew_images").fields.some((field) => field.name === "original_brew_id"));
-  assert.ok(!metadata.foreignKeys.some((fk) => fk.child === "brew_images" && fk.from.includes("original_brew_id")), "Historical source IDs are not database FKs");
+  assert.ok(metadata.models.find((model) => model.name === "inventory_stock").fields.some((field) => field.name === "bottle_size_unit"));
+  assert.ok(!metadata.foreignKeys.some((fk) => fk.child === "inventory_bottlings" && fk.parent === "brews"), "Historical source IDs are not database FKs");
 });
 test("compound ownership keys, optional self references and one-to-one cardinality remain accurate", () => {
-  const stock = metadata.foreignKeys.find((fk) => fk.id === "inventory_consumptions_stock");
-  assert.deepEqual(stock.from, ["stock_id", "user_id", "unit"]);
-  assert.deepEqual(stock.to, ["id", "user_id", "unit"]);
-  assert.equal(stock.parentCardinality, "1");
+  const stock = metadata.foreignKeys.find((fk) => fk.id === "inventory_stock_mead");
+  assert.deepEqual(stock.from, ["mead_id", "user_id"]);
+  assert.deepEqual(stock.to, ["id", "user_id"]);
+  assert.equal(stock.parentCardinality, "0..1");
   assert.equal(stock.childCardinality, "0..N");
-  const tree = metadata.foreignKeys.find((fk) => fk.id === "comments_parent");
+  const tree = metadata.foreignKeys.find((fk) => fk.id === "inventory_locations_parent");
   assert.equal(tree.parent, tree.child);
   assert.equal(tree.parentCardinality, "0..1");
   const account = metadata.foreignKeys.find((fk) => fk.child === "credit_accounts" && fk.parent === "users");

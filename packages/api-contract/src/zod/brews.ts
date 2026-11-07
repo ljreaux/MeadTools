@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { quantitySchema, quantityUnitSchema } from "@meadtools/inventory-domain";
+import { bottlingSelectionSchema, quantitySchema, quantityUnitSchema } from "@meadtools/inventory-domain";
 
 export const brewStageResponseSchema = z.enum([
   "PLANNED",
@@ -210,13 +210,16 @@ export const brewInventoryErrorResponseSchema = z.object({
     "INCOMPATIBLE_UNITS", "QUANTITY_PRECISION", "INVALID_QUANTITY", "INSUFFICIENT_STOCK",
     "NOT_FOUND", "LINK_MISMATCH", "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "STALE_USAGE",
     "USAGE_REMOVED", "ENTRY_MISMATCH", "STOCK_ARCHIVED", "STALE_STOCK", "SELECTION_REQUIRED",
-    "INVALID_INVENTORY_REQUEST", "RECONCILIATION_REQUIRED",
+    "INVALID_INVENTORY_REQUEST", "RECONCILIATION_REQUIRED", "STORAGE_IN_USE", "ORGANIZATION_CHANGED",
   ]),
   shortage: z.number().nonnegative().optional(),
   unit: quantityUnitSchema.optional(),
 });
 
+export const brewBottlingSelectionSchema = bottlingSelectionSchema;
+
 const brewEntryMutationObjectSchema = z.object({
+  bottling: brewBottlingSelectionSchema.optional(),
   datetime: z.string().optional(),
   title: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
@@ -234,7 +237,7 @@ export const createBrewEntryRequestBodySchema =
   });
 export const createBrewEntryBatchRequestBodySchema=z.object({
  operation_id:z.string().uuid(),
- entries:z.array(createBrewEntryRequestBodySchema.extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
+ entries:z.array(createBrewEntryRequestBodySchema.omit({bottling:true}).extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
 }).strict().refine(value=>new Set(value.entries.map(entry=>entry.client_entry_id)).size===value.entries.length,{message:'Entry IDs must be unique'});
 export const createBrewEntryResponseSchema = z.object({
   brew: brewResponseSchema,
@@ -248,7 +251,7 @@ export const updateBrewEntryResponseSchema = z.object({
   entry: brewEntryWithBrewIdResponseSchema.nullable(),
   inventory: brewInventoryOutcomeSchema.optional(),
 });
-export const deleteBrewEntryRequestBodySchema = z.object({ inventory: brewInventorySelectionSchema.optional() }).strict();
+export const deleteBrewEntryRequestBodySchema = z.object({ inventory: brewInventorySelectionSchema.optional(), bottling: brewBottlingSelectionSchema.optional() }).strict();
 export const deleteBrewSuccessResponseSchema = z.object({
   message: z.literal("Brew deleted successfully."),
 });

@@ -72,7 +72,9 @@ INSERT INTO inventory_adjustments
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET balance_after = -1 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET delta = 0 $q$, '23514');
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET kind = 'receipt' $q$, '23514');
-SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET consumption_id = NULL $q$, '23514');
+-- Multi-line uses already aggregate one operation/stock row; such a row has no
+-- single consumption identity. Its stock, operation and ownership FKs still apply.
+UPDATE inventory_adjustments SET consumption_id = NULL;
 SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET user_id = -472 $q$, '23503');
 SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_adjustments
   (user_id, stock_id, operation_id, consumption_id, kind, delta, balance_after, unit)
@@ -115,5 +117,65 @@ DO $$ BEGIN
     RAISE EXCEPTION 'Brew deletion changed stock balances or removed historical records';
   END IF;
 END $$;
+INSERT INTO inventory_meads (id, user_id, name) VALUES
+  ('00000000-0000-4000-8000-000000000011', -471, 'House traditional');
+INSERT INTO inventory_stock (id, user_id, name, category, quantity, unit, mead_id, bottle_size_liters) VALUES
+  ('00000000-0000-4000-8000-000000000012', -471, 'House traditional', 'mead', 12, 'units',
+   '00000000-0000-4000-8000-000000000011', 0.75);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET quantity = 1.5 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET unit = 'L' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_liters = 0 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET mead_id = NULL WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET user_id = -472 WHERE category = 'mead' $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET category = 'packaging' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_meads $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_stock
+  (user_id, name, category, quantity, unit, mead_id, bottle_size_liters)
+  SELECT user_id, name, category, quantity, unit, mead_id, bottle_size_liters FROM inventory_stock WHERE category = 'mead' $q$, '23505');
+
+-- Display size metadata is paired and restricted to finished bottle stock.
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12 WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12, bottle_size_unit = 'g' WHERE category = 'mead' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_stock SET bottle_size_value = 12, bottle_size_unit = 'fl_oz' WHERE category <> 'mead' $q$, '23514');
+UPDATE inventory_stock SET bottle_size_value = 750, bottle_size_unit = 'mL' WHERE category = 'mead';
+
+INSERT INTO inventory_labels (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000013', -471, 'Competition');
+INSERT INTO inventory_locations (id, user_id, name) VALUES ('00000000-0000-4000-8000-000000000014', -471, 'Cellar');
+INSERT INTO inventory_locations (id, user_id, name, parent_id) VALUES
+  ('00000000-0000-4000-8000-000000000015', -471, 'Box A2', '00000000-0000-4000-8000-000000000014');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_locations SET parent_id = id $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_locations SET name = '' $q$, '23514');
+INSERT INTO inventory_label_links (user_id, label_id, stock_id) VALUES
+  (-471, '00000000-0000-4000-8000-000000000013', '00000000-0000-4000-8000-000000000003');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET mead_id = '00000000-0000-4000-8000-000000000011' $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET stock_id = NULL $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_label_links SET user_id = -472 $q$, '23503');
+INSERT INTO inventory_allocations (user_id, stock_id, unit, location_id, position, quantity) VALUES
+  (-471, '00000000-0000-4000-8000-000000000012', 'units', '00000000-0000-4000-8000-000000000015', 'C3', 3);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET quantity = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET user_id = -472 $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_allocations SET unit = 'g' $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_allocations (user_id, stock_id, unit, location_id, position, quantity)
+  SELECT user_id, stock_id, unit, location_id, position, quantity FROM inventory_allocations $q$, '23505');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_locations $q$, '23503');
+INSERT INTO inventory_storage_events (user_id, stock_id, unit, operation_id, location_path, position, delta, balance_after, reason) VALUES
+  (-471, '00000000-0000-4000-8000-000000000012', 'units', '00000000-0000-4000-8000-000000000004', 'Cellar → Box A2', 'C3', 3, 3, 'move');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET balance_after = -1 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET delta = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_storage_events SET user_id = -472 $q$, '23503');
+
+INSERT INTO inventory_bottlings (id,user_id,brew_id,entry_id,source_name,source_snapshot) VALUES
+ ('00000000-0000-4000-8000-000000000016',-471,'00000000-0000-4000-8000-000000000017','00000000-0000-4000-8000-000000000018','Retained source','{}');
+INSERT INTO inventory_productions (user_id,bottling_id,stock_id,row_id,quantity) VALUES
+ (-471,'00000000-0000-4000-8000-000000000016','00000000-0000-4000-8000-000000000012','00000000-0000-4000-8000-000000000019',3);
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_productions SET quantity = 0 $q$, '23514');
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_productions SET user_id = -472 $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ DELETE FROM inventory_bottlings $q$, '23503');
+SELECT pg_temp.expect_rejected($q$ INSERT INTO inventory_productions (user_id,bottling_id,stock_id,row_id,quantity)
+ SELECT user_id,bottling_id,stock_id,row_id,quantity FROM inventory_productions $q$, '23505');
+INSERT INTO inventory_bottlings (id,user_id,brew_id,entry_id,source_name,source_snapshot) VALUES
+ ('00000000-0000-4000-8000-000000000020',-472,'00000000-0000-4000-8000-000000000021','00000000-0000-4000-8000-000000000022','Other owner','{}');
+UPDATE inventory_adjustments SET bottling_id = '00000000-0000-4000-8000-000000000016';
+SELECT pg_temp.expect_rejected($q$ UPDATE inventory_adjustments SET bottling_id = '00000000-0000-4000-8000-000000000020' $q$, '23503');
 ROLLBACK;
 \echo Inventory migration constraints passed.

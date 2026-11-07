@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { tryInventoryEntryLines } from "@meadtools/inventory-domain";
 import { qk } from "@/lib/db/queryKeys";
 import type {
+  BrewBottlingSelection,
   BrewInventorySelection,
   BrewInventoryOutcome,
 } from "@meadtools/api-contract/contracts";
@@ -45,7 +46,7 @@ function useEntryInventory() {
   }
   async function run<T>(
     intent: BrewStockIntent,
-    write: (selection?: BrewInventorySelection) => Promise<T>,
+    write: (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => Promise<T>,
   ) {
     return inventory ? inventory.run(intent, write) : write();
   }
@@ -65,6 +66,8 @@ function useEntryInventory() {
   function success() {
     attempt.current = null;
     void client.invalidateQueries({ queryKey: ["account", "inventory"] });
+    void client.invalidateQueries({ queryKey: ["account", "finished-meads"] });
+    void client.invalidateQueries({ queryKey: ["account", "inventory-organization"] });
     void client.invalidateQueries({ queryKey: ["account", "brew-inventory"] });
   }
   return { prepare, run, outcome, success, failure };
@@ -85,7 +88,7 @@ export function useCreateBrewEntry() {
         { brewId, input },
         input.client_entry_id,
       );
-      const write = async (selection?: BrewInventorySelection) => {
+      const write = async (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => {
         attempt.selection = selection;
         const res = await fetchWithAuth<{
           brew: AccountBrew;
@@ -99,6 +102,7 @@ export function useCreateBrewEntry() {
               ? { client_entry_id: attempt.entryId }
               : {}),
             ...(selection ? { inventory: selection } : {}),
+            ...(bottling ? { bottling } : {}),
           }),
         });
         inventory.outcome(
@@ -148,7 +152,7 @@ export function usePatchBrewEntry() {
       input: PatchBrewEntryInput;
     }) => {
       const attempt = inventory.prepare({ brewId, entryId, input }, entryId);
-      const write = async (selection?: BrewInventorySelection) => {
+      const write = async (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => {
         attempt.selection = selection;
         const res = await fetchWithAuth<{ inventory?: BrewInventoryOutcome }>(
           `/api/brews/${brewId}/entries/${entryId}`,
@@ -158,6 +162,7 @@ export function usePatchBrewEntry() {
             body: JSON.stringify({
               ...input,
               ...(selection ? { inventory: selection } : {}),
+            ...(bottling ? { bottling } : {}),
             }),
           },
         );
@@ -208,16 +213,16 @@ export function useDeleteBrewEntry() {
         { brewId, entryId, selection },
         entryId,
       );
-      const write = async (selection?: BrewInventorySelection) => {
+      const write = async (selection?: BrewInventorySelection, bottling?: BrewBottlingSelection) => {
         attempt.selection = selection;
         const res = await fetchWithAuth<{ inventory?: BrewInventoryOutcome }>(
           `/api/brews/${brewId}/entries/${entryId}`,
           {
             method: "DELETE",
-            ...(selection
+            ...((selection || bottling)
               ? {
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ inventory: selection }),
+                  body: JSON.stringify({ ...(selection ? {inventory:selection} : {}), ...(bottling ? {bottling} : {}) }),
                 }
               : {}),
           },
@@ -291,6 +296,8 @@ export function useCreateBrewEntryBatch() {
     },
     onSettled: () => {
       void client.invalidateQueries({ queryKey: ["account", "inventory"] });
+    void client.invalidateQueries({ queryKey: ["account", "finished-meads"] });
+    void client.invalidateQueries({ queryKey: ["account", "inventory-organization"] });
       void client.invalidateQueries({
         queryKey: ["account", "brew-inventory"],
       });

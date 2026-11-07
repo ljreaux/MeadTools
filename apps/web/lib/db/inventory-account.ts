@@ -33,7 +33,7 @@ export function createInventoryAccountReader(database: PrismaClient = prisma) {
   async function overview(userId: number): Promise<InventoryOverviewResponse> {
     const status = await access(userId);
     const rows = await database.inventory_stock.findMany({
-      where: { user_id: userId, archived_at: null },
+      where: { user_id: userId, archived_at: null, category: { not: "mead" } },
       orderBy: [{ category: "asc" }, { name: "asc" }],
     });
     return { can_manage: status.premiumEnabled, stock: rows.map(stockItem) };
@@ -46,7 +46,7 @@ export function createInventoryAccountReader(database: PrismaClient = prisma) {
     return database.$transaction(
       async (tx) => {
         const row = await tx.inventory_stock.findFirst({
-          where: { id: stockId, user_id: userId },
+          where: { id: stockId, user_id: userId, category: { not: "mead" } },
         });
         if (!row) throw new InventoryError("NOT_FOUND");
         const adjustments = await tx.inventory_adjustments.findMany({

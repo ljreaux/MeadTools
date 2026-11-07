@@ -30,8 +30,13 @@ const equipmentItemRoute = await import("../app/api/account/equipment/[equipment
 const inventoryTransferRoute=await import("../app/api/account/inventory/transfer/route.ts");
 const inventoryRoute = await import("../app/api/account/inventory/route.ts");
 const inventoryItemRoute = await import("../app/api/account/inventory/[stock_id]/route.ts");
+const organizationRoute = await import("../app/api/account/inventory/organization/route.ts");
+const storageRoute = await import("../app/api/account/inventory/storage/[stock_id]/route.ts");
+const finishedMeadsRoute = await import("../app/api/account/inventory/meads/route.ts");
+const finishedMeadRoute = await import("../app/api/account/inventory/meads/[mead_id]/route.ts");
 const brewMetadataRoute = await import("../app/api/brews/[brew_id]/route.ts");
 const brewInventoryRoute = await import("../app/api/brews/[brew_id]/inventory/route.ts");
+const bottlingChangeRoute = await import("../app/api/account/inventory/bottlings/[bottling_id]/route.ts");
 hooks.deregister();
 const contract = await import("@meadtools/api-contract/brews");
 const equipmentContract = await import("@meadtools/api-contract/equipment");
@@ -478,14 +483,32 @@ test("equipment seed creates recipe-linked examples and a six-bucket pool for on
   const recipe = await prisma.recipes.findFirstOrThrow({ where: { name: "Key Lime Pie" } });
   const existing = await prisma.brews.create({ data: { user_id: userId, recipe_id: recipe.id, name: "Planning Test Brew" } });
   await seedEquipment(prisma, userId);
-  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 16);
+  assert.equal(await prisma.equipment.count({ where: { user_id: userId } }), 28);
   assert.equal(await prisma.equipment.count({ where: { user_id: otherId } }), 0);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: { not: null } } }), 2);
-  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 9);
+  assert.equal(await prisma.equipment.count({ where: { type: "vessel", current_brew_id: null } }), 11);
   assert.equal(await prisma.equipment_assignment_events.count(), 2);
   assert.equal(await prisma.brews.count(), 2);
   assert.equal(await prisma.equipment.count({ where: { current_brew_id: existing.id } }), 1);
   assert.equal(await prisma.inventory_consumptions.count(), 0);
+  const ingredients = recipe.dataV2.ingredients;
+  const volumeGal = (secondary) => ingredients.filter((row) => secondary || !row.secondary)
+    .reduce((total, row) => {
+      assert.equal(row.amounts.volume.unit, "gal");
+      return total + Number(row.amounts.volume.value);
+    }, 0);
+  const equipment = await prisma.equipment.findMany({ where: { user_id: userId } });
+  for (const [name, requiredGal] of [
+    ["Key Lime Pie primary fermenter", volumeGal(false)],
+    ["Key Lime Pie secondary carboy", volumeGal(true)],
+    ["Bottling bucket with spigot", volumeGal(true)],
+  ]) {
+    const vessel = equipment.find((item) => item.name === name);
+    assert.equal(vessel.capacity_unit, "gal");
+    assert.ok(vessel.capacity.toNumber() > requiredGal, `${name} needs room for the recipe`);
+  }
+  assert.ok(equipment.filter((item) => item.capacity_unit === "gal").length >
+    equipment.filter((item) => item.capacity_unit === "L").length);
   const result = await equipmentRequest("GET", userId);
   assert.equal(result.status, 200);
   equipmentContract.equipmentOverviewResponseSchema.parse(result.body);
@@ -687,14 +710,48 @@ test("inventory seed creates owned ingredient and packaging stock with matching 
   const otherId = await owner();
   await seedInventory(prisma, userId);
   const list = (await stockRequest("GET", userId)).body.stock;
-  assert.equal(list.length, 19);
-  assert.equal(list.filter((row) => row.category === "packaging").length, 4);
+  assert.equal(list.length, 31);
+  assert.equal(list.filter((row) => row.category === "packaging").length, 8);
+  const { readFile } = await import("node:fs/promises");
+  const recipe = JSON.parse(await readFile(new URL("../prisma/seed-data/recipes_rows.json", import.meta.url), "utf8"))
+    .find((row) => row.name === "Key Lime Pie");
+  const volumeGal = JSON.parse(recipe.dataV2).ingredients
+    .reduce((total, row) => total + Number(row.amounts.volume.value), 0);
+  for (const sizeOz of [12, 22, 32]) {
+    const bottles = list.find((row) => row.name.startsWith(`${sizeOz} fl oz`));
+    assert.ok(bottles.quantity.value * sizeOz / 128 >= volumeGal,
+      `${sizeOz} fl oz bottles should hold the full recipe`);
+  }
+  const cappedBottles = list.filter((row) => /^(12 fl oz|22 fl oz|330 mL)/.test(row.name))
+    .reduce((total, row) => total + row.quantity.value, 0);
+  assert.ok(list.find((row) => row.name === "Crown caps").quantity.value >= cappedBottles);
+  // Exercise the real tracker path: pantry ingredients and juice must be
+  // selectable, convertible and sufficient across both recipe stages.
+  const { inventoryEntryLines, matchInventoryStock } = await import("@meadtools/inventory-domain");
+  const data = JSON.parse(recipe.dataV2);
+  const brew = await prisma.brews.create({ data: { user_id: userId } });
+  const additions = [
+    ...data.ingredients.map((row) => ({ kind: "INGREDIENT", name: row.name,
+      amount: Number(row.amounts[row.amounts.basis].value), unit: row.amounts[row.amounts.basis].unit })),
+    ...data.additives.map((row) => ({ kind: "OTHER", name: row.name, amount: Number(row.amount), unit: row.unit })),
+  ];
+  for (const data of additions) {
+    const line = inventoryEntryLines("ADDITION", data)[0];
+    const match = matchInventoryStock(list, line).stock;
+    assert.ok(match, `Missing usable seed stock for ${data.name}`);
+    assert.equal(match.name.toLowerCase(), data.name === "Honey" ? "wildflower honey" : data.name.toLowerCase());
+    const response = await route("POST", { userId, brewId: brew.id }, {
+      type: "ADDITION", client_entry_id: randomUUID(), data,
+      inventory: { mode: "deduct", operation_id: randomUUID(), stock_id: match.id, expected: null },
+    });
+    assert.equal(response.status, 201, `Cannot use seed stock for ${data.name}: ${JSON.stringify(response.body)}`);
+  }
   assert.equal((await stockRequest("GET", otherId)).body.stock.length, 0);
   for (const row of list) {
     const history = (await stockRequest("GET", userId, undefined, row.id)).body.adjustments;
-    assert.equal(history.length, 1);
-    assert.equal(history[0].delta, row.quantity.value);
-    assert.equal(history[0].balance_after.unit, row.quantity.unit);
+    const receipt = history.find((adjustment) => adjustment.kind === "receipt");
+    assert.equal(receipt.delta, row.quantity.value);
+    assert.equal(receipt.balance_after.unit, row.quantity.unit);
   }
 });
 
@@ -720,7 +777,7 @@ test("brew tracker context hides deductions and all equipment history without pr
   assert.equal((await trackerInventory(otherId, f.brewId)).status, 404);
   assert.equal((await trackerInventory(f.userId, "not-a-uuid")).status, 400);
   await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2020-01-01") } });
-  assert.deepEqual((await trackerInventory(f.userId, f.brewId)).body, { can_manage: false, tracked_entry_ids: [], usages: [], vessel_events: [] });
+  assert.deepEqual((await trackerInventory(f.userId, f.brewId)).body, { can_manage: false, tracked_entry_ids: [], usages: [], vessel_events: [], bottlings: [], brew_name: null });
   assert.equal((await stockRequest("GET", f.userId)).body.stock.length, 1);
   assert.equal((await equipmentRequest("GET", f.userId)).body.equipment.length, 1);
   await prisma.premium_memberships.updateMany({ where: { user_id: f.userId }, data: { paid_through: new Date("2100-01-01") } });
@@ -1078,4 +1135,648 @@ test('packaging creation with a lost response cannot create a second entry or de
   // Even a changed retry intent must not create another entry with a new ID.
   const changed=await route('POST',f,{type:'PACKAGING',client_entry_id:packagingEntryIdentity(pending),data:{...data,bottleRows:[{...data.bottleRows[0],quantity:5}]},inventory:multiSelection([{line_key:'bottle:0',stock_id:bottles.stockId}])});
   assert.equal(changed.status,400);assert.equal(changed.body.code,'ENTRY_MISMATCH');assert.equal(await balance(bottles.stockId),16);
+});
+
+async function meadRequest(method, userId, input, id) {
+  const response = await (id ? finishedMeadRoute : finishedMeadsRoute)[method](
+    new NextRequest(`http://localhost/api/account/inventory/meads${id ? `/${id}` : ''}`, {
+      method, headers: { 'x-inventory-fixture-user': String(userId), 'Content-Type': 'application/json' },
+      ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+    }), { params: Promise.resolve({ mead_id: id }) });
+  return { status: response.status, body: await response.json() };
+}
+const meadInput = () => ({ operation_id: randomUUID(), mead: { name: 'House traditional', bottles: [
+  { size_liters: .75, quantity: 10 }, { size_liters: .375, quantity: 4 },
+] } });
+async function meadFixture() {
+  const userId = await owner();
+  const input = meadInput();
+  const created = await meadRequest('POST', userId, input);
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.mead_id;
+  const read = async () => (await meadRequest('GET', userId, undefined, id)).body;
+  const update = async (change, revision) => meadRequest('PATCH', userId, {
+    operation_id: randomUUID(), expected_revision: revision ?? (await read()).mead.revision, ...change,
+  }, id);
+  return { userId, input, id, read, update };
+}
+
+test('finished mead keeps sizes together, adds to existing counts and retries without duplicate stock', async () => {
+  const f = await meadFixture();
+  const retry = await meadRequest('POST', f.userId, f.input);
+  assert.equal(retry.status, 201);
+  assert.equal(retry.body.mead_id, f.id);
+  assert.equal(await prisma.inventory_meads.count(), 1);
+  assert.equal((await stockRequest('GET', f.userId)).body.stock.length, 0);
+  assert.equal((await f.update({ action: 'receipt', size_liters: .75, quantity: 2 })).status, 200);
+  assert.equal((await f.update({ action: 'receipt', size_liters: .33, quantity: 6, note: 'Another bottling' })).status, 200);
+  const view = await f.read();
+  assert.deepEqual(view.mead.bottles.map(b => [b.size_liters, b.quantity]), [[.33, 6], [.375, 4], [.75, 12]]);
+  assert.equal(view.adjustments.length, 4);
+  assert.equal(view.adjustments[0].note, 'Another bottling');
+  const revision = view.mead.revision;
+  const input = { operation_id: randomUUID(), expected_revision: revision, action: 'manual_use', size_liters: .75, quantity: 2, note: 'Gifted' };
+  assert.equal((await meadRequest('PATCH', f.userId, input, f.id)).status, 200);
+  assert.equal((await meadRequest('PATCH', f.userId, input, f.id)).status, 200);
+  const latest = await f.read();
+  assert.equal(latest.mead.bottles.find(b => b.size_liters === .75).quantity, 10);
+  assert.equal(latest.adjustments.length, 5);
+});
+
+test('finished-mead shortages, concurrent counts and stale details cannot overwrite stock', async () => {
+  const f = await meadFixture();
+  const revision = (await f.read()).mead.revision;
+  assert.equal((await f.update({ action: 'manual_use', size_liters: .75, quantity: 11 }, revision)).status, 409);
+  assert.equal((await f.read()).mead.bottles.find(b => b.size_liters === .75).quantity, 10);
+  const results = await Promise.all([1, 2].map(quantity => f.update({ action: 'manual_use', size_liters: .75, quantity }, revision)));
+  assert.deepEqual(results.map(r => r.status).sort(), [200, 409]);
+  assert.equal((await f.update({ action: 'details', name: 'Stale edit', notes: null }, revision)).status, 409);
+  assert.equal((await f.update({ action: 'correction', size_liters: .75, quantity: 0 })).status, 200);
+  assert.equal((await f.update({ action: 'receipt', size_liters: .75, quantity: .5 })).status, 400);
+  assert.equal((await f.update({ action: 'manual_use', size_liters: 1, quantity: 1 })).status, 404);
+});
+
+test('finished-mead ownership, expiry, archive and generic stock boundaries preserve balances and history', async () => {
+  const f = await meadFixture();
+  const other = await owner();
+  assert.equal((await meadRequest('GET', other, undefined, f.id)).status, 404);
+  const view = await f.read();
+  const stockId = view.mead.bottles[0].id;
+  assert.equal((await stockRequest('PATCH', f.userId, { action: 'archive', operation_id: randomUUID() }, stockId)).status, 404);
+  assert.equal((await stockRequest('GET', f.userId, undefined, stockId)).status, 404);
+  await prisma.premium_memberships.deleteMany({ where: { user_id: f.userId } });
+  assert.equal((await meadRequest('GET', f.userId)).body.can_manage, false);
+  assert.equal((await f.read()).adjustments.length, 2);
+  assert.equal((await f.update({ action: 'receipt', size_liters: .75, quantity: 1 })).status, 403);
+  await prisma.premium_memberships.create({ data: { user_id: f.userId, source: 'manual', external_reference: randomUUID(), paid_through: new Date('2100-01-01T00:00:00Z') } });
+  assert.equal((await f.update({ action: 'archive' })).status, 200);
+  assert.deepEqual((await meadRequest('GET', f.userId)).body.meads, []);
+  assert.equal((await f.read()).adjustments.length, 2);
+  assert.equal((await f.read()).mead.bottles.reduce((sum, b) => sum + b.quantity, 0), 14);
+});
+
+test('a failed finished-mead audit rolls back its group, all bottle counts and retry receipt', async () => {
+  const userId = await owner();
+  const input = meadInput();
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_mead_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.delta = 4 THEN RAISE EXCEPTION 'fixture finished-mead audit failure'; END IF; RETURN NEW; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_mead_audit_failure BEFORE INSERT ON inventory_adjustments FOR EACH ROW EXECUTE FUNCTION fixture_mead_audit_failure()');
+  try {
+    assert.equal((await meadRequest('POST', userId, input)).status, 500);
+    assert.equal(await prisma.inventory_meads.count(), 0);
+    assert.equal(await prisma.inventory_stock.count(), 0);
+    assert.equal(await prisma.inventory_operations.count(), 0);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER fixture_mead_audit_failure ON inventory_adjustments');
+    await prisma.$executeRawUnsafe('DROP FUNCTION fixture_mead_audit_failure()');
+  }
+  assert.equal((await meadRequest('POST', userId, input)).status, 201);
+});
+
+test('finished-mead storage constraints reject fractional bottles and foreign grouping', async () => {
+  const f = await meadFixture();
+  const other = await owner();
+  const bottle = (await f.read()).mead.bottles[0];
+  await assert.rejects(prisma.$executeRaw`UPDATE inventory_stock SET quantity=1.5 WHERE id=${bottle.id}::uuid`);
+  await assert.rejects(prisma.$executeRaw`UPDATE inventory_stock SET unit='L' WHERE id=${bottle.id}::uuid`);
+  await assert.rejects(prisma.$executeRaw`UPDATE inventory_stock SET user_id=${other} WHERE id=${bottle.id}::uuid`);
+  await assert.rejects(prisma.$executeRaw`UPDATE inventory_stock SET bottle_size_liters=0 WHERE id=${bottle.id}::uuid`);
+  assert.equal((await f.read()).mead.bottles[0].quantity, 4);
+});
+
+test('finished-mead seed keeps bottle counts and initial history scoped to its owner', async () => {
+  const { seedFinishedMeads } = await import('../prisma/seed-finished-meads.ts');
+  const userId = await owner();
+  const other = await owner();
+  await seedFinishedMeads(prisma, userId);
+  const list = await meadRequest('GET', userId);
+  assert.equal(list.body.meads.length, 1);
+  assert.equal(list.body.meads[0].bottles.reduce((sum, b) => sum + b.quantity, 0), 18);
+  assert.deepEqual((await meadRequest('GET', other)).body.meads, []);
+  assert.equal((await meadRequest('GET', userId, undefined, list.body.meads[0].id)).body.adjustments.length, 2);
+});
+
+test('finished-mead revisions remain stale when a count is changed and then restored', async () => {
+  const f = await meadFixture();
+  const original = (await f.read()).mead;
+  assert.equal((await f.update({ action: 'correction', size_liters: .375, quantity: 3 })).status, 200);
+  assert.equal((await f.update({ action: 'correction', size_liters: .375, quantity: 4 })).status, 200);
+  const current = (await f.read()).mead;
+  assert.deepEqual(current.bottles, original.bottles);
+  assert.notEqual(current.revision, original.revision);
+  assert.equal((await f.update({ action: 'manual_use', size_liters: .375, quantity: 1 }, original.revision)).status, 409);
+});
+
+async function organizationRequest(userId, input) {
+  const method = input ? 'PATCH' : 'GET';
+  const response = await organizationRoute[method](new NextRequest('http://localhost/api/account/inventory/organization', {
+    method, headers: {'x-inventory-fixture-user': String(userId), 'Content-Type': 'application/json'},
+    ...(input ? {body: JSON.stringify(input)} : {}),
+  }));
+  return {status: response.status, body: await response.json()};
+}
+async function organizationChange(userId, change) {
+  return organizationRequest(userId, {operation_id: randomUUID(), ...change});
+}
+async function location(userId, name='Cellar', parent_id=null) {
+  const response = await organizationChange(userId, {action: 'create_location', name, parent_id});
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  return response.body.id;
+}
+async function organizedStock(userId, id) {
+  return (await organizationRequest(userId)).body.stock.find(row => row.id === id);
+}
+async function storageRequest(method, userId, stockId, input) {
+  const response = await storageRoute[method](new NextRequest(`http://localhost/api/account/inventory/storage/${stockId}`, {
+    method, headers: {'x-inventory-fixture-user': String(userId), 'Content-Type': 'application/json'},
+    ...(input ? {body: JSON.stringify(input)} : {}),
+  }), {params: Promise.resolve({stock_id: stockId})});
+  return {status: response.status, body: await response.json()};
+}
+async function place(userId, stockId, allocations, expected) {
+  const input = {operation_id: randomUUID(), expected_revision: expected ?? (await organizedStock(userId, stockId)).revision, allocations};
+  return storageRequest('PATCH', userId, stockId, input);
+}
+const position = (location_id, quantity, name='C3') => ({location_id, quantity, position: name});
+
+test('custom categories apply across stock and finished meads with ownership and stale selection guards', async () => {
+  const f = await meadFixture();
+  const honey = await stock(f.userId);
+  const first = await organizationChange(f.userId, {action: 'create_label', name: 'Competition'});
+  const second = await organizationChange(f.userId, {action: 'create_label', name: 'Ready'});
+  assert.equal(first.status, 200);
+  const ids = [first.body.id, second.body.id];
+  for (const [kind,id] of [['stock',honey.stockId],['mead',f.id]]) {
+    assert.equal((await organizationChange(f.userId, {action:'assign_labels',kind,id,label_ids:ids,expected_label_ids:[]})).status,200);
+    assert.equal((await organizationChange(f.userId, {action:'assign_labels',kind,id,label_ids:[],expected_label_ids:[]})).status,409);
+  }
+  assert.equal((await organizationRequest(f.userId)).body.assignments.length,2);
+  assert.equal((await organizationChange(f.userId,{action:'create_label',name:' competition '})).status,400);
+  const other = await owner();
+  assert.deepEqual((await organizationRequest(other)).body.labels,[]);
+  assert.equal((await organizationChange(other,{action:'assign_labels',kind:'mead',id:f.id,label_ids:ids,expected_label_ids:[]})).status,404);
+  assert.equal((await organizationChange(f.userId,{action:'edit_label',id:first.body.id,name:'For competitions',expected_version:0})).status,200);
+  assert.equal((await organizationChange(f.userId,{action:'archive_label',id:first.body.id,expected_version:0})).status,409);
+  assert.equal(await balance(honey.stockId),5);
+});
+
+test('storage moves preserve total stock, replay once and reject stale, foreign or excessive allocations',async()=>{
+  const f=await fixture();const room=await location(f.userId);const box=await location(f.userId,'Box A2',room);
+  const initial=await organizedStock(f.userId,f.stockId);
+  const input={operation_id:randomUUID(),expected_revision:initial.revision,allocations:[position(box,3)]};
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,1);
+  assert.equal((await place(f.userId,f.stockId,[position(box,2)],initial.revision)).status,409);
+  assert.equal((await place(f.userId,f.stockId,[position(box,6)])).status,409);
+  const other=await owner();const foreign=await location(other);
+  assert.equal((await place(f.userId,f.stockId,[position(foreign,2)])).status,404);
+  assert.equal((await storageRequest('GET',other,f.stockId)).status,404);
+  const revision=(await organizedStock(f.userId,f.stockId)).revision;
+  const requests=await Promise.all([2,4].map(quantity=>place(f.userId,f.stockId,[position(box,quantity)],revision)));
+  assert.deepEqual(requests.map(row=>row.status).sort(),[200,409]);
+});
+
+test('manual use can select a position and automatic use/corrections keep allocations within the balance',async()=>{
+  const f=await fixture();const room=await location(f.userId);
+  assert.equal((await place(f.userId,f.stockId,[position(room,4)])).status,200);
+  const use=async(value,storage_source)=>stockRequest('PATCH',f.userId,{action:'manual_use',operation_id:randomUUID(),quantity:kg(value),expected_balance:kg(await balance(f.stockId)),...(storage_source===undefined?{}:{storage_source})},f.stockId);
+  assert.equal((await use(1,{location_id:room,position:'C3'})).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,3);
+  assert.equal((await use(2,'unlocated')).status,409);
+  assert.equal(await balance(f.stockId),4);
+  assert.equal((await use(2)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,2);
+  assert.equal((await stockRequest('PATCH',f.userId,{action:'correction',operation_id:randomUUID(),quantity:kg(.5),expected_balance:kg(2)},f.stockId)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,.5);
+  const changes=(await storageRequest('GET',f.userId,f.stockId)).body.changes;
+  assert.equal(changes.length,4);
+  assert.equal(changes[0].reason,'correction');
+});
+
+test('finished bottles use a specific box and whole allocations; stored entries cannot be archived',async()=>{
+  const f=await meadFixture();const box=await location(f.userId,'Competition box');
+  const stockId=(await f.read()).mead.bottles.find(row=>row.size_liters===.75).id;
+  assert.equal((await place(f.userId,stockId,[position(box,8)])).status,200);
+  assert.equal((await place(f.userId,stockId,[position(box,1.5)])).status,400);
+  assert.equal((await f.update({action:'manual_use',size_liters:.75,quantity:3,storage_source:{location_id:box,position:'C3'}})).status,200);
+  assert.equal((await organizedStock(f.userId,stockId)).allocations[0].quantity,5);
+  assert.equal((await f.update({action:'archive'})).status,409);
+  assert.equal((await place(f.userId,stockId,[])).status,200);
+  assert.equal((await f.update({action:'archive'})).status,200);
+  assert.equal((await storageRequest('GET',f.userId,stockId)).body.changes.length,3);
+});
+
+test('linked brew use and its correction reduce stored consumables; reversal returns unlocated stock',async()=>{
+  const f=await fixture();const room=await location(f.userId);
+  await place(f.userId,f.stockId,[position(room,4)]);
+  const entry=addition(2,selection(f));
+  assert.equal((await route('POST',f,entry)).status,201);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,3);
+  assert.equal((await route('PATCH',f,{data:{...entry.data,amount:4},inventory:selection(f,2)},entry.client_entry_id)).status,200);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,1);
+  assert.equal((await route('DELETE',f,{inventory:selection(f,4)},entry.client_entry_id)).status,200);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await organizedStock(f.userId,f.stockId)).allocations[0].quantity,1);
+  const before=(await storageRequest('GET',f.userId,f.stockId)).body.changes.length;
+  const batch=[4,2].map(amount=>addition(amount,multiSelection([{line_key:'addition',stock_id:f.stockId}])));
+  assert.equal((await batchRequest(f,batch)).status,409);
+  assert.equal(await balance(f.stockId),5);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,before);
+});
+
+test('multi-line packaging updates stored bottle counts through the same transaction',async()=>{
+  const f=await fixture();const bottles=await service.createStock(f.userId,randomUUID(),{name:'Bottles',category:'packaging',quantity:{value:10,unit:'units'}});
+  const box=await location(f.userId);await place(f.userId,bottles.stockId,[position(box,8)]);
+  const entry={type:'PACKAGING',client_entry_id:randomUUID(),data:{packagedVolumeLiters:3,bottleRows:[{label:'750',quantity:4,sizeLiters:.75}]},inventory:multiSelection([{line_key:'bottle:0',stock_id:bottles.stockId}])};
+  assert.equal((await route('POST',f,entry)).status,201);
+  assert.equal(await balance(bottles.stockId),6);
+  assert.equal((await organizedStock(f.userId,bottles.stockId)).allocations[0].quantity,6);
+});
+
+test('location cycles, occupied archival and expiry cannot bypass ownership or retained history',async()=>{
+  const f=await fixture();const room=await location(f.userId);const box=await location(f.userId,'Box A2',room);
+  assert.equal((await organizationChange(f.userId,{action:'edit_location',id:room,name:'Cellar',parent_id:box,expected_version:0})).status,400);
+  assert.equal((await organizationChange(f.userId,{action:'archive_location',id:room,expected_version:0})).status,409);
+  await place(f.userId,f.stockId,[position(box,2)]);
+  assert.equal((await organizationChange(f.userId,{action:'archive_location',id:box,expected_version:0})).status,409);
+  assert.equal((await stockRequest('PATCH',f.userId,{action:'archive',operation_id:randomUUID()},f.stockId)).status,409);
+  assert.equal((await organizationChange(f.userId,{action:'edit_location',id:box,name:'Box B1',parent_id:room,expected_version:0})).status,200);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes[0].location_path,'Cellar → Box A2');
+  await prisma.premium_memberships.deleteMany({where:{user_id:f.userId}});
+  assert.equal((await organizationRequest(f.userId)).body.can_manage,false);
+  assert.equal((await place(f.userId,f.stockId,[])).status,403);
+  assert.equal((await storageRequest('GET',f.userId,f.stockId)).status,200);
+});
+
+test('storage audit failure rolls back positions, movement events, revision and retry receipt',async()=>{
+  const f=await fixture();const a=await location(f.userId,'A');const b=await location(f.userId,'B');
+  await place(f.userId,f.stockId,[position(a,2)]);
+  const before=await organizedStock(f.userId,f.stockId);
+  const input={operation_id:randomUUID(),expected_revision:before.revision,allocations:[position(b,3)]};
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_storage_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.delta = 3 THEN RAISE EXCEPTION 'fixture storage history failure'; END IF; RETURN NEW; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_storage_failure BEFORE INSERT ON inventory_storage_events FOR EACH ROW EXECUTE FUNCTION fixture_storage_failure()');
+  try {
+    assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,500);
+    assert.deepEqual(await organizedStock(f.userId,f.stockId),before);
+    assert.equal(await prisma.inventory_operations.count({where:{operation_key:input.operation_id}}),0);
+    assert.equal((await storageRequest('GET',f.userId,f.stockId)).body.changes.length,1);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER fixture_storage_failure ON inventory_storage_events');
+    await prisma.$executeRawUnsafe('DROP FUNCTION fixture_storage_failure()');
+  }
+  assert.equal((await storageRequest('PATCH',f.userId,f.stockId,input)).status,200);
+});
+
+test('organization seed creates owner-scoped categories and locations without changing stock quantities',async()=>{
+  const f=await meadFixture();const honey=await stock(f.userId);const other=await owner();
+  const {seedInventoryOrganization}=await import('../prisma/seed-inventory-organization.ts');
+  await seedInventoryOrganization(prisma,f.userId);
+  const view=(await organizationRequest(f.userId)).body;
+  assert.equal(view.labels.length,2);assert.equal(view.locations.length,3);
+  assert.ok(view.locations.some(row=>row.path==='Cellar → Box A2'));
+  assert.equal(view.assignments.length,2);
+  assert.equal(view.stock.find(row=>row.id===honey.stockId).quantity.value,5);
+  assert.equal((await organizationRequest(other)).body.locations.length,0);
+});
+
+const {readBrewInventory: bottlingContext}=await import('../lib/db/brew-inventory.ts');
+const {createFinishedMeadService:bottlingMeadService}=await import('../lib/db/finished-meads.ts');
+function bottlingInput(quantity=12, overrides={}){
+ const rowId=randomUUID(),meadId=randomUUID();
+ return {type:'PACKAGING',client_entry_id:randomUUID(),data:{packagedVolumeLiters:8.5,bottleRows:[{id:rowId,label:'750 mL',quantity,sizeLiters:.75,totalLiters:quantity*.75}],closures:[]},bottling:{operation_id:randomUUID(),expected_revision:null,mode:'sync',outputs:[{row_id:rowId,quantity,target:{kind:'new',mead_id:meadId,name:'House collection'}}]},...overrides};
+}
+async function production(f,entryId){return (await bottlingContext(f.userId,f.brewId)).bottlings.find(row=>row.entry_id===entryId);}
+async function productionStock(f,input){return prisma.inventory_stock.findFirstOrThrow({where:{user_id:f.userId,mead_id:input.bottling.outputs[0].target.mead_id}});}
+function productionEdit(input,source,quantity){return {data:{...input.data,bottleRows:input.data.bottleRows.map(row=>({...row,quantity,totalLiters:quantity*row.sizeLiters}))},bottling:{operation_id:randomUUID(),expected_revision:source.revision,mode:'sync',outputs:source.outputs.map(row=>({row_id:row.row_id,quantity,target:{kind:'existing',mead_id:row.mead_id}}))}};}
+test('bottling creates finished stock and measured yield atomically, replaying the operation once',async()=>{
+ const f=await fixture(),input=bottlingInput();
+ assert.equal((await route('POST',f,input)).status,201);
+ assert.equal((await route('POST',f,input)).status,201);
+ const item=await productionStock(f,input);assert.equal(await balance(item.id),12);
+ assert.equal((await prisma.brews.findUniqueOrThrow({where:{id:f.brewId}})).current_volume_liters,8.5);
+ assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId,type:'VOLUME'}}),1);
+ assert.equal(await prisma.inventory_bottlings.count(),1);assert.equal(await prisma.inventory_productions.count(),1);
+ const retained=await prisma.inventory_bottlings.findUniqueOrThrow({where:{entry_id:input.client_entry_id}});assert.ok(Number.isFinite(Date.parse(retained.source_snapshot.datetime)));assert.equal(retained.source_snapshot.packaging.bottleRows[0].id,input.data.bottleRows[0].id);
+ assert.equal((await production(f,input.client_entry_id)).outputs[0].quantity,12);
+ const saved=await route('POST',f,input);assert.equal(JSON.stringify(saved.body.brew).includes(input.bottling.outputs[0].target.mead_id),false);
+});
+test('bottling corrections preserve later uses, reject stale snapshots and apply no repeat output',async()=>{
+ const f=await fixture(),input=bottlingInput();await route('POST',f,input);
+ const meads=bottlingMeadService(prisma);let item=(await meads.overview(f.userId)).meads.find(row=>row.id===input.bottling.outputs[0].target.mead_id);
+ await meads.update(f.userId,item.id,{action:'manual_use',operation_id:randomUUID(),expected_revision:item.revision,size_liters:.75,quantity:2,note:null});
+ const source=await production(f,input.client_entry_id),edit=productionEdit(input,source,10);
+ const result=await route('PATCH',f,edit,input.client_entry_id);assert.equal(result.status,200,JSON.stringify(result.body));
+ const stock=await productionStock(f,input);assert.equal(await balance(stock.id),8);
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);assert.equal(await balance(stock.id),8);
+ assert.equal((await route('PATCH',f,{...edit,bottling:{...edit.bottling,operation_id:randomUUID()}},input.client_entry_id)).body.code,'STALE_USAGE');
+ const current=await production(f,input.client_entry_id);const same=productionEdit(input,current,10);await route('PATCH',f,same,input.client_entry_id);assert.equal(await balance(stock.id),8);
+});
+test('bottling inputs and output/storage audit roll back together on an invalid destination',async()=>{
+ const f=await fixture(),input=bottlingInput();const caps=await service.createStock(f.userId,randomUUID(),{name:'750 mL bottles',category:'packaging',quantity:{value:20,unit:'units'}});
+ input.inventory={mode:'items',operation_id:randomUUID(),expected:[],items:[{line_key:`bottle:${input.data.bottleRows[0].id}`,stock_id:caps.stockId}]};
+ input.bottling.outputs[0].location_id=randomUUID();
+ const result=await route('POST',f,input);assert.equal(result.status,404,JSON.stringify(result.body));
+ assert.equal(await balance(caps.stockId),20);assert.equal(await prisma.brew_entries.count(),0);assert.equal(await prisma.inventory_meads.count(),0);assert.equal(await prisma.inventory_bottlings.count(),0);
+ input.bottling.outputs[0].location_id=await location(f.userId);
+ assert.equal((await route('POST',f,input)).status,201);assert.equal(await balance(caps.stockId),8);
+ const out=await productionStock(f,input);assert.equal((await organizedStock(f.userId,out.id)).allocations[0].quantity,12);
+ const edit=productionEdit(input,await production(f,input.client_entry_id),10);edit.inventory={...input.inventory,operation_id:randomUUID(),expected:[{line_key:input.inventory.items[0].line_key,stock_id:caps.stockId,deducted:{value:12,unit:'units'}}]};
+ const blocked=await route('PATCH',f,edit,input.client_entry_id);assert.equal(blocked.body.code,'STORAGE_IN_USE');assert.equal(await balance(caps.stockId),8);assert.equal(await balance(out.id),12);
+});
+test('missing production review cannot bypass corrections; expiry retains counts and flags reconciliation',async()=>{
+ const f=await fixture(),input=bottlingInput();await route('POST',f,input);const out=await productionStock(f,input);
+ assert.equal((await route('PATCH',f,{data:{...input.data,packagedVolumeLiters:7}},input.client_entry_id)).body.code,'SELECTION_REQUIRED');
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2000-01-01')}});
+ assert.equal((await route('PATCH',f,{data:{...input.data,packagedVolumeLiters:7}},input.client_entry_id)).status,200);
+ assert.equal(await balance(out.id),12);assert.equal((await production(f,input.client_entry_id)).reconciliation_required,true);
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2100-01-01')}});
+ const edit=productionEdit(input,await production(f,input.client_entry_id),12);
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).body.code,'RECONCILIATION_REQUIRED');
+ edit.bottling.mode='reconcile';edit.bottling.confirmed_on_hand=true;
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);assert.equal(await balance(out.id),12);assert.equal((await production(f,input.client_entry_id)).reconciliation_required,false);
+});
+test('older packaging requires on-hand confirmation and brew deletion retains private production snapshots',async()=>{
+ const f=await fixture(),input=bottlingInput();const untracked={...input};delete untracked.bottling;await route('POST',f,untracked);
+ const edit={data:input.data,bottling:input.bottling};assert.equal((await route('PATCH',f,edit,input.client_entry_id)).body.code,'RECONCILIATION_REQUIRED');
+ edit.bottling.confirmed_on_hand=true;assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);
+ const out=await productionStock(f,input);await deleteBrewForApp(f.brewId,f.userId);assert.equal(await balance(out.id),12);assert.equal(await prisma.inventory_bottlings.count(),1);
+ const history=await bottlingMeadService(prisma).history(f.userId,out.mead_id);const change=history.adjustments.find(row=>row.kind==='bottling_output');assert.equal(change.source.removed,true);assert.equal(change.source.brew_id,f.brewId);
+});
+
+test('bottling splits sizes across entries and locations, with atomic source removal and packaging returns',async()=>{
+ const f=await fixture(),input=bottlingInput();const row2={id:randomUUID(),label:'375 mL',quantity:4,sizeLiters:.375,totalLiters:1.5};input.data.bottleRows.push(row2);
+ const secondId=randomUUID(),loc=await location(f.userId);
+ const first=input.bottling.outputs[0];first.quantity=7;first.location_id=loc;
+ input.bottling.outputs.push({...first,quantity:5,target:{kind:'new',mead_id:secondId,name:'Competition'},location_id:null},{row_id:row2.id,quantity:4,target:first.target});
+ const caps=await service.createStock(f.userId,randomUUID(),{name:'Caps',category:'packaging',quantity:{value:20,unit:'units'}});
+ input.data.closures=[{name:'Caps',quantity:16}];input.inventory={mode:'items',operation_id:randomUUID(),expected:[],items:[{line_key:`bottle:${input.data.bottleRows[0].id}`,stock_id:null},{line_key:`bottle:${row2.id}`,stock_id:null},{line_key:'closure:0',stock_id:caps.stockId}]};
+ const create=await route('POST',f,input);assert.equal(create.status,201,JSON.stringify(create.body));
+ const source=await production(f,input.client_entry_id);assert.equal(source.outputs.length,3);assert.equal(await balance(caps.stockId),4);
+ const remove={bottling:{operation_id:randomUUID(),mode:'sync',expected_revision:source.revision,outputs:[]},inventory:{mode:'items',operation_id:randomUUID(),items:[],expected:[{line_key:'closure:0',stock_id:caps.stockId,deducted:{value:16,unit:'units'}}]}};
+ assert.equal((await route('DELETE',f,remove,input.client_entry_id)).body.code,'STORAGE_IN_USE');
+ for(const output of source.outputs)await place(f.userId,output.stock_id,[]);
+ const deleted=await route('DELETE',f,remove,input.client_entry_id);assert.equal(deleted.status,200,JSON.stringify(deleted.body));
+ assert.equal(await balance(caps.stockId),20);for(const output of source.outputs)assert.equal(await balance(output.stock_id),0);
+ assert.equal(await prisma.brew_entries.count({where:{brew_id:f.brewId}}),0);
+ assert.equal((await route('POST',f,{...input,inventory:undefined,bottling:undefined})).body.code,'USAGE_REMOVED');
+});
+test('production ownership, row identity, and concurrent corrections cannot overwrite another reviewed save',async()=>{
+ const f=await fixture(),input=bottlingInput();await route('POST',f,input);const source=await production(f,input.client_entry_id);
+ const [a,b]=await Promise.all([route('PATCH',f,productionEdit(input,source,10),input.client_entry_id),route('PATCH',f,productionEdit(input,source,11),input.client_entry_id)]);
+ assert.deepEqual([a.status,b.status].sort(),[200,409]);
+ const other=await fixture();const foreign=bottlingInput();foreign.bottling.outputs[0].target={kind:'existing',mead_id:input.bottling.outputs[0].target.mead_id};assert.equal((await route('POST',other,foreign)).status,404);
+ const wrong=bottlingInput();wrong.bottling.outputs[0].row_id=randomUUID();assert.equal((await route('POST',f,wrong)).status,400);
+ const duplicated=bottlingInput();duplicated.data.bottleRows.push({...duplicated.data.bottleRows[0]});assert.equal((await route('POST',f,duplicated)).status,400);
+});
+test('removed source warnings can be acknowledged after physical review, never replaying stock on renewal',async()=>{
+ const f=await fixture(),input=bottlingInput();await route('POST',f,input);const out=await productionStock(f,input);
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2000-01-01')}});
+ const removed=await route('DELETE',f,undefined,input.client_entry_id);assert.equal(removed.status,200);assert.equal(await balance(out.id),12);
+ let changes=(await organizationRequest(f.userId)).body.bottling_changes;assert.equal(changes.length,1);assert.equal(changes[0].source_missing,true);
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2100-01-01')}});
+ const change=changes[0],body={operation_id:randomUUID(),expected_revision:change.revision,confirmed_on_hand:true};
+ const request=()=>bottlingChangeRoute.PATCH(new NextRequest(`http://localhost/api/account/inventory/bottlings/${change.id}`,{method:'PATCH',headers:{'x-inventory-fixture-user':String(f.userId),'Content-Type':'application/json'},body:JSON.stringify(body)}),{params:Promise.resolve({bottling_id:change.id})});
+ assert.equal((await request()).status,200);assert.equal((await request()).status,200);assert.equal(await balance(out.id),12);assert.equal((await organizationRequest(f.userId)).body.bottling_changes.length,0);
+ assert.equal((await prisma.inventory_stock.findUniqueOrThrow({where:{id:out.id}})).reconciliation_required,false);
+});
+
+test('bottling seed attributes existing seed bottles without issuing another receipt',async()=>{
+ const f=await fixture();const {seedFinishedMeads}=await import('../prisma/seed-finished-meads.ts');await seedFinishedMeads(prisma,f.userId);
+ const before=await prisma.inventory_stock.findMany({where:{user_id:f.userId,category:'mead'},orderBy:{id:'asc'}});
+ const {seedBottlingProduction}=await import('../prisma/seed-bottling-production.ts');await seedBottlingProduction(prisma,f.userId);
+ const after=await prisma.inventory_stock.findMany({where:{user_id:f.userId,category:'mead'},orderBy:{id:'asc'}});
+ assert.deepEqual(after.map(row=>row.quantity.toNumber()),before.map(row=>row.quantity.toNumber()));assert.equal(await prisma.inventory_bottlings.count(),1);assert.equal(await prisma.inventory_productions.count(),1);
+});
+
+test('a bottling increase places only additional bottles and preserves subsequent moves',async()=>{
+ const f=await fixture(),input=bottlingInput(4),a=await location(f.userId,'Box A'),b=await location(f.userId,'Box B');input.bottling.outputs[0].location_id=a;
+ assert.equal((await route('POST',f,input)).status,201);const out=await productionStock(f,input);
+ await place(f.userId,out.id,[position(b,4)]);
+ const edit=productionEdit(input,await production(f,input.client_entry_id),6);edit.bottling.outputs[0].location_id=a;
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);const stored=await organizedStock(f.userId,out.id);
+ assert.equal(stored.allocations.find(row=>row.location_id===b).quantity,4);assert.equal(stored.allocations.find(row=>row.location_id===a).quantity,2);assert.equal(await balance(out.id),6);
+});
+test('a capacity change cannot erase used output or leave new stock behind on failure',async()=>{
+ const f=await fixture(),input=bottlingInput(4);await route('POST',f,input);const meads=bottlingMeadService(prisma),item=(await meads.overview(f.userId)).meads[0];
+ await meads.update(f.userId,item.id,{action:'manual_use',operation_id:randomUUID(),expected_revision:item.revision,size_liters:.75,quantity:3,note:null});
+ const edit=productionEdit(input,await production(f,input.client_entry_id),4);edit.data.bottleRows[0].sizeLiters=.375;
+ const result=await route('PATCH',f,edit,input.client_entry_id);assert.equal(result.body.code,'INSUFFICIENT_STOCK');assert.equal(await prisma.inventory_stock.count({where:{category:'mead'}}),1);assert.equal((await production(f,input.client_entry_id)).outputs[0].size_liters,.75);
+});
+test('finished output and source volume roll back when packaging supplies are short',async()=>{
+ const f=await fixture(),input=bottlingInput(12),caps=await service.createStock(f.userId,randomUUID(),{name:'Bottles',category:'packaging',quantity:{value:3,unit:'units'}});
+ input.inventory={mode:'items',operation_id:randomUUID(),expected:[],items:[{line_key:`bottle:${input.data.bottleRows[0].id}`,stock_id:caps.stockId}]};
+ assert.equal((await route('POST',f,input)).body.code,'INSUFFICIENT_STOCK');assert.equal(await prisma.inventory_meads.count(),0);assert.equal(await prisma.inventory_productions.count(),0);assert.equal(await prisma.brew_entries.count(),0);assert.equal(await balance(caps.stockId),3);
+});
+
+test('the atomic bottling volume keeps the existing estimated-ABV history synchronized',async()=>{
+ const f=await fixture();
+ await route('POST',f,{type:'GRAVITY',gravity:1.1,datetime:'2026-01-01T00:00:00Z',data:{readingRole:'OG',source:'measured'}});
+ await route('POST',f,{type:'GRAVITY',gravity:1,datetime:'2026-01-02T00:00:00Z',data:{readingRole:'FG',source:'measured'}});
+ const input=bottlingInput();input.datetime='2026-01-03T00:00:00Z';
+ assert.equal((await route('POST',f,input)).status,201);
+ const volume=await prisma.brew_entries.findFirstOrThrow({where:{brew_id:f.brewId,type:'VOLUME'}});
+ const estimates=await prisma.brew_entries.findMany({where:{brew_id:f.brewId,type:'GRAVITY',data:{path:['source'],equals:'abv_estimate'}}});
+ assert.ok(estimates.some(entry=>entry.data?.abvEstimate?.eventEntryId===volume.id));
+});
+
+test('durable closure rows can be reordered or removed without confusing packaging deductions',async()=>{
+ const f=await fixture(),input=bottlingInput();const capId=randomUUID(),corkId=randomUUID();
+ const caps=await service.createStock(f.userId,randomUUID(),{name:'Caps',category:'packaging',quantity:{value:20,unit:'units'}}),corks=await service.createStock(f.userId,randomUUID(),{name:'Corks',category:'packaging',quantity:{value:20,unit:'units'}});
+ input.data.closures=[{id:capId,name:'Caps',quantity:12},{id:corkId,name:'Corks',quantity:12}];
+ input.inventory={mode:'items',operation_id:randomUUID(),expected:[],items:[{line_key:`bottle:${input.data.bottleRows[0].id}`,stock_id:null},{line_key:`closure:${capId}`,stock_id:caps.stockId},{line_key:`closure:${corkId}`,stock_id:corks.stockId}]};
+ assert.equal((await route('POST',f,input)).status,201);
+ const context=await bottlingContext(f.userId,f.brewId),edit=productionEdit(input,context.bottlings[0],12);edit.data.closures=[{id:capId,name:'Caps',quantity:10}];
+ edit.inventory={mode:'items',operation_id:randomUUID(),expected:context.usages.map(({line_key,stock_id,deducted})=>({line_key,stock_id,deducted})),items:input.inventory.items.filter(row=>row.line_key!==`closure:${corkId}`)};
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);assert.equal(await balance(caps.stockId),10);assert.equal(await balance(corks.stockId),20);
+});
+test('another bottling can join the same collection, and completing or reopening never adds bottles',async()=>{
+ const f=await fixture(),first=bottlingInput(4);await route('POST',f,first);const out=await productionStock(f,first);
+ const second=bottlingInput(2);second.bottling.outputs[0].target={kind:'existing',mead_id:first.bottling.outputs[0].target.mead_id};
+ assert.equal((await route('POST',f,second)).status,201);assert.equal(await balance(out.id),6);assert.equal(await prisma.inventory_bottlings.count(),2);
+ await patchBrewMetadata(f.userId,f.brewId,{stage:'COMPLETE'});await patchBrewMetadata(f.userId,f.brewId,{stage:'PACKAGED'});
+ assert.equal(await balance(out.id),6);assert.equal(await prisma.inventory_bottlings.count(),2);
+});
+
+test('quantity history retains the source after packaging output is fully undone',async()=>{
+ const f=await fixture(),input=bottlingInput(4);await route('POST',f,input);const out=await productionStock(f,input),source=await production(f,input.client_entry_id);
+ const removed=await route('DELETE',f,{bottling:{operation_id:randomUUID(),mode:'sync',expected_revision:source.revision,outputs:[]}},input.client_entry_id);assert.equal(removed.status,200);
+ const history=await bottlingMeadService(prisma).history(f.userId,out.mead_id);assert.equal(history.adjustments.length,2);assert.ok(history.adjustments.every(row=>row.source?.entry_id===input.client_entry_id&&row.source.removed));
+});
+
+test('reconciling an expired source keeps later uses when production exceeds remaining on-hand bottles',async()=>{
+ const f=await fixture(),input=bottlingInput(6);await route('POST',f,input);const meads=bottlingMeadService(prisma);let item=(await meads.overview(f.userId)).meads[0];
+ await meads.update(f.userId,item.id,{action:'manual_use',operation_id:randomUUID(),expected_revision:item.revision,size_liters:.75,quantity:4,note:null});
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2000-01-01')}});
+ const changed={...input.data,bottleRows:input.data.bottleRows.map(row=>({...row,quantity:5}))};await route('PATCH',f,{data:changed},input.client_entry_id);
+ await prisma.premium_memberships.updateMany({where:{user_id:f.userId},data:{paid_through:new Date('2100-01-01')}});
+ item=(await meads.overview(f.userId)).meads[0];await meads.update(f.userId,item.id,{action:'correction',operation_id:randomUUID(),expected_revision:item.revision,size_liters:.75,quantity:1,note:'Physical count after source correction'});
+ const reconcile=productionEdit(input,await production(f,input.client_entry_id),5);reconcile.bottling.mode='reconcile';reconcile.bottling.confirmed_on_hand=true;
+ const result=await route('PATCH',f,reconcile,input.client_entry_id);assert.equal(result.status,200,JSON.stringify(result.body));
+ const out=await productionStock(f,input);assert.equal(await balance(out.id),1);
+ const subsequent=productionEdit(input,await production(f,input.client_entry_id),6);assert.equal((await route('PATCH',f,subsequent,input.client_entry_id)).status,200);assert.equal(await balance(out.id),2);
+});
+
+test('retained source snapshots preserve the bottling date and an explicitly cleared note',async()=>{
+ const f=await fixture(),input=bottlingInput(3);input.datetime='2026-01-03T00:00:00Z';input.note='Original bottling note';await route('POST',f,input);
+ const edit=productionEdit(input,await production(f,input.client_entry_id),3);edit.note=null;
+ assert.equal((await route('PATCH',f,edit,input.client_entry_id)).status,200);
+ const source=await prisma.inventory_bottlings.findUniqueOrThrow({where:{entry_id:input.client_entry_id}});
+ assert.equal(source.source_snapshot.note,null);assert.equal(source.source_snapshot.datetime,'2026-01-03T00:00:00.000Z');assert.equal(await balance((await productionStock(f,input)).id),3);
+});
+
+test('entered bottle sizes survive mixed collections, use, receipts and history without display conversion', async () => {
+  const userId = await owner();
+  const input = { operation_id: randomUUID(), mead: { name: 'Mixed bottle units', bottles: [
+    { size_liters: .354882, quantity: 12, display_size: { value: 12, unit: 'fl_oz' } },
+    { size_liters: .75, quantity: 4, display_size: { value: 750, unit: 'mL' } },
+  ] } };
+  const created = await meadRequest('POST', userId, input);
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.mead_id;
+  const read = async () => (await meadRequest('GET', userId, undefined, id)).body;
+  let snapshot = await read();
+  const expected = snapshot.mead.bottles.map(row => row.display_size);
+  assert.deepEqual(expected, [{ value: 12, unit: 'fl_oz' }, { value: 750, unit: 'mL' }]);
+  for (const action of ['manual_use', 'correction', 'receipt']) {
+    const result = await meadRequest('PATCH', userId, { action, operation_id: randomUUID(), expected_revision: snapshot.mead.revision,
+      size_liters: .354882, quantity: 2, ...(action === "receipt" ? { display_size: { value: .354882, unit: "L" } } : {}) }, id);
+    assert.equal(result.status, 200, JSON.stringify(result.body));
+    snapshot = await read();
+    assert.deepEqual(snapshot.mead.bottles.map(row => row.display_size), expected);
+  }
+  assert.ok(snapshot.adjustments.filter(row => row.size_liters === .354882)
+    .every(row => row.display_size.value === 12 && row.display_size.unit === 'fl_oz'));
+  const organization = (await organizationRequest(userId)).body;
+  assert.deepEqual(organization.stock.filter(row => row.mead_id === id).map(row => row.display_size)
+    .sort((a,b) => a.value-b.value), expected);
+  const invalid = structuredClone(input); invalid.operation_id = randomUUID();
+  invalid.mead.bottles[0].display_size.value = 750;
+  assert.equal((await meadRequest('POST', userId, invalid)).status, 400);
+});
+
+test('bottling retains selected US and metric row sizes in private stock and source context', async () => {
+  const f = await fixture(), input = bottlingInput(4);
+  input.data.bottleRows[0].label = '12oz'; input.data.bottleRows[0].sizeLiters = .355;
+  input.data.bottleRows[0].totalLiters = 1.42;
+  assert.equal((await route('POST', f, input)).status, 201);
+  let stock = await productionStock(f, input);
+  assert.equal(stock.bottle_size_value.toNumber(), 12); assert.equal(stock.bottle_size_unit, 'fl_oz');
+  let context = await bottlingContext(f.userId, f.brewId);
+  assert.deepEqual(context.bottlings[0].outputs[0].display_size, { value: 12, unit: 'fl_oz' });
+  const edit = productionEdit(input, context.bottlings[0], 3);
+  assert.equal((await route('PATCH', f, edit, input.client_entry_id)).status, 200);
+  stock = await productionStock(f, input);
+  assert.equal(stock.bottle_size_value.toNumber(), 12); assert.equal(stock.bottle_size_unit, 'fl_oz');
+});
+
+const collectionFixture = () => ({ version: 1,
+  consumables: [{ key: 'honey', stock: { name: 'Honey', category: 'honey', quantity: kg(2), notes: null, catalogReference: null } }],
+  meads: [{ key: 'pie', name: 'Key lime pie', notes: 'Summer', bottles: [
+    { key: 'us', size_liters: 0.355, quantity: 6, display_size: { value: 12, unit: 'fl_oz' } },
+    { key: 'metric', size_liters: 0.75, quantity: 3, display_size: { value: 750, unit: 'mL' } },
+    { key: 'legacy', size_liters: 0.375, quantity: 0 },
+  ] }],
+  labels: [{ key: 'ready', name: 'Ready' }],
+  locations: [{ key: 'box', name: 'Box A', parent_key: 'cellar' }, { key: 'cellar', name: 'Cellar', parent_key: null }],
+  assignments: [{ kind: 'mead', key: 'pie', label_key: 'ready' }, { kind: 'stock', key: 'honey', label_key: 'ready' }],
+  allocations: [{ stock_key: 'us', location_key: 'box', position: 'A1', quantity: 3 }, { stock_key: 'honey', location_key: 'cellar', position: '', quantity: 1 }],
+});
+const { createInventoryCollectionService } = await import('../lib/db/inventory-collection.ts');
+const collectionService = createInventoryCollectionService(prisma);
+const { inspectInventoryFile: inspectCollectionWorkbook } = await import('../lib/brews/inventorySpreadsheet.ts');
+const { collectionFromSheets } = await import('@meadtools/inventory-domain');
+
+test('collection import creates mixed units, categories, nested storage and receipts atomically; retries cannot double stock', async () => {
+  const userId = await owner();
+  const input = { action: 'import_collection', operation_id: randomUUID(), collection: collectionFixture() };
+  const result = await transferRequest(userId, input);
+  assert.equal(result.status, 200); assert.equal(result.body.created, 2);
+  assert.deepEqual((await transferRequest(userId, input)).body, result.body);
+  assert.equal(await prisma.inventory_stock.count(), 4);
+  assert.equal(await prisma.inventory_adjustments.count(), 3);
+  assert.equal(await prisma.inventory_storage_events.count(), 2);
+  assert.equal(await prisma.inventory_bottlings.count(), 0);
+  const snapshot = await collectionService.snapshot(userId);
+  assert.deepEqual(snapshot.meads[0].bottles.map(row => row.display_size ?? null).sort((a,b) => (a?.value ?? 0) - (b?.value ?? 0)), [null, { value:12, unit:'fl_oz' }, { value:750, unit:'mL' }]);
+  assert.equal(snapshot.allocations.length, 2);
+  const conflict = await transferRequest(userId, { ...input, collection: { ...input.collection, meads: [] } });
+  assert.equal(conflict.status, 400); // broken workbook references fail before operation replay
+  const changed = structuredClone(input); changed.collection.meads[0].name = 'Changed';
+  assert.equal((await transferRequest(userId, changed)).body.code, 'OPERATION_CONFLICT');
+});
+
+test('exported collection restores into another account with fresh identities and no foreign brew links', async () => {
+  const first = await owner(), second = await owner();
+  await collectionService.restore(first, randomUUID(), collectionFixture());
+  const exported = await transferRequest(first, { action:'export_collection' });
+  assert.equal(exported.status, 200);
+  const data = collectionFromSheets(await inspectCollectionWorkbook(exported.body.filename, Buffer.from(exported.body.content,'base64')));
+  assert.equal((await transferRequest(second, { action:'import_collection', operation_id:randomUUID(), collection:data })).status, 200);
+  const restored = await collectionService.snapshot(second);
+  assert.equal(restored.meads[0].name, data.meads[0].name);
+  assert.equal(restored.meads[0].bottles.reduce((n,row)=>n+row.quantity,0),9);
+  assert.ok(restored.consumables.every(row=>!data.consumables.some(old=>old.key===row.key)));
+  assert.equal(restored.labels.length,1); assert.equal(restored.locations.length,2); assert.equal(restored.allocations.length,2);
+  const firstStock = data.consumables[0].key;
+  assert.equal(await balance(firstStock),2);
+  // The same owner's explicit copy also adds fresh stock, while organization is reused.
+  await collectionService.restore(first,randomUUID(),data);
+  assert.equal(await prisma.inventory_meads.count({where:{user_id:first}}),2);
+  assert.equal(await prisma.inventory_labels.count({where:{user_id:first}}),1);
+  assert.equal(await prisma.inventory_locations.count({where:{user_id:first}}),2);
+});
+
+test('collection import rolls back organization, balances and operation receipt when a later catalog link fails', async () => {
+  const userId = await owner(); const data = collectionFixture();
+  data.consumables[0].stock.catalogReference = { catalog:'ingredient', id:'2147483647' };
+  const result = await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data});
+  assert.equal(result.status,400);
+  for (const table of ['inventory_stock','inventory_meads','inventory_labels','inventory_locations','inventory_allocations','inventory_storage_events','inventory_operations']) assert.equal(await prisma[table].count(),0,table);
+});
+
+test('collection export and template remain available after expiry; imports fail and existing consumables exports remain compatible',async()=>{
+  const userId=await owner(); await collectionService.restore(userId,randomUUID(),collectionFixture());
+  await prisma.premium_memberships.deleteMany({where:{user_id:userId}});
+  assert.equal((await transferRequest(userId,{action:'export_collection'})).status,200);
+  const template=await transferRequest(userId,{action:'export_collection',template:true});
+  assert.equal(template.status,200);
+  assert.equal(collectionFromSheets(await inspectCollectionWorkbook(template.body.filename,Buffer.from(template.body.content,'base64'))).meads.length,0);
+  assert.equal((await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:collectionFixture()})).body.code,'PREMIUM_REQUIRED');
+  const legacy=await transferRequest(userId,{action:'export',format:'csv'});
+  assert.equal(legacy.status,200);
+  const sheets=await inspectCollectionWorkbook(legacy.body.filename,Buffer.from(legacy.body.content,'base64'));
+  assert.equal(sheets[0].rows.length,2); assert.equal(sheets[0].rows[1][0],'Honey');
+});
+
+test('collection invalid allocations and foreign-only references fail before any writes',async()=>{
+  const userId=await owner();
+  for(const mutate of [data=>{data.allocations[0].quantity=7},data=>{data.allocations[0].quantity=1.5},data=>{data.allocations[0].stock_key=randomUUID()},data=>{data.locations[1].parent_key='box'}]){
+    const data=collectionFixture();mutate(data);
+    assert.equal((await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data})).status,400);
+  }
+  assert.equal(await prisma.inventory_stock.count(),0);assert.equal(await prisma.inventory_operations.count(),0);
+});
+
+test('a full 1000-stock collection import uses bulk writes and produces a complete restorable workbook',async()=>{
+  const userId=await owner();const data=collectionFixture();data.meads=[];data.allocations=[];data.assignments=[];
+  data.consumables=Array.from({length:1000},(_,index)=>({key:`stock-${index}`,stock:transferStock(`Collection ${index}`,1)}));
+  const started=Date.now();const saved=await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:data});
+  assert.equal(saved.status,200,JSON.stringify(saved.body));assert.equal(saved.body.created,1000);
+  assert.equal(await prisma.inventory_adjustments.count(),1000);
+  const exported=await transferRequest(userId,{action:'export_collection'});assert.equal(exported.status,200);
+  const restored=collectionFromSheets(await inspectCollectionWorkbook(exported.body.filename,Buffer.from(exported.body.content,'base64')));
+  assert.equal(restored.consumables.length,1000);
+  console.log(`1000-stock collection import/export completed in ${Date.now()-started}ms`);
+});
+
+test('a late collection storage audit failure rolls back every imported object and operation',async()=>{
+  const userId=await owner();
+  await prisma.$executeRawUnsafe("CREATE FUNCTION fixture_collection_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture audit failure'; END $$");
+  await prisma.$executeRawUnsafe('CREATE TRIGGER fixture_collection_audit_failure BEFORE INSERT ON inventory_storage_events FOR EACH ROW EXECUTE FUNCTION fixture_collection_audit_failure()');
+  try{
+    const result=await transferRequest(userId,{action:'import_collection',operation_id:randomUUID(),collection:collectionFixture()});
+    assert.equal(result.status,500);
+    for(const table of ['inventory_stock','inventory_meads','inventory_labels','inventory_label_links','inventory_locations','inventory_allocations','inventory_storage_events','inventory_adjustments','inventory_operations'])assert.equal(await prisma[table].count(),0,table);
+  }finally{await prisma.$executeRawUnsafe('DROP TRIGGER fixture_collection_audit_failure ON inventory_storage_events');await prisma.$executeRawUnsafe('DROP FUNCTION fixture_collection_audit_failure()');}
 });

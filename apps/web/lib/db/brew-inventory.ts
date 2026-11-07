@@ -3,6 +3,7 @@ import "server-only";
 import type { PrismaClient } from "@prisma/client";
 import { InventoryError } from "@meadtools/inventory-domain";
 import type { BrewInventoryContextResponse } from "@meadtools/api-contract/contracts";
+import { readBottlings } from "./bottling";
 import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "./premium-access";
 import { stockItem } from "./inventory-account";
@@ -15,11 +16,13 @@ export async function readBrewInventory(
   const status = await getPremiumAccessStatus(userId, new Date(), database);
   const brew = await database.brews.findFirst({
     where: { id: brewId, user_id: userId },
-    select: { id: true },
+    select: { id: true, name: true },
   });
   if (!status.activeUser || !brew) throw new InventoryError("NOT_FOUND");
+  const bottlings = await readBottlings(database,userId,brewId);
   if (!status.premiumEnabled)
     return {
+      bottlings, brew_name:brew.name,
       can_manage: false,
       tracked_entry_ids: [],
       usages: [],
@@ -67,6 +70,7 @@ export async function readBrewInventory(
     select: { id: true, type: true, data: true },
   });
   return {
+    bottlings, brew_name:brew.name,
     can_manage: true,
     tracked_entry_ids: Array.from(
       new Set(usages.map((usage) => usage.entry_id)),

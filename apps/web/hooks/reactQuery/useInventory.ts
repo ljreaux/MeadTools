@@ -43,7 +43,8 @@ export function useInventory() {
   }, onSuccess: async () => {
     operation.current = null;
     await Promise.all([client.invalidateQueries({ queryKey }),
-      client.invalidateQueries({ queryKey: ["account", "brew-inventory"] })]);
+      client.invalidateQueries({ queryKey: ["account", "brew-inventory"] }),
+      client.invalidateQueries({ queryKey: ["account", "inventory-organization"] })]);
   } });
   return { overview, mutation };
 }

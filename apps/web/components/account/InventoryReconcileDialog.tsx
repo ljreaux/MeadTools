@@ -1,4 +1,5 @@
 "use client";
+import { InventoryDialogContent as DialogContent } from "./InventoryDialogContent";
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -17,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
-  DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,

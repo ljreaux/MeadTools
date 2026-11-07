@@ -7,6 +7,9 @@ import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
 import { seedInventory } from "./seed-inventory";
+import { seedFinishedMeads } from "./seed-finished-meads";
+import { seedBottlingProduction } from "./seed-bottling-production";
+import { seedInventoryOrganization } from "./seed-inventory-organization";
 import { seedEquipment } from "./seed-equipment";
 import bcrypt from "bcrypt";
 import { randomUUID as uuid } from "crypto";
@@ -239,6 +242,9 @@ async function main() {
   await generateBrewEntries();
   await seedEquipment(prisma, hydrometerSeedUser.id);
   await seedInventory(prisma, hydrometerSeedUser.id);
+  await seedFinishedMeads(prisma, hydrometerSeedUser.id);
+  await seedInventoryOrganization(prisma, hydrometerSeedUser.id);
+  await seedBottlingProduction(prisma, hydrometerSeedUser.id);
   console.log("Ingredient and packaging stock seeded for the user account");
   console.log("Equipment seeded for Key Lime Pie, traditional mead and spare supplies");
 }
@@ -418,10 +424,18 @@ async function clearDb() {
   // Order matters because of FKs
   await prisma.equipment_assignment_events.deleteMany();
   await prisma.equipment.deleteMany();
+  await prisma.inventory_productions.deleteMany();
+  await prisma.inventory_label_links.deleteMany();
+  await prisma.inventory_storage_events.deleteMany();
+  await prisma.inventory_allocations.deleteMany();
+  await prisma.inventory_labels.deleteMany();
+  await prisma.inventory_locations.deleteMany();
   await prisma.inventory_adjustments.deleteMany();
+  await prisma.inventory_bottlings.deleteMany();
   await prisma.inventory_consumptions.deleteMany();
   await prisma.inventory_operations.deleteMany();
   await prisma.inventory_stock.deleteMany();
+  await prisma.inventory_meads.deleteMany();
   await prisma.credit_payment_recoveries.deleteMany();
   await prisma.mcp_tool_usage.deleteMany();
   await prisma.mcp_tool_leases.deleteMany();

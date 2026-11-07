@@ -1,4 +1,5 @@
 import "server-only";
+import { reduceStorageForBalance } from "./inventory-storage";
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import {
@@ -182,9 +183,10 @@ export async function applyEntryInventoryLines(
   }
   for (const balance of plan.balances) {
     if (balance.adjustment === 0) continue;
+    await reduceStorageForBalance(tx, userId, operationId, balance.stock_id, balance.quantity.value, input.kind === "remove" ? "usage_removal" : input.kind === "edit" ? "usage_correction" : "brew_use");
     await tx.inventory_stock.update({
       where: { id: balance.stock_id },
-      data: { quantity: balance.quantity.value },
+      data: { quantity: balance.quantity.value, storage_version: { increment: 1 } },
     });
     const links = Array.from(changed.get(balance.stock_id) ?? []);
     const adjustment = {

@@ -15,6 +15,8 @@ export type InventoryLine = {
   name: string;
   kind: string;
   quantity: Quantity;
+  /** Physical bottle volume, independent of the displayed label and unit count. */
+  sizeLiters?: number;
   catalogReference?: CatalogReference | null;
 };
 export type InventoryUse = {
@@ -34,7 +36,10 @@ const packagingSchema = z.object({
   bottleRows: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         label: z.string().optional(),
+        customSizeValue: z.number().positive().optional(),
+        customSizeUnits: z.enum(["fl_oz", "ml", "liter", "gallon"]).optional(),
         quantity: count,
         sizeLiters: z.number().positive(),
       }),
@@ -42,7 +47,7 @@ const packagingSchema = z.object({
     .max(50)
     .default([]),
   closures: z
-    .array(z.object({ name: z.string().min(1).max(200), quantity: count }))
+    .array(z.object({ id: z.string().uuid().optional(), name: z.string().min(1).max(200), quantity: count }))
     .max(50)
     .default([]),
 });
@@ -55,13 +60,17 @@ export function inventoryEntryLines(
     const value = packagingSchema.parse(data);
     return [
       ...value.bottleRows.map((row, index) => ({
-        key: `bottle:${index}`,
-        name: `${Number((row.sizeLiters * 1000).toFixed(3))} mL bottles`,
+        key: `bottle:${row.id ?? index}`,
+        name: `${row.customSizeValue && row.customSizeUnits
+          ? `${row.customSizeValue} ${{ fl_oz: "fl oz", ml: "mL", liter: "L", gallon: "gal" }[row.customSizeUnits]}`
+          : row.label && row.label !== "Custom" ? row.label.replace(/(\d)(oz|ml|L|gal)$/, (_, amount, unit) => `${amount} ${unit === "oz" ? "fl oz" : unit === "ml" ? "mL" : unit}`)
+          : `${Number((row.sizeLiters * 1000).toFixed(3))} mL`} bottles`,
         kind: "PACKAGING",
+        sizeLiters: row.sizeLiters,
         quantity: { value: row.quantity, unit: "units" as const },
       })),
       ...value.closures.map((row, index) => ({
-        key: `closure:${index}`,
+        key: `closure:${row.id ?? index}`,
         name: row.name,
         kind: "PACKAGING",
         quantity: { value: row.quantity, unit: "units" as const },
@@ -140,7 +149,8 @@ export function lineCategories(
   if (line.kind === "PACKAGING") return ["packaging"];
   if (line.kind === "YEAST") return ["yeast"];
   if (line.kind === "NUTRIENT" || line.kind === "OTHER") return ["additive"];
-  return /\bhoney\b/i.test(line.name) ? ["honey"] : ["honey", "fruit"];
+  // Pantry ingredients such as sugar and brewing water use additive stock too.
+  return /\bhoney\b/i.test(line.name) ? ["honey"] : ["honey", "fruit", "additive"];
 }
 /** Return previous uses, then deduct all new uses in stock units. Shared stock is checked once. */
 export function planEntryInventory(input: {

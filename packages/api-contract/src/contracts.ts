@@ -9,6 +9,7 @@ import {
   accountRecipeOwnerResponseSchema,
   accountRecipeResponseSchema,
   accountUserResponseSchema,
+  acknowledgeBottlingChangeRequestBodySchema,
   additiveAmountDimSchema,
   additiveByIdPathParamsSchema,
   additiveByIdResponseSchema,
@@ -48,6 +49,8 @@ import {
   bjcpIngredientResponseSchema,
   bjcpIngredientsFetchErrorResponseSchema,
   bjcpIngredientsResponseSchema,
+  brewBottlingContextSchema,
+  brewBottlingSelectionSchema,
   brewContainerChangeSchema,
   brewContainerErrorResponseSchema,
   brewCreateErrorResponseSchema,
@@ -142,6 +145,7 @@ import {
   createCreditCheckoutRequestBodySchema,
   createCreditCheckoutResponseSchema,
   createEquipmentRequestBodySchema,
+  createFinishedMeadRequestBodySchema,
   createIngredientFailureErrorResponseSchema,
   createIngredientRequestBodySchema,
   createInventoryStockRequestBodySchema,
@@ -198,6 +202,12 @@ import {
   equipmentOverviewResponseSchema,
   equipmentPathParamsSchema,
   equipmentUnexpectedErrorResponseSchema,
+  finishedMeadBottleSchema,
+  finishedMeadHistoryResponseSchema,
+  finishedMeadItemSchema,
+  finishedMeadMutationResponseSchema,
+  finishedMeadOverviewResponseSchema,
+  finishedMeadPathParamsSchema,
   getRecipeResponseSchema,
   goFermTypeSchema,
   gravityUnitResponseSchema,
@@ -236,6 +246,13 @@ import {
   ingredientsFetchErrorResponseSchema,
   ingredientsResponseSchema,
   invalidRecipeIdErrorResponseSchema,
+  inventoryAllocationSchema,
+  inventoryBottlingPathParamsSchema,
+  inventoryLabelSchema,
+  inventoryLocationSchema,
+  inventoryOrganizationMutationResponseSchema,
+  inventoryOrganizationResponseSchema,
+  inventoryOrganizedStockSchema,
   inventoryOverviewResponseSchema,
   inventoryStockErrorResponseSchema,
   inventoryStockHistoryResponseSchema,
@@ -245,6 +262,8 @@ import {
   inventoryStockPathParamsSchema,
   inventoryStockReconciliationSchema,
   inventoryStockUnexpectedErrorResponseSchema,
+  inventoryStorageHistoryResponseSchema,
+  inventoryStorageSourceSchema,
   inventoryTransferErrorResponseSchema,
   inventoryTransferRequestBodySchema,
   inventoryTransferResponseSchema,
@@ -386,6 +405,7 @@ import {
   updateChatConversationRequestBodySchema,
   updateChatConversationResponseSchema,
   updateEquipmentRequestBodySchema,
+  updateFinishedMeadRequestBodySchema,
   updateHydrometerBrewRecipeOrAlertsResponseSchema,
   updateHydrometerBrewRequestBodySchema,
   updateHydrometerBrewResponseSchema,
@@ -393,7 +413,9 @@ import {
   updateHydrometerLogRequestBodySchema,
   updateIngredientFailureErrorResponseSchema,
   updateIngredientRequestBodySchema,
+  updateInventoryOrganizationRequestBodySchema,
   updateInventoryStockRequestBodySchema,
+  updateInventoryStorageRequestBodySchema,
   updateRecipeCommentFailureErrorResponseSchema,
   updateRecipeCommentRequestBodySchema,
   updateRecipeCommentResponseSchema,
@@ -434,6 +456,7 @@ export type AccountInfoUnauthorizedErrorResponse = z.infer<typeof accountInfoUna
 export type AccountRecipeOwnerResponse = z.infer<typeof accountRecipeOwnerResponseSchema>;
 export type AccountRecipeResponse = z.infer<typeof accountRecipeResponseSchema>;
 export type AccountUserResponse = z.infer<typeof accountUserResponseSchema>;
+export type AcknowledgeBottlingChangeRequestBody = z.infer<typeof acknowledgeBottlingChangeRequestBodySchema>;
 export type AdditiveAmountDim = z.infer<typeof additiveAmountDimSchema>;
 export type AdditiveByIdPathParams = z.infer<typeof additiveByIdPathParamsSchema>;
 export type AdditiveByIdResponse = z.infer<typeof additiveByIdResponseSchema>;
@@ -473,6 +496,8 @@ export type AuthenticatedRouteErrorResponse = z.infer<typeof authenticatedRouteE
 export type BjcpIngredientResponse = z.infer<typeof bjcpIngredientResponseSchema>;
 export type BjcpIngredientsFetchErrorResponse = z.infer<typeof bjcpIngredientsFetchErrorResponseSchema>;
 export type BjcpIngredientsResponse = z.infer<typeof bjcpIngredientsResponseSchema>;
+export type BrewBottlingContext = z.infer<typeof brewBottlingContextSchema>;
+export type BrewBottlingSelection = z.infer<typeof brewBottlingSelectionSchema>;
 export type BrewContainerChange = z.infer<typeof brewContainerChangeSchema>;
 export type BrewContainerErrorResponse = z.infer<typeof brewContainerErrorResponseSchema>;
 export type BrewCreateErrorResponse = z.infer<typeof brewCreateErrorResponseSchema>;
@@ -567,6 +592,7 @@ export type CreateChatCreditGrantResponse = z.infer<typeof createChatCreditGrant
 export type CreateCreditCheckoutRequestBody = z.infer<typeof createCreditCheckoutRequestBodySchema>;
 export type CreateCreditCheckoutResponse = z.infer<typeof createCreditCheckoutResponseSchema>;
 export type CreateEquipmentRequestBody = z.infer<typeof createEquipmentRequestBodySchema>;
+export type CreateFinishedMeadRequestBody = z.infer<typeof createFinishedMeadRequestBodySchema>;
 export type CreateIngredientFailureErrorResponse = z.infer<typeof createIngredientFailureErrorResponseSchema>;
 export type CreateIngredientRequestBody = z.infer<typeof createIngredientRequestBodySchema>;
 export type CreateInventoryStockRequestBody = z.infer<typeof createInventoryStockRequestBodySchema>;
@@ -623,6 +649,12 @@ export type EquipmentNotFoundErrorResponse = z.infer<typeof equipmentNotFoundErr
 export type EquipmentOverviewResponse = z.infer<typeof equipmentOverviewResponseSchema>;
 export type EquipmentPathParams = z.infer<typeof equipmentPathParamsSchema>;
 export type EquipmentUnexpectedErrorResponse = z.infer<typeof equipmentUnexpectedErrorResponseSchema>;
+export type FinishedMeadBottle = z.infer<typeof finishedMeadBottleSchema>;
+export type FinishedMeadHistoryResponse = z.infer<typeof finishedMeadHistoryResponseSchema>;
+export type FinishedMeadItem = z.infer<typeof finishedMeadItemSchema>;
+export type FinishedMeadMutationResponse = z.infer<typeof finishedMeadMutationResponseSchema>;
+export type FinishedMeadOverviewResponse = z.infer<typeof finishedMeadOverviewResponseSchema>;
+export type FinishedMeadPathParams = z.infer<typeof finishedMeadPathParamsSchema>;
 export type GetRecipeResponse = z.infer<typeof getRecipeResponseSchema>;
 export type GoFermType = z.infer<typeof goFermTypeSchema>;
 export type GravityUnitResponse = z.infer<typeof gravityUnitResponseSchema>;
@@ -661,6 +693,13 @@ export type IngredientResponse = z.infer<typeof ingredientResponseSchema>;
 export type IngredientsFetchErrorResponse = z.infer<typeof ingredientsFetchErrorResponseSchema>;
 export type IngredientsResponse = z.infer<typeof ingredientsResponseSchema>;
 export type InvalidRecipeIdErrorResponse = z.infer<typeof invalidRecipeIdErrorResponseSchema>;
+export type InventoryAllocation = z.infer<typeof inventoryAllocationSchema>;
+export type InventoryBottlingPathParams = z.infer<typeof inventoryBottlingPathParamsSchema>;
+export type InventoryLabel = z.infer<typeof inventoryLabelSchema>;
+export type InventoryLocation = z.infer<typeof inventoryLocationSchema>;
+export type InventoryOrganizationMutationResponse = z.infer<typeof inventoryOrganizationMutationResponseSchema>;
+export type InventoryOrganizationResponse = z.infer<typeof inventoryOrganizationResponseSchema>;
+export type InventoryOrganizedStock = z.infer<typeof inventoryOrganizedStockSchema>;
 export type InventoryOverviewResponse = z.infer<typeof inventoryOverviewResponseSchema>;
 export type InventoryStockErrorResponse = z.infer<typeof inventoryStockErrorResponseSchema>;
 export type InventoryStockHistoryResponse = z.infer<typeof inventoryStockHistoryResponseSchema>;
@@ -670,6 +709,8 @@ export type InventoryStockNotFoundResponse = z.infer<typeof inventoryStockNotFou
 export type InventoryStockPathParams = z.infer<typeof inventoryStockPathParamsSchema>;
 export type InventoryStockReconciliation = z.infer<typeof inventoryStockReconciliationSchema>;
 export type InventoryStockUnexpectedErrorResponse = z.infer<typeof inventoryStockUnexpectedErrorResponseSchema>;
+export type InventoryStorageHistoryResponse = z.infer<typeof inventoryStorageHistoryResponseSchema>;
+export type InventoryStorageSource = z.infer<typeof inventoryStorageSourceSchema>;
 export type InventoryTransferErrorResponse = z.infer<typeof inventoryTransferErrorResponseSchema>;
 export type InventoryTransferRequestBody = z.infer<typeof inventoryTransferRequestBodySchema>;
 export type InventoryTransferResponse = z.infer<typeof inventoryTransferResponseSchema>;
@@ -811,6 +852,7 @@ export type UpdateChatAccessAdministrationRequestBody = z.infer<typeof updateCha
 export type UpdateChatConversationRequestBody = z.infer<typeof updateChatConversationRequestBodySchema>;
 export type UpdateChatConversationResponse = z.infer<typeof updateChatConversationResponseSchema>;
 export type UpdateEquipmentRequestBody = z.infer<typeof updateEquipmentRequestBodySchema>;
+export type UpdateFinishedMeadRequestBody = z.infer<typeof updateFinishedMeadRequestBodySchema>;
 export type UpdateHydrometerBrewRecipeOrAlertsResponse = z.infer<typeof updateHydrometerBrewRecipeOrAlertsResponseSchema>;
 export type UpdateHydrometerBrewRequestBody = z.infer<typeof updateHydrometerBrewRequestBodySchema>;
 export type UpdateHydrometerBrewResponse = z.infer<typeof updateHydrometerBrewResponseSchema>;
@@ -818,7 +860,9 @@ export type UpdateHydrometerDeviceRequestBody = z.infer<typeof updateHydrometerD
 export type UpdateHydrometerLogRequestBody = z.infer<typeof updateHydrometerLogRequestBodySchema>;
 export type UpdateIngredientFailureErrorResponse = z.infer<typeof updateIngredientFailureErrorResponseSchema>;
 export type UpdateIngredientRequestBody = z.infer<typeof updateIngredientRequestBodySchema>;
+export type UpdateInventoryOrganizationRequestBody = z.infer<typeof updateInventoryOrganizationRequestBodySchema>;
 export type UpdateInventoryStockRequestBody = z.infer<typeof updateInventoryStockRequestBodySchema>;
+export type UpdateInventoryStorageRequestBody = z.infer<typeof updateInventoryStorageRequestBodySchema>;
 export type UpdateRecipeCommentFailureErrorResponse = z.infer<typeof updateRecipeCommentFailureErrorResponseSchema>;
 export type UpdateRecipeCommentRequestBody = z.infer<typeof updateRecipeCommentRequestBodySchema>;
 export type UpdateRecipeCommentResponse = z.infer<typeof updateRecipeCommentResponseSchema>;

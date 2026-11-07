@@ -1,4 +1,5 @@
 import "server-only";
+import { reduceStorageForBalance } from "./inventory-storage";
 
 import { createHash, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient, type inventory_stock } from "@prisma/client";
@@ -9,6 +10,8 @@ import {
   stockTransferImportSchema, nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
+import { inventoryStorageSourceSchema } from "@meadtools/api-contract/inventory";
+import type { InventoryStorageSource } from "@meadtools/api-contract/contracts";
 import { stockReconciliation } from "./inventory-reconciliation";
 import { getPremiumAccessStatus } from "./premium-access";
 
@@ -16,7 +19,7 @@ export class InventoryWriteError extends Error {
   constructor(public readonly code:
     | "PREMIUM_REQUIRED" | "OPERATION_CONFLICT" | "STALE_USAGE"
     | "USAGE_REMOVED" | "ENTRY_MISMATCH" | "STOCK_ARCHIVED" | "STALE_STOCK" | "SELECTION_REQUIRED"
-    | "RECONCILIATION_REQUIRED") {
+    | "RECONCILIATION_REQUIRED" | "STORAGE_IN_USE" | "ORGANIZATION_CHANGED") {
     super(code);
     this.name = "InventoryWriteError";
   }
@@ -36,6 +39,23 @@ const usageResultSchema = z.object({
 type StockResult = z.infer<typeof stockResultSchema>;
 type UsageResult = z.infer<typeof usageResultSchema>;
 type Tx = Prisma.TransactionClient;
+
+/** Shared quantity ledger for consumables and finished bottles. */
+export async function writeInventoryBalance(
+  tx: Tx, userId: number, operationId: string, stock: inventory_stock,
+  plan: { balance: Quantity; adjustment: number }, kind: string,
+  consumptionId: string | null = null, note: string | null = null,
+  storageSource?: InventoryStorageSource, bottlingId?: string,
+) {
+  if (plan.adjustment === 0) return;
+  await reduceStorageForBalance(tx, userId, operationId, stock.id, plan.balance.value, kind, storageSource);
+  await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value, storage_version: { increment: 1 } } });
+  await tx.inventory_adjustments.create({ data: {
+    user_id: userId, stock_id: stock.id, operation_id: operationId,
+    consumption_id: consumptionId, bottling_id: bottlingId ?? null, kind, delta: plan.adjustment,
+    balance_after: plan.balance.value, unit: stock.unit, note,
+  } });
+}
 
 function canonicalJson(value: Prisma.InputJsonValue): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -94,6 +114,15 @@ export function createInventoryOperation(database: PrismaClient = prisma) {
   return operation;
 }
 
+export async function validateInventoryCatalog(tx: Prisma.TransactionClient, category: string, reference?: CatalogReference | null) {
+    if (!reference) return;
+    const compatible = reference.catalog === 'ingredient' ? ['honey','fruit'].includes(category) : reference.catalog === 'yeast' ? category === 'yeast' : category === 'additive';
+    if (!compatible) throw new InventoryError('LINK_MISMATCH');
+    const id = Number(reference.id);
+    const exists = reference.catalog === 'nutrient' ? Boolean(nutrientReference(reference.id)) : reference.catalog === 'additive' ? stabilizerCatalog.some(item=>item.id===reference.id) || z.string().uuid().safeParse(reference.id).success && await tx.additives.findFirst({where:{id:reference.id},select:{id:true}}) : Number.isSafeInteger(id) && id > 0 ? reference.catalog === 'ingredient' ? await tx.ingredients.findUnique({where:{id},select:{id:true}}) : await tx.yeasts.findUnique({where:{id},select:{id:true}}) : null;
+    if (!exists) throw new InventoryError('LINK_MISMATCH');
+  }
+
 export function createInventoryService(database: PrismaClient = prisma) {
   const operation = createInventoryOperation(database);
 
@@ -105,7 +134,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
       ORDER BY id FOR UPDATE
     `);
     const rows = await tx.inventory_stock.findMany({ where: { user_id: userId, id: { in: uniqueIds } } });
-    if (rows.length !== uniqueIds.length) throw new InventoryError("NOT_FOUND");
+    if (rows.length !== uniqueIds.length || rows.some((row) => row.category === "mead")) throw new InventoryError("NOT_FOUND");
     return new Map(rows.map((row) => [row.id, row]));
   }
 
@@ -114,29 +143,15 @@ export function createInventoryService(database: PrismaClient = prisma) {
     plan: { balance: Quantity; adjustment: number }, kind: string,
     consumptionId: string | null = null, note: string | null = null,
   ) {
-    if (plan.adjustment === 0) return;
-    await tx.inventory_stock.update({ where: { id: stock.id }, data: { quantity: plan.balance.value } });
-    await tx.inventory_adjustments.create({ data: {
-      user_id: userId, stock_id: stock.id, operation_id: operationId,
-      consumption_id: consumptionId, kind, delta: plan.adjustment,
-      balance_after: plan.balance.value, unit: stock.unit, note,
-    } });
+    return writeInventoryBalance(tx, userId, operationId, stock, plan, kind, consumptionId, note);
   }
 
-  async function validateCatalog(tx: Tx, category: string, reference?: CatalogReference | null) {
-    if (!reference) return;
-    const compatible = reference.catalog === 'ingredient' ? ['honey','fruit'].includes(category) : reference.catalog === 'yeast' ? category === 'yeast' : category === 'additive';
-    if (!compatible) throw new InventoryError('LINK_MISMATCH');
-    const id = Number(reference.id);
-    const exists = reference.catalog === 'nutrient' ? Boolean(nutrientReference(reference.id)) : reference.catalog === 'additive' ? stabilizerCatalog.some(item=>item.id===reference.id) || z.string().uuid().safeParse(reference.id).success && await tx.additives.findFirst({where:{id:reference.id},select:{id:true}}) : Number.isSafeInteger(id) && id > 0 ? reference.catalog === 'ingredient' ? await tx.ingredients.findUnique({where:{id},select:{id:true}}) : await tx.yeasts.findUnique({where:{id},select:{id:true}}) : null;
-    if (!exists) throw new InventoryError('LINK_MISMATCH');
-  }
   async function editStock(userId: number, operationKey: string, input: {stockId:string;name:string;catalogReference?:CatalogReference|null;notes?:string|null}):Promise<StockResult> {
     const details = z.object({name:stockInputSchema.shape.name,catalogReference:stockInputSchema.shape.catalogReference,notes:stockInputSchema.shape.notes}).parse(input);
     return operation(userId,operationKey,{kind:'stock_details',stockId:input.stockId,details},result=>stockResultSchema.parse(result),async(tx)=>{
       const stock=(await lockStock(tx,userId,[uuid.parse(input.stockId)])).get(input.stockId)!;
       if(stock.archived_at)throw new InventoryWriteError('STOCK_ARCHIVED');
-      await validateCatalog(tx,stock.category,details.catalogReference);
+      await validateInventoryCatalog(tx,stock.category,details.catalogReference);
       await tx.inventory_stock.update({where:{id:stock.id},data:{name:details.name,catalog:details.catalogReference?.catalog??null,catalog_id:details.catalogReference?.id??null,notes:details.notes}});
       return {stockId:stock.id,balance:{value:stock.quantity.toNumber(),unit:stock.unit}};
     });
@@ -148,7 +163,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     const parsed = stockInputSchema.parse(input);
     return operation(userId, operationKey, { kind: "create_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
-        await validateCatalog(tx, parsed.category, parsed.catalogReference);
+        await validateInventoryCatalog(tx, parsed.category, parsed.catalogReference);
         const stock = await tx.inventory_stock.create({ data: {
           user_id: userId, name: parsed.name, category: parsed.category,
           catalog: parsed.catalogReference?.catalog ?? null,
@@ -189,7 +204,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
               row.stock.catalogReference,
             ]);
             if (!references.has(key)) {
-              await validateCatalog(
+              await validateInventoryCatalog(
                 tx,
                 row.stock.category,
                 row.stock.catalogReference,
@@ -283,11 +298,13 @@ export function createInventoryService(database: PrismaClient = prisma) {
   async function changeStock(userId: number, operationKey: string, input: {
     stockId: string; kind: "receipt" | "manual_use" | "correction";
     quantity: Quantity; note?: string | null; expectedBalance?: Quantity | null;
+    storageSource?: InventoryStorageSource;
   }): Promise<StockResult> {
     const parsed = z.object({
       stockId: uuid, kind: z.enum(["receipt", "manual_use", "correction"]),
       quantity: quantitySchema, note: z.string().max(5000).nullable().default(null),
       expectedBalance: quantitySchema.nullable().default(null),
+      storageSource: inventoryStorageSourceSchema.optional(),
     }).strict().parse(input);
     return operation(userId, operationKey, { kind: "change_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
@@ -299,7 +316,8 @@ export function createInventoryService(database: PrismaClient = prisma) {
           throw new InventoryWriteError("STALE_STOCK");
         }
         const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock), ...parsed });
-        await writeBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note);
+        if (parsed.storageSource !== undefined && parsed.kind !== "manual_use") throw new InventoryError("LINK_MISMATCH");
+        await writeInventoryBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note, parsed.storageSource);
         return { stockId: stock.id, balance: plan.balance };
       });
   }
@@ -338,6 +356,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
     return operation(userId, operationKey, { kind: "archive_stock", stockId },
       (result) => stockResultSchema.parse(result), async (tx) => {
         const stock = (await lockStock(tx, userId, [stockId])).get(stockId)!;
+        if (await tx.inventory_allocations.count({ where: { user_id: userId, stock_id: stockId } })) throw new InventoryWriteError("STORAGE_IN_USE");
         await tx.inventory_stock.update({ where: { id: stockId }, data: { archived_at: new Date() } });
         return { stockId, balance: { value: stock.quantity.toNumber(), unit: stock.unit } };
       });

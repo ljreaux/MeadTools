@@ -1,4 +1,5 @@
 import Fuse from "fuse.js";
+import { bottleDisplayMatches, type BottleDisplaySize } from "./finished-mead";
 import { nutrientCatalog, stabilizerCatalog } from "./catalog";
 import { convertQuantity, type Quantity } from "./quantity";
 import { lineCategories, type InventoryLine } from "./entry-lines";
@@ -18,6 +19,22 @@ const normalized = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+
+/** Packaging stock has no structured size; only an explicit volume is safe to infer. */
+const packagingSizePattern = /(?:^|[^\w.])([0-9]+(?:[.,][0-9]+)?)\s*(ml|millilit(?:er|re)s?|l|lit(?:er|re)s?|(?:fl[\s._-]*)?oz|fluid\s+ounces?|gal|gallons?)\b/gi;
+function packagingSize(name: string): BottleDisplaySize | undefined {
+  // Fractions are unsupported; never read their denominator as a whole capacity.
+  if (/\d\s*[/⁄]\s*\d/.test(name)) return undefined;
+  const sizes = [...name.matchAll(packagingSizePattern)];
+  if (sizes.length !== 1) return undefined;
+  const [, amount, label] = sizes[0];
+  const unit = label.toLowerCase();
+  return {
+    value: Number(amount.replace(",", ".")),
+    unit: unit.startsWith("m") ? "mL" : unit.startsWith("l") ? "L"
+      : unit.startsWith("g") ? "gal" : "fl_oz",
+  };
+}
 /** Fuse ranks every stock match; category/unit checks remain hard eligibility rules. */
 export function matchInventoryStock<T extends MatchStock>(
   stock: readonly T[],
@@ -37,8 +54,14 @@ export function matchInventoryStock<T extends MatchStock>(
         return false;
       }
     });
+  const automaticChoices = choices.filter((item) => {
+    if (line.kind !== "PACKAGING" || line.sizeLiters == null) return true;
+    const size = packagingSize(item.name);
+    // Reuse the bottle rules, including the calculator's nominal rounded presets.
+    return size != null && bottleDisplayMatches(line.sizeLiters, size);
+  });
   const linked = line.catalogReference
-    ? choices.filter(
+    ? automaticChoices.filter(
         (item) =>
           item.catalogReference?.catalog === line.catalogReference!.catalog &&
           item.catalogReference.id === line.catalogReference!.id,
@@ -51,7 +74,11 @@ export function matchInventoryStock<T extends MatchStock>(
       score: 0,
       warning: linked.length > 1 ? ("linked_ambiguous" as const) : null,
     };
-  const records = choices
+  const matchName = (name: string) => normalized(
+    line.kind === "PACKAGING" && line.sizeLiters != null
+      ? name.replace(packagingSizePattern, " ") : name,
+  );
+  const records = automaticChoices
     .filter((item) => {
       if (item.catalogReference) return false;
       // A known product name carries an identity even on older, unlinked stock.
@@ -74,7 +101,7 @@ export function matchInventoryStock<T extends MatchStock>(
           reference.id === line.catalogReference.id)
       );
     })
-    .map((item) => ({ item, name: normalized(item.name) }));
+    .map((item) => ({ item, name: matchName(item.name) }));
   const productName =
     line.catalogReference?.catalog === "nutrient"
       ? nutrientCatalog.find(
@@ -92,7 +119,7 @@ export function matchInventoryStock<T extends MatchStock>(
     ignoreFieldNorm: true,
     threshold: 0.45,
   })
-    .search(normalized(productName ?? line.name))
+    .search(matchName(productName ?? line.name))
     .sort(
       (a, b) =>
         (a.score ?? 1) - (b.score ?? 1) ||
