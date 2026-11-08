@@ -11,6 +11,13 @@ export default function AppLayout() {
         name="brews/[id]"
         options={{ title: t("mobileBrews.detailTitle") }}
       />
+      <Stack.Screen
+        name="record-gravity"
+        options={{
+          presentation: "modal",
+          title: t("mobileBrews.recordGravity.title")
+        }}
+      />
     </Stack>
   );
 }

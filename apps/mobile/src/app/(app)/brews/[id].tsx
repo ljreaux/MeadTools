@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -23,6 +24,12 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
+import { useGravityOutbox, useGravityOutboxRecords } from "@/outbox/gravity-outbox-provider";
+import {
+  mergeTimelineWithOutbox,
+  type DeliveryTone,
+  type TimelineRow
+} from "@/outbox/timeline-delivery";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
 export default function BrewScreen() {
@@ -49,6 +56,12 @@ export default function BrewScreen() {
   );
   const overview = useMemo(() => brew ? projectBrewOverview(brew) : null, [brew]);
   const timeline = useMemo(() => brew ? projectBrewTimeline(brew) : [], [brew]);
+  const outbox = useGravityOutbox();
+  const outboxRecords = useGravityOutboxRecords(id);
+  const rows = useMemo(
+    () => mergeTimelineWithOutbox(timeline, outboxRecords, brew?.stage ?? null),
+    [brew?.stage, outboxRecords, timeline]
+  );
   const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 });
   const timelineNumber = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 2 });
 
@@ -95,7 +108,72 @@ export default function BrewScreen() {
     }
   }
 
-  function renderTimelineItem({ item }: { item: BrewTimelineItem }) {
+  function toneColor(tone: DeliveryTone) {
+    switch (tone) {
+      case "pending": return colors.textMuted;
+      case "warning": return colors.warning;
+      case "error": return colors.error;
+      case "success": return colors.success;
+    }
+  }
+
+  function confirmDiscard(clientEntryId: string) {
+    Alert.alert(
+      t("mobileBrews.delivery.discardTitle"),
+      t("mobileBrews.delivery.discardBody"),
+      [
+        { text: t("mobileBrews.delivery.discardCancel"), style: "cancel" },
+        {
+          text: t("mobileBrews.delivery.discard"),
+          style: "destructive",
+          onPress: () => void outbox?.discard(clientEntryId)
+        }
+      ]
+    );
+  }
+
+  function renderDelivery(row: Extract<TimelineRow, { kind: "local" }>) {
+    const { delivery, record } = row;
+    return (
+      <View style={styles.delivery}>
+        <View accessibilityLiveRegion="polite" style={styles.deliveryStatus}>
+          {delivery.busy ? (
+            <ActivityIndicator color={colors.textMuted} size="small" />
+          ) : (
+            <View style={[styles.deliveryDot, { backgroundColor: toneColor(delivery.tone) }]} />
+          )}
+          <Text style={styles.deliveryText}>
+            {t(`mobileBrews.delivery.status.${delivery.message}`)}
+          </Text>
+        </View>
+        {delivery.canRetry || delivery.canDiscard ? (
+          <View style={styles.deliveryActions}>
+            {delivery.canRetry ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void outbox?.retry(record.clientEntryId)}
+                style={({ pressed }) => [styles.deliveryButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.deliveryButtonText}>{t("mobileBrews.delivery.retry")}</Text>
+              </Pressable>
+            ) : null}
+            {delivery.canDiscard ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => confirmDiscard(record.clientEntryId)}
+                style={({ pressed }) => [styles.deliveryButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.deliveryButtonText}>{t("mobileBrews.delivery.discard")}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    );
+  }
+
+  function renderTimelineRow({ item: row }: { item: TimelineRow }) {
+    const item: BrewTimelineItem = row.item;
     const date = new Date(item.datetime);
     const timestamp = Number.isNaN(date.getTime())
       ? t("mobileBrews.timeline.dateUnavailable")
@@ -108,7 +186,7 @@ export default function BrewScreen() {
     const showTitle = item.title && !detail && item.title !== typeLabel;
 
     return (
-      <View style={styles.timelineRow}>
+      <View style={[styles.timelineRow, row.kind === "local" && styles.timelineRowLocal]}>
         <View style={styles.timelineTop}>
           <Text style={styles.timelineType}>{typeLabel}</Text>
           <Text style={styles.timelineDate}>{timestamp}</Text>
@@ -117,6 +195,7 @@ export default function BrewScreen() {
         {detail ? <Text style={styles.timelineDetail}>{detail}</Text> : null}
         {showTitle ? <Text style={styles.timelineDetail}>{item.title}</Text> : null}
         {item.note ? <Text style={styles.timelineNote}>{item.note}</Text> : null}
+        {row.kind === "local" ? renderDelivery(row) : null}
       </View>
     );
   }
@@ -184,9 +263,9 @@ export default function BrewScreen() {
 
   return (
     <FlatList
-      data={timeline}
-      keyExtractor={(item) => item.id}
-      renderItem={renderTimelineItem}
+      data={rows}
+      keyExtractor={(row) => row.key}
+      renderItem={renderTimelineRow}
       ItemSeparatorComponent={() => <View style={styles.timelineSeparator} />}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
@@ -216,6 +295,18 @@ export default function BrewScreen() {
         {started ? <Text style={styles.muted}>{t("mobileBrews.started", { date: started })}</Text> : null}
         {brew.batch_number !== null ? (
           <Text style={styles.muted}>{t("mobileBrews.batch", { number: brew.batch_number })}</Text>
+        ) : null}
+        {outbox && brew.stage !== "COMPLETE" ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({
+              pathname: "/record-gravity",
+              params: { brewId: brew.id, name, unit: brew.gravity_unit_preference }
+            })}
+            style={({ pressed }) => [styles.recordButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.recordButtonText}>{t("mobileBrews.recordGravity.action")}</Text>
+          </Pressable>
         ) : null}
       </View>
 
@@ -353,6 +444,32 @@ function createStyles(colors: typeof colorThemes.light) {
       paddingHorizontal: spacing.xl,
       paddingVertical: spacing.md
     },
-    retryText: { color: colors.onAccent, fontWeight: typography.weight.bold }
+    retryText: { color: colors.onAccent, fontWeight: typography.weight.bold },
+    pressed: { opacity: 0.7 },
+    recordButton: {
+      alignItems: "center",
+      borderRadius: radii.lg,
+      backgroundColor: colors.accent,
+      justifyContent: "center",
+      marginTop: spacing.sm,
+      minHeight: 48,
+      paddingHorizontal: spacing.xl
+    },
+    recordButtonText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    timelineRowLocal: { borderStyle: "dashed" },
+    delivery: { gap: spacing.sm, marginTop: spacing.xs },
+    deliveryStatus: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
+    deliveryDot: { borderRadius: radii.round, height: 10, width: 10 },
+    deliveryText: { color: colors.text, flex: 1, fontSize: typography.size.caption, fontWeight: typography.weight.bold },
+    deliveryActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    deliveryButton: {
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      minHeight: 40,
+      justifyContent: "center",
+      paddingHorizontal: spacing.md
+    },
+    deliveryButtonText: { color: colors.text, fontSize: typography.size.caption, fontWeight: typography.weight.bold }
   });
 }

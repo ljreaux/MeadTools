@@ -1916,6 +1916,26 @@
     "activeCount_other": "{{count}} active brews",
     "batch": "Batch {{number}}",
     "currentVolume": "Current volume",
+    "delivery": {
+      "discard": "Discard",
+      "discardBody": "This reading has not been saved to MeadTools. Discarding removes it from this device.",
+      "discardCancel": "Keep",
+      "discardTitle": "Discard this reading?",
+      "retry": "Retry now",
+      "status": {
+        "authRequired": "Not synced. Sign in again to send it.",
+        "conflict": "Not saved: it conflicts with another entry.",
+        "forbidden": "Not saved: your account cannot add this entry.",
+        "notFound": "Not saved: this brew is no longer available.",
+        "pending": "Waiting to sync",
+        "rejected": "Not saved: MeadTools rejected this reading.",
+        "retryNetwork": "Offline. It will sync when you are back online.",
+        "retryServer": "MeadTools is unavailable. It will retry automatically.",
+        "sending": "Syncing…",
+        "synced": "Synced",
+        "unconfirmed": "Sync could not be confirmed. Retry to check."
+      }
+    },
     "detailError": "Could not load this brew.",
     "detailLoading": "Loading brew…",
     "detailTitle": "Brew details",
@@ -1937,6 +1957,27 @@
     "overview": "Overview",
     "recipe": "Recipe: {{name}}",
     "recipeDetailsUnavailable": "Recipe details are unavailable for this brew.",
+    "recordGravity": {
+      "action": "Record gravity",
+      "brixNote": "Saved as {{sg}} SG. This °Bx reading is not refractometer-corrected.",
+      "cancel": "Cancel",
+      "errors": {
+        "empty": "Enter a reading.",
+        "invalid": "Enter a number, such as 1.050.",
+        "range": "Enter a value from {{min}} to {{max}} {{unit}}.",
+        "saveFailed": "This reading could not be saved on this device. Try again."
+      },
+      "measuredNow": "The reading is timestamped when you save it. It syncs automatically, even if you are offline.",
+      "noteLabel": "Note (optional)",
+      "readingLabel": "Reading",
+      "save": "Save reading",
+      "saving": "Saving…",
+      "title": "Record gravity",
+      "unavailable": "Recording readings is not available on this device.",
+      "unitBrix": "°Bx",
+      "unitLabel": "Unit",
+      "unitSg": "SG"
+    },
     "refresh": "Refresh brews",
     "retry": "Try again",
     "sessionExpiredBody": "Sign in again to see your brews.",
@@ -1949,7 +1990,7 @@
     "timeline": {
       "activity": "Activity",
       "dateUnavailable": "Date unavailable",
-      "empty": "No timeline activity yet. Entries you add on the web will appear here.",
+      "empty": "No timeline activity yet. Readings you record here or on the web will appear here.",
       "heading": "Recent activity",
       "packages_one": "{{count}} package",
       "packages_other": "{{count}} packages",

@@ -31,6 +31,22 @@ backend responses in this document.
 | Expired session / server 401 pause and recovery | Not run (unit tested) | Not run |
 | Terminal validation, not-found and UUID-conflict errors | Not run (unit tested) | Not run |
 
+## Native gravity entry (#445) — November 8, 2026
+
+| Check | iOS Simulator | Android emulator |
+| --- | --- | --- |
+| Record gravity opens from brew detail with the brew's unit preference | Pass | Pass |
+| Empty and implausible input (`1050` SG) refused with a visible error; nothing queued | Pass | Not run |
+| Decimal comma accepted (`21,5` °Bx, `1,008` SG) | Pass | Pass |
+| °Bx shows the SG to be saved and states it is not refractometer-corrected | Pass | Not run |
+| Offline save shows an immediate local row with an honest status, Retry and Discard | Pass (injected offline) | Pass (real airplane mode) |
+| Retry now moves the row to "Waiting to sync"; it syncs once and becomes one server row | Pass | — |
+| Reconnect syncs without user action; the row becomes one server row with its original time | — | Pass: 16 s after reconnect |
+| Discard asks for confirmation and removes the unsent reading from the device | Pass | Not run |
+| Online save syncs immediately with no stale pending copy | Pass | Pass (via reconnect) |
+| Dark mode | Pass | Not run |
+| Stored request matches the web payload for the same input | Pass (unit tested; record inspected on device) | Pass (record inspected on device) |
+
 ## Findings
 
 - Without a network-status listener, reconnect relies on resume, a
