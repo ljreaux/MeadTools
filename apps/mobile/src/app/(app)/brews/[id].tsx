@@ -22,6 +22,7 @@ import { toBrix } from "@meadtools/core/gravity";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
 export default function BrewScreen() {
@@ -256,6 +257,12 @@ export default function BrewScreen() {
           <Text style={styles.muted}>{t("mobileBrews.recipeDetailsUnavailable")}</Text>
         )}
       </View>
+      {__DEV__ ? (
+        <DevOutboxPanel
+          brewId={brew.id}
+          serverEntryIds={brew.entries.map((entry) => entry.id)}
+        />
+      ) : null}
       <Text accessibilityRole="header" style={styles.sectionHeading}>{t("mobileBrews.timeline.heading")}</Text>
       </View>}
       ListEmptyComponent={

@@ -17,9 +17,13 @@ batch easier to monitor and update, especially when connectivity is poor.
 - Environment-aware API client and TanStack Query providers
 - Native password and Google sign-in, protected routes, and SecureStore session restore
 - Active brew list, read-only overview, and recent activity timeline with safe legacy entry handling
+- Durable, account-scoped gravity outbox (`src/outbox/`) that persists each
+  validated reading before upload and replays it idempotently with the same
+  client UUID (#444). The user-facing entry flow is #445; development builds
+  show a verification panel with fault injection on brew detail.
 
-The foundation does not yet provide synchronization, offline persistence, or
-production-ready branding. The read-only POC is accepted for the next slice;
+The foundation does not yet provide a user-facing write flow, generic
+synchronization, or production-ready branding. The read-only POC is accepted for the next slice;
 device-level evidence and remaining release-readiness checks are recorded in
 [POC-VERIFICATION.md](./POC-VERIFICATION.md).
 

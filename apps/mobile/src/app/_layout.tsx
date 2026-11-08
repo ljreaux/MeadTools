@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { I18nextProvider } from "react-i18next";
 
 import i18n, { initI18n } from "@/i18n";
+import { GravityOutboxProvider } from "@/outbox/gravity-outbox-provider";
 import { AppProviders, useSession } from "@/providers/app-providers";
 
 function RootNavigator() {
@@ -44,7 +45,9 @@ export default function RootLayout() {
   return (
     <I18nextProvider i18n={i18n}>
       <AppProviders>
-        <RootNavigator />
+        <GravityOutboxProvider>
+          <RootNavigator />
+        </GravityOutboxProvider>
       </AppProviders>
     </I18nextProvider>
   );
