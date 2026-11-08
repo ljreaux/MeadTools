@@ -9,6 +9,7 @@
     "./auth": "./src/zod/auth.ts",
     "./brews": "./src/zod/brews.ts",
     "./inventory": "./src/zod/inventory.ts",
+    "./inventory-costs": "./src/zod/inventory-costs.ts",
     "./equipment": "./src/zod/equipment.ts",
     "./hydrometers": "./src/zod/hydrometers.ts",
     "./foundation": "./src/zod/foundation.ts",

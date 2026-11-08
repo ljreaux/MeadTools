@@ -37,6 +37,10 @@ const finishedMeadRoute = await import("../app/api/account/inventory/meads/[mead
 const brewMetadataRoute = await import("../app/api/brews/[brew_id]/route.ts");
 const brewInventoryRoute = await import("../app/api/brews/[brew_id]/inventory/route.ts");
 const bottlingChangeRoute = await import("../app/api/account/inventory/bottlings/[bottling_id]/route.ts");
+const currencyRoute = await import("../app/api/account/inventory/currency/route.ts");
+const costExclusionsRoute = await import("../app/api/account/inventory/cost-exclusions/route.ts");
+const brewCostsRoute = await import("../app/api/brews/[brew_id]/costs/route.ts");
+const recipeCostsRoute = await import("../app/api/recipes/[id]/costs/route.ts");
 hooks.deregister();
 const contract = await import("@meadtools/api-contract/brews");
 const equipmentContract = await import("@meadtools/api-contract/equipment");
@@ -731,8 +735,9 @@ test("inventory seed creates owned ingredient and packaging stock with matching 
   const data = JSON.parse(recipe.dataV2);
   const brew = await prisma.brews.create({ data: { user_id: userId } });
   const additions = [
+    // The tracker logs six decimal places, e.g. 0.1171875 gal of lime juice as 0.117188.
     ...data.ingredients.map((row) => ({ kind: "INGREDIENT", name: row.name,
-      amount: Number(row.amounts[row.amounts.basis].value), unit: row.amounts[row.amounts.basis].unit })),
+      amount: Math.round(Number(row.amounts[row.amounts.basis].value) * 1e6) / 1e6, unit: row.amounts[row.amounts.basis].unit })),
     ...data.additives.map((row) => ({ kind: "OTHER", name: row.name, amount: Number(row.amount), unit: row.unit })),
   ];
   for (const data of additions) {
@@ -945,11 +950,11 @@ test('inventory import rolls back all rows on invalid catalog identity and repor
  const userId=await owner();const input=importRequest([{row_number:2,stock:transferStock()},{row_number:3,stock:{name:'Nutrients',category:'additive',quantity:{value:5,unit:'g'},catalogReference:{catalog:'nutrient',id:'unknown'}}}]);const result=await transferRequest(userId,input);assert.equal(result.status,400,JSON.stringify(result.body));assert.equal(result.body.row_number,3);assert.equal(await prisma.inventory_stock.count({where:{user_id:userId}}),0);assert.equal(await prisma.inventory_operations.count({where:{user_id:userId}}),0);
 });
 test('explicit inventory updates use absolute corrections and immutable review snapshots',async()=>{
- const f=await fixture();const previous=(await stockRequest('GET',f.userId)).body.stock.find(item=>item.id===f.stockId);const {id,reconciliation_required,...expected}=previous;
+ const f=await fixture();const previous=(await stockRequest('GET',f.userId)).body.stock.find(item=>item.id===f.stockId);const {id,reconciliation_required,cost:_cost,...expected}=previous;
  const input=importRequest([{row_number:2,stock_id:id,expected,stock:{...expected,name:'Renamed honey',quantity:kg(3)}}],'update');const result=await transferRequest(f.userId,input);assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(await balance(id),3);assert.equal((await transferRequest(f.userId,input)).status,200);assert.equal(await balance(id),3);const stale=await transferRequest(f.userId,{...input,operation_id:randomUUID()});assert.equal(stale.status,409);assert.equal(stale.body.code,'STALE_STOCK');assert.equal(stale.body.row_number,2);const history=(await stockRequest('GET',f.userId,undefined,id)).body.adjustments;assert.equal(history.filter(row=>row.kind==='correction').length,1);assert.equal(history.find(row=>row.kind==='correction').delta,-2);
 });
 test('foreign IDs, duplicate updates, create-mode IDs and reconciliation cannot bypass import rules',async()=>{
- const f=await fixture();const other=await fixture();const prior=(await stockRequest('GET',f.userId)).body.stock[0];const {id,reconciliation_required,...expected}=prior;
+ const f=await fixture();const other=await fixture();const prior=(await stockRequest('GET',f.userId)).body.stock[0];const {id,reconciliation_required,cost:_cost,...expected}=prior;
  assert.equal((await transferRequest(other.userId,importRequest([{row_number:2,stock_id:id,expected,stock:expected}],'update'))).status,404);
  assert.equal((await transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:expected}]))).status,400);
  assert.equal((await transferRequest(f.userId,importRequest([2,3].map(row_number=>({row_number,stock_id:id,expected,stock:expected})),'update'))).status,400);
@@ -970,7 +975,7 @@ test('import rolls back inserted stock when a late audit insert fails',async()=>
  finally{await prisma.$executeRawUnsafe('DROP TRIGGER fixture_transfer_audit_failure ON inventory_adjustments');await prisma.$executeRawUnsafe('DROP FUNCTION fixture_transfer_audit_failure()');}
 });
 test('concurrent imported updates cannot overwrite the same reviewed balance',async()=>{
- const f=await fixture();const {id,reconciliation_required,...expected}=(await stockRequest('GET',f.userId)).body.stock[0];const results=await Promise.all([3,4].map(value=>transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:{...expected,quantity:kg(value)}}],'update'))));assert.deepEqual(results.map(result=>result.status).sort(),[200,409]);assert.ok([3,4].includes(await balance(id)));assert.equal(await prisma.inventory_adjustments.count({where:{stock_id:id,kind:'correction'}}),1);
+ const f=await fixture();const {id,reconciliation_required,cost:_cost,...expected}=(await stockRequest('GET',f.userId)).body.stock[0];const results=await Promise.all([3,4].map(value=>transferRequest(f.userId,importRequest([{row_number:2,stock_id:id,expected,stock:{...expected,quantity:kg(value)}}],'update'))));assert.deepEqual(results.map(result=>result.status).sort(),[200,409]);assert.ok([3,4].includes(await balance(id)));assert.equal(await prisma.inventory_adjustments.count({where:{stock_id:id,kind:'correction'}}),1);
 });
 
 
@@ -1779,4 +1784,248 @@ test('a late collection storage audit failure rolls back every imported object a
     assert.equal(result.status,500);
     for(const table of ['inventory_stock','inventory_meads','inventory_labels','inventory_label_links','inventory_locations','inventory_allocations','inventory_storage_events','inventory_adjustments','inventory_operations'])assert.equal(await prisma[table].count(),0,table);
   }finally{await prisma.$executeRawUnsafe('DROP TRIGGER fixture_collection_audit_failure ON inventory_storage_events');await prisma.$executeRawUnsafe('DROP FUNCTION fixture_collection_audit_failure()');}
+});
+
+// --- Ingredient costing (#513) ---------------------------------------------
+async function costRequest(handler, url, userId, method, input, params) {
+  const response = await handler[method](new NextRequest(`http://localhost${url}`, {
+    method,
+    headers: { ...(userId === null ? {} : { "x-inventory-fixture-user": String(userId) }),
+      ...(input === undefined ? {} : { "Content-Type": "application/json" }) },
+    ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+  }), { params: Promise.resolve(params ?? {}) });
+  return { status: response.status, body: await response.json() };
+}
+const currencyRequest = (userId, input) => costRequest(currencyRoute, "/api/account/inventory/currency", userId, "PUT", input);
+const exclusionRequest = (userId, input) => costRequest(costExclusionsRoute, "/api/account/inventory/cost-exclusions", userId, input ? "PATCH" : "GET", input);
+const brewCostRequest = (userId, brewId, input, query = "") =>
+  costRequest(brewCostsRoute, `/api/brews/${brewId}/costs${query}`, userId, input ? "POST" : "GET", input, { brew_id: brewId });
+const recipeCostRequest = (userId, recipeId, input, query = "") =>
+  costRequest(recipeCostsRoute, `/api/recipes/${recipeId}/costs${query}`, userId, input ? "PATCH" : "GET", input, { id: String(recipeId) });
+const usd = (amount, per) => ({ amount, currency: "USD", per });
+async function seedRecipe(userId, { privateRecipe = false } = {}) {
+  const { readFile } = await import("node:fs/promises");
+  const row = JSON.parse(await readFile(new URL("../prisma/seed-data/recipes_rows.json", import.meta.url), "utf8"))
+    .find((recipe) => recipe.name === "Key Lime Pie");
+  return prisma.recipes.create({ data: { ...row, user_id: userId, private: privateRecipe,
+    lastActivityEmailAt: null, dataV2: JSON.parse(row.dataV2) } });
+}
+
+test("prices need the account currency; receipts average, replay once and keep price history", async () => {
+  const userId = await owner();
+  const priced = { operation_id: randomUUID(), stock: { name: "Clover honey", category: "honey", quantity: kg(5) }, price: usd(30, kg(5)) };
+  const rejected = await stockRequest("POST", userId, priced);
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.body.code, "CURRENCY_REQUIRED");
+  assert.equal(await prisma.inventory_stock.count(), 0);
+  assert.equal((await currencyRequest(userId, { currency: "usd" })).status, 400);
+  assert.equal((await currencyRequest(userId, { currency: "USD" })).status, 200);
+  const created = await stockRequest("POST", userId, priced);
+  assert.equal(created.status, 201);
+  assert.deepEqual((await stockRequest("POST", userId, priced)).body, created.body);
+  const id = created.body.stockId;
+  const cost = async () => (await stockRequest("GET", userId)).body.stock.find((item) => item.id === id).cost;
+  assert.deepEqual(await cost(), { unit_cost: 6, currency: "USD" });
+  assert.equal((await stockRequest("GET", userId)).body.currency, "USD");
+  // 5 kg at $6 plus 5,000 g at $10/kg averages to $8/kg; a retry records nothing twice.
+  const receipt = { operation_id: randomUUID(), action: "receipt", quantity: { value: 5000, unit: "g" },
+    expected_balance: kg(5), note: null, price: usd(50, kg(5)) };
+  assert.equal((await stockRequest("PATCH", userId, receipt, id)).status, 200);
+  assert.equal((await stockRequest("PATCH", userId, receipt, id)).status, 200);
+  assert.equal(await balance(id), 10);
+  assert.deepEqual(await cost(), { unit_cost: 8, currency: "USD" });
+  assert.equal(await prisma.inventory_cost_events.count(), 2);
+  const mismatch = await stockRequest("PATCH", userId, { ...receipt, operation_id: randomUUID(),
+    expected_balance: kg(10), price: { ...receipt.price, currency: "EUR" } }, id);
+  assert.equal(mismatch.status, 409);
+  assert.equal(mismatch.body.code, "CURRENCY_MISMATCH");
+  assert.equal(await balance(id), 10);
+  // Prices only accompany receipts; uses and counts keep the average.
+  assert.equal((await stockRequest("PATCH", userId, { ...stockChangeInput("manual_use", 1, 10), price: usd(1, kg(1)) }, id)).status, 400);
+  assert.equal((await stockRequest("PATCH", userId, stockChangeInput("manual_use", 1, 10), id)).status, 200);
+  assert.equal((await stockRequest("PATCH", userId, stockChangeInput("correction", 9.5, 9), id)).status, 200);
+  assert.deepEqual(await cost(), { unit_cost: 8, currency: "USD" });
+  // An unpriced receipt makes the average unknown, never zero; valuation sets it again.
+  assert.equal((await stockRequest("PATCH", userId, stockChangeInput("receipt", 0.5, 9.5), id)).status, 200);
+  assert.deepEqual(await cost(), { unit_cost: null, currency: null });
+  assert.equal((await stockRequest("PATCH", userId, { operation_id: randomUUID(), action: "set_unit_cost",
+    price: usd(70, kg(10)), note: null }, id)).status, 200);
+  assert.deepEqual(await cost(), { unit_cost: 7, currency: "USD" });
+  const events = (await stockRequest("GET", userId, undefined, id)).body.cost_events;
+  assert.deepEqual(events.map((event) => event.kind).sort(), ["receipt", "receipt", "receipt", "valuation"]);
+  assert.equal(events.filter((event) => event.price === null).length, 1);
+  // A price recorded with nothing on hand still sets the unit cost.
+  const empty = await stockRequest("POST", userId, { operation_id: randomUUID(),
+    stock: { name: "Orange blossom honey", category: "honey", quantity: kg(0) }, price: usd(45, kg(5)) });
+  assert.equal(empty.status, 201);
+  assert.deepEqual((await stockRequest("GET", userId)).body.stock.find((item) => item.id === empty.body.stockId).cost,
+    { unit_cost: 9, currency: "USD" });
+  assert.deepEqual((await stockRequest("GET", userId, undefined, empty.body.stockId)).body.cost_events.map((event) => event.kind), ["valuation"]);
+});
+
+test("brew uses snapshot cost; only corrections or explicit recalculation re-cost; exclusions are per use", async () => {
+  const f = await fixture();
+  await prisma.users.update({ where: { id: f.userId }, data: { inventory_currency: "USD" } });
+  await service.setUnitCost(f.userId, randomUUID(), { stockId: f.stockId, price: usd(6, kg(1)) });
+  const input = addition(1.5, selection(f));
+  const entryId = input.client_entry_id;
+  assert.equal((await route("POST", f, input)).status, 201);
+  const snapshot = async () => (await prisma.inventory_consumptions.findFirstOrThrow({ where: { entry_id: entryId } }));
+  const recorded = async () => (await brewCostRequest(f.userId, f.brewId)).body.recorded;
+  assert.equal((await snapshot()).unit_cost.toNumber(), 6);
+  assert.deepEqual((await recorded()).totals, [{ currency: "USD", amount: 9 }]);
+  assert.equal((await recorded()).complete, true);
+  // A later price never rewrites the recorded use, nor does a note-only or same-amount edit.
+  await service.setUnitCost(f.userId, randomUUID(), { stockId: f.stockId, price: usd(10, kg(1)) });
+  assert.equal((await route("PATCH", f, { note: "Stirred" }, entryId)).status, 200);
+  assert.equal((await route("PATCH", f, { data: input.data, inventory: selection(f, 1.5) }, entryId)).status, 200);
+  assert.equal((await snapshot()).unit_cost.toNumber(), 6);
+  assert.deepEqual((await recorded()).totals, [{ currency: "USD", amount: 9 }]);
+  // Correcting the amount re-costs that use at the current average.
+  assert.equal((await route("PATCH", f, { data: { ...input.data, amount: 2 }, inventory: selection(f, 1.5) }, entryId)).status, 200);
+  assert.equal((await snapshot()).unit_cost.toNumber(), 10);
+  assert.deepEqual((await recorded()).totals, [{ currency: "USD", amount: 20 }]);
+  // One use can be left out of this brew; the choice survives a later correction.
+  const key = `${entryId}/addition`;
+  assert.equal((await brewCostRequest(f.userId, f.brewId, { action: "exclude_use", key, excluded: true })).status, 200);
+  let line = (await recorded()).lines[0];
+  assert.equal(line.status, "excluded");
+  assert.equal(line.exclusion, "use");
+  assert.equal(line.cost, null);
+  assert.equal((await route("PATCH", f, { data: { ...input.data, amount: 2.5 }, inventory: selection(f, 2) }, entryId)).status, 200);
+  assert.equal((await snapshot()).cost_excluded, true);
+  assert.deepEqual((await recorded()).totals, []);
+  // Recalculation is explicit, replays once and never changes balances.
+  await service.setUnitCost(f.userId, randomUUID(), { stockId: f.stockId, price: usd(12, kg(1)) });
+  const before = await balance(f.stockId);
+  const recalculate = { action: "recalculate", operation_id: randomUUID() };
+  assert.equal((await brewCostRequest(f.userId, f.brewId, recalculate)).status, 200);
+  assert.equal((await brewCostRequest(f.userId, f.brewId, recalculate)).status, 200);
+  assert.equal(await balance(f.stockId), before);
+  assert.equal((await snapshot()).unit_cost.toNumber(), 12);
+  assert.equal((await brewCostRequest(f.userId, f.brewId, { action: "exclude_use", key, excluded: false })).status, 200);
+  line = (await recorded()).lines[0];
+  assert.equal(line.status, "priced");
+  assert.equal(line.cost, 30);
+  // A removed use drops out of recorded costs but keeps its snapshot for history.
+  assert.equal((await route("DELETE", f, { inventory: selection(f, 2.5) }, entryId)).status, 200);
+  assert.deepEqual((await recorded()).lines, []);
+  assert.equal((await snapshot()).unit_cost.toNumber(), 12);
+  assert.equal((await brewCostRequest(f.userId, f.brewId, { action: "exclude_use", key, excluded: true })).status, 404);
+});
+
+test("ingredient exclusions match ingredients everywhere but never shared stock", async () => {
+  const userId = await owner();
+  await prisma.users.update({ where: { id: userId }, data: { inventory_currency: "USD" } });
+  const water = await service.createStock(userId, randomUUID(), { name: "Water", category: "additive", quantity: { value: 10, unit: "gal" } });
+  const brews = await Promise.all([1, 2].map(() => prisma.brews.create({ data: { user_id: userId } })));
+  for (const [index, brew] of brews.entries()) {
+    const data = { kind: "INGREDIENT", name: index ? "Spring water" : "Water", amount: 1, unit: "gal" };
+    assert.equal((await route("POST", { userId, brewId: brew.id }, { type: "ADDITION", client_entry_id: randomUUID(), data,
+      inventory: { mode: "deduct", operation_id: randomUUID(), stock_id: water.stockId, expected: null } })).status, 201);
+  }
+  const status = async (brew) => (await brewCostRequest(userId, brew.id)).body.recorded.lines[0];
+  assert.equal((await exclusionRequest(userId, { action: "exclude", name: " WATER " })).status, 200);
+  assert.equal((await exclusionRequest(userId, { action: "exclude", name: "water" })).body.exclusions.length, 1);
+  assert.equal((await status(brews[0])).exclusion, "ingredient");
+  // "Spring water" shares the Water stock item but is a different ingredient.
+  assert.equal((await status(brews[1])).status, "unpriced");
+  // Excluding again from a catalog-linked line adds catalog matching to the same choice.
+  const linked = await exclusionRequest(userId, { action: "exclude", name: "Water", catalog_reference: { catalog: "ingredient", id: "9" } });
+  assert.deepEqual(linked.body.exclusions.map((row) => row.catalog_reference), [{ catalog: "ingredient", id: "9" }]);
+  const id = (await exclusionRequest(userId)).body.exclusions[0].id;
+  assert.equal((await exclusionRequest(userId, { action: "include", id })).status, 200);
+  assert.equal((await status(brews[0])).status, "unpriced");
+});
+
+test("cost reads and writes enforce ownership, premium and opt-in public totals", async () => {
+  const userId = await owner();
+  const stranger = await owner();
+  const free = await owner(false);
+  await prisma.users.update({ where: { id: userId }, data: { inventory_currency: "USD" } });
+  const recipe = await seedRecipe(userId);
+  const privateRecipe = await seedRecipe(userId, { privateRecipe: true });
+  const snapshot = { name: recipe.name, dataV2: recipe.dataV2 };
+  const brew = await prisma.brews.create({ data: { user_id: userId, recipe_id: recipe.id, public: true, recipe_snapshot: snapshot } });
+  const hiddenBrew = await prisma.brews.create({ data: { user_id: userId, recipe_id: privateRecipe.id, public: true, recipe_snapshot: snapshot } });
+  // Owners only; other accounts see nothing.
+  assert.equal((await brewCostRequest(userId, brew.id)).status, 200);
+  assert.equal((await brewCostRequest(stranger, brew.id)).status, 404);
+  assert.equal((await recipeCostRequest(stranger, recipe.id)).status, 404);
+  assert.equal((await brewCostRequest(stranger, brew.id, { action: "share", share_cost_summary: true })).status, 404);
+  assert.equal((await recipeCostRequest(userId, recipe.id)).body.estimate.basis, "recipe_estimate");
+  for (const id of ["99999999999", "2147483648", "0"])
+    assert.equal((await recipeCostRequest(null, id, undefined, "?public=true")).status, 400, id);
+  // Public reads return nothing until the owner opts in, and only totals after.
+  assert.deepEqual((await brewCostRequest(null, brew.id, undefined, "?public=true")).body, { summary: null });
+  assert.equal((await brewCostRequest(userId, brew.id, { action: "share", share_cost_summary: true })).status, 200);
+  assert.equal((await recipeCostRequest(userId, recipe.id, { share_cost_summary: true })).status, 200);
+  for (const response of [await brewCostRequest(null, brew.id, undefined, "?public=true"),
+    await recipeCostRequest(null, recipe.id, undefined, "?public=true")]) {
+    assert.equal(response.status, 200);
+    assert.deepEqual(Object.keys(response.body.summary).sort(),
+      ["basis", "complete", "mixed_currencies", "per_bottle", "per_liter", "totals", "volume_liters"]);
+    assert.equal(JSON.stringify(response.body).includes("unit_cost"), false);
+  }
+  // Private records stay hidden even when the owner has shared a summary.
+  await prisma.brews.update({ where: { id: hiddenBrew.id }, data: { share_cost_summary: true } });
+  await prisma.recipes.update({ where: { id: privateRecipe.id }, data: { share_cost_summary: true } });
+  assert.equal((await brewCostRequest(null, hiddenBrew.id, undefined, "?public=true")).status, 404);
+  assert.equal((await recipeCostRequest(null, privateRecipe.id, undefined, "?public=true")).status, 404);
+  await prisma.brews.update({ where: { id: brew.id }, data: { public: false } });
+  assert.equal((await brewCostRequest(null, brew.id, undefined, "?public=true")).status, 404);
+  // Free accounts can read and switch choices off, but cannot add prices or choices.
+  const freeRecipe = await seedRecipe(free);
+  const freeBrew = await prisma.brews.create({ data: { user_id: free, share_cost_summary: true } });
+  assert.equal((await currencyRequest(free, { currency: "USD" })).status, 403);
+  assert.equal((await exclusionRequest(free, { action: "exclude", name: "Water" })).status, 403);
+  assert.equal((await recipeCostRequest(free, freeRecipe.id, { share_cost_summary: true })).status, 403);
+  assert.equal((await brewCostRequest(free, freeBrew.id, { action: "share", share_cost_summary: false })).status, 200);
+  assert.equal((await brewCostRequest(free, freeBrew.id, { action: "recalculate", operation_id: randomUUID() })).status, 403);
+  assert.equal((await recipeCostRequest(free, freeRecipe.id)).body.can_manage, false);
+});
+
+test("seeded inventory prices the Key Lime Pie estimate completely, with water not costed", async () => {
+  const userId = await owner();
+  await seedInventory(prisma, userId);
+  const recipe = await seedRecipe(userId);
+  const estimate = (await recipeCostRequest(userId, recipe.id)).body.estimate;
+  assert.equal(estimate.complete, true, JSON.stringify(estimate.missing));
+  assert.equal(estimate.excluded_lines, 1);
+  assert.equal(estimate.lines.find((line) => line.name === "Water").exclusion, "ingredient");
+  assert.ok(estimate.totals[0].amount > 0 && estimate.per_liter > 0);
+  const stock = (await stockRequest("GET", userId)).body.stock;
+  assert.deepEqual(stock.filter((item) => item.cost.unit_cost === null).map((item) => item.name), ["Water"]);
+  assert.equal(await prisma.inventory_cost_events.count({ where: { user_id: userId } }), stock.length - 1);
+});
+
+test("packaging and multi-line uses keep unchanged snapshots and per-use exclusions through edits", async () => {
+  const f = await fixture();
+  await prisma.users.update({ where: { id: f.userId }, data: { inventory_currency: "USD" } });
+  const units = (value) => ({ value, unit: "units" });
+  const bottles = await service.createStock(f.userId, randomUUID(), { name: "750 mL bottles", category: "packaging", quantity: units(20) }, usd(18, units(24)));
+  const corks = await service.createStock(f.userId, randomUUID(), { name: "Corks", category: "packaging", quantity: units(20) }, usd(20, units(100)));
+  const id = randomUUID();
+  const data = { packagedVolumeLiters: 3, bottleRows: [{ label: "750", quantity: 4, sizeLiters: 0.75 }], closures: [{ name: "Corks", quantity: 4 }] };
+  const items = [{ line_key: "bottle:0", stock_id: bottles.stockId }, { line_key: "closure:0", stock_id: corks.stockId }];
+  assert.equal((await route("POST", f, { type: "PACKAGING", client_entry_id: id, data, inventory: multiSelection(items) })).status, 201);
+  const recorded = async () => (await brewCostRequest(f.userId, f.brewId)).body.recorded;
+  assert.deepEqual((await recorded()).totals, [{ currency: "USD", amount: 3.8 }]);
+  assert.deepEqual((await recorded()).lines.map((line) => line.kind), ["PACKAGING", "PACKAGING"]);
+  // Reused bottles for this brew only; then prices change and only the corks are corrected.
+  assert.equal((await brewCostRequest(f.userId, f.brewId, { action: "exclude_use", key: `${id}/bottle:0`, excluded: true })).status, 200);
+  await service.setUnitCost(f.userId, randomUUID(), { stockId: bottles.stockId, price: usd(1, units(1)) });
+  await service.setUnitCost(f.userId, randomUUID(), { stockId: corks.stockId, price: usd(0.3, units(1)) });
+  const expected = (await trackerInventory(f.userId, f.brewId)).body.usages.map(({ line_key, stock_id, deducted }) => ({ line_key, stock_id, deducted }));
+  const next = { ...data, closures: [{ name: "Corks", quantity: 2 }] };
+  assert.equal((await route("PATCH", f, { data: next, inventory: multiSelection(items, expected) }, id)).status, 200);
+  const use = (lineKey) => prisma.inventory_consumptions.findFirstOrThrow({ where: { entry_id: id, line_key: lineKey } });
+  const bottleUse = await use("bottle:0");
+  assert.equal(bottleUse.unit_cost.toNumber(), 0.75);
+  assert.equal(bottleUse.cost_excluded, true);
+  assert.equal((await use("closure:0")).unit_cost.toNumber(), 0.3);
+  const after = await recorded();
+  assert.equal(after.lines.find((line) => line.key === `${id}/bottle:0`).exclusion, "use");
+  assert.deepEqual(after.totals, [{ currency: "USD", amount: 0.6 }]);
+  assert.equal(after.complete, true);
 });

@@ -39,19 +39,24 @@ import { Skeleton } from "../ui/skeleton";
 import { formatSgDisplay } from "@/lib/utils/gravityFormatting";
 import { CreateBrewButton } from "@/components/brews/CreateBrewButton";
 import type { ReactNode } from "react";
+import { RecipeCostEstimate } from "@/components/account/InventoryCostSummary";
 
 const buildCardConfig = ({
   recipeId,
   recipeName,
   publicUsername,
   isRecipeHydrated,
-  createBrewAction
+  createBrewAction,
+  recipePublic,
+  dirty
 }: {
   recipeId: number;
   recipeName: string;
   publicUsername?: string | null;
   isRecipeHydrated: boolean;
   createBrewAction: ReactNode;
+  recipePublic: boolean;
+  dirty: boolean;
 }) => [
   {
     key: "card-1",
@@ -123,6 +128,18 @@ const buildCardConfig = ({
         createBrewAction={createBrewAction}
       />
     ]
+  },
+  {
+    key: "card costs",
+    heading: "inventoryCosts.recipeTitle",
+    components: [
+      <RecipeCostEstimate
+        key="costEstimate"
+        recipeId={recipeId}
+        recipePublic={recipePublic}
+        dirty={dirty}
+      />
+    ]
   }
 ];
 
@@ -163,7 +180,9 @@ function OwnerRecipe({
     recipeName,
     publicUsername: recipe.public_username,
     isRecipeHydrated,
-    createBrewAction
+    createBrewAction,
+    recipePublic: !isPrivate,
+    dirty: isDirty
   });
 
   const cards = cardConfig.map(({ key, heading, components, tooltip }) => (
@@ -251,7 +270,7 @@ function OwnerRecipe({
       onChange={setNutrients}
     >
       <div className="w-full flex flex-col justify-center items-center py-[6rem] relative">
-        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1} showConnectedBrews>
+        <RecipeCalculatorSideBar goTo={goTo} cardNumber={currentStepIndex + 1} showConnectedBrews showCostEstimate>
           <div className="py-2">
             <SaveChanges
               privateRecipe={isPrivate}

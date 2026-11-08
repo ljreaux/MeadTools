@@ -1179,6 +1179,31 @@
               },
               "reconciliation_required": {
                 "type": "boolean"
+              },
+              "cost": {
+                "default": {
+                  "unit_cost": null,
+                  "currency": null
+                },
+                "type": "object",
+                "properties": {
+                  "unit_cost": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "nullable": true,
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                },
+                "required": [
+                  "unit_cost",
+                  "currency"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1188,7 +1213,8 @@
               "quantity",
               "notes",
               "id",
-              "reconciliation_required"
+              "reconciliation_required",
+              "cost"
             ],
             "additionalProperties": false
           },
@@ -1269,12 +1295,200 @@
           },
           "has_more": {
             "type": "boolean"
+          },
+          "cost_events": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "receipt",
+                    "valuation"
+                  ]
+                },
+                "received": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "g",
+                        "mg",
+                        "lb",
+                        "oz",
+                        "L",
+                        "mL",
+                        "gal",
+                        "qt",
+                        "pt",
+                        "fl_oz",
+                        "imp_gal",
+                        "imp_qt",
+                        "imp_pt",
+                        "imp_fl_oz",
+                        "tsp",
+                        "tbsp",
+                        "units"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "unit"
+                  ],
+                  "additionalProperties": false
+                },
+                "price": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000
+                    },
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "per": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "g",
+                            "mg",
+                            "lb",
+                            "oz",
+                            "L",
+                            "mL",
+                            "gal",
+                            "qt",
+                            "pt",
+                            "fl_oz",
+                            "imp_gal",
+                            "imp_qt",
+                            "imp_pt",
+                            "imp_fl_oz",
+                            "tsp",
+                            "tbsp",
+                            "units"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value",
+                        "unit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency",
+                    "per"
+                  ],
+                  "additionalProperties": false
+                },
+                "applied_unit_cost": {
+                  "nullable": true,
+                  "type": "number",
+                  "minimum": 0
+                },
+                "before": {
+                  "type": "object",
+                  "properties": {
+                    "unit_cost": {
+                      "nullable": true,
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "nullable": true,
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 3
+                    }
+                  },
+                  "required": [
+                    "unit_cost",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                },
+                "after": {
+                  "type": "object",
+                  "properties": {
+                    "unit_cost": {
+                      "nullable": true,
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "nullable": true,
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 3
+                    }
+                  },
+                  "required": [
+                    "unit_cost",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                },
+                "note": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "kind",
+                "received",
+                "price",
+                "applied_unit_cost",
+                "before",
+                "after",
+                "note",
+                "created_at"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
           "stock",
           "adjustments",
-          "has_more"
+          "has_more",
+          "cost_events"
         ],
         "additionalProperties": false
       },
@@ -1306,7 +1520,9 @@
                   "INVALID_INVENTORY_REQUEST",
                   "RECONCILIATION_REQUIRED",
                   "STORAGE_IN_USE",
-                  "ORGANIZATION_CHANGED"
+                  "ORGANIZATION_CHANGED",
+                  "CURRENCY_REQUIRED",
+                  "CURRENCY_MISMATCH"
                 ]
               },
               "shortage": {
@@ -1407,7 +1623,9 @@
               "INVALID_INVENTORY_REQUEST",
               "RECONCILIATION_REQUIRED",
               "STORAGE_IN_USE",
-              "ORGANIZATION_CHANGED"
+              "ORGANIZATION_CHANGED",
+              "CURRENCY_REQUIRED",
+              "CURRENCY_MISMATCH"
             ]
           },
           "shortage": {
@@ -1631,6 +1849,65 @@
                     "additionalProperties": false
                   }
                 ]
+              },
+              "price": {
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "per": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "kg",
+                          "g",
+                          "mg",
+                          "lb",
+                          "oz",
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz",
+                          "tsp",
+                          "tbsp",
+                          "units"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency",
+                  "per"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1638,6 +1915,92 @@
               "operation_id",
               "quantity",
               "expected_balance"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "set_unit_cost"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "price": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "per": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "kg",
+                          "g",
+                          "mg",
+                          "lb",
+                          "oz",
+                          "L",
+                          "mL",
+                          "gal",
+                          "qt",
+                          "pt",
+                          "fl_oz",
+                          "imp_gal",
+                          "imp_qt",
+                          "imp_pt",
+                          "imp_fl_oz",
+                          "tsp",
+                          "tbsp",
+                          "units"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "unit"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency",
+                  "per"
+                ],
+                "additionalProperties": false
+              },
+              "note": {
+                "default": null,
+                "nullable": true,
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "action",
+              "operation_id",
+              "price"
             ],
             "additionalProperties": false
           },
@@ -1825,6 +2188,99 @@
         },
         "required": [
           "id"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryCostExclusionsResponse": {
+        "type": "object",
+        "properties": {
+          "exclusions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryCostExclusion"
+            }
+          }
+        },
+        "required": [
+          "exclusions"
+        ]
+      },
+      "UpdateInventoryCostExclusionsRequestBody": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "action"
+        },
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "exclude"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "catalog_reference": {
+                "type": "object",
+                "default": null
+              }
+            },
+            "required": [
+              "action",
+              "name",
+              "catalog_reference"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "include"
+                ]
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "action",
+              "id"
+            ]
+          }
+        ]
+      },
+      "UpdateInventoryCurrencyRequestBody": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        },
+        "required": [
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "InventoryCurrencyResponse": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          }
+        },
+        "required": [
+          "currency"
         ],
         "additionalProperties": false
       },
@@ -2961,6 +3417,61 @@
           "can_manage": {
             "type": "boolean"
           },
+          "currency": {
+            "default": null,
+            "nullable": true,
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "cost_exclusions": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "catalog_reference": {
+                  "nullable": true,
+                  "type": "object",
+                  "properties": {
+                    "catalog": {
+                      "type": "string",
+                      "enum": [
+                        "ingredient",
+                        "yeast",
+                        "additive",
+                        "nutrient"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "catalog",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "catalog_reference"
+              ],
+              "additionalProperties": false
+            }
+          },
           "stock": {
             "type": "array",
             "items": {
@@ -3058,6 +3569,31 @@
                 },
                 "reconciliation_required": {
                   "type": "boolean"
+                },
+                "cost": {
+                  "default": {
+                    "unit_cost": null,
+                    "currency": null
+                  },
+                  "type": "object",
+                  "properties": {
+                    "unit_cost": {
+                      "nullable": true,
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "nullable": true,
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 3
+                    }
+                  },
+                  "required": [
+                    "unit_cost",
+                    "currency"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -3067,7 +3603,8 @@
                 "quantity",
                 "notes",
                 "id",
-                "reconciliation_required"
+                "reconciliation_required",
+                "cost"
               ],
               "additionalProperties": false
             }
@@ -3075,6 +3612,8 @@
         },
         "required": [
           "can_manage",
+          "currency",
+          "cost_exclusions",
           "stock"
         ],
         "additionalProperties": false
@@ -3180,6 +3719,66 @@
               "name",
               "category",
               "quantity"
+            ],
+            "additionalProperties": false
+          },
+          "price": {
+            "default": null,
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000000
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "per": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "kg",
+                      "g",
+                      "mg",
+                      "lb",
+                      "oz",
+                      "L",
+                      "mL",
+                      "gal",
+                      "qt",
+                      "pt",
+                      "fl_oz",
+                      "imp_gal",
+                      "imp_qt",
+                      "imp_pt",
+                      "imp_fl_oz",
+                      "tsp",
+                      "tbsp",
+                      "units"
+                    ]
+                  }
+                },
+                "required": [
+                  "value",
+                  "unit"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "amount",
+              "currency",
+              "per"
             ],
             "additionalProperties": false
           }
@@ -4160,7 +4759,9 @@
                   "INVALID_INVENTORY_REQUEST",
                   "RECONCILIATION_REQUIRED",
                   "STORAGE_IN_USE",
-                  "ORGANIZATION_CHANGED"
+                  "ORGANIZATION_CHANGED",
+                  "CURRENCY_REQUIRED",
+                  "CURRENCY_MISMATCH"
                 ]
               },
               "shortage": {
@@ -5889,6 +6490,188 @@
           "brew_id"
         ]
       },
+      "BrewCostReadResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BrewCostResponse"
+          },
+          {
+            "$ref": "#/components/schemas/PublicCostSummaryResponse"
+          }
+        ]
+      },
+      "UpdateBrewCostRequestBody": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "action"
+        },
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "recalculate"
+                ]
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "action",
+              "operation_id"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "share"
+                ]
+              },
+              "share_cost_summary": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "action",
+              "share_cost_summary"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "exclude_use"
+                ]
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^[0-9a-f-]{36}\\/[^/]{1,200}$"
+              },
+              "excluded": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "action",
+              "key",
+              "excluded"
+            ]
+          }
+        ]
+      },
+      "BrewCostResponse": {
+        "type": "object",
+        "properties": {
+          "can_manage": {
+            "type": "boolean"
+          },
+          "share_cost_summary": {
+            "type": "boolean"
+          },
+          "recorded": {
+            "type": "object",
+            "properties": {
+              "basis": {
+                "type": "string",
+                "enum": [
+                  "recipe_estimate",
+                  "recorded_usage"
+                ]
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/InventoryCostLine"
+                }
+              },
+              "short_lines": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              },
+              "excluded_lines": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              },
+              "missing": {
+                "type": "object",
+                "properties": {
+                  "unpriced": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unmatched": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "ambiguous": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "incompatible": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "unpriced",
+                  "unmatched",
+                  "ambiguous",
+                  "incompatible"
+                ]
+              },
+              "volume_source": {
+                "type": "string",
+                "enum": [
+                  "bottled",
+                  "current",
+                  "recipe"
+                ],
+                "nullable": true
+              },
+              "per_bottle": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/InventoryBottleCost"
+                },
+                "nullable": true
+              }
+            },
+            "required": [
+              "basis",
+              "lines",
+              "short_lines",
+              "excluded_lines",
+              "missing",
+              "volume_source",
+              "per_bottle"
+            ]
+          },
+          "planned": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InventoryCostSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "can_manage",
+          "share_cost_summary",
+          "recorded",
+          "planned"
+        ]
+      },
       "CoverImageResponse": {
         "type": "object",
         "properties": {
@@ -6077,7 +6860,9 @@
               "INVALID_INVENTORY_REQUEST",
               "RECONCILIATION_REQUIRED",
               "STORAGE_IN_USE",
-              "ORGANIZATION_CHANGED"
+              "ORGANIZATION_CHANGED",
+              "CURRENCY_REQUIRED",
+              "CURRENCY_MISMATCH"
             ]
           },
           "shortage": {
@@ -7052,6 +7837,31 @@
                     },
                     "reconciliation_required": {
                       "type": "boolean"
+                    },
+                    "cost": {
+                      "default": {
+                        "unit_cost": null,
+                        "currency": null
+                      },
+                      "type": "object",
+                      "properties": {
+                        "unit_cost": {
+                          "nullable": true,
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "nullable": true,
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        }
+                      },
+                      "required": [
+                        "unit_cost",
+                        "currency"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -7061,7 +7871,8 @@
                     "quantity",
                     "notes",
                     "id",
-                    "reconciliation_required"
+                    "reconciliation_required",
+                    "cost"
                   ],
                   "additionalProperties": false
                 },
@@ -7498,7 +8309,9 @@
                       "INVALID_INVENTORY_REQUEST",
                       "RECONCILIATION_REQUIRED",
                       "STORAGE_IN_USE",
-                      "ORGANIZATION_CHANGED"
+                      "ORGANIZATION_CHANGED",
+                      "CURRENCY_REQUIRED",
+                      "CURRENCY_MISMATCH"
                     ]
                   },
                   "shortage": {
@@ -7612,7 +8425,9 @@
                   "INVALID_INVENTORY_REQUEST",
                   "RECONCILIATION_REQUIRED",
                   "STORAGE_IN_USE",
-                  "ORGANIZATION_CHANGED"
+                  "ORGANIZATION_CHANGED",
+                  "CURRENCY_REQUIRED",
+                  "CURRENCY_MISMATCH"
                 ]
               },
               "shortage": {
@@ -8914,6 +9729,46 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "RecipeCostReadResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RecipeCostResponse"
+          },
+          {
+            "$ref": "#/components/schemas/PublicCostSummaryResponse"
+          }
+        ]
+      },
+      "UpdateRecipeCostRequestBody": {
+        "type": "object",
+        "properties": {
+          "share_cost_summary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "share_cost_summary"
+        ]
+      },
+      "RecipeCostResponse": {
+        "type": "object",
+        "properties": {
+          "can_manage": {
+            "type": "boolean"
+          },
+          "share_cost_summary": {
+            "type": "boolean"
+          },
+          "estimate": {
+            "$ref": "#/components/schemas/InventoryCostSummary"
+          }
+        },
+        "required": [
+          "can_manage",
+          "share_cost_summary",
+          "estimate"
         ]
       },
       "CreateRecipeImageRequestBody": {
@@ -12279,6 +13134,209 @@
           "name"
         ]
       },
+      "InventoryBottleCost": {
+        "type": "object",
+        "properties": {
+          "size_liters": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "size_liters",
+          "count",
+          "amount"
+        ]
+      },
+      "InventoryCostExclusion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "catalog_reference": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "catalog_reference"
+        ]
+      },
+      "InventoryCostLine": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "object"
+          },
+          "stock_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "stock_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "priced",
+              "unpriced",
+              "unmatched",
+              "ambiguous",
+              "incompatible",
+              "excluded"
+            ]
+          },
+          "unit_cost": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "unit": {
+            "type": "object"
+          },
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "nullable": true
+          },
+          "cost": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "costed_at": {
+            "type": "string",
+            "nullable": true,
+            "default": null
+          },
+          "shortage": {
+            "type": "object",
+            "default": null
+          },
+          "catalog_reference": {
+            "type": "object",
+            "default": null
+          },
+          "exclusion": {
+            "type": "string",
+            "enum": [
+              "use",
+              "ingredient"
+            ],
+            "nullable": true,
+            "default": null
+          },
+          "kind": {
+            "type": "string",
+            "nullable": true,
+            "default": null
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "quantity",
+          "stock_id",
+          "stock_name",
+          "status",
+          "unit_cost",
+          "unit",
+          "currency",
+          "cost",
+          "costed_at",
+          "shortage",
+          "catalog_reference",
+          "exclusion",
+          "kind"
+        ]
+      },
+      "InventoryCostSummary": {
+        "type": "object",
+        "properties": {
+          "basis": {
+            "type": "string",
+            "enum": [
+              "recipe_estimate",
+              "recorded_usage"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryCostLine"
+            }
+          },
+          "short_lines": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "excluded_lines": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "missing": {
+            "type": "object",
+            "properties": {
+              "unpriced": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unmatched": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ambiguous": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "incompatible": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "unpriced",
+              "unmatched",
+              "ambiguous",
+              "incompatible"
+            ]
+          }
+        },
+        "required": [
+          "basis",
+          "lines",
+          "short_lines",
+          "excluded_lines",
+          "missing"
+        ]
+      },
       "LinkRecipeToHydrometerBrewResponse": {
         "$ref": "#/components/schemas/HydrometerBrewResponse"
       },
@@ -12491,6 +13549,45 @@
         },
         "required": [
           "displayName"
+        ]
+      },
+      "PublicCostSummary": {
+        "type": "object",
+        "properties": {
+          "basis": {
+            "type": "string",
+            "enum": [
+              "recipe_estimate",
+              "recorded_usage"
+            ]
+          },
+          "per_bottle": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryBottleCost"
+            },
+            "nullable": true,
+            "default": null
+          }
+        },
+        "required": [
+          "basis",
+          "per_bottle"
+        ]
+      },
+      "PublicCostSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicCostSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "summary"
         ]
       },
       "PublicRecipeListItemResponse": {
@@ -21205,7 +22302,7 @@
       "get": {
         "operationId": "get-account-inventory",
         "summary": "List inventory stock",
-        "description": "Returns only authenticated owned stock. Active accounts retain read access after premium expiry.",
+        "description": "Returns only authenticated owned stock with its private unit cost and the account inventory currency. Active accounts retain read access after premium expiry.",
         "tags": [
           "Inventory"
         ],
@@ -21261,7 +22358,7 @@
       "post": {
         "operationId": "post-account-inventory",
         "summary": "Add inventory stock",
-        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries.",
+        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. An optional price (total paid for a package quantity, in the account currency) starts the stock's weighted-average unit cost.",
         "tags": [
           "Inventory"
         ],
@@ -21433,8 +22530,8 @@
       },
       "patch": {
         "operationId": "patch-account-inventory-{stock_id}",
-        "summary": "Adjust, reconcile or archive inventory stock",
-        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. Manual use accepts an optional storage source; otherwise unlocated stock is used first, followed by locations in path/position order. Quantity changes update allocations atomically. Stored stock must be moved to unlocated before archival. Reconciliation requires a reviewed revision, confirms a physical count and rebases existing brew links without replaying past deductions.",
+        "summary": "Adjust, reconcile, price or archive inventory stock",
+        "description": "Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. A receipt may record the total paid (tax/shipping included) for a stated package quantity in the account currency; it updates the moving weighted-average unit cost. An unpriced receipt makes the average unknown. set_unit_cost explicitly values all current stock. Uses and counts never change the average. Manual use accepts an optional storage source; otherwise unlocated stock is used first, followed by locations in path/position order. Quantity changes update allocations atomically. Stored stock must be moved to unlocated before archival. Reconciliation requires a reviewed revision, confirms a physical count and rebases existing brew links without replaying past deductions.",
         "tags": [
           "Inventory"
         ],
@@ -21520,6 +22617,236 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/cost-exclusions": {
+      "get": {
+        "operationId": "get-account-inventory-cost-exclusions",
+        "summary": "List ingredients not costed",
+        "description": "Returns the owner's account-wide \"don't track cost\" choices. Active accounts retain read access after premium expiry.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCostExclusionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-account-inventory-cost-exclusions",
+        "summary": "Stop or resume costing an ingredient",
+        "description": "exclude marks an ingredient (for example tap water), by exact normalized line name and optional catalog identity, as never costed in any recipe estimate or brew. It never matches by stock item; per-batch choices such as reused bottles use the brew's exclude_use action. Excluded lines are never costed, even when priced, and never make totals incomplete. Exclusions apply when costs are read, so they also cover uses recorded earlier; include restores those uses' saved snapshots. Excluding requires premium and is idempotent; include is always allowed.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInventoryCostExclusionsRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCostExclusionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/inventory/currency": {
+      "put": {
+        "operationId": "put-account-inventory-currency",
+        "summary": "Choose the inventory currency",
+        "description": "Premium owners choose one ISO 4217 currency for new inventory prices. Prices in other currencies are rejected; there is no conversion. Existing unit costs keep their recorded currency, and totals that mix currencies are reported as incomplete.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInventoryCurrencyRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryCurrencyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
                 }
               }
             }
@@ -21950,6 +23277,164 @@
         }
       }
     },
+    "/brews/{brew_id}/costs": {
+      "get": {
+        "operationId": "get-brews-{brew_id}-costs",
+        "summary": "Read brew ingredient costs",
+        "description": "Owners receive recorded costs from unit costs snapshotted when stock was deducted, plus a separately labeled planned estimate from the brew's recipe snapshot at current averages. Unpriced, unmatched and mixed-currency lines make totals incomplete; missing prices are never treated as zero. Per-liter and per-bottle values are estimates allocated by volume. With public=true, no sign-in is required and only the owner's opt-in totals are returned for a publicly readable brew; lines, stock and price history are never public.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewCostReadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-brews-{brew_id}-costs",
+        "summary": "Recalculate, exclude uses from, or share brew costs",
+        "description": "recalculate is an explicit premium action that replaces every active use's cost snapshot with the stock's current average; it never changes balances and is retry-safe by operation ID. exclude_use stops or resumes counting one recorded use in this brew only (for example reused bottles); its snapshot is kept, other brews sharing the stock are unaffected, excluding requires premium and counting again is always allowed. share toggles the opt-in public cost summary; enabling requires premium, disabling is always allowed.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBrewCostRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/brews/{brew_id}/inventory": {
       "get": {
         "operationId": "get-brews-{brew_id}-inventory",
@@ -22001,6 +23486,154 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/{id}/costs": {
+      "get": {
+        "operationId": "get-recipes-{id}-costs",
+        "summary": "Estimate recipe ingredient costs",
+        "description": "Owners receive a planned estimate from the recipe's amounts and current inventory averages. Estimates never deduct stock. Only confident inventory matches are priced; unpriced, unmatched, ambiguous, incompatible-unit and short-stock lines are labeled, and partial totals are incomplete. With public=true, no sign-in is required and only the owner's opt-in totals are returned for a public recipe; lines, stock and prices are never public.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeCostReadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockNotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockUnexpectedErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-recipes-{id}-costs",
+        "summary": "Share a recipe cost summary",
+        "description": "Toggles the owner's opt-in public estimate totals. Enabling requires premium; disabling is always allowed.",
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecipeCostRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeCostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedRouteErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryStockErrorResponse"
                 }
               }
             }

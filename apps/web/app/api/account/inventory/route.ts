@@ -8,7 +8,7 @@ const service = createInventoryService();
 const reader = createInventoryAccountReader();
 /**
  * List inventory stock
- * @description Returns only authenticated owned stock. Active accounts retain read access after premium expiry.
+ * @description Returns only authenticated owned stock with its private unit cost and the account inventory currency. Active accounts retain read access after premium expiry.
  * @response 200:InventoryOverviewResponse
  * @responseSet none
  * @add 401:AuthenticatedRouteErrorResponse
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * Add inventory stock
- * @description Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries.
+ * @description Premium mutations retain balances and immutable adjustment history, with account-scoped operation IDs for safe retries. An optional price (total paid for a package quantity, in the account currency) starts the stock's weighted-average unit cost.
  * @body CreateInventoryStockRequestBody
  * @response 201:InventoryStockMutationResponse
  * @responseSet none
@@ -46,6 +46,6 @@ export async function POST(req: NextRequest) {
   if (user instanceof NextResponse) return user;
   try {
     const input = createInventoryStockRequestBodySchema.parse(await req.json().catch(() => null));
-    return NextResponse.json(await service.createStock(user, input.operation_id, input.stock), { status: 201 });
+    return NextResponse.json(await service.createStock(user, input.operation_id, input.stock, input.price), { status: 201 });
   } catch (error) { return inventoryRouteError(error); }
 }

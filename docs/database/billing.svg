@@ -1,5 +1,5 @@
 <svg width="1044pt" height="2595pt"
- viewBox="0.00 0.00 1044.00 2595.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Billing &amp; premium"><metadata>{&quot;schema&quot;:&quot;9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e&quot;,&quot;migrations&quot;:&quot;e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980&quot;}</metadata>
+ viewBox="0.00 0.00 1044.00 2595.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Billing &amp; premium"><metadata>{&quot;schema&quot;:&quot;e3103448e8b7e4fa7a5ea257adc29cf0053dd298376a6f2dd79c0fd930989529&quot;,&quot;migrations&quot;:&quot;8ef4414ba87a53449e16efcc66a16c462c978de345c2b421f8bbe0ea07d15d13&quot;}</metadata>
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 2566)">
 <polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-2566 1015.37,-2566 1015.37,28.8 -28.8,28.8"/>
 <!-- credit_accounts&#45;&gt;users -->

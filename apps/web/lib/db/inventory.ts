@@ -7,13 +7,15 @@ import { z } from "zod";
 import {
   InventoryError, convertQuantity, planConsumption, planStockChange,
   normalizeQuantityUnit, validateStockQuantity, quantitySchema, resolveInventoryAccess, stockInputSchema, toQuantityTicks,
-  stockTransferImportSchema, nutrientReference, stabilizerCatalog, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
+  stockTransferImportSchema, nutrientReference, stabilizerCatalog, purchasePriceSchema, type CatalogReference, type ConsumptionLink, type Quantity, type StockRecord,
 } from "@meadtools/inventory-domain";
 import prisma from "@/lib/prisma";
 import { inventoryStorageSourceSchema } from "@meadtools/api-contract/inventory";
 import type { InventoryStorageSource } from "@meadtools/api-contract/contracts";
 import { stockReconciliation } from "./inventory-reconciliation";
 import { getPremiumAccessStatus } from "./premium-access";
+import { applyReceiptCost, applyValuationCost, costSnapshot } from "./inventory-costs";
+import type { PurchasePrice } from "@meadtools/inventory-domain";
 
 export class InventoryWriteError extends Error {
   constructor(public readonly code:
@@ -159,9 +161,11 @@ export function createInventoryService(database: PrismaClient = prisma) {
 
   async function createStock(
     userId: number, operationKey: string, input: z.input<typeof stockInputSchema>,
+    price: PurchasePrice | null = null,
   ): Promise<StockResult> {
     const parsed = stockInputSchema.parse(input);
-    return operation(userId, operationKey, { kind: "create_stock", input: parsed },
+    // Older retries without a price keep their original request fingerprint.
+    return operation(userId, operationKey, price ? { kind: "create_stock", input: parsed, price } : { kind: "create_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
         await validateInventoryCatalog(tx, parsed.category, parsed.catalogReference);
         const stock = await tx.inventory_stock.create({ data: {
@@ -172,6 +176,7 @@ export function createInventoryService(database: PrismaClient = prisma) {
         } });
         const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock), kind: "receipt", quantity: parsed.quantity });
         await writeBalance(tx, userId, operationId, stock, plan, "receipt");
+        await applyReceiptCost(tx, userId, operationId, stock, parsed.quantity, price);
         return { stockId: stock.id, balance: plan.balance };
       });
   }
@@ -299,13 +304,16 @@ export function createInventoryService(database: PrismaClient = prisma) {
     stockId: string; kind: "receipt" | "manual_use" | "correction";
     quantity: Quantity; note?: string | null; expectedBalance?: Quantity | null;
     storageSource?: InventoryStorageSource;
+    price?: PurchasePrice | null;
   }): Promise<StockResult> {
     const parsed = z.object({
       stockId: uuid, kind: z.enum(["receipt", "manual_use", "correction"]),
       quantity: quantitySchema, note: z.string().max(5000).nullable().default(null),
       expectedBalance: quantitySchema.nullable().default(null),
       storageSource: inventoryStorageSourceSchema.optional(),
+      price: purchasePriceSchema.nullable().optional(),
     }).strict().parse(input);
+    if (parsed.price !== undefined && parsed.kind !== "receipt") throw new InventoryError("LINK_MISMATCH");
     return operation(userId, operationKey, { kind: "change_stock", input: parsed },
       (result) => stockResultSchema.parse(result), async (tx, operationId) => {
         const stock = (await lockStock(tx, userId, [parsed.stockId])).get(parsed.stockId)!;
@@ -318,7 +326,27 @@ export function createInventoryService(database: PrismaClient = prisma) {
         const plan = planStockChange({ ownerId: userId, stock: stockRecord(stock), ...parsed });
         if (parsed.storageSource !== undefined && parsed.kind !== "manual_use") throw new InventoryError("LINK_MISMATCH");
         await writeInventoryBalance(tx, userId, operationId, stock, plan, parsed.kind, null, parsed.note, parsed.storageSource);
+        // Uses and counts keep the average; only receipts change it.
+        if (parsed.kind === "receipt")
+          await applyReceiptCost(tx, userId, operationId, stock, parsed.quantity, parsed.price ?? null, parsed.note);
         return { stockId: stock.id, balance: plan.balance };
+      });
+  }
+
+  /** Explicit valuation of all current stock; used after unpriced receipts. */
+  async function setUnitCost(userId: number, operationKey: string, input: {
+    stockId: string; price: PurchasePrice; note?: string | null;
+  }): Promise<StockResult> {
+    const parsed = z.object({
+      stockId: uuid, price: purchasePriceSchema,
+      note: z.string().max(5000).nullable().default(null),
+    }).strict().parse(input);
+    return operation(userId, operationKey, { kind: "set_unit_cost", input: parsed },
+      (result) => stockResultSchema.parse(result), async (tx, operationId) => {
+        const stock = (await lockStock(tx, userId, [parsed.stockId])).get(parsed.stockId)!;
+        if (stock.archived_at) throw new InventoryWriteError("STOCK_ARCHIVED");
+        await applyValuationCost(tx, userId, operationId, stock, parsed.price, parsed.note);
+        return { stockId: stock.id, balance: { value: stock.quantity.toNumber(), unit: stock.unit } };
       });
   }
 
@@ -455,13 +483,20 @@ export function createInventoryService(database: PrismaClient = prisma) {
           const normalized = convertQuantity(actual, nextStock.unit);
           if (normalized.value !== plan.link!.deducted.value) throw new InventoryWriteError("ENTRY_MISMATCH");
         }
+        // A corrected use is re-costed at the current average; an unchanged one keeps its snapshot.
+        // A removal has no new deduction to compare (and keeps its snapshot).
+        const unchanged = Boolean(previous && plan.link && previous.stock_id === nextStock.id &&
+          previous.unit === nextStock.unit &&
+          toQuantityTicks(previous.deducted.toNumber()) === toQuantityTicks(plan.link.deducted.value));
         const link = previous ? await tx.inventory_consumptions.update({
           where: { id: previous.id }, data: parsed.kind === "remove" ? { reversed_at: new Date() } : {
             stock_id: nextStock.id, deducted: plan.link!.deducted.value, unit: nextStock.unit,
+            ...(unchanged ? {} : costSnapshot(nextStock)),
           },
         }) : await tx.inventory_consumptions.create({ data: {
           user_id: userId, stock_id: nextStock.id, brew_id: parsed.brewId, entry_id: parsed.entryId,
           use_key: parsed.entryId, deducted: plan.link!.deducted.value, unit: nextStock.unit,
+          ...costSnapshot(nextStock),
         } });
         for (const movement of plans) {
           await writeBalance(tx, userId, operationId, movement.stock, movement.plan, movement.kind, link.id);
@@ -510,5 +545,5 @@ export function createInventoryService(database: PrismaClient = prisma) {
     }, { maxWait: 10_000, timeout: 15_000 });
   }
 
-  return { reconcileStock, importStock, editStock, createStock, changeStock, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
+  return { reconcileStock, importStock, editStock, createStock, changeStock, setUnitCost, archiveStock, mutateLinkedUsage, mutateUntrackedEntry };
 }

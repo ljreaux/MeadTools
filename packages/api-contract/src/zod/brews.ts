@@ -213,6 +213,7 @@ export const brewInventoryErrorResponseSchema = z.object({
     "NOT_FOUND", "LINK_MISMATCH", "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "STALE_USAGE",
     "USAGE_REMOVED", "ENTRY_MISMATCH", "STOCK_ARCHIVED", "STALE_STOCK", "SELECTION_REQUIRED",
     "INVALID_INVENTORY_REQUEST", "RECONCILIATION_REQUIRED", "STORAGE_IN_USE", "ORGANIZATION_CHANGED",
+    "CURRENCY_REQUIRED", "CURRENCY_MISMATCH",
   ]),
   shortage: z.number().nonnegative().optional(),
   unit: quantityUnitSchema.optional(),

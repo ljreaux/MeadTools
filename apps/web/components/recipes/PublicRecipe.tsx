@@ -16,6 +16,8 @@ import SaveRecipeCopy from "./SaveRecipeCopy";
 import { cn } from "@/lib/utils";
 import { usePublicRecipeBrews } from "@/hooks/reactQuery/usePublicRecipeBrews";
 import { CreateBrewButton } from "@/components/brews/CreateBrewButton";
+import { PublicCostSummaryView } from "@/components/account/InventoryCostSummary";
+import { usePublicCostSummary } from "@/hooks/reactQuery/useInventoryCosts";
 
 export type RecipeViewCapabilities = {
   canSaveCopy: boolean;
@@ -49,6 +51,7 @@ function PublicRecipe({
   const { t } = useTranslation();
   const { id } = useParams();
   const { data: publicBrews = [] } = usePublicRecipeBrews(id as string);
+  const { data: costSummary } = usePublicCostSummary("recipes", recipe.id);
   // Reserve a thumbnail column only when at least one brew has a cover.
   const hasBrewCovers = publicBrews.some((brew) => brew.cover_image_id);
   const {
@@ -105,6 +108,7 @@ function PublicRecipe({
             />
           ) : null}
         </NutrientProvider>
+        <PublicCostSummaryView summary={costSummary} />
         <section className="rounded-lg border border-border bg-card p-4">
           <div className="mb-3">
             <h2 className="text-lg font-semibold">

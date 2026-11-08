@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@meadtools/core": "*",
+    "@meadtools/schemas": "*",
     "fuse.js": "^7.5.0",
     "zod": "^4.0.0"
   },

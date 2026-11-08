@@ -1,5 +1,6 @@
 "use client";
 import { EditableCover } from "@/components/brews/RecordCover";
+import { BrewCostPanel } from "@/components/account/InventoryCostSummary";
 import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
 import { loggedYeastAmountG } from "@meadtools/brew-domain";
 import { BrewImages } from "@/components/brews/BrewImages";
@@ -1195,6 +1196,13 @@ export default function BrewPageClient() {
       <BrewVessels stage={brew.stage} brewId={brew.id} completed={brew.stage === "COMPLETE" || Boolean(brew.end_date)} />
 
       {brew.recipe_snapshot ? <UpdateRecipeSnapshot brew={brew} /> : null}
+
+      <Accordion type="single" collapsible>
+        <AccordionItem value="ingredient-costs">
+          <AccordionTrigger>{t("inventoryCosts.brewTitle")}</AccordionTrigger>
+          <AccordionContent><BrewCostPanel brewId={brew.id} brewPublic={brew.public} /></AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <Accordion type="single" defaultValue="stage-panel" collapsible>
         <AccordionItem value="stage-panel">

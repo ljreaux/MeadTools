@@ -14,6 +14,12 @@ import type { InventoryStockItem, InventoryStorageSource } from "@meadtools/api-
 import { InventoryUseSource } from "./InventoryOrganizationSummary";
 import type { InventoryCommand } from "@/hooks/reactQuery/useInventory";
 import { InventoryCatalogField } from "./InventoryCatalogField";
+import {
+  compatibleUnits,
+  emptyPriceDraft,
+  InventoryPriceFields,
+  parsePriceDraft,
+} from "./InventoryPriceFields";
 import { AmountUnitField } from "@/components/ui/amount-unit-field";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/LoadingButton";
@@ -56,12 +62,13 @@ const inventoryUnitGroups = [
   { label: "count", units: ["units"] as const },
 ];
 export type InventoryAction =
-  "details" | "receipt" | "manual_use" | "correction";
+  "details" | "receipt" | "manual_use" | "correction" | "set_unit_cost";
 export function InventoryEditor({
   item,
   action,
   busy,
   error,
+  currency,
   onClose,
   onSave,
 }: {
@@ -69,8 +76,10 @@ export function InventoryEditor({
   action: InventoryAction;
   busy: boolean;
   error: string;
+  /** Account inventory currency; null until chosen with the first price. */
+  currency: string | null;
   onClose: () => void;
-  onSave: (command: InventoryCommand) => Promise<void>;
+  onSave: (command: InventoryCommand, currency: string | null) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -90,13 +99,29 @@ export function InventoryEditor({
   );
   const [invalid, setInvalid] = useState(false);
   const [source, setSource] = useState<InventoryStorageSource | undefined>(undefined);
+  const [priceDraft, setPriceDraft] = useState(() =>
+    emptyPriceDraft(item?.quantity.unit ?? "kg", currency, action === "set_unit_cost" ? "1" : ""));
+  const stockUnit = item?.quantity.unit ?? unit;
+  // A new item's unit can change after a price unit was chosen.
+  const price = compatibleUnits(stockUnit).includes(priceDraft.perUnit)
+    ? priceDraft : { ...priceDraft, perUnit: stockUnit };
+  const pricing = !item || action === "receipt" || action === "set_unit_cost";
+  const pricedStock = item?.cost.unit_cost != null;
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (item && action === "details") {
       await onSave({
         id: item.id,
         change: { action, name, catalogReference, notes: notes.trim() || null },
-      });
+      }, null);
+      return;
+    }
+    if (item && action === "set_unit_cost") {
+      const parsed = parsePriceDraft(price, null);
+      if (!parsed || parsed === "invalid") { setInvalid(true); return; }
+      setInvalid(false);
+      await onSave({ id: item.id, change: { action, price: parsed, note: notes.trim() || null } },
+        currency ? null : parsed.currency);
       return;
     }
     const quantity = quantitySchema.safeParse({
@@ -110,6 +135,12 @@ export function InventoryEditor({
       setInvalid(true);
       return;
     }
+    const parsedPrice = pricing ? parsePriceDraft(price, quantity.data) : null;
+    if (parsedPrice === "invalid") {
+      setInvalid(true);
+      return;
+    }
+    const newCurrency = parsedPrice && !currency ? parsedPrice.currency : null;
     if (item && action !== "details") {
       try {
         validateStockQuantity(item.category, quantity.data);
@@ -121,13 +152,15 @@ export function InventoryEditor({
       await onSave({
         id: item.id,
         change: {
-          action,
+          // set_unit_cost and details returned above.
+          action: action as "receipt" | "manual_use" | "correction",
           quantity: quantity.data,
           expected_balance: item.quantity,
           ...(action === "manual_use" && source !== undefined ? { storage_source: source } : {}),
+          ...(action === "receipt" && parsedPrice ? { price: parsedPrice } : {}),
           note: notes.trim() || null,
         },
-      });
+      }, newCurrency);
     } else {
       const stock = stockInputSchema.safeParse({
         name,
@@ -137,7 +170,7 @@ export function InventoryEditor({
         notes: notes.trim() || null,
       });
       setInvalid(!stock.success);
-      if (stock.success) await onSave({ stock: stock.data });
+      if (stock.success) await onSave({ stock: stock.data, price: parsedPrice }, newCurrency);
     }
   }
   const title = item ? t(`inventory.actions.${action}`) : t("inventory.add");
@@ -205,7 +238,7 @@ export function InventoryEditor({
               />
             </>
           ) : null}
-          {action !== "details" ? (
+          {action !== "details" && action !== "set_unit_cost" ? (
             <div className="space-y-2">
               <Label htmlFor={`${id}-amount`}>
                 {t(
@@ -269,6 +302,21 @@ export function InventoryEditor({
             <p className="text-sm text-muted-foreground">
               {t(item ? "inventory.yeastSavedUnitHelp" : "inventory.yeastPacketHelp")}
             </p>
+          ) : null}
+          {pricing ? (
+            <InventoryPriceFields
+              id={`${id}-cost`}
+              draft={price}
+              onChange={setPriceDraft}
+              stockUnit={stockUnit}
+              accountCurrency={currency}
+              required={action === "set_unit_cost"}
+              perPlaceholder={t(action === "set_unit_cost" ? "inventoryCosts.valuationHelp" : "inventoryCosts.perDefaultHelp")}
+              disabled={busy}
+            />
+          ) : null}
+          {item && action === "receipt" && pricedStock && !price.amount.trim() ? (
+            <p className="text-sm text-amber-700 dark:text-amber-400">{t("inventoryCosts.unpricedReceiptWarning")}</p>
           ) : null}
           {item && action === "manual_use" ? <InventoryUseSource stockId={item.id} value={source} onChange={setSource} disabled={busy} /> : null}
           <div className="space-y-2">

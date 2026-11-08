@@ -1,7 +1,7 @@
 {
   "fingerprint": {
-    "schema": "9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e",
-    "migrations": "e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980"
+    "schema": "e3103448e8b7e4fa7a5ea257adc29cf0053dd298376a6f2dd79c0fd930989529",
+    "migrations": "8ef4414ba87a53449e16efcc66a16c462c978de345c2b421f8bbe0ea07d15d13"
   },
   "migrations": [
     {
@@ -175,6 +175,10 @@
     {
       "name": "20261107193000_recipe_and_brew_covers",
       "sha256": "c7bfb2aa9c8ded3743530bdc39054399e7acd4f789dc00834910f45e2b4541d3"
+    },
+    {
+      "name": "20261108000000_add_inventory_costing",
+      "sha256": "8dda11f2dfe42b98ce3a668110c162d75ec7c6ad2916322739bd708eaea7d0f1"
     }
   ],
   "models": [
@@ -1385,6 +1389,22 @@
           "default": false,
           "updatedAt": false,
           "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "share_cost_summary",
+          "column": "share_cost_summary",
+          "type": "Boolean",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": false,
+          "updatedAt": false,
+          "documentation": "Owner opt-in: public views may show cost totals, never prices or lines.",
           "foreignKeys": [],
           "uniqueGroups": []
         },
@@ -6573,6 +6593,67 @@
           "documentation": null,
           "foreignKeys": [],
           "uniqueGroups": []
+        },
+        {
+          "name": "unit_cost",
+          "column": "unit_cost",
+          "type": "Decimal",
+          "nativeType": "Decimal(24,10)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": "Stock average snapshotted when deducted; only an explicit recalculation\\nor a correction of this use replaces it.",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "cost_currency",
+          "column": "cost_currency",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "costed_at",
+          "column": "costed_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "cost_excluded",
+          "column": "cost_excluded",
+          "type": "Boolean",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": false,
+          "updatedAt": false,
+          "documentation": "Owner choice for this use only (e.g. reused bottles in one brew). The\\nsnapshot is kept, so counting the use again restores its cost.",
+          "foreignKeys": [],
+          "uniqueGroups": []
         }
       ],
       "primaryKey": [
@@ -6601,6 +6682,495 @@
         "@@unique([user_id, entry_id, line_key])",
         "@@unique([id, user_id])",
         "@@index([user_id, brew_id, entry_id])"
+      ]
+    },
+    {
+      "name": "inventory_cost_events",
+      "table": "inventory_cost_events",
+      "area": "inventory",
+      "documentation": "Append-only price history explaining each stock average. Private to the\\nowner; never exposed through public recipe or brew views.",
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_cost_events_operation",
+            "inventory_cost_events_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "stock_id",
+          "column": "stock_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_cost_events_stock"
+          ],
+          "uniqueGroups": [
+            [
+              "operation_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "unit",
+          "column": "unit",
+          "type": "inventory_quantity_unit",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": true,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_cost_events_stock"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "operation_id",
+          "column": "operation_id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_cost_events_operation"
+          ],
+          "uniqueGroups": [
+            [
+              "operation_id",
+              "stock_id"
+            ]
+          ]
+        },
+        {
+          "name": "kind",
+          "column": "kind",
+          "type": "String",
+          "nativeType": "VarChar(32)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": "receipt (priced or unpriced) or valuation (explicit current unit cost).",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "balance_before",
+          "column": "balance_before",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "received",
+          "column": "received",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "price_amount",
+          "column": "price_amount",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,4)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "price_currency",
+          "column": "price_currency",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "price_per_value",
+          "column": "price_per_value",
+          "type": "Decimal",
+          "nativeType": "Decimal(16,6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "price_per_unit",
+          "column": "price_per_unit",
+          "type": "inventory_quantity_unit",
+          "nativeType": null,
+          "nullable": true,
+          "list": false,
+          "enum": true,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "applied_unit_cost",
+          "column": "applied_unit_cost",
+          "type": "Decimal",
+          "nativeType": "Decimal(24,10)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "unit_cost_before",
+          "column": "unit_cost_before",
+          "type": "Decimal",
+          "nativeType": "Decimal(24,10)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "currency_before",
+          "column": "currency_before",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "unit_cost_after",
+          "column": "unit_cost_after",
+          "type": "Decimal",
+          "nativeType": "Decimal(24,10)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "currency_after",
+          "column": "currency_after",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "note",
+          "column": "note",
+          "type": "String",
+          "nativeType": "VarChar(5000)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "created_at",
+          "column": "created_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": {
+            "name": "now",
+            "args": []
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "operation_id",
+          "stock_id"
+        ]
+      ],
+      "indexes": [
+        "@@unique([operation_id, stock_id])",
+        "@@index([user_id, stock_id, created_at])"
+      ]
+    },
+    {
+      "name": "inventory_cost_exclusions",
+      "table": "inventory_cost_exclusions",
+      "area": "inventory",
+      "documentation": "Account-wide \"never track cost\" choices for ingredients (e.g. tap water),\\nmatched by ingredient identity, never by stock item. Applied when costs are\\nread, so they win over known prices and cover earlier uses; snapshots stay.",
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "default": {
+            "name": "dbgenerated",
+            "args": [
+              "gen_random_uuid()"
+            ]
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "inventory_cost_exclusions_user"
+          ],
+          "uniqueGroups": [
+            [
+              "user_id",
+              "name_key"
+            ]
+          ]
+        },
+        {
+          "name": "name",
+          "column": "name",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": "Display name as chosen; matching uses name_key or the catalog identity.",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "name_key",
+          "column": "name_key",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": [
+            [
+              "user_id",
+              "name_key"
+            ]
+          ]
+        },
+        {
+          "name": "catalog",
+          "column": "catalog",
+          "type": "String",
+          "nativeType": "VarChar(32)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "catalog_id",
+          "column": "catalog_id",
+          "type": "String",
+          "nativeType": "VarChar(200)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "created_at",
+          "column": "created_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": {
+            "name": "now",
+            "args": []
+          },
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ],
+        [
+          "user_id",
+          "name_key"
+        ]
+      ],
+      "indexes": [
+        "@@unique([user_id, name_key])",
+        "@@index([user_id])"
       ]
     },
     {
@@ -7790,6 +8360,36 @@
           "primary": false,
           "unique": false,
           "default": 0,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "unit_cost",
+          "column": "unit_cost",
+          "type": "Decimal",
+          "nativeType": "Decimal(24,10)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": "Moving weighted average per stock unit; null means unknown, never zero.",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "cost_currency",
+          "column": "cost_currency",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
           "updatedAt": false,
           "documentation": null,
           "foreignKeys": [],
@@ -11020,6 +11620,22 @@
           "uniqueGroups": []
         },
         {
+          "name": "share_cost_summary",
+          "column": "share_cost_summary",
+          "type": "Boolean",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": false,
+          "updatedAt": false,
+          "documentation": "Owner opt-in: public views may show cost totals, never prices or lines.",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
           "name": "lastActivityEmailAt",
           "column": "lastActivityEmailAt",
           "type": "DateTime",
@@ -11475,6 +12091,21 @@
           "unique": false,
           "updatedAt": false,
           "documentation": "Claimed before SMTP to keep automated sends at most once per release.",
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "inventory_currency",
+          "column": "inventory_currency",
+          "type": "String",
+          "nativeType": "Char(3)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": "ISO 4217 code for new inventory prices. No conversion between currencies.",
           "foreignKeys": [],
           "uniqueGroups": []
         }
@@ -12445,6 +13076,60 @@
       "childCardinality": "0..N",
       "onDelete": "Restrict",
       "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_cost_events_operation",
+      "child": "inventory_cost_events",
+      "parent": "inventory_operations",
+      "name": "inventory_cost_eventsToinventory_operations",
+      "from": [
+        "operation_id",
+        "user_id"
+      ],
+      "to": [
+        "id",
+        "user_id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_cost_events_stock",
+      "child": "inventory_cost_events",
+      "parent": "inventory_stock",
+      "name": "inventory_cost_eventsToinventory_stock",
+      "from": [
+        "stock_id",
+        "user_id",
+        "unit"
+      ],
+      "to": [
+        "id",
+        "user_id",
+        "unit"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Restrict"
+    },
+    {
+      "id": "inventory_cost_exclusions_user",
+      "child": "inventory_cost_exclusions",
+      "parent": "users",
+      "name": "inventory_cost_exclusionsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
     },
     {
       "id": "inventory_label_links_label",

@@ -28,6 +28,7 @@ function context(quantity: number): BrewInventoryContextResponse {
           notes: null,
           catalogReference: null,
           reconciliation_required: false,
+          cost: { unit_cost: null, currency: null },
         },
       },
     ],
