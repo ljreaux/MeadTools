@@ -4,8 +4,8 @@ import {
   type ApiResponse
 } from "@meadtools/api-client";
 
-import type { SendGravityEntry } from "../../src/outbox/gravity-outbox";
-import type { OutboxFileSystem } from "../../src/outbox/gravity-outbox-store";
+import type { SendBrewEntry } from "../../src/outbox/entry-outbox";
+import type { OutboxFileSystem } from "../../src/outbox/entry-outbox-store";
 
 export const PREVIEW_ORIGIN = "https://preview.meadtools.example";
 export const ACCOUNT_A = { userId: 7, apiOrigin: PREVIEW_ORIGIN };
@@ -191,7 +191,7 @@ export function createFakeServer() {
     return response;
   }
 
-  const send: SendGravityEntry = ({ brewId, request, accessToken }) =>
+  const send: SendBrewEntry = ({ brewId, request, accessToken }) =>
     createMeadToolsApiClient({
       baseUrl: PREVIEW_ORIGIN,
       fetch,

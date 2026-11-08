@@ -47,13 +47,22 @@ backend responses in this document.
 | Dark mode | Pass | Not run |
 | Stored request matches the web payload for the same input | Pass (unit tested; record inspected on device) | Pass (record inspected on device) |
 
+## Every entry type (#522) — November 8, 2026
+
+| Check | iOS Simulator | Android emulator |
+| --- | --- | --- |
+| Add entry offers gravity, temperature, pH, volume, addition, note, tasting and issue | Pass | Pass |
+| Gravity roles (reading, OG, FG) and °Bx refractometer correction using the brew's recorded OG; corrected FG synced as 0.992 SG | Pass | Not run |
+| Correction toggle reachable by tapping its label while the keyboard is open | Pass (after fix) | Not run |
+| Temperature defaults to the device's unit (°F on the US-locale emulator) | Not run | Pass |
+| Manual nutrient addition (DAP, 2 g) records without changing inventory | Not run | Pass |
+| Empty note refused with a visible error; nothing queued | Not run | Pass |
+| Temperature, addition and note queued with real airplane mode, delivered automatically 4–7 s after reconnect via the network listener, each once | — | Pass |
+| Gravity records queued by the earlier gravity-only outbox migrate and still deliver | Unit tested | Unit tested |
+
 ## Findings
 
-- Without a network-status listener, reconnect relies on resume, a
-  successful server read, or the retry backoff, which grows to five minutes.
-  A long offline period can therefore delay upload by up to five minutes after
-  reconnecting. Adding `expo-network` (a native module) would allow an
-  immediate replay.
+- #522 added an `expo-network` listener, so queued entries replay as soon as the device reports connectivity (4–7 s on the Android emulator) instead of waiting for retry backoff.
 - The Expo development tools button can cover the brew list's Logout button
   when the list is empty. This affects development builds only.
 - The sign-in email field has autocorrect enabled, which can alter addresses.

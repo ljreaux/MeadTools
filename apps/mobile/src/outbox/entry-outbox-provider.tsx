@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
+import * as Network from "expo-network";
 import {
   createContext,
   type PropsWithChildren,
@@ -18,17 +19,17 @@ import { apiBaseUrl } from "@/config/api";
 import { useSession } from "@/providers/app-providers";
 
 import { withDevOutboxFault } from "./dev-fault-injection";
-import { createExpoOutboxFileSystem } from "./expo-outbox-file-system";
-import { createGravityOutbox, type GravityOutbox } from "./gravity-outbox";
+import { createBrewEntryOutbox, type BrewEntryOutbox } from "./entry-outbox";
 import {
   normalizeApiOrigin,
-  type GravityOutboxRecord
-} from "./gravity-outbox-record";
-import { createFileOutboxStore, type GravityOutboxStore } from "./gravity-outbox-store";
+  type BrewEntryOutboxRecord
+} from "./entry-outbox-record";
+import { createFileOutboxStore, type OutboxStore } from "./entry-outbox-store";
+import { createExpoOutboxFileSystem } from "./expo-outbox-file-system";
 
-const GravityOutboxContext = createContext<GravityOutbox | null>(null);
+const OutboxContext = createContext<BrewEntryOutbox | null>(null);
 
-let sharedStore: GravityOutboxStore | null = null;
+let sharedStore: OutboxStore | null = null;
 function outboxStore() {
   sharedStore ??= createFileOutboxStore(createExpoOutboxFileSystem());
   return sharedStore;
@@ -42,12 +43,17 @@ function isBrewResponse(value: unknown): value is BrewResponse {
   );
 }
 
+/** True when the device reports a usable connection. */
+export function isOnline(state: Network.NetworkState) {
+  return state.isConnected === true && state.isInternetReachable !== false;
+}
+
 /**
- * Owns the signed-in account's gravity outbox. The outbox is recreated when
- * the account changes, so another account's queue is never loaded, shown or
- * uploaded. Unsent records stay on the device for their own account.
+ * Owns the signed-in account's brew-entry outbox. The outbox is recreated
+ * when the account changes, so another account's queue is never loaded,
+ * shown or uploaded. Unsent entries stay on the device for their own account.
  */
-export function GravityOutboxProvider({ children }: PropsWithChildren) {
+export function BrewEntryOutboxProvider({ children }: PropsWithChildren) {
   const { session, getAccessTokenForUser } = useSession();
   const queryClient = useQueryClient();
   const userId = session?.id ?? null;
@@ -60,7 +66,7 @@ export function GravityOutboxProvider({ children }: PropsWithChildren) {
 
     // Mutable per-outbox auth recovery state, shared by the callbacks below.
     const auth = { forceRefresh: false, recoveryAttempted: false };
-    const engine = createGravityOutbox({
+    const engine = createBrewEntryOutbox({
       account: { userId, apiOrigin: normalizeApiOrigin(apiBaseUrl) },
       store: outboxStore(),
       async getAccessToken(account) {
@@ -103,8 +109,24 @@ export function GravityOutboxProvider({ children }: PropsWithChildren) {
       if (state === "active") void engine.replay("resume");
     });
 
-    // A successful server read means connectivity is back. Reconcile that
-    // brew's timeline first so a lost acknowledgement retires without
+    // Replay as soon as the device reports connectivity again, instead of
+    // waiting for the retry backoff, which can grow to five minutes.
+    let wasOnline: boolean | null = null;
+    const network = Network.addNetworkStateListener((state) => {
+      const online = isOnline(state);
+      if (online && wasOnline === false && engine.hasDeliverableWork()) {
+        void engine.replay("reconnect");
+      }
+      wasOnline = online;
+    });
+    void Network.getNetworkStateAsync()
+      .then((state) => {
+        wasOnline ??= isOnline(state);
+      })
+      .catch(() => undefined);
+
+    // A successful server read also means connectivity is back. Reconcile
+    // that brew's timeline first so a lost acknowledgement retires without
     // another upload, then replay anything still unsent.
     const unsubscribeCache = queryClient.getQueryCache().subscribe((event) => {
       if (
@@ -135,25 +157,26 @@ export function GravityOutboxProvider({ children }: PropsWithChildren) {
 
     return () => {
       appState.remove();
+      network.remove();
       unsubscribeCache();
       engine.dispose();
     };
   }, [outbox, queryClient, userId]);
 
-  return <GravityOutboxContext value={outbox}>{children}</GravityOutboxContext>;
+  return <OutboxContext value={outbox}>{children}</OutboxContext>;
 }
 
 /** The signed-in account's outbox, or null while signed out. */
-export function useGravityOutbox() {
-  return use(GravityOutboxContext);
+export function useBrewEntryOutbox() {
+  return use(OutboxContext);
 }
 
-const EMPTY: readonly GravityOutboxRecord[] = [];
+const EMPTY: readonly BrewEntryOutboxRecord[] = [];
 const noopSubscribe = () => () => undefined;
 
 /** Outbox records for one brew, oldest first, for timeline rendering. */
-export function useGravityOutboxRecords(brewId: string | undefined) {
-  const outbox = useGravityOutbox();
+export function useBrewEntryOutboxRecords(brewId: string | undefined) {
+  const outbox = useBrewEntryOutbox();
   const subscribe = useCallback(
     (listener: () => void) => outbox?.subscribe(listener) ?? noopSubscribe(),
     [outbox]

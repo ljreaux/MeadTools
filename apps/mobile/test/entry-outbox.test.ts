@@ -5,21 +5,24 @@ import { MeadToolsApiError, MeadToolsContractError } from "@meadtools/api-client
 
 import {
   createAccountLocks,
-  createGravityOutbox,
+  createBrewEntryOutbox,
   retryDelayMs,
-  type GravityOutboxOptions
-} from "../src/outbox/gravity-outbox";
+  type BrewEntryOutboxOptions
+} from "../src/outbox/entry-outbox";
+import { entryPayload } from "@meadtools/brew-domain/entry-payload";
+
 import {
   classifyDeliveryError,
-  GravityOutboxValidationError,
+  OutboxValidationError,
   outboxAccountKey,
-  type GravityOutboxRecord,
+  type EnqueueEntryInput,
+  type BrewEntryOutboxRecord,
   type OutboxAccount
-} from "../src/outbox/gravity-outbox-record";
+} from "../src/outbox/entry-outbox-record";
 import {
   createFileOutboxStore,
-  type GravityOutboxStore
-} from "../src/outbox/gravity-outbox-store";
+  type OutboxStore
+} from "../src/outbox/entry-outbox-store";
 import {
   ACCOUNT_A,
   ACCOUNT_B,
@@ -31,19 +34,31 @@ import {
   uuidSequence
 } from "./support/outbox-fakes";
 
-const READING = {
-  brewId: "brew-a",
-  gravity: 1.042,
-  measuredAt: "2026-11-08T07:30:00.000Z",
-  note: "  Before stirring  ",
-  display: { enteredValue: 10.5, enteredUnit: "BRIX" as const, convertedGravity: 1.042 }
-};
+function reading(
+  overrides: { brewId?: string; gravity?: number; datetime?: string } = {}
+): EnqueueEntryInput {
+  const datetime = overrides.datetime ?? "2026-11-08T07:30:00.000Z";
+  return {
+    brewId: overrides.brewId ?? "brew-a",
+    payload: {
+      ...entryPayload.gravity(overrides.gravity ?? 1.042, "Before stirring", {
+        readingRole: "GENERAL",
+        source: "measured",
+        datetime,
+        display: { enteredValue: 10.5, enteredUnit: "BRIX", convertedGravity: 1.042 }
+      }),
+      datetime
+    }
+  };
+}
+
+const READING = reading();
 
 const TOKENS: Record<number, string> = { 7: "token-a", 8: "token-b" };
 
-function setup(overrides: Partial<GravityOutboxOptions> & {
+function setup(overrides: Partial<BrewEntryOutboxOptions> & {
   account?: OutboxAccount;
-  store?: GravityOutboxStore;
+  store?: OutboxStore;
   server?: ReturnType<typeof createFakeServer>;
   clock?: ReturnType<typeof createClock>;
   memory?: ReturnType<typeof createMemoryFileSystem>;
@@ -56,10 +71,10 @@ function setup(overrides: Partial<GravityOutboxOptions> & {
   const account = overrides.account ?? ACCOUNT_A;
   const signedIn = overrides.signedIn ?? { current: account.userId };
   const tokenRequests: OutboxAccount[] = [];
-  const synchronized: GravityOutboxRecord[] = [];
+  const synchronized: BrewEntryOutboxRecord[] = [];
   const authRejected: OutboxAccount[] = [];
 
-  const outbox = createGravityOutbox({
+  const outbox = createBrewEntryOutbox({
     account,
     store,
     send: server.send,
@@ -89,7 +104,7 @@ function setup(overrides: Partial<GravityOutboxOptions> & {
   };
 }
 
-function statuses(records: readonly GravityOutboxRecord[]) {
+function statuses(records: readonly BrewEntryOutboxRecord[]) {
   return records.map((record) => record.delivery.status);
 }
 
@@ -122,7 +137,7 @@ test("persists the validated shared gravity payload before sending it", async ()
 
   // The record reached durable storage (temp write + rename) before the
   // single network request was made, and the sent body is the stored body.
-  const directory = `v1/${outboxAccountKey(ACCOUNT_A)}/gravity`;
+  const directory = `v1/${outboxAccountKey(ACCOUNT_A)}/entries`;
   assert.deepEqual(memory.log.slice(0, 2), [
     `write ${directory}/${record.clientEntryId}.json.tmp`,
     `move ${directory}/${record.clientEntryId}.json.tmp -> ${directory}/${record.clientEntryId}.json`
@@ -135,13 +150,13 @@ test("rejects invalid readings without persisting or sending", async () => {
   const { outbox, memory, server } = setup();
 
   for (const input of [
-    { ...READING, gravity: Number.NaN },
-    { ...READING, gravity: 0 },
-    { ...READING, gravity: Number.POSITIVE_INFINITY },
-    { ...READING, measuredAt: "not a date" },
-    { ...READING, brewId: "  " }
+    reading({ gravity: Number.NaN }),
+    reading({ gravity: 0 }),
+    reading({ gravity: Number.POSITIVE_INFINITY }),
+    reading({ datetime: "not a date" }),
+    reading({ brewId: "  " })
   ]) {
-    await assert.rejects(outbox.enqueue(input), GravityOutboxValidationError);
+    await assert.rejects(outbox.enqueue(input), OutboxValidationError);
   }
 
   await outbox.replay("manual");
@@ -390,7 +405,7 @@ test("terminal failures wait for the user, then retry with the same UUID or disc
   assert.deepEqual(outbox.getSnapshot(), []);
 
   // Not found (deleted brew / lost ownership) can be discarded by the user.
-  const other = await outbox.enqueue({ ...READING, brewId: "brew-b" });
+  const other = await outbox.enqueue(reading({ brewId: "brew-b" }));
   await outbox.replay("enqueue");
   assert.deepEqual(outbox.getSnapshot()[0].delivery.error, { kind: "not_found", status: 404 });
   assert.equal(await outbox.discard(other.clientEntryId), true);
@@ -413,7 +428,7 @@ test("a UUID conflict and an unreadable success response are terminal", async ()
   assert.deepEqual(outbox.getSnapshot()[0].delivery.error, { kind: "conflict", status: 409 });
 
   server.faults.push({ kind: "invalid-response" });
-  await outbox.enqueue({ ...READING, brewId: "brew-a2" });
+  await outbox.enqueue(reading({ brewId: "brew-a2" }));
   await outbox.replay("enqueue");
   assert.deepEqual(statuses(outbox.getSnapshot()), ["terminal_failure", "terminal_failure"]);
   assert.deepEqual(outbox.getSnapshot()[1].delivery.error, { kind: "contract", status: null });
@@ -424,7 +439,7 @@ test("an expired session pauses delivery until the same account has a token", as
   const { outbox, server } = setup({ signedIn });
 
   await outbox.enqueue(READING);
-  await outbox.enqueue({ ...READING, brewId: "brew-a2" });
+  await outbox.enqueue(reading({ brewId: "brew-a2" }));
   await outbox.replay("resume");
   assert.deepEqual(statuses(outbox.getSnapshot()), ["auth_required", "auth_required"]);
   assert.equal(server.requests.length, 0);
@@ -444,7 +459,7 @@ test("a server 401 pauses the queue and reports the rejected account", async () 
   const signedIn = { current: null as number | null };
   const { outbox, server, authRejected } = setup({ signedIn });
   await outbox.enqueue(READING);
-  await outbox.enqueue({ ...READING, brewId: "brew-a2" });
+  await outbox.enqueue(reading({ brewId: "brew-a2" }));
   await outbox.replay("enqueue");
   assert.equal(server.requests.length, 0);
 
@@ -534,7 +549,7 @@ test("an account switch during an upload completes it as the original account on
   server.faults.push({ kind: "hold", release: gate.promise });
 
   await a.outbox.enqueue(READING);
-  await a.outbox.enqueue({ ...READING, brewId: "brew-a2" });
+  await a.outbox.enqueue(reading({ brewId: "brew-a2" }));
   await flush();
   assert.equal(server.requests.length, 1);
 
@@ -561,7 +576,7 @@ test("the file store recovers an interrupted rename and never deletes corrupt fi
   await source.outbox.replay("enqueue");
   source.outbox.dispose();
 
-  const directory = `v1/${outboxAccountKey(ACCOUNT_A)}/gravity`;
+  const directory = `v1/${outboxAccountKey(ACCOUNT_A)}/entries`;
   const recordPath = `${directory}/${record.clientEntryId}.json`;
   const contents = memory.files.get(recordPath);
   assert.ok(contents);
@@ -583,7 +598,7 @@ test("the file store recovers an interrupted rename and never deletes corrupt fi
 
   // A record copied into another account's directory is rejected.
   memory.files.set(
-    `v1/${outboxAccountKey(ACCOUNT_B)}/gravity/${record.clientEntryId}.json`,
+    `v1/${outboxAccountKey(ACCOUNT_B)}/entries/${record.clientEntryId}.json`,
     contents
   );
   assert.deepEqual(await store.list(ACCOUNT_B), []);
@@ -654,4 +669,74 @@ test("delivery errors map to retry, pause and user-action policies", () => {
     disposition(new MeadToolsContractError("Brew entry response mismatch", {})),
     "terminal:contract:null"
   );
+});
+
+test("gravity readings queued by the earlier version still deliver after upgrading", async () => {
+  const memory = createMemoryFileSystem();
+  const server = createFakeServer();
+  // A version-1 record written by the gravity-only outbox, in its old directory.
+  const id = "00000000-0000-4000-8000-0000000000aa";
+  const legacy = {
+    version: 1,
+    account: ACCOUNT_A,
+    brewId: "brew-a",
+    clientEntryId: id,
+    measuredAt: "2026-11-08T07:30:00.000Z",
+    createdAt: "2026-11-08T07:31:00.000Z",
+    request: {
+      ...JSON.parse(JSON.stringify(entryPayload.gravity(1.03, "Queued before upgrade", {
+        datetime: "2026-11-08T07:30:00.000Z"
+      }))),
+      client_entry_id: id
+    },
+    delivery: {
+      status: "retryable_failure",
+      attempts: 2,
+      lastAttemptAt: "2026-11-08T07:32:00.000Z",
+      nextAttemptAt: "2026-11-08T07:33:00.000Z",
+      synchronizedAt: null,
+      error: { kind: "network", status: null }
+    }
+  };
+  const legacyPath = `v1/${outboxAccountKey(ACCOUNT_A)}/gravity/${id}.json`;
+  memory.files.set(legacyPath, JSON.stringify(legacy));
+
+  const { outbox } = setup({ memory, server });
+  await outbox.load();
+  const [migrated] = outbox.getSnapshot();
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.clientEntryId, id);
+  assert.deepEqual(migrated.request, legacy.request);
+  assert.equal(migrated.delivery.attempts, 2);
+
+  // Migrated to the new directory, new copy first, then the original removed.
+  const newPath = `v1/${outboxAccountKey(ACCOUNT_A)}/entries/${id}.json`;
+  assert.ok(memory.files.has(newPath));
+  assert.equal(memory.files.has(legacyPath), false);
+  assert.ok(memory.log.indexOf(`move v1/${outboxAccountKey(ACCOUNT_A)}/entries/${id}.json.tmp -> ${newPath}`) <
+    memory.log.indexOf(`remove ${legacyPath}`));
+
+  await outbox.replay("reconnect");
+  assert.equal(server.entries.size, 1);
+  assert.deepEqual(JSON.parse(server.requests[0].body), legacy.request);
+  assert.deepEqual(outbox.getSnapshot(), []);
+});
+
+test("other queueable entry types deliver through the same idempotent path", async () => {
+  const { outbox, server } = setup();
+  server.faults.push({ kind: "lose-response" });
+  const datetime = "2026-11-08T09:00:00.000Z";
+  const temperature = await outbox.enqueue({
+    brewId: "brew-a",
+    payload: { ...entryPayload.temperature(19.5, "C", null, datetime), datetime }
+  });
+  await outbox.replay("enqueue");
+  assert.equal(server.entries.size, 1);
+  await outbox.replay("resume");
+
+  assert.equal(server.requests.length, 2);
+  assert.equal(server.requests[0].body, server.requests[1].body);
+  assert.equal(server.entries.size, 1);
+  assert.equal(server.entries.get(temperature.clientEntryId)?.body.type, "TEMPERATURE");
+  assert.deepEqual(outbox.getSnapshot(), []);
 });

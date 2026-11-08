@@ -1,6 +1,6 @@
 import { Directory, File, Paths } from "expo-file-system";
 
-import type { OutboxFileSystem } from "./gravity-outbox-store";
+import type { OutboxFileSystem } from "./entry-outbox-store";
 
 const OUTBOX_ROOT = "meadtools-outbox";
 

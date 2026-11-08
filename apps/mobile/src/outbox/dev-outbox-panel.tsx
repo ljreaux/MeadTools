@@ -11,7 +11,8 @@ import {
   subscribeDevOutboxFault,
   type DevOutboxFault
 } from "./dev-fault-injection";
-import { useGravityOutbox, useGravityOutboxRecords } from "./gravity-outbox-provider";
+import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "./entry-outbox-provider";
+import { entryPayload } from "@meadtools/brew-domain/entry-payload";
 
 /** Readings queued from this panel in this app session, newest first. */
 const queuedThisSession: string[] = [];
@@ -19,7 +20,7 @@ const queuedThisSession: string[] = [];
 const FAULTS: DevOutboxFault[] = ["none", "offline", "lose-response"];
 
 /**
- * Development-only verification panel for the gravity outbox (#444/#446).
+ * Development-only verification panel for the brew-entry outbox (#444/#446).
  * Not localized and never rendered in release builds; the user-facing
  * gravity entry flow is #445.
  */
@@ -32,8 +33,8 @@ export function DevOutboxPanel({
 }) {
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
-  const outbox = useGravityOutbox();
-  const records = useGravityOutboxRecords(brewId);
+  const outbox = useBrewEntryOutbox();
+  const records = useBrewEntryOutboxRecords(brewId);
   const fault = useSyncExternalStore(
     subscribeDevOutboxFault,
     getDevOutboxFault,
@@ -46,11 +47,10 @@ export function DevOutboxPanel({
 
   async function queueReading() {
     try {
+      const datetime = new Date().toISOString();
       const record = await outbox!.enqueue({
         brewId,
-        gravity: 1.05,
-        measuredAt: new Date(),
-        note: "Dev outbox check"
+        payload: { ...entryPayload.gravity(1.05, "Dev outbox check", { datetime }), datetime }
       });
       queuedThisSession.unshift(record.clientEntryId);
       rerender((value) => value + 1);

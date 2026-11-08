@@ -6,15 +6,31 @@ import {
   createBrewEntryRequestBodySchema,
   type CreateBrewEntryRequestBody
 } from "@meadtools/api-contract";
-import {
-  entryPayload,
-  type GravityEntryDisplayData
-} from "@meadtools/brew-domain/entry-payload";
+import type { CreateBrewEntryPayload } from "@meadtools/brew-domain/entry-payload";
 
-export const GRAVITY_OUTBOX_RECORD_VERSION = 1;
+/** Version 1 stored gravity readings only; version 2 stores any supported entry. */
+export const ENTRY_OUTBOX_RECORD_VERSION = 2;
 
 /**
- * The account that owns a queued reading. The API origin is part of the
+ * Create-only entry types that are safe to queue offline: each is a single
+ * idempotent insert keyed by `client_entry_id`. Stage changes, inventory
+ * deductions, bottling, edits and deletes are deliberately excluded.
+ */
+export const QUEUEABLE_ENTRY_TYPES = [
+  "NOTE",
+  "TASTING",
+  "ISSUE",
+  "GRAVITY",
+  "TEMPERATURE",
+  "PH",
+  "VOLUME",
+  "ADDITION"
+] as const;
+
+export type QueueableEntryType = (typeof QUEUEABLE_ENTRY_TYPES)[number];
+
+/**
+ * The account that owns a queued entry. The API origin is part of the
  * identity because the same numeric user ID can exist on local, preview and
  * production backends.
  */
@@ -23,14 +39,13 @@ export type OutboxAccount = {
   apiOrigin: string;
 };
 
-export type GravityEntryRequest = CreateBrewEntryRequestBody & {
-  type: "GRAVITY";
+export type BrewEntryRequest = CreateBrewEntryRequestBody & {
+  type: QueueableEntryType;
   client_entry_id: string;
   datetime: string;
-  gravity: number;
 };
 
-export type GravityOutboxStatus =
+export type OutboxStatus =
   /** Persisted and waiting for an upload attempt. */
   | "pending"
   /** An upload attempt is in flight. */
@@ -39,12 +54,12 @@ export type GravityOutboxStatus =
   | "retryable_failure"
   /** The account's session is unusable; resumes after the same account signs in. */
   | "auth_required"
-  /** The server rejected the reading; needs user action (retry or discard). */
+  /** The server rejected the entry; needs user action (retry or discard). */
   | "terminal_failure"
   /** The server confirmed the entry. */
   | "synchronized";
 
-export type GravityOutboxErrorKind =
+export type OutboxErrorKind =
   | "network"
   | "server"
   | "auth"
@@ -58,56 +73,57 @@ export type GravityOutboxErrorKind =
  * Error details are limited to a category and HTTP status. Raw messages,
  * response bodies and credentials are never persisted.
  */
-export type GravityOutboxError = {
-  kind: GravityOutboxErrorKind;
+export type OutboxError = {
+  kind: OutboxErrorKind;
   status: number | null;
 };
 
-export type GravityOutboxDelivery = {
-  status: GravityOutboxStatus;
+export type OutboxDelivery = {
+  status: OutboxStatus;
   attempts: number;
   lastAttemptAt: string | null;
   nextAttemptAt: string | null;
   synchronizedAt: string | null;
-  error: GravityOutboxError | null;
+  error: OutboxError | null;
 };
 
-export type GravityOutboxRecord = {
-  version: typeof GRAVITY_OUTBOX_RECORD_VERSION;
+export type BrewEntryOutboxRecord = {
+  version: typeof ENTRY_OUTBOX_RECORD_VERSION;
   account: OutboxAccount;
   brewId: string;
   clientEntryId: string;
-  /** When the reading was taken, as entered by the user. */
+  /** When the entry happened, as entered by the user. */
   measuredAt: string;
-  /** When the reading was added to the outbox. */
+  /** When the entry was added to the outbox. */
   createdAt: string;
   /** Immutable request body sent on every attempt. */
-  request: GravityEntryRequest;
-  delivery: GravityOutboxDelivery;
+  request: BrewEntryRequest;
+  delivery: OutboxDelivery;
 };
 
-export type EnqueueGravityInput = {
+export type EnqueueEntryInput = {
   brewId: string;
-  /** Specific gravity sent to the server. */
-  gravity: number;
-  measuredAt: Date | string;
-  note?: string | null;
-  /** Entered value/unit metadata preserved for timeline display. */
-  display?: GravityEntryDisplayData;
+  /**
+   * A payload from the shared `entryPayload` builders. `datetime` is
+   * required: it is the time the entry happened, not the upload time.
+   */
+  payload: CreateBrewEntryPayload & { datetime: string };
 };
 
-export class GravityOutboxValidationError extends Error {
-  readonly field: "brewId" | "gravity" | "measuredAt" | "request";
+export class OutboxValidationError extends Error {
+  readonly field: "brewId" | "type" | "datetime" | "request";
 
-  constructor(field: GravityOutboxValidationError["field"], message: string) {
+  constructor(field: OutboxValidationError["field"], message: string) {
     super(message);
-    this.name = "GravityOutboxValidationError";
+    this.name = "OutboxValidationError";
     this.field = field;
   }
 }
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const QUEUEABLE = new Set<string>(QUEUEABLE_ENTRY_TYPES);
 
 export function sameAccount(a: OutboxAccount, b: OutboxAccount) {
   return a.userId === b.userId && a.apiOrigin === b.apiOrigin;
@@ -136,93 +152,105 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-function toIsoTimestamp(value: Date | string) {
-  const date = value instanceof Date ? value : new Date(value);
-  const time = date.getTime();
-
-  if (Number.isNaN(time)) {
-    throw new GravityOutboxValidationError(
-      "measuredAt",
-      "Measurement time is invalid"
-    );
-  }
-
-  return date.toISOString();
+function finite(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }
 
-function isGravityRequest(
+function object(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/** Type-specific checks beyond the API schema, so a queued entry is meaningful. */
+function hasRequiredValues(request: BrewEntryRequest) {
+  const data = object(request.data);
+  switch (request.type) {
+    case "GRAVITY":
+      return finite(request.gravity) && request.gravity > 0;
+    case "TEMPERATURE":
+      return finite(request.temperature) && (request.temp_units === "C" || request.temp_units === "F");
+    case "PH":
+      return finite(data.ph) && data.ph >= 0 && data.ph <= 14;
+    case "VOLUME":
+      return finite(data.liters) && data.liters > 0;
+    case "ADDITION":
+      return typeof data.name === "string" && data.name.trim().length > 0 &&
+        (data.amount === undefined || (finite(data.amount) && data.amount > 0));
+    case "NOTE":
+    case "TASTING":
+    case "ISSUE":
+      return typeof request.note === "string" && request.note.trim().length > 0;
+  }
+}
+
+function isQueueableRequest(
   value: unknown,
   clientEntryId: string
-): value is GravityEntryRequest {
-  if (!createBrewEntryRequestBodySchema.safeParse(value).success) {
-    return false;
-  }
-
-  const request = value as Partial<GravityEntryRequest>;
+): value is BrewEntryRequest {
+  if (!createBrewEntryRequestBodySchema.safeParse(value).success) return false;
+  const request = value as Partial<BrewEntryRequest> & Record<string, unknown>;
   return (
-    request.type === "GRAVITY" &&
+    typeof request.type === "string" &&
+    QUEUEABLE.has(request.type) &&
     request.client_entry_id === clientEntryId &&
-    typeof request.gravity === "number" &&
-    Number.isFinite(request.gravity) &&
     typeof request.datetime === "string" &&
-    !Number.isNaN(Date.parse(request.datetime))
+    !Number.isNaN(Date.parse(request.datetime)) &&
+    request.inventory === undefined &&
+    request.bottling === undefined &&
+    request.stage_to === undefined &&
+    hasRequiredValues(request as BrewEntryRequest)
   );
 }
 
 /**
- * Builds a validated, immutable outbox record with the shared gravity payload
- * builder. The request is JSON-normalized so the persisted body is exactly
- * the body sent on every attempt.
+ * Builds a validated, immutable outbox record from a shared payload builder.
+ * The request is JSON-normalized so the persisted body is exactly the body
+ * sent on every attempt.
  */
-export function createGravityOutboxRecord({
+export function createOutboxRecord({
   account,
   input,
   clientEntryId,
   now
 }: {
   account: OutboxAccount;
-  input: EnqueueGravityInput;
+  input: EnqueueEntryInput;
   clientEntryId: string;
   now: number;
-}): GravityOutboxRecord {
+}): BrewEntryOutboxRecord {
   const brewId = input.brewId.trim();
   if (!brewId) {
-    throw new GravityOutboxValidationError("brewId", "Brew ID is required");
+    throw new OutboxValidationError("brewId", "Brew ID is required");
   }
-  if (!Number.isFinite(input.gravity) || input.gravity <= 0) {
-    throw new GravityOutboxValidationError(
-      "gravity",
-      "Gravity must be a positive number"
-    );
+  if (!QUEUEABLE.has(input.payload.type)) {
+    throw new OutboxValidationError("type", "This entry type cannot be queued");
   }
   if (!UUID_PATTERN.test(clientEntryId)) {
-    throw new GravityOutboxValidationError(
-      "request",
-      "Client entry ID must be a UUID"
-    );
+    throw new OutboxValidationError("request", "Client entry ID must be a UUID");
   }
+  const time = Date.parse(input.payload.datetime);
+  if (Number.isNaN(time)) {
+    throw new OutboxValidationError("datetime", "Entry time is invalid");
+  }
+  const measuredAt = new Date(time).toISOString();
 
-  const measuredAt = toIsoTimestamp(input.measuredAt);
-  const note = input.note?.trim() || null;
-  const payload = entryPayload.gravity(input.gravity, note, {
-    readingRole: "GENERAL",
-    source: "measured",
-    datetime: measuredAt,
-    display: input.display
-  });
   const request: unknown = JSON.parse(
-    JSON.stringify({ ...payload, client_entry_id: clientEntryId })
+    JSON.stringify({
+      ...input.payload,
+      datetime: measuredAt,
+      client_entry_id: clientEntryId
+    })
   );
-
-  if (!isGravityRequest(request, clientEntryId)) {
-    throw new GravityOutboxValidationError(
+  if (!isQueueableRequest(request, clientEntryId)) {
+    throw new OutboxValidationError(
       "request",
-      "Gravity entry does not match the MeadTools API contract"
+      "Entry does not match the MeadTools API contract"
     );
   }
 
   return deepFreeze({
-    version: GRAVITY_OUTBOX_RECORD_VERSION,
+    version: ENTRY_OUTBOX_RECORD_VERSION,
     account: { userId: account.userId, apiOrigin: account.apiOrigin },
     brewId,
     clientEntryId,
@@ -241,16 +269,16 @@ export function createGravityOutboxRecord({
 }
 
 export function withDelivery(
-  record: GravityOutboxRecord,
-  delivery: Partial<GravityOutboxDelivery>
-): GravityOutboxRecord {
+  record: BrewEntryOutboxRecord,
+  delivery: Partial<OutboxDelivery>
+): BrewEntryOutboxRecord {
   return deepFreeze({
     ...record,
     delivery: { ...record.delivery, ...delivery }
   });
 }
 
-const STATUSES = new Set<GravityOutboxStatus>([
+const STATUSES = new Set<OutboxStatus>([
   "pending",
   "sending",
   "retryable_failure",
@@ -258,7 +286,7 @@ const STATUSES = new Set<GravityOutboxStatus>([
   "terminal_failure",
   "synchronized"
 ]);
-const ERROR_KINDS = new Set<GravityOutboxErrorKind>([
+const ERROR_KINDS = new Set<OutboxErrorKind>([
   "network",
   "server",
   "auth",
@@ -277,13 +305,14 @@ function isNullableTimestamp(value: unknown) {
 }
 
 /**
- * Parses a stored record for one account. Returns null for corrupt records or
+ * Parses a stored record for one account. Version 1 (gravity-only) records
+ * are upgraded to version 2 in memory. Returns null for corrupt records or
  * records owned by a different account so they are never displayed or sent.
  */
-export function parseGravityOutboxRecord(
+export function parseOutboxRecord(
   text: string,
   account: OutboxAccount
-): GravityOutboxRecord | null {
+): BrewEntryOutboxRecord | null {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -295,12 +324,14 @@ export function parseGravityOutboxRecord(
   const record = value as Record<string, unknown>;
   const recordAccount = record.account as Partial<OutboxAccount> | undefined;
   const delivery = record.delivery as
-    | Partial<Record<keyof GravityOutboxDelivery, unknown>>
+    | Partial<Record<keyof OutboxDelivery, unknown>>
     | undefined;
-  const error = delivery?.error as Partial<GravityOutboxError> | null;
+  const error = delivery?.error as Partial<OutboxError> | null;
+  const request = record.request as Partial<BrewEntryRequest> | undefined;
 
   if (
-    record.version !== GRAVITY_OUTBOX_RECORD_VERSION ||
+    (record.version !== 1 && record.version !== ENTRY_OUTBOX_RECORD_VERSION) ||
+    (record.version === 1 && request?.type !== "GRAVITY") ||
     !recordAccount ||
     typeof recordAccount.userId !== "number" ||
     typeof recordAccount.apiOrigin !== "string" ||
@@ -309,14 +340,14 @@ export function parseGravityOutboxRecord(
     !record.brewId ||
     typeof record.clientEntryId !== "string" ||
     !UUID_PATTERN.test(record.clientEntryId) ||
-    !isNullableTimestamp(record.measuredAt) ||
-    record.measuredAt === null ||
-    !isNullableTimestamp(record.createdAt) ||
-    record.createdAt === null ||
-    !isGravityRequest(record.request, record.clientEntryId) ||
-    (record.request as GravityEntryRequest).datetime !== record.measuredAt ||
+    typeof record.measuredAt !== "string" ||
+    Number.isNaN(Date.parse(record.measuredAt)) ||
+    typeof record.createdAt !== "string" ||
+    Number.isNaN(Date.parse(record.createdAt)) ||
+    !isQueueableRequest(record.request, record.clientEntryId) ||
+    request?.datetime !== record.measuredAt ||
     !delivery ||
-    !STATUSES.has(delivery.status as GravityOutboxStatus) ||
+    !STATUSES.has(delivery.status as OutboxStatus) ||
     typeof delivery.attempts !== "number" ||
     !Number.isInteger(delivery.attempts) ||
     delivery.attempts < 0 ||
@@ -325,23 +356,26 @@ export function parseGravityOutboxRecord(
     !isNullableTimestamp(delivery.synchronizedAt) ||
     (error !== null &&
       (!error ||
-        !ERROR_KINDS.has(error.kind as GravityOutboxErrorKind) ||
+        !ERROR_KINDS.has(error.kind as OutboxErrorKind) ||
         !(error.status === null || typeof error.status === "number")))
   ) {
     return null;
   }
 
-  return deepFreeze(value as GravityOutboxRecord);
+  return deepFreeze({
+    ...(value as BrewEntryOutboxRecord),
+    version: ENTRY_OUTBOX_RECORD_VERSION
+  });
 }
 
-export function serializeGravityOutboxRecord(record: GravityOutboxRecord) {
+export function serializeOutboxRecord(record: BrewEntryOutboxRecord) {
   return JSON.stringify(record);
 }
 
 export type DeliveryErrorDisposition =
-  | { disposition: "retryable"; error: GravityOutboxError }
-  | { disposition: "auth"; error: GravityOutboxError }
-  | { disposition: "terminal"; error: GravityOutboxError };
+  | { disposition: "retryable"; error: OutboxError }
+  | { disposition: "auth"; error: OutboxError }
+  | { disposition: "terminal"; error: OutboxError };
 
 const RETRYABLE_STATUSES = new Set([408, 425, 429]);
 

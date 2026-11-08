@@ -1,6 +1,10 @@
-import type { BrewTimelineItem } from "@meadtools/brew-domain";
+import {
+  projectBrewTimeline,
+  type BrewTimelineItem,
+  type BrewViewEntry
+} from "@meadtools/brew-domain";
 
-import type { GravityOutboxRecord } from "./gravity-outbox-record";
+import type { BrewEntryOutboxRecord } from "./entry-outbox-record";
 
 export type DeliveryTone = "pending" | "warning" | "error" | "success";
 
@@ -35,13 +39,22 @@ const TERMINAL_MESSAGES: Record<string, DeliveryMessage> = {
   contract: "unconfirmed"
 };
 
-/** Maps an outbox record to an honest, actionable delivery state. */
-export function presentDelivery(record: GravityOutboxRecord): DeliveryPresentation {
+/**
+ * Maps an outbox record to an honest, actionable delivery state. When the
+ * outbox is offline (another entry just failed to reach the server), entries
+ * still waiting behind it are blocked by the same connection, so they say so.
+ */
+export function presentDelivery(
+  record: BrewEntryOutboxRecord,
+  context: { offline: boolean } = { offline: false }
+): DeliveryPresentation {
   const { status, error } = record.delivery;
 
   switch (status) {
     case "pending":
-      return { message: "pending", tone: "pending", busy: false, canRetry: false, canDiscard: true };
+      return context.offline
+        ? { message: "retryNetwork", tone: "warning", busy: false, canRetry: true, canDiscard: true }
+        : { message: "pending", tone: "pending", busy: false, canRetry: false, canDiscard: true };
     case "sending":
       return { message: "sending", tone: "pending", busy: true, canRetry: false, canDiscard: false };
     case "retryable_failure":
@@ -73,28 +86,32 @@ export type TimelineRow =
       kind: "local";
       key: string;
       item: BrewTimelineItem;
-      record: GravityOutboxRecord;
+      record: BrewEntryOutboxRecord;
       delivery: DeliveryPresentation;
     };
 
-function localItem(
-  record: GravityOutboxRecord,
+/**
+ * Projects a queued request through the same shared timeline projection the
+ * server rows use, so a local row reads exactly like its eventual server row.
+ */
+export function projectQueuedEntry(
+  record: BrewEntryOutboxRecord,
   stage: BrewTimelineItem["stage"]
 ): BrewTimelineItem {
-  const role = record.request.data?.readingRole;
-  return {
+  const { request } = record;
+  const entry: BrewViewEntry<unknown> = {
     id: record.clientEntryId,
     datetime: record.measuredAt,
-    type: "GRAVITY",
-    title: record.request.title ?? null,
-    note: record.request.note ?? null,
-    stage,
-    detail: {
-      kind: "gravity",
-      value: record.request.gravity,
-      role: role === "OG" || role === "FG" ? role : "GENERAL"
-    }
+    type: request.type,
+    title: request.title ?? null,
+    note: request.note ?? null,
+    gravity: request.gravity ?? null,
+    temperature: request.temperature ?? null,
+    temp_units: request.temp_units ?? null,
+    data: request.data ?? null
   };
+  const [item] = projectBrewTimeline({ entries: [entry], entries_by_stage: [] });
+  return { ...item, stage };
 }
 
 function time(value: string) {
@@ -105,14 +122,17 @@ function time(value: string) {
 /**
  * Combines the server timeline with this brew's outbox records, newest first.
  * A record whose UUID is already in the server timeline is shown only once,
- * as the server row, so a confirmed reading never appears twice.
+ * as the server row, so a confirmed entry never appears twice.
  */
 export function mergeTimelineWithOutbox(
   serverItems: readonly BrewTimelineItem[],
-  records: readonly GravityOutboxRecord[],
+  records: readonly BrewEntryOutboxRecord[],
   stage: BrewTimelineItem["stage"]
 ): TimelineRow[] {
   const serverIds = new Set(serverItems.map((item) => item.id));
+  const offline = records.some(
+    (record) => record.delivery.status === "retryable_failure" && record.delivery.error?.kind === "network"
+  );
   const rows: TimelineRow[] = serverItems.map((item) => ({
     kind: "server",
     key: `server:${item.id}`,
@@ -124,9 +144,9 @@ export function mergeTimelineWithOutbox(
     rows.push({
       kind: "local",
       key: `local:${record.clientEntryId}`,
-      item: localItem(record, stage),
+      item: projectQueuedEntry(record, stage),
       record,
-      delivery: presentDelivery(record)
+      delivery: presentDelivery(record, { offline })
     });
   }
 

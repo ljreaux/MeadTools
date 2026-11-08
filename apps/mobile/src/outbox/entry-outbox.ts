@@ -2,16 +2,16 @@ import type { BrewResponse } from "@meadtools/api-contract";
 
 import {
   classifyDeliveryError,
-  createGravityOutboxRecord,
+  createOutboxRecord,
   outboxAccountKey,
   withDelivery,
-  type EnqueueGravityInput,
-  type GravityEntryRequest,
-  type GravityOutboxError,
-  type GravityOutboxRecord,
+  type EnqueueEntryInput,
+  type BrewEntryRequest,
+  type OutboxError,
+  type BrewEntryOutboxRecord,
   type OutboxAccount
-} from "./gravity-outbox-record";
-import { compareRecords, type GravityOutboxStore } from "./gravity-outbox-store";
+} from "./entry-outbox-record";
+import { compareRecords, type OutboxStore } from "./entry-outbox-store";
 
 /**
  * What prompted a replay. Timer replays honor retry backoff; every other
@@ -25,15 +25,15 @@ export type ReplayTrigger =
   | "manual"
   | "timer";
 
-export type SendGravityEntry = (input: {
+export type SendBrewEntry = (input: {
   brewId: string;
-  request: GravityEntryRequest;
+  request: BrewEntryRequest;
   accessToken: string;
 }) => Promise<BrewResponse>;
 
-export type GravityOutboxOptions = {
+export type BrewEntryOutboxOptions = {
   account: OutboxAccount;
-  store: GravityOutboxStore;
+  store: OutboxStore;
   /**
    * Returns a usable access token that belongs to `account`, refreshing it if
    * needed. Returns null when this account has no usable session (signed out,
@@ -42,11 +42,11 @@ export type GravityOutboxOptions = {
    */
   getAccessToken(account: OutboxAccount): Promise<string | null>;
   /** Sends with the given token only; never reads the current session. */
-  send: SendGravityEntry;
+  send: SendBrewEntry;
   randomUUID(): string;
   now?: () => number;
   setTimer?: (callback: () => void, delayMs: number) => () => void;
-  onSynchronized?: (record: GravityOutboxRecord, brew: BrewResponse) => void;
+  onSynchronized?: (record: BrewEntryOutboxRecord, brew: BrewResponse) => void;
   onAuthRejected?: (account: OutboxAccount) => void;
   onStorageError?: (error: unknown) => void;
   retry?: { baseDelayMs: number; maxDelayMs: number };
@@ -55,22 +55,22 @@ export type GravityOutboxOptions = {
   locks?: AccountLocks;
 };
 
-export type GravityOutbox = {
+export type BrewEntryOutbox = {
   readonly account: OutboxAccount;
   /** Loads persisted records for this account. Safe to call repeatedly. */
   load(): Promise<void>;
   /** Records for this account, oldest first. Stable until the next change. */
-  getSnapshot(): readonly GravityOutboxRecord[];
+  getSnapshot(): readonly BrewEntryOutboxRecord[];
   subscribe(listener: () => void): () => void;
   /** True when a record could still be delivered automatically. */
   hasDeliverableWork(): boolean;
-  /** Validates and persists a reading, then starts delivery. */
-  enqueue(input: EnqueueGravityInput): Promise<GravityOutboxRecord>;
+  /** Validates and persists an entry, then starts delivery. */
+  enqueue(input: EnqueueEntryInput): Promise<BrewEntryOutboxRecord>;
   /** Replays eligible records. Concurrent calls share one serialized run. */
   replay(trigger: ReplayTrigger): Promise<void>;
   /** User-requested retry, including for terminal failures. */
   retry(clientEntryId: string): Promise<boolean>;
-  /** User-confirmed removal of an unsent reading. Refuses while sending. */
+  /** User-confirmed removal of an unsent entry. Refuses while sending. */
   discard(clientEntryId: string): Promise<boolean>;
   /**
    * Retires records that the server timeline for `brewId` already contains.
@@ -157,7 +157,7 @@ type QueuedReplay = {
 };
 
 function isEligible(
-  record: GravityOutboxRecord,
+  record: BrewEntryOutboxRecord,
   replay: QueuedReplay,
   now: number,
   lastAttemptSequence: number
@@ -185,9 +185,9 @@ function isEligible(
   }
 }
 
-export function createGravityOutbox(
-  options: GravityOutboxOptions
-): GravityOutbox {
+export function createBrewEntryOutbox(
+  options: BrewEntryOutboxOptions
+): BrewEntryOutbox {
   const account = {
     userId: options.account.userId,
     apiOrigin: options.account.apiOrigin
@@ -207,9 +207,9 @@ export function createGravityOutbox(
   const locks = options.locks ?? processAccountLocks;
   const mutate = createMutex();
 
-  const records = new Map<string, GravityOutboxRecord>();
+  const records = new Map<string, BrewEntryOutboxRecord>();
   const listeners = new Set<() => void>();
-  let snapshot: readonly GravityOutboxRecord[] = [];
+  let snapshot: readonly BrewEntryOutboxRecord[] = [];
   let disposed = false;
   let loaded: Promise<void> | null = null;
   let running: Promise<void> | null = null;
@@ -224,7 +224,7 @@ export function createGravityOutbox(
   }
 
   /** Disk first, memory second: memory is never ahead of durable state. */
-  async function write(record: GravityOutboxRecord) {
+  async function write(record: BrewEntryOutboxRecord) {
     await store.put(record);
     records.set(record.clientEntryId, record);
     emit();
@@ -286,9 +286,9 @@ export function createGravityOutbox(
   }
 
   async function markFailure(
-    record: GravityOutboxRecord,
+    record: BrewEntryOutboxRecord,
     status: "retryable_failure" | "auth_required" | "terminal_failure",
-    error: GravityOutboxError
+    error: OutboxError
   ) {
     const nextAttemptAt =
       status === "retryable_failure"
@@ -319,7 +319,7 @@ export function createGravityOutbox(
   }
 
   /** Returns false when the pass should stop. */
-  async function attempt(candidate: GravityOutboxRecord): Promise<boolean> {
+  async function attempt(candidate: BrewEntryOutboxRecord): Promise<boolean> {
     lastAttempt.set(candidate.clientEntryId, ++attemptSequence);
 
     let accessToken: string | null;
@@ -479,8 +479,8 @@ export function createGravityOutbox(
     },
 
     async enqueue(input) {
-      if (disposed) throw new Error("Gravity outbox is closed");
-      const record = createGravityOutboxRecord({
+      if (disposed) throw new Error("Brew entry outbox is closed");
+      const record = createOutboxRecord({
         account,
         input,
         clientEntryId: options.randomUUID(),

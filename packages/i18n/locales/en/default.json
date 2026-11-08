@@ -1914,13 +1914,84 @@
   "mobileBrews": {
     "activeCount_one": "{{count}} active brew",
     "activeCount_other": "{{count}} active brews",
+    "addEntry": {
+      "action": "Add entry",
+      "addition": {
+        "amountLabel": "Amount (optional)",
+        "inventoryHint": "This does not change inventory. Use the web app to deduct stock.",
+        "kindLabel": "Kind",
+        "kinds": {
+          "INGREDIENT": "Ingredient",
+          "NUTRIENT": "Nutrient",
+          "OTHER": "Other"
+        },
+        "nameLabel": "Name",
+        "namePlaceholder": "Wildflower honey"
+      },
+      "cancel": "Cancel",
+      "errors": {
+        "empty": "Enter a value.",
+        "invalid": "Enter a number.",
+        "nameRequired": "Enter a name.",
+        "range": "Enter a value from {{min}} to {{max}}.",
+        "saveFailed": "This entry could not be saved on this device. Try again.",
+        "textRequired": "Enter some text."
+      },
+      "gravity": {
+        "correctedNote": "Saved as {{sg}} SG, refractometer-corrected.",
+        "correction": "Refractometer correction",
+        "correctionFactor": "Correction factor",
+        "correctionOg": "Uses OG {{og}}.",
+        "correctionUnavailable": "Record an OG first to enable refractometer correction.",
+        "factorError": "Enter a correction factor greater than 0.",
+        "invalid": "Enter a number, such as 1.050.",
+        "rangeBrix": "Enter a value from {{min}} to {{max}} °Bx.",
+        "rangeSg": "Enter a value from {{min}} to {{max}} SG.",
+        "readingLabel": "Gravity",
+        "roleLabel": "Reading type",
+        "roles": {
+          "FG": "FG",
+          "GENERAL": "Reading",
+          "OG": "OG"
+        },
+        "uncorrectedNote": "Saved as {{sg}} SG. This °Bx reading is not refractometer-corrected.",
+        "units": {
+          "BRIX": "°Bx",
+          "SG": "SG"
+        }
+      },
+      "measuredNow": "The entry is timestamped when you save it. It syncs automatically, even if you are offline.",
+      "noteLabel": "Note (optional)",
+      "ph": {
+        "label": "pH"
+      },
+      "save": "Save entry",
+      "saving": "Saving…",
+      "temperature": {
+        "label": "Temperature"
+      },
+      "text": {
+        "issueLabel": "What happened?",
+        "noteLabel": "Note",
+        "tastingLabel": "Tasting notes",
+        "titleLabel": "Title (optional)"
+      },
+      "title": "Add entry",
+      "typeLabel": "Entry type",
+      "unavailable": "Adding entries is not available on this device.",
+      "unitLabel": "Unit",
+      "volume": {
+        "hint": "Updates the brew’s current volume.",
+        "label": "Current volume"
+      }
+    },
     "batch": "Batch {{number}}",
     "currentVolume": "Current volume",
     "delivery": {
       "discard": "Discard",
-      "discardBody": "This reading has not been saved to MeadTools. Discarding removes it from this device.",
+      "discardBody": "This entry has not been saved to MeadTools. Discarding removes it from this device.",
       "discardCancel": "Keep",
-      "discardTitle": "Discard this reading?",
+      "discardTitle": "Discard this entry?",
       "retry": "Retry now",
       "status": {
         "authRequired": "Not synced. Sign in again to send it.",
@@ -1928,7 +1999,7 @@
         "forbidden": "Not saved: your account cannot add this entry.",
         "notFound": "Not saved: this brew is no longer available.",
         "pending": "Waiting to sync",
-        "rejected": "Not saved: MeadTools rejected this reading.",
+        "rejected": "Not saved: MeadTools rejected this entry.",
         "retryNetwork": "Offline. It will sync when you are back online.",
         "retryServer": "MeadTools is unavailable. It will retry automatically.",
         "sending": "Syncing…",
@@ -1957,27 +2028,6 @@
     "overview": "Overview",
     "recipe": "Recipe: {{name}}",
     "recipeDetailsUnavailable": "Recipe details are unavailable for this brew.",
-    "recordGravity": {
-      "action": "Record gravity",
-      "brixNote": "Saved as {{sg}} SG. This °Bx reading is not refractometer-corrected.",
-      "cancel": "Cancel",
-      "errors": {
-        "empty": "Enter a reading.",
-        "invalid": "Enter a number, such as 1.050.",
-        "range": "Enter a value from {{min}} to {{max}} {{unit}}.",
-        "saveFailed": "This reading could not be saved on this device. Try again."
-      },
-      "measuredNow": "The reading is timestamped when you save it. It syncs automatically, even if you are offline.",
-      "noteLabel": "Note (optional)",
-      "readingLabel": "Reading",
-      "save": "Save reading",
-      "saving": "Saving…",
-      "title": "Record gravity",
-      "unavailable": "Recording readings is not available on this device.",
-      "unitBrix": "°Bx",
-      "unitLabel": "Unit",
-      "unitSg": "SG"
-    },
     "refresh": "Refresh brews",
     "retry": "Try again",
     "sessionExpiredBody": "Sign in again to see your brews.",
@@ -1990,7 +2040,7 @@
     "timeline": {
       "activity": "Activity",
       "dateUnavailable": "Date unavailable",
-      "empty": "No timeline activity yet. Readings you record here or on the web will appear here.",
+      "empty": "No timeline activity yet. Entries you add here or on the web will appear here.",
       "heading": "Recent activity",
       "packages_one": "{{count}} package",
       "packages_other": "{{count}} packages",
@@ -2601,6 +2651,9 @@
   "units": {
     "C": "°C",
     "F": "°F",
+    "fl_oz": "fl oz",
+    "g": "g",
+    "gal": "gal",
     "gpl": "g/L",
     "imp_fl_oz": "imp fl oz",
     "imp_gal": "imp gal",
@@ -2608,10 +2661,14 @@
     "imp_qt": "imp qt",
     "kg": "kg",
     "L": "L",
+    "lb": "lb",
     "mg": "mg",
     "mL": "mL",
+    "oz": "oz",
     "pt": "pt",
     "qt": "qt",
+    "tbsp": "tbsp",
+    "tsp": "tsp",
     "units": "units"
   },
   "unnamedDevice": "Unnamed device",

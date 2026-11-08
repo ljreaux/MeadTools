@@ -24,7 +24,7 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
-import { useGravityOutbox, useGravityOutboxRecords } from "@/outbox/gravity-outbox-provider";
+import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "@/outbox/entry-outbox-provider";
 import {
   mergeTimelineWithOutbox,
   type DeliveryTone,
@@ -56,8 +56,8 @@ export default function BrewScreen() {
   );
   const overview = useMemo(() => brew ? projectBrewOverview(brew) : null, [brew]);
   const timeline = useMemo(() => brew ? projectBrewTimeline(brew) : [], [brew]);
-  const outbox = useGravityOutbox();
-  const outboxRecords = useGravityOutboxRecords(id);
+  const outbox = useBrewEntryOutbox();
+  const outboxRecords = useBrewEntryOutboxRecords(id);
   const rows = useMemo(
     () => mergeTimelineWithOutbox(timeline, outboxRecords, brew?.stage ?? null),
     [brew?.stage, outboxRecords, timeline]
@@ -300,12 +300,12 @@ export default function BrewScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push({
-              pathname: "/record-gravity",
-              params: { brewId: brew.id, name, unit: brew.gravity_unit_preference }
+              pathname: "/add-entry",
+              params: { brewId: brew.id, name, unit: brew.gravity_unit_preference, stage: brew.stage }
             })}
             style={({ pressed }) => [styles.recordButton, pressed && styles.pressed]}
           >
-            <Text style={styles.recordButtonText}>{t("mobileBrews.recordGravity.action")}</Text>
+            <Text style={styles.recordButtonText}>{t("mobileBrews.addEntry.action")}</Text>
           </Pressable>
         ) : null}
       </View>

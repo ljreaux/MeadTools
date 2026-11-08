@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { BrewTimelineItem } from "@meadtools/brew-domain";
+import { entryPayload } from "@meadtools/brew-domain/entry-payload";
 
 import {
-  createGravityOutboxRecord,
+  createOutboxRecord,
   withDelivery,
-  type GravityOutboxDelivery,
-  type GravityOutboxRecord
-} from "../src/outbox/gravity-outbox-record";
+  type OutboxDelivery,
+  type BrewEntryOutboxRecord
+} from "../src/outbox/entry-outbox-record";
 import {
   mergeTimelineWithOutbox,
   presentDelivery
@@ -19,11 +20,14 @@ const ACCOUNT = { userId: 1, apiOrigin: "https://meadtools.example" };
 function record(
   id: number,
   measuredAt: string,
-  delivery: Partial<GravityOutboxDelivery> = {}
-): GravityOutboxRecord {
-  const base = createGravityOutboxRecord({
+  delivery: Partial<OutboxDelivery> = {}
+): BrewEntryOutboxRecord {
+  const base = createOutboxRecord({
     account: ACCOUNT,
-    input: { brewId: "brew-1", gravity: 1.02, measuredAt, note: "Queued" },
+    input: {
+      brewId: "brew-1",
+      payload: { ...entryPayload.gravity(1.02, "Queued", { datetime: measuredAt }), datetime: measuredAt }
+    },
     clientEntryId: `00000000-0000-4000-8000-${String(id).padStart(12, "0")}`,
     now: Date.parse("2026-11-08T12:00:00.000Z")
   });
@@ -43,7 +47,7 @@ function serverItem(id: string, datetime: string): BrewTimelineItem {
 }
 
 test("each delivery state has an honest message and the right actions", () => {
-  const cases: Array<[Partial<GravityOutboxDelivery>, ReturnType<typeof presentDelivery>]> = [
+  const cases: Array<[Partial<OutboxDelivery>, ReturnType<typeof presentDelivery>]> = [
     [{ status: "pending" }, { message: "pending", tone: "pending", busy: false, canRetry: false, canDiscard: true }],
     [{ status: "sending" }, { message: "sending", tone: "pending", busy: true, canRetry: false, canDiscard: false }],
     [
@@ -152,4 +156,38 @@ test("failed rows keep their recovery actions", () => {
   assert.equal(rows[0].delivery.canRetry, true);
   assert.equal(rows[0].delivery.canDiscard, true);
   assert.equal(rows[0].delivery.tone, "error");
+});
+
+test("entries waiting behind an offline failure say they are offline", () => {
+  const rows = mergeTimelineWithOutbox(
+    [],
+    [
+      record(1, "2026-11-08T09:00:00.000Z", {
+        status: "retryable_failure",
+        error: { kind: "network", status: null }
+      }),
+      record(2, "2026-11-08T09:05:00.000Z")
+    ],
+    null
+  );
+  const waiting = rows.find((row) => row.key.endsWith("000000000002"));
+  assert.equal(waiting?.kind, "local");
+  if (waiting?.kind !== "local") return;
+  assert.equal(waiting.delivery.message, "retryNetwork");
+  assert.equal(waiting.delivery.tone, "warning");
+
+  // A server outage does not make other entries "offline".
+  const outage = mergeTimelineWithOutbox(
+    [],
+    [
+      record(1, "2026-11-08T09:00:00.000Z", {
+        status: "retryable_failure",
+        error: { kind: "server", status: 503 }
+      }),
+      record(2, "2026-11-08T09:05:00.000Z")
+    ],
+    null
+  );
+  const pending = outage.find((row) => row.key.endsWith("000000000002"));
+  assert.equal(pending?.kind === "local" && pending.delivery.message, "pending");
 });
