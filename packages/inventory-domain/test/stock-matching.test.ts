@@ -126,6 +126,19 @@ test("Fuse is a fallback for unlinked stock and warns on ties", () => {
     undefined,
   );
 });
+test("an exact stock name wins over a longer name that contains it", () => {
+  const juice = (id: string, name: string) => ({
+    id, name, category: "fruit", quantity: { value: 48, unit: "fl_oz" as const },
+    reconciliation_required: false, catalogReference: null,
+  });
+  const line = { key: "addition", name: "Lime Juice", kind: "INGREDIENT", quantity: { value: 15, unit: "fl_oz" as const } };
+  const result = matchInventoryStock([juice("k", "Key Lime Juice"), juice("l", "Lime Juice")], line);
+  assert.equal(result.stock?.id, "l");
+  assert.equal(result.warning, null);
+  const keyLime = matchInventoryStock([juice("k", "Key Lime Juice"), juice("l", "Lime Juice")], { ...line, name: "Key Lime Juice" });
+  assert.equal(keyLime.stock?.id, "k");
+  assert.equal(keyLime.warning, null);
+});
 test("Fuse handles typos without crossing category or unit dimensions", () => {
   const stock = item("a", "Fermaid O");
   assert.equal(

@@ -1,6 +1,8 @@
 "use client";
 import { BrewImages } from "./BrewImages";
 import { CoverBanner } from "./RecordCover";
+import { PublicCostSummaryView } from "@/components/account/InventoryCostSummary";
+import { usePublicCostSummary } from "@/hooks/reactQuery/useInventoryCosts";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -275,6 +277,8 @@ export function BrewViewer({
         <SummarySection title={t("recipe", "Recipe")} items={recipeSummary} />
       </div>
 
+      <PublicBrewCost brewId={brew.id} />
+
       <Accordion type="single" defaultValue="stage-panel" collapsible>
         <AccordionItem value="stage-panel">
           <AccordionTrigger>
@@ -548,4 +552,10 @@ function EmptyHistory() {
       {t("brews.history.empty", "No matching history entries.")}
     </div>
   );
+}
+
+/** Owner opt-in totals only; renders nothing when not shared. */
+function PublicBrewCost({ brewId }: { brewId: string }) {
+  const { data } = usePublicCostSummary("brews", brewId);
+  return <PublicCostSummaryView summary={data} />;
 }

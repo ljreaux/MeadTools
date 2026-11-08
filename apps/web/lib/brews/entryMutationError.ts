@@ -1,7 +1,7 @@
 import { EquipmentAssignmentChangedError } from "@/lib/db/equipment";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { InventoryError } from "@meadtools/inventory-domain";
+import { InventoryCostError, InventoryError } from "@meadtools/inventory-domain";
 import { InventoryWriteError } from "@/lib/db/inventory";
 
 /** Allowlisted errors only; never expose arbitrary exception/SQL messages. */
@@ -10,6 +10,11 @@ export function entryMutationError(error: unknown): NextResponse | null {
   if (error instanceof ZodError) return NextResponse.json({
     error: "Invalid inventory request", code: "INVALID_INVENTORY_REQUEST",
   }, { status: 400 });
+  if (error instanceof InventoryCostError) return NextResponse.json({
+    error: error.code === "CURRENCY_REQUIRED" ? "Choose an inventory currency before recording prices"
+      : "Prices must use the inventory currency of this item and account",
+    code: error.code,
+  }, { status: 409 });
   if (error instanceof InventoryError || error instanceof InventoryWriteError) {
     const code = error.code;
     const status = code === "NOT_FOUND" ? 404 : code === "PREMIUM_REQUIRED" ? 403 :

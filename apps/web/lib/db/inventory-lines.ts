@@ -10,6 +10,7 @@ import {
   type InventoryUse,
 } from "@meadtools/inventory-domain";
 import { InventoryWriteError } from "./inventory";
+import { costSnapshot } from "./inventory-costs";
 import type { BrewInventoryItems } from "@meadtools/api-contract/contracts";
 
 type Mutation = {
@@ -157,11 +158,22 @@ export async function applyEntryInventoryLines(
       });
   for (const use of plan.uses) {
     const prior = previous.find((item) => item.line_key === use.line_key);
+    // Keep an unchanged active use's snapshot; re-cost a corrected or restored one.
+    const unchanged =
+      prior &&
+      !prior.reversed_at &&
+      prior.stock_id === use.stock_id &&
+      prior.unit === use.deducted.unit &&
+      toQuantityTicks(prior.deducted.toNumber()) ===
+        toQuantityTicks(use.deducted.value);
     const value = {
       stock_id: use.stock_id,
       deducted: use.deducted.value,
       unit: use.deducted.unit,
       reversed_at: null,
+      ...(unchanged
+        ? {}
+        : costSnapshot(stocks.find((stock) => stock.id === use.stock_id)!)),
     };
     const link = prior
       ? await tx.inventory_consumptions.update({

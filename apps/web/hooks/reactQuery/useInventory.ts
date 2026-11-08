@@ -8,7 +8,7 @@ import { inventoryOverviewResponseSchema, inventoryStockHistoryResponseSchema, i
 import type { CreateInventoryStockRequestBody, UpdateInventoryStockRequestBody } from "@meadtools/api-contract/contracts";
 
 type WithoutOperation<T> = T extends unknown ? Omit<T, "operation_id"> : never;
-export type InventoryCommand = { stock: CreateInventoryStockRequestBody["stock"] } |
+export type InventoryCommand = { stock: CreateInventoryStockRequestBody["stock"]; price?: CreateInventoryStockRequestBody["price"] } |
   { id: string; change: WithoutOperation<UpdateInventoryStockRequestBody> };
 export class InventoryRequestError extends Error {
   constructor(readonly code: string) { super(code); }

@@ -31,6 +31,7 @@ const fixture = {
   notes: "Line 1\nLine 2 — café",
   catalogReference: { catalog: "ingredient" as const, id: "1" },
   reconciliation_required: false,
+  cost: { unit_cost: null, currency: null },
 };
 test("XLSX export/template round trips literal text, quantities, notes and IDs", async () => {
   const file = await exportInventoryFile(

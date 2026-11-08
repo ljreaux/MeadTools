@@ -11,7 +11,8 @@ import {
   Pipette,
   Scale,
   NotebookPen,
-  FileText
+  FileText,
+  Coins
 } from "lucide-react";
 import lodash from "lodash";
 
@@ -27,13 +28,16 @@ function RecipeCalculatorSideBar({
   children,
   cardNumber,
   forceOpen,
-  showConnectedBrews = false
+  showConnectedBrews = false,
+  showCostEstimate = false
 }: {
   goTo: (pageNum: number) => void;
   children: JSX.Element;
   cardNumber: number;
   forceOpen?: boolean;
   showConnectedBrews?: boolean;
+  /** Owner-only page after connected brews. */
+  showCostEstimate?: boolean;
 }) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(forceOpen || false);
@@ -80,6 +84,13 @@ function RecipeCalculatorSideBar({
           label: t("recipes.connectedBrews.title"),
           pageNumber: 8,
           icon: <Beer />
+        }]
+      : []),
+    ...(showConnectedBrews && showCostEstimate
+      ? [{
+          label: t("inventoryCosts.recipeTitle"),
+          pageNumber: 9,
+          icon: <Coins />
         }]
       : [])
   ];

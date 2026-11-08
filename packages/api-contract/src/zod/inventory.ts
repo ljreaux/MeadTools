@@ -13,6 +13,9 @@ import {
   bottleDisplaySizeSchema,
   bottleDisplayMatches,
   bottleSizeLitersSchema,
+  currencyCodeSchema,
+  purchasePriceSchema,
+  catalogReferenceSchema,
 } from "@meadtools/inventory-domain";
 import {
   authenticatedRouteErrorResponseSchema,
@@ -25,11 +28,17 @@ export const inventoryStorageSourceSchema = z.union([
   z.literal("unlocated"), z.object({ location_id: z.string().uuid(), position: z.string().max(200) }).strict(),
 ]);
 
+/** Private owner cost basis: a moving weighted average per stock unit. */
+export const inventoryStockCostSchema = z.object({
+  unit_cost: z.number().nonnegative().nullable(),
+  currency: z.string().length(3).nullable(),
+});
 export const inventoryStockItemSchema = z
   .object({
     ...stockInputSchema.shape,
     id: z.string().uuid(),
     reconciliation_required: z.boolean(),
+    cost: inventoryStockCostSchema.default({ unit_cost: null, currency: null }),
   })
   .refine(
     (stock) =>
@@ -42,14 +51,31 @@ export const inventoryStockItemSchema = z
   );
 export const inventoryOverviewResponseSchema = z.object({
   can_manage: z.boolean(),
+  /** Account currency for new prices; null until the owner chooses one. */
+  currency: z.string().length(3).nullable().default(null),
+  /** Ingredients the owner chose not to cost. */
+  cost_exclusions: z.array(z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    catalog_reference: catalogReferenceSchema.nullable(),
+  })).default([]),
   stock: z.array(inventoryStockItemSchema),
 });
+/** Total paid for a stated package quantity, including any tax/shipping. */
+export const inventoryPurchasePriceSchema = purchasePriceSchema;
 export const createInventoryStockRequestBodySchema = z
   .object({
     operation_id: z.string().uuid(),
     stock: stockInputSchema,
+    price: inventoryPurchasePriceSchema.nullable().default(null),
   })
   .strict();
+export const updateInventoryCurrencyRequestBodySchema = z
+  .object({ currency: currencyCodeSchema })
+  .strict();
+export const inventoryCurrencyResponseSchema = z.object({
+  currency: z.string().length(3),
+});
 export const updateInventoryStockRequestBodySchema = z.discriminatedUnion(
   "action",
   [
@@ -70,8 +96,18 @@ export const updateInventoryStockRequestBodySchema = z.discriminatedUnion(
         note: z.string().max(5000).nullable().default(null),
         expected_balance: quantitySchema,
         storage_source: inventoryStorageSourceSchema.optional(),
+        price: inventoryPurchasePriceSchema.nullable().optional(),
       })
-      .strict().refine((value) => value.storage_source === undefined || value.action === "manual_use", { message: "A storage source is only used for manual use" }),
+      .strict().refine((value) => value.storage_source === undefined || value.action === "manual_use", { message: "A storage source is only used for manual use" })
+      .refine((value) => value.price === undefined || value.action === "receipt", { message: "A price is only recorded with a receipt" }),
+    z
+      .object({
+        action: z.literal("set_unit_cost"),
+        operation_id: z.string().uuid(),
+        price: inventoryPurchasePriceSchema,
+        note: z.string().max(5000).nullable().default(null),
+      })
+      .strict(),
     z
       .object({
         action: z.literal("reconcile"),
@@ -121,6 +157,18 @@ export const inventoryStockHistoryResponseSchema = z.object({
     }),
   ),
   has_more: z.boolean(),
+  /** Latest price history; private to the owner. */
+  cost_events: z.array(z.object({
+    id: z.string().uuid(),
+    kind: z.enum(["receipt", "valuation"]),
+    received: quantitySchema.nullable(),
+    price: inventoryPurchasePriceSchema.nullable(),
+    applied_unit_cost: z.number().nonnegative().nullable(),
+    before: inventoryStockCostSchema,
+    after: inventoryStockCostSchema,
+    note: z.string().nullable(),
+    created_at: z.string().datetime(),
+  })).default([]),
 });
 export const inventoryStockErrorResponseSchema =
   brewInventoryErrorResponseSchema;

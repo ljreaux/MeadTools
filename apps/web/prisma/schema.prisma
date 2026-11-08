@@ -22,6 +22,8 @@ model brews {
   sb_alert_sent          Boolean?  @default(false)
   fg_alert_sent          Boolean?  @default(false)
   public                 Boolean   @default(false)
+  /// Owner opt-in: public views may show cost totals, never prices or lines.
+  share_cost_summary     Boolean   @default(false)
 
   cover_image_id String? @db.Uuid
   cover_image brew_images? @relation("BrewCover", fields: [cover_image_id], references: [id], onDelete: SetNull)
@@ -139,6 +141,8 @@ model recipes {
   version Int   @default(1)
 
   private               Boolean   @default(false)
+  /// Owner opt-in: public views may show cost totals, never prices or lines.
+  share_cost_summary    Boolean   @default(false)
   lastActivityEmailAt   DateTime? @db.Timestamptz(6)
   activityEmailsEnabled Boolean   @default(false)
 
@@ -171,6 +175,8 @@ model users {
   product_updates_opt_in Boolean?
   /// Claimed before SMTP to keep automated sends at most once per release.
   product_updates_last_emailed_date DateTime? @db.Date
+  /// ISO 4217 code for new inventory prices. No conversion between currencies.
+  inventory_currency String? @db.Char(3)
 
   brew_images              brew_images[]
   brews                    brews[]
@@ -203,6 +209,7 @@ model users {
   inventory_labels       inventory_labels[]
   inventory_locations    inventory_locations[]
   inventory_operations   inventory_operations[]
+  inventory_cost_exclusions inventory_cost_exclusions[]
   equipment              equipment[]
 }
 
@@ -226,6 +233,9 @@ model inventory_stock {
   bottle_size_value Decimal? @db.Decimal(16, 6)
   bottle_size_unit inventory_quantity_unit?
   storage_version Int @default(0)
+  /// Moving weighted average per stock unit; null means unknown, never zero.
+  unit_cost       Decimal? @db.Decimal(24, 10)
+  cost_currency   String? @db.Char(3)
 
   user         users @relation(fields: [user_id], references: [id], onDelete: Restrict)
   mead         inventory_meads? @relation(fields: [mead_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
@@ -234,6 +244,7 @@ model inventory_stock {
   adjustments  inventory_adjustments[]
   allocations inventory_allocations[]
   storage_events inventory_storage_events[]
+  cost_events inventory_cost_events[]
   labels inventory_label_links[]
 
   // The compound key enforces ownership and preserves the historical stock unit.
@@ -276,6 +287,7 @@ model inventory_operations {
   user        users @relation(fields: [user_id], references: [id], onDelete: Restrict)
   adjustments inventory_adjustments[]
   storage_events inventory_storage_events[]
+  cost_events inventory_cost_events[]
 
   @@unique([user_id, operation_key])
   @@unique([id, user_id])
@@ -368,6 +380,14 @@ model inventory_consumptions {
   reversed_at    DateTime? @db.Timestamptz(6)
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  /// Stock average snapshotted when deducted; only an explicit recalculation
+  /// or a correction of this use replaces it.
+  unit_cost      Decimal? @db.Decimal(24, 10)
+  cost_currency  String? @db.Char(3)
+  costed_at      DateTime? @db.Timestamptz(6)
+  /// Owner choice for this use only (e.g. reused bottles in one brew). The
+  /// snapshot is kept, so counting the use again restores its cost.
+  cost_excluded  Boolean @default(false)
 
   stock       inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
   adjustments inventory_adjustments[]
@@ -404,6 +424,56 @@ model inventory_adjustments {
   @@unique([operation_id, stock_id])
   @@index([user_id, stock_id, created_at])
   @@index([consumption_id])
+}
+
+/// Append-only price history explaining each stock average. Private to the
+/// owner; never exposed through public recipe or brew views.
+model inventory_cost_events {
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           Int
+  stock_id          String @db.Uuid
+  unit              inventory_quantity_unit
+  operation_id      String @db.Uuid
+  /// receipt (priced or unpriced) or valuation (explicit current unit cost).
+  kind              String @db.VarChar(32)
+  balance_before    Decimal @db.Decimal(16, 6)
+  received          Decimal? @db.Decimal(16, 6)
+  price_amount      Decimal? @db.Decimal(16, 4)
+  price_currency    String? @db.Char(3)
+  price_per_value   Decimal? @db.Decimal(16, 6)
+  price_per_unit    inventory_quantity_unit?
+  applied_unit_cost Decimal? @db.Decimal(24, 10)
+  unit_cost_before  Decimal? @db.Decimal(24, 10)
+  currency_before   String? @db.Char(3)
+  unit_cost_after   Decimal? @db.Decimal(24, 10)
+  currency_after    String? @db.Char(3)
+  note              String? @db.VarChar(5000)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  stock     inventory_stock @relation(fields: [stock_id, user_id, unit], references: [id, user_id, unit], onDelete: Restrict, onUpdate: Restrict)
+  operation inventory_operations @relation(fields: [operation_id, user_id], references: [id, user_id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([operation_id, stock_id])
+  @@index([user_id, stock_id, created_at])
+}
+
+/// Account-wide "never track cost" choices for ingredients (e.g. tap water),
+/// matched by ingredient identity, never by stock item. Applied when costs are
+/// read, so they win over known prices and cover earlier uses; snapshots stay.
+model inventory_cost_exclusions {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    Int
+  /// Display name as chosen; matching uses name_key or the catalog identity.
+  name       String @db.VarChar(200)
+  name_key   String @db.VarChar(200)
+  catalog    String? @db.VarChar(32)
+  catalog_id String? @db.VarChar(200)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
+
+  @@unique([user_id, name_key])
+  @@index([user_id])
 }
 
 model equipment {

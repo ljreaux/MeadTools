@@ -2,7 +2,7 @@
 
 Generated from `apps/web/prisma/schema.prisma`; regenerate with `npm run db:erd`. Do not edit generated files by hand.
 
-**68 tables · 574 columns · 81 foreign keys · 19 enums.**
+**70 tables · 609 columns · 84 foreign keys · 19 enums.**
 
 Open [the interactive viewer](./erd.html) locally in your browser for search, zoom, pan, and focused areas. It works offline and contains no account or database data.
 
@@ -29,9 +29,9 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 ## Schema and migration fingerprints
 
-Schema SHA-256: `9f93036428c952f8e3a78bfa554c76ba43b9e3bc0a83a98eb23614ef35d1418e`
+Schema SHA-256: `e3103448e8b7e4fa7a5ea257adc29cf0053dd298376a6f2dd79c0fd930989529`
 
-Migration-set SHA-256: `e73390fe6ed173d60c06387e6c3c98361d1afbfba1d12d1c44fff4f94c8fd980`
+Migration-set SHA-256: `8ef4414ba87a53449e16efcc66a16c462c978de345c2b421f8bbe0ea07d15d13`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 
@@ -70,6 +70,8 @@ Both fingerprints are checked by `npm run db:erd:check`; adding or editing a mig
 - [inventory_allocations](#table-inventory_allocations) — Inventory & equipment
 - [inventory_bottlings](#table-inventory_bottlings) — Inventory & equipment
 - [inventory_consumptions](#table-inventory_consumptions) — Inventory & equipment
+- [inventory_cost_events](#table-inventory_cost_events) — Inventory & equipment
+- [inventory_cost_exclusions](#table-inventory_cost_exclusions) — Inventory & equipment
 - [inventory_label_links](#table-inventory_label_links) — Inventory & equipment
 - [inventory_labels](#table-inventory_labels) — Inventory & equipment
 - [inventory_locations](#table-inventory_locations) — Inventory & equipment
@@ -275,6 +277,7 @@ This model contains row level security and requires additional setup for migrati
 | `sb_alert_sent` | `Boolean?` |  | false |
 | `fg_alert_sent` | `Boolean?` |  | false |
 | `public` | `Boolean` |  | false |
+| `share_cost_summary` | `Boolean` |  | false |
 | `cover_image_id` | `Uuid?` | FK |  |
 | `stage` | `brew_stage` ([enum](#enum-brew_stage)) |  | &quot;PLANNED&quot; |
 | `batch_number` | `Int?` |  |  |
@@ -1097,6 +1100,10 @@ Retain the physical-use identity and deduction after entry/brew deletion.\nBrew 
 | `reversed_at` | `Timestamptz(6)?` |  |  |
 | `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
 | `updated_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} @updatedAt |
+| `unit_cost` | `Decimal(24,10)?` |  |  |
+| `cost_currency` | `Char(3)?` |  |  |
+| `costed_at` | `Timestamptz(6)?` |  |  |
+| `cost_excluded` | `Boolean` |  | false |
 
 Primary key: `id`.
 
@@ -1110,6 +1117,77 @@ Declared table indexes/constraints:
 Foreign keys:
 
 - (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
+
+<a id="table-inventory_cost_events"></a>
+
+### inventory_cost_events
+
+Prisma model: `inventory_cost_events`. Area: Inventory & equipment.
+
+Append-only price history explaining each stock average. Private to the\nowner; never exposed through public recipe or brew views.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK |  |
+| `stock_id` | `Uuid` | FK, UK |  |
+| `unit` | `inventory_quantity_unit` ([enum](#enum-inventory_quantity_unit)) | FK |  |
+| `operation_id` | `Uuid` | FK, UK |  |
+| `kind` | `VarChar(32)` |  |  |
+| `balance_before` | `Decimal(16,6)` |  |  |
+| `received` | `Decimal(16,6)?` |  |  |
+| `price_amount` | `Decimal(16,4)?` |  |  |
+| `price_currency` | `Char(3)?` |  |  |
+| `price_per_value` | `Decimal(16,6)?` |  |  |
+| `price_per_unit` | `inventory_quantity_unit?` ([enum](#enum-inventory_quantity_unit)) |  |  |
+| `applied_unit_cost` | `Decimal(24,10)?` |  |  |
+| `unit_cost_before` | `Decimal(24,10)?` |  |  |
+| `currency_before` | `Char(3)?` |  |  |
+| `unit_cost_after` | `Decimal(24,10)?` |  |  |
+| `currency_after` | `Char(3)?` |  |  |
+| `note` | `VarChar(5000)?` |  |  |
+| `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([operation_id, stock_id])`
+- `@@index([user_id, stock_id, created_at])`
+
+Foreign keys:
+
+- (`operation_id`, `user_id`) → `inventory_operations` (`id`, `user_id`); delete **Restrict**, update **Restrict**.
+- (`stock_id`, `user_id`, `unit`) → `inventory_stock` (`id`, `user_id`, `unit`); delete **Restrict**, update **Restrict**.
+
+<a id="table-inventory_cost_exclusions"></a>
+
+### inventory_cost_exclusions
+
+Prisma model: `inventory_cost_exclusions`. Area: Inventory & equipment.
+
+Account-wide "never track cost" choices for ingredients (e.g. tap water),\nmatched by ingredient identity, never by stock item. Applied when costs are\nread, so they win over known prices and cover earlier uses; snapshots stay.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK | {&quot;name&quot;:&quot;dbgenerated&quot;,&quot;args&quot;:[&quot;gen_random_uuid()&quot;]} |
+| `user_id` | `Int` | FK, UK |  |
+| `name` | `VarChar(200)` |  |  |
+| `name_key` | `VarChar(200)` | UK |  |
+| `catalog` | `VarChar(32)?` |  |  |
+| `catalog_id` | `VarChar(200)?` |  |  |
+| `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@unique([user_id, name_key])`
+- `@@index([user_id])`
+
+Foreign keys:
+
+- (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
 
 <a id="table-inventory_label_links"></a>
 
@@ -1304,6 +1382,8 @@ Archive referenced stock; preserve quantities and audit records after expiry.
 | `bottle_size_value` | `Decimal(16,6)?` |  |  |
 | `bottle_size_unit` | `inventory_quantity_unit?` ([enum](#enum-inventory_quantity_unit)) |  |  |
 | `storage_version` | `Int` |  | 0 |
+| `unit_cost` | `Decimal(24,10)?` |  |  |
+| `cost_currency` | `Char(3)?` |  |  |
 
 Primary key: `id`.
 
@@ -1909,6 +1989,7 @@ Prisma model: `recipes`. Area: Recipes, catalog & community.
 | `dataV2` | `Json?` |  |  |
 | `version` | `Int` |  | 1 |
 | `private` | `Boolean` |  | false |
+| `share_cost_summary` | `Boolean` |  | false |
 | `lastActivityEmailAt` | `Timestamptz(6)?` |  |  |
 | `activityEmailsEnabled` | `Boolean` |  | false |
 | `cover_image_id` | `Uuid?` | FK |  |
@@ -1979,6 +2060,7 @@ Prisma model: `users`. Area: Identity, authentication & MCP.
 | `active` | `Boolean` |  | true |
 | `product_updates_opt_in` | `Boolean?` |  |  |
 | `product_updates_last_emailed_date` | `Date?` |  |  |
+| `inventory_currency` | `Char(3)?` |  |  |
 
 Primary key: `id`.
 

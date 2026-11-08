@@ -431,6 +431,8 @@ async function clearDb() {
   await prisma.inventory_labels.deleteMany();
   await prisma.inventory_locations.deleteMany();
   await prisma.inventory_adjustments.deleteMany();
+  await prisma.inventory_cost_events.deleteMany();
+  await prisma.inventory_cost_exclusions.deleteMany();
   await prisma.inventory_bottlings.deleteMany();
   await prisma.inventory_consumptions.deleteMany();
   await prisma.inventory_operations.deleteMany();
@@ -1002,10 +1004,11 @@ async function seedCompletedKeyLimePieEntries(brew: {
           kind: "INGREDIENT",
           source: "recipe_ingredient",
           name: "Key Lime Juice",
-          amount: 2.0972,
-          unit: "lb",
+          // Juices are logged by volume, matching the recipe's volume basis.
+          amount: 0.25,
+          unit: "gal",
           recipeIngredientId: "gbl0yyixla",
-          meta: { stage: "SECONDARY" },
+          meta: { stage: "SECONDARY", basis: "volume", volumeUnit: "gal", volumeAmount: 0.25 },
         } as Prisma.JsonObject,
       },
       {

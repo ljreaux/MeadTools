@@ -1,5 +1,27 @@
 # Shared API contract
 
+Ingredient costing (#513) adds authenticated `PUT /account/inventory/currency`,
+`GET`/`POST /brews/{brew_id}/costs` and `GET`/`PATCH /recipes/{id}/costs`.
+Stock creation and receipts accept an optional price: the total paid (tax and
+shipping included) for a stated package quantity in the single account
+currency. It updates a moving weighted-average unit cost; an unpriced receipt
+makes the average unknown, and `set_unit_cost` values current stock
+explicitly. Uses and counts never change the average. Brew uses snapshot the
+average when deducted; corrections re-snapshot, and only the explicit
+`recalculate` action rewrites unchanged snapshots. Recipe estimates never
+deduct stock. Missing prices are never zero: unpriced, unmatched, ambiguous,
+incompatible-unit or mixed-currency lines make totals incomplete, unless the
+owner excludes it. `PATCH /account/inventory/cost-exclusions` excludes an
+ingredient everywhere (for example tap water), matched by exact normalized line
+name or catalog identity, never by stock item. The brew `exclude_use` action
+excludes one recorded use in that brew only (for example reused bottles).
+Excluded lines are reported as `excluded` with an `exclusion` of `ingredient`
+or `use`, and are never costed, even when priced. Both apply when costs are
+read, so they also cover earlier uses; undoing one restores saved snapshots. Stock items
+carry a private `cost`, and history returns the latest 50 price events. With
+`public=true`, cost reads return only the owner's opt-in totals for a publicly
+readable record; lines, stock, prices and history are never public.
+
 Finished-mead inventory adds authenticated `GET`/`POST`
 `/account/inventory/meads` and `GET`/`PATCH`
 `/account/inventory/meads/{mead_id}`. Entries are user-defined groups containing

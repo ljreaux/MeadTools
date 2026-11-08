@@ -112,6 +112,19 @@ export function matchInventoryStock<T extends MatchStock>(
             (product) => product.id === line.catalogReference?.id,
           )?.name
         : undefined;
+  // An exact name is a stronger identity than a fuzzy score: "Lime Juice"
+  // must not tie with "Key Lime Juice" just because one contains the other.
+  const target = matchName(productName ?? line.name);
+  const exact = (target ? records.filter((record) => record.name === target) : [])
+    .sort((a, b) => a.item.name.localeCompare(b.item.name) || a.item.id.localeCompare(b.item.id));
+  if (exact.length)
+    return {
+      choices,
+      // Ties keep the same deterministic default as fuzzy ties, with a warning.
+      stock: exact[0].item,
+      score: 0,
+      warning: exact.length > 1 ? ("ambiguous" as const) : null,
+    };
   const result = new Fuse(records, {
     keys: ["name"],
     includeScore: true,

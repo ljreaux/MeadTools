@@ -9,6 +9,7 @@ import type {
 import prisma from "@/lib/prisma";
 import { stockReconciliation } from "./inventory-reconciliation";
 import { getPremiumAccessStatus } from "./premium-access";
+import { costResponse, exclusionResponse } from "./inventory-costs";
 
 export function stockItem(row: inventory_stock) {
   return inventoryStockItemSchema.parse({
@@ -22,6 +23,7 @@ export function stockItem(row: inventory_stock) {
     quantity: { value: row.quantity.toNumber(), unit: row.unit },
     notes: row.notes,
     reconciliation_required: row.reconciliation_required,
+    cost: costResponse(row.unit_cost, row.cost_currency),
   });
 }
 export function createInventoryAccountReader(database: PrismaClient = prisma) {
@@ -32,11 +34,20 @@ export function createInventoryAccountReader(database: PrismaClient = prisma) {
   }
   async function overview(userId: number): Promise<InventoryOverviewResponse> {
     const status = await access(userId);
-    const rows = await database.inventory_stock.findMany({
-      where: { user_id: userId, archived_at: null, category: { not: "mead" } },
-      orderBy: [{ category: "asc" }, { name: "asc" }],
-    });
-    return { can_manage: status.premiumEnabled, stock: rows.map(stockItem) };
+    const [rows, owner, exclusions] = await Promise.all([
+      database.inventory_stock.findMany({
+        where: { user_id: userId, archived_at: null, category: { not: "mead" } },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
+      }),
+      database.users.findUnique({ where: { id: userId }, select: { inventory_currency: true } }),
+      database.inventory_cost_exclusions.findMany({ where: { user_id: userId }, orderBy: [{ name: "asc" }, { id: "asc" }] }),
+    ]);
+    return {
+      can_manage: status.premiumEnabled,
+      currency: owner?.inventory_currency ?? null,
+      cost_exclusions: exclusions.map(exclusionResponse),
+      stock: rows.map(stockItem),
+    };
   }
   async function history(
     userId: number,
@@ -54,6 +65,12 @@ export function createInventoryAccountReader(database: PrismaClient = prisma) {
           orderBy: [{ created_at: "desc" }, { id: "desc" }],
           take: 101,
         });
+        const costEvents = await tx.inventory_cost_events.findMany({
+          where: { user_id: userId, stock_id: stockId },
+          orderBy: [{ created_at: "desc" }, { id: "desc" }],
+          take: 50,
+        });
+
         return {
           ...(row.reconciliation_required && status.premiumEnabled
             ? { reconciliation: await stockReconciliation(tx, userId, row) }
@@ -70,6 +87,26 @@ export function createInventoryAccountReader(database: PrismaClient = prisma) {
             },
             note: adjustment.note,
             created_at: adjustment.created_at.toISOString(),
+          })),
+          cost_events: costEvents.map((event) => ({
+            id: event.id,
+            kind: event.kind as "receipt" | "valuation",
+            received: event.received
+              ? { value: event.received.toNumber(), unit: event.unit }
+              : null,
+            price:
+              event.price_amount && event.price_currency && event.price_per_value && event.price_per_unit
+                ? {
+                    amount: event.price_amount.toNumber(),
+                    currency: event.price_currency,
+                    per: { value: event.price_per_value.toNumber(), unit: event.price_per_unit },
+                  }
+                : null,
+            applied_unit_cost: event.applied_unit_cost?.toNumber() ?? null,
+            before: costResponse(event.unit_cost_before, event.currency_before),
+            after: costResponse(event.unit_cost_after, event.currency_after),
+            note: event.note,
+            created_at: event.created_at.toISOString(),
           })),
         };
       },

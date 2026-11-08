@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "aff8136645b2e1d852ce8906a5577849339be6e5598066784107a36a96d594ea";
+  "eb12c4bbeefd9b986aa9a1231b1867667f5a8ee259fc293b1cc92ea648b5fed5";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -158,6 +158,11 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/account/inventory/meads/{mead_id}"];
   delete pathsWithoutApprovedAdditions["/account/inventory/organization"];
   delete pathsWithoutApprovedAdditions["/account/inventory/storage/{stock_id}"];
+  // Ingredient costing (#513): private prices/estimates and opt-in public totals.
+  delete pathsWithoutApprovedAdditions["/account/inventory/currency"];
+  delete pathsWithoutApprovedAdditions["/account/inventory/cost-exclusions"];
+  delete pathsWithoutApprovedAdditions["/brews/{brew_id}/costs"];
+  delete pathsWithoutApprovedAdditions["/recipes/{id}/costs"];
   delete pathsWithoutApprovedAdditions["/account/equipment"];
   delete pathsWithoutApprovedAdditions["/account/equipment/{equipment_id}"];
   delete pathsWithoutApprovedAdditions["/chat/context"];
