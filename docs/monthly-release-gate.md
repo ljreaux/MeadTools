@@ -180,8 +180,10 @@ with a concrete explanation, exact head/base lines, and a Mobile build decision.
 Dispatch with `mode=hotfix`, PR number, and exact head SHA. Feature changes do
 not qualify. The `bug-fix-only` and `hotfix-ready` combination skips the Mobile
 quality job for an urgent fix that does not release Mobile; Web/API quality and
-Vercel checks remain required. Do not add `skip-web-check` or `skip-mobile-check`
-to an armed hotfix. Record the hotfix in the next monthly summary without duplicate
+Vercel checks remain required. `policy-ready` and `publication-ready` PRs skip
+the Mobile quality job the same way, because the trusted gate already limits
+their diffs to release-policy files or dated notes and forbids a Mobile build.
+Do not add `skip-web-check` or `skip-mobile-check` to an armed hotfix. Record the hotfix in the next monthly summary without duplicate
 email or GitHub announcements.
 
 The release skill is a coordinator. It does not bypass required status checks,
