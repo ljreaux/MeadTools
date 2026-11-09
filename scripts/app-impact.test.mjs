@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  addsDatedReleaseNoteEntry,
   classifyAppImpact,
   hasWeblateTranslationBatch,
   hasSkipWebCheckLabel,
@@ -135,6 +136,96 @@ test("recognizes a Weblate batch anywhere in a multi-commit push", () => {
       },
     ]),
     true,
+  );
+});
+
+const publishedNotes = {
+  releaseNotes: {
+    title: "Release notes",
+    entries: {
+      "2026-11-02": { title: "November 2026", summary: "Earlier release." },
+    },
+  },
+};
+const publicationNotes = {
+  releaseNotes: {
+    ...publishedNotes.releaseNotes,
+    entries: {
+      ...publishedNotes.releaseNotes.entries,
+      "2026-11-09": { title: "November 9, 2026", summary: "Launch notes." },
+    },
+  },
+};
+const publicationPaths = [
+  "packages/i18n/locales/en/default.json",
+  "docs/releases/2026-11.md",
+];
+
+test("recognizes only an added dated release-note entry", () => {
+  assert.equal(addsDatedReleaseNoteEntry(publishedNotes, publicationNotes), true);
+  assert.equal(addsDatedReleaseNoteEntry(null, publicationNotes), true);
+  assert.equal(addsDatedReleaseNoteEntry(publishedNotes, publishedNotes), false);
+  assert.equal(
+    addsDatedReleaseNoteEntry(publishedNotes, {
+      releaseNotes: {
+        ...publishedNotes.releaseNotes,
+        title: "Product release notes",
+        entries: {
+          "2026-11-02": { title: "November 2026", summary: "Corrected." },
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    addsDatedReleaseNoteEntry(publishedNotes, {
+      releaseNotes: {
+        ...publishedNotes.releaseNotes,
+        entries: { ...publishedNotes.releaseNotes.entries, draft: {} },
+      },
+    }),
+    false,
+  );
+});
+
+test("an English release-note publication on main builds Web", () => {
+  assert.deepEqual(
+    classifyAppImpact(publicationPaths, { publishesReleaseNotes: true }),
+    { web: true, mobile: false, desktop: false },
+  );
+});
+
+test("the same release-note publication on preview still waits for Weblate", () => {
+  assert.deepEqual(
+    classifyAppImpact(publicationPaths, {
+      deferForWeblate: true,
+      publishesReleaseNotes: true,
+    }),
+    { web: false, mobile: false, desktop: false },
+  );
+});
+
+test("an ordinary English string change on main does not build", () => {
+  assert.deepEqual(
+    classifyAppImpact(["packages/i18n/locales/en/default.json"]),
+    { web: false, mobile: false, desktop: false },
+  );
+  // A dated entry elsewhere in the range does not count without the notes file.
+  assert.deepEqual(
+    classifyAppImpact(["packages/i18n/locales/en/YeastTable.json"], {
+      publishesReleaseNotes: true,
+    }),
+    { web: false, mobile: false, desktop: false },
+  );
+});
+
+test("German changes still build every app alongside a publication", () => {
+  assert.deepEqual(
+    classifyAppImpact(
+      [...publicationPaths, "packages/i18n/locales/de/default.json"],
+      { publishesReleaseNotes: true },
+    ),
+    { web: true, mobile: true, desktop: true },
   );
 });
 

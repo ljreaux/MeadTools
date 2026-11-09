@@ -27,6 +27,13 @@ const ENGLISH_TRANSLATION_PATH = "packages/i18n/locales/en/";
 const GERMAN_TRANSLATION_PATH = "packages/i18n/locales/de/";
 const WEBLATE_BATCH_MARKER = "Translation-Batch: weblate-auto";
 
+// Dated release notes are published to production after verification, by a
+// reviewed English-only publication PR to main (see the publication gate in
+// monthly-release-window.mjs). Weblate only follows preview, so such a push
+// must build Web itself; only Web renders release notes.
+const RELEASE_NOTES_PATH = "packages/i18n/locales/en/default.json";
+const DATED_RELEASE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
 const LOCKFILE = "package-lock.json";
 
 // This deliberate, checked-in switch pauses all application builds while the
@@ -72,6 +79,7 @@ export function classifyAppImpact(
     buildsPaused = false,
     deferForWeblate = false,
     isWeblateTranslationBatch = false,
+    publishesReleaseNotes = false,
   } = {},
 ) {
   if (buildsPaused) {
@@ -111,6 +119,10 @@ export function classifyAppImpact(
     TARGETS.map((target) => [target, isTargetAffected(target, changedPaths)]),
   );
 
+  if (publishesReleaseNotes && changedPaths.includes(RELEASE_NOTES_PATH)) {
+    impact.web = true;
+  }
+
   if (changedPaths.includes(LOCKFILE)) {
     const lockfileHasManifestContext = changedPaths.some(
       (changedPath) =>
@@ -148,6 +160,16 @@ export function isWeblateTranslationBatch(
     sourceChangedPaths.some((changedPath) =>
       changedPath.startsWith(ENGLISH_TRANSLATION_PATH),
     )
+  );
+}
+
+// True when the English release notes gain a dated entry. Edits to existing
+// entries or to other English strings do not count.
+export function addsDatedReleaseNoteEntry(beforeNotes, afterNotes) {
+  const beforeEntries = beforeNotes?.releaseNotes?.entries ?? {};
+  const afterEntries = afterNotes?.releaseNotes?.entries ?? {};
+  return Object.keys(afterEntries).some(
+    (key) => DATED_RELEASE_KEY.test(key) && !Object.hasOwn(beforeEntries, key),
   );
 }
 
@@ -258,6 +280,37 @@ function hasWeblateTranslationBatchInRange(base, head) {
   return hasWeblateTranslationBatch(batches);
 }
 
+function readJsonAtRevision(revision, file) {
+  const result = spawnSync("git", ["show", `${revision}:${file}`], {
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    // A missing file means there was no content at that revision.
+    if (/does not exist|exists on disk, but not in/.test(result.stderr)) {
+      return null;
+    }
+    throw new Error(result.stderr.trim() || `Unable to read ${file}.`);
+  }
+  return JSON.parse(result.stdout);
+}
+
+function publishesReleaseNotesInRange(base, head, changedPaths) {
+  if (!changedPaths.includes(RELEASE_NOTES_PATH)) return false;
+  return addsDatedReleaseNoteEntry(
+    readJsonAtRevision(base, RELEASE_NOTES_PATH),
+    readJsonAtRevision(head, RELEASE_NOTES_PATH),
+  );
+}
+
+function isProductionBranch() {
+  return (
+    process.env.APP_IMPACT_PRODUCTION_BRANCH === "true" ||
+    process.env.GITHUB_REF === "refs/heads/main" ||
+    process.env.VERCEL_GIT_COMMIT_REF === "main"
+  );
+}
+
 function isPreviewBranch() {
   return (
     process.env.APP_IMPACT_DEFER_FOR_WEBLATE === "true" ||
@@ -287,6 +340,10 @@ async function run() {
         buildsPaused: existsSync(MIGRATION_BUILD_PAUSE_MARKER),
         deferForWeblate: isPreviewBranch(),
         isWeblateTranslationBatch: hasWeblateTranslationBatchInRange(base, head),
+        publishesReleaseNotes:
+          isProductionBranch() &&
+          !isPreviewBranch() &&
+          publishesReleaseNotesInRange(base, head, changedPaths),
       });
     }
 
