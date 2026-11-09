@@ -532,6 +532,29 @@
             ]
           }
         }
+      },
+      "2026-11-09": {
+        "title": "MeadTools Premium and general chat launch",
+        "summary": "MeadTools Premium subscriptions are now open, and the hosted MeadTools assistant is available to all active accounts.",
+        "products": {
+          "web": {
+            "items": [
+              "Premium is $5 per month and includes ingredient inventory with brew-linked stock deductions, equipment management, brew and timeline photos, and downloadable brew QR codes.",
+              "Photo storage includes 250 MiB per account and up to 20 images per brew. Existing free recipe-building, calculators, brew tracking, and sharing remain available.",
+              "Scheduled photo cleanup removes queued deleted and abandoned image objects and releases their reserved storage after cleanup succeeds."
+            ]
+          },
+          "chat": {
+            "items": [
+              "Hosted chat is available to eligible active accounts without requiring premium. Prompts use your credit balance; premium includes 1,000 hosted-chat prompt credits per paid month."
+            ]
+          },
+          "api": {
+            "items": [
+              "Premium includes MCP access for compatible AI clients, with optional consent for private account reads. MCP tools do not spend hosted-chat prompt credits; your AI provider may charge separately."
+            ]
+          }
+        }
       }
     }
   },
