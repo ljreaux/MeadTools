@@ -2382,6 +2382,29 @@
                         ]
                     }
                 }
+            },
+            "2026-11-09": {
+                "title": "Start von MeadTools Premium und des allgemeinen Chats",
+                "summary": "MeadTools Premium-Abonnements sind jetzt verfügbar, und der gehostete MeadTools-Assistent steht allen aktiven Konten zur Verfügung.",
+                "products": {
+                    "web": {
+                        "items": [
+                            "Premium kostet $5 pro Monat und umfasst eine Bestandsverwaltung für Zutaten mit ansatzgebundenen Lagerabzügen, Ausrüstungsverwaltung, Fotos vom Ansatz und der Zeitleiste sowie herunterladbare QR-Codes für den Ansatz.",
+                            "Der Foto-Speicher umfasst 250 MiB pro Konto und bis zu 20 Bilder pro Ansatz. Die bestehenden kostenlosen Funktionen zum Erstellen von Rezepten, die Berechnungstools, die Ansatzverfolgung und das Teilen bleiben verfügbar.",
+                            "Geplante Foto-Bereinigung entfernt in der Warteschlange befindliche, gelöschte und verwaiste Bildobjekte und gibt deren reservierten Speicher nach erfolgreicher Bereinigung frei."
+                        ]
+                    },
+                    "chat": {
+                        "items": [
+                            "Der gehostete Chat steht berechtigten aktiven Konten ohne Premium zur Verfügung. Anfragen nutzen dein Guthaben; Premium enthält 1.000 Gutschriften für gehostete-Chat-Anfragen pro bezahltem Monat."
+                        ]
+                    },
+                    "api": {
+                        "items": [
+                            "Premium beinhaltet MCP-Zugriff für kompatible KI-Clients, mit optionaler Zustimmung für das Lesen privater Kontodaten. MCP-Tools verbrauchen keine Prompt-Guthaben des gehosteten Chats; dein KI-Anbieter kann separat Gebühren erheben."
+                        ]
+                    }
+                }
             }
         }
     },
