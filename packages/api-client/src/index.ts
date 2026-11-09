@@ -1,6 +1,9 @@
 import {
   accountInfoResponseSchema,
   brewResponseSchema,
+  brewInventoryContextResponseSchema,
+  finishedMeadOverviewResponseSchema,
+  inventoryOrganizationResponseSchema,
   brewsResponseSchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
@@ -20,6 +23,9 @@ import {
   type AccountRecipeResponse,
   type BrewListItemResponse,
   type BrewResponse,
+  type BrewInventoryContextResponse,
+  type FinishedMeadOverviewResponse,
+  type InventoryOrganizationResponse,
   type CreateBrewEntryRequestBody,
   type DeleteBrewEntryRequestBody,
   type DeleteBrewEntrySuccessResponse,
@@ -327,6 +333,27 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
           body
         );
       }
+      return parsed.data;
+    },
+
+    async getBrewInventory(brewId: string): Promise<BrewInventoryContextResponse> {
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/inventory`, { method: "GET" });
+      const parsed = brewInventoryContextResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Brew inventory does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    async getFinishedMeads(): Promise<FinishedMeadOverviewResponse> {
+      const body = await request("/api/account/inventory/meads", { method: "GET" });
+      const parsed = finishedMeadOverviewResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Finished meads do not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    async getInventoryOrganization(): Promise<InventoryOrganizationResponse> {
+      const body = await request("/api/account/inventory/organization", { method: "GET" });
+      const parsed = inventoryOrganizationResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Inventory organization does not match the MeadTools API contract", body);
       return parsed.data;
     },
 

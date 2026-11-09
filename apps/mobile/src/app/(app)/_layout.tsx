@@ -26,6 +26,10 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="bottling"
+        options={{ presentation: "modal", title: t("mobileBrews.bottling.action") }}
+      />
+      <Stack.Screen
         name="change-stage"
         options={{
           presentation: "modal",

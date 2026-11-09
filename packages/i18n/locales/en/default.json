@@ -1912,6 +1912,28 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "bottling": {
+      "action": "Record bottling",
+      "offline": "Connect to the internet to record, correct, or remove bottling.",
+      "bottles": "Bottle rows",
+      "bottleCount": "Bottle count for row {{index}}",
+      "size": "Bottle size",
+      "custom": "Custom",
+      "customSize": "Custom bottle size",
+      "addBottle": "Add bottle row",
+      "removeRow": "Remove row",
+      "closures": "Closures",
+      "closureName": "Closure name for row {{index}}",
+      "closureCount": "Closure count for row {{index}}",
+      "addClosure": "Add closure",
+      "volume": "Packaged volume",
+      "volumeHint": "Leave blank to use the total volume from the bottle rows.",
+      "position": "Storage position (optional)",
+      "invalid": "Enter whole positive counts, valid sizes and a packaged volume.",
+      "untracked": "Packaging will be saved without inventory tracking. Inventory tracking requires Premium.",
+      "confirmRemoval": "Confirm bottling removal",
+      "retrySame": "The save could not be confirmed. Retry to check the same bottling."
+    },
     "plannedAdditions": {
       "title": "Planned additions",
       "logged": "Logged",

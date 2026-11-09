@@ -209,7 +209,11 @@ export default function BrewScreen() {
       <Pressable
         accessibilityHint={t("mobileBrews.editEntry.openHint")}
         accessibilityRole="button"
-        onPress={() => router.push({ pathname: "/edit-entry", params: { brewId: brew.id, entryId: item.id } })}
+        onPress={() => {
+          const params = { brewId: brew.id, entryId: item.id };
+          if (item.type === "PACKAGING") router.push({ pathname: "/bottling", params });
+          else router.push({ pathname: "/edit-entry", params });
+        }}
         style={({ pressed }) => [styles.timelineRow, pressed && styles.pressed]}
       >
         {content}
@@ -339,6 +343,15 @@ export default function BrewScreen() {
             style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
           >
             <Text style={styles.stageButtonText}>{t("mobileBrews.plannedAdditions.title")}</Text>
+          </Pressable>
+        ) : null}
+        {currentStage !== "COMPLETE" ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/bottling", params: { brewId: brew.id } })}
+            style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.stageButtonText}>{t("mobileBrews.bottling.action")}</Text>
           </Pressable>
         ) : null}
         {outbox ? (

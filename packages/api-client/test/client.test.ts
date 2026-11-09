@@ -276,3 +276,28 @@ test("rejects invalid recipe data before calling the transport", async () => {
   );
   assert.equal(called, false);
 });
+
+test("reads the existing inventory context, finished meads, and locations for a bottling review", async () => {
+  const requests: Array<{ url: string; init: ApiRequestInit }> = [];
+  const context = { can_manage: false, tracked_entry_ids: [], usages: [], vessel_events: [] };
+  const meads = { can_manage: false, meads: [] };
+  const organization = { can_manage: false, labels: [], locations: [], stock: [], assignments: [] };
+  const responses = [context, meads, organization, { can_manage: true }];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-access",
+    fetch: async (url, init) => {
+      requests.push({ url, init });
+      return { ok: true, status: 200, json: async () => responses.shift() };
+    }
+  });
+  assert.deepEqual((await client.getBrewInventory("test/brew")).bottlings, []);
+  assert.deepEqual(await client.getFinishedMeads(), meads);
+  assert.deepEqual((await client.getInventoryOrganization()).locations, []);
+  await assert.rejects(() => client.getBrewInventory("test/brew"), MeadToolsContractError);
+  assert.deepEqual(requests.slice(0, 3).map(({ url, init }) => [new URL(url).pathname, init.method, init.headers.authorization]), [
+    ["/api/brews/test%2Fbrew/inventory", "GET", "Bearer test-access"],
+    ["/api/account/inventory/meads", "GET", "Bearer test-access"],
+    ["/api/account/inventory/organization", "GET", "Bearer test-access"]
+  ]);
+});
