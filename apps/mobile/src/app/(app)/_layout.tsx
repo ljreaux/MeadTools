@@ -19,6 +19,13 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="edit-entry"
+        options={{
+          presentation: "modal",
+          title: t("mobileBrews.editEntry.title")
+        }}
+      />
+      <Stack.Screen
         name="change-stage"
         options={{
           presentation: "modal",

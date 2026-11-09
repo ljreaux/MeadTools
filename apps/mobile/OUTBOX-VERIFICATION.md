@@ -72,7 +72,22 @@ backend responses in this document.
 | Stage picker follows the web rules; blocked stages list the unmet prerequisites | — | Pass (Complete blocked without packaging) | Pass |
 | Effective stage shown with "Waiting to sync" while a change is queued; syncs after reconnect | — | Pass (injected offline) | Pass (real airplane mode, 3 s after reconnect) |
 
+## Online-only actions (#521, partial) — November 9, 2026
+
+| Check | iOS Simulator | Android emulator |
+| --- | --- | --- |
+| Tap a saved entry to edit it; value and note changes save and refresh the timeline (gravity 1.050 → 1.048 SG with display metadata) | Pass | Not run |
+| Delete with confirmation removes the entry; latest gravity recalculates | Pass | Not run |
+| Stage changes edit their note only and cannot be deleted | — | Pass |
+| Premium account: addition matched to Wildflower honey stock, balance preview 63 lb, saved online with the web's `items` selection; stock 64 → 63 lb; nothing queued | Pass | Not run |
+| Changing the amount of a stock-linked addition is refused by the server (`SELECTION_REQUIRED`); the app shows the inventory message and points to the web review | Pass | Not run |
+| Offline: edit/delete disabled with an explanation; additions say stock deduction needs a connection and still queue untracked | — | Pass (real airplane mode) |
+| Free account (`can_manage` false): no deduction offered | Unit tested | Unit tested |
+| Bottling/packaging with inventory selection | Not built — remains on the web | — |
+
 ## Findings
+
+- Typing into the iOS Simulator while no field has focus triggers dev-client shortcuts (`r` reloads, `d` opens the dev menu). Automated checks must confirm focus before typing letters.
 
 - #522 added an `expo-network` listener, so queued entries replay as soon as the device reports connectivity (4–7 s on the Android emulator) instead of waiting for retry backoff.
 - The Expo development tools button can cover the brew list's Logout button

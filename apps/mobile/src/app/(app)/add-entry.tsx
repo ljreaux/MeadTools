@@ -1,7 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Crypto from "expo-crypto";
 import * as Localization from "expo-localization";
 import { router, useLocalSearchParams } from "expo-router";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,6 +21,15 @@ import type { GravityEntryUnit, GravityReadingRole } from "@meadtools/brew-domai
 import type { VolumeUnit } from "@meadtools/core/recipe";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
+import {
+  buildDeductionSelection,
+  inventoryErrorCode,
+  planAdditionStock,
+  previewBalance,
+  UNTRACKED,
+  type StockChoice
+} from "@/entries/inventory-deduction";
+import { useIsOnline } from "@/hooks/useIsOnline";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import {
   ADDITION_UNITS,
@@ -49,7 +59,7 @@ import {
   GRAVITY_INPUT_RANGES,
   validateGravityInput
 } from "@/outbox/gravity-entry-form";
-import { useSession } from "@/providers/app-providers";
+import { useApiClient, useSession } from "@/providers/app-providers";
 
 const ENTRY_TYPES = [
   "GRAVITY", "TEMPERATURE", "PH", "VOLUME", "ADDITION", "NOTE", "TASTING", "ISSUE"
@@ -71,6 +81,13 @@ export default function AddEntryScreen() {
   const outbox = useBrewEntryOutbox();
   const { session } = useSession();
   const queryClient = useQueryClient();
+  const apiClient = useApiClient();
+  const online = useIsOnline();
+  // Stock deduction (online only): the choice, and stable IDs so a retry of
+  // the same save is idempotent on the server.
+  const [stockChoice, setStockChoice] = useState<StockChoice | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const deduction = useRef<{ entryId: string; operationId: string; datetime: string } | null>(null);
   const queuedRecords = useBrewEntryOutboxRecords(brewId);
   const locale = Localization.getLocales()[0];
 
@@ -218,7 +235,38 @@ export default function AddEntryScreen() {
   async function save() {
     setSubmitted(true);
     setSaveFailed(false);
+    setServerError(null);
     if (!validation.input || !outbox || saving) return;
+    if (tracked && stockPlan?.line) {
+      if (balance && !balance.ok) return;
+      setSaving(true);
+      deduction.current ??= {
+        entryId: Crypto.randomUUID(),
+        operationId: Crypto.randomUUID(),
+        datetime: new Date().toISOString()
+      };
+      try {
+        const brew = await apiClient.createBrewEntry(brewId, {
+          ...validation.input.payload,
+          datetime: deduction.current.datetime,
+          client_entry_id: deduction.current.entryId,
+          inventory: buildDeductionSelection(stockPlan.line, selectedStock, deduction.current.operationId)
+        });
+        queryClient.setQueryData(["brew", session?.id, brewId], brew);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["brews", session?.id] }),
+          queryClient.invalidateQueries({ queryKey: ["inventory", session?.id] })
+        ]);
+        router.back();
+      } catch (error) {
+        const code = inventoryErrorCode(error);
+        setServerError(code
+          ? t(`inventory.errors.${code}`, { defaultValue: t("mobileBrews.addEntry.addition.stock.failed") })
+          : t("mobileBrews.addEntry.addition.stock.failed"));
+        setSaving(false);
+      }
+      return;
+    }
     setSaving(true);
     try {
       // Rebuild with the save time so the timestamp is when the user saved.
@@ -232,6 +280,27 @@ export default function AddEntryScreen() {
       setSaving(false);
     }
   }
+
+  // Optional stock deduction for a manual addition (premium, online only).
+  const inventoryQuery = useQuery({
+    queryKey: ["inventory", session?.id],
+    queryFn: () => apiClient.getInventoryOverview(),
+    enabled: Boolean(session) && type === "ADDITION" && online,
+    staleTime: 30_000
+  });
+  const canDeduct = type === "ADDITION" && online && inventoryQuery.data?.can_manage === true;
+  const stockItems = canDeduct ? inventoryQuery.data?.stock ?? [] : [];
+  const additionData = type === "ADDITION" && validation.input
+    ? (validation.input.payload as { data?: unknown }).data
+    : null;
+  const stockPlan = canDeduct && additionData ? planAdditionStock(stockItems, additionData) : null;
+  const selectedStock: StockChoice = !stockPlan
+    ? UNTRACKED
+    : stockChoice !== null && (stockChoice === UNTRACKED || stockPlan.choices.some((item) => item.id === stockChoice))
+      ? stockChoice
+      : stockPlan.defaultChoice;
+  const tracked = Boolean(stockPlan?.line) && selectedStock !== UNTRACKED;
+  const balance = tracked && stockPlan?.line ? previewBalance(stockItems, stockPlan.line, selectedStock) : null;
 
   if (!outbox || !brewId) {
     return (
@@ -469,7 +538,7 @@ export default function AddEntryScreen() {
             )}
             {field(t("mobileBrews.addEntry.unitLabel"),
               chips(t("mobileBrews.addEntry.unitLabel"), ADDITION_UNITS, additionUnit, setAdditionUnit, unitLabel))}
-            <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.inventoryHint")}</Text>
+            {renderStockSection()}
           </>
         );
       case "NOTE":
@@ -511,6 +580,63 @@ export default function AddEntryScreen() {
     }
   }
 
+  function renderStockSection() {
+    if (!online) {
+      return <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.offline")}</Text>;
+    }
+    if (inventoryQuery.isPending) return <Text style={styles.hint}>{t("inventory.loading")}</Text>;
+    if (inventoryQuery.isError) return <Text style={styles.hint}>{t("inventory.loadError")}</Text>;
+    if (!canDeduct) {
+      return <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.inventoryHint")}</Text>;
+    }
+    const label = t("mobileBrews.addEntry.addition.stock.label");
+    if (!stockPlan?.line) {
+      return field(label, <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.needsAmount")}</Text>);
+    }
+    const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 });
+    const options: { id: StockChoice; title: string; detail?: string }[] = [
+      ...stockPlan.choices.map((item) => ({
+        id: item.id,
+        title: item.name,
+        detail: `${number.format(item.quantity.value)} ${unitLabel(item.quantity.unit)}`
+      })),
+      { id: UNTRACKED, title: t("brewInventory.untrackedChoice") }
+    ];
+    return field(
+      label,
+      <View accessibilityLabel={label} accessibilityRole="radiogroup" style={styles.stockList}>
+        {stockPlan.choices.length === 0 ? (
+          <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.noMatch")}</Text>
+        ) : null}
+        {options.map((option) => {
+          const selected = option.id === selectedStock;
+          return (
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              key={option.id}
+              onPress={() => {
+                setStockChoice(option.id);
+                setServerError(null);
+              }}
+              style={[styles.stockRow, selected && styles.stockRowSelected]}
+            >
+              <View style={[styles.radio, selected && styles.radioSelected]} />
+              <View style={styles.grow}>
+                <Text style={styles.stockName}>{option.title}</Text>
+                {option.detail ? <Text style={styles.hint}>{option.detail}</Text> : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>,
+      balance && !balance.ok ? t(`inventory.errors.${balance.code}`, { defaultValue: t("inventory.invalid") }) : null,
+      balance?.ok
+        ? t("inventory.balanceAfter", { value: number.format(balance.balance.value), unit: unitLabel(balance.balance.unit) })
+        : selectedStock === UNTRACKED ? t("brewInventory.untrackedHelp") : null
+    );
+  }
+
   const isTextType = type === "NOTE" || type === "TASTING" || type === "ISSUE";
 
   return (
@@ -543,10 +669,15 @@ export default function AddEntryScreen() {
           />
         )}
 
+        {serverError ? (
+          <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={styles.error}>{serverError}</Text>
+        ) : null}
         {saveFailed ? (
           <Text accessibilityRole="alert" style={styles.error}>{t("mobileBrews.addEntry.errors.saveFailed")}</Text>
         ) : null}
-        <Text style={styles.hint}>{t("mobileBrews.addEntry.measuredNow")}</Text>
+        <Text style={styles.hint}>
+          {t(tracked ? "mobileBrews.addEntry.addition.stock.saveOnline" : "mobileBrews.addEntry.measuredNow")}
+        </Text>
 
         <Pressable
           accessibilityRole="button"
@@ -645,6 +776,22 @@ function createStyles(colors: typeof colorThemes.light) {
       paddingHorizontal: spacing.lg
     },
     error: { color: colors.error, fontSize: typography.size.caption, fontWeight: typography.weight.bold },
+    stockList: { gap: spacing.sm },
+    stockRow: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      backgroundColor: colors.surface,
+      flexDirection: "row",
+      gap: spacing.md,
+      minHeight: 52,
+      padding: spacing.md
+    },
+    stockRowSelected: { borderColor: colors.accent, borderWidth: 2 },
+    stockName: { color: colors.text, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    radio: { borderColor: colors.textMuted, borderRadius: radii.round, borderWidth: 2, height: 20, width: 20 },
+    radioSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
     hint: { color: colors.textMuted, fontSize: typography.size.caption },
     button: {
       minHeight: 52,

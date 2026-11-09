@@ -179,5 +179,5 @@ test("the brew's OG is the earliest visible OG-role reading, like the web", () =
 test("an empty note is sent as null", () => {
   const reading = ok(validateGravityInput("1.010", "SG"));
   const input = buildGravityEnqueueInput({ brewId: "brew-1", reading, note: "   ", measuredAt: MEASURED_AT });
-  assert.equal(input.payload.note, null);
+  assert.equal((input.payload as { note?: unknown }).note, null);
 });

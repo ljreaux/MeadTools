@@ -188,8 +188,8 @@ export default function BrewScreen() {
     const detail = formatTimelineDetail(item);
     const showTitle = item.title && !detail && item.title !== typeLabel;
 
-    return (
-      <View style={[styles.timelineRow, row.kind === "local" && styles.timelineRowLocal]}>
+    const content = (
+      <>
         <View style={styles.timelineTop}>
           <Text style={styles.timelineType}>{typeLabel}</Text>
           <Text style={styles.timelineDate}>{timestamp}</Text>
@@ -199,7 +199,21 @@ export default function BrewScreen() {
         {showTitle ? <Text style={styles.timelineDetail}>{item.title}</Text> : null}
         {item.note ? <Text style={styles.timelineNote}>{item.note}</Text> : null}
         {row.kind === "local" ? renderDelivery(row) : null}
-      </View>
+      </>
+    );
+    if (row.kind === "local" || !outbox || !brew) {
+      return <View style={[styles.timelineRow, row.kind === "local" && styles.timelineRowLocal]}>{content}</View>;
+    }
+    // Saved entries open the online edit screen.
+    return (
+      <Pressable
+        accessibilityHint={t("mobileBrews.editEntry.openHint")}
+        accessibilityRole="button"
+        onPress={() => router.push({ pathname: "/edit-entry", params: { brewId: brew.id, entryId: item.id } })}
+        style={({ pressed }) => [styles.timelineRow, pressed && styles.pressed]}
+      >
+        {content}
+      </Pressable>
     );
   }
 

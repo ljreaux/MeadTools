@@ -1918,7 +1918,7 @@
       "action": "Add entry",
       "addition": {
         "amountLabel": "Amount (optional)",
-        "inventoryHint": "This does not change inventory. Use the web app to deduct stock.",
+        "inventoryHint": "This does not change inventory. Inventory tracking requires Premium.",
         "kindLabel": "Kind",
         "kinds": {
           "INGREDIENT": "Ingredient",
@@ -1926,7 +1926,15 @@
           "OTHER": "Other"
         },
         "nameLabel": "Name",
-        "namePlaceholder": "Wildflower honey"
+        "namePlaceholder": "Wildflower honey",
+        "stock": {
+          "failed": "This addition could not be saved. Check your connection and try again.",
+          "label": "Deduct from inventory",
+          "needsAmount": "Enter an amount to deduct it from inventory.",
+          "noMatch": "No stock matches this addition and unit.",
+          "offline": "Connect to deduct from inventory. Offline additions are logged without changing stock.",
+          "saveOnline": "The entry is timestamped when you save it. Saving deducts the stock right away, so it needs a connection."
+        }
       },
       "cancel": "Cancel",
       "errors": {
@@ -2026,6 +2034,27 @@
     "detailError": "Could not load this brew.",
     "detailLoading": "Loading brew…",
     "detailTitle": "Brew details",
+    "editEntry": {
+      "cancel": "Cancel",
+      "delete": "Delete entry",
+      "deleteBody": "The entry is removed from the brew timeline. This cannot be undone.",
+      "deleteKeep": "Keep",
+      "deleteTitle": "Delete this entry?",
+      "errors": {
+        "empty": "Enter a value.",
+        "failed": "The change could not be saved. Check your connection and try again.",
+        "invalid": "Enter a number.",
+        "range": "Enter a realistic value."
+      },
+      "gravitySg": "Edited readings are saved in SG.",
+      "noteOnly": "Only the note can be changed here. Use the web app for other changes to this entry.",
+      "notFound": "This entry is no longer available. Refresh the brew.",
+      "offline": "Editing and deleting entries need a connection.",
+      "openHint": "Opens the entry to edit or delete it",
+      "save": "Save changes",
+      "title": "Edit entry",
+      "webReview": "Use the web app to review the stock changes for this entry."
+    },
     "emptyBody": "Start a brew on the web app, then refresh this list.",
     "emptyTitle": "No active brews",
     "entries_one": "{{count}} entry",
