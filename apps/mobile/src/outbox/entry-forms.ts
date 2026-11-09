@@ -6,7 +6,7 @@ import {
 import { VOLUME_TO_L, type VolumeUnit } from "@meadtools/core/recipe";
 
 import type { EnqueueEntryInput } from "./entry-outbox-record";
-import { parseDecimalInput } from "./gravity-entry-form";
+import { isIncompleteDecimal, parseDecimalInput } from "./gravity-entry-form";
 
 /**
  * Form logic for the non-gravity entry types. Each builder uses the shared
@@ -29,7 +29,7 @@ export function parseNumberField(
   text: string,
   range?: { min: number; max: number; exclusiveMin?: boolean }
 ): FieldResult<number> {
-  if (!text.trim()) return { ok: false, error: "empty" };
+  if (!text.trim() || isIncompleteDecimal(text)) return { ok: false, error: "empty" };
   const value = parseDecimalInput(text);
   if (value === null) return { ok: false, error: "invalid" };
   if (range) {

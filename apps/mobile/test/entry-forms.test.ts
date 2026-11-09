@@ -189,3 +189,9 @@ test("queued entries project into the same timeline rows as server entries", () 
   assert.equal(note.id, UUID);
   assert.equal(note.datetime, ISO);
 });
+
+test("number fields treat a trailing decimal separator as incomplete", () => {
+  assert.deepEqual(parseNumberField("3."), { ok: false, error: "empty" });
+  assert.deepEqual(parseNumberField("12,"), { ok: false, error: "empty" });
+  assert.deepEqual(parseNumberField("12,5"), { ok: true, value: 12.5 });
+});

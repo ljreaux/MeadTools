@@ -148,6 +148,7 @@ export function plannedAdditionRows(
         goFerm: true, goFermUsed: true, nutrientKey: goFermKey(goFermType),
         actualYeastAmount: yeastAmount, actualYeastUnit: yeastAmount != null ? "g" : undefined,
         plannedWaterAmount: fromPitch?.water ?? goFerm.water,
+        recipePlannedAmount: goFerm.amount,
         recipePlannedWaterAmount: goFerm.water, plannedWaterUnit: "mL"
       }
     });
@@ -173,16 +174,47 @@ export function plannedAdditionRows(
 
 export function buildPlannedAddition(
   row: PlannedRow,
-  actual: { amount?: number; name: string; unit?: string; note: string; components?: NutrientComponent[]; datetime: string; stage?: string },
+  actual: {
+    amount?: number;
+    name: string;
+    unit?: string;
+    note: string;
+    components?: NutrientComponent[];
+    datetime: string;
+    stage?: string;
+    skipGoFerm?: boolean;
+  },
   translate: Translate
 ) {
+  const skipGoFerm = row.source === "recipe_go_ferm" && actual.skipGoFerm;
+  if (skipGoFerm) {
+    return { ...buildBrewAddition({
+      name: row.name,
+      amount: 0,
+      unit: "g",
+      note: translate("brews.primary.goFermNotUsed", "Go-Ferm not used."),
+      datetime: actual.datetime,
+      kind: "NUTRIENT",
+      source: "recipe_go_ferm",
+      meta: {
+        goFerm: true,
+        nutrientKey: goFermKey(row.name),
+        goFermUsed: false,
+        plannedAmount: row.meta?.recipePlannedAmount ?? row.amount,
+        plannedUnit: "g",
+        plannedWaterAmount: row.meta?.recipePlannedWaterAmount,
+        plannedWaterUnit: "mL"
+      }
+    }, translate), datetime: actual.datetime };
+  }
   const yeast = row.kind === "YEAST";
   const stabilizer = row.meta?.stabilizer === true;
+  const { recipePlannedAmount: _recipePlannedAmount, ...plannedMeta } = row.meta ?? {};
   const meta = stabilizer
     ? { ...row.meta, plannedAmount: actual.amount ?? row.amount,
         actualAmountChanged: actual.amount != null && Math.abs(actual.amount - Number(row.amount?.toFixed(2))) > 0.0005 }
     : yeast ? { ...row.meta, strain: row.source === "manual_yeast" ? actual.name : row.meta?.strain }
-    : plannedAdditionMetadata(row, {
+    : plannedAdditionMetadata({ ...row, meta: plannedMeta }, {
         name: row.name, basis: row.basis, components: actual.components, stage: actual.stage,
         water: typeof row.meta?.plannedWaterAmount === "number" ? row.meta.plannedWaterAmount : undefined
       });

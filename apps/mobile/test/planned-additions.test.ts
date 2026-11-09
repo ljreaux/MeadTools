@@ -83,3 +83,16 @@ test("actual pitch drives Go-Ferm and queued nutrient components reduce remainin
   assert.equal(afterNutrients.rows.find(({ id }) => id === "nutrient:1")?.status, "queued");
   assert.ok(afterNutrients.remaining.fermO < afterPitch.remaining.fermO);
 });
+
+test("skipping Go-Ferm records the web decision and cannot zero another planned item", () => {
+  const { rows } = plannedAdditionRows(brew, [], nutrientName);
+  const goFerm = rows.find(({ id }) => id === "go-ferm")!;
+  const skipped = buildPlannedAddition(goFerm, { name: goFerm.name, note: "", datetime, skipGoFerm: true }, translate);
+  assert.equal(skipped.data.amount, 0);
+  assert.equal(skipped.data.meta?.goFermUsed, false);
+  assert.equal(skipped.data.meta?.plannedWaterAmount, goFerm.meta?.recipePlannedWaterAmount);
+  const water = rows.find(({ id }) => id === "ingredient:traditional-water")!;
+  const addition = buildPlannedAddition(water, { name: water.name, note: "", datetime, amount: 0.7, skipGoFerm: true }, translate);
+  assert.equal(addition.data.amount, 0.7);
+  assert.equal(addition.data.meta?.goFermUsed, undefined);
+});

@@ -9,6 +9,7 @@ import {
   canCorrectRefractometer,
   convertGravityText,
   findOriginalGravity,
+  isIncompleteDecimal,
   parseDecimalInput,
   validateGravityInput,
   type GravityReading
@@ -41,11 +42,10 @@ test("parses English and German decimal entry", () => {
   assert.equal(parseDecimalInput(".998"), 0.998);
   assert.equal(parseDecimalInput("-1.5"), -1.5);
   assert.equal(parseDecimalInput("−1,5"), -1.5);
-  assert.equal(parseDecimalInput("1."), 1);
 });
 
 test("rejects text that is not a single decimal number", () => {
-  for (const text of ["", "  ", "abc", "1.0.5", "1,0,5", "1.050,2", "1e3", "Infinity", "NaN", "1 050x", "--1"]) {
+  for (const text of ["1.", "1,", ".", "abc", "1.0.5", "1,0,5", "1.050,2", "1e3", "Infinity", "NaN", "1 050x", "--1"]) {
     assert.equal(parseDecimalInput(text), null, text);
   }
 });
@@ -180,4 +180,15 @@ test("an empty note is sent as null", () => {
   const reading = ok(validateGravityInput("1.010", "SG"));
   const input = buildGravityEnqueueInput({ brewId: "brew-1", reading, note: "   ", measuredAt: MEASURED_AT });
   assert.equal((input.payload as { note?: unknown }).note, null);
+});
+
+test("a reading cut off at the decimal separator is incomplete, never 1.000", () => {
+  // Regression: an iOS run saved 1.000 SG after "1.041" lost its last digits.
+  for (const text of ["1.", "1,", " 1. ", "-0,", "."]) {
+    assert.equal(isIncompleteDecimal(text), true, text);
+    assert.deepEqual(validateGravityInput(text, "SG"), { ok: false, error: "empty" }, text);
+  }
+  assert.equal(isIncompleteDecimal("1.0"), false);
+  assert.equal(isIncompleteDecimal("1"), false);
+  assert.equal(validateGravityInput("1.0", "SG").ok, true);
 });

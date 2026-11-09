@@ -41,12 +41,21 @@ export type GravityInputResult = GravityReading | { ok: false; error: GravityInp
  * English (`1.050`) and German (`1,050`) keypads work. Gravity readings never
  * use thousands separators, so a lone comma is always a decimal separator.
  */
+/**
+ * True while a number is still being typed: it ends with a decimal separator
+ * ("1." or "1,"). Such text is treated like an empty field, so the form shows
+ * no error mid-typing but refuses to save a truncated reading as 1.000.
+ */
+export function isIncompleteDecimal(text: string): boolean {
+  return /^-?\d*[.,]$/.test(text.trim().replace(/\s+/g, "").replace("−", "-"));
+}
+
 export function parseDecimalInput(text: string): number | null {
   const normalized = text.trim().replace(/\s+/g, "").replace("−", "-");
   if (!normalized) return null;
   if (normalized.includes(".") && normalized.includes(",")) return null;
   const decimal = normalized.replace(",", ".");
-  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(decimal)) return null;
+  if (!/^-?(\d+(\.\d+)?|\.\d+)$/.test(decimal)) return null;
   const value = Number(decimal);
   return Number.isFinite(value) ? value : null;
 }
@@ -71,7 +80,7 @@ export function validateGravityInput(
   unit: GravityEntryUnit,
   correction?: GravityCorrection
 ): GravityInputResult {
-  if (!text.trim()) return { ok: false, error: "empty" };
+  if (!text.trim() || isIncompleteDecimal(text)) return { ok: false, error: "empty" };
   const enteredValue = parseDecimalInput(text);
   if (enteredValue === null) return { ok: false, error: "invalid" };
   const range = GRAVITY_INPUT_RANGES[unit];

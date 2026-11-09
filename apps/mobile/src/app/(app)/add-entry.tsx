@@ -234,7 +234,8 @@ export default function AddEntryScreen() {
           const packet = parseNumberField(packetWeight, { ...range, exclusiveMin: true });
           const errors: Validation["errors"] = {};
           if (!name) errors.name = t("mobileBrews.addEntry.errors.nameRequired");
-          if (!skipGoFerm && !components && !amount.ok && amountText.trim()) {
+          const skip = row.source === "recipe_go_ferm" && skipGoFerm;
+          if (!skip && !components && !amount.ok && amountText.trim()) {
             errors.amount = rangeMessage(amount.error, range.min, range.max);
           }
           for (const component of components ?? []) {
@@ -249,19 +250,21 @@ export default function AddEntryScreen() {
           const actualComponents = components?.map(({ parsed, ...component }) => ({
             ...component, amount: parsed.ok ? parsed.value : 0
           }));
-          const inputRow = skipGoFerm
-            ? { ...row, meta: { ...row.meta, goFermUsed: false } }
-            : { ...row, meta: { ...row.meta, packetWeightG: plannedUnit === "units" && packet.ok ? packet.value : undefined } };
+          const inputRow = {
+            ...row,
+            meta: { ...row.meta, packetWeightG: plannedUnit === "units" && packet.ok ? packet.value : undefined }
+          };
           return {
             input: {
               brewId,
               payload: buildPlannedAddition(inputRow, {
                 name,
-                amount: skipGoFerm ? 0 : actualComponents?.reduce((sum, component) => sum + component.amount, 0)
+                amount: actualComponents?.reduce((sum, component) => sum + component.amount, 0)
                   ?? (amount.ok ? amount.value : undefined),
                 unit: plannedUnit,
                 components: actualComponents,
-                note: skipGoFerm ? t("brews.primary.goFermNotUsed") : note,
+                note,
+                skipGoFerm: skip,
                 datetime: measuredAt.toISOString(),
                 stage: row.group
               }, (key, fallback) => t(key, { defaultValue: fallback }))
@@ -743,6 +746,12 @@ export default function AddEntryScreen() {
 
   function selectPlan(row: PlannedRow) {
     setSelectedPlan(row);
+    setAdditionName("");
+    setNote("");
+    setPacketWeight("");
+    setSkipGoFerm(false);
+    setSaveFailed(false);
+    setServerError(null);
     setAmountText(Number.isFinite(row.amount) ? String(Number(row.amount!.toFixed(2))) : "");
     setPlannedUnit(row.unit);
     setComponentAmounts(Object.fromEntries((row.components ?? []).map((item) => [
@@ -782,6 +791,9 @@ export default function AddEntryScreen() {
             ))}
           </View> : null;
         })}
+        <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>{t("mobileBrews.addEntry.cancel")}</Text>
+        </Pressable>
       </ScrollView>
     );
   }
