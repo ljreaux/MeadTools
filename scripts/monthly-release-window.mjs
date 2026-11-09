@@ -29,6 +29,34 @@ export function isFirstMondayWindow(date) {
   );
 }
 
+// Publication normally comes from preview. When preview already carries
+// unreleased work, a dated release/publication-YYYY-MM-DD branch cut from main
+// may publish that date's notes instead. The diff and approval checks still apply.
+export function publicationHeadAllowed(pr) {
+  const date = (pr.body ?? "").match(
+    /^Publication date: (\d{4}-\d{2}-\d{2})\s*$/m,
+  )?.[1];
+  return (
+    pr.head.ref === "preview" ||
+    (Boolean(date) && pr.head.ref === `release/publication-${date}`)
+  );
+}
+
+// GitHub lists PR files from the merge base, so a head that is behind main
+// could hide what the merge result would contain. Publication must include main.
+export function headIncludesBase(comparison) {
+  return (
+    comparison?.behind_by === 0 &&
+    ["ahead", "identical"].includes(comparison.status)
+  );
+}
+
+function headRefAllowed(pr, mode) {
+  if (["hotfix", "policy"].includes(mode)) return true;
+  if (mode === "publication") return publicationHeadAllowed(pr);
+  return pr.head.ref === "preview";
+}
+
 export function releaseApproval(pr, mode, expectedHead) {
   const labels = new Set(pr.labels.map((label) => label.name));
   const body = pr.body ?? "";
@@ -41,7 +69,7 @@ export function releaseApproval(pr, mode, expectedHead) {
     pr.state !== "open" ||
     pr.draft ||
     pr.base.ref !== "main" ||
-    (!["hotfix", "policy"].includes(mode) && pr.head.ref !== "preview") ||
+    !headRefAllowed(pr, mode) ||
     pr.head.repo?.full_name !== repository()
   ) {
     return "Only an open, non-draft same-repository main PR can be armed.";
@@ -340,6 +368,7 @@ const live = {
       })),
     ),
   publicationPassed: (pr, now) =>
+    headIncludesBase(api(`compare/${pr.base.sha}...${pr.head.sha}`)) &&
     publicationDiffPassed(pr, publicationFiles(pr), now),
   reviewPassed,
   getStatus: gateStatus,
