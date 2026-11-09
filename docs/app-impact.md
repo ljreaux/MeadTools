@@ -33,6 +33,12 @@ rules. Quality validates source changes immediately, regardless of release
 pauses or translation batches. English changes in a web feature therefore do not
 force Expo checks. Web and Desktop keep their existing package classification.
 
+On `main` only, a push that adds a dated entry under `releaseNotes.entries` in
+`packages/i18n/locales/en/default.json` builds Web, because a reviewed
+English-only publication PR gets no Weblate follow-up there. Other English
+edits, including changes to already-published entries, keep the normal rules,
+and `preview` still defers English for Weblate.
+
 Regression coverage includes the path list from original #466 feature commit
 `5e7a8a4d1a8f0b631e4d812a5067492126f92b30`, before its Expo updates, plus real
 Mobile dependency paths and lockfile closure changes. Run `npm run test:workflows`.
