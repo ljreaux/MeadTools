@@ -1986,6 +1986,21 @@
       }
     },
     "batch": "Batch {{number}}",
+    "changeStage": {
+      "action": "Change stage",
+      "cancel": "Cancel",
+      "confirm": "Move",
+      "confirmBody": "The change is timestamped now and syncs automatically, even if you are offline.",
+      "confirmCompleteBody": "Completing the brew sets its end date. The change syncs automatically, even if you are offline.",
+      "confirmTitle": "Move to {{stage}}?",
+      "current": "Current",
+      "equipmentNote": "Equipment assignments don’t change here. Use the web app to move a brew to different containers.",
+      "needs": "Needs: {{items}}",
+      "pending": "Waiting to sync",
+      "saveFailed": "This change could not be saved on this device. Try again.",
+      "title": "Change stage",
+      "unavailable": "Changing stages is not available on this device."
+    },
     "currentVolume": "Current volume",
     "delivery": {
       "discard": "Discard",
@@ -2003,6 +2018,7 @@
         "retryNetwork": "Offline. It will sync when you are back online.",
         "retryServer": "MeadTools is unavailable. It will retry automatically.",
         "sending": "Syncing…",
+        "stageConflict": "Not saved: the brew’s stage was changed elsewhere. Discard this change and choose again.",
         "synced": "Synced",
         "unconfirmed": "Sync could not be confirmed. Retry to check."
       }

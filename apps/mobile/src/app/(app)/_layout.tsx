@@ -18,6 +18,13 @@ export default function AppLayout() {
           title: t("mobileBrews.addEntry.title")
         }}
       />
+      <Stack.Screen
+        name="change-stage"
+        options={{
+          presentation: "modal",
+          title: t("mobileBrews.changeStage.title")
+        }}
+      />
     </Stack>
   );
 }

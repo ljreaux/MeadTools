@@ -6,15 +6,18 @@ import {
   createBrewEntryRequestBodySchema,
   type CreateBrewEntryRequestBody
 } from "@meadtools/api-contract";
+import type { BrewStage } from "@meadtools/brew-domain";
 import type { CreateBrewEntryPayload } from "@meadtools/brew-domain/entry-payload";
 
 /** Version 1 stored gravity readings only; version 2 stores any supported entry. */
 export const ENTRY_OUTBOX_RECORD_VERSION = 2;
 
 /**
- * Create-only entry types that are safe to queue offline: each is a single
- * idempotent insert keyed by `client_entry_id`. Stage changes, inventory
- * deductions, bottling, edits and deletes are deliberately excluded.
+ * Entry types that are safe to queue offline: each is a single idempotent
+ * insert keyed by `client_entry_id`. Stage changes are included because the
+ * server stores them under the client UUID and refuses a stale change via
+ * `expected_stage`. Inventory deductions, bottling, edits and deletes are
+ * deliberately excluded.
  */
 export const QUEUEABLE_ENTRY_TYPES = [
   "NOTE",
@@ -24,7 +27,8 @@ export const QUEUEABLE_ENTRY_TYPES = [
   "TEMPERATURE",
   "PH",
   "VOLUME",
-  "ADDITION"
+  "ADDITION",
+  "STAGE_CHANGE"
 ] as const;
 
 export type QueueableEntryType = (typeof QUEUEABLE_ENTRY_TYPES)[number];
@@ -67,7 +71,9 @@ export type OutboxErrorKind =
   | "forbidden"
   | "not_found"
   | "conflict"
-  | "contract";
+  | "contract"
+  /** A queued stage change found the brew already in another stage. */
+  | "stage_conflict";
 
 /**
  * Error details are limited to a category and HTTP status. Raw messages,
@@ -101,13 +107,21 @@ export type BrewEntryOutboxRecord = {
   delivery: OutboxDelivery;
 };
 
+/** A queued stage change: move to `stage_to` only if still in `expected_stage`. */
+export type StageChangePayload = {
+  type: "STAGE_CHANGE";
+  stage_to: BrewStage;
+  expected_stage: BrewStage;
+  datetime?: string;
+};
+
 export type EnqueueEntryInput = {
   brewId: string;
   /**
-   * A payload from the shared `entryPayload` builders. `datetime` is
-   * required: it is the time the entry happened, not the upload time.
+   * A payload from the shared `entryPayload` builders (or a stage change).
+   * `datetime` is required: it is when the entry happened, not upload time.
    */
-  payload: CreateBrewEntryPayload & { datetime: string };
+  payload: (CreateBrewEntryPayload | StageChangePayload) & { datetime: string };
 };
 
 export class OutboxValidationError extends Error {
@@ -181,6 +195,10 @@ function hasRequiredValues(request: BrewEntryRequest) {
     case "TASTING":
     case "ISSUE":
       return typeof request.note === "string" && request.note.trim().length > 0;
+    case "STAGE_CHANGE":
+      return typeof request.stage_to === "string" &&
+        typeof request.expected_stage === "string" &&
+        request.stage_to !== request.expected_stage;
   }
 }
 
@@ -198,7 +216,8 @@ function isQueueableRequest(
     !Number.isNaN(Date.parse(request.datetime)) &&
     request.inventory === undefined &&
     request.bottling === undefined &&
-    request.stage_to === undefined &&
+    (request.type === "STAGE_CHANGE" ||
+      (request.stage_to === undefined && request.expected_stage === undefined)) &&
     hasRequiredValues(request as BrewEntryRequest)
   );
 }
@@ -294,7 +313,8 @@ const ERROR_KINDS = new Set<OutboxErrorKind>([
   "forbidden",
   "not_found",
   "conflict",
-  "contract"
+  "contract",
+  "stage_conflict"
 ]);
 
 function isNullableTimestamp(value: unknown) {
@@ -401,7 +421,11 @@ export function classifyDeliveryError(error: unknown): DeliveryErrorDisposition 
       return { disposition: "terminal", error: { kind: "not_found", status } };
     }
     if (status === 409) {
-      return { disposition: "terminal", error: { kind: "conflict", status } };
+      const body = error.body as { code?: unknown } | null | undefined;
+      return {
+        disposition: "terminal",
+        error: { kind: body?.code === "STAGE_CONFLICT" ? "stage_conflict" : "conflict", status }
+      };
     }
     return { disposition: "terminal", error: { kind: "validation", status } };
   }

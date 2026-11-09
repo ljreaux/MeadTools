@@ -32,7 +32,7 @@ export function entryMutationError(error: unknown): NextResponse | null {
   if (error instanceof Error && ["Brew not found", "Entry not found"].includes(error.message)) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  if (error instanceof Error && ["Cannot delete stage change entry", "No valid fields to update", "Invalid datetime", "Missing stage_to"].includes(error.message)) {
+  if (error instanceof Error && ["Cannot delete stage change entry", "No valid fields to update", "Invalid datetime", "Missing stage_to", "Invalid stage_change_datetime"].includes(error.message)) {
     return NextResponse.json({ error: "Invalid entry request" }, { status: 400 });
   }
   return null;

@@ -5,6 +5,7 @@ import {
 } from "@meadtools/brew-domain";
 
 import type { BrewEntryOutboxRecord } from "./entry-outbox-record";
+import { stageAt } from "./stage-change";
 
 export type DeliveryTone = "pending" | "warning" | "error" | "success";
 
@@ -20,6 +21,7 @@ export type DeliveryMessage =
   | "conflict"
   | "forbidden"
   | "unconfirmed"
+  | "stageConflict"
   | "synced";
 
 export type DeliveryPresentation = {
@@ -36,7 +38,8 @@ const TERMINAL_MESSAGES: Record<string, DeliveryMessage> = {
   not_found: "notFound",
   conflict: "conflict",
   forbidden: "forbidden",
-  contract: "unconfirmed"
+  contract: "unconfirmed",
+  stage_conflict: "stageConflict"
 };
 
 /**
@@ -72,7 +75,8 @@ export function presentDelivery(
         message: TERMINAL_MESSAGES[error?.kind ?? ""] ?? "rejected",
         tone: "error",
         busy: false,
-        canRetry: true,
+        // Retrying a stale stage change would conflict again; it needs review.
+        canRetry: error?.kind !== "stage_conflict",
         canDiscard: true
       };
     case "synchronized":
@@ -108,7 +112,10 @@ export function projectQueuedEntry(
     gravity: request.gravity ?? null,
     temperature: request.temperature ?? null,
     temp_units: request.temp_units ?? null,
-    data: request.data ?? null
+    data:
+      request.type === "STAGE_CHANGE"
+        ? { from: request.expected_stage ?? null, to: request.stage_to ?? null }
+        : request.data ?? null
   };
   const [item] = projectBrewTimeline({ entries: [entry], entries_by_stage: [] });
   return { ...item, stage };
@@ -144,7 +151,7 @@ export function mergeTimelineWithOutbox(
     rows.push({
       kind: "local",
       key: `local:${record.clientEntryId}`,
-      item: projectQueuedEntry(record, stage),
+      item: projectQueuedEntry(record, stageAt(record.measuredAt, stage, records)),
       record,
       delivery: presentDelivery(record, { offline })
     });

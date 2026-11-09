@@ -106,6 +106,16 @@ operation. The nutrient-preset update intentionally adds the
 additions before comparing against the pre-migration paths hash, proving all
 earlier endpoint documentation remains unchanged.
 
+The Mobile offline stage-change update (#520) adds optional `expected_stage`
+to `CreateBrewEntryRequestBody` and `BrewStageConflictErrorResponse` to the
+create-entry 409 union. A `STAGE_CHANGE` sent with `client_entry_id` is
+stored under that UUID at its `datetime`, so a retry returns the brew without
+moving it again. With `expected_stage`, the server locks the brew and returns
+409 `STAGE_CONFLICT` with the current stage, changing nothing, when the brew
+has moved on. Callers that omit both fields keep the previous behavior, and the
+batch endpoint does not accept the field. The path-parity test already
+normalizes the create-entry description and 409 response.
+
 The mobile brew overview update makes recipe snapshot metadata optional so
 legacy snapshots can still be read, while consumers validate `dataV2` before
 calculating targets. Authenticated `GET /brews/{brew_id}` now returns the

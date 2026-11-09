@@ -237,10 +237,12 @@ export const createBrewEntryRequestBodySchema =
     type: brewEntryTypeResponseSchema,
     stage_to: brewStageResponseSchema.optional(),
     client_entry_id: z.string().uuid().optional(),
+    /** STAGE_CHANGE only: refuse with 409 unless the brew is in this stage. */
+    expected_stage: brewStageResponseSchema.optional(),
   });
 export const createBrewEntryBatchRequestBodySchema=z.object({
  operation_id:z.string().uuid(),
- entries:z.array(createBrewEntryRequestBodySchema.omit({bottling:true}).extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
+ entries:z.array(createBrewEntryRequestBodySchema.omit({bottling:true,expected_stage:true}).extend({type:z.literal('ADDITION'),client_entry_id:z.string().uuid(),inventory:brewInventoryItemsSchema})).min(1).max(50),
 }).strict().refine(value=>new Set(value.entries.map(entry=>entry.client_entry_id)).size===value.entries.length,{message:'Entry IDs must be unique'});
 export const createBrewEntryResponseSchema = z.object({
   brew: brewResponseSchema,
@@ -308,8 +310,15 @@ export const brewValidationErrorResponseSchema = errorEnum([
 export const brewEntryBadRequestErrorResponseSchema = z.union([
   brewValidationErrorResponseSchema, brewInventoryErrorResponseSchema,
 ]);
+/** A queued stage change found the brew in a different stage; nothing changed. */
+export const brewStageConflictErrorResponseSchema = z.object({
+  error: z.literal("Brew stage changed"),
+  code: z.literal("STAGE_CONFLICT"),
+  current_stage: brewStageResponseSchema,
+});
 export const brewEntryConflictErrorResponseSchema = z.union([
   brewEntryIdConflictErrorResponseSchema, brewInventoryErrorResponseSchema,
+  brewStageConflictErrorResponseSchema,
 ]);
 export const brewEntryNotFoundErrorResponseSchema = z.union([
   authenticatedRouteErrorResponseSchema, brewInventoryErrorResponseSchema,

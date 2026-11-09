@@ -5,3 +5,4 @@ export * from "./overview";
 export * from "./timeline";
 export * from "./scaling";
 export * from "./yeast";
+export * from "./stage-flow";

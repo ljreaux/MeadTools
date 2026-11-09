@@ -60,6 +60,18 @@ backend responses in this document.
 | Temperature, addition and note queued with real airplane mode, delivered automatically 4–7 s after reconnect via the network listener, each once | — | Pass |
 | Gravity records queued by the earlier gravity-only outbox migrate and still deliver | Unit tested | Unit tested |
 
+## Offline-safe stage changes (#520) — November 8–9, 2026
+
+| Check | Local API | iOS Simulator | Android emulator |
+| --- | --- | --- | --- |
+| Queued change stored under the client UUID at its original time | Pass | Pass (synced as Primary → Secondary at 3:07 PM) | Pass (Primary → Planned at the phone's time) |
+| Retry after a lost response replays without a second entry or move | Pass | Unit tested | Unit tested |
+| Two concurrent identical requests create one entry | Pass | — | — |
+| Stale change (brew moved on the web meanwhile) returns 409 `STAGE_CONFLICT`, server unchanged | Pass | Pass: row shows the conflict with Discard only | Not run |
+| Client UUID reused on another brew returns 409 `Entry ID is already in use` | Pass | — | — |
+| Stage picker follows the web rules; blocked stages list the unmet prerequisites | — | Pass (Complete blocked without packaging) | Pass |
+| Effective stage shown with "Waiting to sync" while a change is queued; syncs after reconnect | — | Pass (injected offline) | Pass (real airplane mode, 3 s after reconnect) |
+
 ## Findings
 
 - #522 added an `expo-network` listener, so queued entries replay as soon as the device reports connectivity (4–7 s on the Android emulator) instead of waiting for retry backoff.

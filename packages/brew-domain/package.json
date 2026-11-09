@@ -9,6 +9,7 @@
     "./entry-payload": "./src/entry-payload.ts",
     "./projection": "./src/projection.ts",
     "./timeline": "./src/timeline.ts",
+    "./stage-flow": "./src/stage-flow.ts",
     "./scaling": "./src/scaling.ts",
     "./links": "./src/links.ts",
     "./qr": "./src/qr.ts",

@@ -25,6 +25,7 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
 import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "@/outbox/entry-outbox-provider";
+import { effectiveStage, hasPendingStageChange } from "@/outbox/stage-change";
 import {
   mergeTimelineWithOutbox,
   type DeliveryTone,
@@ -58,6 +59,8 @@ export default function BrewScreen() {
   const timeline = useMemo(() => brew ? projectBrewTimeline(brew) : [], [brew]);
   const outbox = useBrewEntryOutbox();
   const outboxRecords = useBrewEntryOutboxRecords(id);
+  const currentStage = brew ? effectiveStage(brew.stage, outboxRecords) : null;
+  const stagePending = hasPendingStageChange(outboxRecords);
   const rows = useMemo(
     () => mergeTimelineWithOutbox(timeline, outboxRecords, brew?.stage ?? null),
     [brew?.stage, outboxRecords, timeline]
@@ -291,21 +294,35 @@ export default function BrewScreen() {
       ) : null}
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.heading}>{name}</Text>
-        <Text style={styles.stage}>{t(`brewStage.${brew.stage}`)}</Text>
+        <View style={styles.stageRow}>
+          <Text style={styles.stage}>{t(`brewStage.${currentStage}`)}</Text>
+          {stagePending ? (
+            <Text style={styles.muted}>{t("mobileBrews.changeStage.pending")}</Text>
+          ) : null}
+        </View>
         {started ? <Text style={styles.muted}>{t("mobileBrews.started", { date: started })}</Text> : null}
         {brew.batch_number !== null ? (
           <Text style={styles.muted}>{t("mobileBrews.batch", { number: brew.batch_number })}</Text>
         ) : null}
-        {outbox && brew.stage !== "COMPLETE" ? (
+        {outbox && currentStage !== "COMPLETE" ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push({
               pathname: "/add-entry",
-              params: { brewId: brew.id, name, unit: brew.gravity_unit_preference, stage: brew.stage }
+              params: { brewId: brew.id, name, unit: brew.gravity_unit_preference, stage: currentStage }
             })}
             style={({ pressed }) => [styles.recordButton, pressed && styles.pressed]}
           >
             <Text style={styles.recordButtonText}>{t("mobileBrews.addEntry.action")}</Text>
+          </Pressable>
+        ) : null}
+        {outbox ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/change-stage", params: { brewId: brew.id, name } })}
+            style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.stageButtonText}>{t("mobileBrews.changeStage.action")}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -456,6 +473,17 @@ function createStyles(colors: typeof colorThemes.light) {
       paddingHorizontal: spacing.xl
     },
     recordButtonText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    stageRow: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    stageButton: {
+      alignItems: "center",
+      borderColor: colors.accent,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 48,
+      paddingHorizontal: spacing.xl
+    },
+    stageButtonText: { color: colors.text, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     timelineRowLocal: { borderStyle: "dashed" },
     delivery: { gap: spacing.sm, marginTop: spacing.xs },
     deliveryStatus: { alignItems: "center", flexDirection: "row", gap: spacing.sm },

@@ -114,6 +114,8 @@ export function createFakeServer() {
     ["brew-b", 8]
   ]);
   const entries = new Map<string, StoredEntry>();
+  const stages = new Map<string, string>();
+  const stageOf = (brewId: string) => stages.get(brewId) ?? "PRIMARY";
   const faults: ServerFault[] = [];
   const requests: Array<{ brewId: string; token: string | null; body: string }> = [];
 
@@ -141,7 +143,7 @@ export function createFakeServer() {
       name: "Test brew",
       start_date: "2026-11-01T12:00:00.000Z",
       end_date: null,
-      stage: "PRIMARY",
+      stage: stageOf(brewId),
       batch_number: 1,
       current_volume_liters: 18.9,
       requested_email_alerts: false,
@@ -155,13 +157,30 @@ export function createFakeServer() {
       cover_image_id: null,
       recipe_snapshot: null,
       entries: brewEntries,
-      entries_by_stage: [{ stage: "PRIMARY", entries: brewEntries }]
+      entries_by_stage: [{ stage: stageOf(brewId), entries: brewEntries }]
     };
   }
 
   function commit(brewId: string, userId: number, body: Record<string, unknown>) {
     const id = String(body.client_entry_id);
     const existing = entries.get(id);
+    if (body.type === "STAGE_CHANGE") {
+      // Mirrors the server: replay by UUID, then refuse a stale expected stage.
+      if (existing) {
+        return existing.brewId === brewId && existing.userId === userId && existing.body.type === "STAGE_CHANGE"
+          ? json(201, { brew: brewResponse(brewId, userId) })
+          : json(409, { error: "Entry ID is already in use" });
+      }
+      if (body.expected_stage !== undefined && body.expected_stage !== stageOf(brewId)) {
+        return json(409, { error: "Brew stage changed", code: "STAGE_CONFLICT", current_stage: stageOf(brewId) });
+      }
+      entries.set(id, {
+        id, brewId, userId,
+        body: { ...body, data: { from: stageOf(brewId), to: body.stage_to } }
+      });
+      stages.set(brewId, String(body.stage_to));
+      return json(201, { brew: brewResponse(brewId, userId) });
+    }
     if (existing && (existing.brewId !== brewId || existing.userId !== userId)) {
       return json(409, { error: "Entry ID is already in use" });
     }
@@ -200,6 +219,7 @@ export function createFakeServer() {
 
   return {
     entries,
+    stages,
     faults,
     requests,
     send,
