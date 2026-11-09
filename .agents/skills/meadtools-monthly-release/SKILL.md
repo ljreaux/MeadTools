@@ -114,7 +114,9 @@ from the gate procedure for a publication-only `preview` → `main` PR, includin
 after noon. Require the complete exact head/base diff, Mobile skip, valid dated
 notes, `release-ready` plus `publication-ready`, explicit post-deployment approval
 in the PR body, green checks/reviews, and native auto-merge. Workflow/code changes
-cannot use this mode. Policy rollout uses the separate reviewed manual `policy` path with its explicit
+cannot use this mode. If `preview` already holds unreleased work, publish from a
+`release/publication-YYYY-MM-DD` branch cut from live `main` (date matching the
+PR's `Publication date`), then reconcile `main` into `preview` by reviewed PR. Policy rollout uses the separate reviewed manual `policy` path with its explicit
 file allowlist, exact-SHA approval, `policy-ready`, and all required checks.
 Policy approval never authorizes publication; never use a bug-only exemption or bypass.
 

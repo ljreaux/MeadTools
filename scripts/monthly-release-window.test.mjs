@@ -442,6 +442,62 @@ test("publication requires exact approval, labels, Mobile skip, native auto-merg
   );
 });
 
+test("publication may come from a dated release/publication branch matching its date", async () => {
+  const f = publicationFixture();
+  f.pr.head.ref = "release/publication-2026-11-02";
+  assert.equal(await openGate(1, "publication", head, f.io, outside), true);
+  assert.equal(f.posts.length, 1);
+
+  for (const ref of [
+    "release/publication-2026-11-03",
+    "release/publication-2026-11-02-extra",
+    "release/publication-",
+    "release/publication",
+    "release/policy-2026-11-02",
+    "feature/publication-2026-11-02",
+  ]) {
+    const g = publicationFixture();
+    g.pr.head.ref = ref;
+    assert.equal(await openGate(1, "publication", head, g.io, outside), false);
+    assert.equal(g.posts.length, 0);
+  }
+
+  const undated = publicationFixture();
+  undated.pr.head.ref = "release/publication-2026-11-02";
+  undated.pr.body = undated.pr.body.replace("Publication date:", "Other date:");
+  assert.equal(
+    await openGate(1, "publication", head, undated.io, outside),
+    false,
+  );
+});
+
+test("a release/publication branch cannot promote through other modes", async () => {
+  const monthly = fixture();
+  monthly.pr.head.ref = "release/publication-2026-11-02";
+  assert.equal(await runMonthlyGate(monthly.io, inWindow), false);
+  assert.equal(
+    await openGate(1, "monthly", undefined, monthly.io, inWindow),
+    false,
+  );
+  assert.equal(monthly.posts.length, 0);
+
+  const initial = fixture();
+  initial.pr.head.ref = "release/publication-2026-11-02";
+  initial.pr.labels.push({ name: "initial-release-ready" });
+  assert.equal(await openGate(1, "initial", head, initial.io, outside), false);
+  assert.equal(initial.posts.length, 0);
+});
+
+test("publication requires the head to include the live main base", async () => {
+  const { headIncludesBase } = await import("./monthly-release-window.mjs");
+  assert.equal(headIncludesBase({ status: "ahead", behind_by: 0 }), true);
+  assert.equal(headIncludesBase({ status: "identical", behind_by: 0 }), true);
+  assert.equal(headIncludesBase({ status: "diverged", behind_by: 1 }), false);
+  assert.equal(headIncludesBase({ status: "behind", behind_by: 2 }), false);
+  assert.equal(headIncludesBase({ status: "ahead" }), false);
+  assert.equal(headIncludesBase(undefined), false);
+});
+
 test("publication validates complete locale objects, date, product scope, and path allowlist", () => {
   const { pr } = publicationFixture();
   assert.equal(
