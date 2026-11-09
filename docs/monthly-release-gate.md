@@ -85,6 +85,17 @@ workflow, configuration, internal draft JSON, deletions, renames, other dates,
 and Mobile or Mobile-preview announcements are rejected. The English entry is
 mandatory, valid, new, and cannot be future-dated in Chicago.
 
+The source branch is normally `preview`. When `preview` already carries
+unreleased work, so its diff cannot be limited to the notes, cut a
+same-repository branch named exactly `release/publication-YYYY-MM-DD` from the
+live `main` instead, using the `Publication date` below. That branch may only
+open the gate in `publication` mode; monthly, initial, hotfix, and policy
+modes never accept it. Every publication head, `preview` included, must
+contain the live `main` (GitHub compare `behind_by` 0) so the reviewed file list
+matches the merge result. The same diff, approval, label, check, and review
+rules apply. After it merges, bring `main` back into `preview` through a normal
+reviewed PR so the entry is not lost at the next monthly promotion.
+
 Record the normal exact `Release-ready head`, `Release-ready base`, and
 `Mobile production build: skip` lines, plus these explicit authorization lines:
 
