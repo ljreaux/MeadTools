@@ -330,6 +330,17 @@ export default function BrewScreen() {
             <Text style={styles.recordButtonText}>{t("mobileBrews.addEntry.action")}</Text>
           </Pressable>
         ) : null}
+        {outbox && currentStage !== "COMPLETE" ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({
+              pathname: "/add-entry", params: { brewId: brew.id, name, stage: currentStage, type: "ADDITION", planned: "1" }
+            })}
+            style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.stageButtonText}>{t("mobileBrews.plannedAdditions.title")}</Text>
+          </Pressable>
+        ) : null}
         {outbox ? (
           <Pressable
             accessibilityRole="button"

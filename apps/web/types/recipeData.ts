@@ -295,32 +295,7 @@ export const getRecipeDataValidationIssues = (x: unknown) => {
  * snapshots, so keep this intentionally narrower, tolerant top-level check
  * separate from the strict Zod-backed `isRecipeData` guard.
  */
-export const isCompatibleRecipeDataSnapshot = (x: unknown): x is RecipeData => {
-  if (!x || typeof x !== "object") return false;
-
-  const obj = x as Record<string, unknown>;
-  const unitDefaults = obj.unitDefaults as Record<string, unknown> | undefined;
-  const stabilizers = obj.stabilizers as Record<string, unknown> | undefined;
-  const notes = obj.notes as Record<string, unknown> | undefined;
-
-  return (
-    obj.version === 2 &&
-    !!unitDefaults &&
-    typeof unitDefaults.weight === "string" &&
-    typeof unitDefaults.volume === "string" &&
-    Array.isArray(obj.ingredients) &&
-    typeof obj.fg === "string" &&
-    Array.isArray(obj.additives) &&
-    !!stabilizers &&
-    typeof stabilizers.adding === "boolean" &&
-    typeof stabilizers.takingPh === "boolean" &&
-    typeof stabilizers.phReading === "string" &&
-    typeof stabilizers.type === "string" &&
-    !!notes &&
-    Array.isArray(notes.primary) &&
-    Array.isArray(notes.secondary)
-  );
-};
+export { isCompatibleRecipeDataSnapshot } from "@meadtools/brew-domain/recipe-stage";
 
 export type BlendInput = {
   sg: number;

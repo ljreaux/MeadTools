@@ -1,10 +1,11 @@
 "use client";
+
+import { calculateGoFermFromYeastAmount, getNutrientRows } from "@meadtools/brew-domain/planned-additions";
 import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 import { loggedYeastAmountG } from "@meadtools/brew-domain";
 
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import type { NutrientKey } from "@/types/nutrientData";
 import type { StagePanelProps } from "../stageConfig";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,36 +48,7 @@ const goFermOptions = [
   { value: "sterol-flash", label: "nuteResults.gfTypes.gfSterol" }
 ] as const;
 
-function calculateGoFermFromYeastAmount(
-  type: string,
-  yeastAmountG?: number | null
-) {
-  if (
-    typeof yeastAmountG !== "number" ||
-    !Number.isFinite(yeastAmountG) ||
-    yeastAmountG <= 0
-  ) {
-    return null;
-  }
-
-  const multiplier = type === "sterol-flash" ? 1.2 : 1.25;
-  const waterMultiplier = type === "sterol-flash" ? 10 : 20;
-  const amount = Math.round(yeastAmountG * multiplier * 100) / 100;
-
-  return {
-    amount,
-    water: Math.round(amount * waterMultiplier * 100) / 100
-  };
-}
-
 type PlannedAddition = PlannedAdditionDialogItem;
-
-const nutrientLabels: Record<NutrientKey, string> = {
-  fermO: "Fermaid O",
-  fermK: "Fermaid K",
-  dap: "DAP",
-  other: "Other"
-};
 
 function loggedNutrientAdditionForIndex(
   additions: StagePanelProps["ctx"]["recipe"]["actual"]["additions"],
@@ -123,72 +95,6 @@ function getEstimatedFg(ctx: StagePanelProps["ctx"]) {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-function getNutrientRows(ctx: StagePanelProps["ctx"]) {
-  const plan = ctx.recipe.nutrientPlan;
-  if (!plan) return [];
-
-  const keys: NutrientKey[] = ["fermO", "fermK", "dap", "other"];
-  const selected = plan.effectiveData.selected.selectedNutrients;
-  const per = plan.derived.nutrientAdditions.perAddition;
-  const totals = plan.derived.nutrientAdditions.totalGrams;
-  const otherName = plan.effectiveData.settings.other.name.trim();
-  const loggedCount = ctx.recipe.actual.loggedNutrientAdditionCount ?? 0;
-  const plannedCount = Math.max(
-    0,
-    Math.floor(plan.derived.numberOfAdditions || 0)
-  );
-  const hasComponentLogs = keys.some(
-    (key) => (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0) > 0
-  );
-  const remaining = keys.reduce<Record<NutrientKey, number>>(
-    (acc, key) => {
-      const logged = hasComponentLogs
-        ? (ctx.recipe.actual.loggedNutrientGrams[key] ?? 0)
-        : Math.min(loggedCount, plannedCount) * (per[key] ?? 0);
-      acc[key] = Math.max(0, (totals[key] ?? 0) - logged);
-      return acc;
-    },
-    { fermO: 0, fermK: 0, dap: 0, other: 0 }
-  );
-  const hasRemaining = keys.some((key) => remaining[key] > 0.01);
-  const suggestedRowsRemaining = Math.max(
-    plannedCount - loggedCount,
-    hasRemaining ? 1 : 0
-  );
-  const targetCount = Math.max(
-    plannedCount,
-    loggedCount + (hasRemaining ? 1 : 0)
-  );
-
-  const buildComponents = (divisor: number, useRemaining: boolean) =>
-    keys
-      .filter((key) => selected[key])
-      .map((key) => {
-        const amountSource = useRemaining
-          ? remaining[key] / Math.max(1, divisor)
-          : per[key];
-        const amount = Number.isFinite(amountSource) ? amountSource : 0;
-        return {
-          key,
-          name: key === "other" && otherName ? otherName : nutrientLabels[key],
-          amount,
-          unit: "g",
-          plannedAmount: amount
-        };
-      })
-      .filter((component) => component.amount > 0);
-
-  return Array.from({ length: targetCount }, (_, index) => {
-    const rowIndex = index + 1;
-    const useRemaining = rowIndex > loggedCount;
-    return {
-      index: rowIndex,
-      isExtra: rowIndex > plannedCount,
-      components: buildComponents(suggestedRowsRemaining, useRemaining)
-    };
-  }).filter((row) => row.components.length > 0);
-}
-
 export function PrimaryStagePanel({
   t,
   status,
@@ -224,7 +130,7 @@ export function PrimaryStagePanel({
     () => buildNoteLines(ctx.recipe.primaryNotes),
     [ctx.recipe.primaryNotes]
   );
-  const nutrientRows = React.useMemo(() => getNutrientRows(ctx), [ctx]);
+  const nutrientRows = React.useMemo(() => getNutrientRows(ctx.recipe), [ctx]);
 
   const loggedIngredientIds = React.useMemo(
     () => new Set(ctx.recipe.actual.loggedRecipeIngredientIds),

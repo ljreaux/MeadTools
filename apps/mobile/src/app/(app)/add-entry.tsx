@@ -16,19 +16,19 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import type { BrewResponse } from "@meadtools/api-contract";
+import { MeadToolsApiError } from "@meadtools/api-client";
+import type { BrewResponse, CreateBrewEntryRequestBody } from "@meadtools/api-contract";
 import type { GravityEntryUnit, GravityReadingRole } from "@meadtools/brew-domain/entry-payload";
 import type { VolumeUnit } from "@meadtools/core/recipe";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
 import {
-  buildDeductionSelection,
   inventoryErrorCode,
-  planAdditionStock,
-  previewBalance,
   UNTRACKED,
   type StockChoice
 } from "@/entries/inventory-deduction";
+import { matchInventoryStock, planEntryInventory, tryInventoryEntryLines, InventoryError } from "@meadtools/inventory-domain";
+import { buildPlannedAddition, plannedAdditionRows, type PlannedRow } from "@/entries/planned-additions";
 import { useIsOnline } from "@/hooks/useIsOnline";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import {
@@ -73,7 +73,7 @@ const TEMPERATURE_UNITS: TemperatureUnit[] = ["F", "C"];
 type Validation = { input: EnqueueEntryInput | null; errors: Record<string, string | null>; hint: string | null };
 
 export default function AddEntryScreen() {
-  const params = useLocalSearchParams<{ brewId: string; name?: string; unit?: string; stage?: string; type?: string }>();
+  const params = useLocalSearchParams<{ brewId: string; name?: string; unit?: string; stage?: string; type?: string; planned?: string }>();
   const brewId = params.brewId ?? "";
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
@@ -85,11 +85,26 @@ export default function AddEntryScreen() {
   const online = useIsOnline();
   // Stock deduction (online only): the choice, and stable IDs so a retry of
   // the same save is idempotent on the server.
-  const [stockChoice, setStockChoice] = useState<StockChoice | null>(null);
+  const [stockChoices, setStockChoices] = useState<Record<string, StockChoice>>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const deduction = useRef<{ entryId: string; operationId: string; datetime: string } | null>(null);
+  const deduction = useRef<CreateBrewEntryRequestBody | null>(null);
+  const submitting = useRef(false);
   const queuedRecords = useBrewEntryOutboxRecords(brewId);
   const locale = Localization.getLocales()[0];
+
+  const plannedMode = params.planned === "1";
+  const cachedBrew = queryClient.getQueryData<BrewResponse>(["brew", session?.id, brewId]);
+  const plan = useMemo(
+    () => plannedMode && cachedBrew
+      ? plannedAdditionRows(cachedBrew, queuedRecords, (index) => t("brews.primary.nutrientAddition", { index }))
+      : null,
+    [cachedBrew, plannedMode, queuedRecords, t]
+  );
+  const [selectedPlan, setSelectedPlan] = useState<PlannedRow | null>(null);
+  const [componentAmounts, setComponentAmounts] = useState<Record<string, string>>({});
+  const [plannedUnit, setPlannedUnit] = useState<string>();
+  const [packetWeight, setPacketWeight] = useState("");
+  const [skipGoFerm, setSkipGoFerm] = useState(false);
 
   const [type, setType] = useState<EntryType>(
     ENTRY_TYPES.includes(params.type as EntryType) ? (params.type as EntryType) : "GRAVITY"
@@ -204,6 +219,57 @@ export default function AddEntryScreen() {
         return { input: buildVolumeInput({ brewId, value: result.value, unit: volumeUnit, note, measuredAt }), errors: {}, hint: null };
       }
       case "ADDITION": {
+        if (plannedMode) {
+          const row = selectedPlan;
+          if (!row || !plan?.rows.some((item) => item.id === row.id && item.status === "available")) {
+            return { input: null, errors: {}, hint: null };
+          }
+          const name = (row.source === "manual_yeast" ? additionName : row.name).trim();
+          const range = { min: 0, max: 1_000_000 };
+          const components = row.components?.map((component) => ({
+            ...component,
+            parsed: parseNumberField(componentAmounts[component.key] ?? "", range)
+          }));
+          const amount = parseNumberField(amountText, range);
+          const packet = parseNumberField(packetWeight, { ...range, exclusiveMin: true });
+          const errors: Validation["errors"] = {};
+          if (!name) errors.name = t("mobileBrews.addEntry.errors.nameRequired");
+          if (!skipGoFerm && !components && !amount.ok && amountText.trim()) {
+            errors.amount = rangeMessage(amount.error, range.min, range.max);
+          }
+          for (const component of components ?? []) {
+            if (!component.parsed.ok) errors[component.key] = rangeMessage(component.parsed.error, range.min, range.max);
+          }
+          if (plannedUnit === "units" && row.kind === "YEAST" && !packet.ok) {
+            errors.packet = t("mobileBrews.plannedAdditions.packetWeightRequired");
+          }
+          if (Object.keys(errors).length > 0) {
+            return { input: null, errors: submitted ? errors : {}, hint: null };
+          }
+          const actualComponents = components?.map(({ parsed, ...component }) => ({
+            ...component, amount: parsed.ok ? parsed.value : 0
+          }));
+          const inputRow = skipGoFerm
+            ? { ...row, meta: { ...row.meta, goFermUsed: false } }
+            : { ...row, meta: { ...row.meta, packetWeightG: plannedUnit === "units" && packet.ok ? packet.value : undefined } };
+          return {
+            input: {
+              brewId,
+              payload: buildPlannedAddition(inputRow, {
+                name,
+                amount: skipGoFerm ? 0 : actualComponents?.reduce((sum, component) => sum + component.amount, 0)
+                  ?? (amount.ok ? amount.value : undefined),
+                unit: plannedUnit,
+                components: actualComponents,
+                note: skipGoFerm ? t("brews.primary.goFermNotUsed") : note,
+                datetime: measuredAt.toISOString(),
+                stage: row.group
+              }, (key, fallback) => t(key, { defaultValue: fallback }))
+            },
+            errors: {},
+            hint: null
+          };
+        }
         const result = validateAddition({ name: additionName, kind: additionKind, amountText, unit: additionUnit });
         if (!result.ok) {
           const error = show(result.error);
@@ -236,40 +302,40 @@ export default function AddEntryScreen() {
     setSubmitted(true);
     setSaveFailed(false);
     setServerError(null);
-    if (!validation.input || !outbox || saving) return;
-    if (tracked && stockPlan?.line) {
-      if (balance && !balance.ok) return;
+    if (!outbox || submitting.current || (!validation.input && !deduction.current)) return;
+    if (bindings.length || deduction.current) {
+      if (!online || (stockError && !deduction.current)) return;
+      submitting.current = true;
       setSaving(true);
       deduction.current ??= {
-        entryId: Crypto.randomUUID(),
-        operationId: Crypto.randomUUID(),
-        datetime: new Date().toISOString()
+        ...validation.input!.payload,
+        datetime: new Date().toISOString(),
+        client_entry_id: Crypto.randomUUID(),
+        inventory: { mode: "items", operation_id: Crypto.randomUUID(), items: bindings, expected: [] }
       };
       try {
-        const brew = await apiClient.createBrewEntry(brewId, {
-          ...validation.input.payload,
-          datetime: deduction.current.datetime,
-          client_entry_id: deduction.current.entryId,
-          inventory: buildDeductionSelection(stockPlan.line, selectedStock, deduction.current.operationId)
-        });
+        const brew = await apiClient.createBrewEntry(brewId, deduction.current);
         queryClient.setQueryData(["brew", session?.id, brewId], brew);
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["brews", session?.id] }),
-          queryClient.invalidateQueries({ queryKey: ["inventory", session?.id] })
-        ]);
+        void queryClient.invalidateQueries({ queryKey: ["brews", session?.id] });
+        void queryClient.invalidateQueries({ queryKey: ["inventory", session?.id] });
         router.back();
       } catch (error) {
         const code = inventoryErrorCode(error);
+        if (error instanceof MeadToolsApiError && error.status >= 400 && error.status < 500) {
+          deduction.current = null;
+        }
         setServerError(code
           ? t(`inventory.errors.${code}`, { defaultValue: t("mobileBrews.addEntry.addition.stock.failed") })
-          : t("mobileBrews.addEntry.addition.stock.failed"));
+          : t(deduction.current ? "mobileBrews.plannedAdditions.retrySame" : "mobileBrews.addEntry.addition.stock.failed"));
+        submitting.current = false;
         setSaving(false);
       }
       return;
     }
+    if (!validation.input) return;
+    submitting.current = true;
     setSaving(true);
     try {
-      // Rebuild with the save time so the timestamp is when the user saved.
       await outbox.enqueue({
         ...validation.input,
         payload: { ...validation.input.payload, datetime: new Date().toISOString() }
@@ -277,30 +343,40 @@ export default function AddEntryScreen() {
       router.back();
     } catch {
       setSaveFailed(true);
+      submitting.current = false;
       setSaving(false);
     }
   }
 
-  // Optional stock deduction for a manual addition (premium, online only).
   const inventoryQuery = useQuery({
     queryKey: ["inventory", session?.id],
     queryFn: () => apiClient.getInventoryOverview(),
-    enabled: Boolean(session) && type === "ADDITION" && online,
+    enabled: Boolean(session) && type === "ADDITION" && online && (!plannedMode || Boolean(selectedPlan)),
     staleTime: 30_000
   });
   const canDeduct = type === "ADDITION" && online && inventoryQuery.data?.can_manage === true;
   const stockItems = canDeduct ? inventoryQuery.data?.stock ?? [] : [];
-  const additionData = type === "ADDITION" && validation.input
-    ? (validation.input.payload as { data?: unknown }).data
-    : null;
-  const stockPlan = canDeduct && additionData ? planAdditionStock(stockItems, additionData) : null;
-  const selectedStock: StockChoice = !stockPlan
-    ? UNTRACKED
-    : stockChoice !== null && (stockChoice === UNTRACKED || stockPlan.choices.some((item) => item.id === stockChoice))
-      ? stockChoice
-      : stockPlan.defaultChoice;
-  const tracked = Boolean(stockPlan?.line) && selectedStock !== UNTRACKED;
-  const balance = tracked && stockPlan?.line ? previewBalance(stockItems, stockPlan.line, selectedStock) : null;
+  const additionData = validation.input?.payload.type === "ADDITION" ? validation.input.payload.data : null;
+  const stockRows = canDeduct && additionData ? tryInventoryEntryLines("ADDITION", additionData).map((line) => {
+    const match = matchInventoryStock(stockItems, line);
+    const choice = stockChoices[line.key];
+    const selected = choice === UNTRACKED || match.choices.some((item) => item.id === choice)
+      ? choice
+      : match.warning === "linked_ambiguous" ? UNTRACKED : match.stock?.id ?? UNTRACKED;
+    return { line, choices: match.choices, selected };
+  }) : [];
+  const bindings = stockRows.filter(({ selected }) => selected !== UNTRACKED)
+    .map(({ line, selected }) => ({ line_key: line.key, stock_id: selected }));
+  let balances: ReturnType<typeof planEntryInventory>["balances"] = [];
+  let stockError: string | null = null;
+  if (bindings.length) {
+    try {
+      balances = planEntryInventory({ stocks: stockItems, lines: stockRows.map(({ line }) => line), bindings, previous: [] }).balances;
+    } catch (error) {
+      stockError = error instanceof InventoryError ? error.code : "INCOMPATIBLE_UNITS";
+    }
+  }
+  const tracked = bindings.length > 0 || Boolean(deduction.current);
 
   if (!outbox || !brewId) {
     return (
@@ -511,6 +587,42 @@ export default function AddEntryScreen() {
           </>
         );
       case "ADDITION":
+        if (plannedMode && selectedPlan) {
+          const row = selectedPlan;
+          return (
+            <>
+              <Text style={styles.label}>{plannedLabel(row)}</Text>
+              {row.source === "manual_yeast" ? field(t("mobileBrews.addEntry.addition.nameLabel"),
+                <TextInput accessibilityLabel={t("mobileBrews.addEntry.addition.nameLabel")} style={styles.input}
+                  value={additionName} onChangeText={setAdditionName} />, errors.name) : null}
+              {row.source === "recipe_go_ferm" ? (
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: skipGoFerm }}
+                  onPress={() => setSkipGoFerm(!skipGoFerm)} style={styles.stockRow}>
+                  <Text style={styles.stockName}>{skipGoFerm ? "☑" : "☐"} {t("brews.primary.goFermNotUsed")}</Text>
+                </Pressable>
+              ) : null}
+              {!skipGoFerm && (row.components
+                ? row.components.map((component) => (
+                    <View key={component.key}>{field(`${component.name} · g`,
+                      numberInput(`${component.name} · g`, componentAmounts[component.key] ?? "",
+                        (text) => setComponentAmounts((values) => ({ ...values, [component.key]: text })),
+                        "", Boolean(errors[component.key]), false), errors[component.key])}</View>
+                  ))
+                : field(`${t("mobileBrews.addEntry.addition.amountLabel")} · ${unitLabel(plannedUnit ?? row.unit ?? "g")}`,
+                    numberInput(t("mobileBrews.addEntry.addition.amountLabel"), amountText, setAmountText,
+                      "", Boolean(errors.amount), false), errors.amount))}
+              {row.kind === "YEAST" ? (
+                <>
+                  {chips(t("mobileBrews.addEntry.unitLabel"), ["g", "units"], plannedUnit ?? "g", setPlannedUnit, unitLabel)}
+                  {plannedUnit === "units" ? field(t("mobileBrews.plannedAdditions.packetWeight"),
+                    numberInput(t("mobileBrews.plannedAdditions.packetWeight"), packetWeight, setPacketWeight,
+                      "", Boolean(errors.packet), false), errors.packet) : null}
+                </>
+              ) : null}
+              {!skipGoFerm && renderStockSection()}
+            </>
+          );
+        }
         return (
           <>
             {field(
@@ -590,50 +702,87 @@ export default function AddEntryScreen() {
       return <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.inventoryHint")}</Text>;
     }
     const label = t("mobileBrews.addEntry.addition.stock.label");
-    if (!stockPlan?.line) {
+    if (!stockRows.length) {
       return field(label, <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.needsAmount")}</Text>);
     }
-    const number = new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 });
-    const options: { id: StockChoice; title: string; detail?: string }[] = [
-      ...stockPlan.choices.map((item) => ({
-        id: item.id,
-        title: item.name,
-        detail: `${number.format(item.quantity.value)} ${unitLabel(item.quantity.unit)}`
-      })),
-      { id: UNTRACKED, title: t("brewInventory.untrackedChoice") }
-    ];
-    return field(
-      label,
-      <View accessibilityLabel={label} accessibilityRole="radiogroup" style={styles.stockList}>
-        {stockPlan.choices.length === 0 ? (
-          <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.noMatch")}</Text>
-        ) : null}
-        {options.map((option) => {
-          const selected = option.id === selectedStock;
-          return (
-            <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
-              key={option.id}
+    return field(label, <View style={styles.stockList}>
+      {stockRows.map(({ line, choices, selected }) => (
+        <View key={line.key} accessibilityLabel={line.name} accessibilityRole="radiogroup" style={styles.stockList}>
+          {stockRows.length > 1 ? <Text style={styles.label}>{line.name}</Text> : null}
+          {!choices.length ? <Text style={styles.hint}>{t("mobileBrews.addEntry.addition.stock.noMatch")}</Text> : null}
+          {[...choices.map((item) => ({ id: item.id, label: item.name, quantity: item.quantity })),
+            { id: UNTRACKED, label: t("brewInventory.untrackedChoice"), quantity: null }].map((option) => (
+            <Pressable key={option.id} accessibilityRole="radio" accessibilityState={{ checked: selected === option.id }}
               onPress={() => {
-                setStockChoice(option.id);
+                setStockChoices((current) => ({ ...current, [line.key]: option.id }));
                 setServerError(null);
               }}
-              style={[styles.stockRow, selected && styles.stockRowSelected]}
-            >
-              <View style={[styles.radio, selected && styles.radioSelected]} />
+              style={[styles.stockRow, selected === option.id && styles.stockRowSelected]}>
+              <View style={[styles.radio, selected === option.id && styles.radioSelected]} />
               <View style={styles.grow}>
-                <Text style={styles.stockName}>{option.title}</Text>
-                {option.detail ? <Text style={styles.hint}>{option.detail}</Text> : null}
+                <Text style={styles.stockName}>{option.label}</Text>
+                {option.quantity ? <Text style={styles.hint}>{plain.format(option.quantity.value)} {unitLabel(option.quantity.unit)}</Text> : null}
               </View>
             </Pressable>
-          );
+          ))}
+        </View>
+      ))}
+      {balances.map(({ stock_id, quantity }) => (
+        <Text key={stock_id} style={styles.hint}>
+          {stockItems.find((item) => item.id === stock_id)?.name} · {t("inventory.balanceAfter", {
+            value: plain.format(quantity.value), unit: unitLabel(quantity.unit)
+          })}
+        </Text>
+      ))}
+    </View>, stockError ? t(`inventory.errors.${stockError}`, { defaultValue: t("inventory.invalid") }) : null);
+  }
+
+  function plannedLabel(row: PlannedRow) {
+    return row.name || t("mobileBrews.plannedAdditions.manualYeast");
+  }
+
+  function selectPlan(row: PlannedRow) {
+    setSelectedPlan(row);
+    setAmountText(Number.isFinite(row.amount) ? String(Number(row.amount!.toFixed(2))) : "");
+    setPlannedUnit(row.unit);
+    setComponentAmounts(Object.fromEntries((row.components ?? []).map((item) => [
+      item.key, String(Number(item.amount.toFixed(2)))
+    ])));
+    setSubmitted(false);
+    setStockChoices({});
+  }
+
+  if (plannedMode && !selectedPlan) {
+    return (
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+        <Text style={styles.brewName}>{t("mobileBrews.plannedAdditions.title")}</Text>
+        {plan?.hasNutrientPlan ? <Text style={styles.hint}>
+          {t("mobileBrews.plannedAdditions.remaining", {
+            amounts: Object.entries(plan.remaining)
+              .filter(([, value]) => value > 0.01)
+              .map(([key, value]) => `${t(`nutrients.${key}`, { defaultValue: key })} ${plain.format(value)} g`)
+              .join(", ") || t("none")
+          })}
+        </Text> : null}
+        {(["PRIMARY", "SECONDARY"] as const).map((group) => {
+          const rows = plan?.rows.filter((item) => item.group === group) ?? [];
+          return rows.length ? <View key={group} style={styles.stockList}>
+            <Text style={styles.label}>{t(`brewStage.${group}`)}</Text>
+            {rows.map((row) => (
+              <Pressable key={row.id} accessibilityRole="button" disabled={row.status !== "available"}
+                accessibilityState={{ disabled: row.status !== "available" }} style={styles.stockRow}
+                onPress={() => selectPlan(row)}>
+                <View style={styles.grow}>
+                  <Text style={styles.stockName}>{plannedLabel(row)}</Text>
+                  <Text style={styles.hint}>{row.status === "available"
+                    ? row.amount != null && Number.isFinite(row.amount) ? `${plain.format(row.amount)} ${unitLabel(row.unit ?? "")}` : t("brews.primary.log")
+                    : t(`mobileBrews.plannedAdditions.${row.status}`)}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View> : null;
         })}
-      </View>,
-      balance && !balance.ok ? t(`inventory.errors.${balance.code}`, { defaultValue: t("inventory.invalid") }) : null,
-      balance?.ok
-        ? t("inventory.balanceAfter", { value: number.format(balance.balance.value), unit: unitLabel(balance.balance.unit) })
-        : selectedStock === UNTRACKED ? t("brewInventory.untrackedHelp") : null
+      </ScrollView>
     );
   }
 
@@ -648,15 +797,15 @@ export default function AddEntryScreen() {
       >
         {params.name ? <Text style={styles.brewName}>{params.name}</Text> : null}
 
-        {chips(t("mobileBrews.addEntry.typeLabel"), ENTRY_TYPES, type, (next) => {
+        {plannedMode ? null : chips(t("mobileBrews.addEntry.typeLabel"), ENTRY_TYPES, type, (next) => {
           setType(next);
           setSubmitted(false);
           setSaveFailed(false);
         }, (option) => t(`mobileBrews.timeline.types.${option}`))}
 
-        {renderFields()}
+        {deduction.current ? null : renderFields()}
 
-        {isTextType ? null : field(
+        {isTextType || deduction.current ? null : field(
           t("mobileBrews.addEntry.noteLabel"),
           <TextInput
             accessibilityLabel={t("mobileBrews.addEntry.noteLabel")}
@@ -681,8 +830,8 @@ export default function AddEntryScreen() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ busy: saving, disabled: saving }}
-          disabled={saving}
+          accessibilityState={{ busy: saving, disabled: saving || (tracked && !online) }}
+          disabled={saving || (tracked && !online)}
           onPress={() => void save()}
           style={({ pressed }) => [styles.button, saving && styles.buttonDisabled, pressed && !saving && styles.pressed]}
         >
@@ -694,7 +843,10 @@ export default function AddEntryScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.back()}
+          onPress={() => {
+            if (plannedMode && !deduction.current) setSelectedPlan(null);
+            else router.back();
+          }}
           style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
         >
           <Text style={styles.secondaryButtonText}>{t("mobileBrews.addEntry.cancel")}</Text>
