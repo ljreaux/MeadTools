@@ -85,6 +85,17 @@ workflow, configuration, internal draft JSON, deletions, renames, other dates,
 and Mobile or Mobile-preview announcements are rejected. The English entry is
 mandatory, valid, new, and cannot be future-dated in Chicago.
 
+The source branch is normally `preview`. When `preview` already carries
+unreleased work, so its diff cannot be limited to the notes, cut a
+same-repository branch named exactly `release/publication-YYYY-MM-DD` from the
+live `main` instead, using the `Publication date` below. That branch may only
+open the gate in `publication` mode; monthly, initial, hotfix, and policy
+modes never accept it. Every publication head, `preview` included, must
+contain the live `main` (GitHub compare `behind_by` 0) so the reviewed file list
+matches the merge result. The same diff, approval, label, check, and review
+rules apply. After it merges, bring `main` back into `preview` through a normal
+reviewed PR so the entry is not lost at the next monthly promotion.
+
 Record the normal exact `Release-ready head`, `Release-ready base`, and
 `Mobile production build: skip` lines, plus these explicit authorization lines:
 
@@ -169,8 +180,10 @@ with a concrete explanation, exact head/base lines, and a Mobile build decision.
 Dispatch with `mode=hotfix`, PR number, and exact head SHA. Feature changes do
 not qualify. The `bug-fix-only` and `hotfix-ready` combination skips the Mobile
 quality job for an urgent fix that does not release Mobile; Web/API quality and
-Vercel checks remain required. Do not add `skip-web-check` or `skip-mobile-check`
-to an armed hotfix. Record the hotfix in the next monthly summary without duplicate
+Vercel checks remain required. `policy-ready` and `publication-ready` PRs skip
+the Mobile quality job the same way, because the trusted gate already limits
+their diffs to release-policy files or dated notes and forbids a Mobile build.
+Do not add `skip-web-check` or `skip-mobile-check` to an armed hotfix. Record the hotfix in the next monthly summary without duplicate
 email or GitHub announcements.
 
 The release skill is a coordinator. It does not bypass required status checks,

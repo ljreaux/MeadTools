@@ -78,6 +78,30 @@ test("existing impact job gates all mobile validation and always tests classific
   for (const command of ["mobile:typecheck", "npm test --workspace @meadtools/mobile", "expo install --check", "expo export --platform android"]) assert.ok(mobile.includes(command));
 });
 
+test("Mobile job skips only for reviewed release-process labels without a Mobile build", () => {
+  const workflow = readFileSync(".github/workflows/quality.yml", "utf8");
+  const mobile = workflow.slice(workflow.indexOf("\n  mobile:"));
+  const condition = mobile.match(/^    if: (.+)$/m)[1];
+  // Translate the GitHub expression into JS over a label set.
+  const source = condition
+    .replace("needs.impact.outputs.mobile == 'true'", "affected")
+    .replaceAll(/contains\(github\.event\.pull_request\.labels\.\*\.name, '([a-z-]+)'\)/g, "labels.has('$1')");
+  assert.doesNotMatch(source, /github|contains/);
+  const runs = new Function("affected", "labels", `return ${source};`);
+  const run = (...names) => runs(true, new Set(names));
+  assert.equal(run(), true);
+  assert.equal(runs(false, new Set()), false);
+  assert.equal(run("skip-mobile-check"), false);
+  assert.equal(run("bug-fix-only", "hotfix-ready"), false);
+  assert.equal(run("bug-fix-only"), true);
+  assert.equal(run("hotfix-ready"), true);
+  assert.equal(run("release-ready", "policy-ready"), false);
+  assert.equal(run("release-ready", "publication-ready"), false);
+  assert.equal(run("release-ready"), true);
+  for (const skip of [["bug-fix-only", "hotfix-ready"], ["policy-ready"], ["publication-ready"]])
+    assert.equal(run(...skip, "build-mobile-production"), true, skip.join("+"));
+  assert.equal(run("skip-mobile-check", "build-mobile-production"), false);
+});
 
 test("moving source out of a mobile workspace retains its deletion path", () => {
   const directory = mkdtempSync(path.join(tmpdir(), "meadtools-impact-rename-"));
