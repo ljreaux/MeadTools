@@ -3,7 +3,7 @@ import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import { recipeDerivedStateResponseBodySchema } from "@meadtools/api-contract/schemas";
 import { recipeDataV2Schema } from "@meadtools/schemas";
 
-// Fragments never enter HTTP requests or Referer headers. No server storage.
+// Legacy fragments carry the whole handoff without sending it in an HTTP request.
 export const MAX_DRAFT_TOKEN_LENGTH = 24000;
 export const draftHandoffSchema = z
   .object({
@@ -17,7 +17,9 @@ export const draftHandoffSchema = z
 export type DraftHandoff = z.infer<typeof draftHandoffSchema>;
 
 export function encodeDraftHandoff(input: DraftHandoff): string {
-  const json = JSON.stringify(draftHandoffSchema.parse(input));
+  const parsed = draftHandoffSchema.parse(input);
+  rejectUnknownFields(input, parsed);
+  const json = JSON.stringify(parsed);
   const bytes = new TextEncoder().encode(json);
   if (bytes.length > MAX_DRAFT_TOKEN_LENGTH * 0.75)
     throw new Error("Draft is too large to open by link.");

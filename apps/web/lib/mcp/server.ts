@@ -21,10 +21,11 @@ import { agentCatalogLookups } from "@/lib/ai/agent-catalog-lookups";
 import { executeLimitedMcpTool, McpToolLimitError } from "@/lib/mcp/usage";
 
 import {
-  encodeDraftHandoff,
   defaultRecipeDraftName
 } from "@meadtools/recipe-workflows";
 import { publicAppOrigin } from "@/lib/public-origin";
+import { mcpDraftUrl } from "./draft-link";
+import { storeMcpDraft } from "./draft-store";
 
 const MAX_RESULT_BYTES = 64 * 1024;
 
@@ -107,12 +108,14 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
             : "MCP tool execution failed."
       };
     }
+    let builderUrl: string | undefined;
     if (execution.status === "ok" && "result" in execution && execution.result &&
         typeof execution.result === "object" && "status" in execution.result &&
         execution.result.status === "recipe" && "recipeData" in execution.result) {
       const result = execution.result;
       try {
-        const token = encodeDraftHandoff({
+        const origin = publicAppOrigin();
+        const id = await storeMcpDraft(userId, {
           version: 1,
           name: defaultRecipeDraftName({
             recipeData: result.recipeData,
@@ -125,24 +128,30 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
           warnings: result.warnings,
           assumptions: result.assumptions,
         });
-        execution = { ...execution, result: { ...result, builderUrl: `${publicAppOrigin()}/recipe-draft#${token}` } };
+        builderUrl = mcpDraftUrl(origin, id);
+        execution = { ...execution, result: { ...result, builderUrl } };
       } catch {
-        execution = { ...execution, result: { ...result, builderLinkError: "This draft cannot be opened by link. Reduce the draft size and try again." } };
+        execution = { ...execution, result: { ...result, builderLinkError: "Could not create a recipe draft link. Try building the draft again." } };
       }
     }
     const response = {
       isError: execution.status !== "ok",
-      content: [{ type: "text" as const, text: JSON.stringify(execution) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(execution) },
+        ...(builderUrl
+          ? [{ type: "text" as const, text: `[Open unsaved draft in MeadTools](${builderUrl})` }]
+          : [])
+      ],
       ...(isMcpAccountReadTool(request.params.name) ||
       isPublicReadTool(request.params.name) ||
       (isCalculatorTool(request.params.name) && execution.status === "ok")
         ? { structuredContent: execution }
         : {})
     };
-    // Include both structured content and compatibility text in the byte limit.
+    // Count additional link and structured content blocks in the byte limit.
     const size = Buffer.byteLength(
       JSON.stringify(
-        isMcpAccountReadTool(request.params.name) ||
+        builderUrl || isMcpAccountReadTool(request.params.name) ||
           isPublicReadTool(request.params.name) ||
           isCalculatorTool(request.params.name)
           ? response

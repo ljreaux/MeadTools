@@ -42,6 +42,7 @@ test("rejects malformed, unsupported and oversized handoffs", () => {
 test("refuses unknown nested recipe settings instead of dropping them", () => {
   const handoff = JSON.parse(JSON.stringify(fixture()));
   handoff.recipeData.futureSetting = true;
+  assert.throws(() => encodeDraftHandoff(handoff), /Unsupported draft field/);
   const token = Buffer.from(JSON.stringify(handoff), "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   assert.throws(() => decodeDraftHandoff(token), /Unsupported draft field/);
 });
