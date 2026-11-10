@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import Link from "next/link";
 import type { DraftHandoff } from "@meadtools/recipe-workflows/draft-handoff";
 import { openDraftHandoff } from "@/lib/draft-handoff";
+import { getStoredAccessToken } from "@/lib/auth/client-token";
+import { isMcpDraftId, mcpDraftIdFromFragment } from "@/lib/mcp/draft-link";
 import { RecipeProvider } from "../providers/RecipeProvider";
 import RecipeBuilder from "./RecipeBuilder";
 import { CardWrapper } from "../CardWrapper";
@@ -17,23 +20,66 @@ export default function DraftRecipeBuilder() {
   } | null>(null);
   const [failed, setFailed] = useState(false);
 
+  const [signInHref, setSignInHref] = useState<string | null>(null);
+
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
+    const controller = new AbortController();
+
+    async function open() {
+      const url = new URL(window.location.href);
       try {
+        let resolvedDraft: DraftHandoff | undefined;
+        const id = mcpDraftIdFromFragment(url.hash);
+        if (id !== null) {
+          if (!isMcpDraftId(id)) throw new Error("Invalid draft ID");
+          const token = getStoredAccessToken();
+          const response = await fetch("/mcp/draft", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(id),
+            signal: controller.signal
+          });
+          if (response.status === 401) {
+            const next = url.pathname + url.search + url.hash;
+            if (!controller.signal.aborted)
+              setSignInHref(`/login?${new URLSearchParams({ next })}`);
+            return;
+          }
+          if (!response.ok) throw new Error("Draft unavailable");
+          resolvedDraft = await response.json();
+        }
+        if (controller.signal.aborted) return;
         const opened = openDraftHandoff(
-          window.location.href,
+          url.href,
           localStorage,
-          () => crypto.randomUUID()
+          () => crypto.randomUUID(),
+          resolvedDraft
         );
         window.history.replaceState(null, "", opened.returnPath);
         setDraft(opened);
       } catch {
-        setFailed(true);
+        if (!controller.signal.aborted) setFailed(true);
       }
-    });
-    return () => window.cancelAnimationFrame(frame);
+    }
+
+    const frame = window.requestAnimationFrame(() => void open());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      controller.abort();
+    };
   }, []);
 
+  if (signInHref)
+    return (
+      <p className="mx-auto max-w-xl px-4 py-28">
+        <Link href={signInHref} className="underline">
+          {t("accountPage.login")}
+        </Link>
+      </p>
+    );
   if (failed)
     return (
       <p role="alert" className="mx-auto max-w-xl px-4 py-28">
