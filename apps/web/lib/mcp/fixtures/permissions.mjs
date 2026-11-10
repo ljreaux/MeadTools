@@ -2,6 +2,7 @@ import { registerHooks } from "node:module";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import { POST as mcpPost } from "../../../app/mcp/route.ts";
+import { encodeDraftHandoff } from "@meadtools/recipe-workflows/draft-handoff";
 import { createHash } from "node:crypto";
 import prisma from "../../prisma.ts";
 import { authenticateMcpAccessToken, createMcpAccessToken } from "../access.ts";
@@ -141,7 +142,13 @@ const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
     if (specifier === "@/lib/userAccessFunctions") {
       return {
-        url: "data:text/javascript,export async function verifyUser() { return 42; }",
+        url: `data:text/javascript,${encodeURIComponent(`
+          export async function verifyUser(request) {
+            if (request.nextUrl.pathname !== "/mcp/draft") return 42;
+            const user = request.headers.get("x-fixture-user");
+            return user ? Number(user) : new Response(null, { status: 401 });
+          }
+        `)}`,
         shortCircuit: true
       };
     }
@@ -152,6 +159,7 @@ const tokenRoute = await import(
   "../../../app/api/account/premium/mcp/tokens/route.ts"
 );
 const authorizeRoute = await import("../../../app/oauth/authorize/route.ts");
+const { POST: openDraft } = await import("../../../app/mcp/draft/route.ts");
 hooks.deregister();
 prisma.mcp_access_tokens.create = async ({ data }) => ({
   ...data,
@@ -325,6 +333,34 @@ prisma.mcp_tool_usage.create = async ({ data }) => {
   return {};
 };
 
+const drafts = new Map();
+let failDraftWrites = false;
+prisma.mcp_draft_handoffs.deleteMany = async ({ where }) => {
+  for (const draft of drafts.values()) {
+    if (draft.expires_at <= where.expires_at.lte) drafts.delete(draft.id);
+  }
+};
+prisma.mcp_draft_handoffs.create = async ({ data }) => {
+  if (failDraftWrites) throw new Error("Store offline");
+  drafts.set(data.id, data);
+};
+prisma.mcp_draft_handoffs.findFirst = async ({ where, select }) => {
+  assert.deepEqual(select, { payload: true });
+  assert.equal(typeof where.user_id, "number");
+  const draft = drafts.get(where.id);
+  return draft?.user_id === where.user_id && draft.expires_at > where.expires_at.gt
+    ? { payload: draft.payload }
+    : null;
+};
+const redeem = (id, userId) => openDraft(new NextRequest(`${resource}/draft`, {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    ...(userId ? { "x-fixture-user": String(userId) } : {})
+  },
+  body: JSON.stringify(id)
+}));
+
 // Real SDK protocol exchange, no network, database or model provider.
 for (const scope of [base, expanded]) {
   const server = createMeadToolsMcpServer(42, scope);
@@ -383,6 +419,75 @@ for (const scope of [base, expanded]) {
       result.structuredContent,
       JSON.parse(result.content[0].text)
     );
+  }
+  if (scope === base) {
+    const arguments_ = {
+      name: "Key Lime Pie — Link Test 🍯",
+      batchVolume: { value: 1, unit: "gal" },
+      fermentationFinalGravity: 0.996,
+      ingredients: [
+        { name: "Honey", brix: 79.6, role: "fixed", amount: { kind: "weight", unit: "lb", value: 1.5 } },
+        { name: "Water", role: "fill_liquid" },
+        { name: "Key Lime Juice", category: "juice", brix: 1.35, role: "fixed", secondary: true,
+          amount: { kind: "volume", unit: "fl_oz", value: 6 } }
+      ],
+      additives: [{ name: "Vanilla Bean", amount: 1, unit: "units", secondary: true }],
+      assumptions: Array.from({ length: 10 }, (_, i) =>
+        `Secondary note ${i + 1}: keep the fruit additions separate from primary. ${"🍋".repeat(55)}`),
+      nutrients: { enabled: true, yeastBrand: "Lalvin", yeastStrain: "ICV D47",
+        nitrogenRequirement: "Low", schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+      stabilizers: { enabled: true, type: "kmeta" }
+    };
+    const response = await client.callTool({ name: "build_recipe_draft", arguments: arguments_ });
+    const { result } = JSON.parse(response.content[0].text);
+    assert.equal(result.status, "recipe", response.content[0].text);
+    const url = new URL(result.builderUrl);
+    assert.equal(url.pathname + url.search, "/recipe-draft");
+    assert.match(url.hash, /^#mcp-[0-9a-f-]{36}$/);
+    assert.ok(result.builderUrl.length < 100);
+    assert.deepEqual(response.content[1], {
+      type: "text",
+      text: `[Open unsaved draft in MeadTools](${result.builderUrl})`
+    });
+    const id = url.hash.slice(5);
+    const stored = drafts.get(id);
+    assert.ok(stored.payload.length > 5253);
+    assert.ok(stored.expires_at.getTime() > Date.now() + 23 * 60 * 60 * 1000);
+    const owner = await redeem(id, 42);
+    assert.equal(owner.status, 200);
+    assert.equal(owner.headers.get("cache-control"), "private, no-store");
+    const handoff = await owner.json();
+    assert.deepEqual(handoff, {
+      version: 1,
+      name: arguments_.name,
+      recipeData: result.recipeData,
+      assumptions: result.assumptions,
+      warnings: result.warnings
+    });
+    assert.ok(handoff.recipeData.nutrients);
+    assert.equal(handoff.recipeData.additives[0].name, "Vanilla Bean");
+    assert.equal(handoff.recipeData.ingredients.some(ingredient => ingredient.secondary), true);
+
+    // Also carry native secondary notes if present in the draft payload.
+    handoff.recipeData.notes.secondary = [{ lineId: "note-1", content: ["Syrup & zest 🍋", ""] }];
+    stored.payload = encodeDraftHandoff(handoff);
+    assert.deepEqual(await (await redeem(id, 42)).json(), handoff);
+
+    assert.equal((await redeem(id)).status, 401);
+    assert.equal((await redeem(id, 43)).status, 404);
+    assert.equal((await redeem(`${id}%0a`, 42)).status, 404);
+    stored.expires_at = new Date(0);
+    assert.equal((await redeem(id, 42)).status, 404);
+
+    failDraftWrites = true;
+    const failed = await client.callTool({ name: "build_recipe_draft", arguments: arguments_ });
+    const failedDraft = JSON.parse(failed.content[0].text).result;
+    assert.equal(failedDraft.status, "recipe");
+    assert.equal(failedDraft.builderUrl, undefined);
+    assert.match(failedDraft.builderLinkError, /Could not create/);
+    assert.equal(failed.content.length, 1);
+    assert.equal(drafts.size, 0);
+    failDraftWrites = false;
   }
   for (const name of mcpAccountReadToolNames) {
     const result = await client.callTool({ name, arguments: {} });

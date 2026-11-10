@@ -2,7 +2,7 @@
 
 Generated from `apps/web/prisma/schema.prisma`; regenerate with `npm run db:erd`. Do not edit generated files by hand.
 
-**60 tables · 507 columns · 62 foreign keys · 19 enums.**
+**61 tables · 511 columns · 63 foreign keys · 19 enums.**
 
 Open [the interactive viewer](./erd.html) locally in your browser for search, zoom, pan, and focused areas. It works offline and contains no account or database data.
 
@@ -29,9 +29,9 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 ## Schema and migration fingerprints
 
-Schema SHA-256: `7f861165df95bab1ed7d9fba5f706404a00df4405a6ab2817cb4894f4e02ffec`
+Schema SHA-256: `455992cbaec9173a9e58690cc210f1f77ce222bfe874960fb8bdd2c8db8074de`
 
-Migration-set SHA-256: `e5b3805543915b8f86cc234963f2cfa3a9a38510ee9de62e4d3125440bb4e32f`
+Migration-set SHA-256: `d114fd3abae283336108abaac9e0b7d7c01a8c7db9281ec91f9aa10ca2c8825e`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 
@@ -72,6 +72,7 @@ Both fingerprints are checked by `npm run db:erd:check`; adding or editing a mig
 - [inventory_stock](#table-inventory_stock) — Inventory & equipment
 - [logs](#table-logs) — Brewing & hydrometers
 - [mcp_access_tokens](#table-mcp_access_tokens) — Identity, authentication & MCP
+- [mcp_draft_handoffs](#table-mcp_draft_handoffs) — Identity, authentication & MCP
 - [mcp_oauth_clients](#table-mcp_oauth_clients) — Identity, authentication & MCP
 - [mcp_oauth_codes](#table-mcp_oauth_codes) — Identity, authentication & MCP
 - [mcp_oauth_consumed_refresh_tokens](#table-mcp_oauth_consumed_refresh_tokens) — Identity, authentication & MCP
@@ -1160,6 +1161,32 @@ Declared table indexes/constraints:
 Foreign keys:
 
 - (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
+<a id="table-mcp_draft_handoffs"></a>
+
+### mcp_draft_handoffs
+
+Prisma model: `mcp_draft_handoffs`. Area: Identity, authentication & MCP.
+
+Short-lived, owner-only handoffs. These are separate from saved recipes.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `id` | `Uuid` | PK |  |
+| `user_id` | `Int` | FK |  |
+| `payload` | `VarChar(24000)` |  |  |
+| `expires_at` | `Timestamptz(6)` |  |  |
+
+Primary key: `id`.
+
+Declared table indexes/constraints:
+
+- `@@index([expires_at])`
+- `@@index([user_id])`
+
+Foreign keys:
+
+- (`user_id`) → `users` (`id`); delete **Cascade**, update **Cascade (Prisma default)**.
 
 <a id="table-mcp_oauth_clients"></a>
 
