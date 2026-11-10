@@ -6,6 +6,7 @@ import RECIPES from "./seed-data/recipes_rows.json";
 import COMMENTS from "./seed-data/comments_rows.json";
 import RATINGS from "./seed-data/recipe_ratings_rows.json";
 import prisma from "../lib/prisma";
+import { loadLocalChatGptClient } from "./local-chatgpt-client";
 import { seedInventory } from "./seed-inventory";
 import { seedFinishedMeads } from "./seed-finished-meads";
 import { seedBottlingProduction } from "./seed-bottling-production";
@@ -35,8 +36,13 @@ if (process.env.NODE_ENV === "production") {
 }
 async function main() {
   assertSeedSafe();
+  const chatGptClient = loadLocalChatGptClient(process.env.DATABASE_URL);
   // Drop and recreate tables is unnecessary; Prisma migrations handle this.
   await clearDb();
+  if (chatGptClient) {
+    await prisma.mcp_oauth_clients.create({ data: chatGptClient });
+    console.log("Restored the local ChatGPT client registration.");
+  }
   await seedCreditBillingDefaults();
   // Seed users
   const adminEmail = process.env.ADMIN_EMAIL || "";

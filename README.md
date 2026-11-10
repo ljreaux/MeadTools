@@ -138,6 +138,13 @@ npm run db:reset
 WARNING: This deletes all local data.  
 The command is protected by an environment guard and will not run against production databases.
 
+To keep an existing ChatGPT developer connection through a local reset, run
+`npm run db:pin-chatgpt-client --workspace @meadtools/web -- <client-id>` once
+with the registered OAuth client ID. The reset restores the pinned registration
+from an ignored file outside the Docker volume. Sign in and consent again in
+ChatGPT after resetting to get a new OAuth session. Pin the replacement ID if
+you recreate the plugin.
+
 ---
 
 ## i18n / Translations

@@ -61,6 +61,7 @@ next-env.d.ts
 skills-lock.json
 AGENTS.override.md
 CLAUDE.local.md
+/.local-chatgpt-client.json*
 # Sentry Config File
 .env.sentry-build-plugin
 # Obsolete local copy of Next.js docs from the old `agents-md` codemod; the
