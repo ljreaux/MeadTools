@@ -44,7 +44,7 @@ test("MCP packages are reproducible across timezones and preserve distinct insta
     const first = JSON.parse(await readFile(path.join(outputs[0], "inventory.json"), "utf8"));
     const second = JSON.parse(await readFile(path.join(outputs[1], "inventory.json"), "utf8"));
     assert.deepEqual(first, second);
-    assert.equal(first.artifacts.length, 4);
+    assert.equal(first.artifacts.length, 5);
     for (const artifact of first.artifacts) {
       assert.deepEqual(
         await readFile(path.join(outputs[0], artifact.name)),
@@ -62,6 +62,21 @@ test("MCP packages are reproducible across timezones and preserve distinct insta
     assert.equal(customer.extensions["com.openai"].review, undefined);
     const review = readEntry("meadtools-chatgpt-0.1.0-draft.zip", "plugin.json");
     assert.equal(review.extensions["com.openai"].review.test_cases.positive.length, 5);
+    const reviewMcp = readEntry("meadtools-chatgpt-0.1.0-draft.zip", "mcp.json");
+    assert.equal(reviewMcp.mcpServers.meadtools.extensions["com.openai"].auth.client.mode, "dcr");
+
+    const workspaceZip = "meadtools-chatgpt-0.1.1-workspace-test.zip";
+    const workspace = readEntry(workspaceZip, "plugin.json");
+    assert.equal(workspace.name, review.name);
+    assert.equal(workspace.version, "0.1.1");
+    assert.equal(workspace.extensions["com.openai"].apps, undefined);
+    assert.equal(workspace.extensions["com.openai"].review, undefined);
+    assert.deepEqual(readEntry(workspaceZip, "mcp.json").mcpServers, {
+      meadtools: { type: "streamable-http", url: "https://meadtools.com/mcp" }
+    });
+    const workspaceArtifact = first.artifacts.find(({ name }) => name === workspaceZip);
+    assert.equal(workspaceArtifact.customerDownload, false);
+    assert.deepEqual(workspaceArtifact.files, ["assets/composer-icon.png", "assets/logo.png", "mcp.json", "plugin.json"]);
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }

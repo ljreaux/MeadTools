@@ -13,6 +13,7 @@ const copyPublic = !args.includes("--no-public");
 const output = path.resolve(root, args.find((arg) => arg !== "--no-public") ?? "release-drafts/mcp-marketplaces");
 const source = path.join(root, "integrations/chatgpt/meadtools");
 const manifest = JSON.parse(await readFile(path.join(source, "plugin.json"), "utf8"));
+const mcpManifest = JSON.parse(await readFile(path.join(source, "mcp.json"), "utf8"));
 const settings = manifest.extensions["com.openai"];
 assert.equal(settings.review.test_cases.positive.length, 5);
 assert.equal(settings.review.test_cases.negative.length, 3);
@@ -37,18 +38,18 @@ const staging = await mkdtemp(path.join(tmpdir(), "meadtools-mcp-package-"));
 const artifacts = [];
 try {
   // Explicit inventories keep credentials, hidden bindings and unrelated source out.
+  const chatgptFiles = [
+    ["plugin.json", "integrations/chatgpt/meadtools/plugin.json"],
+    ["mcp.json", "integrations/chatgpt/meadtools/mcp.json"],
+    ["assets/logo.png", "integrations/chatgpt/meadtools/assets/logo.png"],
+    ["assets/composer-icon.png", "integrations/chatgpt/meadtools/assets/composer-icon.png"]
+  ];
+  const workspaceTestZip = "meadtools-chatgpt-0.1.1-workspace-test.zip";
   const inventories = {
-    "meadtools-chatgpt-0.1.0-draft.zip": [
-      ["plugin.json", "integrations/chatgpt/meadtools/plugin.json"],
-      ["mcp.json", "integrations/chatgpt/meadtools/mcp.json"],
-      ["assets/logo.png", "integrations/chatgpt/meadtools/assets/logo.png"],
-      ["assets/composer-icon.png", "integrations/chatgpt/meadtools/assets/composer-icon.png"]
-    ],
+    "meadtools-chatgpt-0.1.0-draft.zip": chatgptFiles,
+    [workspaceTestZip]: chatgptFiles,
     "meadtools-chatgpt-0.1.0.zip": [
-      ["plugin.json", "integrations/chatgpt/meadtools/plugin.json"],
-      ["mcp.json", "integrations/chatgpt/meadtools/mcp.json"],
-      ["assets/logo.png", "integrations/chatgpt/meadtools/assets/logo.png"],
-      ["assets/composer-icon.png", "integrations/chatgpt/meadtools/assets/composer-icon.png"],
+      ...chatgptFiles,
       ["README.md", "integrations/chatgpt/install-README.md"]
     ],
     "meadtools-claude-0.1.0.zip": [
@@ -74,10 +75,21 @@ try {
     const files = entries.map(([destination]) => destination);
     const customerDownload = name === "meadtools-chatgpt-0.1.0.zip" || name === "meadtools-claude-0.1.0.zip";
     let savedManifest = manifest;
-    if (name === "meadtools-chatgpt-0.1.0.zip") {
+    if (name === "meadtools-chatgpt-0.1.0.zip" || name === workspaceTestZip) {
       savedManifest = structuredClone(manifest);
       delete savedManifest.extensions["com.openai"].review;
       delete savedManifest.extensions["com.openai"].publication;
+      if (name === workspaceTestZip) {
+        savedManifest.version = "0.1.1";
+        // Use portable transport fields. The server still requires OAuth and
+        // advertises dynamic registration through its discovery documents.
+        const { type, url } = mcpManifest.mcpServers.meadtools;
+        const workspaceMcp = {
+          $schema: mcpManifest.$schema,
+          mcpServers: { meadtools: { type, url } }
+        };
+        await writeFile(path.join(folder, "mcp.json"), JSON.stringify(workspaceMcp, null, 2) + "\n");
+      }
       await writeFile(path.join(folder, "plugin.json"), JSON.stringify(savedManifest, null, 2) + "\n");
     }
     if (name === "meadtools-claude-preparation-draft.zip") {
