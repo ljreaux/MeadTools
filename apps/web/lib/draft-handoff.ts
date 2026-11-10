@@ -1,19 +1,21 @@
 import { initialNutrientData } from "@meadtools/core/nutrients";
 import {
   decodeDraftHandoff,
-  draftHandoffSchema
+  draftHandoffSchema,
+  type DraftHandoff
 } from "@meadtools/recipe-workflows/draft-handoff";
 
 export function openDraftHandoff(
   href: string,
   storage: Pick<Storage, "getItem" | "setItem">,
-  newId: () => string
+  newId: () => string,
+  resolvedDraft?: DraftHandoff
 ) {
   const url = new URL(href);
   let id = url.searchParams.get("draft");
   let handoff;
-  if (url.hash) {
-    handoff = decodeDraftHandoff(url.hash.slice(1));
+  if (resolvedDraft || url.hash) {
+    handoff = resolvedDraft ?? decodeDraftHandoff(url.hash.slice(1));
     id = newId();
     storage.setItem(`meadtools:handoff:${id}`, JSON.stringify(handoff));
     storage.setItem(

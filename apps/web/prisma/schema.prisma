@@ -203,6 +203,7 @@ model users {
   mcp_rate_buckets        mcp_rate_buckets?
   mcp_tool_leases         mcp_tool_leases[]
   mcp_tool_usage          mcp_tool_usage[]
+  mcp_draft_handoffs      mcp_draft_handoffs[]
   inventory_stock        inventory_stock[]
   inventory_meads        inventory_meads[]
   inventory_bottlings    inventory_bottlings[]
@@ -770,6 +771,19 @@ model mcp_tool_leases {
   user users @relation(fields: [user_id], references: [id], onDelete: Restrict)
 
   @@index([user_id, expires_at])
+}
+
+/// Short-lived, owner-only handoffs. These are separate from saved recipes.
+model mcp_draft_handoffs {
+  id         String   @id @db.Uuid
+  user_id    Int
+  payload    String   @db.VarChar(24000)
+  expires_at DateTime @db.Timestamptz(6)
+
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([expires_at])
+  @@index([user_id])
 }
 
 /// Metadata only: never store tool arguments, results or credentials here.

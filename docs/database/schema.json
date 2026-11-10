@@ -1,7 +1,7 @@
 {
   "fingerprint": {
-    "schema": "e3103448e8b7e4fa7a5ea257adc29cf0053dd298376a6f2dd79c0fd930989529",
-    "migrations": "8ef4414ba87a53449e16efcc66a16c462c978de345c2b421f8bbe0ea07d15d13"
+    "schema": "06cb9f390a44ef726570b7246e0ef388b68baca80c93bfa2716f4800d4ee6b15",
+    "migrations": "2e545d0e77f604d87f3ef690173c02a39aec97d8164fa8c69478bef66d709542"
   },
   "migrations": [
     {
@@ -179,6 +179,10 @@
     {
       "name": "20261108000000_add_inventory_costing",
       "sha256": "8dda11f2dfe42b98ce3a668110c162d75ec7c6ad2916322739bd708eaea7d0f1"
+    },
+    {
+      "name": "20261110000000_add_mcp_draft_handoffs",
+      "sha256": "2da20da75a00ab5e29c23fb521d13803e4950b744ac817a359407b545b63a3b2"
     }
   ],
   "models": [
@@ -9001,6 +9005,88 @@
       ]
     },
     {
+      "name": "mcp_draft_handoffs",
+      "table": "mcp_draft_handoffs",
+      "area": "identity",
+      "documentation": "Short-lived, owner-only handoffs. These are separate from saved recipes.",
+      "fields": [
+        {
+          "name": "id",
+          "column": "id",
+          "type": "String",
+          "nativeType": "Uuid",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "user_id",
+          "column": "user_id",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "mcp_draft_handoffs_user"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "payload",
+          "column": "payload",
+          "type": "String",
+          "nativeType": "VarChar(24000)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "expires_at",
+          "column": "expires_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "id"
+      ],
+      "unique": [
+        [
+          "id"
+        ]
+      ],
+      "indexes": [
+        "@@index([expires_at])",
+        "@@index([user_id])"
+      ]
+    },
+    {
       "name": "mcp_oauth_clients",
       "table": "mcp_oauth_clients",
       "area": "identity",
@@ -13421,6 +13507,22 @@
       "parentCardinality": "1",
       "childCardinality": "0..N",
       "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "mcp_draft_handoffs_user",
+      "child": "mcp_draft_handoffs",
+      "parent": "users",
+      "name": "mcp_draft_handoffsTousers",
+      "from": [
+        "user_id"
+      ],
+      "to": [
+        "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Cascade",
       "onUpdate": "Cascade (Prisma default)"
     },
     {

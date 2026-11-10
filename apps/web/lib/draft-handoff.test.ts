@@ -97,3 +97,33 @@ test("nutrient-less handoffs hydrate their recipe and preserve edits when resume
   assert.equal(resumed.nutrients.version, 2);
   assert.equal(result.recipeData.nutrients, undefined);
 });
+
+test("an authorized MCP draft opens in the same editable builder and strips the remote reference", () => {
+  const result = createTraditionalMead({
+    batchVolume: { value: 1, unit: "gal" },
+    targetOriginalGravity: 1.1,
+    fermentationFinalGravity: 0.996,
+    nutrients: { enabled: false },
+    stabilizers: { enabled: false }
+  });
+  if (result.status !== "recipe") throw new Error("Invalid fixture");
+  const handoff = {
+    version: 1 as const,
+    name: "Key Lime Pie — 1 Gallon",
+    recipeData: result.recipeData,
+    assumptions: result.assumptions,
+    warnings: result.warnings
+  };
+  handoff.recipeData.notes.secondary = [{ lineId: "lime", content: ["Add lime 🍋", ""] }];
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); }
+  };
+  const id = "00000000-0000-4000-8000-000000000000";
+  const url = "https://meadtools.com/recipe-draft#mcp-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const opened = openDraftHandoff(url, storage, () => id, handoff);
+  assert.equal(opened.returnPath, `/recipe-draft?draft=${id}`);
+  assert.deepEqual(opened.handoff, handoff);
+  assert.deepEqual(JSON.parse(values.get(opened.key)!).notes, handoff.recipeData.notes);
+});

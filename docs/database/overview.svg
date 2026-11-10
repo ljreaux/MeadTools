@@ -1,13 +1,13 @@
-<svg width="1406pt" height="1873pt"
- viewBox="0.00 0.00 1406.00 1873.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Overview — every table"><metadata>{&quot;schema&quot;:&quot;e3103448e8b7e4fa7a5ea257adc29cf0053dd298376a6f2dd79c0fd930989529&quot;,&quot;migrations&quot;:&quot;8ef4414ba87a53449e16efcc66a16c462c978de345c2b421f8bbe0ea07d15d13&quot;}</metadata>
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1844)">
-<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-1844 1377.29,-1844 1377.29,28.8 -28.8,28.8"/>
+<svg width="1406pt" height="2063pt"
+ viewBox="0.00 0.00 1406.00 2063.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Overview — every table"><metadata>{&quot;schema&quot;:&quot;06cb9f390a44ef726570b7246e0ef388b68baca80c93bfa2716f4800d4ee6b15&quot;,&quot;migrations&quot;:&quot;2e545d0e77f604d87f3ef690173c02a39aec97d8164fa8c69478bef66d709542&quot;}</metadata>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 2034)">
+<polygon fill="white" stroke="none" points="-28.8,28.8 -28.8,-2034 1377.29,-2034 1377.29,28.8 -28.8,28.8"/>
 <!-- Account&#45;&gt;User -->
 <g id="fk_Account_user" class="edge">
 <title>Account:header&#45;&gt;User:header</title>
 <g id="a_fk_Account_user"><a xlink:title="Account (userId) &#45;&gt; User (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M122.9,-493.6C188.37,-493.6 346.49,-493.6 346.49,-493.6 346.49,-493.6 346.49,-488 346.49,-488"/>
-<polygon fill="#64748b" stroke="#64748b" points="348.76,-488 346.49,-481.5 344.21,-488 348.76,-488"/>
+<path fill="none" stroke="#64748b" d="M122.9,-611.6C188.37,-611.6 346.49,-611.6 346.49,-611.6 346.49,-611.6 346.49,-606 346.49,-606"/>
+<polygon fill="#64748b" stroke="#64748b" points="348.76,-606 346.49,-599.5 344.21,-606 348.76,-606"/>
 </a>
 </g>
 </g>
@@ -15,8 +15,8 @@
 <g id="fk_brew_entries_brews" class="edge">
 <title>brew_entries:header&#45;&gt;brews:header</title>
 <g id="a_fk_brew_entries_brews"><a xlink:title="brew_entries (brew_id) &#45;&gt; brews (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M376.49,-1398.01C376.49,-1357.86 376.49,-1235.5 376.49,-1235.5 376.49,-1235.5 548.79,-1235.5 548.79,-1235.5"/>
-<polygon fill="#64748b" stroke="#64748b" points="548.79,-1237.78 555.29,-1235.5 548.79,-1233.23 548.79,-1237.78"/>
+<path fill="none" stroke="#64748b" d="M378.49,-1583.22C378.49,-1560.42 378.49,-1514.1 378.49,-1514.1 378.49,-1514.1 548.62,-1514.1 548.62,-1514.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="548.62,-1516.38 555.12,-1514.1 548.62,-1511.83 548.62,-1516.38"/>
 </a>
 </g>
 </g>
@@ -24,8 +24,8 @@
 <g id="fk_brew_entries_users" class="edge">
 <title>brew_entries:header&#45;&gt;users:header</title>
 <g id="a_fk_brew_entries_users"><a xlink:title="brew_entries (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M379.49,-1398.23C379.49,-1365.94 379.49,-1281.6 379.49,-1281.6 379.49,-1281.6 1328.49,-1281.6 1328.49,-1281.6 1328.49,-1281.6 1328.49,-860.87 1328.49,-860.87"/>
-<polygon fill="#64748b" stroke="#64748b" points="1330.76,-860.87 1328.49,-854.37 1326.21,-860.87 1330.76,-860.87"/>
+<path fill="none" stroke="#64748b" d="M386.57,-1587.44C414,-1587.44 445.49,-1587.44 445.49,-1587.44 445.49,-1587.44 445.49,-971.83 445.49,-971.83 445.49,-971.83 1298.31,-971.83 1298.31,-971.83"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.31,-974.1 1304.81,-971.83 1298.31,-969.55 1298.31,-974.1"/>
 </a>
 </g>
 </g>
@@ -33,8 +33,8 @@
 <g id="fk_brew_images_entry" class="edge">
 <title>brew_images:header&#45;&gt;brew_entries:header</title>
 <g id="a_fk_brew_images_entry"><a xlink:title="brew_images (entry_id) &#45;&gt; brew_entries (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M808.45,-1260.53C694.33,-1260.53 378.49,-1260.53 378.49,-1260.53 378.49,-1260.53 378.49,-1390.05 378.49,-1390.05"/>
-<polygon fill="#64748b" stroke="#64748b" points="376.21,-1390.05 378.49,-1396.55 380.76,-1390.05 376.21,-1390.05"/>
+<path fill="none" stroke="#64748b" d="M808.29,-1603.76C808.29,-1603.76 394.33,-1603.76 394.33,-1603.76"/>
+<polygon fill="#64748b" stroke="#64748b" points="394.33,-1601.49 387.83,-1603.76 394.33,-1606.04 394.33,-1601.49"/>
 </a>
 </g>
 </g>
@@ -42,8 +42,8 @@
 <g id="fk_brew_images_brew" class="edge">
 <title>brew_images:header&#45;&gt;brews:header</title>
 <g id="a_fk_brew_images_brew"><a xlink:title="brew_images (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M808.49,-1243.4C808.49,-1239.32 808.49,-1235.8 808.49,-1235.8 808.49,-1235.8 608.07,-1235.8 608.07,-1235.8"/>
-<polygon fill="#64748b" stroke="#64748b" points="608.07,-1233.53 601.57,-1235.8 608.07,-1238.08 608.07,-1233.53"/>
+<path fill="none" stroke="#64748b" d="M808.24,-1592.88C734.52,-1592.88 586.49,-1592.88 586.49,-1592.88 586.49,-1592.88 586.49,-1524.89 586.49,-1524.89"/>
+<polygon fill="#64748b" stroke="#64748b" points="588.76,-1524.89 586.49,-1518.39 584.21,-1524.89 588.76,-1524.89"/>
 </a>
 </g>
 </g>
@@ -51,8 +51,8 @@
 <g id="fk_brew_images_recipe" class="edge">
 <title>brew_images:header&#45;&gt;recipes:header</title>
 <g id="a_fk_brew_images_recipe"><a xlink:title="brew_images (recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M889.61,-1260.13C916.75,-1260.13 947.49,-1260.13 947.49,-1260.13 947.49,-1260.13 947.49,-1356.5 947.49,-1356.5 947.49,-1356.5 1098.5,-1356.5 1098.5,-1356.5"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.5,-1358.78 1105,-1356.5 1098.5,-1354.23 1098.5,-1358.78"/>
+<path fill="none" stroke="#64748b" d="M889.81,-1589.7C904.94,-1589.7 918.49,-1589.7 918.49,-1589.7 918.49,-1589.7 918.49,-1422.65 918.49,-1422.65 918.49,-1422.65 1098.85,-1422.65 1098.85,-1422.65"/>
+<polygon fill="#64748b" stroke="#64748b" points="1098.85,-1424.93 1105.35,-1422.65 1098.85,-1420.38 1098.85,-1424.93"/>
 </a>
 </g>
 </g>
@@ -60,8 +60,8 @@
 <g id="fk_brew_images_user" class="edge">
 <title>brew_images:header&#45;&gt;users:header</title>
 <g id="a_fk_brew_images_user"><a xlink:title="brew_images (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: NoAction; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M888.49,-1243.14C888.49,-1206.24 888.49,-1100.1 888.49,-1100.1 888.49,-1100.1 1312.49,-1100.1 1312.49,-1100.1 1312.49,-1100.1 1312.49,-861.13 1312.49,-861.13"/>
-<polygon fill="#64748b" stroke="#64748b" points="1314.76,-861.13 1312.49,-854.63 1310.21,-861.13 1314.76,-861.13"/>
+<path fill="none" stroke="#64748b" d="M889.7,-1602.7C1006.87,-1602.7 1336.49,-1602.7 1336.49,-1602.7 1336.49,-1602.7 1336.49,-994.18 1336.49,-994.18"/>
+<polygon fill="#64748b" stroke="#64748b" points="1338.76,-994.18 1336.49,-987.68 1334.21,-994.18 1338.76,-994.18"/>
 </a>
 </g>
 </g>
@@ -69,8 +69,8 @@
 <g id="fk_brews_cover_image" class="edge">
 <title>brews:header&#45;&gt;brew_images:header</title>
 <g id="a_fk_brews_cover_image"><a xlink:title="brews (cover_image_id) &#45;&gt; brew_images (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M600.24,-1229.6C658.01,-1229.6 810.49,-1229.6 810.49,-1229.6 810.49,-1229.6 810.49,-1235.2 810.49,-1235.2"/>
-<polygon fill="#64748b" stroke="#64748b" points="808.21,-1235.2 810.49,-1241.7 812.76,-1235.2 808.21,-1235.2"/>
+<path fill="none" stroke="#64748b" d="M570.49,-1516.85C570.49,-1542.26 570.49,-1598.32 570.49,-1598.32 570.49,-1598.32 800.16,-1598.32 800.16,-1598.32"/>
+<polygon fill="#64748b" stroke="#64748b" points="800.16,-1600.6 806.66,-1598.32 800.16,-1596.05 800.16,-1600.6"/>
 </a>
 </g>
 </g>
@@ -78,8 +78,8 @@
 <g id="fk_brews_recipes" class="edge">
 <title>brews:header&#45;&gt;recipes:header</title>
 <g id="a_fk_brews_recipes"><a xlink:title="brews (recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M586.49,-1241.88C586.49,-1274.83 586.49,-1362.7 586.49,-1362.7 586.49,-1362.7 1098.53,-1362.7 1098.53,-1362.7"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.53,-1364.98 1105.03,-1362.7 1098.53,-1360.43 1098.53,-1364.98"/>
+<path fill="none" stroke="#64748b" d="M589.49,-1492.1C589.49,-1468.53 589.49,-1419.88 589.49,-1419.88 589.49,-1419.88 1098.67,-1419.88 1098.67,-1419.88"/>
+<polygon fill="#64748b" stroke="#64748b" points="1098.67,-1422.15 1105.17,-1419.88 1098.67,-1417.6 1098.67,-1422.15"/>
 </a>
 </g>
 </g>
@@ -87,8 +87,8 @@
 <g id="fk_brews_users" class="edge">
 <title>brews:header&#45;&gt;users:header</title>
 <g id="a_fk_brews_users"><a xlink:title="brews (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M600.27,-1223.4C723.18,-1223.4 1322.49,-1223.4 1322.49,-1223.4 1322.49,-1223.4 1322.49,-860.92 1322.49,-860.92"/>
-<polygon fill="#64748b" stroke="#64748b" points="1324.76,-860.92 1322.49,-854.42 1320.21,-860.92 1324.76,-860.92"/>
+<path fill="none" stroke="#64748b" d="M600.19,-1511.7C723.99,-1511.7 1333.49,-1511.7 1333.49,-1511.7 1333.49,-1511.7 1333.49,-994.12 1333.49,-994.12"/>
+<polygon fill="#64748b" stroke="#64748b" points="1335.76,-994.12 1333.49,-987.62 1331.21,-994.12 1335.76,-994.12"/>
 </a>
 </g>
 </g>
@@ -96,8 +96,8 @@
 <g id="fk_chat_access_grants_user" class="edge">
 <title>chat_access_grants:header&#45;&gt;users:header</title>
 <g id="a_fk_chat_access_grants_user"><a xlink:title="chat_access_grants (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1190.14,-1255.6C1247.18,-1255.6 1325.49,-1255.6 1325.49,-1255.6 1325.49,-1255.6 1325.49,-861.03 1325.49,-861.03"/>
-<polygon fill="#64748b" stroke="#64748b" points="1327.76,-861.03 1325.49,-854.53 1323.21,-861.03 1327.76,-861.03"/>
+<path fill="none" stroke="#64748b" d="M1190.17,-1259.6C1245.6,-1259.6 1320.49,-1259.6 1320.49,-1259.6 1320.49,-1259.6 1320.49,-993.9 1320.49,-993.9"/>
+<polygon fill="#64748b" stroke="#64748b" points="1322.76,-993.9 1320.49,-987.4 1318.21,-993.9 1322.76,-993.9"/>
 </a>
 </g>
 </g>
@@ -105,8 +105,8 @@
 <g id="fk_chat_access_settings_updated_by" class="edge">
 <title>chat_access_settings:header&#45;&gt;users:header</title>
 <g id="a_fk_chat_access_settings_updated_by"><a xlink:title="chat_access_settings (updated_by_user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1194.6,-1203.6C1249.5,-1203.6 1320.49,-1203.6 1320.49,-1203.6 1320.49,-1203.6 1320.49,-861.11 1320.49,-861.11"/>
-<polygon fill="#64748b" stroke="#64748b" points="1322.76,-861.11 1320.49,-854.61 1318.21,-861.11 1322.76,-861.11"/>
+<path fill="none" stroke="#64748b" d="M1194.37,-1207.6C1248.29,-1207.6 1317.49,-1207.6 1317.49,-1207.6 1317.49,-1207.6 1317.49,-994.19 1317.49,-994.19"/>
+<polygon fill="#64748b" stroke="#64748b" points="1319.76,-994.19 1317.49,-987.69 1315.21,-994.19 1319.76,-994.19"/>
 </a>
 </g>
 </g>
@@ -114,8 +114,8 @@
 <g id="fk_chat_conversations_user" class="edge">
 <title>chat_conversations:header&#45;&gt;users:header</title>
 <g id="a_fk_chat_conversations_user"><a xlink:title="chat_conversations (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1189.31,-1514.6C1249.56,-1514.6 1335.49,-1514.6 1335.49,-1514.6 1335.49,-1514.6 1335.49,-861.18 1335.49,-861.18"/>
-<polygon fill="#64748b" stroke="#64748b" points="1337.76,-861.18 1335.49,-854.68 1333.21,-861.18 1337.76,-861.18"/>
+<path fill="none" stroke="#64748b" d="M1189.32,-1103.6C1242.88,-1103.6 1314.49,-1103.6 1314.49,-1103.6 1314.49,-1103.6 1314.49,-994.08 1314.49,-994.08"/>
+<polygon fill="#64748b" stroke="#64748b" points="1316.76,-994.08 1314.49,-987.58 1312.21,-994.08 1316.76,-994.08"/>
 </a>
 </g>
 </g>
@@ -123,8 +123,8 @@
 <g id="fk_chat_drafts_conversation" class="edge">
 <title>chat_drafts:header&#45;&gt;chat_conversations:header</title>
 <g id="a_fk_chat_drafts_conversation"><a xlink:title="chat_drafts (conversation_id) &#45;&gt; chat_conversations (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M884.5,-1515.1C884.5,-1515.1 1066.33,-1515.1 1066.33,-1515.1"/>
-<polygon fill="#64748b" stroke="#64748b" points="1066.33,-1517.38 1072.83,-1515.1 1066.33,-1512.83 1066.33,-1517.38"/>
+<path fill="none" stroke="#64748b" d="M884.5,-1099.07C884.5,-1099.07 1066.33,-1099.07 1066.33,-1099.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="1066.33,-1101.34 1072.83,-1099.07 1066.33,-1096.79 1066.33,-1101.34"/>
 </a>
 </g>
 </g>
@@ -132,8 +132,8 @@
 <g id="fk_chat_drafts_saved_recipe" class="edge">
 <title>chat_drafts:header&#45;&gt;recipes:header</title>
 <g id="a_fk_chat_drafts_saved_recipe"><a xlink:title="chat_drafts (saved_recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M884.59,-1508.55C911.02,-1508.55 942.49,-1508.55 942.49,-1508.55 942.49,-1508.55 942.49,-1368.9 942.49,-1368.9 942.49,-1368.9 1098.6,-1368.9 1098.6,-1368.9"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.6,-1371.18 1105.1,-1368.9 1098.6,-1366.63 1098.6,-1371.18"/>
+<path fill="none" stroke="#64748b" d="M884.41,-1108.13C899.85,-1108.13 914.49,-1108.13 914.49,-1108.13 914.49,-1108.13 914.49,-1408.78 914.49,-1408.78 914.49,-1408.78 1098.81,-1408.78 1098.81,-1408.78"/>
+<polygon fill="#64748b" stroke="#64748b" points="1098.81,-1411.05 1105.31,-1408.78 1098.81,-1406.5 1098.81,-1411.05"/>
 </a>
 </g>
 </g>
@@ -141,8 +141,8 @@
 <g id="fk_chat_generations_message" class="edge">
 <title>chat_generations:header&#45;&gt;chat_messages:header</title>
 <g id="a_fk_chat_generations_message"><a xlink:title="chat_generations (message_id) &#45;&gt; chat_messages (id); 0..1 child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M397.91,-1520.13C428.12,-1520.13 460.49,-1520.13 460.49,-1520.13 460.49,-1520.13 460.49,-1563.07 460.49,-1563.07 460.49,-1563.07 523.45,-1563.07 523.45,-1563.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="523.45,-1565.34 529.95,-1563.07 523.45,-1560.79 523.45,-1565.34"/>
+<path fill="none" stroke="#64748b" d="M397.91,-1030.13C433.47,-1030.13 474.49,-1030.13 474.49,-1030.13 474.49,-1030.13 474.49,-1073.07 474.49,-1073.07 474.49,-1073.07 523.6,-1073.07 523.6,-1073.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="523.6,-1075.34 530.1,-1073.07 523.6,-1070.79 523.6,-1075.34"/>
 </a>
 </g>
 </g>
@@ -150,8 +150,8 @@
 <g id="fk_chat_generations_usage_event" class="edge">
 <title>chat_generations:header&#45;&gt;chatbot_usage_events:header</title>
 <g id="a_fk_chat_generations_usage_event"><a xlink:title="chat_generations (usage_event_id) &#45;&gt; chatbot_usage_events (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M398.09,-1511.07C398.09,-1511.07 505.41,-1511.07 505.41,-1511.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="505.41,-1513.34 511.91,-1511.07 505.41,-1508.79 505.41,-1513.34"/>
+<path fill="none" stroke="#64748b" d="M398.09,-1021.07C398.09,-1021.07 505.41,-1021.07 505.41,-1021.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="505.41,-1023.34 511.91,-1021.07 505.41,-1018.79 505.41,-1023.34"/>
 </a>
 </g>
 </g>
@@ -159,8 +159,8 @@
 <g id="fk_chat_message_contexts_message" class="edge">
 <title>chat_message_contexts:header&#45;&gt;chat_messages:header</title>
 <g id="a_fk_chat_message_contexts_message"><a xlink:title="chat_message_contexts (message_id) &#45;&gt; chat_messages (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M416.19,-1572.13C416.19,-1572.13 523.65,-1572.13 523.65,-1572.13"/>
-<polygon fill="#64748b" stroke="#64748b" points="523.65,-1574.41 530.15,-1572.13 523.65,-1569.86 523.65,-1574.41"/>
+<path fill="none" stroke="#64748b" d="M416.19,-1082.13C416.19,-1082.13 523.65,-1082.13 523.65,-1082.13"/>
+<polygon fill="#64748b" stroke="#64748b" points="523.65,-1084.41 530.15,-1082.13 523.65,-1079.86 523.65,-1084.41"/>
 </a>
 </g>
 </g>
@@ -168,8 +168,8 @@
 <g id="fk_chat_messages_conversation" class="edge">
 <title>chat_messages:header&#45;&gt;chat_conversations:header</title>
 <g id="a_fk_chat_messages_conversation"><a xlink:title="chat_messages (conversation_id) &#45;&gt; chat_conversations (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M625.06,-1571.47C717.81,-1571.47 916.49,-1571.47 916.49,-1571.47 916.49,-1571.47 916.49,-1521.65 916.49,-1521.65 916.49,-1521.65 1066.33,-1521.65 1066.33,-1521.65"/>
-<polygon fill="#64748b" stroke="#64748b" points="1066.33,-1523.93 1072.83,-1521.65 1066.33,-1519.38 1066.33,-1523.93"/>
+<path fill="none" stroke="#64748b" d="M625.09,-1077.6C758.43,-1077.6 1131.49,-1077.6 1131.49,-1077.6 1131.49,-1077.6 1131.49,-1083.2 1131.49,-1083.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="1129.21,-1083.2 1131.49,-1089.7 1133.76,-1083.2 1129.21,-1083.2"/>
 </a>
 </g>
 </g>
@@ -177,8 +177,8 @@
 <g id="fk_chat_messages_draft" class="edge">
 <title>chat_messages:header&#45;&gt;chat_drafts:header</title>
 <g id="a_fk_chat_messages_draft"><a xlink:title="chat_messages (draft_id) &#45;&gt; chat_drafts (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M625.14,-1562.73C702.44,-1562.73 848.49,-1562.73 848.49,-1562.73 848.49,-1562.73 848.49,-1536 848.49,-1536"/>
-<polygon fill="#64748b" stroke="#64748b" points="850.76,-1536 848.49,-1529.5 846.21,-1536 850.76,-1536"/>
+<path fill="none" stroke="#64748b" d="M613.49,-1089.97C613.49,-1096.91 613.49,-1104.2 613.49,-1104.2 613.49,-1104.2 805.45,-1104.2 805.45,-1104.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="805.45,-1106.48 811.95,-1104.2 805.45,-1101.93 805.45,-1106.48"/>
 </a>
 </g>
 </g>
@@ -186,8 +186,8 @@
 <g id="fk_comments_parent" class="edge">
 <title>comments:header&#45;&gt;comments:header</title>
 <g id="a_fk_comments_parent"><a xlink:title="comments (parent_id) &#45;&gt; comments (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M815.85,-1151.6C813.77,-1151.6 812.49,-1151.6 812.49,-1151.6 812.49,-1151.6 812.49,-1173.47 812.49,-1173.47 812.49,-1173.47 885.49,-1173.47 885.49,-1173.47 885.49,-1173.47 885.49,-1158.4 885.49,-1158.4 885.49,-1158.4 885.15,-1158.4 885.15,-1158.4"/>
-<polygon fill="#64748b" stroke="#64748b" points="890.13,-1156.13 883.63,-1158.4 890.13,-1160.68 890.13,-1156.13"/>
+<path fill="none" stroke="#64748b" d="M815.56,-1283.6C807.16,-1283.6 800.49,-1283.6 800.49,-1283.6 800.49,-1283.6 800.49,-1258 800.49,-1258 800.49,-1258 897.49,-1258 897.49,-1258 897.49,-1258 897.49,-1279.2 897.49,-1279.2 897.49,-1279.2 890.41,-1279.2 890.41,-1279.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="890.41,-1276.93 883.91,-1279.2 890.41,-1281.48 890.41,-1276.93"/>
 </a>
 </g>
 </g>
@@ -195,8 +195,8 @@
 <g id="fk_comments_recipe" class="edge">
 <title>comments:header&#45;&gt;recipes:header</title>
 <g id="a_fk_comments_recipe"><a xlink:title="comments (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: NoAction">
-<path fill="none" stroke="#64748b" d="M882.33,-1151.6C912.91,-1151.6 953.49,-1151.6 953.49,-1151.6 953.49,-1151.6 953.49,-1353.4 953.49,-1353.4 953.49,-1353.4 1098.57,-1353.4 1098.57,-1353.4"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.57,-1355.68 1105.07,-1353.4 1098.57,-1351.13 1098.57,-1355.68"/>
+<path fill="none" stroke="#64748b" d="M882.21,-1291.2C956.89,-1291.2 1131.49,-1291.2 1131.49,-1291.2 1131.49,-1291.2 1131.49,-1394.3 1131.49,-1394.3"/>
+<polygon fill="#64748b" stroke="#64748b" points="1129.21,-1394.3 1131.49,-1400.8 1133.76,-1394.3 1129.21,-1394.3"/>
 </a>
 </g>
 </g>
@@ -204,8 +204,8 @@
 <g id="fk_comments_author" class="edge">
 <title>comments:header&#45;&gt;users:header</title>
 <g id="a_fk_comments_author"><a xlink:title="comments (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: NoAction">
-<path fill="none" stroke="#64748b" d="M882.15,-1144.8C988.73,-1144.8 1315.49,-1144.8 1315.49,-1144.8 1315.49,-1144.8 1315.49,-860.92 1315.49,-860.92"/>
-<polygon fill="#64748b" stroke="#64748b" points="1317.76,-860.92 1315.49,-854.42 1313.21,-860.92 1317.76,-860.92"/>
+<path fill="none" stroke="#64748b" d="M882.34,-1285.2C990.35,-1285.2 1323.49,-1285.2 1323.49,-1285.2 1323.49,-1285.2 1323.49,-993.83 1323.49,-993.83"/>
+<polygon fill="#64748b" stroke="#64748b" points="1325.76,-993.83 1323.49,-987.33 1321.21,-993.83 1325.76,-993.83"/>
 </a>
 </g>
 </g>
@@ -213,8 +213,8 @@
 <g id="fk_credit_accounts_user" class="edge">
 <title>credit_accounts:header&#45;&gt;users:header</title>
 <g id="a_fk_credit_accounts_user"><a xlink:title="credit_accounts (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1179.65,-944.6C1232.59,-944.6 1310.49,-944.6 1310.49,-944.6 1310.49,-944.6 1310.49,-860.95 1310.49,-860.95"/>
-<polygon fill="#64748b" stroke="#64748b" points="1312.76,-860.95 1310.49,-854.45 1308.21,-860.95 1312.76,-860.95"/>
+<path fill="none" stroke="#64748b" d="M1179.89,-481.6C1236.97,-481.6 1324.49,-481.6 1324.49,-481.6 1324.49,-481.6 1324.49,-953.18 1324.49,-953.18"/>
+<polygon fill="#64748b" stroke="#64748b" points="1322.21,-953.18 1324.49,-959.68 1326.76,-953.18 1322.21,-953.18"/>
 </a>
 </g>
 </g>
@@ -222,8 +222,8 @@
 <g id="fk_credit_checkout_sessions_user" class="edge">
 <title>credit_checkout_sessions:header&#45;&gt;users:header</title>
 <g id="a_fk_credit_checkout_sessions_user"><a xlink:title="credit_checkout_sessions (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1206.28,-892.6C1254.17,-892.6 1307.49,-892.6 1307.49,-892.6 1307.49,-892.6 1307.49,-861.2 1307.49,-861.2"/>
-<polygon fill="#64748b" stroke="#64748b" points="1309.76,-861.2 1307.49,-854.7 1305.21,-861.2 1309.76,-861.2"/>
+<path fill="none" stroke="#64748b" d="M1206.41,-1051.6C1255.79,-1051.6 1311.49,-1051.6 1311.49,-1051.6 1311.49,-1051.6 1311.49,-994.15 1311.49,-994.15"/>
+<polygon fill="#64748b" stroke="#64748b" points="1313.76,-994.15 1311.49,-987.65 1309.21,-994.15 1313.76,-994.15"/>
 </a>
 </g>
 </g>
@@ -231,8 +231,8 @@
 <g id="fk_credit_ledger_entries_account" class="edge">
 <title>credit_ledger_entries:header&#45;&gt;credit_accounts:header</title>
 <g id="a_fk_credit_ledger_entries_account"><a xlink:title="credit_ledger_entries (account_id) &#45;&gt; credit_accounts (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M848.49,-984.22C848.49,-970.25 848.49,-949.47 848.49,-949.47 848.49,-949.47 1075.68,-949.47 1075.68,-949.47"/>
-<polygon fill="#64748b" stroke="#64748b" points="1075.68,-951.74 1082.18,-949.47 1075.68,-947.19 1075.68,-951.74"/>
+<path fill="none" stroke="#64748b" d="M910.5,-529.07C957.94,-529.07 1015.49,-529.07 1015.49,-529.07 1015.49,-529.07 1015.49,-486.13 1015.49,-486.13 1015.49,-486.13 1075.78,-486.13 1075.78,-486.13"/>
+<polygon fill="#64748b" stroke="#64748b" points="1075.78,-488.41 1082.28,-486.13 1075.78,-483.86 1075.78,-488.41"/>
 </a>
 </g>
 </g>
@@ -240,8 +240,8 @@
 <g id="fk_credit_ledger_entries_fee_policy_version" class="edge">
 <title>credit_ledger_entries:header&#45;&gt;credit_fee_policy_versions:header</title>
 <g id="a_fk_credit_ledger_entries_fee_policy_version"><a xlink:title="credit_ledger_entries (fee_policy_version_id) &#45;&gt; credit_fee_policy_versions (id); 0..N child / 0..1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M910.33,-996.6C910.33,-996.6 1047.36,-996.6 1047.36,-996.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1047.36,-998.88 1053.86,-996.6 1047.36,-994.33 1047.36,-998.88"/>
+<path fill="none" stroke="#64748b" d="M910.33,-538.13C910.33,-538.13 1047.36,-538.13 1047.36,-538.13"/>
+<polygon fill="#64748b" stroke="#64748b" points="1047.36,-540.41 1053.86,-538.13 1047.36,-535.86 1047.36,-540.41"/>
 </a>
 </g>
 </g>
@@ -249,8 +249,8 @@
 <g id="fk_credit_ledger_entries_pricing_version" class="edge">
 <title>credit_ledger_entries:header&#45;&gt;credit_pricing_versions:header</title>
 <g id="a_fk_credit_ledger_entries_pricing_version"><a xlink:title="credit_ledger_entries (pricing_version_id) &#45;&gt; credit_pricing_versions (id); 0..N child / 0..1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M900.49,-1009.19C900.49,-1024.58 900.49,-1048.6 900.49,-1048.6 900.49,-1048.6 1055.91,-1048.6 1055.91,-1048.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1055.91,-1050.88 1062.41,-1048.6 1055.91,-1046.33 1055.91,-1050.88"/>
+<path fill="none" stroke="#64748b" d="M848.49,-546.19C848.49,-561.58 848.49,-585.6 848.49,-585.6 848.49,-585.6 1055.89,-585.6 1055.89,-585.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="1055.89,-587.88 1062.39,-585.6 1055.89,-583.33 1055.89,-587.88"/>
 </a>
 </g>
 </g>
@@ -258,8 +258,8 @@
 <g id="fk_credit_payment_recoveries_checkout" class="edge">
 <title>credit_payment_recoveries:header&#45;&gt;credit_checkout_sessions:header</title>
 <g id="a_fk_credit_payment_recoveries_checkout"><a xlink:title="credit_payment_recoveries (checkout_id) &#45;&gt; credit_checkout_sessions (id); 0..N child / 0..1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M922.49,-853.19C922.49,-868.58 922.49,-892.6 922.49,-892.6 922.49,-892.6 1049.07,-892.6 1049.07,-892.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1049.07,-894.88 1055.57,-892.6 1049.07,-890.33 1049.07,-894.88"/>
+<path fill="none" stroke="#64748b" d="M922.49,-1012.03C922.49,-1025.5 922.49,-1045.1 922.49,-1045.1 922.49,-1045.1 1049.07,-1045.1 1049.07,-1045.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="1049.07,-1047.38 1055.57,-1045.1 1049.07,-1042.83 1049.07,-1047.38"/>
 </a>
 </g>
 </g>
@@ -267,8 +267,8 @@
 <g id="fk_credit_payment_recoveries_premium_invoice" class="edge">
 <title>credit_payment_recoveries:header&#45;&gt;premium_stripe_invoices:header</title>
 <g id="a_fk_credit_payment_recoveries_premium_invoice"><a xlink:title="credit_payment_recoveries (premium_invoice_id) &#45;&gt; premium_stripe_invoices (invoice_id); 0..N child / 0..1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M926.17,-838.66C1009.82,-838.66 1131.49,-838.66 1131.49,-838.66 1131.49,-838.66 1131.49,-808.99 1131.49,-808.99"/>
-<polygon fill="#64748b" stroke="#64748b" points="1133.76,-808.99 1131.49,-802.49 1129.21,-808.99 1133.76,-808.99"/>
+<path fill="none" stroke="#64748b" d="M926.17,-995.87C1009.82,-995.87 1131.49,-995.87 1131.49,-995.87 1131.49,-995.87 1131.49,-968.04 1131.49,-968.04"/>
+<polygon fill="#64748b" stroke="#64748b" points="1133.76,-968.04 1131.49,-961.54 1129.21,-968.04 1133.76,-968.04"/>
 </a>
 </g>
 </g>
@@ -276,8 +276,8 @@
 <g id="fk_credit_payment_recoveries_resolved_by_user" class="edge">
 <title>credit_payment_recoveries:header&#45;&gt;users:header</title>
 <g id="a_fk_credit_payment_recoveries_resolved_by_user"><a xlink:title="credit_payment_recoveries (resolved_by_user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M926.01,-842.54C926.01,-842.54 1298.19,-842.54 1298.19,-842.54"/>
-<polygon fill="#64748b" stroke="#64748b" points="1298.19,-844.82 1304.69,-842.54 1298.19,-840.27 1298.19,-844.82"/>
+<path fill="none" stroke="#64748b" d="M926.14,-1004.53C1057.03,-1004.53 1308.49,-1004.53 1308.49,-1004.53 1308.49,-1004.53 1308.49,-994.2 1308.49,-994.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="1310.76,-994.2 1308.49,-987.7 1306.21,-994.2 1310.76,-994.2"/>
 </a>
 </g>
 </g>
@@ -285,8 +285,8 @@
 <g id="fk_devices_brews" class="edge">
 <title>devices:header&#45;&gt;brews:header</title>
 <g id="a_fk_devices_brews"><a xlink:title="devices (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M372.77,-1251.87C431.81,-1251.87 570.49,-1251.87 570.49,-1251.87 570.49,-1251.87 570.49,-1250.05 570.49,-1250.05"/>
-<polygon fill="#64748b" stroke="#64748b" points="572.76,-1250.05 570.49,-1243.55 568.21,-1250.05 572.76,-1250.05"/>
+<path fill="none" stroke="#64748b" d="M372.8,-1381.1C433.43,-1381.1 578.49,-1381.1 578.49,-1381.1 578.49,-1381.1 578.49,-1484.29 578.49,-1484.29"/>
+<polygon fill="#64748b" stroke="#64748b" points="576.21,-1484.29 578.49,-1490.79 580.76,-1484.29 576.21,-1484.29"/>
 </a>
 </g>
 </g>
@@ -294,8 +294,8 @@
 <g id="fk_devices_recipes" class="edge">
 <title>devices:header&#45;&gt;recipes:header</title>
 <g id="a_fk_devices_recipes"><a xlink:title="devices (recipe_id) &#45;&gt; recipes (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M346.49,-1267.81C346.49,-1296.51 346.49,-1365.8 346.49,-1365.8 346.49,-1365.8 1098.5,-1365.8 1098.5,-1365.8"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.5,-1368.08 1105,-1365.8 1098.5,-1363.53 1098.5,-1368.08"/>
+<path fill="none" stroke="#64748b" d="M346.49,-1387.17C346.49,-1398.81 346.49,-1414.33 346.49,-1414.33 346.49,-1414.33 1098.5,-1414.33 1098.5,-1414.33"/>
+<polygon fill="#64748b" stroke="#64748b" points="1098.5,-1416.6 1105,-1414.33 1098.5,-1412.05 1098.5,-1416.6"/>
 </a>
 </g>
 </g>
@@ -303,8 +303,8 @@
 <g id="fk_devices_users" class="edge">
 <title>devices:header&#45;&gt;users:header</title>
 <g id="a_fk_devices_users"><a xlink:title="devices (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M346.49,-1243.07C346.49,-1222 346.49,-1181.73 346.49,-1181.73 346.49,-1181.73 1317.49,-1181.73 1317.49,-1181.73 1317.49,-1181.73 1317.49,-861.16 1317.49,-861.16"/>
-<polygon fill="#64748b" stroke="#64748b" points="1319.76,-861.16 1317.49,-854.66 1315.21,-861.16 1319.76,-861.16"/>
+<path fill="none" stroke="#64748b" d="M372.59,-1367.5C521.63,-1367.5 1262.49,-1367.5 1262.49,-1367.5 1262.49,-1367.5 1262.49,-982.46 1262.49,-982.46 1262.49,-982.46 1298.44,-982.46 1298.44,-982.46"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.44,-984.73 1304.94,-982.46 1298.44,-980.18 1298.44,-984.73"/>
 </a>
 </g>
 </g>
@@ -312,8 +312,8 @@
 <g id="fk_equipment_brew" class="edge">
 <title>equipment:header&#45;&gt;brews:header</title>
 <g id="a_fk_equipment_brew"><a xlink:title="equipment (current_brew_id, user_id) &#45;&gt; brews (id, user_id); 0..N child / 0..1 parent; delete: NoAction; update: Restrict">
-<path fill="none" stroke="#64748b" d="M375.49,-957.86C375.49,-1011.44 375.49,-1222.5 375.49,-1222.5 375.49,-1222.5 548.68,-1222.5 548.68,-1222.5"/>
-<polygon fill="#64748b" stroke="#64748b" points="548.68,-1224.78 555.18,-1222.5 548.68,-1220.23 548.68,-1224.78"/>
+<path fill="none" stroke="#64748b" d="M376.49,-1218.85C376.49,-1274.48 376.49,-1500.5 376.49,-1500.5 376.49,-1500.5 548.79,-1500.5 548.79,-1500.5"/>
+<polygon fill="#64748b" stroke="#64748b" points="548.79,-1502.78 555.29,-1500.5 548.79,-1498.23 548.79,-1502.78"/>
 </a>
 </g>
 </g>
@@ -321,8 +321,8 @@
 <g id="fk_equipment_user" class="edge">
 <title>equipment:header&#45;&gt;users:header</title>
 <g id="a_fk_equipment_user"><a xlink:title="equipment (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M380.25,-940.73C504.74,-940.73 932.49,-940.73 932.49,-940.73 932.49,-940.73 932.49,-846.43 932.49,-846.43 932.49,-846.43 1298.15,-846.43 1298.15,-846.43"/>
-<polygon fill="#64748b" stroke="#64748b" points="1298.15,-848.7 1304.65,-846.43 1298.15,-844.15 1298.15,-848.7"/>
+<path fill="none" stroke="#64748b" d="M380.46,-1207.1C478.41,-1207.1 755.49,-1207.1 755.49,-1207.1 755.49,-1207.1 755.49,-975.37 755.49,-975.37 755.49,-975.37 1298.12,-975.37 1298.12,-975.37"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.12,-977.65 1304.62,-975.37 1298.12,-973.1 1298.12,-977.65"/>
 </a>
 </g>
 </g>
@@ -330,8 +330,8 @@
 <g id="fk_equipment_assignment_events_equipment" class="edge">
 <title>equipment_assignment_events:header&#45;&gt;equipment:header</title>
 <g id="a_fk_equipment_assignment_events_equipment"><a xlink:title="equipment_assignment_events (equipment_id, user_id) &#45;&gt; equipment (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M182.68,-945.6C182.68,-945.6 304.97,-945.6 304.97,-945.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="304.97,-947.88 311.47,-945.6 304.97,-943.33 304.97,-947.88"/>
+<path fill="none" stroke="#64748b" d="M182.68,-1206.6C182.68,-1206.6 304.97,-1206.6 304.97,-1206.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="304.97,-1208.88 311.47,-1206.6 304.97,-1204.33 304.97,-1208.88"/>
 </a>
 </g>
 </g>
@@ -339,8 +339,8 @@
 <g id="fk_inventory_adjustments_bottling" class="edge">
 <title>inventory_adjustments:header&#45;&gt;inventory_bottlings:header</title>
 <g id="a_fk_inventory_adjustments_bottling"><a xlink:title="inventory_adjustments (bottling_id, user_id) &#45;&gt; inventory_bottlings (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M406.49,-532.03C406.49,-560.51 406.49,-628 406.49,-628 406.49,-628 784.02,-628 784.02,-628"/>
-<polygon fill="#64748b" stroke="#64748b" points="784.02,-630.28 790.52,-628 784.02,-625.73 784.02,-630.28"/>
+<path fill="none" stroke="#64748b" d="M406.49,-650.07C406.49,-654.98 406.49,-659.47 406.49,-659.47 406.49,-659.47 793.49,-659.47 793.49,-659.47 793.49,-659.47 793.49,-658.08 793.49,-658.08"/>
+<polygon fill="#64748b" stroke="#64748b" points="795.76,-658.08 793.49,-651.58 791.21,-658.08 795.76,-658.08"/>
 </a>
 </g>
 </g>
@@ -348,8 +348,8 @@
 <g id="fk_inventory_adjustments_consumption" class="edge">
 <title>inventory_adjustments:header&#45;&gt;inventory_consumptions:header</title>
 <g id="a_fk_inventory_adjustments_consumption"><a xlink:title="inventory_adjustments (consumption_id, user_id) &#45;&gt; inventory_consumptions (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M381.49,-507.14C381.49,-474.6 381.49,-389.6 381.49,-389.6 381.49,-389.6 499.02,-389.6 499.02,-389.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="499.02,-391.88 505.52,-389.6 499.02,-387.33 499.02,-391.88"/>
+<path fill="none" stroke="#64748b" d="M410.49,-650.19C410.49,-665.58 410.49,-689.6 410.49,-689.6 410.49,-689.6 499.18,-689.6 499.18,-689.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="499.18,-691.88 505.68,-689.6 499.18,-687.33 499.18,-691.88"/>
 </a>
 </g>
 </g>
@@ -357,8 +357,8 @@
 <g id="fk_inventory_adjustments_operation" class="edge">
 <title>inventory_adjustments:header&#45;&gt;inventory_operations:header</title>
 <g id="a_fk_inventory_adjustments_operation"><a xlink:title="inventory_adjustments (operation_id, user_id) &#45;&gt; inventory_operations (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M412.73,-519.6C537.3,-519.6 794.49,-519.6 794.49,-519.6 794.49,-519.6 794.49,-537.14 794.49,-537.14"/>
-<polygon fill="#64748b" stroke="#64748b" points="792.21,-537.14 794.49,-543.64 796.76,-537.14 792.21,-537.14"/>
+<path fill="none" stroke="#64748b" d="M389.49,-625.12C389.49,-579.28 389.49,-422.8 389.49,-422.8 389.49,-422.8 779.47,-422.8 779.47,-422.8"/>
+<polygon fill="#64748b" stroke="#64748b" points="779.47,-425.08 785.97,-422.8 779.47,-420.53 779.47,-425.08"/>
 </a>
 </g>
 </g>
@@ -366,8 +366,8 @@
 <g id="fk_inventory_adjustments_stock" class="edge">
 <title>inventory_adjustments:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_adjustments_stock"><a xlink:title="inventory_adjustments (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M397.49,-507.44C397.49,-494.77 397.49,-476.75 397.49,-476.75 397.49,-476.75 793.07,-476.75 793.07,-476.75"/>
-<polygon fill="#64748b" stroke="#64748b" points="793.07,-479.03 799.57,-476.75 793.07,-474.48 793.07,-479.03"/>
+<path fill="none" stroke="#64748b" d="M402.49,-649.86C402.49,-658.2 402.49,-667.73 402.49,-667.73 402.49,-667.73 848.49,-667.73 848.49,-667.73 848.49,-667.73 848.49,-669.12 848.49,-669.12"/>
+<polygon fill="#64748b" stroke="#64748b" points="846.21,-669.12 848.49,-675.62 850.76,-669.12 846.21,-669.12"/>
 </a>
 </g>
 </g>
@@ -375,8 +375,8 @@
 <g id="fk_inventory_allocations_location" class="edge">
 <title>inventory_allocations:header&#45;&gt;inventory_locations:header</title>
 <g id="a_fk_inventory_allocations_location"><a xlink:title="inventory_allocations (location_id, user_id) &#45;&gt; inventory_locations (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M640.71,-291.2C720.47,-291.2 848.49,-291.2 848.49,-291.2 848.49,-291.2 848.49,-302.18 848.49,-302.18"/>
-<polygon fill="#64748b" stroke="#64748b" points="846.21,-302.18 848.49,-308.68 850.76,-302.18 846.21,-302.18"/>
+<path fill="none" stroke="#64748b" d="M640.9,-800.96C705.34,-800.96 796.49,-800.96 796.49,-800.96 796.49,-800.96 796.49,-823.02 796.49,-823.02"/>
+<polygon fill="#64748b" stroke="#64748b" points="794.21,-823.02 796.49,-829.52 798.76,-823.02 794.21,-823.02"/>
 </a>
 </g>
 </g>
@@ -384,8 +384,8 @@
 <g id="fk_inventory_allocations_stock" class="edge">
 <title>inventory_allocations:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_allocations_stock"><a xlink:title="inventory_allocations (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M640.66,-295.2C678.08,-295.2 718.49,-295.2 718.49,-295.2 718.49,-295.2 718.49,-470.25 718.49,-470.25 718.49,-470.25 793.11,-470.25 793.11,-470.25"/>
-<polygon fill="#64748b" stroke="#64748b" points="793.11,-472.53 799.61,-470.25 793.11,-467.98 793.11,-472.53"/>
+<path fill="none" stroke="#64748b" d="M640.89,-790.48C716.12,-790.48 832.49,-790.48 832.49,-790.48 832.49,-790.48 832.49,-709.98 832.49,-709.98"/>
+<polygon fill="#64748b" stroke="#64748b" points="834.76,-709.98 832.49,-703.48 830.21,-709.98 834.76,-709.98"/>
 </a>
 </g>
 </g>
@@ -393,8 +393,8 @@
 <g id="fk_inventory_bottlings_user" class="edge">
 <title>inventory_bottlings:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_bottlings_user"><a xlink:title="inventory_bottlings (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M905.68,-633.6C1029.19,-633.6 1311.49,-633.6 1311.49,-633.6 1311.49,-633.6 1311.49,-820.26 1311.49,-820.26"/>
-<polygon fill="#64748b" stroke="#64748b" points="1309.21,-820.26 1311.49,-826.76 1313.76,-820.26 1309.21,-820.26"/>
+<path fill="none" stroke="#64748b" d="M905.97,-637.6C1031.64,-637.6 1321.49,-637.6 1321.49,-637.6 1321.49,-637.6 1321.49,-953.23 1321.49,-953.23"/>
+<polygon fill="#64748b" stroke="#64748b" points="1319.21,-953.23 1321.49,-959.73 1323.76,-953.23 1319.21,-953.23"/>
 </a>
 </g>
 </g>
@@ -402,8 +402,8 @@
 <g id="fk_inventory_consumptions_stock" class="edge">
 <title>inventory_consumptions:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_consumptions_stock"><a xlink:title="inventory_consumptions (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M649.72,-396.2C729.74,-396.2 848.49,-396.2 848.49,-396.2 848.49,-396.2 848.49,-460.13 848.49,-460.13"/>
-<polygon fill="#64748b" stroke="#64748b" points="846.21,-460.13 848.49,-466.63 850.76,-460.13 846.21,-460.13"/>
+<path fill="none" stroke="#64748b" d="M649.5,-694.13C649.5,-694.13 792.92,-694.13 792.92,-694.13"/>
+<polygon fill="#64748b" stroke="#64748b" points="792.92,-696.41 799.42,-694.13 792.92,-691.86 792.92,-696.41"/>
 </a>
 </g>
 </g>
@@ -411,8 +411,8 @@
 <g id="fk_inventory_cost_events_operation" class="edge">
 <title>inventory_cost_events:header&#45;&gt;inventory_operations:header</title>
 <g id="a_fk_inventory_cost_events_operation"><a xlink:title="inventory_cost_events (operation_id, user_id) &#45;&gt; inventory_operations (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M643.9,-554.13C643.9,-554.13 779.31,-554.13 779.31,-554.13"/>
-<polygon fill="#64748b" stroke="#64748b" points="779.31,-556.41 785.81,-554.13 779.31,-551.86 779.31,-556.41"/>
+<path fill="none" stroke="#64748b" d="M578.49,-469.01C578.49,-453.62 578.49,-429.6 578.49,-429.6 578.49,-429.6 779.24,-429.6 779.24,-429.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="779.24,-431.88 785.74,-429.6 779.24,-427.33 779.24,-431.88"/>
 </a>
 </g>
 </g>
@@ -420,8 +420,8 @@
 <g id="fk_inventory_cost_events_stock" class="edge">
 <title>inventory_cost_events:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_cost_events_stock"><a xlink:title="inventory_cost_events (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M643.79,-538C723.72,-538 848.49,-538 848.49,-538 848.49,-538 848.49,-501.07 848.49,-501.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="850.76,-501.07 848.49,-494.57 846.21,-501.07 850.76,-501.07"/>
+<path fill="none" stroke="#64748b" d="M643.78,-481.6C683.06,-481.6 725.49,-481.6 725.49,-481.6 725.49,-481.6 725.49,-680.53 725.49,-680.53 725.49,-680.53 792.86,-680.53 792.86,-680.53"/>
+<polygon fill="#64748b" stroke="#64748b" points="792.86,-682.81 799.36,-680.53 792.86,-678.26 792.86,-682.81"/>
 </a>
 </g>
 </g>
@@ -429,8 +429,8 @@
 <g id="fk_inventory_cost_exclusions_user" class="edge">
 <title>inventory_cost_exclusions:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_cost_exclusions_user"><a xlink:title="inventory_cost_exclusions (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1208.32,-325.6C1262.47,-325.6 1325.49,-325.6 1325.49,-325.6 1325.49,-325.6 1325.49,-820.36 1325.49,-820.36"/>
-<polygon fill="#64748b" stroke="#64748b" points="1323.21,-820.36 1325.49,-826.86 1327.76,-820.36 1323.21,-820.36"/>
+<path fill="none" stroke="#64748b" d="M1208.34,-740.6C1258.75,-740.6 1315.49,-740.6 1315.49,-740.6 1315.49,-740.6 1315.49,-953.06 1315.49,-953.06"/>
+<polygon fill="#64748b" stroke="#64748b" points="1313.21,-953.06 1315.49,-959.56 1317.76,-953.06 1313.21,-953.06"/>
 </a>
 </g>
 </g>
@@ -438,8 +438,8 @@
 <g id="fk_inventory_label_links_label" class="edge">
 <title>inventory_label_links:header&#45;&gt;inventory_labels:header</title>
 <g id="a_fk_inventory_label_links_label"><a xlink:title="inventory_label_links (label_id, user_id) &#45;&gt; inventory_labels (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M640.03,-345.2C719.74,-345.2 848.49,-345.2 848.49,-345.2 848.49,-345.2 848.49,-355.22 848.49,-355.22"/>
-<polygon fill="#64748b" stroke="#64748b" points="846.21,-355.22 848.49,-361.72 850.76,-355.22 846.21,-355.22"/>
+<path fill="none" stroke="#64748b" d="M578.49,-857.96C578.49,-872.77 578.49,-895.6 578.49,-895.6 578.49,-895.6 791.66,-895.6 791.66,-895.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="791.66,-897.88 798.16,-895.6 791.66,-893.33 791.66,-897.88"/>
 </a>
 </g>
 </g>
@@ -447,8 +447,8 @@
 <g id="fk_inventory_label_links_mead" class="edge">
 <title>inventory_label_links:header&#45;&gt;inventory_meads:header</title>
 <g id="a_fk_inventory_label_links_mead"><a xlink:title="inventory_label_links (mead_id, user_id) &#45;&gt; inventory_meads (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M640.24,-342.2C784.57,-342.2 1131.49,-342.2 1131.49,-342.2 1131.49,-342.2 1131.49,-460.3 1131.49,-460.3"/>
-<polygon fill="#64748b" stroke="#64748b" points="1129.21,-460.3 1131.49,-466.8 1133.76,-460.3 1129.21,-460.3"/>
+<path fill="none" stroke="#64748b" d="M640.15,-844.6C662.56,-844.6 682.49,-844.6 682.49,-844.6 682.49,-844.6 682.49,-795.72 682.49,-795.72 682.49,-795.72 1072.64,-795.72 1072.64,-795.72"/>
+<polygon fill="#64748b" stroke="#64748b" points="1072.64,-798 1079.14,-795.72 1072.64,-793.45 1072.64,-798"/>
 </a>
 </g>
 </g>
@@ -456,8 +456,8 @@
 <g id="fk_inventory_label_links_stock" class="edge">
 <title>inventory_label_links:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_label_links_stock"><a xlink:title="inventory_label_links (stock_id, user_id) &#45;&gt; inventory_stock (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M640.21,-348.2C668.78,-348.2 696.49,-348.2 696.49,-348.2 696.49,-348.2 696.49,-473.5 696.49,-473.5 696.49,-473.5 793.13,-473.5 793.13,-473.5"/>
-<polygon fill="#64748b" stroke="#64748b" points="793.13,-475.78 799.63,-473.5 793.13,-471.23 793.13,-475.78"/>
+<path fill="none" stroke="#64748b" d="M640.28,-838.3C655.48,-838.3 667.49,-838.3 667.49,-838.3 667.49,-838.3 667.49,-698.67 667.49,-698.67 667.49,-698.67 792.8,-698.67 792.8,-698.67"/>
+<polygon fill="#64748b" stroke="#64748b" points="792.8,-700.94 799.3,-698.67 792.8,-696.39 792.8,-700.94"/>
 </a>
 </g>
 </g>
@@ -465,8 +465,8 @@
 <g id="fk_inventory_labels_user" class="edge">
 <title>inventory_labels:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_labels_user"><a xlink:title="inventory_labels (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M898.2,-375.6C1019.22,-375.6 1321.49,-375.6 1321.49,-375.6 1321.49,-375.6 1321.49,-820.15 1321.49,-820.15"/>
-<polygon fill="#64748b" stroke="#64748b" points="1319.21,-820.15 1321.49,-826.65 1323.76,-820.15 1319.21,-820.15"/>
+<path fill="none" stroke="#64748b" d="M898.04,-895.6C1016.32,-895.6 1307.49,-895.6 1307.49,-895.6 1307.49,-895.6 1307.49,-953.05 1307.49,-953.05"/>
+<polygon fill="#64748b" stroke="#64748b" points="1305.21,-953.05 1307.49,-959.55 1309.76,-953.05 1305.21,-953.05"/>
 </a>
 </g>
 </g>
@@ -474,8 +474,8 @@
 <g id="fk_inventory_locations_parent" class="edge">
 <title>inventory_locations:header&#45;&gt;inventory_locations:header</title>
 <g id="a_fk_inventory_locations_parent"><a xlink:title="inventory_locations (parent_id, user_id) &#45;&gt; inventory_locations (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M791.27,-316.5C784.24,-316.5 779.49,-316.5 779.49,-316.5 779.49,-316.5 779.49,-304.1 779.49,-304.1 779.49,-304.1 918.49,-304.1 918.49,-304.1 918.49,-304.1 918.49,-320.07 918.49,-320.07 918.49,-320.07 914.71,-320.07 914.71,-320.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="914.71,-317.79 908.21,-320.07 914.71,-322.34 914.71,-317.79"/>
+<path fill="none" stroke="#64748b" d="M791.27,-850.9C784.24,-850.9 779.49,-850.9 779.49,-850.9 779.49,-850.9 779.49,-824.5 779.49,-824.5 779.49,-824.5 918.49,-824.5 918.49,-824.5 918.49,-824.5 918.49,-839.07 918.49,-839.07 918.49,-839.07 914.71,-839.07 914.71,-839.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="914.71,-836.79 908.21,-839.07 914.71,-841.34 914.71,-836.79"/>
 </a>
 </g>
 </g>
@@ -483,8 +483,8 @@
 <g id="fk_inventory_locations_user" class="edge">
 <title>inventory_locations:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_locations_user"><a xlink:title="inventory_locations (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M906.53,-328.13C923.43,-328.13 937.49,-328.13 937.49,-328.13 937.49,-328.13 937.49,-834.77 937.49,-834.77 937.49,-834.77 1298.14,-834.77 1298.14,-834.77"/>
-<polygon fill="#64748b" stroke="#64748b" points="1298.14,-837.05 1304.64,-834.77 1298.14,-832.5 1298.14,-837.05"/>
+<path fill="none" stroke="#64748b" d="M906.49,-848.13C1030.21,-848.13 1310.49,-848.13 1310.49,-848.13 1310.49,-848.13 1310.49,-953.1 1310.49,-953.1"/>
+<polygon fill="#64748b" stroke="#64748b" points="1308.21,-953.1 1310.49,-959.6 1312.76,-953.1 1308.21,-953.1"/>
 </a>
 </g>
 </g>
@@ -492,8 +492,8 @@
 <g id="fk_inventory_meads_user" class="edge">
 <title>inventory_meads:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_meads_user"><a xlink:title="inventory_meads (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1182.78,-480.6C1238.06,-480.6 1318.49,-480.6 1318.49,-480.6 1318.49,-480.6 1318.49,-820.19 1318.49,-820.19"/>
-<polygon fill="#64748b" stroke="#64748b" points="1316.21,-820.19 1318.49,-826.69 1320.76,-820.19 1316.21,-820.19"/>
+<path fill="none" stroke="#64748b" d="M1182.86,-792.6C1236.61,-792.6 1313.49,-792.6 1313.49,-792.6 1313.49,-792.6 1313.49,-953.15 1313.49,-953.15"/>
+<polygon fill="#64748b" stroke="#64748b" points="1311.21,-953.15 1313.49,-959.65 1315.76,-953.15 1311.21,-953.15"/>
 </a>
 </g>
 </g>
@@ -501,8 +501,8 @@
 <g id="fk_inventory_operations_user" class="edge">
 <title>inventory_operations:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_operations_user"><a xlink:title="inventory_operations (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M910.44,-557.6C1037.12,-557.6 1315.49,-557.6 1315.49,-557.6 1315.49,-557.6 1315.49,-820.06 1315.49,-820.06"/>
-<polygon fill="#64748b" stroke="#64748b" points="1313.21,-820.06 1315.49,-826.56 1317.76,-820.06 1313.21,-820.06"/>
+<path fill="none" stroke="#64748b" d="M910.53,-429.6C947.53,-429.6 987.49,-429.6 987.49,-429.6 987.49,-429.6 987.49,-968.29 987.49,-968.29 987.49,-968.29 1298.33,-968.29 1298.33,-968.29"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.33,-970.56 1304.83,-968.29 1298.33,-966.01 1298.33,-970.56"/>
 </a>
 </g>
 </g>
@@ -510,8 +510,8 @@
 <g id="fk_inventory_productions_bottling" class="edge">
 <title>inventory_productions:header&#45;&gt;inventory_bottlings:header</title>
 <g id="a_fk_inventory_productions_bottling"><a xlink:title="inventory_productions (bottling_id, user_id) &#45;&gt; inventory_bottlings (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M643.9,-643.47C643.9,-643.47 784.31,-643.47 784.31,-643.47"/>
-<polygon fill="#64748b" stroke="#64748b" points="784.31,-645.74 790.81,-643.47 784.31,-641.19 784.31,-645.74"/>
+<path fill="none" stroke="#64748b" d="M643.9,-633.07C643.9,-633.07 784.31,-633.07 784.31,-633.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="784.31,-635.34 790.81,-633.07 784.31,-630.79 784.31,-635.34"/>
 </a>
 </g>
 </g>
@@ -519,8 +519,8 @@
 <g id="fk_inventory_productions_stock" class="edge">
 <title>inventory_productions:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_productions_stock"><a xlink:title="inventory_productions (stock_id, user_id) &#45;&gt; inventory_stock (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M643.97,-639.73C661.4,-639.73 675.49,-639.73 675.49,-639.73 675.49,-639.73 675.49,-489.47 675.49,-489.47 675.49,-489.47 793.09,-489.47 793.09,-489.47"/>
-<polygon fill="#64748b" stroke="#64748b" points="793.09,-491.74 799.59,-489.47 793.09,-487.19 793.09,-491.74"/>
+<path fill="none" stroke="#64748b" d="M643.66,-642.13C670.97,-642.13 696.49,-642.13 696.49,-642.13 696.49,-642.13 696.49,-689.6 696.49,-689.6 696.49,-689.6 793.13,-689.6 793.13,-689.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="793.13,-691.88 799.63,-689.6 793.13,-687.33 793.13,-691.88"/>
 </a>
 </g>
 </g>
@@ -528,8 +528,8 @@
 <g id="fk_inventory_stock_mead" class="edge">
 <title>inventory_stock:header&#45;&gt;inventory_meads:header</title>
 <g id="a_fk_inventory_stock_mead"><a xlink:title="inventory_stock (mead_id, user_id) &#45;&gt; inventory_meads (id, user_id); 0..N child / 0..1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M896.94,-476.07C896.94,-476.07 1072.66,-476.07 1072.66,-476.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="1072.66,-478.34 1079.16,-476.07 1072.66,-473.79 1072.66,-478.34"/>
+<path fill="none" stroke="#64748b" d="M865.49,-702.1C865.49,-728.03 865.49,-785.24 865.49,-785.24 865.49,-785.24 1072.71,-785.24 1072.71,-785.24"/>
+<polygon fill="#64748b" stroke="#64748b" points="1072.71,-787.52 1079.21,-785.24 1072.71,-782.97 1072.71,-787.52"/>
 </a>
 </g>
 </g>
@@ -537,8 +537,8 @@
 <g id="fk_inventory_stock_user" class="edge">
 <title>inventory_stock:header&#45;&gt;users:header</title>
 <g id="a_fk_inventory_stock_user"><a xlink:title="inventory_stock (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M896.81,-485.13C941.54,-485.13 1001.49,-485.13 1001.49,-485.13 1001.49,-485.13 1001.49,-830.89 1001.49,-830.89 1001.49,-830.89 1298.44,-830.89 1298.44,-830.89"/>
-<polygon fill="#64748b" stroke="#64748b" points="1298.44,-833.16 1304.94,-830.89 1298.44,-828.61 1298.44,-833.16"/>
+<path fill="none" stroke="#64748b" d="M897.01,-689.6C1016.67,-689.6 1318.49,-689.6 1318.49,-689.6 1318.49,-689.6 1318.49,-953.02 1318.49,-953.02"/>
+<polygon fill="#64748b" stroke="#64748b" points="1316.21,-953.02 1318.49,-959.52 1320.76,-953.02 1316.21,-953.02"/>
 </a>
 </g>
 </g>
@@ -546,8 +546,8 @@
 <g id="fk_inventory_storage_events_operation" class="edge">
 <title>inventory_storage_events:header&#45;&gt;inventory_operations:header</title>
 <g id="a_fk_inventory_storage_events_operation"><a xlink:title="inventory_storage_events (operation_id, user_id) &#45;&gt; inventory_operations (id, user_id); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M649.49,-506.19C649.49,-522.55 649.49,-549.07 649.49,-549.07 649.49,-549.07 779.2,-549.07 779.2,-549.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="779.2,-551.34 785.7,-549.07 779.2,-546.79 779.2,-551.34"/>
+<path fill="none" stroke="#64748b" d="M649.49,-521.29C649.49,-495.13 649.49,-436.4 649.49,-436.4 649.49,-436.4 779.2,-436.4 779.2,-436.4"/>
+<polygon fill="#64748b" stroke="#64748b" points="779.2,-438.68 785.7,-436.4 779.2,-434.13 779.2,-438.68"/>
 </a>
 </g>
 </g>
@@ -555,8 +555,8 @@
 <g id="fk_inventory_storage_events_stock" class="edge">
 <title>inventory_storage_events:header&#45;&gt;inventory_stock:header</title>
 <g id="a_fk_inventory_storage_events_stock"><a xlink:title="inventory_storage_events (stock_id, user_id, unit) &#45;&gt; inventory_stock (id, user_id, unit); 0..N child / 1 parent; delete: Restrict; update: Restrict">
-<path fill="none" stroke="#64748b" d="M652.34,-484.73C652.34,-484.73 793.11,-484.73 793.11,-484.73"/>
-<polygon fill="#64748b" stroke="#64748b" points="793.11,-487.01 799.61,-484.73 793.11,-482.46 793.11,-487.01"/>
+<path fill="none" stroke="#64748b" d="M652.55,-533.6C682.66,-533.6 710.49,-533.6 710.49,-533.6 710.49,-533.6 710.49,-685.07 710.49,-685.07 710.49,-685.07 792.91,-685.07 792.91,-685.07"/>
+<polygon fill="#64748b" stroke="#64748b" points="792.91,-687.34 799.41,-685.07 792.91,-682.79 792.91,-687.34"/>
 </a>
 </g>
 </g>
@@ -564,8 +564,8 @@
 <g id="fk_logs_brews" class="edge">
 <title>logs:header&#45;&gt;brews:header</title>
 <g id="a_fk_logs_brews"><a xlink:title="logs (brew_id) &#45;&gt; brews (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M112.24,-1229C112.24,-1229 548.61,-1229 548.61,-1229"/>
-<polygon fill="#64748b" stroke="#64748b" points="548.61,-1231.28 555.11,-1229 548.61,-1226.73 548.61,-1231.28"/>
+<path fill="none" stroke="#64748b" d="M112.09,-1417.1C196.61,-1417.1 566.49,-1417.1 566.49,-1417.1 566.49,-1417.1 566.49,-1484.05 566.49,-1484.05"/>
+<polygon fill="#64748b" stroke="#64748b" points="564.21,-1484.05 566.49,-1490.55 568.76,-1484.05 564.21,-1484.05"/>
 </a>
 </g>
 </g>
@@ -573,8 +573,8 @@
 <g id="fk_logs_devices" class="edge">
 <title>logs:header&#45;&gt;devices:header</title>
 <g id="a_fk_logs_devices"><a xlink:title="logs (device_id) &#45;&gt; devices (id); 0..N child / 0..1 parent; delete: NoAction; update: NoAction">
-<path fill="none" stroke="#64748b" d="M95.49,-1241.99C95.49,-1248.69 95.49,-1255.6 95.49,-1255.6 95.49,-1255.6 312.71,-1255.6 312.71,-1255.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="312.71,-1257.88 319.21,-1255.6 312.71,-1253.33 312.71,-1257.88"/>
+<path fill="none" stroke="#64748b" d="M95.49,-1407.3C95.49,-1393.98 95.49,-1374.6 95.49,-1374.6 95.49,-1374.6 312.71,-1374.6 312.71,-1374.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="312.71,-1376.88 319.21,-1374.6 312.71,-1372.33 312.71,-1376.88"/>
 </a>
 </g>
 </g>
@@ -582,8 +582,17 @@
 <g id="fk_mcp_access_tokens_user" class="edge">
 <title>mcp_access_tokens:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_access_tokens_user"><a xlink:title="mcp_access_tokens (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1191.04,-273.6C1248.97,-273.6 1328.49,-273.6 1328.49,-273.6 1328.49,-273.6 1328.49,-820.22 1328.49,-820.22"/>
-<polygon fill="#64748b" stroke="#64748b" points="1326.21,-820.22 1328.49,-826.72 1330.76,-820.22 1326.21,-820.22"/>
+<path fill="none" stroke="#64748b" d="M1191.08,-377.6C1249.32,-377.6 1329.49,-377.6 1329.49,-377.6 1329.49,-377.6 1329.49,-953.14 1329.49,-953.14"/>
+<polygon fill="#64748b" stroke="#64748b" points="1327.21,-953.14 1329.49,-959.64 1331.76,-953.14 1327.21,-953.14"/>
+</a>
+</g>
+</g>
+<!-- mcp_draft_handoffs&#45;&gt;users -->
+<g id="fk_mcp_draft_handoffs_user" class="edge">
+<title>mcp_draft_handoffs:header&#45;&gt;users:header</title>
+<g id="a_fk_mcp_draft_handoffs_user"><a xlink:title="mcp_draft_handoffs (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
+<path fill="none" stroke="#64748b" d="M1190.35,-325.6C1249.6,-325.6 1332.49,-325.6 1332.49,-325.6 1332.49,-325.6 1332.49,-953.22 1332.49,-953.22"/>
+<polygon fill="#64748b" stroke="#64748b" points="1330.21,-953.22 1332.49,-959.72 1334.76,-953.22 1330.21,-953.22"/>
 </a>
 </g>
 </g>
@@ -591,8 +600,8 @@
 <g id="fk_mcp_oauth_codes_user" class="edge">
 <title>mcp_oauth_codes:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_oauth_codes_user"><a xlink:title="mcp_oauth_codes (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1185.8,-221.6C1244.95,-221.6 1331.49,-221.6 1331.49,-221.6 1331.49,-221.6 1331.49,-820.22 1331.49,-820.22"/>
-<polygon fill="#64748b" stroke="#64748b" points="1329.21,-820.22 1331.49,-826.72 1333.76,-820.22 1329.21,-820.22"/>
+<path fill="none" stroke="#64748b" d="M1185.81,-273.6C1245.87,-273.6 1334.49,-273.6 1334.49,-273.6 1334.49,-273.6 1334.49,-953.14 1334.49,-953.14"/>
+<polygon fill="#64748b" stroke="#64748b" points="1332.21,-953.14 1334.49,-959.64 1336.76,-953.14 1332.21,-953.14"/>
 </a>
 </g>
 </g>
@@ -600,8 +609,8 @@
 <g id="fk_mcp_oauth_consumed_refresh_tokens_session" class="edge">
 <title>mcp_oauth_consumed_refresh_tokens:header&#45;&gt;mcp_oauth_sessions:header</title>
 <g id="a_fk_mcp_oauth_consumed_refresh_tokens_session"><a xlink:title="mcp_oauth_consumed_refresh_tokens (session_id) &#45;&gt; mcp_oauth_sessions (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M957.09,-169.6C957.09,-169.6 1061.94,-169.6 1061.94,-169.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1061.94,-171.88 1068.44,-169.6 1061.94,-167.33 1061.94,-171.88"/>
+<path fill="none" stroke="#64748b" d="M957.25,-477.07C1015.49,-477.07 1075.49,-477.07 1075.49,-477.07 1075.49,-477.07 1075.49,-450.08 1075.49,-450.08"/>
+<polygon fill="#64748b" stroke="#64748b" points="1077.76,-450.08 1075.49,-443.58 1073.21,-450.08 1077.76,-450.08"/>
 </a>
 </g>
 </g>
@@ -609,8 +618,8 @@
 <g id="fk_mcp_oauth_sessions_user" class="edge">
 <title>mcp_oauth_sessions:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_oauth_sessions_user"><a xlink:title="mcp_oauth_sessions (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1193.43,-169.6C1253.39,-169.6 1335.49,-169.6 1335.49,-169.6 1335.49,-169.6 1335.49,-820.08 1335.49,-820.08"/>
-<polygon fill="#64748b" stroke="#64748b" points="1333.21,-820.08 1335.49,-826.58 1337.76,-820.08 1333.21,-820.08"/>
+<path fill="none" stroke="#64748b" d="M1193.63,-429.6C1250.65,-429.6 1326.49,-429.6 1326.49,-429.6 1326.49,-429.6 1326.49,-953.2 1326.49,-953.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="1324.21,-953.2 1326.49,-959.7 1328.76,-953.2 1324.21,-953.2"/>
 </a>
 </g>
 </g>
@@ -618,8 +627,8 @@
 <g id="fk_mcp_rate_buckets_user" class="edge">
 <title>mcp_rate_buckets:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_rate_buckets_user"><a xlink:title="mcp_rate_buckets (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1185.8,-117.6C1247.05,-117.6 1338.49,-117.6 1338.49,-117.6 1338.49,-117.6 1338.49,-820.04 1338.49,-820.04"/>
-<polygon fill="#64748b" stroke="#64748b" points="1336.21,-820.04 1338.49,-826.54 1340.76,-820.04 1336.21,-820.04"/>
+<path fill="none" stroke="#64748b" d="M1185.8,-221.6C1246.76,-221.6 1337.49,-221.6 1337.49,-221.6 1337.49,-221.6 1337.49,-953.16 1337.49,-953.16"/>
+<polygon fill="#64748b" stroke="#64748b" points="1335.21,-953.16 1337.49,-959.66 1339.76,-953.16 1335.21,-953.16"/>
 </a>
 </g>
 </g>
@@ -627,8 +636,8 @@
 <g id="fk_mcp_tool_leases_user" class="edge">
 <title>mcp_tool_leases:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_tool_leases_user"><a xlink:title="mcp_tool_leases (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1181.99,-65.6C1244.03,-65.6 1341.49,-65.6 1341.49,-65.6 1341.49,-65.6 1341.49,-820.1 1341.49,-820.1"/>
-<polygon fill="#64748b" stroke="#64748b" points="1339.21,-820.1 1341.49,-826.6 1343.76,-820.1 1339.21,-820.1"/>
+<path fill="none" stroke="#64748b" d="M1182.01,-169.6C1243.78,-169.6 1340.49,-169.6 1340.49,-169.6 1340.49,-169.6 1340.49,-953.28 1340.49,-953.28"/>
+<polygon fill="#64748b" stroke="#64748b" points="1338.21,-953.28 1340.49,-959.78 1342.76,-953.28 1338.21,-953.28"/>
 </a>
 </g>
 </g>
@@ -636,8 +645,8 @@
 <g id="fk_mcp_tool_usage_user" class="edge">
 <title>mcp_tool_usage:header&#45;&gt;users:header</title>
 <g id="a_fk_mcp_tool_usage_user"><a xlink:title="mcp_tool_usage (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1181.05,-13.6C1244.17,-13.6 1345.49,-13.6 1345.49,-13.6 1345.49,-13.6 1345.49,-820.25 1345.49,-820.25"/>
-<polygon fill="#64748b" stroke="#64748b" points="1343.21,-820.25 1345.49,-826.75 1347.76,-820.25 1343.21,-820.25"/>
+<path fill="none" stroke="#64748b" d="M1181.12,-117.6C1243.69,-117.6 1343.49,-117.6 1343.49,-117.6 1343.49,-117.6 1343.49,-953.16 1343.49,-953.16"/>
+<polygon fill="#64748b" stroke="#64748b" points="1341.21,-953.16 1343.49,-959.66 1345.76,-953.16 1341.21,-953.16"/>
 </a>
 </g>
 </g>
@@ -645,8 +654,8 @@
 <g id="fk_premium_kofi_link_challenges_user" class="edge">
 <title>premium_kofi_link_challenges:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_kofi_link_challenges_user"><a xlink:title="premium_kofi_link_challenges (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1217.76,-1774.6C1277.15,-1774.6 1345.49,-1774.6 1345.49,-1774.6 1345.49,-1774.6 1345.49,-861.11 1345.49,-861.11"/>
-<polygon fill="#64748b" stroke="#64748b" points="1347.76,-861.11 1345.49,-854.61 1343.21,-861.11 1347.76,-861.11"/>
+<path fill="none" stroke="#64748b" d="M1212.49,-25.97C1212.49,-137.46 1212.49,-964.74 1212.49,-964.74 1212.49,-964.74 1298.36,-964.74 1298.36,-964.74"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.36,-967.02 1304.86,-964.74 1298.36,-962.47 1298.36,-967.02"/>
 </a>
 </g>
 </g>
@@ -654,8 +663,8 @@
 <g id="fk_premium_kofi_links_user" class="edge">
 <title>premium_kofi_links:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_kofi_links_user"><a xlink:title="premium_kofi_links (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1189.33,-1722.6C1252.03,-1722.6 1343.49,-1722.6 1343.49,-1722.6 1343.49,-1722.6 1343.49,-861.08 1343.49,-861.08"/>
-<polygon fill="#64748b" stroke="#64748b" points="1345.76,-861.08 1343.49,-854.58 1341.21,-861.08 1345.76,-861.08"/>
+<path fill="none" stroke="#64748b" d="M1189.31,-1828.6C1252.61,-1828.6 1345.49,-1828.6 1345.49,-1828.6 1345.49,-1828.6 1345.49,-994.03 1345.49,-994.03"/>
+<polygon fill="#64748b" stroke="#64748b" points="1347.76,-994.03 1345.49,-987.53 1343.21,-994.03 1347.76,-994.03"/>
 </a>
 </g>
 </g>
@@ -663,8 +672,8 @@
 <g id="fk_premium_memberships_user" class="edge">
 <title>premium_memberships:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_memberships_user"><a xlink:title="premium_memberships (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1199.52,-1670.6C1260.47,-1670.6 1340.49,-1670.6 1340.49,-1670.6 1340.49,-1670.6 1340.49,-860.99 1340.49,-860.99"/>
-<polygon fill="#64748b" stroke="#64748b" points="1342.76,-860.99 1340.49,-854.49 1338.21,-860.99 1342.76,-860.99"/>
+<path fill="none" stroke="#64748b" d="M1199.59,-1776.6C1261.19,-1776.6 1342.49,-1776.6 1342.49,-1776.6 1342.49,-1776.6 1342.49,-993.91 1342.49,-993.91"/>
+<polygon fill="#64748b" stroke="#64748b" points="1344.76,-993.91 1342.49,-987.41 1340.21,-993.91 1344.76,-993.91"/>
 </a>
 </g>
 </g>
@@ -672,8 +681,8 @@
 <g id="fk_premium_stripe_checkouts_user" class="edge">
 <title>premium_stripe_checkouts:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_stripe_checkouts_user"><a xlink:title="premium_stripe_checkouts (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1209.02,-1618.6C1267.74,-1618.6 1338.49,-1618.6 1338.49,-1618.6 1338.49,-1618.6 1338.49,-861.15 1338.49,-861.15"/>
-<polygon fill="#64748b" stroke="#64748b" points="1340.76,-861.15 1338.49,-854.65 1336.21,-861.15 1340.76,-861.15"/>
+<path fill="none" stroke="#64748b" d="M1209.1,-1724.6C1268.16,-1724.6 1339.49,-1724.6 1339.49,-1724.6 1339.49,-1724.6 1339.49,-994.02 1339.49,-994.02"/>
+<polygon fill="#64748b" stroke="#64748b" points="1341.76,-994.02 1339.49,-987.52 1337.21,-994.02 1341.76,-994.02"/>
 </a>
 </g>
 </g>
@@ -681,8 +690,8 @@
 <g id="fk_premium_stripe_invoices_user" class="edge">
 <title>premium_stripe_invoices:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_stripe_invoices_user"><a xlink:title="premium_stripe_invoices (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1203.89,-788.6C1252.76,-788.6 1308.49,-788.6 1308.49,-788.6 1308.49,-788.6 1308.49,-820 1308.49,-820"/>
-<polygon fill="#64748b" stroke="#64748b" points="1306.21,-820 1308.49,-826.5 1310.76,-820 1306.21,-820"/>
+<path fill="none" stroke="#64748b" d="M1203.81,-947C1265.86,-947 1345.49,-947 1345.49,-947 1345.49,-947 1345.49,-953.22 1345.49,-953.22"/>
+<polygon fill="#64748b" stroke="#64748b" points="1343.21,-953.22 1345.49,-959.72 1347.76,-953.22 1343.21,-953.22"/>
 </a>
 </g>
 </g>
@@ -690,8 +699,8 @@
 <g id="fk_premium_stripe_payments_invoice" class="edge">
 <title>premium_stripe_payments:header&#45;&gt;premium_stripe_invoices:header</title>
 <g id="a_fk_premium_stripe_payments_invoice"><a xlink:title="premium_stripe_payments (invoice_id) &#45;&gt; premium_stripe_invoices (invoice_id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M924.75,-788.6C924.75,-788.6 1051.65,-788.6 1051.65,-788.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1051.65,-790.88 1058.15,-788.6 1051.65,-786.33 1051.65,-790.88"/>
+<path fill="none" stroke="#64748b" d="M924.75,-947.6C924.75,-947.6 1051.65,-947.6 1051.65,-947.6"/>
+<polygon fill="#64748b" stroke="#64748b" points="1051.65,-949.88 1058.15,-947.6 1051.65,-945.33 1051.65,-949.88"/>
 </a>
 </g>
 </g>
@@ -699,8 +708,8 @@
 <g id="fk_premium_stripe_subscriptions_user" class="edge">
 <title>premium_stripe_subscriptions:header&#45;&gt;users:header</title>
 <g id="a_fk_premium_stripe_subscriptions_user"><a xlink:title="premium_stripe_subscriptions (user_id) &#45;&gt; users (id); 0..1 child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1214.49,-1554.17C1214.49,-1459.05 1214.49,-850.31 1214.49,-850.31 1214.49,-850.31 1298.19,-850.31 1298.19,-850.31"/>
-<polygon fill="#64748b" stroke="#64748b" points="1298.19,-852.59 1304.69,-850.31 1298.19,-848.04 1298.19,-852.59"/>
+<path fill="none" stroke="#64748b" d="M1215.49,-1557.26C1215.49,-1472.44 1215.49,-978.91 1215.49,-978.91 1215.49,-978.91 1298.38,-978.91 1298.38,-978.91"/>
+<polygon fill="#64748b" stroke="#64748b" points="1298.38,-981.19 1304.88,-978.91 1298.38,-976.64 1298.38,-981.19"/>
 </a>
 </g>
 </g>
@@ -708,8 +717,8 @@
 <g id="fk_recipe_daily_activity_recipe" class="edge">
 <title>recipe_daily_activity:header&#45;&gt;recipes:header</title>
 <g id="a_fk_recipe_daily_activity_recipe"><a xlink:title="recipe_daily_activity (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M901.49,-1320.19C901.49,-1335.58 901.49,-1359.6 901.49,-1359.6 901.49,-1359.6 1098.65,-1359.6 1098.65,-1359.6"/>
-<polygon fill="#64748b" stroke="#64748b" points="1098.65,-1361.88 1105.15,-1359.6 1098.65,-1357.33 1098.65,-1361.88"/>
+<path fill="none" stroke="#64748b" d="M901.49,-1400.14C901.49,-1405.93 901.49,-1411.55 901.49,-1411.55 901.49,-1411.55 1098.65,-1411.55 1098.65,-1411.55"/>
+<polygon fill="#64748b" stroke="#64748b" points="1098.65,-1413.83 1105.15,-1411.55 1098.65,-1409.28 1098.65,-1413.83"/>
 </a>
 </g>
 </g>
@@ -717,8 +726,8 @@
 <g id="fk_recipe_ratings_recipe" class="edge">
 <title>recipe_ratings:header&#45;&gt;recipes:header</title>
 <g id="a_fk_recipe_ratings_recipe"><a xlink:title="recipe_ratings (recipe_id) &#45;&gt; recipes (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M892.49,-1407.07C971.74,-1407.07 1131.49,-1407.07 1131.49,-1407.07 1131.49,-1407.07 1131.49,-1380.08 1131.49,-1380.08"/>
-<polygon fill="#64748b" stroke="#64748b" points="1133.76,-1380.08 1131.49,-1373.58 1129.21,-1380.08 1133.76,-1380.08"/>
+<path fill="none" stroke="#64748b" d="M892.49,-1487.07C971.74,-1487.07 1131.49,-1487.07 1131.49,-1487.07 1131.49,-1487.07 1131.49,-1434.91 1131.49,-1434.91"/>
+<polygon fill="#64748b" stroke="#64748b" points="1133.76,-1434.91 1131.49,-1428.41 1129.21,-1434.91 1133.76,-1434.91"/>
 </a>
 </g>
 </g>
@@ -726,8 +735,8 @@
 <g id="fk_recipe_ratings_user" class="edge">
 <title>recipe_ratings:header&#45;&gt;users:header</title>
 <g id="a_fk_recipe_ratings_user"><a xlink:title="recipe_ratings (user_id) &#45;&gt; users (id); 0..N child / 1 parent; delete: Restrict; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M892.39,-1416.13C1011.32,-1416.13 1333.49,-1416.13 1333.49,-1416.13 1333.49,-1416.13 1333.49,-861.17 1333.49,-861.17"/>
-<polygon fill="#64748b" stroke="#64748b" points="1335.76,-861.17 1333.49,-854.67 1331.21,-861.17 1335.76,-861.17"/>
+<path fill="none" stroke="#64748b" d="M892.46,-1496.13C1010.74,-1496.13 1329.49,-1496.13 1329.49,-1496.13 1329.49,-1496.13 1329.49,-994.01 1329.49,-994.01"/>
+<polygon fill="#64748b" stroke="#64748b" points="1331.76,-994.01 1329.49,-987.51 1327.21,-994.01 1331.76,-994.01"/>
 </a>
 </g>
 </g>
@@ -735,8 +744,8 @@
 <g id="fk_recipes_cover_image" class="edge">
 <title>recipes:header&#45;&gt;brew_images:header</title>
 <g id="a_fk_recipes_cover_image"><a xlink:title="recipes (cover_image_id) &#45;&gt; brew_images (id); 0..N child / 0..1 parent; delete: SetNull; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1106.54,-1350.3C1085.34,-1350.3 1058.49,-1350.3 1058.49,-1350.3 1058.49,-1350.3 1058.49,-1251.07 1058.49,-1251.07 1058.49,-1251.07 897.38,-1251.07 897.38,-1251.07"/>
-<polygon fill="#64748b" stroke="#64748b" points="897.38,-1248.79 890.88,-1251.07 897.38,-1253.34 897.38,-1248.79"/>
+<path fill="none" stroke="#64748b" d="M1106.62,-1425.43C1055.13,-1425.43 942.49,-1425.43 942.49,-1425.43 942.49,-1425.43 942.49,-1596.2 942.49,-1596.2 942.49,-1596.2 897.73,-1596.2 897.73,-1596.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="897.73,-1593.93 891.23,-1596.2 897.73,-1598.48 897.73,-1593.93"/>
 </a>
 </g>
 </g>
@@ -744,8 +753,8 @@
 <g id="fk_recipes_users" class="edge">
 <title>recipes:header&#45;&gt;users:header</title>
 <g id="a_fk_recipes_users"><a xlink:title="recipes (user_id) &#45;&gt; users (id); 0..N child / 0..1 parent; delete: SetNull (Prisma default); update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M1156.92,-1359.6C1210.4,-1359.6 1330.49,-1359.6 1330.49,-1359.6 1330.49,-1359.6 1330.49,-861.19 1330.49,-861.19"/>
-<polygon fill="#64748b" stroke="#64748b" points="1332.76,-861.19 1330.49,-854.69 1328.21,-861.19 1332.76,-861.19"/>
+<path fill="none" stroke="#64748b" d="M1156.81,-1414.6C1209.4,-1414.6 1326.49,-1414.6 1326.49,-1414.6 1326.49,-1414.6 1326.49,-993.87 1326.49,-993.87"/>
+<polygon fill="#64748b" stroke="#64748b" points="1328.76,-993.87 1326.49,-987.37 1324.21,-993.87 1328.76,-993.87"/>
 </a>
 </g>
 </g>
@@ -753,8 +762,8 @@
 <g id="fk_Session_user" class="edge">
 <title>Session:header&#45;&gt;User:header</title>
 <g id="a_fk_Session_user"><a xlink:title="Session (userId) &#45;&gt; User (id); 0..N child / 1 parent; delete: Cascade; update: Cascade (Prisma default)">
-<path fill="none" stroke="#64748b" d="M121.94,-441C186.81,-441 346.49,-441 346.49,-441 346.49,-441 346.49,-447.22 346.49,-447.22"/>
-<polygon fill="#64748b" stroke="#64748b" points="344.21,-447.22 346.49,-453.72 348.76,-447.22 344.21,-447.22"/>
+<path fill="none" stroke="#64748b" d="M121.94,-559.6C186.81,-559.6 346.49,-559.6 346.49,-559.6 346.49,-559.6 346.49,-565.2 346.49,-565.2"/>
+<polygon fill="#64748b" stroke="#64748b" points="344.21,-565.2 346.49,-571.7 348.76,-565.2 344.21,-565.2"/>
 </a>
 </g>
 </g>
@@ -762,10 +771,10 @@
 <g id="table_Account" class="node">
 <title>Account</title>
 <g id="a_table_Account"><a xlink:title="Account — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="66.03,-480 66.03,-507.2 124.03,-507.2 124.03,-480 66.03,-480"/>
-<polygon fill="none" stroke="#94a3b8" points="66.03,-480 66.03,-507.2 124.03,-507.2 124.03,-480 66.03,-480"/>
-<polygon fill="#ffe4e6" stroke="none" points="67.03,-481 67.03,-506.2 123.03,-506.2 123.03,-481 67.03,-481"/>
-<text xml:space="preserve" text-anchor="start" x="73.03" y="-491.3" font-family="Arial" font-weight="bold" font-size="11.00">Account</text>
+<polygon fill="white" stroke="none" points="66.03,-598 66.03,-625.2 124.03,-625.2 124.03,-598 66.03,-598"/>
+<polygon fill="none" stroke="#94a3b8" points="66.03,-598 66.03,-625.2 124.03,-625.2 124.03,-598 66.03,-598"/>
+<polygon fill="#ffe4e6" stroke="none" points="67.03,-599 67.03,-624.2 123.03,-624.2 123.03,-599 67.03,-599"/>
+<text xml:space="preserve" text-anchor="start" x="73.03" y="-609.3" font-family="Arial" font-weight="bold" font-size="11.00">Account</text>
 </a>
 </g>
 </g>
@@ -773,10 +782,10 @@
 <g id="table_additives" class="node">
 <title>additives</title>
 <g id="a_table_additives"><a xlink:title="additives — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="64.19,-712 64.19,-739.2 125.87,-739.2 125.87,-712 64.19,-712"/>
-<polygon fill="none" stroke="#94a3b8" points="64.19,-712 64.19,-739.2 125.87,-739.2 125.87,-712 64.19,-712"/>
-<polygon fill="#ffedd5" stroke="none" points="65.19,-713 65.19,-738.2 124.87,-738.2 124.87,-713 65.19,-713"/>
-<text xml:space="preserve" text-anchor="start" x="71.19" y="-723.3" font-family="Arial" font-weight="bold" font-size="11.00">additives</text>
+<polygon fill="white" stroke="none" points="64.19,-819 64.19,-846.2 125.87,-846.2 125.87,-819 64.19,-819"/>
+<polygon fill="none" stroke="#94a3b8" points="64.19,-819 64.19,-846.2 125.87,-846.2 125.87,-819 64.19,-819"/>
+<polygon fill="#ffedd5" stroke="none" points="65.19,-820 65.19,-845.2 124.87,-845.2 124.87,-820 65.19,-820"/>
+<text xml:space="preserve" text-anchor="start" x="71.19" y="-830.3" font-family="Arial" font-weight="bold" font-size="11.00">additives</text>
 </a>
 </g>
 </g>
@@ -784,10 +793,10 @@
 <g id="table_BjcpIngredient" class="node">
 <title>BjcpIngredient</title>
 <g id="a_table_BjcpIngredient"><a xlink:title="bjcp&#45;ingredients — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="45.25,-841 45.25,-868.2 144.81,-868.2 144.81,-841 45.25,-841"/>
-<polygon fill="none" stroke="#94a3b8" points="45.25,-841 45.25,-868.2 144.81,-868.2 144.81,-841 45.25,-841"/>
-<polygon fill="#ffedd5" stroke="none" points="46.25,-842 46.25,-867.2 143.81,-867.2 143.81,-842 46.25,-842"/>
-<text xml:space="preserve" text-anchor="start" x="52.25" y="-852.3" font-family="Arial" font-weight="bold" font-size="11.00">bjcp&#45;ingredients</text>
+<polygon fill="white" stroke="none" points="45.25,-1051 45.25,-1078.2 144.81,-1078.2 144.81,-1051 45.25,-1051"/>
+<polygon fill="none" stroke="#94a3b8" points="45.25,-1051 45.25,-1078.2 144.81,-1078.2 144.81,-1051 45.25,-1051"/>
+<polygon fill="#ffedd5" stroke="none" points="46.25,-1052 46.25,-1077.2 143.81,-1077.2 143.81,-1052 46.25,-1052"/>
+<text xml:space="preserve" text-anchor="start" x="52.25" y="-1062.3" font-family="Arial" font-weight="bold" font-size="11.00">bjcp&#45;ingredients</text>
 </a>
 </g>
 </g>
@@ -795,10 +804,10 @@
 <g id="table_brew_entries" class="node">
 <title>brew_entries</title>
 <g id="a_table_brew_entries"><a xlink:title="brew_entries — Brewing &amp; hydrometers">
-<polygon fill="white" stroke="none" points="305.72,-1397 305.72,-1424.2 387.58,-1424.2 387.58,-1397 305.72,-1397"/>
-<polygon fill="none" stroke="#94a3b8" points="305.72,-1397 305.72,-1424.2 387.58,-1424.2 387.58,-1397 305.72,-1397"/>
-<polygon fill="#e0f2fe" stroke="none" points="306.72,-1398 306.72,-1423.2 386.58,-1423.2 386.58,-1398 306.72,-1398"/>
-<text xml:space="preserve" text-anchor="start" x="312.72" y="-1408.3" font-family="Arial" font-weight="bold" font-size="11.00">brew_entries</text>
+<polygon fill="white" stroke="none" points="305.72,-1582 305.72,-1609.2 387.58,-1609.2 387.58,-1582 305.72,-1582"/>
+<polygon fill="none" stroke="#94a3b8" points="305.72,-1582 305.72,-1609.2 387.58,-1609.2 387.58,-1582 305.72,-1582"/>
+<polygon fill="#e0f2fe" stroke="none" points="306.72,-1583 306.72,-1608.2 386.58,-1608.2 386.58,-1583 306.72,-1583"/>
+<text xml:space="preserve" text-anchor="start" x="312.72" y="-1593.3" font-family="Arial" font-weight="bold" font-size="11.00">brew_entries</text>
 </a>
 </g>
 </g>
@@ -806,10 +815,10 @@
 <g id="table_brew_images" class="node">
 <title>brew_images</title>
 <g id="a_table_brew_images"><a xlink:title="brew_images — Brewing &amp; hydrometers">
-<polygon fill="white" stroke="none" points="807.12,-1242 807.12,-1269.2 890.82,-1269.2 890.82,-1242 807.12,-1242"/>
-<polygon fill="none" stroke="#94a3b8" points="807.12,-1242 807.12,-1269.2 890.82,-1269.2 890.82,-1242 807.12,-1242"/>
-<polygon fill="#e0f2fe" stroke="none" points="808.12,-1243 808.12,-1268.2 889.82,-1268.2 889.82,-1243 808.12,-1243"/>
-<text xml:space="preserve" text-anchor="start" x="814.12" y="-1253.3" font-family="Arial" font-weight="bold" font-size="11.00">brew_images</text>
+<polygon fill="white" stroke="none" points="807.12,-1582 807.12,-1609.2 890.82,-1609.2 890.82,-1582 807.12,-1582"/>
+<polygon fill="none" stroke="#94a3b8" points="807.12,-1582 807.12,-1609.2 890.82,-1609.2 890.82,-1582 807.12,-1582"/>
+<polygon fill="#e0f2fe" stroke="none" points="808.12,-1583 808.12,-1608.2 889.82,-1608.2 889.82,-1583 808.12,-1583"/>
+<text xml:space="preserve" text-anchor="start" x="814.12" y="-1593.3" font-family="Arial" font-weight="bold" font-size="11.00">brew_images</text>
 </a>
 </g>
 </g>
@@ -817,10 +826,10 @@
 <g id="table_brews" class="node">
 <title>brews</title>
 <g id="a_table_brews"><a xlink:title="brews — Brewing &amp; hydrometers">
-<polygon fill="white" stroke="none" points="555.51,-1216 555.51,-1243.2 601.3,-1243.2 601.3,-1216 555.51,-1216"/>
-<polygon fill="none" stroke="#94a3b8" points="555.51,-1216 555.51,-1243.2 601.3,-1243.2 601.3,-1216 555.51,-1216"/>
-<polygon fill="#e0f2fe" stroke="none" points="556.51,-1217 556.51,-1242.2 600.3,-1242.2 600.3,-1217 556.51,-1217"/>
-<text xml:space="preserve" text-anchor="start" x="562.51" y="-1227.3" font-family="Arial" font-weight="bold" font-size="11.00">brews</text>
+<polygon fill="white" stroke="none" points="555.51,-1491 555.51,-1518.2 601.3,-1518.2 601.3,-1491 555.51,-1491"/>
+<polygon fill="none" stroke="#94a3b8" points="555.51,-1491 555.51,-1518.2 601.3,-1518.2 601.3,-1491 555.51,-1491"/>
+<polygon fill="#e0f2fe" stroke="none" points="556.51,-1492 556.51,-1517.2 600.3,-1517.2 600.3,-1492 556.51,-1492"/>
+<text xml:space="preserve" text-anchor="start" x="562.51" y="-1502.3" font-family="Arial" font-weight="bold" font-size="11.00">brews</text>
 </a>
 </g>
 </g>
@@ -828,10 +837,10 @@
 <g id="table_chat_access_grants" class="node">
 <title>chat_access_grants</title>
 <g id="a_table_chat_access_grants"><a xlink:title="chat_access_grants — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="1072.16,-1242 1072.16,-1269.2 1191.34,-1269.2 1191.34,-1242 1072.16,-1242"/>
-<polygon fill="none" stroke="#94a3b8" points="1072.16,-1242 1072.16,-1269.2 1191.34,-1269.2 1191.34,-1242 1072.16,-1242"/>
-<polygon fill="#f3e8ff" stroke="none" points="1073.16,-1243 1073.16,-1268.2 1190.34,-1268.2 1190.34,-1243 1073.16,-1243"/>
-<text xml:space="preserve" text-anchor="start" x="1079.16" y="-1253.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_grants</text>
+<polygon fill="white" stroke="none" points="1072.16,-1246 1072.16,-1273.2 1191.34,-1273.2 1191.34,-1246 1072.16,-1246"/>
+<polygon fill="none" stroke="#94a3b8" points="1072.16,-1246 1072.16,-1273.2 1191.34,-1273.2 1191.34,-1246 1072.16,-1246"/>
+<polygon fill="#f3e8ff" stroke="none" points="1073.16,-1247 1073.16,-1272.2 1190.34,-1272.2 1190.34,-1247 1073.16,-1247"/>
+<text xml:space="preserve" text-anchor="start" x="1079.16" y="-1257.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_grants</text>
 </a>
 </g>
 </g>
@@ -839,10 +848,10 @@
 <g id="table_chat_access_settings" class="node">
 <title>chat_access_settings</title>
 <g id="a_table_chat_access_settings"><a xlink:title="chat_access_settings — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="1067.88,-1190 1067.88,-1217.2 1195.61,-1217.2 1195.61,-1190 1067.88,-1190"/>
-<polygon fill="none" stroke="#94a3b8" points="1067.88,-1190 1067.88,-1217.2 1195.61,-1217.2 1195.61,-1190 1067.88,-1190"/>
-<polygon fill="#f3e8ff" stroke="none" points="1068.88,-1191 1068.88,-1216.2 1194.61,-1216.2 1194.61,-1191 1068.88,-1191"/>
-<text xml:space="preserve" text-anchor="start" x="1074.88" y="-1201.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_settings</text>
+<polygon fill="white" stroke="none" points="1067.88,-1194 1067.88,-1221.2 1195.61,-1221.2 1195.61,-1194 1067.88,-1194"/>
+<polygon fill="none" stroke="#94a3b8" points="1067.88,-1194 1067.88,-1221.2 1195.61,-1221.2 1195.61,-1194 1067.88,-1194"/>
+<polygon fill="#f3e8ff" stroke="none" points="1068.88,-1195 1068.88,-1220.2 1194.61,-1220.2 1194.61,-1195 1068.88,-1195"/>
+<text xml:space="preserve" text-anchor="start" x="1074.88" y="-1205.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_access_settings</text>
 </a>
 </g>
 </g>
@@ -850,10 +859,10 @@
 <g id="table_chat_conversations" class="node">
 <title>chat_conversations</title>
 <g id="a_table_chat_conversations"><a xlink:title="chat_conversations — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="1073.09,-1501 1073.09,-1528.2 1190.41,-1528.2 1190.41,-1501 1073.09,-1501"/>
-<polygon fill="none" stroke="#94a3b8" points="1073.09,-1501 1073.09,-1528.2 1190.41,-1528.2 1190.41,-1501 1073.09,-1501"/>
-<polygon fill="#f3e8ff" stroke="none" points="1074.09,-1502 1074.09,-1527.2 1189.41,-1527.2 1189.41,-1502 1074.09,-1502"/>
-<text xml:space="preserve" text-anchor="start" x="1080.09" y="-1512.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_conversations</text>
+<polygon fill="white" stroke="none" points="1073.09,-1090 1073.09,-1117.2 1190.41,-1117.2 1190.41,-1090 1073.09,-1090"/>
+<polygon fill="none" stroke="#94a3b8" points="1073.09,-1090 1073.09,-1117.2 1190.41,-1117.2 1190.41,-1090 1073.09,-1090"/>
+<polygon fill="#f3e8ff" stroke="none" points="1074.09,-1091 1074.09,-1116.2 1189.41,-1116.2 1189.41,-1091 1074.09,-1091"/>
+<text xml:space="preserve" text-anchor="start" x="1080.09" y="-1101.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_conversations</text>
 </a>
 </g>
 </g>
@@ -861,10 +870,10 @@
 <g id="table_chat_drafts" class="node">
 <title>chat_drafts</title>
 <g id="a_table_chat_drafts"><a xlink:title="chat_drafts — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="812.32,-1502 812.32,-1529.2 885.62,-1529.2 885.62,-1502 812.32,-1502"/>
-<polygon fill="none" stroke="#94a3b8" points="812.32,-1502 812.32,-1529.2 885.62,-1529.2 885.62,-1502 812.32,-1502"/>
-<polygon fill="#f3e8ff" stroke="none" points="813.32,-1503 813.32,-1528.2 884.62,-1528.2 884.62,-1503 813.32,-1503"/>
-<text xml:space="preserve" text-anchor="start" x="819.32" y="-1513.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_drafts</text>
+<polygon fill="white" stroke="none" points="812.32,-1090 812.32,-1117.2 885.62,-1117.2 885.62,-1090 812.32,-1090"/>
+<polygon fill="none" stroke="#94a3b8" points="812.32,-1090 812.32,-1117.2 885.62,-1117.2 885.62,-1090 812.32,-1090"/>
+<polygon fill="#f3e8ff" stroke="none" points="813.32,-1091 813.32,-1116.2 884.62,-1116.2 884.62,-1091 813.32,-1091"/>
+<text xml:space="preserve" text-anchor="start" x="819.32" y="-1101.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_drafts</text>
 </a>
 </g>
 </g>
@@ -872,10 +881,10 @@
 <g id="table_chat_generations" class="node">
 <title>chat_generations</title>
 <g id="a_table_chat_generations"><a xlink:title="chat_generations — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="294.11,-1502 294.11,-1529.2 399.19,-1529.2 399.19,-1502 294.11,-1502"/>
-<polygon fill="none" stroke="#94a3b8" points="294.11,-1502 294.11,-1529.2 399.19,-1529.2 399.19,-1502 294.11,-1502"/>
-<polygon fill="#f3e8ff" stroke="none" points="295.11,-1503 295.11,-1528.2 398.19,-1528.2 398.19,-1503 295.11,-1503"/>
-<text xml:space="preserve" text-anchor="start" x="301.11" y="-1513.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_generations</text>
+<polygon fill="white" stroke="none" points="294.11,-1012 294.11,-1039.2 399.19,-1039.2 399.19,-1012 294.11,-1012"/>
+<polygon fill="none" stroke="#94a3b8" points="294.11,-1012 294.11,-1039.2 399.19,-1039.2 399.19,-1012 294.11,-1012"/>
+<polygon fill="#f3e8ff" stroke="none" points="295.11,-1013 295.11,-1038.2 398.19,-1038.2 398.19,-1013 295.11,-1013"/>
+<text xml:space="preserve" text-anchor="start" x="301.11" y="-1023.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_generations</text>
 </a>
 </g>
 </g>
@@ -883,10 +892,10 @@
 <g id="table_chat_message_contexts" class="node">
 <title>chat_message_contexts</title>
 <g id="a_table_chat_message_contexts"><a xlink:title="chat_message_contexts — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="276.06,-1554 276.06,-1581.2 417.24,-1581.2 417.24,-1554 276.06,-1554"/>
-<polygon fill="none" stroke="#94a3b8" points="276.06,-1554 276.06,-1581.2 417.24,-1581.2 417.24,-1554 276.06,-1554"/>
-<polygon fill="#f3e8ff" stroke="none" points="277.06,-1555 277.06,-1580.2 416.24,-1580.2 416.24,-1555 277.06,-1555"/>
-<text xml:space="preserve" text-anchor="start" x="283.06" y="-1565.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_message_contexts</text>
+<polygon fill="white" stroke="none" points="276.06,-1064 276.06,-1091.2 417.24,-1091.2 417.24,-1064 276.06,-1064"/>
+<polygon fill="none" stroke="#94a3b8" points="276.06,-1064 276.06,-1091.2 417.24,-1091.2 417.24,-1064 276.06,-1064"/>
+<polygon fill="#f3e8ff" stroke="none" points="277.06,-1065 277.06,-1090.2 416.24,-1090.2 416.24,-1065 277.06,-1065"/>
+<text xml:space="preserve" text-anchor="start" x="283.06" y="-1075.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_message_contexts</text>
 </a>
 </g>
 </g>
@@ -894,10 +903,10 @@
 <g id="table_chat_messages" class="node">
 <title>chat_messages</title>
 <g id="a_table_chat_messages"><a xlink:title="chat_messages — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="530.44,-1554 530.44,-1581.2 626.38,-1581.2 626.38,-1554 530.44,-1554"/>
-<polygon fill="none" stroke="#94a3b8" points="530.44,-1554 530.44,-1581.2 626.38,-1581.2 626.38,-1554 530.44,-1554"/>
-<polygon fill="#f3e8ff" stroke="none" points="531.44,-1555 531.44,-1580.2 625.38,-1580.2 625.38,-1555 531.44,-1555"/>
-<text xml:space="preserve" text-anchor="start" x="537.44" y="-1565.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_messages</text>
+<polygon fill="white" stroke="none" points="530.44,-1064 530.44,-1091.2 626.38,-1091.2 626.38,-1064 530.44,-1064"/>
+<polygon fill="none" stroke="#94a3b8" points="530.44,-1064 530.44,-1091.2 626.38,-1091.2 626.38,-1064 530.44,-1064"/>
+<polygon fill="#f3e8ff" stroke="none" points="531.44,-1065 531.44,-1090.2 625.38,-1090.2 625.38,-1065 531.44,-1065"/>
+<text xml:space="preserve" text-anchor="start" x="537.44" y="-1075.3" font-family="Arial" font-weight="bold" font-size="11.00">chat_messages</text>
 </a>
 </g>
 </g>
@@ -905,10 +914,10 @@
 <g id="table_chatbot_usage_events" class="node">
 <title>chatbot_usage_events</title>
 <g id="a_table_chatbot_usage_events"><a xlink:title="chatbot_usage_events — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="512.11,-1502 512.11,-1529.2 644.71,-1529.2 644.71,-1502 512.11,-1502"/>
-<polygon fill="none" stroke="#94a3b8" points="512.11,-1502 512.11,-1529.2 644.71,-1529.2 644.71,-1502 512.11,-1502"/>
-<polygon fill="#f3e8ff" stroke="none" points="513.11,-1503 513.11,-1528.2 643.71,-1528.2 643.71,-1503 513.11,-1503"/>
-<text xml:space="preserve" text-anchor="start" x="519.11" y="-1513.3" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_events</text>
+<polygon fill="white" stroke="none" points="512.11,-1012 512.11,-1039.2 644.71,-1039.2 644.71,-1012 512.11,-1012"/>
+<polygon fill="none" stroke="#94a3b8" points="512.11,-1012 512.11,-1039.2 644.71,-1039.2 644.71,-1012 512.11,-1012"/>
+<polygon fill="#f3e8ff" stroke="none" points="513.11,-1013 513.11,-1038.2 643.71,-1038.2 643.71,-1013 513.11,-1013"/>
+<text xml:space="preserve" text-anchor="start" x="519.11" y="-1023.3" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_events</text>
 </a>
 </g>
 </g>
@@ -916,10 +925,10 @@
 <g id="table_chatbot_usage_windows" class="node">
 <title>chatbot_usage_windows</title>
 <g id="a_table_chatbot_usage_windows"><a xlink:title="chatbot_usage_windows — Chat &amp; model usage">
-<polygon fill="white" stroke="none" points="22.94,-1268 22.94,-1295.2 167.13,-1295.2 167.13,-1268 22.94,-1268"/>
-<polygon fill="none" stroke="#94a3b8" points="22.94,-1268 22.94,-1295.2 167.13,-1295.2 167.13,-1268 22.94,-1268"/>
-<polygon fill="#f3e8ff" stroke="none" points="23.94,-1269 23.94,-1294.2 166.13,-1294.2 166.13,-1269 23.94,-1269"/>
-<text xml:space="preserve" text-anchor="start" x="29.94" y="-1279.3" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_windows</text>
+<polygon fill="white" stroke="none" points="22.94,-1458 22.94,-1485.2 167.13,-1485.2 167.13,-1458 22.94,-1458"/>
+<polygon fill="none" stroke="#94a3b8" points="22.94,-1458 22.94,-1485.2 167.13,-1485.2 167.13,-1458 22.94,-1458"/>
+<polygon fill="#f3e8ff" stroke="none" points="23.94,-1459 23.94,-1484.2 166.13,-1484.2 166.13,-1459 23.94,-1459"/>
+<text xml:space="preserve" text-anchor="start" x="29.94" y="-1469.3" font-family="Arial" font-weight="bold" font-size="11.00">chatbot_usage_windows</text>
 </a>
 </g>
 </g>
@@ -927,10 +936,10 @@
 <g id="table_comments" class="node">
 <title>comments</title>
 <g id="a_table_comments"><a xlink:title="comments — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="814.46,-1138 814.46,-1165.2 883.48,-1165.2 883.48,-1138 814.46,-1138"/>
-<polygon fill="none" stroke="#94a3b8" points="814.46,-1138 814.46,-1165.2 883.48,-1165.2 883.48,-1138 814.46,-1138"/>
-<polygon fill="#ffedd5" stroke="none" points="815.46,-1139 815.46,-1164.2 882.48,-1164.2 882.48,-1139 815.46,-1139"/>
-<text xml:space="preserve" text-anchor="start" x="821.46" y="-1149.3" font-family="Arial" font-weight="bold" font-size="11.00">comments</text>
+<polygon fill="white" stroke="none" points="814.46,-1270 814.46,-1297.2 883.48,-1297.2 883.48,-1270 814.46,-1270"/>
+<polygon fill="none" stroke="#94a3b8" points="814.46,-1270 814.46,-1297.2 883.48,-1297.2 883.48,-1270 814.46,-1270"/>
+<polygon fill="#ffedd5" stroke="none" points="815.46,-1271 815.46,-1296.2 882.48,-1296.2 882.48,-1271 815.46,-1271"/>
+<text xml:space="preserve" text-anchor="start" x="821.46" y="-1281.3" font-family="Arial" font-weight="bold" font-size="11.00">comments</text>
 </a>
 </g>
 </g>
@@ -938,10 +947,10 @@
 <g id="table_credit_accounts" class="node">
 <title>credit_accounts</title>
 <g id="a_table_credit_accounts"><a xlink:title="credit_accounts — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1082.57,-931 1082.57,-958.2 1180.93,-958.2 1180.93,-931 1082.57,-931"/>
-<polygon fill="none" stroke="#94a3b8" points="1082.57,-931 1082.57,-958.2 1180.93,-958.2 1180.93,-931 1082.57,-931"/>
-<polygon fill="#fef3c7" stroke="none" points="1083.57,-932 1083.57,-957.2 1179.93,-957.2 1179.93,-932 1083.57,-932"/>
-<text xml:space="preserve" text-anchor="start" x="1089.57" y="-942.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_accounts</text>
+<polygon fill="white" stroke="none" points="1082.57,-468 1082.57,-495.2 1180.93,-495.2 1180.93,-468 1082.57,-468"/>
+<polygon fill="none" stroke="#94a3b8" points="1082.57,-468 1082.57,-495.2 1180.93,-495.2 1180.93,-468 1082.57,-468"/>
+<polygon fill="#fef3c7" stroke="none" points="1083.57,-469 1083.57,-494.2 1179.93,-494.2 1179.93,-469 1083.57,-469"/>
+<text xml:space="preserve" text-anchor="start" x="1089.57" y="-479.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_accounts</text>
 </a>
 </g>
 </g>
@@ -949,10 +958,10 @@
 <g id="table_credit_checkout_sessions" class="node">
 <title>credit_checkout_sessions</title>
 <g id="a_table_credit_checkout_sessions"><a xlink:title="credit_checkout_sessions — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1055.97,-879 1055.97,-906.2 1207.53,-906.2 1207.53,-879 1055.97,-879"/>
-<polygon fill="none" stroke="#94a3b8" points="1055.97,-879 1055.97,-906.2 1207.53,-906.2 1207.53,-879 1055.97,-879"/>
-<polygon fill="#fef3c7" stroke="none" points="1056.97,-880 1056.97,-905.2 1206.53,-905.2 1206.53,-880 1056.97,-880"/>
-<text xml:space="preserve" text-anchor="start" x="1062.97" y="-890.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_checkout_sessions</text>
+<polygon fill="white" stroke="none" points="1055.97,-1038 1055.97,-1065.2 1207.53,-1065.2 1207.53,-1038 1055.97,-1038"/>
+<polygon fill="none" stroke="#94a3b8" points="1055.97,-1038 1055.97,-1065.2 1207.53,-1065.2 1207.53,-1038 1055.97,-1038"/>
+<polygon fill="#fef3c7" stroke="none" points="1056.97,-1039 1056.97,-1064.2 1206.53,-1064.2 1206.53,-1039 1056.97,-1039"/>
+<text xml:space="preserve" text-anchor="start" x="1062.97" y="-1049.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_checkout_sessions</text>
 </a>
 </g>
 </g>
@@ -960,10 +969,10 @@
 <g id="table_credit_fee_policy_versions" class="node">
 <title>credit_fee_policy_versions</title>
 <g id="a_table_credit_fee_policy_versions"><a xlink:title="credit_fee_policy_versions — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1054.13,-983 1054.13,-1010.2 1209.37,-1010.2 1209.37,-983 1054.13,-983"/>
-<polygon fill="none" stroke="#94a3b8" points="1054.13,-983 1054.13,-1010.2 1209.37,-1010.2 1209.37,-983 1054.13,-983"/>
-<polygon fill="#fef3c7" stroke="none" points="1055.13,-984 1055.13,-1009.2 1208.37,-1009.2 1208.37,-984 1055.13,-984"/>
-<text xml:space="preserve" text-anchor="start" x="1061.13" y="-994.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_fee_policy_versions</text>
+<polygon fill="white" stroke="none" points="1054.13,-520 1054.13,-547.2 1209.37,-547.2 1209.37,-520 1054.13,-520"/>
+<polygon fill="none" stroke="#94a3b8" points="1054.13,-520 1054.13,-547.2 1209.37,-547.2 1209.37,-520 1054.13,-520"/>
+<polygon fill="#fef3c7" stroke="none" points="1055.13,-521 1055.13,-546.2 1208.37,-546.2 1208.37,-521 1055.13,-521"/>
+<text xml:space="preserve" text-anchor="start" x="1061.13" y="-531.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_fee_policy_versions</text>
 </a>
 </g>
 </g>
@@ -971,10 +980,10 @@
 <g id="table_credit_ledger_entries" class="node">
 <title>credit_ledger_entries</title>
 <g id="a_table_credit_ledger_entries"><a xlink:title="credit_ledger_entries — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="786.33,-983 786.33,-1010.2 911.61,-1010.2 911.61,-983 786.33,-983"/>
-<polygon fill="none" stroke="#94a3b8" points="786.33,-983 786.33,-1010.2 911.61,-1010.2 911.61,-983 786.33,-983"/>
-<polygon fill="#fef3c7" stroke="none" points="787.33,-984 787.33,-1009.2 910.61,-1009.2 910.61,-984 787.33,-984"/>
-<text xml:space="preserve" text-anchor="start" x="793.33" y="-994.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_ledger_entries</text>
+<polygon fill="white" stroke="none" points="786.33,-520 786.33,-547.2 911.61,-547.2 911.61,-520 786.33,-520"/>
+<polygon fill="none" stroke="#94a3b8" points="786.33,-520 786.33,-547.2 911.61,-547.2 911.61,-520 786.33,-520"/>
+<polygon fill="#fef3c7" stroke="none" points="787.33,-521 787.33,-546.2 910.61,-546.2 910.61,-521 787.33,-521"/>
+<text xml:space="preserve" text-anchor="start" x="793.33" y="-531.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_ledger_entries</text>
 </a>
 </g>
 </g>
@@ -982,10 +991,10 @@
 <g id="table_credit_payment_recoveries" class="node">
 <title>credit_payment_recoveries</title>
 <g id="a_table_credit_payment_recoveries"><a xlink:title="credit_payment_recoveries — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="770.74,-827 770.74,-854.2 927.2,-854.2 927.2,-827 770.74,-827"/>
-<polygon fill="none" stroke="#94a3b8" points="770.74,-827 770.74,-854.2 927.2,-854.2 927.2,-827 770.74,-827"/>
-<polygon fill="#fef3c7" stroke="none" points="771.74,-828 771.74,-853.2 926.2,-853.2 926.2,-828 771.74,-828"/>
-<text xml:space="preserve" text-anchor="start" x="777.74" y="-838.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_payment_recoveries</text>
+<polygon fill="white" stroke="none" points="770.74,-986 770.74,-1013.2 927.2,-1013.2 927.2,-986 770.74,-986"/>
+<polygon fill="none" stroke="#94a3b8" points="770.74,-986 770.74,-1013.2 927.2,-1013.2 927.2,-986 770.74,-986"/>
+<polygon fill="#fef3c7" stroke="none" points="771.74,-987 771.74,-1012.2 926.2,-1012.2 926.2,-987 771.74,-987"/>
+<text xml:space="preserve" text-anchor="start" x="777.74" y="-997.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_payment_recoveries</text>
 </a>
 </g>
 </g>
@@ -993,10 +1002,10 @@
 <g id="table_credit_payment_webhook_events" class="node">
 <title>credit_payment_webhook_events</title>
 <g id="a_table_credit_payment_webhook_events"><a xlink:title="credit_payment_webhook_events — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="0,-1320 0,-1347.2 190.06,-1347.2 190.06,-1320 0,-1320"/>
-<polygon fill="none" stroke="#94a3b8" points="0,-1320 0,-1347.2 190.06,-1347.2 190.06,-1320 0,-1320"/>
-<polygon fill="#fef3c7" stroke="none" points="1,-1321 1,-1346.2 189.06,-1346.2 189.06,-1321 1,-1321"/>
-<text xml:space="preserve" text-anchor="start" x="7" y="-1331.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_payment_webhook_events</text>
+<polygon fill="white" stroke="none" points="0,-1510 0,-1537.2 190.06,-1537.2 190.06,-1510 0,-1510"/>
+<polygon fill="none" stroke="#94a3b8" points="0,-1510 0,-1537.2 190.06,-1537.2 190.06,-1510 0,-1510"/>
+<polygon fill="#fef3c7" stroke="none" points="1,-1511 1,-1536.2 189.06,-1536.2 189.06,-1511 1,-1511"/>
+<text xml:space="preserve" text-anchor="start" x="7" y="-1521.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_payment_webhook_events</text>
 </a>
 </g>
 </g>
@@ -1004,10 +1013,10 @@
 <g id="table_credit_pricing_versions" class="node">
 <title>credit_pricing_versions</title>
 <g id="a_table_credit_pricing_versions"><a xlink:title="credit_pricing_versions — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1062.7,-1035 1062.7,-1062.2 1200.8,-1062.2 1200.8,-1035 1062.7,-1035"/>
-<polygon fill="none" stroke="#94a3b8" points="1062.7,-1035 1062.7,-1062.2 1200.8,-1062.2 1200.8,-1035 1062.7,-1035"/>
-<polygon fill="#fef3c7" stroke="none" points="1063.7,-1036 1063.7,-1061.2 1199.8,-1061.2 1199.8,-1036 1063.7,-1036"/>
-<text xml:space="preserve" text-anchor="start" x="1069.7" y="-1046.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_pricing_versions</text>
+<polygon fill="white" stroke="none" points="1062.7,-572 1062.7,-599.2 1200.8,-599.2 1200.8,-572 1062.7,-572"/>
+<polygon fill="none" stroke="#94a3b8" points="1062.7,-572 1062.7,-599.2 1200.8,-599.2 1200.8,-572 1062.7,-572"/>
+<polygon fill="#fef3c7" stroke="none" points="1063.7,-573 1063.7,-598.2 1199.8,-598.2 1199.8,-573 1063.7,-573"/>
+<text xml:space="preserve" text-anchor="start" x="1069.7" y="-583.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_pricing_versions</text>
 </a>
 </g>
 </g>
@@ -1015,10 +1024,10 @@
 <g id="table_credit_stripe_dispute_events" class="node">
 <title>credit_stripe_dispute_events</title>
 <g id="a_table_credit_stripe_dispute_events"><a xlink:title="credit_stripe_dispute_events — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="11.92,-1372 11.92,-1399.2 178.15,-1399.2 178.15,-1372 11.92,-1372"/>
-<polygon fill="none" stroke="#94a3b8" points="11.92,-1372 11.92,-1399.2 178.15,-1399.2 178.15,-1372 11.92,-1372"/>
-<polygon fill="#fef3c7" stroke="none" points="12.92,-1373 12.92,-1398.2 177.15,-1398.2 177.15,-1373 12.92,-1373"/>
-<text xml:space="preserve" text-anchor="start" x="18.92" y="-1383.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_stripe_dispute_events</text>
+<polygon fill="white" stroke="none" points="11.92,-1562 11.92,-1589.2 178.15,-1589.2 178.15,-1562 11.92,-1562"/>
+<polygon fill="none" stroke="#94a3b8" points="11.92,-1562 11.92,-1589.2 178.15,-1589.2 178.15,-1562 11.92,-1562"/>
+<polygon fill="#fef3c7" stroke="none" points="12.92,-1563 12.92,-1588.2 177.15,-1588.2 177.15,-1563 12.92,-1563"/>
+<text xml:space="preserve" text-anchor="start" x="18.92" y="-1573.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_stripe_dispute_events</text>
 </a>
 </g>
 </g>
@@ -1026,10 +1035,10 @@
 <g id="table_credit_stripe_refund_events" class="node">
 <title>credit_stripe_refund_events</title>
 <g id="a_table_credit_stripe_refund_events"><a xlink:title="credit_stripe_refund_events — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="14.36,-1424 14.36,-1451.2 175.7,-1451.2 175.7,-1424 14.36,-1424"/>
-<polygon fill="none" stroke="#94a3b8" points="14.36,-1424 14.36,-1451.2 175.7,-1451.2 175.7,-1424 14.36,-1424"/>
-<polygon fill="#fef3c7" stroke="none" points="15.36,-1425 15.36,-1450.2 174.7,-1450.2 174.7,-1425 15.36,-1425"/>
-<text xml:space="preserve" text-anchor="start" x="21.36" y="-1435.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_stripe_refund_events</text>
+<polygon fill="white" stroke="none" points="14.36,-1614 14.36,-1641.2 175.7,-1641.2 175.7,-1614 14.36,-1614"/>
+<polygon fill="none" stroke="#94a3b8" points="14.36,-1614 14.36,-1641.2 175.7,-1641.2 175.7,-1614 14.36,-1614"/>
+<polygon fill="#fef3c7" stroke="none" points="15.36,-1615 15.36,-1640.2 174.7,-1640.2 174.7,-1615 15.36,-1615"/>
+<text xml:space="preserve" text-anchor="start" x="21.36" y="-1625.3" font-family="Arial" font-weight="bold" font-size="11.00">credit_stripe_refund_events</text>
 </a>
 </g>
 </g>
@@ -1037,10 +1046,10 @@
 <g id="table_devices" class="node">
 <title>devices</title>
 <g id="a_table_devices"><a xlink:title="devices — Brewing &amp; hydrometers">
-<polygon fill="white" stroke="none" points="319.47,-1242 319.47,-1269.2 373.83,-1269.2 373.83,-1242 319.47,-1242"/>
-<polygon fill="none" stroke="#94a3b8" points="319.47,-1242 319.47,-1269.2 373.83,-1269.2 373.83,-1242 319.47,-1242"/>
-<polygon fill="#e0f2fe" stroke="none" points="320.47,-1243 320.47,-1268.2 372.83,-1268.2 372.83,-1243 320.47,-1243"/>
-<text xml:space="preserve" text-anchor="start" x="326.47" y="-1253.3" font-family="Arial" font-weight="bold" font-size="11.00">devices</text>
+<polygon fill="white" stroke="none" points="319.47,-1361 319.47,-1388.2 373.83,-1388.2 373.83,-1361 319.47,-1361"/>
+<polygon fill="none" stroke="#94a3b8" points="319.47,-1361 319.47,-1388.2 373.83,-1388.2 373.83,-1361 319.47,-1361"/>
+<polygon fill="#e0f2fe" stroke="none" points="320.47,-1362 320.47,-1387.2 372.83,-1387.2 372.83,-1362 320.47,-1362"/>
+<text xml:space="preserve" text-anchor="start" x="326.47" y="-1372.3" font-family="Arial" font-weight="bold" font-size="11.00">devices</text>
 </a>
 </g>
 </g>
@@ -1048,10 +1057,10 @@
 <g id="table_equipment" class="node">
 <title>equipment</title>
 <g id="a_table_equipment"><a xlink:title="equipment — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="311.85,-932 311.85,-959.2 381.46,-959.2 381.46,-932 311.85,-932"/>
-<polygon fill="none" stroke="#94a3b8" points="311.85,-932 311.85,-959.2 381.46,-959.2 381.46,-932 311.85,-932"/>
-<polygon fill="#dcfce7" stroke="none" points="312.85,-933 312.85,-958.2 380.46,-958.2 380.46,-933 312.85,-933"/>
-<text xml:space="preserve" text-anchor="start" x="318.85" y="-943.3" font-family="Arial" font-weight="bold" font-size="11.00">equipment</text>
+<polygon fill="white" stroke="none" points="311.85,-1193 311.85,-1220.2 381.46,-1220.2 381.46,-1193 311.85,-1193"/>
+<polygon fill="none" stroke="#94a3b8" points="311.85,-1193 311.85,-1220.2 381.46,-1220.2 381.46,-1193 311.85,-1193"/>
+<polygon fill="#dcfce7" stroke="none" points="312.85,-1194 312.85,-1219.2 380.46,-1219.2 380.46,-1194 312.85,-1194"/>
+<text xml:space="preserve" text-anchor="start" x="318.85" y="-1204.3" font-family="Arial" font-weight="bold" font-size="11.00">equipment</text>
 </a>
 </g>
 </g>
@@ -1059,10 +1068,10 @@
 <g id="table_equipment_assignment_events" class="node">
 <title>equipment_assignment_events</title>
 <g id="a_table_equipment_assignment_events"><a xlink:title="equipment_assignment_events — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="6.12,-932 6.12,-959.2 183.95,-959.2 183.95,-932 6.12,-932"/>
-<polygon fill="none" stroke="#94a3b8" points="6.12,-932 6.12,-959.2 183.95,-959.2 183.95,-932 6.12,-932"/>
-<polygon fill="#dcfce7" stroke="none" points="7.12,-933 7.12,-958.2 182.95,-958.2 182.95,-933 7.12,-933"/>
-<text xml:space="preserve" text-anchor="start" x="13.12" y="-943.3" font-family="Arial" font-weight="bold" font-size="11.00">equipment_assignment_events</text>
+<polygon fill="white" stroke="none" points="6.12,-1193 6.12,-1220.2 183.95,-1220.2 183.95,-1193 6.12,-1193"/>
+<polygon fill="none" stroke="#94a3b8" points="6.12,-1193 6.12,-1220.2 183.95,-1220.2 183.95,-1193 6.12,-1193"/>
+<polygon fill="#dcfce7" stroke="none" points="7.12,-1194 7.12,-1219.2 182.95,-1219.2 182.95,-1194 7.12,-1194"/>
+<text xml:space="preserve" text-anchor="start" x="13.12" y="-1204.3" font-family="Arial" font-weight="bold" font-size="11.00">equipment_assignment_events</text>
 </a>
 </g>
 </g>
@@ -1070,10 +1079,10 @@
 <g id="table_ingredients" class="node">
 <title>ingredients</title>
 <g id="a_table_ingredients"><a xlink:title="ingredients — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="58.39,-1476 58.39,-1503.2 131.68,-1503.2 131.68,-1476 58.39,-1476"/>
-<polygon fill="none" stroke="#94a3b8" points="58.39,-1476 58.39,-1503.2 131.68,-1503.2 131.68,-1476 58.39,-1476"/>
-<polygon fill="#ffedd5" stroke="none" points="59.39,-1477 59.39,-1502.2 130.68,-1502.2 130.68,-1477 59.39,-1477"/>
-<text xml:space="preserve" text-anchor="start" x="65.39" y="-1487.3" font-family="Arial" font-weight="bold" font-size="11.00">ingredients</text>
+<polygon fill="white" stroke="none" points="58.39,-1666 58.39,-1693.2 131.68,-1693.2 131.68,-1666 58.39,-1666"/>
+<polygon fill="none" stroke="#94a3b8" points="58.39,-1666 58.39,-1693.2 131.68,-1693.2 131.68,-1666 58.39,-1666"/>
+<polygon fill="#ffedd5" stroke="none" points="59.39,-1667 59.39,-1692.2 130.68,-1692.2 130.68,-1667 59.39,-1667"/>
+<text xml:space="preserve" text-anchor="start" x="65.39" y="-1677.3" font-family="Arial" font-weight="bold" font-size="11.00">ingredients</text>
 </a>
 </g>
 </g>
@@ -1081,10 +1090,10 @@
 <g id="table_inventory_adjustments" class="node">
 <title>inventory_adjustments</title>
 <g id="a_table_inventory_adjustments"><a xlink:title="inventory_adjustments — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="279.44,-506 279.44,-533.2 413.86,-533.2 413.86,-506 279.44,-506"/>
-<polygon fill="none" stroke="#94a3b8" points="279.44,-506 279.44,-533.2 413.86,-533.2 413.86,-506 279.44,-506"/>
-<polygon fill="#dcfce7" stroke="none" points="280.44,-507 280.44,-532.2 412.86,-532.2 412.86,-507 280.44,-507"/>
-<text xml:space="preserve" text-anchor="start" x="286.44" y="-517.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_adjustments</text>
+<polygon fill="white" stroke="none" points="279.44,-624 279.44,-651.2 413.86,-651.2 413.86,-624 279.44,-624"/>
+<polygon fill="none" stroke="#94a3b8" points="279.44,-624 279.44,-651.2 413.86,-651.2 413.86,-624 279.44,-624"/>
+<polygon fill="#dcfce7" stroke="none" points="280.44,-625 280.44,-650.2 412.86,-650.2 412.86,-625 280.44,-625"/>
+<text xml:space="preserve" text-anchor="start" x="286.44" y="-635.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_adjustments</text>
 </a>
 </g>
 </g>
@@ -1092,10 +1101,10 @@
 <g id="table_inventory_allocations" class="node">
 <title>inventory_allocations</title>
 <g id="a_table_inventory_allocations"><a xlink:title="inventory_allocations — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="514.86,-272 514.86,-299.2 641.95,-299.2 641.95,-272 514.86,-272"/>
-<polygon fill="none" stroke="#94a3b8" points="514.86,-272 514.86,-299.2 641.95,-299.2 641.95,-272 514.86,-272"/>
-<polygon fill="#dcfce7" stroke="none" points="515.86,-273 515.86,-298.2 640.95,-298.2 640.95,-273 515.86,-273"/>
-<text xml:space="preserve" text-anchor="start" x="521.86" y="-283.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_allocations</text>
+<polygon fill="white" stroke="none" points="514.86,-780 514.86,-807.2 641.95,-807.2 641.95,-780 514.86,-780"/>
+<polygon fill="none" stroke="#94a3b8" points="514.86,-780 514.86,-807.2 641.95,-807.2 641.95,-780 514.86,-780"/>
+<polygon fill="#dcfce7" stroke="none" points="515.86,-781 515.86,-806.2 640.95,-806.2 640.95,-781 515.86,-781"/>
+<text xml:space="preserve" text-anchor="start" x="521.86" y="-791.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_allocations</text>
 </a>
 </g>
 </g>
@@ -1103,10 +1112,10 @@
 <g id="table_inventory_bottlings" class="node">
 <title>inventory_bottlings</title>
 <g id="a_table_inventory_bottlings"><a xlink:title="inventory_bottlings — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="790.94,-620 790.94,-647.2 907,-647.2 907,-620 790.94,-620"/>
-<polygon fill="none" stroke="#94a3b8" points="790.94,-620 790.94,-647.2 907,-647.2 907,-620 790.94,-620"/>
-<polygon fill="#dcfce7" stroke="none" points="791.94,-621 791.94,-646.2 906,-646.2 906,-621 791.94,-621"/>
-<text xml:space="preserve" text-anchor="start" x="797.94" y="-631.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_bottlings</text>
+<polygon fill="white" stroke="none" points="790.94,-624 790.94,-651.2 907,-651.2 907,-624 790.94,-624"/>
+<polygon fill="none" stroke="#94a3b8" points="790.94,-624 790.94,-651.2 907,-651.2 907,-624 790.94,-624"/>
+<polygon fill="#dcfce7" stroke="none" points="791.94,-625 791.94,-650.2 906,-650.2 906,-625 791.94,-625"/>
+<text xml:space="preserve" text-anchor="start" x="797.94" y="-635.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_bottlings</text>
 </a>
 </g>
 </g>
@@ -1114,10 +1123,10 @@
 <g id="table_inventory_consumptions" class="node">
 <title>inventory_consumptions</title>
 <g id="a_table_inventory_consumptions"><a xlink:title="inventory_consumptions — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="506.01,-376 506.01,-403.2 650.81,-403.2 650.81,-376 506.01,-376"/>
-<polygon fill="none" stroke="#94a3b8" points="506.01,-376 506.01,-403.2 650.81,-403.2 650.81,-376 506.01,-376"/>
-<polygon fill="#dcfce7" stroke="none" points="507.01,-377 507.01,-402.2 649.81,-402.2 649.81,-377 507.01,-377"/>
-<text xml:space="preserve" text-anchor="start" x="513.01" y="-387.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_consumptions</text>
+<polygon fill="white" stroke="none" points="506.01,-676 506.01,-703.2 650.81,-703.2 650.81,-676 506.01,-676"/>
+<polygon fill="none" stroke="#94a3b8" points="506.01,-676 506.01,-703.2 650.81,-703.2 650.81,-676 506.01,-676"/>
+<polygon fill="#dcfce7" stroke="none" points="507.01,-677 507.01,-702.2 649.81,-702.2 649.81,-677 507.01,-677"/>
+<text xml:space="preserve" text-anchor="start" x="513.01" y="-687.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_consumptions</text>
 </a>
 </g>
 </g>
@@ -1125,10 +1134,10 @@
 <g id="table_inventory_cost_events" class="node">
 <title>inventory_cost_events</title>
 <g id="a_table_inventory_cost_events"><a xlink:title="inventory_cost_events — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="511.8,-532 511.8,-559.2 645.02,-559.2 645.02,-532 511.8,-532"/>
-<polygon fill="none" stroke="#94a3b8" points="511.8,-532 511.8,-559.2 645.02,-559.2 645.02,-532 511.8,-532"/>
-<polygon fill="#dcfce7" stroke="none" points="512.8,-533 512.8,-558.2 644.02,-558.2 644.02,-533 512.8,-533"/>
-<text xml:space="preserve" text-anchor="start" x="518.8" y="-543.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_cost_events</text>
+<polygon fill="white" stroke="none" points="511.8,-468 511.8,-495.2 645.02,-495.2 645.02,-468 511.8,-468"/>
+<polygon fill="none" stroke="#94a3b8" points="511.8,-468 511.8,-495.2 645.02,-495.2 645.02,-468 511.8,-468"/>
+<polygon fill="#dcfce7" stroke="none" points="512.8,-469 512.8,-494.2 644.02,-494.2 644.02,-469 512.8,-469"/>
+<text xml:space="preserve" text-anchor="start" x="518.8" y="-479.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_cost_events</text>
 </a>
 </g>
 </g>
@@ -1136,10 +1145,10 @@
 <g id="table_inventory_cost_exclusions" class="node">
 <title>inventory_cost_exclusions</title>
 <g id="a_table_inventory_cost_exclusions"><a xlink:title="inventory_cost_exclusions — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="1054.14,-312 1054.14,-339.2 1209.36,-339.2 1209.36,-312 1054.14,-312"/>
-<polygon fill="none" stroke="#94a3b8" points="1054.14,-312 1054.14,-339.2 1209.36,-339.2 1209.36,-312 1054.14,-312"/>
-<polygon fill="#dcfce7" stroke="none" points="1055.14,-313 1055.14,-338.2 1208.36,-338.2 1208.36,-313 1055.14,-313"/>
-<text xml:space="preserve" text-anchor="start" x="1061.14" y="-323.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_cost_exclusions</text>
+<polygon fill="white" stroke="none" points="1054.14,-727 1054.14,-754.2 1209.36,-754.2 1209.36,-727 1054.14,-727"/>
+<polygon fill="none" stroke="#94a3b8" points="1054.14,-727 1054.14,-754.2 1209.36,-754.2 1209.36,-727 1054.14,-727"/>
+<polygon fill="#dcfce7" stroke="none" points="1055.14,-728 1055.14,-753.2 1208.36,-753.2 1208.36,-728 1055.14,-728"/>
+<text xml:space="preserve" text-anchor="start" x="1061.14" y="-738.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_cost_exclusions</text>
 </a>
 </g>
 </g>
@@ -1147,10 +1156,10 @@
 <g id="table_inventory_label_links" class="node">
 <title>inventory_label_links</title>
 <g id="a_table_inventory_label_links"><a xlink:title="inventory_label_links — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="515.47,-324 515.47,-351.2 641.35,-351.2 641.35,-324 515.47,-324"/>
-<polygon fill="none" stroke="#94a3b8" points="515.47,-324 515.47,-351.2 641.35,-351.2 641.35,-324 515.47,-324"/>
-<polygon fill="#dcfce7" stroke="none" points="516.47,-325 516.47,-350.2 640.35,-350.2 640.35,-325 516.47,-325"/>
-<text xml:space="preserve" text-anchor="start" x="522.47" y="-335.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_label_links</text>
+<polygon fill="white" stroke="none" points="515.47,-832 515.47,-859.2 641.35,-859.2 641.35,-832 515.47,-832"/>
+<polygon fill="none" stroke="#94a3b8" points="515.47,-832 515.47,-859.2 641.35,-859.2 641.35,-832 515.47,-832"/>
+<polygon fill="#dcfce7" stroke="none" points="516.47,-833 516.47,-858.2 640.35,-858.2 640.35,-833 516.47,-833"/>
+<text xml:space="preserve" text-anchor="start" x="522.47" y="-843.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_label_links</text>
 </a>
 </g>
 </g>
@@ -1158,10 +1167,10 @@
 <g id="table_inventory_labels" class="node">
 <title>inventory_labels</title>
 <g id="a_table_inventory_labels"><a xlink:title="inventory_labels — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="798.56,-362 798.56,-389.2 899.38,-389.2 899.38,-362 798.56,-362"/>
-<polygon fill="none" stroke="#94a3b8" points="798.56,-362 798.56,-389.2 899.38,-389.2 899.38,-362 798.56,-362"/>
-<polygon fill="#dcfce7" stroke="none" points="799.56,-363 799.56,-388.2 898.38,-388.2 898.38,-363 799.56,-363"/>
-<text xml:space="preserve" text-anchor="start" x="805.56" y="-373.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_labels</text>
+<polygon fill="white" stroke="none" points="798.56,-882 798.56,-909.2 899.38,-909.2 899.38,-882 798.56,-882"/>
+<polygon fill="none" stroke="#94a3b8" points="798.56,-882 798.56,-909.2 899.38,-909.2 899.38,-882 798.56,-882"/>
+<polygon fill="#dcfce7" stroke="none" points="799.56,-883 799.56,-908.2 898.38,-908.2 898.38,-883 799.56,-883"/>
+<text xml:space="preserve" text-anchor="start" x="805.56" y="-893.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_labels</text>
 </a>
 </g>
 </g>
@@ -1169,10 +1178,10 @@
 <g id="table_inventory_locations" class="node">
 <title>inventory_locations</title>
 <g id="a_table_inventory_locations"><a xlink:title="inventory_locations — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="790.01,-309 790.01,-336.2 907.93,-336.2 907.93,-309 790.01,-309"/>
-<polygon fill="none" stroke="#94a3b8" points="790.01,-309 790.01,-336.2 907.93,-336.2 907.93,-309 790.01,-309"/>
-<polygon fill="#dcfce7" stroke="none" points="791.01,-310 791.01,-335.2 906.93,-335.2 906.93,-310 791.01,-310"/>
-<text xml:space="preserve" text-anchor="start" x="797.01" y="-320.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_locations</text>
+<polygon fill="white" stroke="none" points="790.01,-830 790.01,-857.2 907.93,-857.2 907.93,-830 790.01,-830"/>
+<polygon fill="none" stroke="#94a3b8" points="790.01,-830 790.01,-857.2 907.93,-857.2 907.93,-830 790.01,-830"/>
+<polygon fill="#dcfce7" stroke="none" points="791.01,-831 791.01,-856.2 906.93,-856.2 906.93,-831 791.01,-831"/>
+<text xml:space="preserve" text-anchor="start" x="797.01" y="-841.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_locations</text>
 </a>
 </g>
 </g>
@@ -1180,10 +1189,10 @@
 <g id="table_inventory_meads" class="node">
 <title>inventory_meads</title>
 <g id="a_table_inventory_meads"><a xlink:title="inventory_meads — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="1079.51,-467 1079.51,-494.2 1183.99,-494.2 1183.99,-467 1079.51,-467"/>
-<polygon fill="none" stroke="#94a3b8" points="1079.51,-467 1079.51,-494.2 1183.99,-494.2 1183.99,-467 1079.51,-467"/>
-<polygon fill="#dcfce7" stroke="none" points="1080.51,-468 1080.51,-493.2 1182.99,-493.2 1182.99,-468 1080.51,-468"/>
-<text xml:space="preserve" text-anchor="start" x="1086.51" y="-478.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_meads</text>
+<polygon fill="white" stroke="none" points="1079.51,-779 1079.51,-806.2 1183.99,-806.2 1183.99,-779 1079.51,-779"/>
+<polygon fill="none" stroke="#94a3b8" points="1079.51,-779 1079.51,-806.2 1183.99,-806.2 1183.99,-779 1079.51,-779"/>
+<polygon fill="#dcfce7" stroke="none" points="1080.51,-780 1080.51,-805.2 1182.99,-805.2 1182.99,-780 1080.51,-780"/>
+<text xml:space="preserve" text-anchor="start" x="1086.51" y="-790.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_meads</text>
 </a>
 </g>
 </g>
@@ -1191,10 +1200,10 @@
 <g id="table_inventory_operations" class="node">
 <title>inventory_operations</title>
 <g id="a_table_inventory_operations"><a xlink:title="inventory_operations — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="786.04,-544 786.04,-571.2 911.9,-571.2 911.9,-544 786.04,-544"/>
-<polygon fill="none" stroke="#94a3b8" points="786.04,-544 786.04,-571.2 911.9,-571.2 911.9,-544 786.04,-544"/>
-<polygon fill="#dcfce7" stroke="none" points="787.04,-545 787.04,-570.2 910.9,-570.2 910.9,-545 787.04,-545"/>
-<text xml:space="preserve" text-anchor="start" x="793.04" y="-555.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_operations</text>
+<polygon fill="white" stroke="none" points="786.04,-416 786.04,-443.2 911.9,-443.2 911.9,-416 786.04,-416"/>
+<polygon fill="none" stroke="#94a3b8" points="786.04,-416 786.04,-443.2 911.9,-443.2 911.9,-416 786.04,-416"/>
+<polygon fill="#dcfce7" stroke="none" points="787.04,-417 787.04,-442.2 910.9,-442.2 910.9,-417 787.04,-417"/>
+<text xml:space="preserve" text-anchor="start" x="793.04" y="-427.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_operations</text>
 </a>
 </g>
 </g>
@@ -1202,10 +1211,10 @@
 <g id="table_inventory_productions" class="node">
 <title>inventory_productions</title>
 <g id="a_table_inventory_productions"><a xlink:title="inventory_productions — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="511.82,-636 511.82,-663.2 645,-663.2 645,-636 511.82,-636"/>
-<polygon fill="none" stroke="#94a3b8" points="511.82,-636 511.82,-663.2 645,-663.2 645,-636 511.82,-636"/>
-<polygon fill="#dcfce7" stroke="none" points="512.82,-637 512.82,-662.2 644,-662.2 644,-637 512.82,-637"/>
-<text xml:space="preserve" text-anchor="start" x="518.82" y="-647.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_productions</text>
+<polygon fill="white" stroke="none" points="511.82,-624 511.82,-651.2 645,-651.2 645,-624 511.82,-624"/>
+<polygon fill="none" stroke="#94a3b8" points="511.82,-624 511.82,-651.2 645,-651.2 645,-624 511.82,-624"/>
+<polygon fill="#dcfce7" stroke="none" points="512.82,-625 512.82,-650.2 644,-650.2 644,-625 512.82,-625"/>
+<text xml:space="preserve" text-anchor="start" x="518.82" y="-635.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_productions</text>
 </a>
 </g>
 </g>
@@ -1213,10 +1222,10 @@
 <g id="table_inventory_stock" class="node">
 <title>inventory_stock</title>
 <g id="a_table_inventory_stock"><a xlink:title="inventory_stock — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="799.79,-467 799.79,-494.2 898.15,-494.2 898.15,-467 799.79,-467"/>
-<polygon fill="none" stroke="#94a3b8" points="799.79,-467 799.79,-494.2 898.15,-494.2 898.15,-467 799.79,-467"/>
-<polygon fill="#dcfce7" stroke="none" points="800.79,-468 800.79,-493.2 897.15,-493.2 897.15,-468 800.79,-468"/>
-<text xml:space="preserve" text-anchor="start" x="806.79" y="-478.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_stock</text>
+<polygon fill="white" stroke="none" points="799.79,-676 799.79,-703.2 898.15,-703.2 898.15,-676 799.79,-676"/>
+<polygon fill="none" stroke="#94a3b8" points="799.79,-676 799.79,-703.2 898.15,-703.2 898.15,-676 799.79,-676"/>
+<polygon fill="#dcfce7" stroke="none" points="800.79,-677 800.79,-702.2 897.15,-702.2 897.15,-677 800.79,-677"/>
+<text xml:space="preserve" text-anchor="start" x="806.79" y="-687.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_stock</text>
 </a>
 </g>
 </g>
@@ -1224,10 +1233,10 @@
 <g id="table_inventory_storage_events" class="node">
 <title>inventory_storage_events</title>
 <g id="a_table_inventory_storage_events"><a xlink:title="inventory_storage_events — Inventory &amp; equipment">
-<polygon fill="white" stroke="none" points="503.24,-480 503.24,-507.2 653.58,-507.2 653.58,-480 503.24,-480"/>
-<polygon fill="none" stroke="#94a3b8" points="503.24,-480 503.24,-507.2 653.58,-507.2 653.58,-480 503.24,-480"/>
-<polygon fill="#dcfce7" stroke="none" points="504.24,-481 504.24,-506.2 652.58,-506.2 652.58,-481 504.24,-481"/>
-<text xml:space="preserve" text-anchor="start" x="510.24" y="-491.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_storage_events</text>
+<polygon fill="white" stroke="none" points="503.24,-520 503.24,-547.2 653.58,-547.2 653.58,-520 503.24,-520"/>
+<polygon fill="none" stroke="#94a3b8" points="503.24,-520 503.24,-547.2 653.58,-547.2 653.58,-520 503.24,-520"/>
+<polygon fill="#dcfce7" stroke="none" points="504.24,-521 504.24,-546.2 652.58,-546.2 652.58,-521 504.24,-521"/>
+<text xml:space="preserve" text-anchor="start" x="510.24" y="-531.3" font-family="Arial" font-weight="bold" font-size="11.00">inventory_storage_events</text>
 </a>
 </g>
 </g>
@@ -1235,10 +1244,10 @@
 <g id="table_logs" class="node">
 <title>logs</title>
 <g id="a_table_logs"><a xlink:title="logs — Brewing &amp; hydrometers">
-<polygon fill="white" stroke="none" points="76.73,-1216 76.73,-1243.2 113.34,-1243.2 113.34,-1216 76.73,-1216"/>
-<polygon fill="none" stroke="#94a3b8" points="76.73,-1216 76.73,-1243.2 113.34,-1243.2 113.34,-1216 76.73,-1216"/>
-<polygon fill="#e0f2fe" stroke="none" points="77.73,-1217 77.73,-1242.2 112.34,-1242.2 112.34,-1217 77.73,-1217"/>
-<text xml:space="preserve" text-anchor="start" x="83.73" y="-1227.3" font-family="Arial" font-weight="bold" font-size="11.00">logs</text>
+<polygon fill="white" stroke="none" points="76.73,-1406 76.73,-1433.2 113.34,-1433.2 113.34,-1406 76.73,-1406"/>
+<polygon fill="none" stroke="#94a3b8" points="76.73,-1406 76.73,-1433.2 113.34,-1433.2 113.34,-1406 76.73,-1406"/>
+<polygon fill="#e0f2fe" stroke="none" points="77.73,-1407 77.73,-1432.2 112.34,-1432.2 112.34,-1407 77.73,-1407"/>
+<text xml:space="preserve" text-anchor="start" x="83.73" y="-1417.3" font-family="Arial" font-weight="bold" font-size="11.00">logs</text>
 </a>
 </g>
 </g>
@@ -1246,10 +1255,21 @@
 <g id="table_mcp_access_tokens" class="node">
 <title>mcp_access_tokens</title>
 <g id="a_table_mcp_access_tokens"><a xlink:title="mcp_access_tokens — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1071.24,-260 1071.24,-287.2 1192.26,-287.2 1192.26,-260 1071.24,-260"/>
-<polygon fill="none" stroke="#94a3b8" points="1071.24,-260 1071.24,-287.2 1192.26,-287.2 1192.26,-260 1071.24,-260"/>
-<polygon fill="#ffe4e6" stroke="none" points="1072.24,-261 1072.24,-286.2 1191.26,-286.2 1191.26,-261 1072.24,-261"/>
-<text xml:space="preserve" text-anchor="start" x="1078.24" y="-271.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_access_tokens</text>
+<polygon fill="white" stroke="none" points="1071.24,-364 1071.24,-391.2 1192.26,-391.2 1192.26,-364 1071.24,-364"/>
+<polygon fill="none" stroke="#94a3b8" points="1071.24,-364 1071.24,-391.2 1192.26,-391.2 1192.26,-364 1071.24,-364"/>
+<polygon fill="#ffe4e6" stroke="none" points="1072.24,-365 1072.24,-390.2 1191.26,-390.2 1191.26,-365 1072.24,-365"/>
+<text xml:space="preserve" text-anchor="start" x="1078.24" y="-375.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_access_tokens</text>
+</a>
+</g>
+</g>
+<!-- mcp_draft_handoffs -->
+<g id="table_mcp_draft_handoffs" class="node">
+<title>mcp_draft_handoffs</title>
+<g id="a_table_mcp_draft_handoffs"><a xlink:title="mcp_draft_handoffs — Identity, authentication &amp; MCP">
+<polygon fill="white" stroke="none" points="1071.88,-312 1071.88,-339.2 1191.62,-339.2 1191.62,-312 1071.88,-312"/>
+<polygon fill="none" stroke="#94a3b8" points="1071.88,-312 1071.88,-339.2 1191.62,-339.2 1191.62,-312 1071.88,-312"/>
+<polygon fill="#ffe4e6" stroke="none" points="1072.88,-313 1072.88,-338.2 1190.62,-338.2 1190.62,-313 1072.88,-313"/>
+<text xml:space="preserve" text-anchor="start" x="1078.88" y="-323.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_draft_handoffs</text>
 </a>
 </g>
 </g>
@@ -1257,10 +1277,10 @@
 <g id="table_mcp_oauth_clients" class="node">
 <title>mcp_oauth_clients</title>
 <g id="a_table_mcp_oauth_clients"><a xlink:title="mcp_oauth_clients — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="38.21,-1528 38.21,-1555.2 151.85,-1555.2 151.85,-1528 38.21,-1528"/>
-<polygon fill="none" stroke="#94a3b8" points="38.21,-1528 38.21,-1555.2 151.85,-1555.2 151.85,-1528 38.21,-1528"/>
-<polygon fill="#ffe4e6" stroke="none" points="39.21,-1529 39.21,-1554.2 150.85,-1554.2 150.85,-1529 39.21,-1529"/>
-<text xml:space="preserve" text-anchor="start" x="45.21" y="-1539.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_clients</text>
+<polygon fill="white" stroke="none" points="38.21,-1718 38.21,-1745.2 151.85,-1745.2 151.85,-1718 38.21,-1718"/>
+<polygon fill="none" stroke="#94a3b8" points="38.21,-1718 38.21,-1745.2 151.85,-1745.2 151.85,-1718 38.21,-1718"/>
+<polygon fill="#ffe4e6" stroke="none" points="39.21,-1719 39.21,-1744.2 150.85,-1744.2 150.85,-1719 39.21,-1719"/>
+<text xml:space="preserve" text-anchor="start" x="45.21" y="-1729.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_clients</text>
 </a>
 </g>
 </g>
@@ -1268,10 +1288,10 @@
 <g id="table_mcp_oauth_codes" class="node">
 <title>mcp_oauth_codes</title>
 <g id="a_table_mcp_oauth_codes"><a xlink:title="mcp_oauth_codes — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1076.46,-208 1076.46,-235.2 1187.04,-235.2 1187.04,-208 1076.46,-208"/>
-<polygon fill="none" stroke="#94a3b8" points="1076.46,-208 1076.46,-235.2 1187.04,-235.2 1187.04,-208 1076.46,-208"/>
-<polygon fill="#ffe4e6" stroke="none" points="1077.46,-209 1077.46,-234.2 1186.04,-234.2 1186.04,-209 1077.46,-209"/>
-<text xml:space="preserve" text-anchor="start" x="1083.46" y="-219.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_codes</text>
+<polygon fill="white" stroke="none" points="1076.46,-260 1076.46,-287.2 1187.04,-287.2 1187.04,-260 1076.46,-260"/>
+<polygon fill="none" stroke="#94a3b8" points="1076.46,-260 1076.46,-287.2 1187.04,-287.2 1187.04,-260 1076.46,-260"/>
+<polygon fill="#ffe4e6" stroke="none" points="1077.46,-261 1077.46,-286.2 1186.04,-286.2 1186.04,-261 1077.46,-261"/>
+<text xml:space="preserve" text-anchor="start" x="1083.46" y="-271.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_codes</text>
 </a>
 </g>
 </g>
@@ -1279,10 +1299,10 @@
 <g id="table_mcp_oauth_consumed_refresh_tokens" class="node">
 <title>mcp_oauth_consumed_refresh_tokens</title>
 <g id="a_table_mcp_oauth_consumed_refresh_tokens"><a xlink:title="mcp_oauth_consumed_refresh_tokens — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="739.58,-156 739.58,-183.2 958.36,-183.2 958.36,-156 739.58,-156"/>
-<polygon fill="none" stroke="#94a3b8" points="739.58,-156 739.58,-183.2 958.36,-183.2 958.36,-156 739.58,-156"/>
-<polygon fill="#ffe4e6" stroke="none" points="740.58,-157 740.58,-182.2 957.36,-182.2 957.36,-157 740.58,-157"/>
-<text xml:space="preserve" text-anchor="start" x="746.58" y="-167.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_consumed_refresh_tokens</text>
+<polygon fill="white" stroke="none" points="739.58,-468 739.58,-495.2 958.36,-495.2 958.36,-468 739.58,-468"/>
+<polygon fill="none" stroke="#94a3b8" points="739.58,-468 739.58,-495.2 958.36,-495.2 958.36,-468 739.58,-468"/>
+<polygon fill="#ffe4e6" stroke="none" points="740.58,-469 740.58,-494.2 957.36,-494.2 957.36,-469 740.58,-469"/>
+<text xml:space="preserve" text-anchor="start" x="746.58" y="-479.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_consumed_refresh_tokens</text>
 </a>
 </g>
 </g>
@@ -1290,10 +1310,10 @@
 <g id="table_mcp_oauth_sessions" class="node">
 <title>mcp_oauth_sessions</title>
 <g id="a_table_mcp_oauth_sessions"><a xlink:title="mcp_oauth_sessions — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1068.81,-156 1068.81,-183.2 1194.69,-183.2 1194.69,-156 1068.81,-156"/>
-<polygon fill="none" stroke="#94a3b8" points="1068.81,-156 1068.81,-183.2 1194.69,-183.2 1194.69,-156 1068.81,-156"/>
-<polygon fill="#ffe4e6" stroke="none" points="1069.81,-157 1069.81,-182.2 1193.69,-182.2 1193.69,-157 1069.81,-157"/>
-<text xml:space="preserve" text-anchor="start" x="1075.81" y="-167.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_sessions</text>
+<polygon fill="white" stroke="none" points="1068.81,-416 1068.81,-443.2 1194.69,-443.2 1194.69,-416 1068.81,-416"/>
+<polygon fill="none" stroke="#94a3b8" points="1068.81,-416 1068.81,-443.2 1194.69,-443.2 1194.69,-416 1068.81,-416"/>
+<polygon fill="#ffe4e6" stroke="none" points="1069.81,-417 1069.81,-442.2 1193.69,-442.2 1193.69,-417 1069.81,-417"/>
+<text xml:space="preserve" text-anchor="start" x="1075.81" y="-427.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_oauth_sessions</text>
 </a>
 </g>
 </g>
@@ -1301,10 +1321,10 @@
 <g id="table_mcp_rate_buckets" class="node">
 <title>mcp_rate_buckets</title>
 <g id="a_table_mcp_rate_buckets"><a xlink:title="mcp_rate_buckets — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1076.45,-104 1076.45,-131.2 1187.05,-131.2 1187.05,-104 1076.45,-104"/>
-<polygon fill="none" stroke="#94a3b8" points="1076.45,-104 1076.45,-131.2 1187.05,-131.2 1187.05,-104 1076.45,-104"/>
-<polygon fill="#ffe4e6" stroke="none" points="1077.45,-105 1077.45,-130.2 1186.05,-130.2 1186.05,-105 1077.45,-105"/>
-<text xml:space="preserve" text-anchor="start" x="1083.45" y="-115.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_rate_buckets</text>
+<polygon fill="white" stroke="none" points="1076.45,-208 1076.45,-235.2 1187.05,-235.2 1187.05,-208 1076.45,-208"/>
+<polygon fill="none" stroke="#94a3b8" points="1076.45,-208 1076.45,-235.2 1187.05,-235.2 1187.05,-208 1076.45,-208"/>
+<polygon fill="#ffe4e6" stroke="none" points="1077.45,-209 1077.45,-234.2 1186.05,-234.2 1186.05,-209 1077.45,-209"/>
+<text xml:space="preserve" text-anchor="start" x="1083.45" y="-219.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_rate_buckets</text>
 </a>
 </g>
 </g>
@@ -1312,10 +1332,10 @@
 <g id="table_mcp_registration_budget" class="node">
 <title>mcp_registration_budget</title>
 <g id="a_table_mcp_registration_budget"><a xlink:title="mcp_registration_budget — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="22.02,-1580 22.02,-1607.2 168.04,-1607.2 168.04,-1580 22.02,-1580"/>
-<polygon fill="none" stroke="#94a3b8" points="22.02,-1580 22.02,-1607.2 168.04,-1607.2 168.04,-1580 22.02,-1580"/>
-<polygon fill="#ffe4e6" stroke="none" points="23.02,-1581 23.02,-1606.2 167.04,-1606.2 167.04,-1581 23.02,-1581"/>
-<text xml:space="preserve" text-anchor="start" x="29.02" y="-1591.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_registration_budget</text>
+<polygon fill="white" stroke="none" points="22.02,-1770 22.02,-1797.2 168.04,-1797.2 168.04,-1770 22.02,-1770"/>
+<polygon fill="none" stroke="#94a3b8" points="22.02,-1770 22.02,-1797.2 168.04,-1797.2 168.04,-1770 22.02,-1770"/>
+<polygon fill="#ffe4e6" stroke="none" points="23.02,-1771 23.02,-1796.2 167.04,-1796.2 167.04,-1771 23.02,-1771"/>
+<text xml:space="preserve" text-anchor="start" x="29.02" y="-1781.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_registration_budget</text>
 </a>
 </g>
 </g>
@@ -1323,10 +1343,10 @@
 <g id="table_mcp_tool_leases" class="node">
 <title>mcp_tool_leases</title>
 <g id="a_table_mcp_tool_leases"><a xlink:title="mcp_tool_leases — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1080.42,-52 1080.42,-79.2 1183.08,-79.2 1183.08,-52 1080.42,-52"/>
-<polygon fill="none" stroke="#94a3b8" points="1080.42,-52 1080.42,-79.2 1183.08,-79.2 1183.08,-52 1080.42,-52"/>
-<polygon fill="#ffe4e6" stroke="none" points="1081.42,-53 1081.42,-78.2 1182.08,-78.2 1182.08,-53 1081.42,-53"/>
-<text xml:space="preserve" text-anchor="start" x="1087.42" y="-63.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_leases</text>
+<polygon fill="white" stroke="none" points="1080.42,-156 1080.42,-183.2 1183.08,-183.2 1183.08,-156 1080.42,-156"/>
+<polygon fill="none" stroke="#94a3b8" points="1080.42,-156 1080.42,-183.2 1183.08,-183.2 1183.08,-156 1080.42,-156"/>
+<polygon fill="#ffe4e6" stroke="none" points="1081.42,-157 1081.42,-182.2 1182.08,-182.2 1182.08,-157 1081.42,-157"/>
+<text xml:space="preserve" text-anchor="start" x="1087.42" y="-167.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_leases</text>
 </a>
 </g>
 </g>
@@ -1334,10 +1354,10 @@
 <g id="table_mcp_tool_usage" class="node">
 <title>mcp_tool_usage</title>
 <g id="a_table_mcp_tool_usage"><a xlink:title="mcp_tool_usage — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1081.35,0 1081.35,-27.2 1182.15,-27.2 1182.15,0 1081.35,0"/>
-<polygon fill="none" stroke="#94a3b8" points="1081.35,0 1081.35,-27.2 1182.15,-27.2 1182.15,0 1081.35,0"/>
-<polygon fill="#ffe4e6" stroke="none" points="1082.35,-1 1082.35,-26.2 1181.15,-26.2 1181.15,-1 1082.35,-1"/>
-<text xml:space="preserve" text-anchor="start" x="1088.35" y="-11.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_usage</text>
+<polygon fill="white" stroke="none" points="1081.35,-104 1081.35,-131.2 1182.15,-131.2 1182.15,-104 1081.35,-104"/>
+<polygon fill="none" stroke="#94a3b8" points="1081.35,-104 1081.35,-131.2 1182.15,-131.2 1182.15,-104 1081.35,-104"/>
+<polygon fill="#ffe4e6" stroke="none" points="1082.35,-105 1082.35,-130.2 1181.15,-130.2 1181.15,-105 1082.35,-105"/>
+<text xml:space="preserve" text-anchor="start" x="1088.35" y="-115.3" font-family="Arial" font-weight="bold" font-size="11.00">mcp_tool_usage</text>
 </a>
 </g>
 </g>
@@ -1345,10 +1365,10 @@
 <g id="table_nutrient_presets" class="node">
 <title>nutrient_presets</title>
 <g id="a_table_nutrient_presets"><a xlink:title="nutrient_presets — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="44.94,-1632 44.94,-1659.2 145.13,-1659.2 145.13,-1632 44.94,-1632"/>
-<polygon fill="none" stroke="#94a3b8" points="44.94,-1632 44.94,-1659.2 145.13,-1659.2 145.13,-1632 44.94,-1632"/>
-<polygon fill="#ffedd5" stroke="none" points="45.94,-1633 45.94,-1658.2 144.13,-1658.2 144.13,-1633 45.94,-1633"/>
-<text xml:space="preserve" text-anchor="start" x="51.94" y="-1643.3" font-family="Arial" font-weight="bold" font-size="11.00">nutrient_presets</text>
+<polygon fill="white" stroke="none" points="44.94,-1822 44.94,-1849.2 145.13,-1849.2 145.13,-1822 44.94,-1822"/>
+<polygon fill="none" stroke="#94a3b8" points="44.94,-1822 44.94,-1849.2 145.13,-1849.2 145.13,-1822 44.94,-1822"/>
+<polygon fill="#ffedd5" stroke="none" points="45.94,-1823 45.94,-1848.2 144.13,-1848.2 144.13,-1823 45.94,-1823"/>
+<text xml:space="preserve" text-anchor="start" x="51.94" y="-1833.3" font-family="Arial" font-weight="bold" font-size="11.00">nutrient_presets</text>
 </a>
 </g>
 </g>
@@ -1356,10 +1376,10 @@
 <g id="table_premium_kofi_link_challenges" class="node">
 <title>premium_kofi_link_challenges</title>
 <g id="a_table_premium_kofi_link_challenges"><a xlink:title="premium_kofi_link_challenges — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1044.66,-1761 1044.66,-1788.2 1218.83,-1788.2 1218.83,-1761 1044.66,-1761"/>
-<polygon fill="none" stroke="#94a3b8" points="1044.66,-1761 1044.66,-1788.2 1218.83,-1788.2 1218.83,-1761 1044.66,-1761"/>
-<polygon fill="#fef3c7" stroke="none" points="1045.66,-1762 1045.66,-1787.2 1217.83,-1787.2 1217.83,-1762 1045.66,-1762"/>
-<text xml:space="preserve" text-anchor="start" x="1051.66" y="-1772.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_link_challenges</text>
+<polygon fill="white" stroke="none" points="1044.66,0 1044.66,-27.2 1218.83,-27.2 1218.83,0 1044.66,0"/>
+<polygon fill="none" stroke="#94a3b8" points="1044.66,0 1044.66,-27.2 1218.83,-27.2 1218.83,0 1044.66,0"/>
+<polygon fill="#fef3c7" stroke="none" points="1045.66,-1 1045.66,-26.2 1217.83,-26.2 1217.83,-1 1045.66,-1"/>
+<text xml:space="preserve" text-anchor="start" x="1051.66" y="-11.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_link_challenges</text>
 </a>
 </g>
 </g>
@@ -1367,10 +1387,10 @@
 <g id="table_premium_kofi_links" class="node">
 <title>premium_kofi_links</title>
 <g id="a_table_premium_kofi_links"><a xlink:title="premium_kofi_links — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1073.09,-1709 1073.09,-1736.2 1190.41,-1736.2 1190.41,-1709 1073.09,-1709"/>
-<polygon fill="none" stroke="#94a3b8" points="1073.09,-1709 1073.09,-1736.2 1190.41,-1736.2 1190.41,-1709 1073.09,-1709"/>
-<polygon fill="#fef3c7" stroke="none" points="1074.09,-1710 1074.09,-1735.2 1189.41,-1735.2 1189.41,-1710 1074.09,-1710"/>
-<text xml:space="preserve" text-anchor="start" x="1080.09" y="-1720.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_links</text>
+<polygon fill="white" stroke="none" points="1073.09,-1815 1073.09,-1842.2 1190.41,-1842.2 1190.41,-1815 1073.09,-1815"/>
+<polygon fill="none" stroke="#94a3b8" points="1073.09,-1815 1073.09,-1842.2 1190.41,-1842.2 1190.41,-1815 1073.09,-1815"/>
+<polygon fill="#fef3c7" stroke="none" points="1074.09,-1816 1074.09,-1841.2 1189.41,-1841.2 1189.41,-1816 1074.09,-1816"/>
+<text xml:space="preserve" text-anchor="start" x="1080.09" y="-1826.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_links</text>
 </a>
 </g>
 </g>
@@ -1378,10 +1398,10 @@
 <g id="table_premium_kofi_payments" class="node">
 <title>premium_kofi_payments</title>
 <g id="a_table_premium_kofi_payments"><a xlink:title="premium_kofi_payments — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="23.23,-1684 23.23,-1711.2 166.83,-1711.2 166.83,-1684 23.23,-1684"/>
-<polygon fill="none" stroke="#94a3b8" points="23.23,-1684 23.23,-1711.2 166.83,-1711.2 166.83,-1684 23.23,-1684"/>
-<polygon fill="#fef3c7" stroke="none" points="24.23,-1685 24.23,-1710.2 165.83,-1710.2 165.83,-1685 24.23,-1685"/>
-<text xml:space="preserve" text-anchor="start" x="30.23" y="-1695.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_payments</text>
+<polygon fill="white" stroke="none" points="23.23,-1874 23.23,-1901.2 166.83,-1901.2 166.83,-1874 23.23,-1874"/>
+<polygon fill="none" stroke="#94a3b8" points="23.23,-1874 23.23,-1901.2 166.83,-1901.2 166.83,-1874 23.23,-1874"/>
+<polygon fill="#fef3c7" stroke="none" points="24.23,-1875 24.23,-1900.2 165.83,-1900.2 165.83,-1875 24.23,-1875"/>
+<text xml:space="preserve" text-anchor="start" x="30.23" y="-1885.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_kofi_payments</text>
 </a>
 </g>
 </g>
@@ -1389,10 +1409,10 @@
 <g id="table_premium_memberships" class="node">
 <title>premium_memberships</title>
 <g id="a_table_premium_memberships"><a xlink:title="premium_memberships — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1062.7,-1657 1062.7,-1684.2 1200.8,-1684.2 1200.8,-1657 1062.7,-1657"/>
-<polygon fill="none" stroke="#94a3b8" points="1062.7,-1657 1062.7,-1684.2 1200.8,-1684.2 1200.8,-1657 1062.7,-1657"/>
-<polygon fill="#fef3c7" stroke="none" points="1063.7,-1658 1063.7,-1683.2 1199.8,-1683.2 1199.8,-1658 1063.7,-1658"/>
-<text xml:space="preserve" text-anchor="start" x="1069.7" y="-1668.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_memberships</text>
+<polygon fill="white" stroke="none" points="1062.7,-1763 1062.7,-1790.2 1200.8,-1790.2 1200.8,-1763 1062.7,-1763"/>
+<polygon fill="none" stroke="#94a3b8" points="1062.7,-1763 1062.7,-1790.2 1200.8,-1790.2 1200.8,-1763 1062.7,-1763"/>
+<polygon fill="#fef3c7" stroke="none" points="1063.7,-1764 1063.7,-1789.2 1199.8,-1789.2 1199.8,-1764 1063.7,-1764"/>
+<text xml:space="preserve" text-anchor="start" x="1069.7" y="-1774.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_memberships</text>
 </a>
 </g>
 </g>
@@ -1400,10 +1420,10 @@
 <g id="table_premium_stripe_checkouts" class="node">
 <title>premium_stripe_checkouts</title>
 <g id="a_table_premium_stripe_checkouts"><a xlink:title="premium_stripe_checkouts — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1053.22,-1605 1053.22,-1632.2 1210.28,-1632.2 1210.28,-1605 1053.22,-1605"/>
-<polygon fill="none" stroke="#94a3b8" points="1053.22,-1605 1053.22,-1632.2 1210.28,-1632.2 1210.28,-1605 1053.22,-1605"/>
-<polygon fill="#fef3c7" stroke="none" points="1054.22,-1606 1054.22,-1631.2 1209.28,-1631.2 1209.28,-1606 1054.22,-1606"/>
-<text xml:space="preserve" text-anchor="start" x="1060.22" y="-1616.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_checkouts</text>
+<polygon fill="white" stroke="none" points="1053.22,-1711 1053.22,-1738.2 1210.28,-1738.2 1210.28,-1711 1053.22,-1711"/>
+<polygon fill="none" stroke="#94a3b8" points="1053.22,-1711 1053.22,-1738.2 1210.28,-1738.2 1210.28,-1711 1053.22,-1711"/>
+<polygon fill="#fef3c7" stroke="none" points="1054.22,-1712 1054.22,-1737.2 1209.28,-1737.2 1209.28,-1712 1054.22,-1712"/>
+<text xml:space="preserve" text-anchor="start" x="1060.22" y="-1722.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_checkouts</text>
 </a>
 </g>
 </g>
@@ -1411,10 +1431,10 @@
 <g id="table_premium_stripe_invoices" class="node">
 <title>premium_stripe_invoices</title>
 <g id="a_table_premium_stripe_invoices"><a xlink:title="premium_stripe_invoices — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1058.42,-775 1058.42,-802.2 1205.08,-802.2 1205.08,-775 1058.42,-775"/>
-<polygon fill="none" stroke="#94a3b8" points="1058.42,-775 1058.42,-802.2 1205.08,-802.2 1205.08,-775 1058.42,-775"/>
-<polygon fill="#fef3c7" stroke="none" points="1059.42,-776 1059.42,-801.2 1204.08,-801.2 1204.08,-776 1059.42,-776"/>
-<text xml:space="preserve" text-anchor="start" x="1065.42" y="-786.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_invoices</text>
+<polygon fill="white" stroke="none" points="1058.42,-934 1058.42,-961.2 1205.08,-961.2 1205.08,-934 1058.42,-934"/>
+<polygon fill="none" stroke="#94a3b8" points="1058.42,-934 1058.42,-961.2 1205.08,-961.2 1205.08,-934 1058.42,-934"/>
+<polygon fill="#fef3c7" stroke="none" points="1059.42,-935 1059.42,-960.2 1204.08,-960.2 1204.08,-935 1059.42,-935"/>
+<text xml:space="preserve" text-anchor="start" x="1065.42" y="-945.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_invoices</text>
 </a>
 </g>
 </g>
@@ -1422,10 +1442,10 @@
 <g id="table_premium_stripe_payments" class="node">
 <title>premium_stripe_payments</title>
 <g id="a_table_premium_stripe_payments"><a xlink:title="premium_stripe_payments — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="771.97,-775 771.97,-802.2 925.97,-802.2 925.97,-775 771.97,-775"/>
-<polygon fill="none" stroke="#94a3b8" points="771.97,-775 771.97,-802.2 925.97,-802.2 925.97,-775 771.97,-775"/>
-<polygon fill="#fef3c7" stroke="none" points="772.97,-776 772.97,-801.2 924.97,-801.2 924.97,-776 772.97,-776"/>
-<text xml:space="preserve" text-anchor="start" x="778.97" y="-786.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_payments</text>
+<polygon fill="white" stroke="none" points="771.97,-934 771.97,-961.2 925.97,-961.2 925.97,-934 771.97,-934"/>
+<polygon fill="none" stroke="#94a3b8" points="771.97,-934 771.97,-961.2 925.97,-961.2 925.97,-934 771.97,-934"/>
+<polygon fill="#fef3c7" stroke="none" points="772.97,-935 772.97,-960.2 924.97,-960.2 924.97,-935 772.97,-935"/>
+<text xml:space="preserve" text-anchor="start" x="778.97" y="-945.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_payments</text>
 </a>
 </g>
 </g>
@@ -1433,10 +1453,10 @@
 <g id="table_premium_stripe_subscriptions" class="node">
 <title>premium_stripe_subscriptions</title>
 <g id="a_table_premium_stripe_subscriptions"><a xlink:title="premium_stripe_subscriptions — Billing &amp; premium">
-<polygon fill="white" stroke="none" points="1044.36,-1553 1044.36,-1580.2 1219.13,-1580.2 1219.13,-1553 1044.36,-1553"/>
-<polygon fill="none" stroke="#94a3b8" points="1044.36,-1553 1044.36,-1580.2 1219.13,-1580.2 1219.13,-1553 1044.36,-1553"/>
-<polygon fill="#fef3c7" stroke="none" points="1045.36,-1554 1045.36,-1579.2 1218.13,-1579.2 1218.13,-1554 1045.36,-1554"/>
-<text xml:space="preserve" text-anchor="start" x="1051.36" y="-1564.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_subscriptions</text>
+<polygon fill="white" stroke="none" points="1044.36,-1556 1044.36,-1583.2 1219.13,-1583.2 1219.13,-1556 1044.36,-1556"/>
+<polygon fill="none" stroke="#94a3b8" points="1044.36,-1556 1044.36,-1583.2 1219.13,-1583.2 1219.13,-1556 1044.36,-1556"/>
+<polygon fill="#fef3c7" stroke="none" points="1045.36,-1557 1045.36,-1582.2 1218.13,-1582.2 1218.13,-1557 1045.36,-1557"/>
+<text xml:space="preserve" text-anchor="start" x="1051.36" y="-1567.3" font-family="Arial" font-weight="bold" font-size="11.00">premium_stripe_subscriptions</text>
 </a>
 </g>
 </g>
@@ -1444,10 +1464,10 @@
 <g id="table_recipe_daily_activity" class="node">
 <title>recipe_daily_activity</title>
 <g id="a_table_recipe_daily_activity"><a xlink:title="recipe_daily_activity — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="788.16,-1294 788.16,-1321.2 909.78,-1321.2 909.78,-1294 788.16,-1294"/>
-<polygon fill="none" stroke="#94a3b8" points="788.16,-1294 788.16,-1321.2 909.78,-1321.2 909.78,-1294 788.16,-1294"/>
-<polygon fill="#ffedd5" stroke="none" points="789.16,-1295 789.16,-1320.2 908.78,-1320.2 908.78,-1295 789.16,-1295"/>
-<text xml:space="preserve" text-anchor="start" x="795.16" y="-1305.3" font-family="Arial" font-weight="bold" font-size="11.00">recipe_daily_activity</text>
+<polygon fill="white" stroke="none" points="788.16,-1374 788.16,-1401.2 909.78,-1401.2 909.78,-1374 788.16,-1374"/>
+<polygon fill="none" stroke="#94a3b8" points="788.16,-1374 788.16,-1401.2 909.78,-1401.2 909.78,-1374 788.16,-1374"/>
+<polygon fill="#ffedd5" stroke="none" points="789.16,-1375 789.16,-1400.2 908.78,-1400.2 908.78,-1375 789.16,-1375"/>
+<text xml:space="preserve" text-anchor="start" x="795.16" y="-1385.3" font-family="Arial" font-weight="bold" font-size="11.00">recipe_daily_activity</text>
 </a>
 </g>
 </g>
@@ -1455,10 +1475,10 @@
 <g id="table_recipe_ratings" class="node">
 <title>recipe_ratings</title>
 <g id="a_table_recipe_ratings"><a xlink:title="recipe_ratings — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="804.37,-1398 804.37,-1425.2 893.57,-1425.2 893.57,-1398 804.37,-1398"/>
-<polygon fill="none" stroke="#94a3b8" points="804.37,-1398 804.37,-1425.2 893.57,-1425.2 893.57,-1398 804.37,-1398"/>
-<polygon fill="#ffedd5" stroke="none" points="805.37,-1399 805.37,-1424.2 892.57,-1424.2 892.57,-1399 805.37,-1399"/>
-<text xml:space="preserve" text-anchor="start" x="811.37" y="-1409.3" font-family="Arial" font-weight="bold" font-size="11.00">recipe_ratings</text>
+<polygon fill="white" stroke="none" points="804.37,-1478 804.37,-1505.2 893.57,-1505.2 893.57,-1478 804.37,-1478"/>
+<polygon fill="none" stroke="#94a3b8" points="804.37,-1478 804.37,-1505.2 893.57,-1505.2 893.57,-1478 804.37,-1478"/>
+<polygon fill="#ffedd5" stroke="none" points="805.37,-1479 805.37,-1504.2 892.57,-1504.2 892.57,-1479 805.37,-1479"/>
+<text xml:space="preserve" text-anchor="start" x="811.37" y="-1489.3" font-family="Arial" font-weight="bold" font-size="11.00">recipe_ratings</text>
 </a>
 </g>
 </g>
@@ -1466,10 +1486,10 @@
 <g id="table_recipes" class="node">
 <title>recipes</title>
 <g id="a_table_recipes"><a xlink:title="recipes — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="1105.49,-1346 1105.49,-1373.2 1158.01,-1373.2 1158.01,-1346 1105.49,-1346"/>
-<polygon fill="none" stroke="#94a3b8" points="1105.49,-1346 1105.49,-1373.2 1158.01,-1373.2 1158.01,-1346 1105.49,-1346"/>
-<polygon fill="#ffedd5" stroke="none" points="1106.49,-1347 1106.49,-1372.2 1157.01,-1372.2 1157.01,-1347 1106.49,-1347"/>
-<text xml:space="preserve" text-anchor="start" x="1112.49" y="-1357.3" font-family="Arial" font-weight="bold" font-size="11.00">recipes</text>
+<polygon fill="white" stroke="none" points="1105.49,-1401 1105.49,-1428.2 1158.01,-1428.2 1158.01,-1401 1105.49,-1401"/>
+<polygon fill="none" stroke="#94a3b8" points="1105.49,-1401 1105.49,-1428.2 1158.01,-1428.2 1158.01,-1401 1105.49,-1401"/>
+<polygon fill="#ffedd5" stroke="none" points="1106.49,-1402 1106.49,-1427.2 1157.01,-1427.2 1157.01,-1402 1106.49,-1402"/>
+<text xml:space="preserve" text-anchor="start" x="1112.49" y="-1412.3" font-family="Arial" font-weight="bold" font-size="11.00">recipes</text>
 </a>
 </g>
 </g>
@@ -1477,10 +1497,10 @@
 <g id="table_Session" class="node">
 <title>Session</title>
 <g id="a_table_Session"><a xlink:title="Session — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="66.94,-428 66.94,-455.2 123.12,-455.2 123.12,-428 66.94,-428"/>
-<polygon fill="none" stroke="#94a3b8" points="66.94,-428 66.94,-455.2 123.12,-455.2 123.12,-428 66.94,-428"/>
-<polygon fill="#ffe4e6" stroke="none" points="67.94,-429 67.94,-454.2 122.12,-454.2 122.12,-429 67.94,-429"/>
-<text xml:space="preserve" text-anchor="start" x="73.94" y="-439.3" font-family="Arial" font-weight="bold" font-size="11.00">Session</text>
+<polygon fill="white" stroke="none" points="66.94,-546 66.94,-573.2 123.12,-573.2 123.12,-546 66.94,-546"/>
+<polygon fill="none" stroke="#94a3b8" points="66.94,-546 66.94,-573.2 123.12,-573.2 123.12,-546 66.94,-546"/>
+<polygon fill="#ffe4e6" stroke="none" points="67.94,-547 67.94,-572.2 122.12,-572.2 122.12,-547 67.94,-547"/>
+<text xml:space="preserve" text-anchor="start" x="73.94" y="-557.3" font-family="Arial" font-weight="bold" font-size="11.00">Session</text>
 </a>
 </g>
 </g>
@@ -1488,10 +1508,10 @@
 <g id="table_User" class="node">
 <title>User</title>
 <g id="a_table_User"><a xlink:title="User — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="327.42,-454 327.42,-481.2 365.88,-481.2 365.88,-454 327.42,-454"/>
-<polygon fill="none" stroke="#94a3b8" points="327.42,-454 327.42,-481.2 365.88,-481.2 365.88,-454 327.42,-454"/>
-<polygon fill="#ffe4e6" stroke="none" points="328.42,-455 328.42,-480.2 364.88,-480.2 364.88,-455 328.42,-455"/>
-<text xml:space="preserve" text-anchor="start" x="334.42" y="-465.3" font-family="Arial" font-weight="bold" font-size="11.00">User</text>
+<polygon fill="white" stroke="none" points="327.42,-572 327.42,-599.2 365.88,-599.2 365.88,-572 327.42,-572"/>
+<polygon fill="none" stroke="#94a3b8" points="327.42,-572 327.42,-599.2 365.88,-599.2 365.88,-572 327.42,-572"/>
+<polygon fill="#ffe4e6" stroke="none" points="328.42,-573 328.42,-598.2 364.88,-598.2 364.88,-573 328.42,-573"/>
+<text xml:space="preserve" text-anchor="start" x="334.42" y="-583.3" font-family="Arial" font-weight="bold" font-size="11.00">User</text>
 </a>
 </g>
 </g>
@@ -1499,10 +1519,10 @@
 <g id="table_users" class="node">
 <title>users</title>
 <g id="a_table_users"><a xlink:title="users — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="1305.13,-827 1305.13,-854.2 1348.49,-854.2 1348.49,-827 1305.13,-827"/>
-<polygon fill="none" stroke="#94a3b8" points="1305.13,-827 1305.13,-854.2 1348.49,-854.2 1348.49,-827 1305.13,-827"/>
-<polygon fill="#ffe4e6" stroke="none" points="1306.13,-828 1306.13,-853.2 1347.49,-853.2 1347.49,-828 1306.13,-828"/>
-<text xml:space="preserve" text-anchor="start" x="1312.13" y="-838.3" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
+<polygon fill="white" stroke="none" points="1305.13,-960 1305.13,-987.2 1348.49,-987.2 1348.49,-960 1305.13,-960"/>
+<polygon fill="none" stroke="#94a3b8" points="1305.13,-960 1305.13,-987.2 1348.49,-987.2 1348.49,-960 1305.13,-960"/>
+<polygon fill="#ffe4e6" stroke="none" points="1306.13,-961 1306.13,-986.2 1347.49,-986.2 1347.49,-961 1306.13,-961"/>
+<text xml:space="preserve" text-anchor="start" x="1312.13" y="-971.3" font-family="Arial" font-weight="bold" font-size="11.00">users</text>
 </a>
 </g>
 </g>
@@ -1510,10 +1530,10 @@
 <g id="table_VerificationToken" class="node">
 <title>VerificationToken</title>
 <g id="a_table_VerificationToken"><a xlink:title="VerificationToken — Identity, authentication &amp; MCP">
-<polygon fill="white" stroke="none" points="41.88,-1736 41.88,-1763.2 148.18,-1763.2 148.18,-1736 41.88,-1736"/>
-<polygon fill="none" stroke="#94a3b8" points="41.88,-1736 41.88,-1763.2 148.18,-1763.2 148.18,-1736 41.88,-1736"/>
-<polygon fill="#ffe4e6" stroke="none" points="42.88,-1737 42.88,-1762.2 147.18,-1762.2 147.18,-1737 42.88,-1737"/>
-<text xml:space="preserve" text-anchor="start" x="48.88" y="-1747.3" font-family="Arial" font-weight="bold" font-size="11.00">VerificationToken</text>
+<polygon fill="white" stroke="none" points="41.88,-1926 41.88,-1953.2 148.18,-1953.2 148.18,-1926 41.88,-1926"/>
+<polygon fill="none" stroke="#94a3b8" points="41.88,-1926 41.88,-1953.2 148.18,-1953.2 148.18,-1926 41.88,-1926"/>
+<polygon fill="#ffe4e6" stroke="none" points="42.88,-1927 42.88,-1952.2 147.18,-1952.2 147.18,-1927 42.88,-1927"/>
+<text xml:space="preserve" text-anchor="start" x="48.88" y="-1937.3" font-family="Arial" font-weight="bold" font-size="11.00">VerificationToken</text>
 </a>
 </g>
 </g>
@@ -1521,10 +1541,10 @@
 <g id="table_yeasts" class="node">
 <title>yeasts</title>
 <g id="a_table_yeasts"><a xlink:title="yeasts — Recipes, catalog &amp; community">
-<polygon fill="white" stroke="none" points="70.91,-1788 70.91,-1815.2 119.16,-1815.2 119.16,-1788 70.91,-1788"/>
-<polygon fill="none" stroke="#94a3b8" points="70.91,-1788 70.91,-1815.2 119.16,-1815.2 119.16,-1788 70.91,-1788"/>
-<polygon fill="#ffedd5" stroke="none" points="71.91,-1789 71.91,-1814.2 118.16,-1814.2 118.16,-1789 71.91,-1789"/>
-<text xml:space="preserve" text-anchor="start" x="77.91" y="-1799.3" font-family="Arial" font-weight="bold" font-size="11.00">yeasts</text>
+<polygon fill="white" stroke="none" points="70.91,-1978 70.91,-2005.2 119.16,-2005.2 119.16,-1978 70.91,-1978"/>
+<polygon fill="none" stroke="#94a3b8" points="70.91,-1978 70.91,-2005.2 119.16,-2005.2 119.16,-1978 70.91,-1978"/>
+<polygon fill="#ffedd5" stroke="none" points="71.91,-1979 71.91,-2004.2 118.16,-2004.2 118.16,-1979 71.91,-1979"/>
+<text xml:space="preserve" text-anchor="start" x="77.91" y="-1989.3" font-family="Arial" font-weight="bold" font-size="11.00">yeasts</text>
 </a>
 </g>
 </g>
