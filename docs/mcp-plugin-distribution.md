@@ -64,6 +64,34 @@ Exact package hashes and client builds were not supplied. This does not establis
 the OpenAI public-submission portal accepts the documented OAuth extension, or
 that ZIP upload is available to every account.
 
+### November 10 retest
+
+The reported ChatGPT upload had no MCP server listed. The directly registered
+production connection showed OAuth connected. Production returned an OAuth
+challenge and advertised dynamic client registration through discovery.
+
+The builder now produces `meadtools-chatgpt-0.1.1-workspace-test.zip` in the
+ignored drafts directory. This candidate uses only standard transport and URL
+fields in `mcp.json`, so the workspace importer can be tested without the
+OpenAI-specific field that conflicts with the portable schema. Authentication
+still depends on the same OAuth challenge and discovery at the MeadTools server.
+
+- **Workspace ZIP.** Use a workspace with both **Upload plugins** and **Upload
+  plugins with custom MCP servers** permissions. Upload the test ZIP, confirm
+  MeadTools appears as an included connection, sign in with an eligible
+  MeadTools account and verify a tool call in a fresh chat. Check the uploaded
+  version and capture any import diagnostics if the server is still missing.
+  This candidate stays out of public downloads until the import is verified.
+- **Public Plugin Directory.** Upload the existing `-draft.zip` with explicit
+  DCR settings in the Developer Portal. Confirm MeadTools appears under
+  **MCPs**, complete domain verification and OAuth, and verify the tool scan.
+  Public review and publication follow the existing release plan. Once
+  published, customers install the listing and authorize their own accounts.
+
+[Workspace plugin permissions](https://learn.chatgpt.com/docs/enterprise/apps-and-connectors#choose-what-members-can-do-with-plugins)
+and [Developer Portal MCP setup](https://developers.openai.com/plugins/deploy/submission#connect-and-scan-your-mcp-server)
+describe the two flows.
+
 ## Build and check downloads
 
 Run `npm run mcp:package --workspace @meadtools/web` at the repository root after changing package source.
