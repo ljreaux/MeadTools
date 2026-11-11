@@ -380,7 +380,7 @@ export default function RecipeList({
               </PaginationItem>
 
               {/* Mobile: compact page input */}
-              <PaginationItem className="sm:hidden w-full">
+              <PaginationItem className="w-24 min-w-0 sm:hidden">
                 <form
                   method="GET"
                   className="flex items-center justify-center w-full"

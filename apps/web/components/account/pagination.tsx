@@ -71,7 +71,7 @@ export function AccountPagination({
           </PaginationItem>
 
           {/* Mobile: compact page input */}
-          <PaginationItem className="sm:hidden w-full">
+          <PaginationItem className="w-24 min-w-0 sm:hidden">
             <form
               className="flex items-center justify-center w-full"
               onSubmit={(e) => {
@@ -84,7 +84,7 @@ export function AccountPagination({
               }}
               autoComplete="off"
             >
-              <InputGroup className="h-7 max-w-[160px]">
+              <InputGroup className="h-7">
                 <InputGroupInput
                   type="number"
                   min={1}
