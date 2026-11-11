@@ -19,6 +19,8 @@ export async function resumePremiumCheckout(deps: {
   create: (params: Stripe.Checkout.SessionCreateParams, key: string) => Promise<Stripe.Checkout.Session>;
   retrieve: (id: string) => Promise<Stripe.Checkout.Session>;
   completedSubscriptionCanBeReplaced: (id: string) => Promise<boolean>;
+  requestedPriceId?: string;
+  expire?: (id: string) => Promise<Stripe.Checkout.Session>;
   now?: () => number;
 }): Promise<{ url: string }> {
   for (let retry = 0; retry < 4; retry++) {
@@ -40,7 +42,16 @@ export async function resumePremiumCheckout(deps: {
       throw error;
     }
     if (!attempt.session_id) await deps.save(attempt.attempt_id, session.id);
-    if (session.status === "open" && session.url) return { url: session.url };
+    if (session.status === "open" && session.url) {
+      if (deps.requestedPriceId && attempt.params.line_items?.[0]?.price !== deps.requestedPriceId) {
+        if (!deps.expire) throw new PremiumCheckoutStateError("conflict", "Another billing interval has an open checkout.");
+        const expired = await deps.expire(session.id);
+        if (expired.status !== "expired") throw new PremiumCheckoutStateError("conflict", "Previous checkout could not be expired.");
+        await deps.replace(attempt.attempt_id);
+        continue;
+      }
+      return { url: session.url };
+    }
     const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
     if (session.status === "expired" || (session.status === "complete" && subscriptionId &&
       await deps.completedSubscriptionCanBeReplaced(subscriptionId))) {

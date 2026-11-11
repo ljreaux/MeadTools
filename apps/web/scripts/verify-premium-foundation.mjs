@@ -15,6 +15,10 @@ Object.assign(process.env, {
   VERCEL_ENV: "",
   STRIPE_SECRET_KEY: "sk_test_offline_fixture",
   STRIPE_PREMIUM_PRICE_ID: "price_premium",
+  STRIPE_PREMIUM_ANNUAL_PRICE_ID: "price_annual",
+  PREMIUM_ANNUAL_SUBSCRIPTIONS_ENABLED: "true",
+  PREMIUM_SUBSCRIPTIONS_ENABLED: "true",
+  STRIPE_WEBHOOK_SECRET: "whsec_offline_fixture",
   KOFI_EMAIL_DIGEST_SECRET: "offline-fixture-email-digest-secret",
   PREMIUM_KOFI_GRANDFATHER_CUTOFF: "2020-01-01T00:00:00Z",
 });
@@ -383,11 +387,14 @@ async function invoiceFor(
   u,
   suffix = "first",
   end = Math.floor(Date.now() / 1000) + 30 * 86400,
+  interval = "month",
 ) {
   const subscriptionId = `sub_${u.id}`;
   const invoiceId = `in_${u.id}_${suffix}`;
   const paymentId = `pi_${u.id}_${suffix}`;
-  const start = end - 30 * 86400;
+  const annualStart = new Date(end * 1000);
+  annualStart.setUTCFullYear(annualStart.getUTCFullYear() - 1);
+  const start = interval === "year" ? annualStart.getTime() / 1000 : end - 30 * 86400;
   subscriptions.set(subscriptionId, {
     id: subscriptionId,
     customer: `cus_${u.id}`,
@@ -398,12 +405,13 @@ async function invoiceFor(
       data: [
         {
           id: `si_${u.id}`,
+          quantity: 1,
           current_period_end: end,
           price: {
-            id: "price_premium",
+            id: interval === "year" ? "price_annual" : "price_premium",
             currency: "usd",
-            unit_amount: 500,
-            recurring: { interval: "month" },
+            unit_amount: interval === "year" ? 5000 : 500,
+            recurring: { interval, interval_count: 1 },
           },
         },
       ],
@@ -417,7 +425,7 @@ async function invoiceFor(
     id: invoiceId,
     status: "paid",
     currency: "usd",
-    amount_paid: 500,
+    amount_paid: interval === "year" ? 5000 : 500,
     billing_reason: "subscription_cycle",
     customer: `cus_${u.id}`,
     created: start,
@@ -440,16 +448,17 @@ async function invoiceFor(
               proration: false,
             },
           },
-          pricing: { price_details: { price: "price_premium" } },
+          pricing: { price_details: { price: interval === "year" ? "price_annual" : "price_premium" } },
           currency: "usd",
           quantity: 1,
-          amount: 500,
+          amount: interval === "year" ? 5000 : 500,
           period: { start, end },
         },
       ],
     },
   };
   return {
+    invoice,
     invoiceId,
     paymentId,
     end,
@@ -460,6 +469,33 @@ async function invoiceFor(
       }),
   };
 }
+for (const interval of ["month", "year"]) {
+  test(`a ${interval} invoice may put a one-off item before its Premium recurring line`, async () => {
+    const u = await user();
+    const end = new Date(); end.setUTCFullYear(end.getUTCFullYear() + 1);
+    const i = await invoiceFor(u, "extra-item", Math.floor(end.getTime() / 1000), interval);
+    i.invoice.lines.data.unshift({
+      parent: { type: "invoice_item_details", invoice_item_details: { invoice_item: "ii_extra" } },
+      pricing: { price_details: { price: "price_unrelated" } }, currency: "usd", amount: 100,
+    });
+    i.invoice.amount_paid += 100;
+    await i.pay();
+    assert.equal(await balance(u.id), 1000);
+    assert.equal((await prisma.premium_stripe_invoices.findUniqueOrThrow({ where: { invoice_id: i.invoiceId } })).billing_interval, interval);
+  });
+}
+
+test("a delayed historical monthly invoice does not erase a future monthly switch from annual", async () => {
+  const u = await user();
+  const historicalEnd = Math.floor(Date.now() / 1000) - 86400;
+  const old = await invoiceFor(u, "delayed", historicalEnd);
+  await annualInvoice(u);
+  await prisma.premium_stripe_subscriptions.update({ where: { user_id: u.id }, data: { scheduled_interval: "month" } });
+  await old.pay();
+  assert.equal((await prisma.premium_stripe_subscriptions.findUniqueOrThrow({ where: { user_id: u.id } })).scheduled_interval, "month");
+  assert.equal(await balance(u.id), 2000);
+});
+
 const refund = (
   paymentId,
   amount,
@@ -672,4 +708,148 @@ test("operator correction of an overspent premium refund is applied only once", 
   await assert.rejects(resolve(row.id, u, 800), /resolved payment recovery/);
   assert.equal((await resolve(row.id, u)).chatReleased, true);
   assert.equal(await balance(u.id), 0);
+});
+
+const { deliverDuePremiumAllowances } = await import("../lib/billing/premium-allowances.ts");
+async function annualInvoice(u) {
+  const end = new Date(); end.setUTCFullYear(end.getUTCFullYear() + 1);
+  const invoice = await invoiceFor(u, "annual", Math.floor(end.getTime() / 1000), "year");
+  await invoice.pay();
+  return invoice;
+}
+
+test("annual invoice grants once, catches up concurrently, and never exceeds twelve allowances", async () => {
+  const u = await user();
+  const i = await annualInvoice(u);
+  assert.equal(await balance(u.id), 1000);
+  assert.equal(await prisma.premium_stripe_allowances.count({ where: { invoice_id: i.invoiceId } }), 12);
+  await Promise.all([i.pay(), i.pay()]);
+  assert.equal(await balance(u.id), 1000);
+  const schedule = await prisma.premium_stripe_allowances.findMany({ where: { invoice_id: i.invoiceId }, orderBy: { allowance_index: "asc" } });
+  await Promise.all(Array.from({ length: 5 }, () => deliverDuePremiumAllowances({ now: schedule[2].due_at })));
+  assert.equal(await balance(u.id), 3000);
+  assert.equal((await prisma.premium_stripe_invoices.findUniqueOrThrow({ where: { invoice_id: i.invoiceId } })).granted_credits, 3000);
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000 + 86400000) });
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000 + 86400000) });
+  assert.equal(await balance(u.id), 12000);
+});
+
+test("canceling renewal preserves annual grants; full refund removes only delivered included credits", async () => {
+  const u = await user(); const i = await annualInvoice(u);
+  const sub = subscriptions.get(`sub_${u.id}`); sub.cancel_at_period_end = false; sub.cancel_at = i.end;
+  await handlePremiumStripeEvent({ type: "customer.subscription.updated", data: { object: sub } });
+  assert.equal((await prisma.premium_stripe_subscriptions.findUniqueOrThrow({ where: { user_id: u.id } })).cancel_at_period_end, true);
+  const second = await prisma.premium_stripe_allowances.findUniqueOrThrow({ where: { invoice_id_allowance_index: { invoice_id: i.invoiceId, allowance_index: 1 } } });
+  await deliverDuePremiumAllowances({ now: second.due_at });
+  assert.equal(await balance(u.id), 2000);
+  await recordCreditGrant({ userId: u.id, operationId: randomUUID(), idempotencyKey: randomUUID(), creditAmount: 700 });
+  await recovery.reconcileStripeRefund({ eventId: randomUUID(), eventType: "refund.created", refund: {
+    id: `re_${randomUUID()}`, payment_intent: i.paymentId, status: "succeeded", amount: 5000, currency: "usd",
+  } });
+  assert.equal(await balance(u.id), 700);
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000) });
+  assert.equal(await balance(u.id), 700);
+});
+
+test("partial annual refunds require review and prevent subsequent allowance delivery", async () => {
+  const u = await user(); const i = await annualInvoice(u);
+  assert.equal(await recovery.reconcileStripeRefund({ eventId: randomUUID(), eventType: "refund.created", refund: {
+    id: `re_${randomUUID()}`, payment_intent: i.paymentId, status: "succeeded", amount: 2500, currency: "usd",
+  } }), "review_required");
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000) });
+  assert.equal(await balance(u.id), 1000);
+});
+
+const { schedulePremiumPlanChange } = await import("../lib/billing/premium-plan-change.ts");
+for (const currentInterval of ["month", "year"]) {
+  test(`repeated ${currentInterval} billing switches withdraw and recreate schedules without charging`, async () => {
+    const u = await user();
+    const i = currentInterval === "year" ? await annualInvoice(u) : await invoiceFor(u);
+    if (currentInterval === "month") await i.pay();
+    const targetInterval = currentInterval === "month" ? "year" : "month";
+    const currentPrice = currentInterval === "month" ? "price_premium" : "price_annual";
+    const targetPrice = currentInterval === "month" ? "price_annual" : "price_premium";
+    const sub = subscriptions.get(`sub_${u.id}`);
+    sub.items.data[0].current_period_start = Math.floor(Date.now() / 1000);
+    const schedules = new Map();
+    const responses = new Map();
+    stripe.subscriptions.update = async (id, params) => {
+      assert.equal(id, sub.id);
+      Object.assign(sub.metadata, params.metadata);
+      return structuredClone(sub);
+    };
+    stripe.subscriptionSchedules.create = async ({ from_subscription }, { idempotencyKey }) => {
+      assert.equal(from_subscription, sub.id);
+      // Stripe replays the ORIGINAL create response, even after release.
+      if (responses.has(idempotencyKey)) return structuredClone(responses.get(idempotencyKey));
+      assert.equal(sub.schedule ?? null, null);
+      const schedule = { id: `sched_fixture_${schedules.size}`, metadata: {}, status: "active", subscription: sub.id,
+        current_phase: { start_date: sub.items.data[0].current_period_start } };
+      schedules.set(schedule.id, schedule);
+      responses.set(idempotencyKey, structuredClone(schedule));
+      sub.schedule = schedule.id;
+      return structuredClone(schedule);
+    };
+    stripe.subscriptionSchedules.retrieve = async (id) => structuredClone(schedules.get(id));
+    stripe.subscriptionSchedules.update = async (id, params) => {
+      const schedule = schedules.get(id);
+      assert.equal(schedule.status, "active");
+      assert.equal(params.proration_behavior, "none");
+      assert.equal(params.phases[0].items[0].price, currentPrice);
+      assert.equal(params.phases[0].end_date, i.end);
+      assert.equal(params.phases[1].start_date, i.end);
+      assert.equal(params.phases[1].items[0].price, targetPrice);
+      assert.equal(params.phases[1].duration.interval, targetInterval);
+      schedule.metadata = params.metadata;
+      return structuredClone(schedule);
+    };
+    stripe.subscriptionSchedules.release = async (id) => {
+      const schedule = schedules.get(id);
+      assert.equal(schedule.status, "active");
+      Object.assign(schedule, { status: "released", subscription: null, released_subscription: sub.id, current_phase: null });
+      sub.schedule = null;
+      return structuredClone(schedule);
+    };
+    for (let repeat = 0; repeat < 3; repeat++) {
+      const change = await schedulePremiumPlanChange(u.id, targetInterval);
+      assert.equal(change.effectiveAt, new Date(i.end * 1000).toISOString());
+      await schedulePremiumPlanChange(u.id, targetInterval); // duplicate request reuses the active schedule
+      assert.equal((await prisma.premium_stripe_subscriptions.findUniqueOrThrow({ where: { user_id: u.id } })).scheduled_interval, targetInterval);
+      assert.equal(await balance(u.id), 1000);
+      // Disabling new annual sales must never block withdrawing an existing change.
+      process.env.PREMIUM_ANNUAL_SUBSCRIPTIONS_ENABLED = "false";
+      try {
+        await schedulePremiumPlanChange(u.id, currentInterval);
+        if (currentInterval === "month") {
+          await assert.rejects(schedulePremiumPlanChange(u.id, "year"), /unavailable/);
+        }
+      } finally {
+        process.env.PREMIUM_ANNUAL_SUBSCRIPTIONS_ENABLED = "true";
+      }
+      assert.equal((await prisma.premium_stripe_subscriptions.findUniqueOrThrow({ where: { user_id: u.id } })).scheduled_interval, null);
+      assert.equal(sub.schedule, null);
+      // Simulate an account that withdrew its change using the old implementation.
+      if (repeat === 0) delete sub.metadata.meadtools_premium_previous_schedule;
+    }
+    assert.equal(schedules.size, 3);
+    assert.equal(await balance(u.id), 1000);
+  });
+}
+
+test("an early manual revocation stops future annual grants without starving later invoices", async () => {
+  const u = await user(); const i = await annualInvoice(u);
+  await prisma.premium_memberships.update({ where: { user_id_source: { user_id: u.id, source: "stripe" } }, data: { revoked_at: new Date() } });
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000) });
+  assert.equal(await balance(u.id), 1000);
+  assert.ok((await prisma.premium_stripe_invoices.findUniqueOrThrow({ where: { invoice_id: i.invoiceId } })).allowances_stopped_at);
+});
+
+test("annual payment restrictions pause grants and a resolved restriction allows catch-up", async () => {
+  const u = await user(); const i = await annualInvoice(u);
+  await prisma.credit_accounts.update({ where: { user_id: u.id }, data: { payment_restricted_at: new Date() } });
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000) });
+  assert.equal(await balance(u.id), 1000);
+  await prisma.credit_accounts.update({ where: { user_id: u.id }, data: { payment_restricted_at: null } });
+  await deliverDuePremiumAllowances({ now: new Date(i.end * 1000) });
+  assert.equal(await balance(u.id), 12000);
 });

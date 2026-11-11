@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "eb12c4bbeefd9b986aa9a1231b1867667f5a8ee259fc293b1cc92ea648b5fed5";
+  "fe5fcc40a92bb62c9469135f09d5773b9e1f484173ba44928e380c1cd6d02e96";
 const preZodPathsCanonicalSha256 =
   "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
 
@@ -179,6 +179,7 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/account/premium/mcp/tokens/{id}"];
   delete pathsWithoutApprovedAdditions["/account/premium/stripe/checkout"];
   delete pathsWithoutApprovedAdditions["/account/premium/stripe/portal"];
+  delete pathsWithoutApprovedAdditions["/account/premium/stripe/plan"];
   delete pathsWithoutApprovedAdditions["/account/release-emails"];
   delete pathsWithoutApprovedAdditions["/release-emails/unsubscribe"];
   delete pathsWithoutApprovedAdditions["/webhooks/stripe"];

@@ -314,8 +314,11 @@ import {
   nutrientSettingsResponseSchema,
   nutrientVolumeUnitSchema,
   premiumAccessResponseSchema,
+  premiumCheckoutRequestBodySchema,
   premiumCheckoutResponseSchema,
   premiumErrorResponseSchema,
+  premiumPlanChangeRequestBodySchema,
+  premiumPlanChangeResponseSchema,
   premiumPortalResponseSchema,
   publicBrewDetailResponseSchema,
   publicBrewEntriesByStageResponseSchema,
@@ -787,8 +790,11 @@ export type NutrientSelectedResponse = z.infer<typeof nutrientSelectedResponseSc
 export type NutrientSettingsResponse = z.infer<typeof nutrientSettingsResponseSchema>;
 export type NutrientVolumeUnit = z.infer<typeof nutrientVolumeUnitSchema>;
 export type PremiumAccessResponse = z.infer<typeof premiumAccessResponseSchema>;
+export type PremiumCheckoutRequestBody = z.infer<typeof premiumCheckoutRequestBodySchema>;
 export type PremiumCheckoutResponse = z.infer<typeof premiumCheckoutResponseSchema>;
 export type PremiumErrorResponse = z.infer<typeof premiumErrorResponseSchema>;
+export type PremiumPlanChangeRequestBody = z.infer<typeof premiumPlanChangeRequestBodySchema>;
+export type PremiumPlanChangeResponse = z.infer<typeof premiumPlanChangeResponseSchema>;
 export type PremiumPortalResponse = z.infer<typeof premiumPortalResponseSchema>;
 export type PublicBrewDetailResponse = z.infer<typeof publicBrewDetailResponseSchema>;
 export type PublicBrewEntriesByStageResponse = z.infer<typeof publicBrewEntriesByStageResponseSchema>;

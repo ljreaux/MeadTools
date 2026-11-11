@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   premiumAccessResponseSchema,
 } from "@meadtools/api-contract/premium";
-import { PREMIUM_MONTHLY_CHAT_CREDITS, PREMIUM_MONTHLY_PRICE_CENTS } from "@meadtools/premium-domain";
+import { PREMIUM_MONTHLY_CHAT_CREDITS, PREMIUM_MONTHLY_PRICE_CENTS, PREMIUM_ANNUAL_PRICE_CENTS } from "@meadtools/premium-domain";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
-import { arePremiumSubscriptionsAvailable } from "@/lib/billing/premium-subscription-config";
+import { arePremiumSubscriptionsAvailable, areAnnualPremiumSubscriptionsAvailable } from "@/lib/billing/premium-subscription-config";
 import { isMcpRolloutEnabled } from "@/lib/mcp/access";
 import prisma from "@/lib/prisma";
 import { verifyUser } from "@/lib/userAccessFunctions";
@@ -42,9 +42,13 @@ export async function GET(request: NextRequest) {
     }),
     prisma.premium_stripe_subscriptions.findUnique({
       where: { user_id: userId },
-      select: { user_id: true },
+      select: { user_id: true, subscription_id: true, scheduled_interval: true, cancel_at_period_end: true },
     }),
   ]);
+  const invoice = stripeLink ? await prisma.premium_stripe_invoices.findFirst({
+    where: { user_id: userId, subscription_id: stripeLink.subscription_id },
+    orderBy: { paid_through: "desc" }, select: { billing_interval: true },
+  }) : null;
   return NextResponse.json(
     premiumAccessResponseSchema.parse({
       entitled: status.entitled,
@@ -56,6 +60,11 @@ export async function GET(request: NextRequest) {
       stripeLinked: Boolean(stripeLink),
       monthlyPriceCents: PREMIUM_MONTHLY_PRICE_CENTS,
       monthlyChatCredits: PREMIUM_MONTHLY_CHAT_CREDITS,
+      annualPriceCents: PREMIUM_ANNUAL_PRICE_CENTS,
+      annualSubscriptionsEnabled: areAnnualPremiumSubscriptionsAvailable(),
+      billingInterval: invoice?.billing_interval ?? null,
+      scheduledBillingInterval: stripeLink?.scheduled_interval ?? null,
+      renewalCanceled: stripeLink?.cancel_at_period_end ?? false,
       subscriptionsEnabled: arePremiumSubscriptionsAvailable(),
       kofiJoinUrl: kofiJoinUrl(),
       mcpEnabled: status.premiumEnabled && isMcpRolloutEnabled(),

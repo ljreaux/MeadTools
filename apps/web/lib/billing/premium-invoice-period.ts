@@ -2,13 +2,20 @@ import type Stripe from "stripe";
 
 const id = (value: string | { id: string } | null | undefined) => typeof value === "string" ? value : value?.id;
 
-export function premiumInvoicePaidThrough(
+/** Portal cancellation can set a cancellation date without the legacy period-end flag. */
+export function premiumRenewalCanceled(subscription: Pick<Stripe.Subscription, "cancel_at_period_end" | "cancel_at">): boolean {
+  return subscription.cancel_at_period_end || Boolean(subscription.cancel_at);
+}
+
+/** Validate the paid line once and retain both endpoints for allowance scheduling. */
+export function premiumInvoiceServicePeriod(
   invoice: Stripe.Invoice,
   subscription: Stripe.Subscription,
   priceId: string,
   minimumCents: number,
-): Date {
-  const item = subscription.items.data.find((entry) => entry.price.id === priceId);
+): { start: Date; end: Date } {
+  // A delayed invoice can predate a scheduled price change on the same item.
+  const item = subscription.items.data.length === 1 ? subscription.items.data[0] : undefined;
   if (!item || id(invoice.customer) !== id(subscription.customer) ||
       id(invoice.parent?.subscription_details?.subscription) !== subscription.id ||
       invoice.parent?.subscription_details?.metadata?.meadtools_user_id !== subscription.metadata.meadtools_user_id ||
@@ -25,8 +32,19 @@ export function premiumInvoicePaidThrough(
   if (matching.length !== 1) throw new Error("Invoice must contain one paid premium recurring line.");
   const { start, end } = matching[0].period;
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start <= 0 || end <= start ||
+      !Number.isFinite(new Date(start * 1_000).getTime()) ||
       !Number.isFinite(new Date(end * 1_000).getTime())) throw new Error("Invalid invoice service period.");
-  return new Date(end * 1_000);
+  return { start: new Date(start * 1_000), end: new Date(end * 1_000) };
+}
+
+/** Existing monthly consumers retain the same interface and validation. */
+export function premiumInvoicePaidThrough(
+  invoice: Stripe.Invoice,
+  subscription: Stripe.Subscription,
+  priceId: string,
+  minimumCents: number,
+): Date {
+  return premiumInvoiceServicePeriod(invoice, subscription, priceId, minimumCents).end;
 }
 
 export function laterPaidThrough(current: Date | undefined, incoming: Date): Date {

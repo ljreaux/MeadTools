@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import type Stripe from "stripe";
-import { PREMIUM_MONTHLY_CHAT_CREDITS } from "@meadtools/premium-domain";
+import { PREMIUM_MONTHLY_CHAT_CREDITS, premiumAllowanceSchedule, type PremiumBillingInterval } from "@meadtools/premium-domain";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getPremiumAccessStatus } from "@/lib/db/premium-access";
@@ -10,12 +10,15 @@ import { recordCreditGrantInTransaction } from "@/lib/db/credit-accounting";
 import { getStripeClient } from "./stripe";
 import { reconcileDeferredStripeDisputes, reconcileDeferredStripeRefunds } from "./credit-payment-recovery";
 import { resumePremiumCheckout, PremiumCheckoutStateError, type CheckoutAttempt } from "./premium-checkout-reservation";
-import { premiumInvoicePaidThrough, laterPaidThrough, currentSubscriptionState } from "./premium-invoice-period";
+import { premiumInvoiceServicePeriod, laterPaidThrough, currentSubscriptionState, premiumRenewalCanceled } from "./premium-invoice-period";
+import { deliverPremiumAllowancesInTransaction } from "./premium-allowances";
+import { premiumPortalConfiguration } from "./premium-portal";
 import { buildPremiumCheckoutSessionParams } from "./premium-checkout-session";
 import {
   arePremiumSubscriptionsAvailable,
-  getPremiumStripePriceId,
-  PREMIUM_STRIPE_MINIMUM_PAID_CENTS,
+  areAnnualPremiumSubscriptionsAvailable,
+  getPremiumPlanPriceId,
+  premiumPlanForPriceId,
 } from "./premium-subscription-config";
 
 export class PremiumSubscriptionUnavailableError extends Error {}
@@ -35,13 +38,13 @@ function userIdFromSubscription(subscription: Stripe.Subscription): number {
   return userId;
 }
 
-function premiumItem(subscription: Stripe.Subscription, priceId: string) {
-  return subscription.items.data.find((item) =>
-    item.price.id === priceId &&
-    item.price.currency === "usd" &&
-    item.price.unit_amount === PREMIUM_STRIPE_MINIMUM_PAID_CENTS &&
-    item.price.recurring?.interval === "month",
-  );
+function premiumItem(subscription: Stripe.Subscription) {
+  const item = subscription.items.data[0];
+  const plan = item && premiumPlanForPriceId(item.price.id);
+  if (!plan || subscription.items.data.length !== 1 || item.quantity !== 1 ||
+      item.price.currency !== "usd" || item.price.unit_amount !== plan.priceCents ||
+      item.price.recurring?.interval !== plan.interval || item.price.recurring.interval_count !== 1) return null;
+  return { item, plan };
 }
 
 function allowanceOperation(invoiceId: string) {
@@ -52,12 +55,15 @@ function allowanceOperation(invoiceId: string) {
 /** Creates only a sandbox/local checkout until the rollout switch is enabled. */
 export async function createPremiumStripeCheckout(options: {
   userId: number;
+  interval?: PremiumBillingInterval;
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string }> {
   const stripe = getStripeClient();
-  const priceId = getPremiumStripePriceId();
-  if (!stripe || !priceId || !arePremiumSubscriptionsAvailable()) {
+  const interval = options.interval ?? "month";
+  const priceId = getPremiumPlanPriceId(interval);
+  if (!stripe || !priceId || !arePremiumSubscriptionsAvailable() ||
+      (interval === "year" && !areAnnualPremiumSubscriptionsAvailable())) {
     throw new PremiumSubscriptionUnavailableError("Premium subscriptions are unavailable.");
   }
   const access = await getPremiumAccessStatus(options.userId);
@@ -85,6 +91,8 @@ export async function createPremiumStripeCheckout(options: {
   });
   try {
     return await resumePremiumCheckout({
+      requestedPriceId: priceId,
+      expire: (id) => stripe.checkout.sessions.expire(id),
       reserve: async () => {
         // createMany ON CONFLICT handles simultaneous first requests; the winner's
         // exact params (including random integration identifier) are always reused.
@@ -134,26 +142,25 @@ export async function createPremiumStripePortal(options: {
   if (!stripe || !linked) {
     throw new PremiumSubscriptionUnavailableError("Stripe billing is unavailable.");
   }
+  const configuration = await premiumPortalConfiguration(stripe);
   const session = await stripe.billingPortal.sessions.create({
     customer: linked.customer_id,
     return_url: options.returnUrl,
-    ...(process.env.STRIPE_PREMIUM_PORTAL_CONFIG_ID
-      ? { configuration: process.env.STRIPE_PREMIUM_PORTAL_CONFIG_ID }
-      : {}),
+    configuration,
   });
   return { url: session.url };
 }
 
-async function verifiedSubscription(subscriptionId: string): Promise<{
+export async function verifiedPremiumSubscription(subscriptionId: string): Promise<{
   subscription: Stripe.Subscription;
   userId: number;
   customerId: string;
+  plan: NonNullable<ReturnType<typeof premiumPlanForPriceId>>;
 }> {
   const stripe = getStripeClient();
-  const priceId = getPremiumStripePriceId();
-  if (!stripe || !priceId) throw new PremiumSubscriptionUnavailableError("Stripe premium is unavailable.");
+  if (!stripe) throw new PremiumSubscriptionUnavailableError("Stripe premium is unavailable.");
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const item = premiumItem(subscription, priceId);
+  const item = premiumItem(subscription);
   const customerId = stripeId(subscription.customer);
   if (!item || !customerId || subscription.items.data.length !== 1) {
     throw new PremiumStripeVerificationError("Subscription price or customer did not match.");
@@ -162,6 +169,7 @@ async function verifiedSubscription(subscriptionId: string): Promise<{
     subscription,
     userId: userIdFromSubscription(subscription),
     customerId,
+    plan: item.plan,
   };
 }
 
@@ -196,12 +204,12 @@ async function upsertStripeIdentity(
 
 async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
   if (invoice.status !== "paid" || invoice.currency !== "usd" ||
-      invoice.amount_paid < PREMIUM_STRIPE_MINIMUM_PAID_CENTS ||
+      invoice.amount_paid < 500 ||
       !["subscription_create", "subscription_cycle"].includes(invoice.billing_reason ?? "")) return;
   if (!invoice.parent?.subscription_details?.metadata?.meadtools_user_id) return;
   const subscriptionId = stripeId(invoice.parent?.subscription_details?.subscription);
   if (!subscriptionId) return;
-  const { userId } = await verifiedSubscription(subscriptionId);
+  const { userId } = await verifiedPremiumSubscription(subscriptionId);
   const stripe = getStripeClient()!;
   const payments = await stripe.invoicePayments.list({ invoice: invoice.id, status: "paid", limit: 100 });
   if (payments.has_more) throw new PremiumStripeVerificationError("Invoice payment list is incomplete.");
@@ -213,12 +221,24 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
   const paidAt = new Date(paidAtSeconds * 1_000);
   await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-    const { subscription, customerId, userId: currentUserId } = await verifiedSubscription(subscriptionId);
+    const { subscription, customerId, userId: currentUserId, plan: currentPlan } = await verifiedPremiumSubscription(subscriptionId);
     if (currentUserId !== userId) throw new PremiumStripeVerificationError("Subscription owner changed.");
     // Historical paid invoices are valid even if the current renewal is past due.
     // Terminal subscriptions must not be revived by a delayed invoice event.
     if (["canceled", "unpaid", "incomplete_expired"].includes(subscription.status)) return;
-    const paidThrough = premiumInvoicePaidThrough(invoice, subscription, getPremiumStripePriceId()!, PREMIUM_STRIPE_MINIMUM_PAID_CENTS);
+    const recurringLines = invoice.lines.data.filter((line) => {
+      const details = line.parent?.subscription_item_details;
+      const priceId = stripeId(line.pricing?.price_details?.price);
+      return line.parent?.type === "subscription_item_details" &&
+        details?.subscription_item === subscription.items.data[0].id &&
+        details.subscription === subscription.id && !details.proration &&
+        priceId && premiumPlanForPriceId(priceId);
+    });
+    const invoicePrice = recurringLines.length === 1 ? recurringLines[0].pricing?.price_details?.price : null;
+    const plan = invoicePrice && premiumPlanForPriceId(stripeId(invoicePrice)!);
+    if (!plan || invoice.amount_paid < plan.priceCents) throw new PremiumStripeVerificationError("Invoice plan or paid amount did not match.");
+    const period = premiumInvoiceServicePeriod(invoice, subscription, plan.priceId, plan.priceCents);
+    const paidThrough = period.end;
     const inserted = await tx.premium_stripe_invoices.createMany({
       data: {
         invoice_id: invoice.id,
@@ -227,6 +247,8 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
         paid_at: paidAt,
         paid_through: paidThrough,
         amount_paid_cents: invoice.amount_paid,
+        billing_interval: plan.interval,
+        granted_credits: plan.interval === "year" ? 0 : PREMIUM_MONTHLY_CHAT_CREDITS,
       },
       skipDuplicates: true,
     });
@@ -235,10 +257,13 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
       skipDuplicates: true,
     });
     if (inserted.count === 0) return;
+    if (currentPlan.interval === plan.interval) await tx.premium_stripe_subscriptions.updateMany({
+      where: { user_id: userId, scheduled_interval: plan.interval }, data: { scheduled_interval: null },
+    });
     await upsertStripeIdentity(tx, {
       userId, customerId, subscriptionId: subscription.id,
       status: subscription.status,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      cancelAtPeriodEnd: premiumRenewalCanceled(subscription),
     });
     const current = await tx.premium_memberships.findUnique({
       where: { user_id_source: { user_id: userId, source: "stripe" } },
@@ -259,7 +284,13 @@ async function processPaidInvoice(invoice: Stripe.Invoice): Promise<void> {
         revoked_at: null,
       },
     });
-    await recordCreditGrantInTransaction(tx, {
+    if (plan.interval === "year") {
+      const schedule = premiumAllowanceSchedule({ interval: "year", periodStart: period.start, periodEnd: period.end });
+      await tx.premium_stripe_allowances.createMany({ data: schedule.map((allowance) => ({
+        invoice_id: invoice.id, allowance_index: allowance.index, due_at: allowance.dueAt,
+      })), skipDuplicates: true });
+      await deliverPremiumAllowancesInTransaction(tx, invoice.id, new Date());
+    } else await recordCreditGrantInTransaction(tx, {
       userId,
       operationId: allowanceOperation(invoice.id),
       idempotencyKey: `stripe-premium:${invoice.id}`,
@@ -279,7 +310,7 @@ async function processCheckout(session: Stripe.Checkout.Session): Promise<void> 
       !session.metadata?.premium_user_id) return;
   const subscriptionId = stripeId(session.subscription);
   if (!subscriptionId) return;
-  const { subscription, userId, customerId } = await verifiedSubscription(subscriptionId);
+  const { subscription, userId, customerId } = await verifiedPremiumSubscription(subscriptionId);
   if (session.client_reference_id !== String(userId) ||
       session.metadata?.premium_user_id !== String(userId) ||
       stripeId(session.customer) !== customerId) {
@@ -287,7 +318,7 @@ async function processCheckout(session: Stripe.Checkout.Session): Promise<void> 
   }
   await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-    const current = await verifiedSubscription(subscriptionId);
+    const current = await verifiedPremiumSubscription(subscriptionId);
     if (current.userId !== userId || current.customerId !== customerId) {
       throw new PremiumStripeVerificationError("Checkout account changed.");
     }
@@ -295,7 +326,7 @@ async function processCheckout(session: Stripe.Checkout.Session): Promise<void> 
     await upsertStripeIdentity(tx, {
       userId, customerId, subscriptionId: subscription.id,
       status: current.subscription.status,
-      cancelAtPeriodEnd: current.subscription.cancel_at_period_end,
+      cancelAtPeriodEnd: premiumRenewalCanceled(current.subscription),
     });
   }, { timeout: 30_000 });
 }
@@ -317,9 +348,14 @@ async function processSubscriptionChange(subscription: Stripe.Subscription): Pro
     }
     await tx.premium_stripe_subscriptions.update({
       where: { user_id: linked.user_id },
-      data: { status: current.subscription.status, cancel_at_period_end: current.subscription.cancel_at_period_end },
+      data: { status: current.subscription.status, cancel_at_period_end: premiumRenewalCanceled(current.subscription) },
     });
     if (current.shouldRevoke) {
+      const now = new Date();
+      await tx.premium_stripe_invoices.updateMany({
+        where: { subscription_id: subscription.id, billing_interval: "year", paid_through: { gt: now } },
+        data: { allowances_stopped_at: now },
+      });
       await tx.premium_memberships.updateMany({
         where: { user_id: linked.user_id, source: "stripe", external_reference: subscription.id },
         data: { revoked_at: new Date() },

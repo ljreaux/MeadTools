@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { premiumCheckoutResponseSchema } from "@meadtools/api-contract/premium";
+import { premiumCheckoutResponseSchema, premiumCheckoutRequestBodySchema } from "@meadtools/api-contract/premium";
 import {
   createPremiumStripeCheckout,
   PremiumSubscriptionConflictError,
@@ -12,10 +12,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Create a monthly premium Stripe Checkout Session when sales are enabled.
+ * Create a premium Stripe Checkout Session for the selected billing interval.
+ * @body PremiumCheckoutRequestBody
  * @response 200:PremiumCheckoutResponse
  * @responseSet none
  * @add 401:PremiumErrorResponse
+ * @add 400:PremiumErrorResponse
  * @add 403:PremiumErrorResponse
  * @add 409:PremiumErrorResponse
  * @add 503:PremiumErrorResponse
@@ -36,9 +38,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Premium subscriptions are unavailable" }, { status: 503 });
   }
   try {
+    const text = await request.text();
+    let body: unknown;
+    try { body = text ? JSON.parse(text) : {}; } catch { return NextResponse.json({ error: "Invalid checkout request" }, { status: 400 }); }
+    const parsed = premiumCheckoutRequestBodySchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 });
     const origin = request.nextUrl.origin;
     const result = await createPremiumStripeCheckout({
       userId,
+      interval: parsed.data.interval,
       successUrl: new URL("/account/premium?checkout=success", origin).toString(),
       cancelUrl: new URL("/account/premium?checkout=cancelled", origin).toString(),
     });

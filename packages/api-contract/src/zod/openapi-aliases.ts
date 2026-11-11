@@ -313,8 +313,11 @@ import {
   nutrientSettingsResponseSchema,
   nutrientVolumeUnitSchema,
   premiumAccessResponseSchema,
+  premiumCheckoutRequestBodySchema,
   premiumCheckoutResponseSchema,
   premiumErrorResponseSchema,
+  premiumPlanChangeRequestBodySchema,
+  premiumPlanChangeResponseSchema,
   premiumPortalResponseSchema,
   publicBrewDetailResponseSchema,
   publicBrewEntriesByStageResponseSchema,
@@ -786,8 +789,11 @@ export const NutrientSelectedResponse = nutrientSelectedResponseSchema;
 export const NutrientSettingsResponse = nutrientSettingsResponseSchema;
 export const NutrientVolumeUnit = nutrientVolumeUnitSchema;
 export const PremiumAccessResponse = premiumAccessResponseSchema;
+export const PremiumCheckoutRequestBody = premiumCheckoutRequestBodySchema;
 export const PremiumCheckoutResponse = premiumCheckoutResponseSchema;
 export const PremiumErrorResponse = premiumErrorResponseSchema;
+export const PremiumPlanChangeRequestBody = premiumPlanChangeRequestBodySchema;
+export const PremiumPlanChangeResponse = premiumPlanChangeResponseSchema;
 export const PremiumPortalResponse = premiumPortalResponseSchema;
 export const PublicBrewDetailResponse = publicBrewDetailResponseSchema;
 export const PublicBrewEntriesByStageResponse = publicBrewEntriesByStageResponseSchema;

@@ -16,6 +16,7 @@ export function PremiumAccount() {
   const token = useAuthToken();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const claimed = useRef(false);
@@ -60,6 +61,7 @@ export function PremiumAccount() {
   const sendLink = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBusy(true);
+    setSendingLink(true);
     setError("");
     setNotice("");
     try {
@@ -74,18 +76,22 @@ export function PremiumAccount() {
       setError(t("premium.requestFailed"));
     } finally {
       setBusy(false);
+      setSendingLink(false);
     }
   };
 
-  const openStripe = async (path: "checkout" | "portal") => {
+  const openStripe = async (path: "checkout" | "portal", interval: "month" | "year" = "month") => {
     setBusy(true);
     setError("");
     try {
       const response = await fetch(`/api/account/premium/stripe/${path}`, {
         method: "POST",
-        headers: headers()
+        headers: { ...headers(), "Content-Type": "application/json" },
+        ...(path === "checkout" ? { body: JSON.stringify({ interval }) } : {})
       });
-      if (!response.ok) throw new Error("Stripe billing request failed");
+      if (!response.ok) {
+        throw new Error("Stripe billing request failed");
+      }
       const result = (await response.json()) as { url: string };
       const destination = new URL(result.url);
       if (
@@ -103,6 +109,21 @@ export function PremiumAccount() {
     }
   };
 
+  const changePlan = async (interval: "month" | "year") => {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/account/premium/stripe/plan", {
+        method: "POST", headers: { ...headers(), "Content-Type": "application/json" },
+        body: JSON.stringify({ interval })
+      });
+      if (!response.ok) throw new Error("Plan change failed");
+      setNotice(t("premium.planChangeSaved"));
+      await refetch();
+    } catch { setError(t("premium.planChangeFailed")); }
+    finally { setBusy(false); }
+  };
+
   return (
     <main className="relative w-11/12 max-w-[1200px] rounded-xl bg-background px-4 py-6 sm:px-12 sm:py-8 space-y-5">
       <Header />
@@ -110,7 +131,7 @@ export function PremiumAccount() {
       <p className="text-muted-foreground">
         {t(
           status ? (status.subscriptionsEnabled
-            ? "premium.bundleAvailable"
+            ? (status.annualSubscriptionsEnabled ? "premium.bundleAvailableAnnual" : "premium.bundleAvailable")
             : "premium.bundleComingSoon") : "premium.bundleSummary"
         )}
       </p>
@@ -150,6 +171,14 @@ export function PremiumAccount() {
             >
               {t("premium.subscribeStripe")}
             </Button>
+            {status.annualSubscriptionsEnabled && (
+              <div className="space-y-2">
+                <Button type="button" variant="outline" disabled={busy} onClick={() => void openStripe("checkout", "year")}>
+                  {t("premium.subscribeAnnual")}
+                </Button>
+                <p className="text-sm text-muted-foreground">{t("premium.annualTerms")}</p>
+              </div>
+            )}
             {status.kofiJoinUrl && (
               <div>
                 <a
@@ -167,6 +196,22 @@ export function PremiumAccount() {
             )}
           </div>
         )}
+      {status?.stripeLinked && status.premiumEnabled && status.billingInterval && (
+        <section aria-labelledby="premium-billing-title" className="space-y-3">
+          <h2 id="premium-billing-title" className="text-xl font-semibold">{t("premium.billingTitle")}</h2>
+          <p>{t(status.billingInterval === "year" ? "premium.annualBillingSummary" : "premium.monthlyTerms")}</p>
+          {status.renewalCanceled && status.paidThrough && (
+            <p role="status">{t("premium.renewalCanceled", { date: new Intl.DateTimeFormat(i18n.resolvedLanguage, { dateStyle: "medium" }).format(new Date(status.paidThrough)) })}</p>
+          )}
+          {status.scheduledBillingInterval && <p role="status">{t(status.scheduledBillingInterval === "year" ? "premium.scheduledAnnual" : "premium.scheduledMonthly")}</p>}
+          {(status.scheduledBillingInterval || status.billingInterval === "year" || status.annualSubscriptionsEnabled) && (
+            <Button type="button" variant="outline" disabled={busy || status.renewalCanceled} onClick={() => void changePlan(status.scheduledBillingInterval ? status.billingInterval! : status.billingInterval === "year" ? "month" : "year")}>
+              {t(status.scheduledBillingInterval ? "premium.keepCurrentPlan" : status.billingInterval === "year" ? "premium.switchMonthly" : "premium.switchAnnual")}
+            </Button>
+          )}
+          <p className="text-sm text-muted-foreground">{t("premium.switchTerms")}</p>
+        </section>
+      )}
       <section aria-labelledby="premium-benefits-title" className="space-y-3">
         <h2 id="premium-benefits-title" className="text-xl font-semibold">{t("premium.benefits.title")}</h2>
         <ul className="grid gap-3 sm:grid-cols-2">
@@ -204,7 +249,7 @@ export function PremiumAccount() {
             onChange={(event) => setEmail(event.target.value)}
           />
           <Button type="submit" disabled={busy}>
-            {t(busy ? "premium.sending" : "premium.sendLink")}
+            {t(sendingLink ? "premium.sending" : "premium.sendLink")}
           </Button>
         </form>
       ) : null}
