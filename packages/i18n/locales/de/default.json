@@ -2503,7 +2503,22 @@
             "dismiss": "Premium-Ankündigung schließen"
         },
         "bundleSummary": "Premium bietet mehr Werkzeuge für deinen Ansatz, MCP-Zugang und 1.000 gehostete Chat-Prompt-Credits für jeden bezahlten Monat – für $5/Monat.",
-        "supporterLinkHelp": "Unterstützt du MeadTools bereits monatlich auf Ko-fi? Gib die E-Mail-Adresse des Zahlers ein, um deine Unterstützung mit diesem Konto zu verknüpfen. Bestehende monatliche Unterstützer behalten ihren aktuellen Betrag."
+        "supporterLinkHelp": "Unterstützt du MeadTools bereits monatlich auf Ko-fi? Gib die E-Mail-Adresse des Zahlers ein, um deine Unterstützung mit diesem Konto zu verknüpfen. Bestehende monatliche Unterstützer behalten ihren aktuellen Betrag.",
+        "bundleAvailableAnnual": "Erhalte die untenstehenden Premium-Brauwerkzeuge, MCP-Zugang und jeden Abrechnungsmonat 1.000 Prompt-Credits für gehostete Chats für $5/Monat oder $50/Jahr.",
+        "subscribeAnnual": "Über Stripe abonnieren — $50/Jahr",
+        "annualBillingSummary": "$50 werden jährlich abgerechnet, inklusive 1.000 Prompt-Credits, die jedem Abrechnungsmonat gutgeschrieben werden.",
+        "renewalCanceled": "Die Verlängerung wurde gekündigt. Premium-Zugang und die monatlich bereitgestellten Credits bleiben bis zum Ende deines bezahlten Zeitraums {{date}}.",
+        "annualTerms": "$50 werden jährlich abgerechnet. Du sparst $10 gegenüber 12 monatlichen Zahlungen. Beinhaltet 1.000 Prompt-Credits pro Abrechnungsmonat. Verlängert sich jährlich; kündige die Verlängerung jederzeit und behalte Zugang und geplante Credits bis zum Ende deines bezahlten Jahres.",
+        "monthlyTerms": "$5 werden monatlich abgerechnet, inklusive 1.000 Prompt-Credits pro bezahltem Monat.",
+        "billingTitle": "Premium-Abrechnung",
+        "switchAnnual": "Bei Verlängerung auf $50/Jahr umstellen",
+        "switchMonthly": "Bei Verlängerung auf $5/Monat umstellen",
+        "scheduledAnnual": "Dein Abonnement wird auf $50/Jahr umgestellt, wenn dein aktueller bezahlter Zeitraum endet.",
+        "scheduledMonthly": "Dein Abonnement wird auf $5/Monat umgestellt, wenn dein aktuell bezahltes Jahr endet.",
+        "keepCurrentPlan": "Aktuelles Abrechnungsintervall beibehalten",
+        "switchTerms": "Änderungen gelten ab der nächsten Verlängerung. Deine aktuell bezahlte Zeit und die enthaltenen Credits bleiben erhalten. Wenn die Verlängerung gekündigt ist, setze sie in der Abrechnungsverwaltung wieder fort, bevor du den Plan änderst.",
+        "planChangeSaved": "Deine Abrechnungseinstellung wurde gespeichert.",
+        "planChangeFailed": "Änderung der Abrechnung nicht möglich. Wenn die Verlängerung gekündigt ist, setze sie in der Abrechnungsverwaltung wieder fort und versuche es erneut."
     },
     "mcpGuide": {
         "title": "MeadTools mit einem KI-Assistenten verbinden",
