@@ -16,7 +16,6 @@ import {
 import { canReleasePaymentRestrictedChat } from "./credit-payment-recovery-eligibility";
 import { calculateCreditRefundReconciliation } from "./credit-payment-recovery-math";
 import { getStripeClient, stripeDashboardDisputeUrl } from "./stripe";
-import { PREMIUM_MONTHLY_CHAT_CREDITS } from "@meadtools/premium-domain";
 import {
   paymentRecoveryCheckoutDisposition,
   shouldReplayStoredDispute,
@@ -456,6 +455,7 @@ export async function getCreditPaymentRecoveryAdministration() {
         select: {
           user_id: true,
           invoice_id: true,
+          granted_credits: true,
           user: {
             select: {
               email: true,
@@ -510,7 +510,7 @@ export async function getCreditPaymentRecoveryAdministration() {
         recovery.checkout?.pack_id ??
         `premium:${recovery.premium_invoice!.invoice_id}`,
       packCredits:
-        recovery.checkout?.credit_amount ?? PREMIUM_MONTHLY_CHAT_CREDITS,
+        recovery.checkout?.credit_amount ?? recovery.premium_invoice!.granted_credits,
     };
   });
 }
@@ -801,6 +801,8 @@ async function processPremiumRefund(
     subscription_id: string;
     amount_paid_cents: number;
     refunded_amount_cents: number;
+    billing_interval: string;
+    granted_credits: number;
   },
 ): Promise<CreditPaymentRecoveryResult> {
   const existing = await tx.credit_payment_recoveries.findUnique({
@@ -809,6 +811,12 @@ async function processPremiumRefund(
   if (existing) {
     await markStoredRefundProcessed(tx, event.id);
     return "duplicate";
+  }
+  if (invoice.billing_interval === "year") {
+    // Even partial refunds stop future delivery until the paid term is reconciled.
+    await tx.premium_stripe_invoices.update({
+      where: { invoice_id: invoice.invoice_id }, data: { allowances_stopped_at: new Date() },
+    });
   }
   const prior = await tx.credit_payment_recoveries.aggregate({
     where: {
@@ -820,13 +828,17 @@ async function processPremiumRefund(
   let reconciliation;
   try {
     if (event.currency !== "usd") throw new Error("Refund currency mismatch.");
+    if (invoice.billing_interval === "year" && event.amount_cents + (prior._sum.amount_cents ?? 0) < invoice.amount_paid_cents) {
+      throw new Error("Partial annual refunds require a reviewed access and allowance adjustment.");
+    }
     reconciliation = calculateCreditRefundReconciliation({
-      creditAmount: PREMIUM_MONTHLY_CHAT_CREDITS,
+      creditAmount: Math.max(1, invoice.granted_credits),
       paymentAmountCents: invoice.amount_paid_cents,
       priorRefundedAmountCents: prior._sum.amount_cents ?? 0,
       priorRevokedCredits: Math.max(0, -(prior._sum.credit_delta ?? 0)),
       refundAmountCents: event.amount_cents,
     });
+    if (invoice.granted_credits === 0) reconciliation.creditsToRevoke = 0;
   } catch {
     await getLockedCreditBalanceInTransaction(tx, invoice.user_id);
     await tx.credit_payment_recoveries.create({

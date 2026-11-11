@@ -18,7 +18,7 @@ test("identical divergent trees reconcile into preview without modifying main; r
   const root = mkdtempSync(join(tmpdir(), "meadtools-sync-"));
   const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).trim();
   try {
-    git("init"); git("config", "user.name", "Fixture"); git("config", "user.email", "fixture@example.invalid");
+    git("init", "--initial-branch=fixture-base"); git("config", "user.name", "Fixture"); git("config", "user.email", "fixture@example.invalid");
     writeFileSync(join(root, "file"), "same\n"); git("add", "."); git("commit", "-m", "base");
     git("branch", "main"); git("branch", "preview");
     git("checkout", "main"); git("commit", "--allow-empty", "-m", "production publication");

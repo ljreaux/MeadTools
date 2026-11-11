@@ -5032,6 +5032,35 @@
               1000
             ]
           },
+          "annualPriceCents": {
+            "type": "number",
+            "enum": [
+              5000
+            ]
+          },
+          "annualSubscriptionsEnabled": {
+            "type": "boolean"
+          },
+          "billingInterval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
+            "nullable": true
+          },
+          "scheduledBillingInterval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
+            "nullable": true
+          },
+          "renewalCanceled": {
+            "type": "boolean",
+            "default": false
+          },
           "subscriptionsEnabled": {
             "type": "boolean"
           },
@@ -5054,9 +5083,30 @@
           "stripeLinked",
           "monthlyPriceCents",
           "monthlyChatCredits",
+          "annualPriceCents",
+          "annualSubscriptionsEnabled",
+          "billingInterval",
+          "scheduledBillingInterval",
+          "renewalCanceled",
           "subscriptionsEnabled",
           "kofiJoinUrl",
           "mcpEnabled"
+        ]
+      },
+      "PremiumCheckoutRequestBody": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ],
+            "default": "month"
+          }
+        },
+        "required": [
+          "interval"
         ]
       },
       "PremiumCheckoutResponse": {
@@ -5069,6 +5119,40 @@
         },
         "required": [
           "url"
+        ]
+      },
+      "PremiumPlanChangeRequestBody": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ]
+          }
+        },
+        "required": [
+          "interval"
+        ]
+      },
+      "PremiumPlanChangeResponse": {
+        "type": "object",
+        "properties": {
+          "interval": {
+            "type": "string",
+            "enum": [
+              "month",
+              "year"
+            ]
+          },
+          "effectiveAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "interval",
+          "effectiveAt"
         ]
       },
       "PremiumPortalResponse": {
@@ -15306,7 +15390,7 @@
     "/account/premium/stripe/checkout": {
       "post": {
         "operationId": "post-account-premium-stripe-checkout",
-        "summary": "Create a monthly premium Stripe Checkout Session when sales are enabled.",
+        "summary": "Create a premium Stripe Checkout Session for the selected billing interval.",
         "description": "",
         "tags": [
           "Account"
@@ -15317,6 +15401,15 @@
             "BearerAuth": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PremiumCheckoutRequestBody"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",
@@ -15324,6 +15417,113 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PremiumCheckoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HTTP 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/premium/stripe/plan": {
+      "post": {
+        "operationId": "post-account-premium-stripe-plan",
+        "summary": "Schedule a Premium billing interval change at the end of the current paid period.",
+        "description": "",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PremiumPlanChangeRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumPlanChangeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiumErrorResponse"
                 }
               }
             }

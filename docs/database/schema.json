@@ -1,7 +1,7 @@
 {
   "fingerprint": {
-    "schema": "06cb9f390a44ef726570b7246e0ef388b68baca80c93bfa2716f4800d4ee6b15",
-    "migrations": "2e545d0e77f604d87f3ef690173c02a39aec97d8164fa8c69478bef66d709542"
+    "schema": "429d157d467fc41f23a07bfe8633943ea40805f1378ae848b85116b61ab9ab73",
+    "migrations": "6d4b4e44c1955b758185faa41edb298ce48b925ffc05ac49e3d0c6cd34051344"
   },
   "migrations": [
     {
@@ -183,6 +183,10 @@
     {
       "name": "20261110000000_add_mcp_draft_handoffs",
       "sha256": "2da20da75a00ab5e29c23fb521d13803e4950b744ac817a359407b545b63a3b2"
+    },
+    {
+      "name": "20261110010000_annual_premium_allowances",
+      "sha256": "3b5ee6c6056f5a665f400c63ed8839caabeeb2614d956a6ebaa41af108115fe0"
     }
   ],
   "models": [
@@ -10750,6 +10754,90 @@
       ]
     },
     {
+      "name": "premium_stripe_allowances",
+      "table": "premium_stripe_allowances",
+      "area": "billing",
+      "documentation": "Monthly credit deliveries paid for by one annual invoice.",
+      "fields": [
+        {
+          "name": "invoice_id",
+          "column": "invoice_id",
+          "type": "String",
+          "nativeType": "VarChar(255)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [
+            "premium_stripe_allowances_invoice"
+          ],
+          "uniqueGroups": []
+        },
+        {
+          "name": "allowance_index",
+          "column": "allowance_index",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": true,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "due_at",
+          "column": "due_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "granted_at",
+          "column": "granted_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        }
+      ],
+      "primaryKey": [
+        "invoice_id",
+        "allowance_index"
+      ],
+      "unique": [
+        [
+          "invoice_id",
+          "allowance_index"
+        ]
+      ],
+      "indexes": [
+        "@@id([invoice_id, allowance_index])",
+        "@@index([granted_at, due_at])"
+      ]
+    },
+    {
       "name": "premium_stripe_checkouts",
       "table": "premium_stripe_checkouts",
       "area": "billing",
@@ -10976,6 +11064,53 @@
           "uniqueGroups": []
         },
         {
+          "name": "billing_interval",
+          "column": "billing_interval",
+          "type": "String",
+          "nativeType": "VarChar(8)",
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": "month",
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "granted_credits",
+          "column": "granted_credits",
+          "type": "Int",
+          "nativeType": null,
+          "nullable": false,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "default": 1000,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "allowances_stopped_at",
+          "column": "allowances_stopped_at",
+          "type": "DateTime",
+          "nativeType": "Timestamptz(6)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
           "name": "created_at",
           "column": "created_at",
           "type": "DateTime",
@@ -11146,6 +11281,21 @@
           "primary": false,
           "unique": false,
           "default": false,
+          "updatedAt": false,
+          "documentation": null,
+          "foreignKeys": [],
+          "uniqueGroups": []
+        },
+        {
+          "name": "scheduled_interval",
+          "column": "scheduled_interval",
+          "type": "String",
+          "nativeType": "VarChar(8)",
+          "nullable": true,
+          "list": false,
+          "enum": false,
+          "primary": false,
+          "unique": false,
           "updatedAt": false,
           "documentation": null,
           "foreignKeys": [],
@@ -13663,6 +13813,22 @@
       ],
       "to": [
         "id"
+      ],
+      "parentCardinality": "1",
+      "childCardinality": "0..N",
+      "onDelete": "Restrict",
+      "onUpdate": "Cascade (Prisma default)"
+    },
+    {
+      "id": "premium_stripe_allowances_invoice",
+      "child": "premium_stripe_allowances",
+      "parent": "premium_stripe_invoices",
+      "name": "premium_stripe_allowancesTopremium_stripe_invoices",
+      "from": [
+        "invoice_id"
+      ],
+      "to": [
+        "invoice_id"
       ],
       "parentCardinality": "1",
       "childCardinality": "0..N",

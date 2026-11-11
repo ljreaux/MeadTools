@@ -4,6 +4,8 @@ import {
   kofiLinkClaimRequestBodySchema,
   kofiLinkRequestBodySchema,
   premiumAccessResponseSchema,
+  premiumCheckoutRequestBodySchema,
+  premiumPlanChangeRequestBodySchema,
 } from "../src/zod/premium";
 
 test("premium status exposes planned bundle without implying sales are open", () => {
@@ -17,6 +19,7 @@ test("premium status exposes planned bundle without implying sales are open", ()
     stripeLinked: false,
     monthlyPriceCents: 500,
     monthlyChatCredits: 1000,
+    annualPriceCents: 5000, annualSubscriptionsEnabled: false, billingInterval: null, scheduledBillingInterval: null,
     subscriptionsEnabled: false,
     kofiJoinUrl: null,
     mcpEnabled: false,
@@ -31,6 +34,7 @@ test("premium status exposes planned bundle without implying sales are open", ()
     stripeLinked: false,
     monthlyPriceCents: 600,
     monthlyChatCredits: 1000,
+    annualPriceCents: 5000, annualSubscriptionsEnabled: false, billingInterval: null, scheduledBillingInterval: null,
     subscriptionsEnabled: false,
     kofiJoinUrl: null,
     mcpEnabled: false,
@@ -42,4 +46,14 @@ test("Ko-fi link requests accept one address or one bounded claim token", () => 
   assert.equal(kofiLinkRequestBodySchema.safeParse({ email: "payer@example.com", userId: 42 }).success, false);
   assert.equal(kofiLinkClaimRequestBodySchema.safeParse({ token: "x".repeat(43) }).success, true);
   assert.equal(kofiLinkClaimRequestBodySchema.safeParse({ token: "short" }).success, false);
+});
+
+ test("premium checkout defaults old callers to monthly and rejects arbitrary prices", () => {
+  assert.deepEqual(premiumCheckoutRequestBodySchema.parse({}), { interval: "month" });
+  assert.deepEqual(premiumCheckoutRequestBodySchema.parse({ interval: "year" }), { interval: "year" });
+  for (const body of [{ interval: "week" }, { interval: "year", price: "price_attacker" }, { userId: 42 }]) {
+    assert.equal(premiumCheckoutRequestBodySchema.safeParse(body).success, false);
+  }
+  assert.equal(premiumPlanChangeRequestBodySchema.safeParse({}).success, false);
+  assert.equal(premiumPlanChangeRequestBodySchema.safeParse({ interval: "month" }).success, true);
 });

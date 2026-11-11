@@ -75,3 +75,19 @@ test("ambiguous requests past Stripe idempotency retention fail closed", async (
   await assert.rejects(resumePremiumCheckout(f.deps), /reconcile/);
   assert.equal(f.creates(), 0);
 });
+
+test("choosing annual expires an unpaid monthly checkout before reserving a new one", async () => {
+  const f = fixture();
+  await f.deps.reserve();
+  f.current().params.line_items = [{ price: "price_month", quantity: 1 }];
+  await resumePremiumCheckout(f.deps);
+  const previous = f.current().session_id!;
+  const replace = f.deps.replace;
+  const result = await resumePremiumCheckout({ ...f.deps, requestedPriceId: "price_year",
+    expire: async (id) => { const session = f.sessions.get(id)!; session.status = "expired"; return session; },
+    replace: async (id) => { await replace(id); f.current().params.line_items = [{ price: "price_year", quantity: 1 }]; },
+  });
+  assert.equal(f.sessions.get(previous)!.status, "expired");
+  assert.equal(f.creates(), 2);
+  assert.equal(result.url, f.sessions.get(f.current().session_id!)!.url);
+});

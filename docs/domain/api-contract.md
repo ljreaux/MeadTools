@@ -416,3 +416,21 @@ which rechecks visibility. Removing a photo, its entry, its record or the
 owner's account clears any cover that references it in the same transaction, so
 a non-null value always names a live image. The generic recipe update ignores
 `cover_image_id`; covers change only through the cover endpoints.
+
+Annual Premium (#538) adds optional JSON `{interval: "month" | "year"}` to
+`POST /account/premium/stripe/checkout`; an omitted body still selects monthly.
+Unknown intervals and supplied price/account fields return 400. Account Premium
+status includes the $50 annual price, annual-sales availability, current billing
+interval and a pending interval change. `POST /account/premium/stripe/plan`
+schedules a verified owned Stripe subscription to change interval at renewal,
+with `{interval, effectiveAt}` returned; no current-period proration occurs.
+This is an approved addition excluded from legacy path parity. The internal
+`/cron/premium-allowances` delivery endpoint requires cron authentication and is
+excluded from public OpenAPI like the existing maintenance routes.
+
+The reviewed annual-Premium document SHA-256 is
+`fe5fcc40a92bb62c9469135f09d5773b9e1f484173ba44928e380c1cd6d02e96`.
+Generation preloads a small compatibility fix for `next-openapi-gen` 0.10.5:
+an empty type-alias map is still a completed scan. The original CLI, schema
+resolver and normalizer remain in use; an integration regression verifies
+that separate schema lookups do not repeatedly rescan the project.

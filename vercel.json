@@ -5,6 +5,10 @@
   "outputDirectory": "apps/web/.next",
   "crons": [
     {
+      "path": "/api/cron/premium-allowances",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/daily-recipe-activity",
       "schedule": "0 2 * * *"
     },

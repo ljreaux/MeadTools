@@ -2,7 +2,7 @@
 
 Generated from `apps/web/prisma/schema.prisma`; regenerate with `npm run db:erd`. Do not edit generated files by hand.
 
-**71 tables · 613 columns · 85 foreign keys · 19 enums.**
+**72 tables · 621 columns · 86 foreign keys · 19 enums.**
 
 Open [the interactive viewer](./erd.html) locally in your browser for search, zoom, pan, and focused areas. It works offline and contains no account or database data.
 
@@ -29,9 +29,9 @@ The SVGs below are directly viewable in the repository and on GitHub:
 
 ## Schema and migration fingerprints
 
-Schema SHA-256: `06cb9f390a44ef726570b7246e0ef388b68baca80c93bfa2716f4800d4ee6b15`
+Schema SHA-256: `429d157d467fc41f23a07bfe8633943ea40805f1378ae848b85116b61ab9ab73`
 
-Migration-set SHA-256: `2e545d0e77f604d87f3ef690173c02a39aec97d8164fa8c69478bef66d709542`
+Migration-set SHA-256: `6d4b4e44c1955b758185faa41edb298ce48b925ffc05ac49e3d0c6cd34051344`
 
 Both fingerprints are checked by `npm run db:erd:check`; adding or editing a migration requires regenerating these artifacts even when model geometry is unchanged.
 
@@ -96,6 +96,7 @@ Both fingerprints are checked by `npm run db:erd:check`; adding or editing a mig
 - [premium_kofi_links](#table-premium_kofi_links) — Billing & premium
 - [premium_kofi_payments](#table-premium_kofi_payments) — Billing & premium
 - [premium_memberships](#table-premium_memberships) — Billing & premium
+- [premium_stripe_allowances](#table-premium_stripe_allowances) — Billing & premium
 - [premium_stripe_checkouts](#table-premium_stripe_checkouts) — Billing & premium
 - [premium_stripe_invoices](#table-premium_stripe_invoices) — Billing & premium
 - [premium_stripe_payments](#table-premium_stripe_payments) — Billing & premium
@@ -1840,6 +1841,32 @@ Foreign keys:
 
 - (`user_id`) → `users` (`id`); delete **Restrict**, update **Cascade (Prisma default)**.
 
+<a id="table-premium_stripe_allowances"></a>
+
+### premium_stripe_allowances
+
+Prisma model: `premium_stripe_allowances`. Area: Billing & premium.
+
+Monthly credit deliveries paid for by one annual invoice.
+
+| Column | Type | Keys | Default / behavior |
+| --- | --- | --- | --- |
+| `invoice_id` | `VarChar(255)` | PK, FK |  |
+| `allowance_index` | `Int` | PK |  |
+| `due_at` | `Timestamptz(6)` |  |  |
+| `granted_at` | `Timestamptz(6)?` |  |  |
+
+Primary key: `invoice_id`, `allowance_index`.
+
+Declared table indexes/constraints:
+
+- `@@id([invoice_id, allowance_index])`
+- `@@index([granted_at, due_at])`
+
+Foreign keys:
+
+- (`invoice_id`) → `premium_stripe_invoices` (`invoice_id`); delete **Restrict**, update **Cascade (Prisma default)**.
+
 <a id="table-premium_stripe_checkouts"></a>
 
 ### premium_stripe_checkouts
@@ -1879,6 +1906,9 @@ One paid Stripe invoice per premium allowance. The invoice ID makes\nwebhook ret
 | `paid_through` | `Timestamptz(6)` |  |  |
 | `amount_paid_cents` | `Int` |  |  |
 | `refunded_amount_cents` | `Int` |  | 0 |
+| `billing_interval` | `VarChar(8)` |  | &quot;month&quot; |
+| `granted_credits` | `Int` |  | 1000 |
+| `allowances_stopped_at` | `Timestamptz(6)?` |  |  |
 | `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
 
 Primary key: `invoice_id`.
@@ -1930,6 +1960,7 @@ Stripe customer and subscription identity for account billing management.
 | `subscription_id` | `VarChar(255)` | UK |  |
 | `status` | `VarChar(32)` |  |  |
 | `cancel_at_period_end` | `Boolean` |  | false |
+| `scheduled_interval` | `VarChar(8)?` |  |  |
 | `created_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} |
 | `updated_at` | `Timestamptz(6)` |  | {&quot;name&quot;:&quot;now&quot;,&quot;args&quot;:[]} @updatedAt |
 

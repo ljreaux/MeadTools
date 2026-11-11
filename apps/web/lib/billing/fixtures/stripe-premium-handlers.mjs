@@ -13,8 +13,8 @@ let currentLink = { user_id: 42, subscription_id: "sub_1", customer_id: "cus_1",
 let subscription = {
   id: "sub_1", customer: "cus_1", status: "active", cancel_at_period_end: false,
   metadata: { meadtools_user_id: "42" },
-  items: { data: [{ id: "si_1", current_period_end: 2_000_000_000,
-    price: { id: "price_premium", currency: "usd", unit_amount: 500, recurring: { interval: "month" } } }] },
+  items: { data: [{ id: "si_1", quantity: 1, current_period_end: 2_000_000_000,
+    price: { id: "price_premium", currency: "usd", unit_amount: 500, recurring: { interval: "month", interval_count: 1 } } }] },
 };
 let retrieves = 0;
 let updates = [];
@@ -34,6 +34,7 @@ const tx = new Proxy({
     throw new Error(`Unmocked SQL: ${sql}`);
   },
   premium_stripe_subscriptions: {
+    updateMany: async () => ({ count: 0 }),
     findUnique: async () => { assert.ok(locked); return currentLink; },
     update: async ({ data }) => { assert.ok(locked); updates.push(data); },
     upsert: async ({ create, update }) => { currentLink = currentLink ? { ...currentLink, ...update } : create; },
@@ -44,6 +45,7 @@ const tx = new Proxy({
     upsert: async ({ create, update }) => { membership = membership ? { ...membership, ...update } : { ...create, revoked_at: null }; },
   },
   premium_stripe_invoices: {
+    updateMany: async () => ({ count: 0 }),
     createMany: async ({ data }) => {
       if (invoices.has(data.invoice_id)) return { count: 0 };
       invoices.set(data.invoice_id, data); return { count: 1 };
