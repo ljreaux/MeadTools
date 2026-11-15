@@ -3667,5 +3667,20 @@
         "includeUse": "In diesem Ansatz zählen",
         "includeUseNamed": "Zähle {{name}} in diesem Ansatz wieder mit",
         "allExcluded": "Nichts zu berechnen: Alle Positionen wurden aufgrund deiner Auswahl ausgeschlossen."
+    },
+    "mobileNav": {
+        "brews": "Ansätze",
+        "recipes": "Rezepte",
+        "tools": "Werkzeuge",
+        "inventory": "Bestand",
+        "account": "Konto",
+        "placeholder": {
+            "title": "Kommt in einem späteren Update",
+            "recipes": "Durchsuche deine Rezepte und lege hier neue an.",
+            "tools": "Rechner für Nährstoffe, Stabilisatoren, Alkoholgehalt und andere findest du hier.",
+            "inventory": "Dein Bestand, fertige Gebräue und Ausrüstung werden hier angezeigt."
+        },
+        "signedInAs": "Angemeldet als",
+        "version": "Version {{version}}"
     }
 }
