@@ -88,6 +88,8 @@ export default function AddEntryScreen() {
   const [stockChoices, setStockChoices] = useState<Record<string, StockChoice>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const deduction = useRef<CreateBrewEntryRequestBody | null>(null);
+  // Mirrors `deduction` for rendering: a retry must resend the same request.
+  const [deductionPending, setDeductionPending] = useState(false);
   const submitting = useRef(false);
   const queuedRecords = useBrewEntryOutboxRecords(brewId);
   const locale = Localization.getLocales()[0];
@@ -316,6 +318,7 @@ export default function AddEntryScreen() {
         client_entry_id: Crypto.randomUUID(),
         inventory: { mode: "items", operation_id: Crypto.randomUUID(), items: bindings, expected: [] }
       };
+      setDeductionPending(true);
       try {
         const brew = await apiClient.createBrewEntry(brewId, deduction.current);
         queryClient.setQueryData(["brew", session?.id, brewId], brew);
@@ -326,6 +329,7 @@ export default function AddEntryScreen() {
         const code = inventoryErrorCode(error);
         if (error instanceof MeadToolsApiError && error.status >= 400 && error.status < 500) {
           deduction.current = null;
+          setDeductionPending(false);
         }
         setServerError(code
           ? t(`inventory.errors.${code}`, { defaultValue: t("mobileBrews.addEntry.addition.stock.failed") })
@@ -379,7 +383,7 @@ export default function AddEntryScreen() {
       stockError = error instanceof InventoryError ? error.code : "INCOMPATIBLE_UNITS";
     }
   }
-  const tracked = bindings.length > 0 || Boolean(deduction.current);
+  const tracked = bindings.length > 0 || deductionPending;
 
   if (!outbox || !brewId) {
     return (
@@ -823,9 +827,9 @@ export default function AddEntryScreen() {
           setSaveFailed(false);
         }, (option) => t(`mobileBrews.timeline.types.${option}`))}
 
-        {deduction.current ? null : renderFields()}
+        {deductionPending ? null : renderFields()}
 
-        {isTextType || deduction.current ? null : field(
+        {isTextType || deductionPending ? null : field(
           t("mobileBrews.addEntry.noteLabel"),
           <TextInput
             accessibilityLabel={t("mobileBrews.addEntry.noteLabel")}

@@ -23,6 +23,7 @@ import {
   type MobileSession,
   saveSession
 } from "@/auth/session-storage";
+import { createSessionHolder } from "@/auth/session-holder";
 import { isAccessTokenExpired } from "@/auth/token";
 
 type SessionContextValue = {
@@ -57,19 +58,19 @@ function SessionProvider({
   children,
   queryClient
 }: PropsWithChildren<{ queryClient: QueryClient }>) {
-  const sessionRef = useRef<MobileSession | null>(null);
+  const [sessionHolder] = useState(createSessionHolder);
   const [session, setSession] = useState<MobileSession | null>(null);
   const [status, setStatus] =
     useState<SessionContextValue["status"]>("loading");
   const [apiClient] = useState(() =>
-    createMobileApiClient(() => sessionRef.current?.accessToken)
+    createMobileApiClient(() => sessionHolder.get()?.accessToken)
   );
 
   const updateSession = useCallback((nextSession: MobileSession | null) => {
-    sessionRef.current = nextSession;
+    sessionHolder.set(nextSession);
     setSession(nextSession);
     setStatus(nextSession ? "authenticated" : "unauthenticated");
-  }, []);
+  }, [sessionHolder]);
 
   useEffect(() => {
     let active = true;
@@ -152,7 +153,7 @@ function SessionProvider({
 
   const getAccessTokenForUser = useCallback(
     async (userId: number, options?: { forceRefresh?: boolean }) => {
-      const current = sessionRef.current;
+      const current = sessionHolder.get();
       if (!current || current.id !== userId) {
         return null;
       }
@@ -170,8 +171,8 @@ function SessionProvider({
             refreshToken: current.refreshToken
           });
           // Never apply a refresh to a session that was replaced meanwhile.
-          if (sessionRef.current !== current) {
-            return sessionRef.current;
+          if (sessionHolder.get() !== current) {
+            return sessionHolder.get();
           }
           const nextSession = { ...current, accessToken: refreshed.accessToken };
           await saveSession(nextSession);
@@ -192,11 +193,11 @@ function SessionProvider({
 
       const refreshedSession = await refreshRef.current;
       return refreshedSession?.id === userId &&
-        sessionRef.current === refreshedSession
+        sessionHolder.get() === refreshedSession
         ? refreshedSession.accessToken
         : null;
     },
-    [apiClient, updateSession]
+    [apiClient, sessionHolder, updateSession]
   );
 
   const signOut = useCallback(async () => {

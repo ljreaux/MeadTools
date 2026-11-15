@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint-config-expo": "~57.0.2",
     "tsx": "^4.19.2",
     "typescript": "~6.0.3"
   },
@@ -54,7 +55,7 @@
     "android": "node ../../scripts/run-mobile-android.mjs",
     "ios": "NODE_PATH=\"$PWD/node_modules\" expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
+    "lint": "expo lint --max-warnings 0",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
