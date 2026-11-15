@@ -475,7 +475,8 @@
       "schema": {
         "type": "string"
       },
-      "required": false
+      "required": true,
+      "description": "Hydrometer token for the MeadTools account receiving the reading."
     }
   ],
   "GET /ingredients": [

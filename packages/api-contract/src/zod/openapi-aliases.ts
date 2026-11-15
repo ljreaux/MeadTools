@@ -373,6 +373,7 @@ import {
   updateAccountInfoErrorResponseSchema,
   updateAccountInfoRequestBodySchema,
   updateAccountInfoResponseSchema,
+  updateAccountInfoValidationErrorResponseSchema,
   updateAdditiveFailureErrorResponseSchema,
   updateAdditiveRequestBodySchema,
   updateAdminUserRequestBodySchema,
@@ -798,6 +799,7 @@ export const TiltIngestRequestBody = tiltIngestRequestBodySchema;
 export const UpdateAccountInfoErrorResponse = updateAccountInfoErrorResponseSchema;
 export const UpdateAccountInfoRequestBody = updateAccountInfoRequestBodySchema;
 export const UpdateAccountInfoResponse = updateAccountInfoResponseSchema;
+export const UpdateAccountInfoValidationErrorResponse = updateAccountInfoValidationErrorResponseSchema;
 export const UpdateAdditiveFailureErrorResponse = updateAdditiveFailureErrorResponseSchema;
 export const UpdateAdditiveRequestBody = updateAdditiveRequestBodySchema;
 export const UpdateAdminUserRequestBody = updateAdminUserRequestBodySchema;

@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "a75746a58b998a155727425875a54b5823eb4c767425a15f20747ad46b47923d";
-const preZodPathsCanonicalSha256 =
-  "5474c09299fc8dbcd5bb25a54559d9bd19cca3dec0b0ee22f05f302dab0a7aa3";
+  "f74c9658d870d8999ec69e025def506caf66742f9d3bf6b3ed086ff049b45dd1";
+const retainedHistoricalPathsCanonicalSha256 =
+  "04af6c89cd661d8d14053ee217d9121e02a835ba0241109c2bb55b21ec2d347e";
 
 function sortJson(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortJson);
@@ -38,6 +38,96 @@ test("inventory OpenAPI uses actual shared quantity definitions and an optional 
   assert.ok(schemas.DeleteBrewEntryRequestBody);
 });
 
+test("public OpenAPI excludes operational, hosted chat, and app-only account routes", async () => {
+  const document = JSON.parse(await readFile(new URL("../../../apps/web/public/openapi.json", import.meta.url), "utf8"));
+
+  const internalNamespace = /^\/(?:admin|webhooks|cron|chat)(?:\/|$)|^\/account\/(?:credits|premium|release-emails)(?:\/|$)/;
+  assert.deepEqual(Object.keys(document.paths).filter((path) => internalNamespace.test(path)), []);
+  assert.equal(document.paths["/release-emails/unsubscribe"], undefined);
+
+  for (const path of ["/auth/login", "/account/equipment", "/account/inventory"]) {
+    assert.ok(document.paths[path], `${path} should remain available in the public reference`);
+  }
+});
+
+test("public OpenAPI excludes staff methods and retains public methods on shared paths", async () => {
+  const document = JSON.parse(await readFile(new URL("../../../apps/web/public/openapi.json", import.meta.url), "utf8"));
+  assert.equal(document.paths["/users"], undefined);
+  assert.equal(document.paths["/users/{id}"], undefined);
+  assert.deepEqual(Object.keys(document.paths["/recipes"]), ["post"]);
+  for (const path of [
+    "/additives", "/additives/{id}", "/bjcp-ingredients",
+    "/ingredients", "/ingredients/{id}", "/yeasts", "/yeasts/{id}",
+  ]) {
+    assert.deepEqual(Object.keys(document.paths[path]), ["get"], path);
+  }
+  for (const pathItem of Object.values(document.paths) as Record<string, { tags?: string[] }>[]) {
+    for (const operation of Object.values(pathItem)) {
+      assert.ok(!operation.tags?.includes("Admin"));
+    }
+  }
+});
+
+test("every local OpenAPI reference resolves", async () => {
+  const document = JSON.parse(await readFile(new URL("../../../apps/web/public/openapi.json", import.meta.url), "utf8")) as Record<string, unknown>;
+  const unresolved = new Set<string>();
+
+  function visit(value: unknown) {
+    if (!value || typeof value !== "object") return;
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "$ref" && typeof child === "string" && child.startsWith("#")) {
+        const pointer = decodeURIComponent(child.slice(1));
+        if (!pointer) continue;
+        if (!pointer.startsWith("/")) {
+          unresolved.add(child);
+          continue;
+        }
+        const tokens = pointer.slice(1).split("/");
+        let target: unknown = document;
+        for (const token of tokens) {
+          const name = token.replace(/~1/g, "/").replace(/~0/g, "~");
+          if (!target || typeof target !== "object" || !Object.hasOwn(target, name)) {
+            unresolved.add(child);
+            break;
+          }
+          target = (target as Record<string, unknown>)[name];
+        }
+      } else {
+        visit(child);
+      }
+    }
+  }
+
+  visit(document);
+  assert.deepEqual([...unresolved].sort(), []);
+});
+
+test("Tilt OpenAPI requires a query token and documents both request encodings", async () => {
+  const document = JSON.parse(await readFile(new URL("../../../apps/web/public/openapi.json", import.meta.url), "utf8"));
+  const { parameters, requestBody } = document.paths["/hydrometer/tilt"].post;
+  assert.ok(parameters.some((param: { in: string; name: string; required: boolean }) =>
+    param.in === "query" && param.name === "token" && param.required));
+  assert.equal(requestBody.required, true);
+  for (const contentType of ["application/json", "application/x-www-form-urlencoded"]) {
+    assert.deepEqual(requestBody.content[contentType].schema, {
+      $ref: "#/components/schemas/TiltIngestRequestBody",
+    });
+  }
+});
+
+test("account update OpenAPI exposes only allowed request fields and documents rejection", async () => {
+  const document = JSON.parse(await readFile(new URL("../../../apps/web/public/openapi.json", import.meta.url), "utf8"));
+  const body = document.components.schemas.UpdateAccountInfoRequestBody;
+  assert.deepEqual(Object.keys(body.properties).sort(), [
+    "email", "password", "public_username", "show_google_avatar",
+  ]);
+  assert.equal(body.additionalProperties, false);
+  assert.deepEqual(
+    document.paths["/auth/account-info"].patch.responses["400"].content["application/json"].schema,
+    { $ref: "#/components/schemas/UpdateAccountInfoValidationErrorResponse" },
+  );
+});
+
 test("generated OpenAPI document matches the reviewed Zod baseline", async () => {
   const documentUrl = new URL(
     "../../../apps/web/public/openapi.json",
@@ -56,7 +146,7 @@ test("generated OpenAPI document matches the reviewed Zod baseline", async () =>
   );
 });
 
-test("approved API additions preserve all pre-existing endpoint documentation", async () => {
+test("approved API additions preserve retained historical endpoint documentation", async () => {
   const documentUrl = new URL(
     "../../../apps/web/public/openapi.json",
     import.meta.url,
@@ -64,7 +154,12 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   const document = JSON.parse(await readFile(documentUrl, "utf8")) as {
     paths: Record<string, {
       get?: { responses?: Record<string, unknown> };
-      post?: { description?: string; parameters?: unknown[]; responses?: Record<string, unknown> };
+      post?: {
+        description?: string;
+        parameters?: unknown[];
+        requestBody?: { required?: boolean; content: Record<string, unknown> };
+        responses?: Record<string, unknown>;
+      };
       patch?: { responses?: Record<string, unknown> };
       delete?: { requestBody?: unknown; responses?: Record<string, unknown> };
     }>;
@@ -104,6 +199,15 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
       };
     }
   }
+  // Tilt now documents the required query token and both accepted encodings.
+  const tilt = pathsWithoutApprovedAdditions["/hydrometer/tilt"]?.post;
+  if (tilt?.requestBody) {
+    tilt.parameters = [{ in: "query", name: "token", schema: { type: "string" }, required: false }];
+    delete tilt.requestBody.required;
+    delete tilt.requestBody.content["application/x-www-form-urlencoded"];
+  }
+  // Invalid account updates now return a documented 400.
+  delete pathsWithoutApprovedAdditions["/auth/account-info"]?.patch?.responses?.["400"];
   if (pathsWithoutApprovedAdditions["/brews/{brew_id}"]?.get?.responses) {
     pathsWithoutApprovedAdditions["/brews/{brew_id}"].get.responses["404"] = {
       description: "Not Found",
@@ -146,39 +250,11 @@ test("approved API additions preserve all pre-existing endpoint documentation", 
   delete pathsWithoutApprovedAdditions["/account/inventory/{stock_id}"];
   delete pathsWithoutApprovedAdditions["/account/equipment"];
   delete pathsWithoutApprovedAdditions["/account/equipment/{equipment_id}"];
-  delete pathsWithoutApprovedAdditions["/chat/context"];
-  delete pathsWithoutApprovedAdditions["/chat/recipe"];
-  delete pathsWithoutApprovedAdditions["/chat/conversations"];
-  delete pathsWithoutApprovedAdditions["/chat/conversations/{conversationId}"];
-  delete pathsWithoutApprovedAdditions["/account/credits"];
-  delete pathsWithoutApprovedAdditions["/account/credits/checkout"];
-  delete pathsWithoutApprovedAdditions["/account/credits/history"];
-  delete pathsWithoutApprovedAdditions["/account/premium"];
-  delete pathsWithoutApprovedAdditions["/account/premium/kofi/link"];
-  delete pathsWithoutApprovedAdditions["/account/premium/kofi/claim"];
-  delete pathsWithoutApprovedAdditions["/account/premium/mcp/tokens"];
-  delete pathsWithoutApprovedAdditions["/account/premium/mcp/tokens/{id}"];
-  delete pathsWithoutApprovedAdditions["/account/premium/stripe/checkout"];
-  delete pathsWithoutApprovedAdditions["/account/premium/stripe/portal"];
-  delete pathsWithoutApprovedAdditions["/account/release-emails"];
-  delete pathsWithoutApprovedAdditions["/release-emails/unsubscribe"];
-  delete pathsWithoutApprovedAdditions["/webhooks/stripe"];
-  delete pathsWithoutApprovedAdditions["/webhooks/kofi"];
-  delete pathsWithoutApprovedAdditions["/chat/access"];
-  delete pathsWithoutApprovedAdditions["/admin/chat-access"];
-  delete pathsWithoutApprovedAdditions["/admin/chat-access/grants"];
-  delete pathsWithoutApprovedAdditions["/admin/chat-access/grants/{userId}"];
-  delete pathsWithoutApprovedAdditions["/admin/chat-access/credits"];
-  delete pathsWithoutApprovedAdditions["/admin/chat-access/payment-recoveries"];
-  delete pathsWithoutApprovedAdditions[
-    "/admin/chat-access/payment-recoveries/{recoveryId}"
-  ];
-  delete pathsWithoutApprovedAdditions["/admin/chat/usage"];
   delete pathsWithoutApprovedAdditions["/brews/{brew_id}/entries/batch"];
   const canonicalPaths = JSON.stringify(
     sortJson(pathsWithoutApprovedAdditions),
   );
   const actualHash = createHash("sha256").update(canonicalPaths).digest("hex");
 
-  assert.equal(actualHash, preZodPathsCanonicalSha256);
+  assert.equal(actualHash, retainedHistoricalPathsCanonicalSha256);
 });

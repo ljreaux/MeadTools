@@ -52,7 +52,7 @@ export async function GET() {
  * @add 500:CreateBjcpIngredientFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function POST(req: NextRequest) {
   // Check for admin privileges

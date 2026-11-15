@@ -157,16 +157,16 @@ export const accountInfoNotFoundErrorResponseSchema =
 export const accountInfoFetchErrorResponseSchema =
   z.object({ error: z.literal("Failed to fetch account info") });
 export const updateAccountInfoRequestBodySchema =
-  z.object({
+  z.strictObject({
     email: z.string().optional(),
-    password: z.string().optional(),
+    password: z.string().min(1).optional(),
     public_username: z.string().optional(),
-    google_id: z.string().optional(),
-    hydro_token: z.string().optional(),
-    role: z.string().optional()
+    show_google_avatar: z.boolean().optional()
   });
 export const updateAccountInfoResponseSchema =
   accountUserResponseObjectSchema.omit({ isGoogleUser: true });
+export const updateAccountInfoValidationErrorResponseSchema =
+  z.object({ error: z.literal("Invalid account update") });
 export const updateAccountInfoErrorResponseSchema =
   z.object({ error: z.literal("Failed to update account info") });
 export const createUsernameRequestBodySchema =

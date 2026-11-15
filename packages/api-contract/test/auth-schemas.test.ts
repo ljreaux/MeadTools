@@ -5,9 +5,31 @@ import {
   loginSuccessResponseSchema,
   refreshTokenFailureErrorResponseSchema,
   registerRequestBodySchema,
+  updateAccountInfoRequestBodySchema,
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema
 } from "../src/zod/auth";
+
+test("account updates accept profile fields and reject mixed requests with protected fields", () => {
+  const profile = {
+    email: "user@example.com",
+    password: "new-password",
+    public_username: "meadmaker",
+    show_google_avatar: false
+  };
+  assert.deepEqual(updateAccountInfoRequestBodySchema.parse(profile), profile);
+  for (const protectedFields of [
+    { role: "admin" },
+    { google_id: "another-account" },
+    { hydro_token: "new-token" },
+    { active: false }
+  ]) {
+    assert.equal(
+      updateAccountInfoRequestBodySchema.safeParse({ ...profile, ...protectedFields }).success,
+      false
+    );
+  }
+});
 
 test("auth schemas preserve existing successful payloads", () => {
   assert.equal(

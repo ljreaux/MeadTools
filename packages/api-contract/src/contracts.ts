@@ -374,6 +374,7 @@ import {
   updateAccountInfoErrorResponseSchema,
   updateAccountInfoRequestBodySchema,
   updateAccountInfoResponseSchema,
+  updateAccountInfoValidationErrorResponseSchema,
   updateAdditiveFailureErrorResponseSchema,
   updateAdditiveRequestBodySchema,
   updateAdminUserRequestBodySchema,
@@ -799,6 +800,7 @@ export type TiltIngestRequestBody = z.infer<typeof tiltIngestRequestBodySchema>;
 export type UpdateAccountInfoErrorResponse = z.infer<typeof updateAccountInfoErrorResponseSchema>;
 export type UpdateAccountInfoRequestBody = z.infer<typeof updateAccountInfoRequestBodySchema>;
 export type UpdateAccountInfoResponse = z.infer<typeof updateAccountInfoResponseSchema>;
+export type UpdateAccountInfoValidationErrorResponse = z.infer<typeof updateAccountInfoValidationErrorResponseSchema>;
 export type UpdateAdditiveFailureErrorResponse = z.infer<typeof updateAdditiveFailureErrorResponseSchema>;
 export type UpdateAdditiveRequestBody = z.infer<typeof updateAdditiveRequestBodySchema>;
 export type UpdateAdminUserRequestBody = z.infer<typeof updateAdminUserRequestBodySchema>;
