@@ -2074,7 +2074,14 @@
         "mL": "mL",
         "pt": "pt",
         "qt": "qt",
-        "units": "Einheiten"
+        "units": "Einheiten",
+        "fl_oz": "fl oz",
+        "g": "g",
+        "gal": "gal",
+        "lb": "lb",
+        "oz": "oz",
+        "tbsp": "tbsp",
+        "tsp": "tsp"
     },
     "unnamedDevice": "Unbenanntes Gerät",
     "credits": {
@@ -2289,7 +2296,7 @@
         "timeline": {
             "activity": "Aktivität",
             "dateUnavailable": "Datum nicht verfügbar",
-            "empty": "Noch keine Aktivitäten im Verlauf. Einträge, die du hier oder im Web hinzufügst, werden hier angezeigt.",
+            "empty": "Noch keine Timeline-Aktivität. Einträge, die du hier oder im Web hinzufügst, werden hier angezeigt.",
             "heading": "Neueste Aktivitäten",
             "packages_one": "{{count}} Paket",
             "packages_other": "{{count}} Pakete",
@@ -2314,6 +2321,174 @@
                 "TEMPERATURE": "Temperatur",
                 "VOLUME": "Volumen"
             }
+        },
+        "bottling": {
+            "action": "Abfüllung erfassen",
+            "offline": "Verbinde dich mit dem Internet, um Abfüllungen zu erfassen, zu korrigieren oder zu entfernen.",
+            "bottles": "Flaschenreihen",
+            "bottleCount": "Flaschenanzahl für Reihe {{index}}",
+            "size": "Flaschengröße",
+            "custom": "Benutzerdefiniert",
+            "customSize": "Benutzerdefinierte Flaschengröße",
+            "addBottle": "Flaschenreihe hinzufügen",
+            "removeRow": "Reihe entfernen",
+            "closures": "Verschlüsse",
+            "closureName": "Name des Verschlusses für Reihe {{index}}",
+            "closureCount": "Anzahl Verschlüsse für Reihe {{index}}",
+            "addClosure": "Verschluss hinzufügen",
+            "volume": "Verpacktes Volumen",
+            "volumeHint": "Leer lassen, um das Gesamtvolumen aus den Flaschenreihen zu verwenden.",
+            "position": "Lagerposition (optional)",
+            "invalid": "Gib ganze positive Stückzahlen, gültige Größen und ein Verpackungsvolumen ein.",
+            "untracked": "Die Verpackung wird ohne Bestandsverfolgung gespeichert. Für Bestandsverfolgung benötigst du Premium.",
+            "confirmRemoval": "Entfernen der Abfüllung bestätigen",
+            "retrySame": "Speichern konnte nicht bestätigt werden. Versuch es erneut, um dieselbe Abfüllung zu prüfen."
+        },
+        "plannedAdditions": {
+            "title": "Geplante Zugaben",
+            "logged": "Erfasst",
+            "queued": "Wartet auf Synchronisation",
+            "manualYeast": "Manuelle Hefe erfassen",
+            "remaining": "Verbleibende Nährstoffe: {{amounts}}",
+            "packetWeight": "Gramm pro Päckchen",
+            "packetWeightRequired": "Gib ein positives Gewicht pro Päckchen an.",
+            "retrySame": "Speichern konnte nicht bestätigt werden. Versuch es erneut, um dieselbe Zugabe zu prüfen."
+        },
+        "addEntry": {
+            "action": "Eintrag hinzufügen",
+            "addition": {
+                "amountLabel": "Menge (optional)",
+                "inventoryHint": "Das ändert den Bestand nicht. Bestandsverfolgung erfordert Premium.",
+                "kindLabel": "Art",
+                "kinds": {
+                    "INGREDIENT": "Zutat",
+                    "NUTRIENT": "Nährstoff",
+                    "OTHER": "Andere"
+                },
+                "nameLabel": "Name",
+                "namePlaceholder": "Wildblütenhonig",
+                "stock": {
+                    "failed": "Diese Zugabe konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.",
+                    "label": "Vom Bestand abziehen",
+                    "needsAmount": "Gib eine Menge ein, um sie vom Lagerbestand abzuziehen.",
+                    "noMatch": "Kein Bestand passt zu dieser Zugabe und Einheit.",
+                    "offline": "Verbinde dich, um vom Lagerbestand abzuziehen. Offline-Zugaben werden protokolliert, ohne den Bestand zu ändern.",
+                    "saveOnline": "Der Eintrag wird beim Speichern mit einem Zeitstempel versehen. Beim Speichern wird der Bestand sofort abgezogen, daher wird eine Verbindung benötigt."
+                }
+            },
+            "cancel": "Abbrechen",
+            "errors": {
+                "empty": "Gib einen Wert ein.",
+                "invalid": "Gib eine Zahl ein.",
+                "nameRequired": "Gib einen Namen ein.",
+                "range": "Gib einen Wert von {{min}} bis {{max}} ein.",
+                "saveFailed": "Dieser Eintrag konnte auf diesem Gerät nicht gespeichert werden. Versuch es erneut.",
+                "textRequired": "Gib etwas Text ein."
+            },
+            "gravity": {
+                "correctedNote": "Als {{sg}} spezifische Dichte, Refraktometer-korrigiert.",
+                "correction": "Refraktometerkorrektur",
+                "correctionFactor": "Korrekturfaktor",
+                "correctionOg": "Verwendet Anfangsdichte {{og}}.",
+                "correctionUnavailable": "Erfasse zuerst eine Anfangsdichte, um die Refraktometerkorrektur zu aktivieren.",
+                "factorError": "Gib einen Korrekturfaktor größer als 0 ein.",
+                "invalid": "Gib eine Zahl ein, z. B. 1.050.",
+                "rangeBrix": "Gib einen Wert von {{min}} bis {{max}} °Bx ein.",
+                "rangeSg": "Gib einen Wert von {{min}} bis {{max}} spezifische Dichte ein.",
+                "readingLabel": "Dichte",
+                "roleLabel": "Messart",
+                "roles": {
+                    "FG": "Enddichte",
+                    "GENERAL": "Messung",
+                    "OG": "Anfangsdichte"
+                },
+                "uncorrectedNote": "Als {{sg}} spezifische Dichte. Diese °Bx-Messung ist nicht refraktometerkorrigiert.",
+                "units": {
+                    "BRIX": "°Bx",
+                    "SG": "spezifische Dichte"
+                }
+            },
+            "measuredNow": "Der Eintrag wird beim Speichern mit einem Zeitstempel versehen. Er wird automatisch synchronisiert, auch wenn du offline bist.",
+            "noteLabel": "Notiz (optional)",
+            "ph": {
+                "label": "pH"
+            },
+            "save": "Eintrag speichern",
+            "saving": "Speichere…",
+            "temperature": {
+                "label": "Temperatur"
+            },
+            "text": {
+                "issueLabel": "Was ist passiert?",
+                "noteLabel": "Notiz",
+                "tastingLabel": "Verkostungsnotizen",
+                "titleLabel": "Titel (optional)"
+            },
+            "title": "Eintrag hinzufügen",
+            "typeLabel": "Eintragsart",
+            "unavailable": "Das Hinzufügen von Einträgen ist auf diesem Gerät nicht verfügbar.",
+            "unitLabel": "Einheit",
+            "volume": {
+                "hint": "Aktualisiert das aktuelle Volumen des Ansatzes.",
+                "label": "Aktuelles Volumen"
+            }
+        },
+        "changeStage": {
+            "action": "Phase ändern",
+            "cancel": "Abbrechen",
+            "confirm": "Verschieben",
+            "confirmBody": "Die Änderung wurde jetzt mit Zeitstempel versehen und synchronisiert automatisch, auch wenn du offline bist.",
+            "confirmCompleteBody": "Das Abschließen des Ansatzes setzt dessen Enddatum. Die Änderung wird automatisch synchronisiert, auch wenn du offline bist.",
+            "confirmTitle": "In {{stage}} verschieben?",
+            "current": "Aktuell",
+            "equipmentNote": "Gerätezuweisungen werden hier nicht geändert. Verwende die Web-App, um einen Ansatz in andere Behälter zu verschieben.",
+            "needs": "Benötigt: {{items}}",
+            "pending": "Wartet auf Synchronisierung",
+            "saveFailed": "Diese Änderung konnte auf diesem Gerät nicht gespeichert werden. Versuche es erneut.",
+            "title": "Phase ändern",
+            "unavailable": "Das Ändern der Phase ist auf diesem Gerät nicht verfügbar."
+        },
+        "delivery": {
+            "discard": "Verwerfen",
+            "discardBody": "Dieser Eintrag wurde nicht in MeadTools gespeichert. Beim Verwerfen wird er von diesem Gerät entfernt.",
+            "discardCancel": "Behalten",
+            "discardTitle": "Diesen Eintrag verwerfen?",
+            "retry": "Jetzt erneut versuchen",
+            "status": {
+                "authRequired": "Nicht synchronisiert. Melde dich erneut an, um ihn zu senden.",
+                "conflict": "Nicht gespeichert: Konflikt mit einem anderen Eintrag.",
+                "forbidden": "Nicht gespeichert: dein Konto kann diesen Eintrag nicht hinzufügen.",
+                "notFound": "Nicht gespeichert: dieser Ansatz ist nicht mehr verfügbar.",
+                "pending": "Wartet auf Synchronisierung",
+                "rejected": "Nicht gespeichert: MeadTools hat diesen Eintrag abgelehnt.",
+                "retryNetwork": "Offline. Er wird synchronisiert, sobald du wieder online bist.",
+                "retryServer": "MeadTools ist nicht verfügbar. Es wird automatisch einen neuen Versuch starten.",
+                "sending": "Wird synchronisiert…",
+                "stageConflict": "Nicht gespeichert: Die Phase dieses Ansatzes wurde anderswo geändert. Diese Änderung verwerfen und erneut auswählen.",
+                "synced": "Synchronisiert",
+                "unconfirmed": "Synchronisierung konnte nicht bestätigt werden. Erneut versuchen, um dies zu überprüfen."
+            }
+        },
+        "editEntry": {
+            "cancel": "Abbrechen",
+            "delete": "Eintrag löschen",
+            "deleteBody": "Der Eintrag wird aus dem Verlauf des Ansatzes entfernt. Das kann nicht rückgängig gemacht werden.",
+            "deleteKeep": "Behalten",
+            "deleteTitle": "Diesen Eintrag löschen?",
+            "errors": {
+                "empty": "Gib einen Wert ein.",
+                "failed": "Die Änderung konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.",
+                "invalid": "Gib eine Zahl ein.",
+                "range": "Gib einen realistischen Wert ein."
+            },
+            "gravitySg": "Bearbeitete Messwerte werden als spezifische Dichte gespeichert.",
+            "noteOnly": "Hier kann nur die Notiz geändert werden. Nutze die Web-App für andere Änderungen an diesem Eintrag.",
+            "notFound": "Dieser Eintrag ist nicht mehr verfügbar. Aktualisiere den Ansatz.",
+            "offline": "Zum Bearbeiten oder Löschen von Einträgen ist eine Verbindung erforderlich.",
+            "openHint": "Öffnet den Eintrag zum Bearbeiten oder Löschen",
+            "save": "Änderungen speichern",
+            "title": "Eintrag bearbeiten",
+            "webReview": "Nutze die Web-App, um die Bestandsänderungen für diesen Eintrag zu prüfen."
         }
     },
     "releaseNotes": {
