@@ -2289,7 +2289,7 @@
         "timeline": {
             "activity": "Aktivität",
             "dateUnavailable": "Datum nicht verfügbar",
-            "empty": "Noch keine Aktivitäten im Zeitstrahl. Einträge, die du im Web hinzufügst, werden hier angezeigt.",
+            "empty": "Noch keine Aktivitäten im Verlauf. Einträge, die du hier oder im Web hinzufügst, werden hier angezeigt.",
             "heading": "Neueste Aktivitäten",
             "packages_one": "{{count}} Paket",
             "packages_other": "{{count}} Pakete",
