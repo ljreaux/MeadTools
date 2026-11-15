@@ -2405,7 +2405,7 @@
                 "uncorrectedNote": "Als {{sg}} spezifische Dichte. Diese °Bx-Messung ist nicht refraktometerkorrigiert.",
                 "units": {
                     "BRIX": "°Bx",
-                    "SG": "spezifische Dichte"
+                    "SG": "SG"
                 }
             },
             "measuredNow": "Der Eintrag wird beim Speichern mit einem Zeitstempel versehen. Er wird automatisch synchronisiert, auch wenn du offline bist.",
