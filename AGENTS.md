@@ -163,6 +163,14 @@ the same commit when the user requests a commit. Do not hand-edit generated
 `packages/api-contract/src/contracts.ts` or
 `packages/api-contract/src/zod/openapi-aliases.ts`.
 
+For each new route or HTTP method, decide whether external API clients should
+use it. Follow the public reference scope in `docs/domain/api-contract.md`. Use
+`ignoreRoutes` in `apps/web/next.openapi.json` for excluded paths and
+`@ignore` on individual handlers when a path also serves public methods.
+For published operations, match nearby routes' OpenAPI comment formatting,
+schema names, and parameter and response conventions. Verify the publication
+decision in the generated spec.
+
 ## Database changes
 
 - Every production schema change needs a reviewed Prisma migration under

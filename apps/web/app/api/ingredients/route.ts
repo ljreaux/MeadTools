@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
  * @add 500:CreateIngredientFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function POST(req: NextRequest) {
   // Check for admin privileges
