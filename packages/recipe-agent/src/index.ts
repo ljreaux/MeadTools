@@ -13,6 +13,7 @@ import {
   calculatorToolDefinitions,
   calculatorToolNames,
   isCalculatorTool,
+  isHostedCalculatorTool,
   executeCalculatorTool,
   type CalculatorToolName
 } from "./calculator-tools";
@@ -502,7 +503,7 @@ export type HostedAgentTool =
   | (typeof accountReadAgentTools)[number]
   | (typeof publicReadAgentTools)[number];
 export const hostedAgentTools: readonly HostedAgentTool[] = [
-  ...calculatorTools,
+  ...calculatorTools.filter((tool) => isHostedCalculatorTool(tool.name)),
   ...accountReadAgentTools,
   ...publicReadAgentTools,
   recordRecipePlanAgentTool,
@@ -536,7 +537,7 @@ export type HostedAgentToolDefinition = {
  */
 export const hostedAgentToolDefinitions: readonly HostedAgentToolDefinition[] =
   [
-    ...calculatorToolDefinitions,
+    ...calculatorToolDefinitions.filter((tool) => isHostedCalculatorTool(tool.name)),
     ...accountReadToolDefinitions,
     ...publicReadToolDefinitions,
     {
@@ -717,6 +718,8 @@ export type McpAgentToolName = (typeof mcpAgentToolNames)[number];
 /** Human-readable discovery metadata shared by remote MCP adapters. */
 const mcpToolTitles = {
   calculate_juice_sugar: "Calculate juice sugar",
+  calculate_ingredient_volumes: "Calculate ingredient volumes",
+  evaluate_recipe: "Evaluate a fixed recipe",
   calculate_abv: "Calculate ABV",
   convert_brix_gravity: "Convert Brix and specific gravity",
   estimate_original_gravity: "Estimate original gravity",
@@ -779,6 +782,7 @@ export async function executeMcpAgentTool(
   if (!mcpAgentToolNames.some((name) => name === toolName)) {
     return { status: "unknown_tool", toolName };
   }
+  if (isCalculatorTool(toolName)) return executeCalculatorTool(toolName, input);
   return executeHostedAgentTool(toolName, input, options);
 }
 
@@ -807,7 +811,7 @@ export async function executeHostedAgentTool(
     publicReadAdapter?: PublicReadAdapter;
   } = {}
 ): Promise<HostedAgentToolExecution> {
-  if (isCalculatorTool(toolName)) return executeCalculatorTool(toolName, input);
+  if (isHostedCalculatorTool(toolName)) return executeCalculatorTool(toolName, input);
   if (isPublicReadTool(toolName)) {
     return executePublicReadTool(toolName, input, options.publicReadAdapter);
   }

@@ -835,10 +835,10 @@ test("a full-volume juice base explains why a gravity-targeted cyser cannot fit"
   assert.match(result.message, /larger (?:finished )?batch/i);
 });
 
-test("a target ABV gravity includes fixed secondary fruit in the final blend", () => {
+test("a finished ABV target compensates for fixed secondary fruit dilution", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 5, unit: "gal" },
-    targetOriginalGravity: 1.119,
+    targetAbv: 16,
     fermentationFinalGravity: 0.999,
     ingredients: [
       { name: "Honey", role: "adjustable_fermentable" },
@@ -1179,4 +1179,140 @@ test("a supplied fermentable amount remains fixed even beside an adjustable role
   assert.equal(honey?.amounts.weight.value, "3");
   assert.ok(Math.abs(result.derived.volume.total - 1) < 0.00001);
   assert.ok(result.warnings.some(warning => warning.includes("kept the stated amounts unchanged")));
+});
+
+test("drafts a waterless fruit base to the desired yield after primary loss", () => {
+  const lossAdjustment = { enabled: true, mode: "manual", percentage: 50 };
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 2, unit: "gal" },
+    lossAdjustment,
+    targetOriginalGravity: 1.15,
+    fermentationFinalGravity: 1.05,
+    allowWaterFill: false,
+    ingredients: [
+      { name: "Raspberry", category: "fruit", brix: 10, role: "fill_liquid" },
+      { name: "Honey", role: "adjustable_fermentable" },
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+  assert.equal(draft.status, "recipe", JSON.stringify(draft));
+  assert.deepEqual(draft.recipeData.lossAdjustment, lossAdjustment);
+  assert.equal(draft.recipeData.ingredients.some(({ name }) => name === "Water"), false);
+  assert.ok(Math.abs(draft.derived.volume.primary - 4) < 0.00001);
+  assert.ok(Math.abs(draft.derived.volume.bottlingL - 7.570823568) < 0.00001);
+  assert.ok(Math.abs(draft.derived.gravity.ogPrimary - 1.15) < 0.00001);
+});
+
+test("draft loss settings apply once at each stage, with backsweetening and finished ABV targets", () => {
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "L" },
+    lossAdjustment: { enabled: true, mode: "manual", percentage: 20,
+      secondary: { enabled: true, percentage: 10 } },
+    targetAbv: 10,
+    fermentationFinalGravity: 1,
+    backsweetening: { targetFinalGravity: 1.02 },
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Water", role: "fill_liquid" },
+      { name: "Apple juice", brix: 12, secondary: true, amount: { kind: "volume", value: 0.3, unit: "L" } }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false },
+  });
+  assert.equal(draft.status, "recipe", JSON.stringify(draft));
+  const { volume, gravity, alcohol } = draft.derived;
+  assert.ok(Math.abs(volume.postLossPrimaryL - volume.primaryL * 0.8) < 1e-8);
+  assert.ok(Math.abs(volume.bottlingL - 5) < 0.00001);
+  assert.ok(Math.abs(gravity.backsweetenedFg - 1.02) < 0.00001);
+  assert.ok(Math.abs(alcohol.abv - 10) < 0.001);
+  assert.equal(draft.recipeData.ingredients[0].amounts.volume.value, "0.3");
+});
+
+test("an explicit primary OG survives secondary dilution and both transfer losses", () => {
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "L" },
+    lossAdjustment: { enabled: true, mode: "manual", percentage: 20,
+      secondary: { enabled: true, percentage: 5 } },
+    targetOriginalGravity: 1.15,
+    fermentationFinalGravity: 1,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Water", role: "fill_liquid" },
+      { name: "Apple juice", brix: 12, secondary: true, amount: { kind: "volume", value: 2, unit: "L" } }
+    ],
+    nutrients: nutrientPlan
+  });
+  assert.equal(draft.status, "recipe", JSON.stringify(draft));
+  assert.ok(Math.abs(draft.derived.gravity.ogPrimary - 1.15) < 0.00001);
+  assert.ok(Math.abs(draft.derived.volume.bottlingL - 5) < 0.00001);
+  assert.ok(draft.derived.alcohol.abv < 15);
+});
+
+test("fixed primary amounts are retained and a calculated sweetener overfill is reported", () => {
+  const draft = buildRecipeDraft({
+    batchVolume: { value: 5, unit: "L" },
+    lossAdjustment: { enabled: true, mode: "manual", percentage: 20 },
+    fermentationFinalGravity: 1,
+    backsweetening: { targetFinalGravity: 1.1 },
+    allowWaterFill: false,
+    ingredients: [
+      { name: "Honey", amount: { kind: "weight", value: 1, unit: "kg" } },
+      { name: "Water", amount: { kind: "volume", value: 5.5, unit: "L" } }
+    ],
+    nutrients: nutrientPlan
+  });
+  assert.equal(draft.status, "recipe", JSON.stringify(draft));
+  assert.equal(draft.recipeData.ingredients[0].amounts.weight.value, "1");
+  assert.equal(draft.recipeData.ingredients[1].amounts.volume.value, "5.5");
+  assert.ok(Math.abs(draft.derived.volume.bottlingL - 6.54202) < 0.00001);
+  assert.ok(draft.warnings.some((warning) => /6\.542.*L packaged, above the requested 5 L/.test(warning)));
+});
+
+test("draft nutrients default to the builder's primary-fruit YAN offset and accept explicit zero", () => {
+  const input = {
+    batchVolume: { value: 2, unit: "gal" },
+    lossAdjustment: { enabled: true, mode: "manual", percentage: 50 },
+    targetOriginalGravity: 1.15,
+    fermentationFinalGravity: 1.05,
+    allowWaterFill: false,
+    ingredients: [
+      { name: "Raspberry", category: "fruit", brix: 10, role: "fill_liquid" },
+      { name: "Honey", role: "adjustable_fermentable" }
+    ],
+    nutrients: { ...nutrientPlan, nitrogenRequirement: "Low" }
+  };
+  const estimated = buildRecipeDraft(input);
+  const explicit = buildRecipeDraft({ ...input, nutrients: { ...input.nutrients, offsetPpm: 0 } });
+  assert.equal(estimated.status, "recipe", JSON.stringify(estimated));
+  assert.equal(explicit.status, "recipe", JSON.stringify(explicit));
+  const fruitLb = Number(estimated.recipeData.ingredients.find((line) => line.category === "fruit")?.amounts.weight.value);
+  assert.equal(estimated.recipeData.nutrients?.inputs.offsetPpm, String(Math.round(fruitLb * 25 / 4)));
+  assert.equal(estimated.recipeData.nutrients?.inputs.volume, "4");
+  assert.equal(explicit.recipeData.nutrients?.inputs.offsetPpm, "0");
+  assert.ok(estimated.derived.nutrients.nutrientAdditions.totalGrams.fermO < explicit.derived.nutrients.nutrientAdditions.totalGrams.fermO);
+});
+
+test("rejects a fermentation FG above the explicit primary OG before drafting", () => {
+  const input = {
+    batchVolume: { value: 5, unit: "L" },
+    targetOriginalGravity: 1.09,
+    fermentationFinalGravity: 1.10,
+    ingredients: [
+      { name: "Honey", role: "adjustable_fermentable" },
+      { name: "Water", role: "fill_liquid" }
+    ],
+    nutrients: nutrientPlan,
+    stabilizers: { enabled: false }
+  };
+  for (const lossAdjustment of [undefined, { enabled: true, mode: "manual", percentage: 20 }]) {
+    const result = buildRecipeDraft({ ...input, lossAdjustment });
+    assert.equal(result.status, "error");
+    assert.equal(result.code, "invalid_input");
+    assert.deepEqual(result.issues?.map(({ path }) => path), ["fermentationFinalGravity"]);
+    assert.match(result.message, /final gravity cannot exceed primary original gravity/i);
+  }
+  const equalGravity = buildRecipeDraft({ ...input, fermentationFinalGravity: 1.09 });
+  assert.equal(equalGravity.status, "recipe");
+  assert.ok(Math.abs(equalGravity.derived.alcohol.abv) < 0.00001);
 });

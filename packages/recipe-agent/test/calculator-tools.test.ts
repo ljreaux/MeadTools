@@ -19,7 +19,10 @@ import {
   benchTrial
 } from "@meadtools/core";
 
+const fixedIngredients = [{ name: "Water", stage: "primary", amount: { kind: "volume", value: 1, unit: "L" } }];
 const samples: Record<string, object> = {
+  calculate_ingredient_volumes: { ingredients: fixedIngredients },
+  evaluate_recipe: { ingredients: fixedIngredients },
   calculate_juice_sugar: { sugar: 24, servingSize: 240, servings: 4 },
   calculate_abv: { originalGravity: 1.1, finalGravity: 1 },
   convert_brix_gravity: { reading: 1.1, unit: "SG" },
@@ -60,8 +63,8 @@ function near(actual: number, expected: number) {
   assert.ok(Math.abs(actual - expected) < 1e-10, `${actual} != ${expected}`);
 }
 
-test("every standalone calculator is registered once, shared with hosted chat, and stateless", async () => {
-  assert.equal(calculatorToolNames.length, 12);
+test("every calculator is registered once and stateless, with hosted discovery for scalar calculators", async () => {
+  assert.equal(calculatorToolNames.length, 14);
   assert.equal(
     new Set(mcpAgentToolDefinitions.map((t) => t.name)).size,
     mcpAgentToolDefinitions.length
@@ -74,16 +77,17 @@ test("every standalone calculator is registered once, shared with hosted chat, a
   for (const tool of calculatorTools) {
     assert.equal(isMcpAccountReadTool(tool.name), false);
     assert.ok(mcpAgentToolDefinitions.some((t) => t.name === tool.name));
-    assert.ok(hostedAgentToolDefinitions.some((t) => t.name === tool.name));
+    const isScalar = tool.name !== "calculate_ingredient_volumes" && tool.name !== "evaluate_recipe";
+    assert.equal(hostedAgentToolDefinitions.some((t) => t.name === tool.name), isScalar);
     assert.equal(tool.parameters.additionalProperties, false);
     assert.equal(tool.outputSchema.type, "object");
-    assert.deepEqual(
-      await executeMcpAgentTool(tool.name, samples[tool.name]),
-      await executeHostedAgentTool(tool.name, samples[tool.name])
-    );
+    const mcpResult = await executeMcpAgentTool(tool.name, samples[tool.name]);
+    const hostedResult = await executeHostedAgentTool(tool.name, samples[tool.name]);
+    if (isScalar) assert.deepEqual(mcpResult, hostedResult);
+    else assert.equal(hostedResult.status, "unknown_tool");
     const result = await tool.execute(samples[tool.name]);
     assert.equal(result.status, "ok");
-    await values(tool.name);
+    if (isScalar) await values(tool.name);
     assert.equal(
       tool.execute({ ...samples[tool.name], userId: 1 }).status,
       "invalid_input"

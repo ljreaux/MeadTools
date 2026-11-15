@@ -69,6 +69,10 @@ export const VOLUME_TO_L: Record<VolumeUnit, number> = {
   imp_fl_oz: 0.0284130625,
 };
 
+export function weightToVolumeL(value: number, unit: WeightUnit, densityKgPerL: number) {
+  return (value * WEIGHT_TO_KG[unit]) / densityKgPerL;
+}
+
 export const KG_TO_WEIGHT: Record<WeightUnit, number> = {
   kg: 1,
   g: 1000,

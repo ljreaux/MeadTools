@@ -2,7 +2,7 @@ import { z } from "zod";
 import { recipeDerivedStateResponseBodySchema } from "@meadtools/api-contract/schemas";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import { calcABV, calcOG, toSG } from "@meadtools/core/gravity";
-import { initialNutrientData } from "@meadtools/core/nutrients";
+import { estimatePrimaryFruitYanOffset, initialNutrientData } from "@meadtools/core/nutrients";
 import {
   HONEY_BRIX,
   KG_TO_WEIGHT,
@@ -10,9 +10,12 @@ import {
   ADDITIVE_UNITS,
   VOLUME_TO_L,
   WEIGHT_TO_KG,
+  weightToVolumeL,
+  normalizeIngredientLine,
 } from "@meadtools/core/recipe";
 import {
   recipeDataV2Schema,
+  recipeLossAdjustmentSchema,
   type NutrientDataV2,
   type RecipeDataV2,
   type VolumeUnit,
@@ -52,6 +55,8 @@ const nutrientPreferencesSchema = z.object({
     ])
     .optional(),
   numberOfAdditions: z.number().int().min(1).max(10).optional(),
+  offsetPpm: z.number().nonnegative().optional()
+    .describe("Explicit must YAN offset in ppm, including zero. Omit to use the recipe builder's primary-fruit estimate."),
   goFermType: z.enum(["Go-Ferm", "protect", "sterol-flash", "none"]).optional(),
 });
 
@@ -139,11 +144,21 @@ export const buildRecipeDraftInputSchema = z
     name: z.string().trim().min(1).max(160).optional(),
     style: z.string().trim().min(1).max(80).optional(),
     batchVolume: batchVolumeSchema.optional().describe(
-      "Requested finished batch volume, including secondary fruit, sugar and calculated backsweetening. When adapting a saved recipe, use its total finished volume rather than primary volume. Do not also assign this volume as a fixed water amount.",
+      "Requested finished batch volume, including secondary additions. With lossAdjustment, use the target packaged volume after losses. Without losses, use the post-addition volume.",
     ),
+    lossAdjustment: recipeLossAdjustmentSchema
+      .strict()
+      .extend({
+        secondary: recipeLossAdjustmentSchema.shape.secondary.unwrap().strict().optional(),
+      })
+      .optional()
+      .describe(
+        "Recipe builder loss settings. Use enabled: true, mode: manual, percentage for a specified primary transfer loss. Optional secondary applies a percentage loss after all additions.",
+      ),
     /** Finished-batch ABV target; normalized to an OG by the shared workflow. */
     targetAbv: z.number().finite().min(0).max(30).optional(),
-    targetOriginalGravity: z.number().min(1.001).max(1.2).optional(),
+    targetOriginalGravity: z.number().min(1.001).max(1.2).optional()
+      .describe("Primary original gravity before secondary additions. Takes precedence over targetAbv if both are supplied."),
     fermentationFinalGravity: z.number().min(0.97).max(1.2).optional().describe(
       "Fermentation FG before secondary additions or backsweetening. Finished sweetness belongs in backsweetening.targetFinalGravity.",
     ),
@@ -228,6 +243,20 @@ export function buildRecipeDraft(
       parsed.error.issues,
     );
 
+  const { targetOriginalGravity, fermentationFinalGravity } = parsed.data;
+  if (
+    targetOriginalGravity !== undefined &&
+    fermentationFinalGravity !== undefined &&
+    fermentationFinalGravity > targetOriginalGravity
+  ) {
+    return invalidInput("Fermentation final gravity cannot exceed primary original gravity.", [
+      {
+        path: ["fermentationFinalGravity"],
+        message: "Supply a fermentation final gravity at or below the primary OG. Use the backsweetening target for sweetness added after fermentation.",
+      },
+    ]);
+  }
+
   const input = normalizeDraftInput(parsed.data);
   const fixedVolumeConflict = fixedIngredientVolumeConflict(input);
   if (fixedVolumeConflict) {
@@ -306,6 +335,25 @@ export function buildRecipeDraft(
       );
     }
 
+    const { volume, alcohol } = authoritative.data.derived;
+    const targetVolumeUnit = completeInput.batchVolume.unit;
+    const litersPerUnit = VOLUME_TO_L[targetVolumeUnit];
+    const packagedTargetL = completeInput.batchVolume.value * litersPerUnit;
+    if (input.backsweetening && volume.bottlingL > packagedTargetL + 0.001) {
+      warnings.push(
+        `The fixed ingredients and calculated backsweetening yield ${formatNumber(volume.bottlingL / litersPerUnit)} ${targetVolumeUnit} packaged, above the requested ${completeInput.batchVolume.value} ${completeInput.batchVolume.unit}. The supplied ingredient amounts were kept. Adjust the packaged target, ingredient amounts, or backsweetening target to reconcile them.`,
+      );
+    }
+    if (
+      input.targetOriginalGravity === undefined &&
+      input.targetAbv !== undefined &&
+      Math.abs(alcohol.abv - input.targetAbv) > 0.05
+    ) {
+      warnings.push(
+        `Finished ABV differs from the target of ${input.targetAbv}%. The supplied formulation calculates to ${formatNumber(alcohol.abv)}% after secondary additions. MeadTools kept the stated amounts unchanged.`,
+      );
+    }
+
     return validateResult({
       ...resultBase,
       status: "recipe",
@@ -369,12 +417,13 @@ function fixedIngredientVolumeConflict(
     return undefined;
   }
   try {
-    const fixedVolumeL = input.ingredients.reduce(
-      (total, ingredient) => total + toSuppliedIngredient(ingredient).volumeL,
-      0,
-    );
+    const { primaryRetention, packagingRetention } = draftRetention(input.lossAdjustment);
+    const fixedVolumeL = input.ingredients.reduce((total, ingredient) => {
+      const row = toSuppliedIngredient(ingredient);
+      return total + row.volumeL * (row.secondary ? 1 : primaryRetention);
+    }, 0);
     const requestedVolumeL =
-      input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
+      input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit] / packagingRetention;
     // A fully specified recipe needs validation, not space for a solver.
     // Allow 1 mL for displayed metric totals such as 4.219 L; never change a
     // supplied ingredient amount to reconcile that display rounding.
@@ -386,10 +435,11 @@ function fixedIngredientVolumeConflict(
     if (fillConflict) return fillConflict;
     const fruitMass = input.ingredients.filter(isSolidFruitMassIngredient);
     const fruitVolumeL = fruitMass.reduce(
-      (total, ingredient) => total + toSuppliedIngredient(ingredient).volumeL, 0,
+      (total, ingredient) => total + toSuppliedIngredient(ingredient).volumeL *
+        (ingredient.secondary ? 1 : primaryRetention), 0,
     );
     if (fruitVolumeL >= requestedVolumeL) {
-      return `The stated fruit load (${fruitMass.map((ingredient) => ingredient.name).join(", ")}) contributes enough expected juice volume to fill the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its juice still affects finished volume and gravity. Reduce the fruit load or choose a larger finished batch volume before calculating the remaining fermentables.`;
+      return `The stated fruit load (${fruitMass.map((ingredient) => ingredient.name).join(", ")}) contributes enough modeled ingredient volume to fill the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch. MeadTools treats fruit mass as fruit, not as a liquid measurement, and its modeled volume contributes to the recipe blend. Reduce the fruit load or choose a larger finished batch volume before calculating the remaining fermentables.`;
     }
     return `The fixed ingredient${input.ingredients.length === 1 ? "" : "s"} (${names}) already use the requested ${input.batchVolume.value} ${input.batchVolume.unit} batch volume. There is no room left to reconcile the supplied fermentables with the requested gravity target. Reduce a fixed liquid or fermentable amount, or choose a larger finished batch volume.`;
   } catch {
@@ -432,31 +482,19 @@ type CompleteBuildRecipeDraftInput = Omit<
   }>;
 };
 
+function hasGravityTarget(input: Pick<BuildRecipeDraftInput, "targetOriginalGravity" | "targetAbv">) {
+  return input.targetOriginalGravity !== undefined || input.targetAbv !== undefined;
+}
+
 function normalizeDraftInput(
   input: BuildRecipeDraftInput,
 ): BuildRecipeDraftInput {
-  // Recipe prompts naturally express their target as finished-batch ABV. Keep
-  // that conversion in the shared workflow so an agent never has to invent or
-  // hand-calculate an OG before it can build a draft. An explicitly supplied
-  // OG remains authoritative for backwards compatibility and expert use.
-  const withAbvTarget =
-    input.targetOriginalGravity === undefined &&
-    input.targetAbv !== undefined &&
-    input.fermentationFinalGravity !== undefined
-      ? {
-          ...input,
-          targetOriginalGravity: calcOG(
-            input.targetAbv,
-            input.fermentationFinalGravity,
-          ),
-        }
-      : input;
-  const measuredAdditives = withAbvTarget.additives.filter(
+  const measuredAdditives = input.additives.filter(
     (additive) => additive.amount !== undefined && additive.unit !== undefined,
   );
   const unresolvedAdditives = deduplicateDeferredAdditives([
-    ...withAbvTarget.deferredAdditives,
-    ...withAbvTarget.additives
+    ...input.deferredAdditives,
+    ...input.additives
       .filter((additive) => additive.amount === undefined || !additive.unit)
       .map((additive) => ({
         name: additive.name,
@@ -473,7 +511,7 @@ function normalizeDraftInput(
   // treating it as an ingredient the brewer must quantify causes an otherwise
   // complete draft to stall on a pointless water question.
   const withoutImplicitWater = {
-    ...withAbvTarget,
+    ...input,
     additives: [
       ...measuredAdditives,
       ...unresolvedAdditives.map((additive) => ({
@@ -482,7 +520,7 @@ function normalizeDraftInput(
       })),
     ],
     deferredAdditives: [],
-    ingredients: withAbvTarget.ingredients.filter(
+    ingredients: input.ingredients.filter(
       (ingredient) =>
         ingredient.amount !== undefined ||
         ingredient.role === "fill_liquid" ||
@@ -523,7 +561,7 @@ function normalizeDraftInput(
   // user gave a concrete amount; treat it as fixed rather than saving a zero
   // quantity ingredient.
   const withValidRoles =
-    withStabilizerDefaults.targetOriginalGravity === undefined
+    !hasGravityTarget(withStabilizerDefaults)
       ? {
           ...withStabilizerDefaults,
           ingredients: withStabilizerDefaults.ingredients.map((ingredient) =>
@@ -533,7 +571,7 @@ function normalizeDraftInput(
           ),
         }
       : withStabilizerDefaults;
-  if (withValidRoles.targetOriginalGravity === undefined) return withValidRoles;
+  if (!hasGravityTarget(withValidRoles)) return withValidRoles;
   if (
     withValidRoles.ingredients.some(
       (ingredient) => ingredient.role === "adjustable_fermentable",
@@ -669,7 +707,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
     if (honeyNeedsTarget && isHoneyIngredientName(ingredient.name)) continue;
     if (ingredient.role === "fill_liquid") continue;
     if (
-      input.targetOriginalGravity !== undefined &&
+      hasGravityTarget(input) &&
       ingredient.role === "adjustable_fermentable"
     )
       continue;
@@ -696,7 +734,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
     }
   }
 
-  if (input.targetOriginalGravity !== undefined) {
+  if (hasGravityTarget(input)) {
     const adjustable = input.ingredients.filter(
       (ingredient) =>
         !ingredient.secondary && ingredient.role === "adjustable_fermentable",
@@ -770,20 +808,30 @@ function formatMissingDetails(details: string[]): string {
   return `${details.slice(0, -1).join(", ")}, and ${details.at(-1)}`;
 }
 
+function draftRetention(loss: BuildRecipeDraftInput["lossAdjustment"]) {
+  return {
+    primaryRetention: loss?.enabled ? 1 - loss.percentage / 100 : 1,
+    packagingRetention: loss?.secondary?.enabled ? 1 - loss.secondary.percentage / 100 : 1,
+  };
+}
+
 function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
   const volumeUnit: VolumeUnit = input.batchVolume.unit;
   const weightUnit: WeightUnit = input.batchVolume.unit === "gal" ? "lb" : "kg";
+  const { primaryRetention, packagingRetention } = draftRetention(input.lossAdjustment);
+  const requestedFinishedVolumeL =
+    (input.batchVolume.value * VOLUME_TO_L[volumeUnit]) / packagingRetention;
   const supplied = input.ingredients.map((ingredient) =>
     toSuppliedIngredient(ingredient),
   );
   const adjustable =
-    input.targetOriginalGravity === undefined
-      ? undefined
-      : supplied.find(
+    hasGravityTarget(input)
+      ? supplied.find(
           (ingredient) =>
             !ingredient.secondary &&
             ingredient.role === "adjustable_fermentable",
-        );
+        )
+      : undefined;
   const fillLiquid = supplied.find(
     (ingredient) => !ingredient.secondary && ingredient.role === "fill_liquid",
   );
@@ -798,45 +846,49 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       weightUnit,
     }),
   );
-  let secondaryAlreadyMeetsBacksweeteningTarget = false;
+
+  const fixedSecondary = fixed.filter((ingredient) => ingredient.secondary);
+  const fixedSecondaryVolumeL = fixedSecondary.reduce(
+    (total, ingredient) => total + ingredient.volumeL,
+    0,
+  );
+  const fixedSecondaryGravityVolume = fixedSecondary.reduce(
+    (total, ingredient) => total + ingredient.sg * ingredient.volumeL,
+    0,
+  );
+  // Backsweetening is a calculated secondary addition. Reserve its volume
+  // before solving the primary must so the requested batch volume and ABV
+  // both describe the finished, backsweetened recipe.
+  const fixedSecondaryBacksweetenedFg =
+    backsweetenedGravityFromFixedSecondary({
+      requestedFinishedVolumeL,
+      fixedSecondaryVolumeL,
+      fixedSecondaryGravityVolume,
+      fermentationFinalGravity: input.fermentationFinalGravity,
+    });
+  const reservesBacksweetening =
+    Boolean(adjustable) || primaryRetention !== 1 || packagingRetention !== 1;
+  const secondaryAlreadyMeetsBacksweeteningTarget =
+    reservesBacksweetening &&
+    input.backsweetening !== undefined &&
+    fixedSecondaryVolumeL > 0 &&
+    fixedSecondaryBacksweetenedFg >= input.backsweetening.targetFinalGravity;
+  const desiredRackedVolumeL =
+    reservesBacksweetening &&
+    input.backsweetening &&
+    !secondaryAlreadyMeetsBacksweeteningTarget
+      ? solvePrimaryVolumeWithBacksweetening({
+          requestedFinishedVolumeL,
+          fixedSecondaryVolumeL,
+          fixedSecondaryGravityVolume,
+          fermentationFinalGravity: input.fermentationFinalGravity,
+          targetFinalGravity: input.backsweetening.targetFinalGravity,
+          sweetenerSg: backsweeteningSweetenerSg(input.backsweetening),
+        })
+      : requestedFinishedVolumeL - fixedSecondaryVolumeL;
+  const desiredPrimaryVolumeL = desiredRackedVolumeL / primaryRetention;
 
   if (adjustable) {
-    const requestedFinishedVolumeL =
-      input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit];
-    const fixedSecondary = fixed.filter((ingredient) => ingredient.secondary);
-    const fixedSecondaryVolumeL = fixedSecondary.reduce(
-      (total, ingredient) => total + ingredient.volumeL,
-      0,
-    );
-    const fixedSecondaryGravityVolume = fixedSecondary.reduce(
-      (total, ingredient) => total + ingredient.sg * ingredient.volumeL,
-      0,
-    );
-    // Backsweetening is a calculated secondary addition. Reserve its volume
-    // before solving the primary must so the requested batch volume and ABV
-    // both describe the finished, backsweetened recipe.
-    const fixedSecondaryBacksweetenedFg =
-      backsweetenedGravityFromFixedSecondary({
-        requestedFinishedVolumeL,
-        fixedSecondaryVolumeL,
-        fixedSecondaryGravityVolume,
-        fermentationFinalGravity: input.fermentationFinalGravity,
-      });
-    secondaryAlreadyMeetsBacksweeteningTarget =
-      input.backsweetening !== undefined &&
-      fixedSecondaryVolumeL > 0 &&
-      fixedSecondaryBacksweetenedFg >= input.backsweetening.targetFinalGravity;
-    const desiredPrimaryVolumeL =
-      input.backsweetening && !secondaryAlreadyMeetsBacksweeteningTarget
-        ? solvePrimaryVolumeWithBacksweetening({
-            requestedFinishedVolumeL,
-            fixedSecondaryVolumeL,
-            fixedSecondaryGravityVolume,
-            fermentationFinalGravity: input.fermentationFinalGravity,
-            targetFinalGravity: input.backsweetening.targetFinalGravity,
-            sweetenerSg: backsweeteningSweetenerSg(input.backsweetening),
-          })
-        : requestedFinishedVolumeL - fixedSecondaryVolumeL;
     // Do this feasibility check before deriving a primary ABV. Otherwise a
     // malformed or over-large secondary volume reaches calcOG as NaN and
     // leaks a low-level calculator validation error into the chat.
@@ -855,17 +907,10 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       0,
     );
     const fillSg = fillLiquid?.sg ?? toSG(0);
-    // The ABV target is calculated from the fermenting primary must. Secondary
-    // fruit dilutes that alcohol after fermentation, so solve a stronger primary
-    // OG when a fixed secondary volume is present.
-    const targetAbv = calcABV(
-      input.targetOriginalGravity!,
-      input.fermentationFinalGravity,
-    );
-    const targetPrimaryAbv =
-      (targetAbv * requestedFinishedVolumeL) / desiredPrimaryVolumeL;
-    const targetPrimaryOg = calcOG(
-      targetPrimaryAbv,
+    // An explicit OG is a primary target. A finished ABV target accounts
+    // for the dilution from secondary additions.
+    const targetPrimaryOg = input.targetOriginalGravity ?? calcOG(
+      (input.targetAbv! * requestedFinishedVolumeL) / desiredRackedVolumeL,
       input.fermentationFinalGravity,
     );
     const targetPrimaryGravityVolume = targetPrimaryOg * desiredPrimaryVolumeL;
@@ -899,7 +944,7 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
           ) >= desiredPrimaryVolumeL)
       ) {
         throw new Error(
-          `The stated primary fruit load (${fixedPrimaryFruit.map((ingredient) => ingredient.name).join(", ")}) leaves no liquid room in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. MeadTools treats fruit mass as fruit, not as a liquid measurement, but its expected juice volume still contributes to the batch. Reduce the primary fruit load or choose a larger finished batch volume.`,
+          `The stated primary fruit load (${fixedPrimaryFruit.map((ingredient) => ingredient.name).join(", ")}) leaves no liquid room in the requested ${input.batchVolume.value} ${input.batchVolume.unit} finished batch for ${adjustable.name} and ${fillLiquid?.name ?? "water"} to reach the gravity target. MeadTools treats fruit mass as fruit, not as a liquid measurement, and its modeled volume contributes to the recipe blend. Reduce the primary fruit load or choose a larger finished batch volume.`,
         );
       }
       if (fixedPrimaryVolumeL >= desiredPrimaryVolumeL) {
@@ -943,11 +988,6 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       ),
     );
   } else {
-    const desiredPrimaryVolumeL =
-      input.batchVolume.value * VOLUME_TO_L[input.batchVolume.unit] -
-      fixed
-        .filter((ingredient) => ingredient.secondary)
-        .reduce((total, ingredient) => total + ingredient.volumeL, 0);
     const fixedPrimaryVolumeL = fixed
       .filter((ingredient) => !ingredient.secondary)
       .reduce((total, ingredient) => total + ingredient.volumeL, 0);
@@ -1020,8 +1060,9 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       secondary: [],
     },
     flags: { private: true },
+    ...(input.lossAdjustment ? { lossAdjustment: input.lossAdjustment } : {}),
   };
-  recipe.nutrients = nutrientData(input);
+  recipe.nutrients = nutrientData(input, ingredientLines);
   if (input.backsweetening && !secondaryAlreadyMeetsBacksweeteningTarget) {
     recipe = addCalculatedBacksweetening(recipe, input.backsweetening);
   }
@@ -1060,7 +1101,7 @@ function addCalculatedBacksweetening(
     );
   }
 
-  const primaryVolumeL = current.volume.primaryL;
+  const primaryVolumeL = current.volume.postLossPrimaryL;
   const secondaryVolumeL = current.volume.secondaryL;
   const existingSecondaryGravity =
     current.gravity.backsweetenedFg * (primaryVolumeL + secondaryVolumeL) -
@@ -1242,7 +1283,7 @@ function toSuppliedIngredient(
     volumeL =
       ingredient.amount.kind === "volume"
         ? ingredient.amount.value * VOLUME_TO_L[ingredient.amount.unit]
-        : (ingredient.amount.value * WEIGHT_TO_KG[ingredient.amount.unit]) / sg;
+        : weightToVolumeL(ingredient.amount.value, ingredient.amount.unit, sg);
   }
   return {
     name: ingredient.name,
@@ -1354,13 +1395,24 @@ function ingredientMeasurementBasis(
     : "weight";
 }
 
-function nutrientData(input: CompleteBuildRecipeDraftInput): NutrientDataV2 {
+function nutrientData(
+  input: CompleteBuildRecipeDraftInput,
+  ingredients: RecipeDataV2["ingredients"],
+): NutrientDataV2 {
   const defaults = initialNutrientData();
   const schedule = input.nutrients.schedule!;
+  const normalized = ingredients.map(normalizeIngredientLine);
+  const primaryVolumeL = normalized.reduce(
+    (sum, line) => sum + (line.secondary ? 0 : line.volumeL),
+    0,
+  );
+  const offsetPpm = input.nutrients.offsetPpm ??
+    estimatePrimaryFruitYanOffset(normalized, primaryVolumeL);
   return initialNutrientData({
     inputs: {
       ...defaults.inputs,
-      volume: formatNumber(input.batchVolume.value),
+      volume: formatNumber(primaryVolumeL * L_TO_VOLUME[input.batchVolume.unit]),
+      offsetPpm: String(offsetPpm),
       volumeUnits: input.batchVolume.unit === "gal" ? "gal" : "liter",
       numberOfAdditions: String(input.nutrients.numberOfAdditions),
       goFermType: input.nutrients.goFermType!,

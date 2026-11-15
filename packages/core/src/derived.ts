@@ -7,7 +7,7 @@ import {
   type NutrientDerivedState,
 } from "./nutrients";
 import { parseNumber } from "./numeric";
-import { isValidLossPercentage } from "./loss";
+import { isValidLossPercentage, volumeAfterLoss } from "./loss";
 import {
   calculateOriginalGravity,
   calculateVolume,
@@ -139,8 +139,8 @@ export function calculateRecipeDerivedState(
   const lossPercentage = isValidLossPercentage(configuredLossPercentage)
     ? configuredLossPercentage
     : 0;
-  const lossVolumeL = primaryVolumeL * lossPercentage / 100;
-  const postLossPrimaryVolumeL = primaryVolumeL - lossVolumeL;
+  const { lossL: lossVolumeL, remainingL: postLossPrimaryVolumeL } =
+    volumeAfterLoss(primaryVolumeL, { percentage: lossPercentage });
   const totalVolumeL = postLossPrimaryVolumeL + secondaryVolumeL;
   const configuredSecondaryLossPercentage = recipeData.lossAdjustment?.secondary?.enabled
     ? recipeData.lossAdjustment.secondary.percentage
@@ -148,8 +148,8 @@ export function calculateRecipeDerivedState(
   const secondaryLossPercentage = isValidLossPercentage(configuredSecondaryLossPercentage)
     ? configuredSecondaryLossPercentage
     : 0;
-  const secondaryLossVolumeL = totalVolumeL * secondaryLossPercentage / 100;
-  const bottlingVolumeL = totalVolumeL - secondaryLossVolumeL;
+  const { lossL: secondaryLossVolumeL, remainingL: bottlingVolumeL } =
+    volumeAfterLoss(totalVolumeL, { percentage: secondaryLossPercentage });
   const volumeFactor = L_TO_VOLUME[recipeData.unitDefaults.volume];
   const totalForAbv = calculateOriginalGravity(
     lossPercentage === 0
@@ -162,14 +162,7 @@ export function calculateRecipeDerivedState(
     { sg: secondarySg, volumeL: secondaryVolumeL },
   ]);
   const primaryAbv = calcABV(ogPrimary, parseNumber(recipeData.fg));
-  const abv =
-    totalVolumeL > 0 ? (primaryAbv * postLossPrimaryVolumeL) / totalVolumeL : 0;
-  const nutrients = recipeData.nutrients ?? initialNutrientData();
-  const fgSg = parseNumber(recipeData.fg);
-  const nutrientSg =
-    Number.isFinite(ogPrimary) && Number.isFinite(fgSg)
-      ? 1 + (ogPrimary - fgSg)
-      : 1;
+  const abv = diluteRecipeAbv(primaryAbv, postLossPrimaryVolumeL, totalVolumeL);
 
   return {
     normalized,
@@ -195,15 +188,38 @@ export function calculateRecipeDerivedState(
     backsweetenedFg,
     abv,
     delle: toBrix(backsweetenedFg) + 4.5 * abv,
-    nutrientValueForRecipe: {
-      ...nutrients,
-      inputs: {
-        ...nutrients.inputs,
-        volume: fmt(primaryVolumeL * volumeFactor),
-        volumeUnits: recipeData.unitDefaults.volume === "gal" ? "gal" : "liter",
-        sg: fmt(nutrientSg),
-      },
-    },
+    nutrientValueForRecipe: recipeNutrientBasis({
+      nutrients: recipeData.nutrients ?? initialNutrientData(),
+      volume: primaryVolumeL * volumeFactor,
+      volumeUnit: recipeData.unitDefaults.volume,
+      og: ogPrimary,
+      fg: parseNumber(recipeData.fg)
+    }),
+  };
+}
+
+export function diluteRecipeAbv(primaryAbv: number, rackedVolumeL: number, finishedVolumeL: number) {
+  return finishedVolumeL > 0 ? (primaryAbv * rackedVolumeL) / finishedVolumeL : 0;
+}
+
+export function recipeNutrientBasis(args: {
+  nutrients: NutrientData;
+  volume: number;
+  volumeUnit: VolumeUnit;
+  og: number;
+  fg: number;
+}): NutrientData {
+  const sg = Number.isFinite(args.og) && Number.isFinite(args.fg)
+    ? 1 + (args.og - args.fg)
+    : 1;
+  return {
+    ...args.nutrients,
+    inputs: {
+      ...args.nutrients.inputs,
+      volume: fmt(args.volume),
+      volumeUnits: args.volumeUnit === "gal" ? "gal" : "liter",
+      sg: fmt(sg)
+    }
   };
 }
 

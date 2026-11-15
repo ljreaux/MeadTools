@@ -6,8 +6,8 @@ web hooks, shared core functions, hosted tools, and the MCP allowlist.
 All calculator tools are stateless and available under the existing `mcp:tools`
 scope. The authenticated premium entitlement, kill switch, usage accounting, and
 rate limits still apply. No account-read grant, saved recipe, or brew is needed.
-They are also registered with the hosted brewing assistant through the same
-validated execution path. Existing tools retain their names and behavior.
+The scalar calculators are also registered with the hosted brewing assistant.
+The two fixed-recipe tools are available through MCP.
 
 ## Inventory and overlap audit
 
@@ -28,21 +28,25 @@ validated execution path. Existing tools retain their names and behavior.
 | `/juice` label calculator        | `calculate_juice_sugar`                                                                         | Shared label sugar/serving concentration and container sugar; included despite separate route                                                                           |
 | `/stabilizers` main page         | `calculate_sulfite` + `calculate_sorbate`                                                       | Same two component tools; optional `ph` selects the main page's shared pH lookup instead of explicit `ppm`                                                              |
 | Gravity target planning          | existing `calculate_gravity_target`                                                             | Preserved: target ABV + planned fermentation FG → target OG, optionally offset. Different from estimating a missing historical OG.                                      |
-| Recipe and nutrient calculations | existing `build_recipe_draft`, `explain_recipe` (hosted), `get_recipe` (authorized saved reads) | Preserve recipe calculation engine/workflows. Use these when working on a recipe rather than issuing standalone calculations. No duplicate recipe/nutrient engine tool. |
+| Fixed ingredient volume | `calculate_ingredient_volumes` | Shared unit conversions and stage loss calculations. Reports liquid contributions, partial totals, and a loss-free batch-volume input for the draft solver. |
+| Outside recipe evaluation | `evaluate_recipe` | Checks fixed ingredients or an inline RecipeDataV2 snapshot using shared gravity, ABV, nutrient and stabilizer calculations. |
+| Recipe and nutrient calculations | existing `build_recipe_draft`, `explain_recipe` (hosted), `get_recipe` (authorized saved reads) | Use the existing draft solver to formulate against targets and authorized saved reads to retrieve existing recipes. |
 
-There are **12 new standalone tools**, in addition to the existing seven basic
-MCP tools and seven optional private account reads. Discovery returns 19 tools
-for basic scope and 26 with account-read permission. No active extra calculator
-is excluded. The ABV alias route and combined stabilizer page reuse existing
-entries above. Recipe building and nutrient planning remain in their existing
-workflows.
+Discovery includes 14 calculator tools, seven original tools and five public
+community reads under the basic scope, for 26 tools. Granting account reads
+adds seven more, for 33 tools.
+Both fixed-recipe tools accept inline data using the basic scope. Explicit
+`rackedVolume` and stabilizer scenario overrides default to `assumption`.
+Set the volume's `source` or the scenario's `abvSource` to `measurement` for
+actual readings or `recipeClaim` for values taken from the recipe.
+Readings under `measurements` are labeled as measurements.
 
 ## Inputs, output, and units
 
 Discovery schemas describe required inputs, defaults, numeric bounds and result
 keys. Inputs are strict: unknown properties, identities, NaN/Infinity, negative
 volumes, unsupported units and invalid combinations are rejected. Successful
-responses have `status: "ok"` and `result: { values, units, assumptions, warnings }`.
+standalone scalar calculators return `status: "ok"` and `result: { values, units, assumptions, warnings }`. The two fixed-recipe tools return structured stage and check results.
 Each numeric result key has its unit in `units`; unrounded values are returned
 unless the web formula itself rounds. Web display formatting remains a UI
 concern. Errors return `status: "invalid_input"` and readable `issues`, with MCP
@@ -89,6 +93,83 @@ to the advertised output schema and equivalent JSON text.
   unit names; all-zero volume is rejected. This is linear averaging, including
   its limitations when blending quantities that are not linearly additive.
 
+## Fixed recipes and draft inputs
+
+For an outside recipe, use `evaluate_recipe` with its fixed ingredient amounts.
+Include reported OG, fermentation FG, volume and ABV under `claims`. Use
+`measurements` for readings the brewer actually took. Volume claims must name
+their stage. OG claims can use SG or Brix. Fermentation FG uses SG and refers
+to the end of primary fermentation, before sweetening. Comparison deltas
+subtract the claim from the MeadTools estimate or comparable measurement.
+A recipe's planned FG can be used in the model while its comparison remains
+open until there is a measurement.
+
+For an isolated addition, `calculate_ingredient_volumes` accepts this input:
+
+```json
+{
+  "ingredients": [
+    {
+      "name": "Apple juice",
+      "stage": "secondary",
+      "amount": { "kind": "volume", "value": 32, "unit": "fl_oz" }
+    }
+  ]
+}
+```
+
+The secondary contribution is 0.946352946 L. An explicit `rackedVolume` or
+a primary formulation with `primaryLoss` is needed to resolve the post-addition
+total. `packagingLoss` applies next. Supply an explicit zero when modeling no
+loss. Native snapshots follow the builder's zero-loss defaults when their
+loss settings are absent or disabled. Unresolved stages include field-level
+reasons and known subtotals. Stage targets are comparisons and leave the
+ingredient amounts fixed.
+
+For a loss-free draft, use `draftBatchVolume` as `batchVolume` when the solver can
+model the supplied ingredients the same way. It sums the primary and
+secondary ingredient contributions before transfer losses. Keep the
+original weight or volume basis, set each supplied ingredient role to
+`fixed`, and use `allowWaterFill: false` for an all-fixed formulation. The
+draft solver still needs its normal intake inputs. Both tools calculate weighed fruit volume from mass and Brix-derived density.
+
+For a draft with planned losses, pass the desired packaged yield as
+`batchVolume` and supply the recipe builder's `lossAdjustment`. For example,
+a 2 US gal target with `{ "enabled": true, "mode": "manual", "percentage": 50 }`
+and no secondary additions solves for 4 US gal in primary. The draft stores the
+loss setting. An optional `secondary` percentage applies after all additions.
+
+The standard MeadTools model converts a weighed ingredient's Brix to SG,
+then divides its mass in kilograms by that SG. This includes whole fruit
+in primary and secondary. Use catalog or supplied Brix, or supply measured
+density for a volume estimate. The stage loss applies to the modeled blend.
+Use a separate displacement input when estimating physical headspace.
+When a honey ingredient lacks Brix, the tool reports use of standard honey
+as a proxy, including for cooked honey.
+
+An explicit `targetOriginalGravity` sets primary OG. A `targetAbv` sets
+finished ABV and lets the solver compensate for secondary dilution. If fixed
+amounts and calculated backsweetening exceed the packaged target, the draft
+preserves the formulation and reports the overage. Draft nutrients use
+the builder's estimated YAN offset from primary fruit by default. Set
+`nutrients.offsetPpm` explicitly to substitute another estimate, including zero.
+
+Send the whole formulation in one tool call. The two fixed-recipe tools accept
+a single MCP request body up to 128 KiB. Large calculator responses carry
+their full results in MCP structured
+content. Stage-specific stabilizer checks refer to the missing inputs on
+their source volume or ABV check when either remains unresolved.
+
+The nutrient calculation replaces the nutrient form's volume and SG with
+the primary liquid volume and fermented gravity points (OG minus fermentation FG). Secondary additions dilute the finished ABV estimate under the
+alcohol-free, unfermented addition model. Stabilizer scenarios can use a
+measured volume and ABV at the selected stage even if the formulation is
+incomplete. Native snapshots use their stored stabilizer pH, including the builder default.
+Sulfite scenarios accept pH or requested ppm. Campden is the alternative
+sulfite form. At 16% ABV the sorbate formula returns zero, and above 16% the
+sorbate check reports that the formula is out of range. The zero result
+marks the formula boundary. Stability requires separate evidence.
+
 ## Deterministic verification
 
 `packages/recipe-agent/test/calculator-tools.test.ts` checks registration,
@@ -98,3 +179,9 @@ Core tests pin extracted calculation behavior. The existing offline MCP
 permissions fixture invokes every calculator through the real SDK for both
 scope grants, validates structured responses, and retains private-read denial
 checks. No model calls or paid evaluation are involved.
+
+After deployment, refresh discovery through the existing production custom
+connection. Verify the 32 US fl oz example and an outside fixed recipe with
+stage-specific claims, including a partial check and a resolved stabilizer
+scenario. Record the client and results in the MCP client testing plan before
+including the tools in marketplace submission material.
