@@ -17,7 +17,11 @@ import {
   gravity_unit
 } from "@prisma/client";
 import { calcABV } from "@meadtools/core/gravity";
-import { createBrewEntryIdempotently } from "@/lib/brews/createBrewEntryIdempotently";
+import {
+  BrewEntryIdConflictError,
+  createBrewEntryIdempotently
+} from "@/lib/brews/createBrewEntryIdempotently";
+import { decideQueuedStageChange } from "@/lib/brews/queuedStageChange";
 import { recipeSnapshotContentKey } from "@/lib/brews/recipeSnapshot";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
@@ -136,6 +140,19 @@ export type CreateBrewEntryInput = {
 
   // for stage change only (preferred explicit field; fallback to data.to if you want)
   stage_to?: brew_stage;
+  /** Stage change only: refuse the change unless the brew is in this stage. */
+  expected_stage?: brew_stage;
+};
+
+/**
+ * Internal controls for a queued (offline) stage change. Kept out of
+ * PatchBrewMetadataInput because the metadata route forwards its body as is.
+ */
+export type QueuedStageChangeOptions = {
+  /** Client UUID stored as the STAGE_CHANGE entry's ID; retries replay. */
+  entryId?: string;
+  /** Refuse with BrewStageConflictError unless the brew is in this stage. */
+  expectedStage?: brew_stage;
 };
 
 export type PatchBrewEntryInput = {
@@ -439,9 +456,40 @@ export async function getBrewForApp(
 export async function patchBrewMetadata(
   userId: number,
   brewId: string,
-  input: PatchBrewMetadataInput
+  input: PatchBrewMetadataInput,
+  options: { stageChange?: QueuedStageChangeOptions } = {}
 ) {
+  const stageChange = options.stageChange;
   const change = input.containers ? brewContainerChangeSchema.parse(input.containers) : null;
+  if (stageChange && change) throw new InventoryWriteError("ENTRY_MISMATCH");
+  const readMetadata = async (tx: Prisma.TransactionClient) => {
+    const updatedBrew = await tx.brews.findFirst({
+      where: { id: brewId, user_id: userId },
+      select: {
+        id: true,
+        name: true,
+        start_date: true,
+        end_date: true,
+        stage: true,
+        batch_number: true,
+        current_volume_liters: true,
+        requested_email_alerts: true,
+        gravity_unit_preference: true,
+        public: true,
+        latest_gravity: true,
+        cover_image_id: true,
+        recipe_id: true,
+        recipes: { select: { name: true, private: true } }
+      }
+    });
+    if (!updatedBrew) return null;
+    return {
+      ...updatedBrew,
+      recipe_name: updatedBrew.recipes?.name ?? null,
+      recipe_private: updatedBrew.recipes?.private ?? null,
+      recipes: undefined
+    };
+  };
   if (change && (!input.stage || input.stage === "COMPLETE")) throw new InventoryWriteError("ENTRY_MISMATCH");
   const write = async (tx: Prisma.TransactionClient) => {
     if (change) {
@@ -455,6 +503,12 @@ export async function patchBrewMetadata(
         WHERE id = CAST(${brewId} AS uuid) AND user_id = ${userId}
         FOR UPDATE
       `);
+    }
+    // A queued stage change locks the brew so concurrent retries serialize
+    // before the replay/conflict decision.
+    if (stageChange) {
+      const owned = await tx.$queryRaw<Array<{ id: string }>>`SELECT id FROM brews WHERE id = ${brewId}::uuid AND user_id = ${userId} FOR UPDATE`;
+      if (!owned.length) throw new Error("Brew not found");
     }
     // 0) Get current brew (ownership check + “from stage” baseline)
     const existing = await tx.brews.findFirst({
@@ -472,6 +526,23 @@ export async function patchBrewMetadata(
     });
 
     if (!existing) throw new Error("Brew not found");
+
+    if (stageChange) {
+      const prior = stageChange.entryId
+        ? await tx.brew_entries.findUnique({
+            where: { id: stageChange.entryId },
+            select: { brew_id: true, user_id: true, type: true }
+          })
+        : null;
+      const decision = decideQueuedStageChange({
+        prior,
+        brewId,
+        userId,
+        currentStage: existing.stage,
+        expectedStage: stageChange.expectedStage
+      });
+      if (decision === "replay") return readMetadata(tx);
+    }
 
     const fromStage = existing.stage;
 
@@ -738,6 +809,7 @@ export async function patchBrewMetadata(
     if (toStage !== fromStage) {
       await tx.brew_entries.create({
         data: {
+          ...(stageChange?.entryId ? { id: stageChange.entryId } : {}),
           brew_id: brewId,
           user_id: userId,
           type: brew_entry_type.STAGE_CHANGE,
@@ -754,38 +826,14 @@ export async function patchBrewMetadata(
     }
 
     // 5) Return the updated metadata (same style you’ve been using)
-    const updatedBrew = await tx.brews.findFirst({
-      where: { id: brewId, user_id: userId },
-      select: {
-        id: true,
-        name: true,
-        start_date: true,
-        end_date: true,
-        stage: true,
-        batch_number: true,
-        current_volume_liters: true,
-        requested_email_alerts: true,
-        gravity_unit_preference: true,
-        public: true,
-        latest_gravity: true,
-        cover_image_id: true,
-        recipe_id: true,
-        recipes: { select: { name: true, private: true } }
-      }
-    });
-
+    const updatedBrew = await readMetadata(tx);
     if (!updatedBrew) return null;
 
     if (updatedBrew.stage === brew_stage.COMPLETE || updatedBrew.end_date !== null) {
       await releaseEquipmentForBrew(tx, userId, brewId);
     }
 
-    return {
-      ...updatedBrew,
-      recipe_name: updatedBrew.recipes?.name ?? null,
-      recipe_private: updatedBrew.recipes?.private ?? null,
-      recipes: undefined
-    };
+    return updatedBrew;
   };
   if (change) {
     const result = await createInventoryOperation(prisma)<{brew:Prisma.InputJsonObject|null}>(userId,change.operation_id,JSON.parse(JSON.stringify({kind:"stage_containers",brewId,input})),value=>value as {brew:Prisma.InputJsonObject|null},async tx=>({brew:JSON.parse(JSON.stringify(await write(tx)))}));
@@ -1368,7 +1416,26 @@ export async function createBrewEntryForApp(
       input.stage_to ?? ((input.data as any)?.to as brew_stage | undefined);
     if (!to) throw new Error("Missing stage_to");
 
-    await patchBrewMetadata(userId, brewId, { stage: to });
+    if (input.client_entry_id || input.expected_stage) {
+      // Queued (offline) stage change: idempotent by client UUID, conflict-
+      // checked against the expected stage, and timestamped when it happened.
+      try {
+        await patchBrewMetadata(
+          userId,
+          brewId,
+          { stage: to, stage_change_datetime: input.datetime ?? undefined },
+          { stageChange: { entryId: input.client_entry_id, expectedStage: input.expected_stage } }
+        );
+      } catch (error) {
+        // A concurrent insert of the same UUID for another brew or owner.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          throw new BrewEntryIdConflictError();
+        }
+        throw error;
+      }
+    } else {
+      await patchBrewMetadata(userId, brewId, { stage: to });
+    }
 
     // consistent return
     return { brew: await getBrewForApp(userId, brewId), inventory: { status: "untracked" } };

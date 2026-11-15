@@ -28,6 +28,16 @@ import { isAccessTokenExpired } from "@/auth/token";
 type SessionContextValue = {
   session: MobileSession | null;
   status: "authenticated" | "loading" | "unauthenticated";
+  /**
+   * Returns a usable access token only while `userId` is the signed-in
+   * account, refreshing an expired token once for concurrent callers.
+   * Returns null when that account has no usable session; throws for a
+   * transport failure so callers can retry later.
+   */
+  getAccessTokenForUser(
+    userId: number,
+    options?: { forceRefresh?: boolean }
+  ): Promise<string | null>;
   signIn(input: { email: string; password: string }): Promise<void>;
   signInWithGoogle(idToken: string): Promise<void>;
   signOut(): Promise<void>;
@@ -138,6 +148,57 @@ function SessionProvider({
     [apiClient, updateSession]
   );
 
+  const refreshRef = useRef<Promise<MobileSession | null> | null>(null);
+
+  const getAccessTokenForUser = useCallback(
+    async (userId: number, options?: { forceRefresh?: boolean }) => {
+      const current = sessionRef.current;
+      if (!current || current.id !== userId) {
+        return null;
+      }
+      if (
+        !options?.forceRefresh &&
+        !isAccessTokenExpired(current.accessToken)
+      ) {
+        return current.accessToken;
+      }
+
+      refreshRef.current ??= (async () => {
+        try {
+          const refreshed = await apiClient.refreshAccessToken({
+            email: current.email,
+            refreshToken: current.refreshToken
+          });
+          // Never apply a refresh to a session that was replaced meanwhile.
+          if (sessionRef.current !== current) {
+            return sessionRef.current;
+          }
+          const nextSession = { ...current, accessToken: refreshed.accessToken };
+          await saveSession(nextSession);
+          updateSession(nextSession);
+          return nextSession;
+        } catch (error) {
+          if (
+            error instanceof MeadToolsApiError &&
+            [400, 401, 403].includes(error.status)
+          ) {
+            return null;
+          }
+          throw error;
+        } finally {
+          refreshRef.current = null;
+        }
+      })();
+
+      const refreshedSession = await refreshRef.current;
+      return refreshedSession?.id === userId &&
+        sessionRef.current === refreshedSession
+        ? refreshedSession.accessToken
+        : null;
+    },
+    [apiClient, updateSession]
+  );
+
   const signOut = useCallback(async () => {
     await clearStoredSession();
     queryClient.clear();
@@ -164,6 +225,7 @@ function SessionProvider({
   return (
     <SessionContext
       value={{
+        getAccessTokenForUser,
         session,
         status,
         signIn,

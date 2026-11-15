@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  brewEntryConflictErrorResponseSchema,
   brewEntryIdConflictErrorResponseSchema,
   brewEntryResponseSchema,
+  brewStageConflictErrorResponseSchema,
   brewDetailNotFoundErrorResponseSchema,
   brewRecipeSnapshotResponseSchema,
   createBrewEntryRequestBodySchema,
@@ -124,4 +126,27 @@ test("brew snapshot contract accepts legacy fields without accepting non-objects
     sourceUsername: "maker",
     previousSnapshots: [{ name: "Earlier", dataV2: { version: 2 } }]
   }).success, true);
+});
+
+test("queued stage changes accept an expected stage and document a typed conflict", () => {
+  const request = {
+    type: "STAGE_CHANGE",
+    stage_to: "SECONDARY",
+    client_entry_id: "00000000-0000-4000-8000-000000000001",
+    datetime: "2026-11-08T12:00:00.000Z",
+    expected_stage: "PRIMARY"
+  };
+  assert.equal(createBrewEntryRequestBodySchema.safeParse(request).success, true);
+  assert.equal(
+    createBrewEntryRequestBodySchema.safeParse({ ...request, expected_stage: "NOT_A_STAGE" }).success,
+    false
+  );
+  // Existing callers that omit the new field remain valid.
+  const { expected_stage: _expected, ...legacy } = request;
+  assert.equal(createBrewEntryRequestBodySchema.safeParse(legacy).success, true);
+
+  const conflict = { error: "Brew stage changed", code: "STAGE_CONFLICT", current_stage: "BULK_AGE" };
+  assert.equal(brewStageConflictErrorResponseSchema.safeParse(conflict).success, true);
+  assert.equal(brewEntryConflictErrorResponseSchema.safeParse(conflict).success, true);
+  assert.equal(brewEntryConflictErrorResponseSchema.safeParse({ error: "Entry ID is already in use" }).success, true);
 });

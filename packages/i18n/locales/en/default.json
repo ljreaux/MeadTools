@@ -1912,13 +1912,181 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "bottling": {
+      "action": "Record bottling",
+      "offline": "Connect to the internet to record, correct, or remove bottling.",
+      "bottles": "Bottle rows",
+      "bottleCount": "Bottle count for row {{index}}",
+      "size": "Bottle size",
+      "custom": "Custom",
+      "customSize": "Custom bottle size",
+      "addBottle": "Add bottle row",
+      "removeRow": "Remove row",
+      "closures": "Closures",
+      "closureName": "Closure name for row {{index}}",
+      "closureCount": "Closure count for row {{index}}",
+      "addClosure": "Add closure",
+      "volume": "Packaged volume",
+      "volumeHint": "Leave blank to use the total volume from the bottle rows.",
+      "position": "Storage position (optional)",
+      "invalid": "Enter whole positive counts, valid sizes and a packaged volume.",
+      "untracked": "Packaging will be saved without inventory tracking. Inventory tracking requires Premium.",
+      "confirmRemoval": "Confirm bottling removal",
+      "retrySame": "The save could not be confirmed. Retry to check the same bottling."
+    },
+    "plannedAdditions": {
+      "title": "Planned additions",
+      "logged": "Logged",
+      "queued": "Waiting to sync",
+      "manualYeast": "Log manual yeast",
+      "remaining": "Nutrients remaining: {{amounts}}",
+      "packetWeight": "Grams per packet",
+      "packetWeightRequired": "Enter a positive weight per packet.",
+      "retrySame": "The save could not be confirmed. Retry to check the same addition."
+    },
     "activeCount_one": "{{count}} active brew",
     "activeCount_other": "{{count}} active brews",
+    "addEntry": {
+      "action": "Add entry",
+      "addition": {
+        "amountLabel": "Amount (optional)",
+        "inventoryHint": "This does not change inventory. Inventory tracking requires Premium.",
+        "kindLabel": "Kind",
+        "kinds": {
+          "INGREDIENT": "Ingredient",
+          "NUTRIENT": "Nutrient",
+          "OTHER": "Other"
+        },
+        "nameLabel": "Name",
+        "namePlaceholder": "Wildflower honey",
+        "stock": {
+          "failed": "This addition could not be saved. Check your connection and try again.",
+          "label": "Deduct from inventory",
+          "needsAmount": "Enter an amount to deduct it from inventory.",
+          "noMatch": "No stock matches this addition and unit.",
+          "offline": "Connect to deduct from inventory. Offline additions are logged without changing stock.",
+          "saveOnline": "The entry is timestamped when you save it. Saving deducts the stock right away, so it needs a connection."
+        }
+      },
+      "cancel": "Cancel",
+      "errors": {
+        "empty": "Enter a value.",
+        "invalid": "Enter a number.",
+        "nameRequired": "Enter a name.",
+        "range": "Enter a value from {{min}} to {{max}}.",
+        "saveFailed": "This entry could not be saved on this device. Try again.",
+        "textRequired": "Enter some text."
+      },
+      "gravity": {
+        "correctedNote": "Saved as {{sg}} SG, refractometer-corrected.",
+        "correction": "Refractometer correction",
+        "correctionFactor": "Correction factor",
+        "correctionOg": "Uses OG {{og}}.",
+        "correctionUnavailable": "Record an OG first to enable refractometer correction.",
+        "factorError": "Enter a correction factor greater than 0.",
+        "invalid": "Enter a number, such as 1.050.",
+        "rangeBrix": "Enter a value from {{min}} to {{max}} °Bx.",
+        "rangeSg": "Enter a value from {{min}} to {{max}} SG.",
+        "readingLabel": "Gravity",
+        "roleLabel": "Reading type",
+        "roles": {
+          "FG": "FG",
+          "GENERAL": "Reading",
+          "OG": "OG"
+        },
+        "uncorrectedNote": "Saved as {{sg}} SG. This °Bx reading is not refractometer-corrected.",
+        "units": {
+          "BRIX": "°Bx",
+          "SG": "SG"
+        }
+      },
+      "measuredNow": "The entry is timestamped when you save it. It syncs automatically, even if you are offline.",
+      "noteLabel": "Note (optional)",
+      "ph": {
+        "label": "pH"
+      },
+      "save": "Save entry",
+      "saving": "Saving…",
+      "temperature": {
+        "label": "Temperature"
+      },
+      "text": {
+        "issueLabel": "What happened?",
+        "noteLabel": "Note",
+        "tastingLabel": "Tasting notes",
+        "titleLabel": "Title (optional)"
+      },
+      "title": "Add entry",
+      "typeLabel": "Entry type",
+      "unavailable": "Adding entries is not available on this device.",
+      "unitLabel": "Unit",
+      "volume": {
+        "hint": "Updates the brew’s current volume.",
+        "label": "Current volume"
+      }
+    },
     "batch": "Batch {{number}}",
+    "changeStage": {
+      "action": "Change stage",
+      "cancel": "Cancel",
+      "confirm": "Move",
+      "confirmBody": "The change is timestamped now and syncs automatically, even if you are offline.",
+      "confirmCompleteBody": "Completing the brew sets its end date. The change syncs automatically, even if you are offline.",
+      "confirmTitle": "Move to {{stage}}?",
+      "current": "Current",
+      "equipmentNote": "Equipment assignments don’t change here. Use the web app to move a brew to different containers.",
+      "needs": "Needs: {{items}}",
+      "pending": "Waiting to sync",
+      "saveFailed": "This change could not be saved on this device. Try again.",
+      "title": "Change stage",
+      "unavailable": "Changing stages is not available on this device."
+    },
     "currentVolume": "Current volume",
+    "delivery": {
+      "discard": "Discard",
+      "discardBody": "This entry has not been saved to MeadTools. Discarding removes it from this device.",
+      "discardCancel": "Keep",
+      "discardTitle": "Discard this entry?",
+      "retry": "Retry now",
+      "status": {
+        "authRequired": "Not synced. Sign in again to send it.",
+        "conflict": "Not saved: it conflicts with another entry.",
+        "forbidden": "Not saved: your account cannot add this entry.",
+        "notFound": "Not saved: this brew is no longer available.",
+        "pending": "Waiting to sync",
+        "rejected": "Not saved: MeadTools rejected this entry.",
+        "retryNetwork": "Offline. It will sync when you are back online.",
+        "retryServer": "MeadTools is unavailable. It will retry automatically.",
+        "sending": "Syncing…",
+        "stageConflict": "Not saved: the brew’s stage was changed elsewhere. Discard this change and choose again.",
+        "synced": "Synced",
+        "unconfirmed": "Sync could not be confirmed. Retry to check."
+      }
+    },
     "detailError": "Could not load this brew.",
     "detailLoading": "Loading brew…",
     "detailTitle": "Brew details",
+    "editEntry": {
+      "cancel": "Cancel",
+      "delete": "Delete entry",
+      "deleteBody": "The entry is removed from the brew timeline. This cannot be undone.",
+      "deleteKeep": "Keep",
+      "deleteTitle": "Delete this entry?",
+      "errors": {
+        "empty": "Enter a value.",
+        "failed": "The change could not be saved. Check your connection and try again.",
+        "invalid": "Enter a number.",
+        "range": "Enter a realistic value."
+      },
+      "gravitySg": "Edited readings are saved in SG.",
+      "noteOnly": "Only the note can be changed here. Use the web app for other changes to this entry.",
+      "notFound": "This entry is no longer available. Refresh the brew.",
+      "offline": "Editing and deleting entries need a connection.",
+      "openHint": "Opens the entry to edit or delete it",
+      "save": "Save changes",
+      "title": "Edit entry",
+      "webReview": "Use the web app to review the stock changes for this entry."
+    },
     "emptyBody": "Start a brew on the web app, then refresh this list.",
     "emptyTitle": "No active brews",
     "entries_one": "{{count}} entry",
@@ -1949,7 +2117,7 @@
     "timeline": {
       "activity": "Activity",
       "dateUnavailable": "Date unavailable",
-      "empty": "No timeline activity yet. Entries you add on the web will appear here.",
+      "empty": "No timeline activity yet. Entries you add here or on the web will appear here.",
       "heading": "Recent activity",
       "packages_one": "{{count}} package",
       "packages_other": "{{count}} packages",
@@ -2560,6 +2728,9 @@
   "units": {
     "C": "°C",
     "F": "°F",
+    "fl_oz": "fl oz",
+    "g": "g",
+    "gal": "gal",
     "gpl": "g/L",
     "imp_fl_oz": "imp fl oz",
     "imp_gal": "imp gal",
@@ -2567,10 +2738,14 @@
     "imp_qt": "imp qt",
     "kg": "kg",
     "L": "L",
+    "lb": "lb",
     "mg": "mg",
     "mL": "mL",
+    "oz": "oz",
     "pt": "pt",
     "qt": "qt",
+    "tbsp": "tbsp",
+    "tsp": "tsp",
     "units": "units"
   },
   "unnamedDevice": "Unnamed device",

@@ -97,6 +97,7 @@ import {
   brewRecipeSnapshotResponseSchema,
   brewResponseSchema,
   brewSnapshotUpdateErrorResponseSchema,
+  brewStageConflictErrorResponseSchema,
   brewStageResponseSchema,
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
@@ -574,6 +575,7 @@ export const BrewRecipeSnapshotResponse = brewRecipeSnapshotResponseSchema;
 export const BrewResponse = brewResponseSchema;
 export const BrewSnapshotUpdateErrorResponse = brewSnapshotUpdateErrorResponseSchema;
 export const BrewsResponse = brewsResponseSchema;
+export const BrewStageConflictErrorResponse = brewStageConflictErrorResponseSchema;
 export const BrewStageResponse = brewStageResponseSchema;
 export const BrewUpdateErrorResponse = brewUpdateErrorResponseSchema;
 export const BrewValidationErrorResponse = brewValidationErrorResponseSchema;

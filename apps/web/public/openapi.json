@@ -7297,6 +7297,9 @@
           },
           {
             "$ref": "#/components/schemas/BrewInventoryErrorResponse"
+          },
+          {
+            "$ref": "#/components/schemas/BrewStageConflictErrorResponse"
           }
         ]
       },
@@ -7374,6 +7377,13 @@
           "client_entry_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "expected_stage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrewStageResponse"
+              }
+            ]
           }
         },
         "required": [
@@ -12829,6 +12839,31 @@
             }
           }
         }
+      },
+      "BrewStageConflictErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Brew stage changed"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "STAGE_CONFLICT"
+            ]
+          },
+          "current_stage": {
+            "$ref": "#/components/schemas/BrewStageResponse"
+          }
+        },
+        "required": [
+          "error",
+          "code",
+          "current_stage"
+        ]
       },
       "BrewStageResponse": {
         "type": "string",
@@ -18997,7 +19032,7 @@
       "post": {
         "operationId": "post-brews-{brew_id}-entries",
         "summary": "Create brew entry",
-        "description": "Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.",
+        "description": "Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew. A stage change with a client_entry_id is stored under that UUID at its datetime, so a retry returns the brew without moving it again; with expected_stage it returns 409 and changes nothing if the brew has moved to another stage.",
         "tags": [
           "Brews"
         ],

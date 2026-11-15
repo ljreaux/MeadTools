@@ -1,4 +1,6 @@
 "use client";
+
+import { buildBrewAddition } from "@meadtools/brew-domain/planned-additions";
 import { EditableCover } from "@/components/brews/RecordCover";
 import { BrewCostPanel } from "@/components/account/InventoryCostSummary";
 import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
@@ -807,27 +809,7 @@ export default function BrewPageClient() {
     meta?: Record<string, any>;
     datetime?: string;
   }) {
-    const nameKey =
-      typeof input.meta?.nameKey === "string" ? input.meta.nameKey : getBrewItemKey(input.meta?.plannedName ?? input.name);
-    const displayName = nameKey ? t(nameKey, getBrewItemLabel(t, input.name)) : getBrewItemLabel(t, input.name);
-    return (
-      { ...entryPayload.addition({
-        name: displayName,
-        recipeIngredientId: input.recipeIngredientId,
-        recipeAdditiveId: input.recipeAdditiveId,
-        amount: input.amount == null ? input.amount : Number(input.amount.toFixed(6)),
-        unit: input.unit,
-        note: input.note ?? null,
-        kind: input.kind,
-        source: input.source,
-        meta: {
-          ...(input.meta ?? {}),
-          nameKey: nameKey ?? undefined,
-          plannedName: input.meta?.plannedName ?? input.name
-        },
-        datetime: input.datetime
-      }), inventory: input.inventory }
-    );
+    return { ...buildBrewAddition(input, (key, fallback) => t(key, fallback)), inventory: input.inventory };
   }
 
   async function addAddition(input:Parameters<typeof buildAddition>[0]) {await addEntry(buildAddition(input));}
