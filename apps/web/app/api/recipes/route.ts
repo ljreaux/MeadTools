@@ -15,7 +15,7 @@ import { isRecipeData, RecipeData } from "@/types/recipeData";
  * @add 500:AdminRecipesFetchErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function GET(req: NextRequest) {
   try {

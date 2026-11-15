@@ -114,7 +114,20 @@
     "/auth/oauth-callback",
     "/auth/start-oauth-flow",
     "/auth/{nextauth}",
-    "/admin/maintenance/rebuild-estimated-abv"
+    "/admin",
+    "/admin/*",
+    "/webhooks",
+    "/webhooks/*",
+    "/chat",
+    "/chat/*",
+    "/account/credits",
+    "/account/credits/*",
+    "/account/premium",
+    "/account/premium/kofi/*",
+    "/account/premium/stripe/*",
+    "/account/premium/mcp/*",
+    "/account/release-emails",
+    "/release-emails/unsubscribe"
   ],
   "debug": false
 }

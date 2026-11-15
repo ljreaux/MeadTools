@@ -110,7 +110,8 @@
         "request": {
           "email": "string (optional) - Updated user email",
           "password": "string (optional) - New password (hashed before storage)",
-          "public_username": "string (optional) - Updated public display name"
+          "public_username": "string (optional) - Updated public display name",
+          "show_google_avatar": "boolean (optional) - Show the linked Google avatar on the public profile"
         },
         "response": {
           "200": {
@@ -119,6 +120,7 @@
             "role": "user",
             "public_username": "updated_username"
           },
+          "400": { "error": "Invalid account update" },
           "401": { "error": "Unauthorized" },
           "500": { "error": "Failed to update account info" }
         }

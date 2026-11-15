@@ -54,7 +54,7 @@ export async function GET(
  * @add 500:UpdateAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function PATCH(
   req: NextRequest,
@@ -98,7 +98,7 @@ export async function PATCH(
  * @add 500:DeleteAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function DELETE(
   req: NextRequest,

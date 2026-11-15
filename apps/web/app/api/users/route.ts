@@ -13,7 +13,7 @@ import { requireAdmin, verifyUser } from "@/lib/userAccessFunctions";
  * @add 500:AdminUsersFetchErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function GET(req: NextRequest) {
   const userId = await verifyUser(req);

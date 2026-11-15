@@ -1,8 +1,10 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { updateAccountInfoRequestBodySchema } from "../packages/api-contract/src/zod/auth.ts";
 import {
   createBrewEntryBatchRequestBodySchema, brewContainerChangeSchema, updateBrewRequestBodySchema,
   brewInventorySelectionSchema, brewInventoryOutcomeSchema, brewInventoryErrorResponseSchema,
 } from "../packages/api-contract/src/zod/brews.ts";
+import { recipeDataV2ResponseSchema, volumeUnitSchema } from "../packages/api-contract/src/zod/foundation.ts";
 import * as inventorySchemas from "../packages/api-contract/src/zod/inventory.ts";
 import * as brewImageSchemas from "../packages/api-contract/src/zod/brew-images.ts";
 import * as equipmentSchemas from "../packages/api-contract/src/zod/equipment.ts";
@@ -26,6 +28,10 @@ const schemaToPublicName = new Map(
   )
 );
 const schemas = document.components?.schemas ?? {};
+
+// The resolver emits the imported recipe name for inline request and response
+// fields. Point those fields to the published component generated below.
+schemaToPublicName.set("recipeDataV2Schema", "RecipeDataV2Response");
 
 function rewriteReferences(value) {
   if (Array.isArray(value)) return value.map(rewriteReferences);
@@ -63,6 +69,9 @@ schemas.CreateBrewEntryBatchRequestBody=createBrewEntryBatchRequestBodySchema.to
 schemas.BrewInventorySelection = brewInventorySelectionSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
 schemas.BrewInventoryOutcome = brewInventoryOutcomeSchema.toJSONSchema({ target: "openapi-3.0" });
 schemas.BrewInventoryErrorResponse = brewInventoryErrorResponseSchema.toJSONSchema({ target: "openapi-3.0" });
+schemas.RecipeDataV2Response = recipeDataV2ResponseSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
+schemas.VolumeUnit = volumeUnitSchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
+schemas.UpdateAccountInfoRequestBody = updateAccountInfoRequestBodySchema.toJSONSchema({ target: "openapi-3.0", io: "input" });
 for (const [name, schema] of Object.entries({ ...equipmentSchemas, ...inventorySchemas, ...brewImageSchemas })) {
   const publicName = schemaToPublicName.get(name);
   if (publicName) schemas[publicName] = schema.toJSONSchema({ target: "openapi-3.0", io: name.includes("RequestBody") ? "input" : "output" });
@@ -74,6 +83,11 @@ if (deleteBrewEntry) deleteBrewEntry.requestBody = {
   required: false,
   content: { "application/json": { schema: { $ref: "#/components/schemas/DeleteBrewEntryRequestBody" } } },
 };
+const tiltBody = rewrittenDocument.paths?.["/hydrometer/tilt"]?.post?.requestBody;
+if (tiltBody) {
+  tiltBody.required = true;
+  tiltBody.content["application/x-www-form-urlencoded"] = tiltBody.content["application/json"];
+}
 const rewrittenSchemas = rewrittenDocument.components?.schemas ?? {};
 const referenced = new Set();
 
