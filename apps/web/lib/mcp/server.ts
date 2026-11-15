@@ -13,6 +13,7 @@ import {
   isCalculatorTool,
   isPublicReadTool,
   isRecipeEvaluationTool,
+  summarizeRecipeEvaluation,
   mcpAgentToolDefinitions,
   mcpAgentToolNames,
   mcpServerInstructions
@@ -164,12 +165,20 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
       "utf8"
     );
     const wholeRecipeCalculation = isRecipeEvaluationTool(request.params.name);
-    if (size > MAX_RESULT_BYTES && wholeRecipeCalculation && execution.status === "ok") {
+    if (
+      size > MAX_RESULT_BYTES &&
+      wholeRecipeCalculation &&
+      execution.status === "ok" &&
+      "result" in execution &&
+      execution.result &&
+      typeof execution.result === "object" &&
+      ("stages" in execution.result || "primaryOg" in execution.result)
+    ) {
       const compactResponse = {
         ...response,
         content: [{
           type: "text" as const,
-          text: "Calculation complete. The full ingredient and stage results are in structuredContent."
+          text: JSON.stringify(summarizeRecipeEvaluation(execution.result))
         }]
       };
       if (Buffer.byteLength(JSON.stringify(compactResponse), "utf8") <= MAX_RECIPE_CALCULATION_BYTES)

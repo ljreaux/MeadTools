@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   HONEY_BRIX,
+  isPlainWaterIngredient,
   VOLUME_TO_L,
   weightToVolumeL,
   toSG,
@@ -53,7 +54,7 @@ export const fixedIngredientSchema = z.strictObject({
     .enum(["liquid", "fruit", "solid"])
     .optional()
     .describe(
-      "Use fruit for whole, crushed or dried fruit. Fruit uses the standard ingredient density model by default. Use solid for additions that contribute zero modeled recipe volume.",
+      "Use fruit for whole, crushed or dried fruit. Fruit uses the standard ingredient density model by default. Use solid only for additions that contribute zero modeled volume and sugar. Use the density model for fermentable sugars, even when added dry.",
     ),
   brix: z.number().min(0).max(100).optional(),
   densityKgPerL: z.number().min(0.01).max(30).optional(),
@@ -138,6 +139,7 @@ type IngredientVolumeInput = z.infer<typeof ingredientVolumeInputSchema>;
 export type VolumeOptions = Omit<IngredientVolumeInput, "ingredients">;
 export type FixedIngredient = Omit<Ingredient, "amount"> & {
   amount: Ingredient["amount"] | null;
+  storedVolumeL?: number;
 };
 
 export function liters(amount: z.infer<typeof liquidAmountSchema>) {
@@ -149,7 +151,7 @@ function resolveIngredient(ingredient: FixedIngredient, index: number) {
   const field = `ingredients[${index}]`;
   const missing: MissingInput[] = [];
   const assumptions: string[] = [];
-  const water = /^water$/i.test(name);
+  const water = isPlainWaterIngredient(name);
   const honey =
     /\bhoney\b/i.test(name) && !/\bhoney\s+(?:wine|mead)\b/i.test(name);
   const kind = ingredient.kind ?? "liquid";
@@ -174,7 +176,23 @@ function resolveIngredient(ingredient: FixedIngredient, index: number) {
   const specificGravity = brix === undefined ? null : toSG(brix);
   let liquidLiters: number | null = null;
 
-  if (!amount) {
+  const drySugar =
+    /^(?:(?:table|granulated|white|cane|beet|brown|corn|powdered|raw) )*sugar$|^(?:dextrose|sucrose|glucose|fructose)$/i.test(
+      name,
+    );
+  if (
+    kind === "solid" &&
+    amount?.value &&
+    (drySugar || (ingredient.brix ?? 0) > 0)
+  ) {
+    throw new Error(
+      `${field}.kind: A fermentable contributes to the recipe blend. Use the density model with Brix or density for a weighed sugar.`,
+    );
+  }
+
+  if (ingredient.storedVolumeL !== undefined) {
+    liquidLiters = ingredient.storedVolumeL;
+  } else if (!amount) {
     missing.push({
       field: `${field}.amount`,
       reason: "Supply a numeric amount in the ingredient's quantity basis.",

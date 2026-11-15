@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { statelessCalculator } from "./stateless-calculator";
 import { recipeEvaluationTools } from "./recipe-evaluation-tools";
+export { summarizeRecipeEvaluation } from "./recipe-evaluation-tools";
 import {
   standaloneAlcohol as alcohol,
   toBrix,
@@ -492,8 +493,9 @@ const scalarCalculatorTools = [
   )
 ] as const;
 export const calculatorTools = [...scalarCalculatorTools, ...recipeEvaluationTools] as const;
+export const recipeEvaluationToolNames = recipeEvaluationTools.map((tool) => tool.name);
 export const isRecipeEvaluationTool = (name: string) =>
-  recipeEvaluationTools.some((tool) => tool.name === name);
+  recipeEvaluationToolNames.some((known) => known === name);
 export const isHostedCalculatorTool = (name: string) =>
   scalarCalculatorTools.some((tool) => tool.name === name);
 export type CalculatorToolName = (typeof calculatorTools)[number]["name"];

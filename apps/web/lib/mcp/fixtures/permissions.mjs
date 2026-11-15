@@ -18,6 +18,8 @@ import { createMeadToolsMcpServer } from "../server.ts";
 import {
   mcpAccountReadToolNames,
   calculatorToolNames,
+  isRecipeEvaluationTool,
+  recipeEvaluationToolNames,
   publicReadToolNames
 } from "@meadtools/recipe-agent";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -468,7 +470,7 @@ for (const scope of [base, expanded]) {
       kind: "fruit",
       amount: { kind: "weight", unit: "lb", value: 1 }
     }));
-    for (const name of ["calculate_ingredient_volumes", "evaluate_recipe"]) {
+    for (const name of recipeEvaluationToolNames) {
       const arguments_ = name === "evaluate_recipe"
         ? {
             ingredients,
@@ -492,7 +494,12 @@ for (const scope of [base, expanded]) {
       const volume = result.volume ?? result;
       assert.equal(volume.ingredients.length, 60);
       assert.equal(volume.stages.packaging.liters, null);
-      assert.match(response.content[0].text, /structuredContent/);
+      const textResult = JSON.parse(response.content[0].text);
+      assert.equal(textResult.result.ingredientCount, 60);
+      assert.equal(textResult.result.stages.primary.knownSubtotalL, 0);
+      assert.equal(textResult.result.stages.packaging.liters, null);
+      assert.ok(textResult.result.stages.packaging.unresolvedInputs >= 60);
+      assert.match(textResult.details, /structuredContent/);
       assert.ok(volume.stages.packaging.missing.some(({ field }) => field === "ingredients[59].densityKgPerL"));
     }
     const recipeData = {
@@ -630,5 +637,5 @@ for (const scope of [base, expanded]) {
 }
 for (const name of calculatorToolNames)
   assert.equal(calculatorUsage.filter((tool) => tool === name).length,
-    name === "evaluate_recipe" ? 4 : name === "calculate_ingredient_volumes" ? 3 : 2);
+    2 + Number(isRecipeEvaluationTool(name)) + Number(name === "evaluate_recipe"));
 await prisma.$disconnect();

@@ -11,6 +11,7 @@ import {
   VOLUME_TO_L,
   WEIGHT_TO_KG,
   weightToVolumeL,
+  isPlainWaterIngredient,
   normalizeIngredientLine,
 } from "@meadtools/core/recipe";
 import {
@@ -294,6 +295,14 @@ export function buildRecipeDraft(
       );
     }
 
+    const calculatedOg = authoritative.data.derived.gravity.ogPrimary;
+    // Ingredient quantities are serialized to six decimals before deriving OG.
+    if (completeInput.fermentationFinalGravity - calculatedOg > 0.000001) {
+      return invalidInput(
+        `Fermentation final gravity exceeds the calculated primary OG of ${formatNumber(calculatedOg)}.`,
+        [{ path: ["fermentationFinalGravity"], message: "Supply a fermentation FG at or below the calculated primary OG, or adjust the primary formulation." }],
+      );
+    }
     const warnings = ["This is an unsaved recipe draft."];
     const primaryFermentationAbv = calcABV(
       authoritative.data.derived.gravity.ogPrimary,
@@ -325,7 +334,6 @@ export function buildRecipeDraft(
           input.targetOriginalGravity,
       ) > 0.0005
     ) {
-      const calculatedOg = authoritative.data.derived.gravity.ogPrimary;
       const gravityAdjustment =
         calculatedOg > input.targetOriginalGravity
           ? "reduce a fixed fermentable or increase the finished batch volume to lower the gravity"
@@ -524,7 +532,7 @@ function normalizeDraftInput(
       (ingredient) =>
         ingredient.amount !== undefined ||
         ingredient.role === "fill_liquid" ||
-        ingredient.name.trim().toLowerCase() !== "water",
+        !isPlainWaterIngredient(ingredient.name),
     ),
   };
   const stabilizationRequested =
@@ -743,7 +751,7 @@ function missingQuestions(input: BuildRecipeDraftInput): WorkflowQuestion[] {
       (ingredient) =>
         !ingredient.secondary &&
         ingredient.amount !== undefined &&
-        !isWaterIngredientName(ingredient.name),
+        !isPlainWaterIngredient(ingredient.name),
     );
     // A stated honey/fruit amount is a fixed recipe constraint. The
     // calculation should show the resulting gravity (or surface a genuine
@@ -867,9 +875,8 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
       fermentationFinalGravity: input.fermentationFinalGravity,
     });
   const reservesBacksweetening =
-    Boolean(adjustable) || primaryRetention !== 1 || packagingRetention !== 1;
+    Boolean(adjustable || fillLiquid) || input.allowWaterFill !== false;
   const secondaryAlreadyMeetsBacksweeteningTarget =
-    reservesBacksweetening &&
     input.backsweetening !== undefined &&
     fixedSecondaryVolumeL > 0 &&
     fixedSecondaryBacksweetenedFg >= input.backsweetening.targetFinalGravity;
@@ -1063,7 +1070,7 @@ function buildRecipeData(input: CompleteBuildRecipeDraftInput): RecipeDataV2 {
     ...(input.lossAdjustment ? { lossAdjustment: input.lossAdjustment } : {}),
   };
   recipe.nutrients = nutrientData(input, ingredientLines);
-  if (input.backsweetening && !secondaryAlreadyMeetsBacksweeteningTarget) {
+  if (input.backsweetening) {
     recipe = addCalculatedBacksweetening(recipe, input.backsweetening);
   }
   return recipe;
@@ -1303,24 +1310,20 @@ function ingredientBrix(
 ): number | undefined {
   if (ingredient.brix !== undefined) return ingredient.brix;
   const normalized = ingredient.name.trim().toLowerCase();
-  if (normalized === "water") return 0;
+  if (isPlainWaterIngredient(normalized)) return 0;
   if (isHoneyIngredientName(normalized)) return HONEY_BRIX;
   return undefined;
 }
 
 function inferCategory(name: string): string {
   const normalized = name.trim().toLowerCase();
-  if (normalized === "water") return "water";
+  if (isPlainWaterIngredient(normalized)) return "water";
   if (isHoneyIngredientName(normalized)) return "sugar";
   return "other";
 }
 
 function isHoneyIngredientName(name: string): boolean {
   return /\bhoney\b/i.test(name);
-}
-
-function isWaterIngredientName(name: string): boolean {
-  return name.trim().toLowerCase() === "water";
 }
 
 function ingredientLine(
@@ -1389,7 +1392,7 @@ function ingredientMeasurementBasis(
   ingredient: Pick<SuppliedIngredient, "name" | "category" | "role">,
 ): "weight" | "volume" {
   if (ingredient.role === "fill_liquid") return "volume";
-  if (isWaterIngredientName(ingredient.name)) return "volume";
+  if (isPlainWaterIngredient(ingredient.name)) return "volume";
   return /(?:water|juice|cider|liquid)/i.test(ingredient.category)
     ? "volume"
     : "weight";

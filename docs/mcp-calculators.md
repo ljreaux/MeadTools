@@ -131,7 +131,8 @@ model the supplied ingredients the same way. It sums the primary and
 secondary ingredient contributions before transfer losses. Keep the
 original weight or volume basis, set each supplied ingredient role to
 `fixed`, and use `allowWaterFill: false` for an all-fixed formulation. The
-draft solver still needs its normal intake inputs. Both tools calculate weighed fruit volume from mass and Brix-derived density.
+draft solver still needs its normal intake inputs. The draft and structured-input calculators derive weighed fruit volume from
+mass and Brix-derived density.
 
 For a draft with planned losses, pass the desired packaged yield as
 `batchVolume` and supply the recipe builder's `lossAdjustment`. For example,
@@ -144,20 +145,31 @@ then divides its mass in kilograms by that SG. This includes whole fruit
 in primary and secondary. Use catalog or supplied Brix, or supply measured
 density for a volume estimate. The stage loss applies to the modeled blend.
 Use a separate displacement input when estimating physical headspace.
+Plain water names such as spring water default to zero Brix. Supply Brix
+when the liquid has dissolved sugar. Use the density model for fermentable
+sugars. The `solid` kind is reserved for additions that contribute neither
+modeled volume nor sugar.
+Native snapshots preserve the builder’s stored ingredient volume when present.
+If Brix is missing, volume can still resolve while gravity-dependent checks
+remain unresolved. When a measured racked volume is supplied alongside
+planned primary loss, the evaluator uses the measurement through all stages.
 When a honey ingredient lacks Brix, the tool reports use of standard honey
 as a proxy, including for cooked honey.
 
 An explicit `targetOriginalGravity` sets primary OG. A `targetAbv` sets
 finished ABV and lets the solver compensate for secondary dilution. If fixed
 amounts and calculated backsweetening exceed the packaged target, the draft
-preserves the formulation and reports the overage. Draft nutrients use
+preserves the formulation and reports the overage. An adjustable fill liquid
+reserves space for backsweetening, including when transfer loss is zero.
+Fermentation FG must be at or below the calculated primary OG. Draft nutrients use
 the builder's estimated YAN offset from primary fruit by default. Set
 `nutrients.offsetPpm` explicitly to substitute another estimate, including zero.
 
 Send the whole formulation in one tool call. The two fixed-recipe tools accept
-a single MCP request body up to 128 KiB. Large calculator responses carry
-their full results in MCP structured
-content. Stage-specific stabilizer checks refer to the missing inputs on
+a single MCP request body up to 128 KiB. The route reads up to that bound
+to identify the tool. Other MCP calls still have a 16 KiB limit.
+Large calculator responses include stage totals and key estimates in text and
+carry the full results in MCP structured content. Stage-specific stabilizer checks refer to the missing inputs on
 their source volume or ABV check when either remains unresolved.
 
 The nutrient calculation replaces the nutrient form's volume and SG with

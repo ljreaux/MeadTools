@@ -944,7 +944,7 @@ test("recipe drafts reject additive units outside the recipe-builder contract", 
 test("general recipe drafting preserves a catalog ingredient reference", () => {
   const result = buildRecipeDraft({
     batchVolume: { value: 1, unit: "gal" },
-    fermentationFinalGravity: 1.01,
+    fermentationFinalGravity: 1.005,
     ingredients: [
       {
         name: "Blackberries",
@@ -1315,4 +1315,43 @@ test("rejects a fermentation FG above the explicit primary OG before drafting", 
   const equalGravity = buildRecipeDraft({ ...input, fermentationFinalGravity: 1.09 });
   assert.equal(equalGravity.status, "recipe");
   assert.ok(Math.abs(equalGravity.derived.alcohol.abv) < 0.00001);
+});
+
+test("reserves backsweetening volume with fixed honey and an adjustable water fill at zero loss", () => {
+  const input = {
+    batchVolume: { value: 5, unit: "L" },
+    fermentationFinalGravity: 1,
+    ingredients: [
+      { name: "Honey", amount: { kind: "weight", value: 1, unit: "kg" } },
+      { name: "Spring water", role: "fill_liquid" }
+    ],
+    backsweetening: { targetFinalGravity: 1.02 },
+    nutrients: nutrientPlan
+  };
+  for (const lossAdjustment of [undefined, { enabled: true, mode: "manual", percentage: 0.01 }]) {
+    const draft = buildRecipeDraft({ ...input, lossAdjustment });
+    assert.equal(draft.status, "recipe", JSON.stringify(draft));
+    assert.equal(draft.recipeData.ingredients[0]?.amounts.weight.value, "1");
+    assert.ok(Math.abs(draft.derived.volume.bottlingL - 5) < 0.00001);
+    assert.ok(Math.abs(draft.derived.gravity.backsweetenedFg - 1.02) < 0.00001);
+  }
+});
+
+test("rejects a fermentation FG above calculated primary OG for fixed recipes", () => {
+  const input = {
+    batchVolume: { value: 7, unit: "L" },
+    allowWaterFill: false,
+    fermentationFinalGravity: 1.1,
+    ingredients: [
+      { name: "Honey", amount: { kind: "weight", value: 1, unit: "kg" } },
+      { name: "Water", amount: { kind: "volume", value: 5.5, unit: "L" } }
+    ],
+    nutrients: nutrientPlan
+  };
+  for (const targetOriginalGravity of [undefined, 1.11]) {
+    const draft = buildRecipeDraft({ ...input, targetOriginalGravity });
+    assert.equal(draft.status, "error");
+    assert.equal(draft.code, "invalid_input");
+    assert.match(draft.message, /calculated primary OG of 1\.047257/);
+  }
 });

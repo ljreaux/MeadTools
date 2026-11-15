@@ -205,11 +205,16 @@ function snapshotIngredients(
       !/\bjuice\b/i.test(line.name);
     const { weight, volume, basis } = line.amounts;
     const value = recipeNumber(line.amounts[basis].value);
+    const storedVolume = recipeNumber(volume.value);
     return {
       name: line.name,
       stage: line.secondary ? "secondary" : "primary",
       brix,
       kind: isFruit ? "fruit" : "liquid",
+      storedVolumeL:
+        storedVolume !== undefined && storedVolume >= 0
+          ? liters({ value: storedVolume, unit: volume.unit })
+          : undefined,
       amount:
         value === undefined || value < 0
           ? null
@@ -258,16 +263,30 @@ function evaluateRecipe(
   const measuredRacked = input.measurements?.volumes?.find(
     ({ stage }) => stage === "racked",
   );
+  const useMeasuredRacked = !input.rackedVolume && measuredRacked;
   const rackedVolume =
     input.rackedVolume ??
-    (!input.primaryLoss && measuredRacked
-      ? { ...measuredRacked, source: "measurement" as const }
+    (useMeasuredRacked
+      ? { ...useMeasuredRacked, source: "measurement" as const }
       : undefined);
-  const primaryLoss =
-    input.primaryLoss ??
-    (snapshot && !rackedVolume
-      ? { kind: "percent" as const, value: loss?.enabled ? loss.percentage : 0 }
-      : undefined);
+  const primaryLoss = useMeasuredRacked
+    ? undefined
+    : (input.primaryLoss ??
+      (snapshot && !rackedVolume
+        ? {
+            kind: "percent" as const,
+            value: loss?.enabled ? loss.percentage : 0,
+          }
+        : undefined));
+  if (useMeasuredRacked && (input.primaryLoss || loss?.enabled)) {
+    assumptions.push(
+      "The measured racked volume replaces the planned primary loss for this evaluation.",
+    );
+  }
+  if (snapshot)
+    assumptions.push(
+      "Native recipe stages use the stored ingredient volumes when available.",
+    );
   const packagingLoss =
     input.packagingLoss ??
     (snapshot
@@ -479,9 +498,10 @@ function evaluateRecipe(
       if (scenario.abvSource !== undefined && scenario.abvPercent === undefined)
         throw new Error(`stabilizers[${index}].abvSource requires abvPercent.`);
       const stage = scenario.stage;
-      const measuredVolume = measurements?.volumes?.find(
-        (row) => row.stage === stage,
-      );
+      const measuredVolume =
+        stage === "racked"
+          ? undefined
+          : measurements?.volumes?.find((row) => row.stage === stage);
       const volumeL = scenario.volume
         ? check(liters(scenario.volume), scenario.volume.source ?? "assumption")
         : measuredVolume
@@ -597,7 +617,11 @@ function evaluateRecipe(
       ),
     );
   }
-  if (claims.fermentationFg !== undefined) {
+  if (
+    claims.fermentationFg !== undefined &&
+    (input.claims?.fermentationFg !== undefined ||
+      measurements?.fermentationFg !== undefined)
+  ) {
     const measured =
       measurements?.fermentationFg === undefined
         ? unresolved(
@@ -651,6 +675,69 @@ function evaluateRecipe(
     measurements: measurements ?? null,
     comparisons,
     assumptions,
+  };
+}
+
+type RecipeEvaluationSummaryInput =
+  | (z.output<typeof volumeResultSchema> & { draftBatchVolume?: unknown })
+  | z.output<typeof evaluationResultSchema>;
+
+export function summarizeRecipeEvaluation(
+  result: RecipeEvaluationSummaryInput,
+) {
+  const evaluation = "primaryOg" in result ? result : undefined;
+  const volume = "volume" in result ? result.volume : result;
+  const stages = Object.fromEntries(
+    Object.entries(volume.stages).map(([stage, value]) => [
+      stage,
+      {
+        liters: value.liters,
+        knownSubtotalL: value.knownSubtotalL,
+        source: value.source,
+        unresolvedInputs: value.missing.length,
+        examples: value.missing.slice(0, 2),
+      },
+    ]),
+  );
+  return {
+    status: "ok",
+    result: {
+      quality: volume.quality,
+      ingredientCount: volume.ingredients.length,
+      unresolvedIngredients: volume.ingredients.filter(
+        (row) => row.liquidLiters === null,
+      ).length,
+      stages,
+      target: volume.target && {
+        stage: volume.target.stage,
+        targetL: volume.target.targetL,
+        deltaL: volume.target.deltaL,
+      },
+      ...("draftBatchVolume" in result
+        ? { draftBatchVolume: result.draftBatchVolume }
+        : {}),
+      ...(evaluation && {
+        primaryOg: evaluation.primaryOg.value,
+        fermentationFg: evaluation.fermentationFg.value,
+        primaryAbvPercent: evaluation.primaryAbvPercent.value,
+        finishedAbvPercent: evaluation.finishedAbvPercent.value,
+        nutrients: evaluation.nutrients.result,
+        stabilizers: evaluation.stabilizers.map((scenario) => ({
+          stage: scenario.stage,
+          volumeL: scenario.volumeL.value,
+          abvPercent: scenario.abvPercent.value,
+          sulfiteBasis: scenario.sulfiteBasis,
+          sulfiteGrams: scenario.sulfiteGrams.value,
+          campdenTablets: scenario.campdenTablets.value,
+          sorbateGrams: scenario.sorbateGrams.value,
+        })),
+        comparisons: evaluation.comparisons.map(
+          ({ missing, ...comparison }) => comparison,
+        ),
+      }),
+    },
+    details:
+      "Full per-ingredient results and diagnostics are available in structuredContent.",
   };
 }
 

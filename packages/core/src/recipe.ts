@@ -145,6 +145,11 @@ export function isEffectivelyEmptyNumericInput(value: string) {
 
 export const HONEY_BRIX = 79.6;
 
+export function isPlainWaterIngredient(name: string): boolean {
+  return /^(?:(?:spring|tap|distilled|filtered|bottled|purified|mineral|drinking|plain|ro|reverse osmosis) )*water$/i
+    .test(name.trim().replace(/\s+/g, " "));
+}
+
 export function calculateHoneyAndWaterL(
   desiredOg: number,
   totalVolumeL: number,

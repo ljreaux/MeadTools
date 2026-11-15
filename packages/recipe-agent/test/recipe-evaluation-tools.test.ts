@@ -352,7 +352,7 @@ test("supplied Brix on bochet honey still records the cooking approximation", ()
   );
 });
 
-test("native fruit uses its declared weight basis and the same density model as the draft solver", () => {
+test("native fruit preserves authored amounts and the builder’s stored volume", () => {
   const nutrients = initialNutrientData();
   const fruit = {
     name: "Plums",
@@ -451,17 +451,18 @@ test("native fruit uses its declared weight basis and the same density model as 
       },
     }),
   );
-  assert.deepEqual(snapshot.volume.stages, structured.volume.stages);
-  near(
-    snapshot.volume.ingredients[1].liquidLiters,
-    (2 * 0.45359237) / toSG(13),
-  );
+  near(snapshot.volume.stages.primary.liters, 103);
+  near(snapshot.volume.stages.racked.liters, 92.7);
+  assert.deepEqual(snapshot.volume.ingredients[1].amount, {
+    kind: "weight",
+    unit: "lb",
+    value: 2,
+  });
+  assert.equal(snapshot.volume.ingredients[1].liquidLiters, 99);
+  assert.notEqual(snapshot.primaryOg.value, structured.primaryOg.value);
+  assert.deepEqual(snapshot.comparisons, []);
   assert.equal(snapshot.volume.ingredients[1].specificGravity, toSG(13));
   assert.equal(snapshot.volume.ingredients[1].solidsDisplacementL, null);
-  assert.deepEqual(snapshot.primaryOg, structured.primaryOg);
-  assert.deepEqual(snapshot.finishedAbvPercent, structured.finishedAbvPercent);
-  assert.deepEqual(snapshot.nutrients, structured.nutrients);
-  assert.deepEqual(snapshot.stabilizers, structured.stabilizers);
 });
 
 test("waterless berry draft, volume calculator, and native evaluation agree after primary loss", () => {
@@ -558,4 +559,106 @@ test("native stabilization uses the stored default pH with manual pH entry off",
   near(scenario.sulfiteGrams.value, draft.derived.stabilizers.sulfite, 0.00001);
   near(scenario.campdenTablets.value, draft.derived.stabilizers.campden, 0.001);
   assert.deepEqual(scenario.sulfiteGrams.missing, []);
+});
+
+test("models plain spring water and rejects sugars classified as inert solids", () => {
+  const springWater = { ...water, name: "Spring water" };
+  const check = result(evaluate.execute({ ingredients: [springWater, honey] }));
+  assert.ok(check.primaryOg.value! > 1);
+  const overridden = result(
+    volume.execute({ ingredients: [{ ...springWater, brix: 5 }] }),
+  );
+  assert.equal(overridden.ingredients[0].specificGravity, toSG(5));
+  const sugar = { ...honey, name: "Table sugar" };
+  assert.equal(
+    volume.execute({ ingredients: [{ ...sugar, kind: "solid" }] }).status,
+    "invalid_input",
+  );
+  assert.equal(
+    evaluate.execute({
+      ingredients: [
+        { ...sugar, name: "Sweet powder", kind: "solid", brix: 100 },
+      ],
+    }).status,
+    "invalid_input",
+  );
+  const blend = result(
+    evaluate.execute({ ingredients: [springWater, { ...sugar, brix: 100 }] }),
+  );
+  const sugarSg = toSG(100);
+  const sugarLiters = 1 / sugarSg;
+  near(
+    blend.primaryOg.value,
+    (4 * toSG(0) + sugarLiters * sugarSg) / (4 + sugarLiters),
+  );
+});
+
+test("a measured racked volume replaces planned loss for stage totals and stabilizers", () => {
+  const output = result(
+    evaluate.execute({
+      ingredients: [water, honey, juice],
+      claims: { fermentationFg: 1 },
+      measurements: { volumes: [{ stage: "racked", value: 3, unit: "L" }] },
+      primaryLoss: { kind: "percent", value: 20 },
+      packagingLoss: noLoss,
+      stabilizers: [
+        { stage: "racked", ph: 3.5 },
+        { stage: "postAddition", ph: 3.5 },
+      ],
+    }),
+  );
+  assert.equal(output.volume.stages.racked.liters, 3);
+  assert.equal(output.volume.stages.racked.source, "measurement");
+  assert.equal(output.stabilizers[0].volumeL.value, 3);
+  near(output.stabilizers[1].volumeL.value, 3 + 0.946352946);
+  near(
+    output.finishedAbvPercent.value,
+    (output.primaryAbvPercent.value! * 3) / (3 + 0.946352946),
+  );
+  assert.match(
+    output.assumptions.join(" "),
+    /replaces the planned primary loss/,
+  );
+});
+
+test("native snapshots can use stored volume with unknown Brix and compare FG when measured", () => {
+  const output = result(
+    evaluate.execute({
+      recipeData: {
+        version: 2,
+        unitDefaults: { weight: "kg", volume: "L" },
+        fg: "1",
+        ingredients: [
+          {
+            lineId: "fruit",
+            name: "Plums",
+            category: "fruit",
+            secondary: false,
+            brix: "",
+            ref: { kind: "custom" },
+            amounts: {
+              basis: "weight",
+              weight: { value: "1", unit: "kg" },
+              volume: { value: "0.9", unit: "L" },
+            },
+          },
+        ],
+        additives: [],
+        notes: { primary: [], secondary: [] },
+        stabilizers: {
+          adding: false,
+          takingPh: false,
+          phReading: "3.6",
+          type: "kmeta",
+        },
+      },
+      measurements: { fermentationFg: 1.005 },
+    }),
+  );
+  near(output.volume.stages.primary.liters, 0.9);
+  assert.equal(output.primaryOg.value, null);
+  assert.equal(output.primaryOg.missing[0].field, "ingredients[0].brix");
+  assert.equal(output.primaryAbvPercent.value, null);
+  assert.equal(output.comparisons[0].field, "fermentationFg");
+  near(output.comparisons[0].delta, 0.005);
 });
