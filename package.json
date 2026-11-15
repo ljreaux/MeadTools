@@ -69,8 +69,8 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
     "@viz-js/viz": "3.31.0",
-    "expo": "~57.0.30",
-    "expo-router": "~57.0.28",
+    "expo": "~57.0.33",
+    "expo-router": "~57.0.31",
     "prisma": "6.19.3",
     "react": "19.2.3",
     "react-dom": "19.2.3"

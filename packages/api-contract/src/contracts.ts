@@ -98,6 +98,7 @@ import {
   brewRecipeSnapshotResponseSchema,
   brewResponseSchema,
   brewSnapshotUpdateErrorResponseSchema,
+  brewStageConflictErrorResponseSchema,
   brewStageResponseSchema,
   brewUpdateErrorResponseSchema,
   brewValidationErrorResponseSchema,
@@ -575,6 +576,7 @@ export type BrewRecipeSnapshotResponse = z.infer<typeof brewRecipeSnapshotRespon
 export type BrewResponse = z.infer<typeof brewResponseSchema>;
 export type BrewSnapshotUpdateErrorResponse = z.infer<typeof brewSnapshotUpdateErrorResponseSchema>;
 export type BrewsResponse = z.infer<typeof brewsResponseSchema>;
+export type BrewStageConflictErrorResponse = z.infer<typeof brewStageConflictErrorResponseSchema>;
 export type BrewStageResponse = z.infer<typeof brewStageResponseSchema>;
 export type BrewUpdateErrorResponse = z.infer<typeof brewUpdateErrorResponseSchema>;
 export type BrewValidationErrorResponse = z.infer<typeof brewValidationErrorResponseSchema>;

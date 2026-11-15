@@ -1,9 +1,17 @@
 import {
   accountInfoResponseSchema,
   brewResponseSchema,
+  brewInventoryContextResponseSchema,
+  finishedMeadOverviewResponseSchema,
+  inventoryOrganizationResponseSchema,
   brewsResponseSchema,
   createBrewEntryRequestBodySchema,
   createBrewEntryResponseSchema,
+  deleteBrewEntryRequestBodySchema,
+  deleteBrewEntrySuccessResponseSchema,
+  inventoryOverviewResponseSchema,
+  updateBrewEntryRequestBodySchema,
+  updateBrewEntryResponseSchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
   recipeDataV2Schema,
@@ -15,7 +23,15 @@ import {
   type AccountRecipeResponse,
   type BrewListItemResponse,
   type BrewResponse,
+  type BrewInventoryContextResponse,
+  type FinishedMeadOverviewResponse,
+  type InventoryOrganizationResponse,
   type CreateBrewEntryRequestBody,
+  type DeleteBrewEntryRequestBody,
+  type DeleteBrewEntrySuccessResponse,
+  type InventoryOverviewResponse,
+  type UpdateBrewEntryRequestBody,
+  type UpdateBrewEntryResponse,
   type LoginRequestBody,
   type LoginSuccessResponse,
   type RecipeDataV2Input,
@@ -305,6 +321,90 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.brew;
+    },
+
+    /** Owned, non-archived stock and whether the account can deduct from it. */
+    async getInventoryOverview(): Promise<InventoryOverviewResponse> {
+      const body = await request("/api/account/inventory", { method: "GET" });
+      const parsed = inventoryOverviewResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Inventory response does not match the MeadTools API contract",
+          body
+        );
+      }
+      return parsed.data;
+    },
+
+    async getBrewInventory(brewId: string): Promise<BrewInventoryContextResponse> {
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/inventory`, { method: "GET" });
+      const parsed = brewInventoryContextResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Brew inventory does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    async getFinishedMeads(): Promise<FinishedMeadOverviewResponse> {
+      const body = await request("/api/account/inventory/meads", { method: "GET" });
+      const parsed = finishedMeadOverviewResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Finished meads do not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    async getInventoryOrganization(): Promise<InventoryOrganizationResponse> {
+      const body = await request("/api/account/inventory/organization", { method: "GET" });
+      const parsed = inventoryOrganizationResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Inventory organization does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    async updateBrewEntry(
+      brewId: string,
+      entryId: string,
+      input: UpdateBrewEntryRequestBody
+    ): Promise<UpdateBrewEntryResponse> {
+      if (!updateBrewEntryRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Brew entry update does not match the MeadTools API contract",
+          input
+        );
+      }
+      const body = await request(
+        `/api/brews/${encodeURIComponent(brewId)}/entries/${encodeURIComponent(entryId)}`,
+        { method: "PATCH", body: JSON.stringify(input) }
+      );
+      const parsed = updateBrewEntryResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew entry update response does not match the MeadTools API contract",
+          body
+        );
+      }
+      return parsed.data;
+    },
+
+    async deleteBrewEntry(
+      brewId: string,
+      entryId: string,
+      input: DeleteBrewEntryRequestBody = {}
+    ): Promise<DeleteBrewEntrySuccessResponse> {
+      if (!deleteBrewEntryRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Brew entry delete does not match the MeadTools API contract",
+          input
+        );
+      }
+      const body = await request(
+        `/api/brews/${encodeURIComponent(brewId)}/entries/${encodeURIComponent(entryId)}`,
+        { method: "DELETE", body: JSON.stringify(input) }
+      );
+      const parsed = deleteBrewEntrySuccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew entry delete response does not match the MeadTools API contract",
+          body
+        );
+      }
+      return parsed.data;
     }
   };
 }

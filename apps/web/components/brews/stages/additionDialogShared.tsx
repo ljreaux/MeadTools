@@ -6,7 +6,8 @@ import { reportBrewInventoryError } from "@/lib/brews/inventoryUiError";
 import * as React from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import lodash from "lodash";
+import { getBrewItemKey, plannedAdditionMetadata } from "@meadtools/brew-domain/planned-additions";
+export { getBrewItemKey, getPlannedIngredientAmounts } from "@meadtools/brew-domain/planned-additions";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +53,6 @@ import {
   parseNumber,
 } from "@/lib/utils/validateInput";
 import type {
-  IngredientLine,
   VolumeUnit,
   WeightUnit,
 } from "@/types/recipeData";
@@ -180,34 +180,6 @@ export function getUnitLabel(t: TFunction, unit: string) {
   return t(key, unitDisplayFallbacks[unit] ?? unit);
 }
 
-export function getBrewItemKey(name?: string | null) {
-  const value = (name ?? "").trim();
-  if (!value) return null;
-
-  const normalized = value.toLowerCase();
-  const explicitKeys: Record<string, string> = {
-    "campden tablets": "campden",
-    dap: "nutrients.dap",
-    "fermaid k": "nutrients.fermK",
-    "fermaid o": "nutrients.fermO",
-    "go-ferm": "nuteResults.gfTypes.gf",
-    "go-ferm protect": "nuteResults.gfTypes.gfProtect",
-    "go-ferm sterol flash": "nuteResults.gfTypes.gfSterol",
-    "k-meta": "kMeta",
-    "na-meta": "naMeta",
-    none: "none",
-    other: "other.label",
-    "potassium metabisulfite": "kMeta",
-    "potassium sorbate": "kSorbate",
-    protect: "nuteResults.gfTypes.gfProtect",
-    "sodium metabisulfite": "naMeta",
-    sorbate: "sorbate",
-    "sterol-flash": "nuteResults.gfTypes.gfSterol",
-  };
-
-  return explicitKeys[normalized] ?? lodash.camelCase(value);
-}
-
 export function getBrewItemLabel(t: TFunction, name?: string | null) {
   const value = (name ?? "").trim();
   if (!value) return "";
@@ -253,19 +225,6 @@ export function convertIngredientAmount(
   }
 
   return amountStr;
-}
-
-export function getPlannedIngredientAmounts(line: IngredientLine) {
-  const weightAmount = Number(line.amounts.weight.value);
-  const volumeAmount = Number(line.amounts.volume.value);
-
-  return {
-    basis: line.amounts.basis as AdditionBasis,
-    weightAmount: Number.isFinite(weightAmount) ? weightAmount : undefined,
-    weightUnit: line.amounts.weight.unit,
-    volumeAmount: Number.isFinite(volumeAmount) ? volumeAmount : undefined,
-    volumeUnit: line.amounts.volume.unit,
-  };
 }
 
 export function IngredientBasisSelect({
@@ -591,40 +550,15 @@ export function PlannedAdditionDialog({
         kind: planned.kind,
         source: planned.source,
         datetime: datetime.toISOString(),
-        meta: {
-          ...(planned.meta ?? {}),
-          nutrientKey: isGoFerm
-            ? trimmedName === "protect"
-              ? "goFermProtect"
-              : trimmedName === "sterol-flash"
-                ? "goFermSterolFlash"
-                : "goFerm"
-            : planned.meta?.nutrientKey,
-          nameKey:
-            planned.meta?.nameKey ?? getBrewItemKey(planned.name) ?? undefined,
-          plannedName: planned.name,
-          plannedAmount: planned.amount,
-          plannedUnit: planned.unit,
-          actualBasis: usesIngredientUnits ? basis : undefined,
-          plannedBasis: planned.basis,
-          plannedWeightAmount: planned.weightAmount,
-          plannedWeightUnit: planned.weightUnit,
-          plannedVolumeAmount: planned.volumeAmount,
-          plannedVolumeUnit: planned.volumeUnit,
-          actualWaterAmount:
-            isGoFerm && planned.meta?.actualYeastAmount
-              ? calculateGoFermFromYeastAmount?.(
-                  trimmedName,
-                  planned.meta.actualYeastAmount,
-                )?.water
-              : planned.meta?.plannedWaterAmount,
-          actualWaterUnit: isGoFerm ? "mL" : undefined,
-          components:
-            actualComponents.length > 0 || includeEmptyComponents
-              ? actualComponents
-              : undefined,
-          stage: stage ?? planned.meta?.stage,
-        },
+        meta: plannedAdditionMetadata(planned, {
+          name: trimmedName,
+          basis: usesIngredientUnits ? basis : undefined,
+          water: isGoFerm && planned.meta?.actualYeastAmount
+            ? calculateGoFermFromYeastAmount?.(trimmedName, planned.meta.actualYeastAmount)?.water
+            : planned.meta?.plannedWaterAmount,
+          components: actualComponents.length > 0 || includeEmptyComponents ? actualComponents : undefined,
+          stage: stage ?? planned.meta?.stage
+        }),
       });
     } catch (error) {
       reportBrewInventoryError(error, t);

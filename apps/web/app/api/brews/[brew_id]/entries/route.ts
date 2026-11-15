@@ -1,5 +1,6 @@
 import { createBrewEntryForApp } from "@/lib/db/brews";
 import { BrewEntryIdConflictError } from "@/lib/brews/createBrewEntryIdempotently";
+import { BrewStageConflictError } from "@/lib/brews/queuedStageChange";
 import { entryMutationError } from "@/lib/brews/entryMutationError";
 import type { CreateBrewEntryInput } from "@/lib/db/brews";
 import { verifyUser } from "@/lib/userAccessFunctions";
@@ -8,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Create brew entry
- * @description Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew.
+ * @description Adds a timeline entry to a brew. An optional private bottling selection atomically records finished output, storage and measured yield alongside packaging deductions. Stable bottle-row UUIDs and an operation UUID make retries safe. STAGE_CHANGE entries are handled by updating the brew stage and return the refreshed brew. A stage change with a client_entry_id is stored under that UUID at its datetime, so a retry returns the brew without moving it again; with expected_stage it returns 409 and changes nothing if the brew has moved to another stage.
  * @pathParams BrewPathParams
  * @body CreateBrewEntryRequestBody
  * @response 201:CreateBrewEntryResponse
@@ -58,6 +59,12 @@ export async function POST(
     const result = await createBrewEntryForApp(userId, brew_id, parsed.data as CreateBrewEntryInput);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
+    if (err instanceof BrewStageConflictError) {
+      return NextResponse.json(
+        { error: "Brew stage changed", code: "STAGE_CONFLICT", current_stage: err.currentStage },
+        { status: 409 }
+      );
+    }
     if (err instanceof BrewEntryIdConflictError) {
       return NextResponse.json(
         { error: "Entry ID is already in use" },

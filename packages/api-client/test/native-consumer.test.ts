@@ -220,3 +220,95 @@ test("client rejects an invalid client entry UUID before transport", async () =>
   );
   assert.equal(called, false);
 });
+
+test("mobile reads stock and edits or deletes entries through the shared contract", async () => {
+  const stockId = "00000000-0000-4000-8000-0000000000aa";
+  const requests: Array<{ url: string; init: ApiRequestInit }> = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.example",
+    getAccessToken: () => "access-token",
+    fetch: async (url, init) => {
+      requests.push({ url, init });
+      if (url.endsWith("/api/account/inventory")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            can_manage: true,
+            stock: [{
+              id: stockId,
+              name: "Wildflower honey",
+              category: "honey",
+              catalogReference: null,
+              quantity: { value: 12, unit: "lb" },
+              notes: null,
+              reconciliation_required: false
+            }]
+          })
+        };
+      }
+      if (init.method === "PATCH") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            entry: {
+              id: clientEntryId,
+              brew_id: "brew-1",
+              datetime: "2026-07-03T12:30:00.000Z",
+              type: "NOTE",
+              title: null,
+              note: "Edited",
+              gravity: null,
+              temperature: null,
+              temp_units: null,
+              data: null,
+              user_id: 7
+            }
+          })
+        };
+      }
+      if (init.method === "DELETE" && url.endsWith("/linked")) {
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({ error: "Review the inventory deduction before changing this use", code: "SELECTION_REQUIRED" })
+        };
+      }
+      if (init.method === "DELETE") {
+        return { ok: true, status: 200, json: async () => ({ message: "Entry deleted successfully." }) };
+      }
+      throw new Error(`Unexpected request: ${init.method} ${url}`);
+    }
+  });
+
+  const overview = await client.getInventoryOverview();
+  assert.equal(overview.can_manage, true);
+  assert.equal(overview.stock[0].quantity.unit, "lb");
+  assert.deepEqual(overview.cost_exclusions, []);
+
+  const updated = await client.updateBrewEntry("brew-1", clientEntryId, { note: "Edited" });
+  assert.equal(updated.entry?.note, "Edited");
+  assert.equal(requests.at(-1)?.init.method, "PATCH");
+  assert.deepEqual(JSON.parse(requests.at(-1)?.init.body ?? "{}"), { note: "Edited" });
+
+  const removed = await client.deleteBrewEntry("brew-1", clientEntryId);
+  assert.equal(removed.message, "Entry deleted successfully.");
+  assert.ok(requests.at(-1)?.url.endsWith(`/api/brews/brew-1/entries/${clientEntryId}`));
+
+  // An inventory-linked entry needs the web's review flow; the code is kept.
+  await assert.rejects(client.deleteBrewEntry("brew-1", "linked"), (error) => {
+    assert.ok(error instanceof MeadToolsApiError);
+    assert.equal(error.status, 409);
+    assert.equal((error.body as { code: string }).code, "SELECTION_REQUIRED");
+    return true;
+  });
+
+  // Invalid edits are rejected before transport.
+  const before = requests.length;
+  await assert.rejects(
+    client.updateBrewEntry("brew-1", clientEntryId, { gravity: "1.050" as unknown as number }),
+    MeadToolsContractError
+  );
+  assert.equal(requests.length, before);
+});
