@@ -82,7 +82,7 @@ export default function SignInScreen() {
           inputMode="email"
           onChangeText={setEmail}
           placeholder={t("accountPage.email")}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           textContentType="emailAddress"
           value={email}
@@ -94,7 +94,7 @@ export default function SignInScreen() {
           onChangeText={setPassword}
           onSubmitEditing={handleSignIn}
           placeholder={t("accountPage.password")}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholder}
           secureTextEntry
           style={styles.input}
           textContentType="password"

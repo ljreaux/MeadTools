@@ -2101,7 +2101,6 @@
     "notRecorded": "Not recorded",
     "offlineBody": "Check your connection, then try again.",
     "offlineTitle": "Connection unavailable",
-    "openBrew": "Open {{name}}",
     "overview": "Overview",
     "recipe": "Recipe: {{name}}",
     "recipeDetailsUnavailable": "Recipe details are unavailable for this brew.",

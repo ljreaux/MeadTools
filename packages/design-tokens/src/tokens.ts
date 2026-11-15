@@ -63,21 +63,48 @@ export function hslColor(channels: string) {
   return `hsl(${channels})`;
 }
 
+// Native screens draw text and controls straight on the theme background
+// (honey in light mode), where several web channels fall below WCAG AA. These
+// native-only values keep text at 4.5:1 and borders and status marks at 3:1.
+// Placeholders (examples beside a visible label) stay at 3:1 so they read as
+// hints rather than entered values. test/tokens.test.ts checks the ratios.
+// Web CSS keeps the web channels.
+const nativeContrastOverrides = {
+  light: {
+    textMuted: "215, 20%, 24%",
+    placeholder: "30, 40%, 30%",
+    border: "33, 35%, 28%",
+    success: "142, 72%, 20%",
+    warning: "30, 90%, 22%",
+    error: "0, 80%, 24%"
+  },
+  dark: {
+    textMuted: "215, 20.2%, 65.1%",
+    placeholder: "215, 20.2%, 65.1%",
+    border: "210, 13%, 50%",
+    success: "142, 69%, 58%",
+    warning: "45, 90%, 40%",
+    error: "0, 90%, 70%"
+  }
+} as const satisfies Record<ColorTheme, Record<string, string>>;
+
 function createSemanticTheme(theme: ColorTheme) {
   const colors = webColorChannels[theme];
+  const native = nativeContrastOverrides[theme];
 
   return {
     background: hslColor(colors.background),
     surface: hslColor(colors.card),
     surfaceRaised: hslColor(colors.secondary),
     text: hslColor(colors.foreground),
-    textMuted: hslColor(colors.mutedForeground),
-    border: hslColor(colors.border),
+    textMuted: hslColor(native.textMuted),
+    placeholder: hslColor(native.placeholder),
+    border: hslColor(native.border),
     accent: hslColor(colors.primary),
     onAccent: hslColor(colors.primaryForeground),
-    success: hslColor(theme === "light" ? "142, 72%, 29%" : "142, 69%, 58%"),
-    warning: hslColor(colors.warning),
-    error: hslColor(colors.destructive)
+    success: hslColor(native.success),
+    warning: hslColor(native.warning),
+    error: hslColor(native.error)
   } as const;
 }
 

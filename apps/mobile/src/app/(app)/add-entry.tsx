@@ -496,7 +496,7 @@ export default function AddEntryScreen() {
           setSaveFailed(false);
         }}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholder}
         style={[styles.input, large && styles.largeInput, invalid && styles.inputInvalid]}
         value={value}
       />
@@ -652,7 +652,7 @@ export default function AddEntryScreen() {
                 autoCapitalize="sentences"
                 onChangeText={setAdditionName}
                 placeholder={t("mobileBrews.addEntry.addition.namePlaceholder")}
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 style={[styles.input, errors.name && styles.inputInvalid]}
                 value={additionName}
               />,
@@ -683,7 +683,7 @@ export default function AddEntryScreen() {
               <TextInput
                 accessibilityLabel={t("mobileBrews.addEntry.text.titleLabel")}
                 onChangeText={setTitle}
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 style={styles.input}
                 value={title}
               />
@@ -694,7 +694,7 @@ export default function AddEntryScreen() {
                 accessibilityLabel={bodyLabel}
                 multiline
                 onChangeText={setBody}
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholder}
                 style={[styles.input, styles.noteInput, errors.body && styles.inputInvalid]}
                 textAlignVertical="top"
                 value={body}
@@ -835,7 +835,7 @@ export default function AddEntryScreen() {
             accessibilityLabel={t("mobileBrews.addEntry.noteLabel")}
             multiline
             onChangeText={setNote}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholder}
             style={[styles.input, styles.noteInput]}
             textAlignVertical="top"
             value={note}
