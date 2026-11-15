@@ -69,3 +69,9 @@ export function estimateSecondaryLossPercentage(
 export function isValidLossPercentage(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value < 100;
 }
+
+/** Return the remaining liquid after a loss at one stage. */
+export function volumeAfterLoss(volumeL: number, loss: { liters: number } | { percentage: number }) {
+  const lossL = "liters" in loss ? loss.liters : volumeL * loss.percentage / 100;
+  return { lossL, remainingL: volumeL - lossL };
+}

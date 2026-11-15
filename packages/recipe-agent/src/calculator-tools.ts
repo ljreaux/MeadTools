@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { statelessCalculator } from "./stateless-calculator";
+import { recipeEvaluationTools } from "./recipe-evaluation-tools";
+export { summarizeRecipeEvaluation } from "./recipe-evaluation-tools";
 import {
   standaloneAlcohol as alcohol,
   toBrix,
@@ -67,24 +70,18 @@ function calculatorOutputSchema(name: string) {
   const fields = Object.fromEntries(outputFields[name].map((key) => [key, n]));
   const values = z.object(fields);
   return z.object({
-    status: z.literal("ok"),
-    result: z.object({
-      values:
-        name === "calculate_bottling"
-          ? values
-              .catchall(n)
-              .describe(
-                "Also returns row1BottlesToFill, row2BottlesToFill, etc., one integer bottle count for each supplied row."
-              )
-          : values.strict(),
-      units: z
-        .record(z.string(), z.string())
-        .describe("Unit for each values key."),
-      assumptions: z.array(z.string()),
-      warnings: z.array(z.string())
-    })
+    values:
+      name === "calculate_bottling"
+        ? values.catchall(n).describe(
+            "Also returns row1BottlesToFill, row2BottlesToFill, etc., one integer bottle count for each supplied row."
+          )
+        : values.strict(),
+    units: z.record(z.string(), z.string()).describe("Unit for each values key."),
+    assumptions: z.array(z.string()),
+    warnings: z.array(z.string())
   });
 }
+
 function tool<N extends string, S extends z.ZodRawShape>(
   name: N,
   description: string,
@@ -96,42 +93,17 @@ function tool<N extends string, S extends z.ZodRawShape>(
     warnings?: string[];
   }
 ) {
-  const inputSchema = z.object(shape).strict();
-  const resultSchema = calculatorOutputSchema(name);
-  return {
+  return statelessCalculator(
     name,
     description,
-    inputSchema,
-    execute(input: unknown) {
-      const parsed = inputSchema.safeParse(input);
-      if (!parsed.success)
-        return {
-          status: "invalid_input" as const,
-          issues: [z.prettifyError(parsed.error)]
-        };
-      try {
-        const result = calculate(parsed.data);
-        return resultSchema.parse({
-          status: "ok",
-          result: { assumptions: [], warnings: [], ...result }
-        });
-      } catch (error) {
-        return {
-          status: "invalid_input" as const,
-          issues: [
-            error instanceof Error
-              ? error.message
-              : "Unsupported calculator input."
-          ]
-        };
-      }
-    },
-    parameters: z.toJSONSchema(inputSchema, { io: "input" }),
-    outputSchema: z.toJSONSchema(resultSchema)
-  };
+    z.strictObject(shape),
+    calculatorOutputSchema(name),
+    (input) => ({ assumptions: [], warnings: [], ...calculate(input) })
+  );
 }
+
 const alcoholUnits = { abvPercent: "%", delle: "Delle units" };
-export const calculatorTools = [
+const scalarCalculatorTools = [
   tool(
     "calculate_juice_sugar",
     "Estimate juice Brix, SG and container sugar from a nutrition label. Distinct from convert_brix_gravity: derives concentration from sugar per serving.",
@@ -520,6 +492,12 @@ export const calculatorTools = [
     })
   )
 ] as const;
+export const calculatorTools = [...scalarCalculatorTools, ...recipeEvaluationTools] as const;
+export const recipeEvaluationToolNames = recipeEvaluationTools.map((tool) => tool.name);
+export const isRecipeEvaluationTool = (name: string) =>
+  recipeEvaluationToolNames.some((known) => known === name);
+export const isHostedCalculatorTool = (name: string) =>
+  scalarCalculatorTools.some((tool) => tool.name === name);
 export type CalculatorToolName = (typeof calculatorTools)[number]["name"];
 export const calculatorToolNames = calculatorTools.map((tool) => tool.name);
 export const calculatorToolDefinitions = calculatorTools.map(

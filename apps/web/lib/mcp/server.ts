@@ -12,6 +12,8 @@ import {
   isMcpAccountReadTool,
   isCalculatorTool,
   isPublicReadTool,
+  isRecipeEvaluationTool,
+  summarizeRecipeEvaluation,
   mcpAgentToolDefinitions,
   mcpAgentToolNames,
   mcpServerInstructions
@@ -28,6 +30,9 @@ import { mcpDraftUrl } from "./draft-link";
 import { storeMcpDraft } from "./draft-store";
 
 const MAX_RESULT_BYTES = 64 * 1024;
+// Whole-recipe calculators need the complete formulation and its field-level
+// diagnostics. Large responses carry the detailed result once.
+const MAX_RECIPE_CALCULATION_BYTES = 512 * 1024;
 
 /** One stateless MCP server per HTTP request. No account state lives in it. */
 export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
@@ -159,13 +164,35 @@ export function createMeadToolsMcpServer(userId: number, scope = MCP_SCOPE) {
       ),
       "utf8"
     );
+    const wholeRecipeCalculation = isRecipeEvaluationTool(request.params.name);
+    if (
+      size > MAX_RESULT_BYTES &&
+      wholeRecipeCalculation &&
+      execution.status === "ok" &&
+      "result" in execution &&
+      execution.result &&
+      typeof execution.result === "object" &&
+      ("stages" in execution.result || "primaryOg" in execution.result)
+    ) {
+      const compactResponse = {
+        ...response,
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(summarizeRecipeEvaluation(execution.result))
+        }]
+      };
+      if (Buffer.byteLength(JSON.stringify(compactResponse), "utf8") <= MAX_RECIPE_CALCULATION_BYTES)
+        return compactResponse;
+    }
     if (size > MAX_RESULT_BYTES) {
       return {
         isError: true,
         content: [
           {
             type: "text" as const,
-            text: "Tool result exceeds the MCP response limit. Request a smaller page."
+            text: wholeRecipeCalculation
+              ? "Recipe calculation exceeds the MCP response limit."
+              : "Tool result exceeds the MCP response limit. Request a smaller page."
           }
         ]
       };

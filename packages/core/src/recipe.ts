@@ -69,6 +69,10 @@ export const VOLUME_TO_L: Record<VolumeUnit, number> = {
   imp_fl_oz: 0.0284130625,
 };
 
+export function weightToVolumeL(value: number, unit: WeightUnit, densityKgPerL: number) {
+  return (value * WEIGHT_TO_KG[unit]) / densityKgPerL;
+}
+
 export const KG_TO_WEIGHT: Record<WeightUnit, number> = {
   kg: 1,
   g: 1000,
@@ -140,6 +144,11 @@ export function isEffectivelyEmptyNumericInput(value: string) {
 }
 
 export const HONEY_BRIX = 79.6;
+
+export function isPlainWaterIngredient(name: string): boolean {
+  return /^(?:(?:spring|tap|distilled|filtered|bottled|purified|mineral|drinking|plain|ro|reverse osmosis) )*water$/i
+    .test(name.trim().replace(/\s+/g, " "));
+}
 
 export function calculateHoneyAndWaterL(
   desiredOg: number,

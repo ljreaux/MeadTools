@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { POST as mcpPost } from "../../../app/mcp/route.ts";
 import { encodeDraftHandoff } from "@meadtools/recipe-workflows/draft-handoff";
 import { createHash } from "node:crypto";
+import { initialNutrientData } from "@meadtools/core";
 import prisma from "../../prisma.ts";
 import { authenticateMcpAccessToken, createMcpAccessToken } from "../access.ts";
 import {
@@ -17,6 +18,8 @@ import { createMeadToolsMcpServer } from "../server.ts";
 import {
   mcpAccountReadToolNames,
   calculatorToolNames,
+  isRecipeEvaluationTool,
+  recipeEvaluationToolNames,
   publicReadToolNames
 } from "@meadtools/recipe-agent";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -334,6 +337,22 @@ prisma.mcp_tool_usage.create = async ({ data }) => {
   return {};
 };
 
+const mcpToolRequest = (name, args) => JSON.stringify({
+  jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args }
+});
+const callMcpHttp = (body, headers = {}) => mcpPost(new NextRequest(resource, {
+  method: "POST",
+  headers: {
+    Authorization: header,
+    Accept: "application/json, text/event-stream",
+    "Content-Type": "application/json",
+    "MCP-Protocol-Version": "2025-11-25",
+    ...headers
+  },
+  body,
+  duplex: "half"
+}));
+
 const drafts = new Map();
 let failDraftWrites = false;
 prisma.mcp_draft_handoffs.deleteMany = async ({ where }) => {
@@ -417,6 +436,12 @@ for (const scope of [base, expanded]) {
       volumeUnit: "L"
     },
     calculate_priming_sugar: { volume: 1 },
+    calculate_ingredient_volumes: {
+      ingredients: [{ name: "Juice", stage: "secondary", amount: { kind: "volume", value: 32, unit: "fl_oz" } }]
+    },
+    evaluate_recipe: {
+      ingredients: [{ name: "Water", stage: "primary", amount: { kind: "volume", value: 1, unit: "L" } }]
+    },
     calculate_bottling: { volume: 1, rows: [{ size: "750ml", quantity: 5 }] },
     calculate_bench_trial: {
       stockVolumeMl: 1,
@@ -439,7 +464,96 @@ for (const scope of [base, expanded]) {
     );
   }
   if (scope === base) {
+    const ingredients = Array.from({ length: 60 }, (_, index) => ({
+      name: `Fruit ${index} ${"🍓".repeat(70)}`,
+      stage: index % 3 === 0 ? "secondary" : "primary",
+      kind: "fruit",
+      amount: { kind: "weight", unit: "lb", value: 1 }
+    }));
+    for (const name of recipeEvaluationToolNames) {
+      const arguments_ = name === "evaluate_recipe"
+        ? {
+            ingredients,
+            target: { stage: "packaging", value: 5, unit: "L" },
+            claims: {
+              volumes: Array.from({ length: 5 }, () => ({ stage: "packaging", value: 5, unit: "L" })),
+              primaryOg: { unit: "SG", value: 1.1 }, fermentationFg: 1,
+              primaryAbvPercent: 12, finishedAbvPercent: 10
+            },
+            stabilizers: Array.from({ length: 8 }, () => ({ stage: "packaging" }))
+          }
+        : { ingredients, target: { stage: "packaging", value: 5, unit: "L" } };
+      const body = mcpToolRequest(name, arguments_);
+      const bytes = Buffer.byteLength(body);
+      assert.ok(bytes > 16 * 1024);
+      const http = await callMcpHttp(body, { "Content-Length": String(bytes) });
+      assert.equal(http.status, 200);
+      const { result: response } = await http.json();
+      assert.equal(response.isError, false, JSON.stringify(response.content));
+      const { result } = response.structuredContent;
+      const volume = result.volume ?? result;
+      assert.equal(volume.ingredients.length, 60);
+      assert.equal(volume.stages.packaging.liters, null);
+      const textResult = JSON.parse(response.content[0].text);
+      assert.equal(textResult.result.ingredientCount, 60);
+      assert.equal(textResult.result.stages.primary.knownSubtotalL, 0);
+      assert.equal(textResult.result.stages.packaging.liters, null);
+      assert.ok(textResult.result.stages.packaging.unresolvedInputs >= 60);
+      assert.match(textResult.details, /structuredContent/);
+      assert.ok(volume.stages.packaging.missing.some(({ field }) => field === "ingredients[59].densityKgPerL"));
+    }
+    const recipeData = {
+      version: 2,
+      unitDefaults: { weight: "kg", volume: "L" },
+      fg: "1.000",
+      ingredients: Array.from({ length: 60 }, (_, index) => ({
+        lineId: `12345678-1234-4123-8123-${String(index).padStart(12, "0")}`,
+        name: "Blueberry, frozen and thawed — reference lot",
+        ref: { kind: "custom" },
+        category: "fruit",
+        brix: "9.36",
+        secondary: false,
+        amounts: {
+          basis: "weight",
+          weight: { value: "1", unit: "lb" },
+          volume: { value: "0.437", unit: "L" }
+        }
+      })),
+      additives: [],
+      notes: { primary: [], secondary: [] },
+      stabilizers: { adding: false, takingPh: false, phReading: "3.6", type: "kmeta" },
+      nutrients: initialNutrientData()
+    };
+    const nativeBody = mcpToolRequest("evaluate_recipe", { recipeData });
+    assert.ok(Buffer.byteLength(nativeBody) > 16 * 1024);
+    const nativeBytes = Buffer.from(nativeBody);
+    const nativeHttp = await callMcpHttp(new ReadableStream({
+      start(controller) {
+        for (let offset = 0; offset < nativeBytes.length; offset += 511) {
+          controller.enqueue(nativeBytes.subarray(offset, offset + 511));
+        }
+        controller.close();
+      }
+    }));
+    assert.equal(nativeHttp.status, 200);
+    const native = (await nativeHttp.json()).result;
+    assert.equal(native.isError, false);
+    assert.equal(native.structuredContent.result.volume.ingredients.length, 60);
+    assert.ok(native.structuredContent.result.volume.stages.primary.liters > 26);
+
+    const tooLargeForScalar = mcpToolRequest("calculate_abv", { padding: "x".repeat(16 * 1024) });
+    assert.equal((await callMcpHttp(tooLargeForScalar)).status, 413);
+    const tooLargeForRecipe = mcpToolRequest("evaluate_recipe", { padding: "x".repeat(128 * 1024) });
+    assert.equal((await callMcpHttp(tooLargeForRecipe, { "Content-Length": "1" })).status, 413);
+    assert.equal((await callMcpHttp(tooLargeForRecipe, {
+      "Content-Length": String(Buffer.byteLength(tooLargeForRecipe))
+    })).status, 413);
+
+    const draftTool = inventory.tools.find(({ name }) => name === "build_recipe_draft");
+    assert.ok(draftTool.inputSchema.properties.lossAdjustment);
+    assert.equal(draftTool.inputSchema.properties.nutrients.properties.offsetPpm.type, "number");
     const arguments_ = {
+      lossAdjustment: { enabled: true, mode: "manual", percentage: 10 },
       name: "Key Lime Pie — Link Test 🍯",
       batchVolume: { value: 1, unit: "gal" },
       fermentationFinalGravity: 0.996,
@@ -453,7 +567,7 @@ for (const scope of [base, expanded]) {
       assumptions: Array.from({ length: 10 }, (_, i) =>
         `Secondary note ${i + 1}: keep the fruit additions separate from primary. ${"🍋".repeat(55)}`),
       nutrients: { enabled: true, yeastBrand: "Lalvin", yeastStrain: "ICV D47",
-        nitrogenRequirement: "Low", schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm" },
+        nitrogenRequirement: "Low", schedule: "tosna", numberOfAdditions: 3, goFermType: "Go-Ferm", offsetPpm: 0 },
       stabilizers: { enabled: true, type: "kmeta" }
     };
     const response = await client.callTool({ name: "build_recipe_draft", arguments: arguments_ });
@@ -482,7 +596,9 @@ for (const scope of [base, expanded]) {
       assumptions: result.assumptions,
       warnings: result.warnings
     });
-    assert.ok(handoff.recipeData.nutrients);
+    assert.deepEqual(handoff.recipeData.lossAdjustment, arguments_.lossAdjustment);
+    assert.ok(Math.abs(result.derived.volume.bottlingL - 3.785411784) < 0.0001);
+    assert.equal(handoff.recipeData.nutrients.inputs.offsetPpm, "0");
     assert.equal(handoff.recipeData.additives[0].name, "Vanilla Bean");
     assert.equal(handoff.recipeData.ingredients.some(ingredient => ingredient.secondary), true);
 
@@ -520,5 +636,6 @@ for (const scope of [base, expanded]) {
   await server.close();
 }
 for (const name of calculatorToolNames)
-  assert.equal(calculatorUsage.filter((tool) => tool === name).length, 2);
+  assert.equal(calculatorUsage.filter((tool) => tool === name).length,
+    2 + Number(isRecipeEvaluationTool(name)) + Number(name === "evaluate_recipe"));
 await prisma.$disconnect();

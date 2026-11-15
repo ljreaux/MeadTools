@@ -1,5 +1,20 @@
 import { toBrix } from "./gravity";
 import { parseNumber } from "./numeric";
+import { KG_TO_WEIGHT, type NormalizedIngredientLine } from "./recipe";
+
+export function estimatePrimaryFruitYanOffset(
+  ingredients: readonly Pick<NormalizedIngredientLine, "secondary" | "category" | "weightKg">[],
+  primaryVolumeL: number
+): number {
+  const primaryVolumeGal = primaryVolumeL / 3.78541;
+  if (!Number.isFinite(primaryVolumeGal) || primaryVolumeGal <= 0) return 0;
+  const primaryFruitLb = ingredients
+    .filter((line) => !line.secondary && line.category === "fruit")
+    .reduce((sum, line) => sum + line.weightKg * KG_TO_WEIGHT.lb, 0);
+  const offsetPpm = primaryFruitLb * 25 / primaryVolumeGal;
+  return Number.isFinite(offsetPpm) ? Math.round(offsetPpm) : 0;
+}
+
 
 export type NutrientVolumeUnit = "gal" | "liter";
 export type GoFermType = "Go-Ferm" | "protect" | "sterol-flash" | "none";

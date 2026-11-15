@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import { recipeDerivedStateResponseBodySchema } from "@meadtools/api-contract/schemas";
-import { recipeDataV2Schema } from "@meadtools/schemas";
+import { findUnknownField, recipeDataV2Schema } from "@meadtools/schemas";
 
 // Legacy fragments carry the whole handoff without sending it in an HTTP request.
 export const MAX_DRAFT_TOKEN_LENGTH = 24000;
@@ -18,7 +18,7 @@ export type DraftHandoff = z.infer<typeof draftHandoffSchema>;
 
 export function encodeDraftHandoff(input: DraftHandoff): string {
   const parsed = draftHandoffSchema.parse(input);
-  rejectUnknownFields(input, parsed);
+  if (findUnknownField(input, parsed) !== undefined) throw new Error("Unsupported draft field.");
   const json = JSON.stringify(parsed);
   const bytes = new TextEncoder().encode(json);
   if (bytes.length > MAX_DRAFT_TOKEN_LENGTH * 0.75)
@@ -48,23 +48,9 @@ export function decodeDraftHandoff(token: string): DraftHandoff {
   );
   const raw: unknown = JSON.parse(json);
   const parsed = draftHandoffSchema.parse(raw);
-  rejectUnknownFields(raw, parsed);
+  if (findUnknownField(raw, parsed) !== undefined) throw new Error("Unsupported draft field.");
   recipeDerivedStateResponseBodySchema.parse(
     calculateRecipeDerivedApiResponse(parsed.recipeData)
   );
   return parsed;
-}
-
-// Refuse future fields rather than silently stripping recipe settings.
-function rejectUnknownFields(raw: unknown, parsed: unknown): void {
-  if (!raw || typeof raw !== "object") return;
-  if (!parsed || typeof parsed !== "object")
-    throw new Error("Unsupported draft field.");
-  for (const key of Object.keys(raw)) {
-    if (!(key in parsed)) throw new Error("Unsupported draft field.");
-    rejectUnknownFields(
-      (raw as Record<string, unknown>)[key],
-      (parsed as Record<string, unknown>)[key]
-    );
-  }
 }

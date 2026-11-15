@@ -32,6 +32,7 @@ import {
   nextAdditiveAmountDimOnUnitChange
 } from "@meadtools/core/recipe";
 import { normalizeIngredientLine } from "@meadtools/core/recipe";
+import { estimatePrimaryFruitYanOffset } from "@meadtools/core/nutrients";
 import {
   estimatePrimaryLossPercentage,
   estimateSecondaryLossPercentage,
@@ -485,26 +486,10 @@ export function RecipeProvider({ children }: { children: ReactNode }) {
     [addingStabilizers, phReading, stabilizerType, totalVolumeL, abv]
   );
 
-  // --- Default offset (25 ppm per lb of PRIMARY fruit per gal of PRIMARY volume) ---
-  const defaultOffsetPpm = useMemo(() => {
-    // primary volume in gallons (canonical liters -> gal)
-    const primaryVolGal = primaryVolumeL / 3.78541;
-    if (!Number.isFinite(primaryVolGal) || primaryVolGal <= 0) return "0";
-
-    // total PRIMARY fruit weight in pounds
-    // NOTE: normalizeIngredientLine gives you canonical weightKg + category + secondary.
-    const primaryFruitLb = normalized
-      .filter((l) => !l.secondary && l.category === "fruit")
-      .reduce((sum, l) => {
-        const kg = l.weightKg ?? 0; // depends on your normalizeIngredientLine shape
-        return sum + kg * 2.2046226218;
-      }, 0);
-
-    const ppm = (primaryFruitLb * 25) / primaryVolGal;
-
-    // match old behavior: integer ppm string
-    return Number.isFinite(ppm) ? String(Math.round(ppm)) : "0";
-  }, [normalized, primaryVolumeL]);
+  const defaultOffsetPpm = useMemo(
+    () => String(estimatePrimaryFruitYanOffset(normalized, primaryVolumeL)),
+    [normalized, primaryVolumeL]
+  );
   // a stable-ish signature so we can trigger resets only when ingredients meaningfully change
   const ingredientNutrientSig = useMemo(() => {
     // we only include fields that affect the offset default calc
