@@ -2,91 +2,156 @@
 
 ## Product role
 
-MeadTools Mobile is a brew-day and fermentation companion. The web app remains
-the complete product and primary recipe editor. Mobile should make an active
-batch easier to monitor and update, especially when connectivity is poor.
+MeadTools Mobile brings almost everything a brewer does on the web to iOS and
+Android: building and browsing recipes, running brews from start to finish,
+calculators, hydrometers, inventory and AI chat. Brew-day work keeps its
+offline-first behavior. A short list of administrative and integration pages
+stays on the web (see below).
 
-## Current foundation
+## Release decision (November 15, 2026)
 
-- Expo SDK 57 and React Native 0.86
-- Expo Router with separate authenticated and unauthenticated route groups
-- npm workspace integration
-- EAS development, preview, and production build profiles
-- EAS production workflow gated by mobile typechecking
-- Access to the shared MeadTools domain, schema, contract, and API packages
-- Environment-aware API client and TanStack Query providers
-- Native password and Google sign-in, protected routes, and SecureStore session restore
-- Active brew list, read-only overview, and recent activity timeline with safe legacy entry handling
-- Durable, account-scoped brew-entry outbox (`src/outbox/`): gravity (including OG/FG and refractometer correction), temperature, pH, volume, untracked additions, notes, tastings, issues and stage changes are saved on the device first and synchronized exactly once with the same client UUID, replaying as soon as connectivity returns (#444, #445, #522, #520). A queued stage change is refused by the server if the brew moved on elsewhere. Development builds show a verification panel with fault injection on brew detail.
+- **The first store release waits for parity** with the web feature set below,
+  instead of shipping a smaller companion in January 2027.
+- Monthly web releases continue with `Mobile production build: skip` until the
+  parity areas and release readiness are complete. #439 covers the first `run`.
+- **Premium is not purchasable on Mobile.** Accounts that bought Premium (or
+  chat credits) on the web get the matching features on Mobile. Mobile has no
+  purchase flow, prices, or calls to action to buy; Premium-only screens explain
+  that the feature is part of Premium without linking to a checkout. Confirm the
+  current App Store and Google Play rules for free companions to a paid web
+  service before submission.
 
-- Online-only actions (#521): edit or delete saved entries, and deduct a manual addition from inventory using the web's stock matching and `items` selection. Unavailable offline, with an explanation; stock-linked corrections point to the web review.
+## Stays on the web
 
-The foundation does not yet provide bottling with inventory selection (web only), generic synchronization, or
-production-ready branding. The read-only POC is accepted for the next slice;
-device-level evidence and remaining release-readiness checks are recorded in
-[POC-VERIFICATION.md](./POC-VERIFICATION.md).
+- Admin tools
+- Desktop app download and taplist embed pages
+- MCP and chatbot-marketplace integration setup
+- Release emails and subscriber management
+- Inventory spreadsheet import and export
+- Premium and credit purchases, billing and Ko-fi/Stripe management
 
-## Planned vertical slices
+Legal pages, the contact form, release notes and the recipe builder tutorial are
+reached through links to the web.
 
-### 1. Read-only brew companion
+## Done
 
-- Native sign-in using the agreed API/auth contract
-- List the signed-in user's active brews
-- Open a brew and display its recipe snapshot, targets, and stage
-- Display recent timeline entries
-- Use `@meadtools/api-client`, `@meadtools/api-contract`, and
-  `@meadtools/brew-domain` rather than duplicating requests or projections
+- Expo SDK 57, React Native 0.86, Expo Router, npm workspace integration
+- EAS development, preview and production profiles; production builds only by
+  approved dispatch
+- Shared domain, schema, contract and API packages; environment-aware API client
+- Password and Google sign-in, protected routes, SecureStore session restore
+- Active brew list, brew overview, recent activity timeline
+- Durable, account-scoped outbox: gravity (OG/FG, refractometer correction),
+  temperature, pH, volume, additions, notes, tastings, issues and stage changes
+  are saved on the device and synchronized exactly once (#444, #445, #522, #520)
+- Online-only actions: entry edits and deletes, stock deduction for additions,
+  stock-review notice when tracking is unavailable (#521)
+- Planned recipe additions from the recipe snapshot (#532)
+- Bottling with packaging stock and finished-mead output; untracked for free and
+  expired accounts (#531)
+- Device verification on iOS and Android, web parity, English and German (#446)
 
-Exit: a user can sign in and inspect an active brew on iOS and Android.
+## Parity areas
 
-### 2. Record one measurement safely
+Each area becomes a parent issue with one child issue per slice, delivered as one
+PR per parent with one commit per child (one Expo build per parent). Order is a
+suggestion; areas 1 and 2 can run alongside the others.
 
-- Record a gravity measurement
-- Assign a client UUID before submission
-- Queue the entry locally when offline
-- Retry through the idempotent brew-entry API
-- Display pending, failed, and synchronized states
+### 1. Release readiness (#549)
 
-Exit: the same measurement synchronizes exactly once after connectivity
-returns.
+- Branding: app icon, Android adaptive icon colors, splash, store name and slug
+- Sign in with Apple on iOS (App Review guideline 4.8 expects it alongside
+  Google sign-in), with a server endpoint
+- Sign-in screen: forgot-password, create-account (in app or on the web) and
+  privacy-policy links; clear message when Google finds no MeadTools account.
+  If accounts can be created in the app, the stores also require in-app account
+  deletion (area 12)
+- Crash and error reporting
+- Production configuration: Google client IDs for both platforms, EAS production
+  environment
+- Store setup: App Store Connect and Play Console listings, screenshots, privacy
+  labels and Data safety, support and privacy URLs, age rating
+- Early tester distribution (TestFlight, Play internal or closed testing),
+  including Google Play's closed-testing requirement if it applies to the account
 
-### 3. Brew-day additions and notes
+### 2. Platform (#550)
 
-- Record temperature, pH, and volume
-- Record ingredient, nutrient, yeast, and additive additions
-- Add general notes and stage-relevant observations
-- Reuse shared payload builders and validation schemas
+- Over-the-air JavaScript updates (`expo-updates`) for monthly feature drops
+- Mobile linting and the two existing lint errors
+- Accessibility pass (screen readers, dynamic type), long-list performance
+- Typed `@meadtools/api-client` methods for each new area (14 of about 112 web
+  API routes are covered today)
 
-Exit: common brew-day timeline entries can be recorded without opening the web
-app.
+### 3. Calculators (#551)
 
-### 4. Fermentation monitoring
+Mostly shared math in `@meadtools/core`; available offline.
 
-- Display gravity and temperature charts
-- Show recent linked hydrometer readings
-- Highlight stale readings and device connectivity state
-- Cache the last useful view for poor connectivity
+- Nutrient calculator
+- Stabilizers (sulfite, sorbate)
+- Juice and fruit sugar, yeast table
+- Extra calculators: ABV, Brix, refractometer correction, temperature
+  correction, estimated OG, blending, bench trials, priming sugar, bottling
+- ABV without OG (Woodland Brew)
 
-Exit: the mobile app provides a useful at-a-glance fermentation status.
+### 4. Brews: list and lifecycle (#552)
 
-### 5. Reminders and quick tools
+- Completed and archived brews alongside active ones, with search and filters
+- Start a brew from a recipe; brew settings (name, batch, start date, email
+  alerts, visibility)
+- Update the recipe snapshot; delete a brew
 
-- Local reminders for additions and measurements
-- ABV, gravity/Brix, temperature correction, and stabilization tools
-- Derived values calculated through `@meadtools/core`
+### 5. Brew tracker parity (#553)
 
-Exit: the highest-value brew-day utilities work without a network request.
+- Stage panels with checklists and warnings, matching the web tracker
+- Yeast pitching (packets or weight, Go-Ferm) and OG logging dialogs
+- Gravity and temperature charts
+- Brew photos and cover images (Premium)
+- Brew QR codes: scan to open a brew, show and share a brew's code (Premium)
+- Containers and vessels (Premium)
 
-## Deferred
+### 6. Recipes: browse and view (#554)
 
-- Full recipe creation and editing
-- Generic bidirectional recipe synchronization
-- Hydrometer administration and device setup
-- Admin tools, comments, ratings, and public recipe discovery
-- Desktop-specific UI reuse
+- Your recipes list and recipe detail (ingredients, targets, nutrients,
+  stabilizers, additives, notes)
+- Recipe costs (Premium), covers, print or share
 
-These can be reconsidered after the brew companion and offline outbox are
-reliable.
+### 7. Recipe builder (#555)
+
+- Create and edit recipes: ingredients, volumes, gravity targets, yeast,
+  nutrients, stabilizers, additives, notes
+- Open AI recipe drafts handed off from chat or MCP
+- Move recipe state out of the web's `RecipeProvider` into a shared package so
+  web and Mobile use one implementation
+
+### 8. Hydrometers (#556)
+
+- Linked devices (iSpindel, RAPT) and their brews
+- Readings and logs, including a brew's live readings
+- Device setup and tokens where practical on a phone; otherwise linked to the web
+
+### 9. Inventory and equipment (Premium) (#557)
+
+- Stock overview, add, edit, adjust and archive
+- Finished meads and storage organization
+- Equipment
+- Costs and currency
+
+### 10. Community (#558)
+
+- Public recipes and brews: browse, search, view
+- Comments and ratings
+- Make a recipe or brew public
+
+### 11. AI chat (Premium) (#559)
+
+- Chat with conversations and drafts
+- Credit balance and usage (no purchases)
+
+### 12. Account (#560)
+
+- Profile, username and avatar settings
+- Premium and credit status (read-only)
+- Email preferences, sign out on all devices, account deletion request
 
 ## Localization direction
 
@@ -94,5 +159,6 @@ Git is the translation source of truth. `@meadtools/i18n` shares translation
 resources and metadata while web and mobile keep platform-specific runtime
 adapters. App-neutral keys should be reused when their meaning matches;
 feature work changes English locale JSON, and Weblate generates German
-suggestions after the change reaches `preview`. See
-`docs/translation-workflow.md` for review and deployment behavior.
+suggestions after the change reaches `preview`. Mobile segment and toggle labels
+need short translations. See `docs/translation-workflow.md` for review and
+deployment behavior.
