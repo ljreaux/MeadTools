@@ -16,7 +16,7 @@ import ShortUniqueId from "short-unique-id";
  * @add 500:AdminUserFetchErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function GET(
   req: NextRequest,
@@ -62,7 +62,7 @@ export async function GET(
  * @add 500:AdminUserUpdateErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function PATCH(
   req: NextRequest,
@@ -121,7 +121,7 @@ export async function PATCH(
  * @add 500:AdminUserDeleteErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function DELETE(
   req: NextRequest,

@@ -81,6 +81,29 @@ and `CHATBOT_ORCHESTRATION` have been removed. This does not add client request
 fields or change chat response shapes, statuses or confirmation contracts.
 Contract/OpenAPI generation and API-contract checks verify the route wiring.
 
+## Public reference scope
+
+The public API reference loads `apps/web/public/openapi.json`.
+`apps/web/next.openapi.json` excludes staff administration, scheduled jobs,
+payment-provider webhooks, browser sign-in plumbing, hosted chat UI routes, and
+account screens for credits, Premium, MCP credential management, and
+release-email preferences. The signed release-email unsubscribe action is also
+excluded. Equipment and inventory operations remain documented for integrations.
+
+Review each new route or HTTP method for intended external use. Add excluded
+paths to `ignoreRoutes` in `apps/web/next.openapi.json`. For shared paths,
+use `@ignore` on the specific handler so supported operations such as catalog
+reads and recipe creation still appear. Keep runtime contracts for excluded
+operations. The OpenAPI normalizer prunes unused schemas, and the contract tests
+verify that every local reference resolves.
+
+Tilt telemetry requires a hydrometer token in the query string and accepts both
+`application/json` and `application/x-www-form-urlencoded` request bodies.
+
+`PATCH /auth/account-info` accepts only `email`, `password`,
+`public_username`, and `show_google_avatar`. Malformed requests and updates
+containing other fields return HTTP 400 before any changes are saved.
+
 ## OpenAPI compatibility
 
 Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
@@ -92,8 +115,9 @@ Before the Zod migration, `apps/web/public/openapi.json` was regenerated with
 - Reviewed Zod document SHA-256:
   `dfb7f887be5ebb8050dd761c6274668741026ef40b94b21f487a696dad197c42`
 
-The parity test preserves the complete pre-migration `paths` object: routes,
-methods, parameters, descriptions, response statuses, and component references.
+The path parity test verifies that the pre-migration routes retained in the
+public spec preserve their methods, parameters, descriptions, response
+statuses, and component references, apart from reviewed changes.
 Zod now generates the component schemas, including explicit required and
 nullable semantics, so the full document has a separately reviewed baseline.
 The canonical hashes sort object keys; array order and all values remain
@@ -285,13 +309,18 @@ path and query parameters.
 
 ## Adding or changing a contract
 
-1. Add or update the named `*Schema` export in
+1. Decide whether each new operation belongs in the public reference. Use a
+   nearby route as the formatting example for the OpenAPI summary, description,
+   tags, and auth, parameter, and response annotations. Keep PascalCase
+   component names and follow the existing parameter metadata format.
+2. Add or update the named `*Schema` export in
    `packages/api-contract/src/zod`.
-2. Run `npm run contracts:generate` to regenerate inferred public types and
+3. Run `npm run contracts:generate` to regenerate inferred public types and
    OpenAPI aliases.
-3. Add schema acceptance and rejection tests.
-4. Run `npm run openapi:generate` and review any documentation diff.
-5. Run `npm test` and workspace typechecks.
+4. Add schema acceptance and rejection tests.
+5. Run `npm run openapi:generate` and review the diff. Check that published
+   operations match the handler and excluded methods are absent.
+6. Run `npm test` and workspace typechecks.
 
 Do not edit `src/contracts.ts` or `src/zod/openapi-aliases.ts` by hand; both are
 generated. The package's domain subpaths export the runtime schemas directly,

@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
  * @add 500:CreateAdditiveFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function POST(req: NextRequest) {
   const adminOrResponse = await verifyAdmin(req);

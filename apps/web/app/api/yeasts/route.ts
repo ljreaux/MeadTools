@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
  * @add 500:CreateYeastFailureErrorResponse
  * @auth BearerAuth
  * @tag Admin
- * @openapi
+ * @ignore
  */
 export async function POST(req: NextRequest) {
   const adminOrResponse = await verifyAdmin(req);

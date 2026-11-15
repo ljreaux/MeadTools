@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyUser } from "@/lib/userAccessFunctions";
 import { getUserById, updateUser } from "@/lib/db/users";
 import { getAllRecipesForUser } from "@/lib/db/recipes";
+import { updateAccountInfoRequestBodySchema } from "@meadtools/api-contract/auth";
 import bcrypt from "bcrypt";
 
 /**
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
  * @body UpdateAccountInfoRequestBody
  * @response 200:UpdateAccountInfoResponse
  * @responseSet none
+ * @add 400:UpdateAccountInfoValidationErrorResponse
  * @add 401:AccountInfoUnauthorizedErrorResponse
  * @add 500:UpdateAccountInfoErrorResponse
  * @auth BearerAuth
@@ -67,14 +69,21 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-
-  if (body.password) {
-    body.password = await bcrypt.hash(body.password, 10);
+  const parsed = updateAccountInfoRequestBodySchema.safeParse(
+    await req.json().catch(() => undefined)
+  );
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid account update" }, { status: 400 });
   }
 
   try {
-    const updatedUser = await updateUser(userId, body);
+    const { password, ...fields } = parsed.data;
+    const updatedUser = await updateUser(
+      userId,
+      password === undefined
+        ? fields
+        : { ...fields, password: await bcrypt.hash(password, 10) }
+    );
 
     return NextResponse.json({ ...updatedUser, password: undefined });
   } catch (error) {
