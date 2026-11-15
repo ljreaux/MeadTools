@@ -162,13 +162,6 @@ export default function BrewsScreen() {
                 </Text>
               ) : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void signOut()}
-              style={styles.signOutButton}
-            >
-              <Text style={styles.signOutText}>{t("account.logout")}</Text>
-            </Pressable>
           </View>
           {brews.length > 0 && brewsQuery.isError ? renderStatus() : null}
         </View>
@@ -206,14 +199,6 @@ function createStyles(colors: typeof colorThemes.light) {
       fontSize: typography.size.caption,
       marginTop: spacing.xs
     },
-    signOutButton: {
-      borderColor: colors.border,
-      borderRadius: radii.md,
-      borderWidth: 1,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm
-    },
-    signOutText: { color: colors.text, fontSize: typography.size.caption },
     card: {
       borderColor: colors.border,
       borderRadius: radii.lg,

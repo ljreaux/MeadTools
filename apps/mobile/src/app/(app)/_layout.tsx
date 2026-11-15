@@ -1,16 +1,15 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 
+// Keep the tab shell behind a modal that was opened from a deep link.
+export const unstable_settings = { anchor: "(tabs)" };
+
 export default function AppLayout() {
   const { t } = useTranslation();
 
   return (
     <Stack>
-      <Stack.Screen name="brews" options={{ title: t("brews.label") }} />
-      <Stack.Screen
-        name="brews/[id]"
-        options={{ title: t("mobileBrews.detailTitle") }}
-      />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="add-entry"
         options={{

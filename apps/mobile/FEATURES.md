@@ -50,12 +50,18 @@ reached through links to the web.
 - Bottling with packaging stock and finished-mead output; untracked for free and
   expired accounts (#531)
 - Device verification on iOS and Android, web parity, English and German (#446)
+- Navigation shell: native tabs for Brews, Recipes, Tools, Inventory and
+  Account, with placeholders until each area lands (#562)
 
 ## Parity areas
 
 Each area becomes a parent issue with one child issue per slice, delivered as one
-PR per parent with one commit per child (one Expo build per parent). Order is a
-suggestion; areas 1 and 2 can run alongside the others.
+PR per parent with one commit per child (one Expo build per parent). Each area
+also adds the typed `@meadtools/api-client` methods (and any missing
+`@meadtools/api-contract` schemas) for its own routes; 14 of about 112 web API
+routes are covered today. Suggested start: area 2's navigation shell, then
+area 3 (calculators), with area 1's people-dependent work (artwork, store
+accounts, tester distribution) in parallel.
 
 ### 1. Release readiness (#549)
 
@@ -71,16 +77,25 @@ suggestion; areas 1 and 2 can run alongside the others.
   environment
 - Store setup: App Store Connect and Play Console listings, screenshots, privacy
   labels and Data safety, support and privacy URLs, age rating
-- Early tester distribution (TestFlight, Play internal or closed testing),
-  including Google Play's closed-testing requirement if it applies to the account
+- Early tester distribution: a real-device iOS build (the `preview` profile
+  builds for the simulator only) through internal distribution or TestFlight,
+  and a Play internal-testing track, so parity work can be tried on real phones
+- Universal Links (iOS) and App Links (Android) for `https://meadtools.com`:
+  a tapped MeadTools link opens the app when installed and the website
+  otherwise, with web paths mapped to app routes; needs the production domain
+  and Play signing key, so alongside tester distribution (`meadtools://` deep
+  links already work)
+- Over-the-air JavaScript updates (`expo-updates`) per channel once tester
+  builds exist
+- Google Play's closed-testing requirement, if it applies to the account, near
+  the end with a near-final build
 
 ### 2. Platform (#550)
 
-- Over-the-air JavaScript updates (`expo-updates`) for monthly feature drops
+- Navigation shell: top-level sections (for example tabs for Brews, Recipes,
+  Tools, Inventory and Account) so each parity area has a home. Start here.
 - Mobile linting and the two existing lint errors
 - Accessibility pass (screen readers, dynamic type), long-list performance
-- Typed `@meadtools/api-client` methods for each new area (14 of about 112 web
-  API routes are covered today)
 
 ### 3. Calculators (#551)
 
