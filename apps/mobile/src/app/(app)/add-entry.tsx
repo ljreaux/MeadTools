@@ -408,7 +408,15 @@ export default function AddEntryScreen() {
               onPress={() => onChange(option)}
               style={[styles.segment, selected && styles.segmentSelected]}
             >
-              <Text numberOfLines={1} style={[styles.segmentText, selected && styles.segmentTextSelected]}>
+              {/* Longer translations (German "Anfangsdichte") shrink before they truncate.
+                  Neither platform enforces minimumFontScale here (iOS falls back to
+                  4 pt), so segment labels still need short translations. */}
+              <Text
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+                numberOfLines={1}
+                style={[styles.segmentText, selected && styles.segmentTextSelected]}
+              >
                 {optionLabel(option)}
               </Text>
             </Pressable>
