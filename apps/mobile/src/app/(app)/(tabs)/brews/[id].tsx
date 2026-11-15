@@ -188,20 +188,26 @@ export default function BrewScreen() {
     const detail = formatTimelineDetail(item);
     const showTitle = item.title && !detail && item.title !== typeLabel;
 
+    const pressable = row.kind !== "local" && Boolean(outbox) && Boolean(brew);
     const content = (
       <>
-        <View style={styles.timelineTop}>
-          <Text style={styles.timelineType}>{typeLabel}</Text>
-          <Text style={styles.timelineDate}>{timestamp}</Text>
+        {/* Screen readers read an entry's summary as one item. Pressable rows
+            already group their content; local rows keep their delivery
+            buttons reachable outside the summary. */}
+        <View accessible={!pressable} style={styles.timelineSummary}>
+          <View style={styles.timelineTop}>
+            <Text style={styles.timelineType}>{typeLabel}</Text>
+            <Text style={styles.timelineDate}>{timestamp}</Text>
+          </View>
+          {item.stage ? <Text style={styles.timelineStage}>{t(`brewStage.${item.stage}`)}</Text> : null}
+          {detail ? <Text style={styles.timelineDetail}>{detail}</Text> : null}
+          {showTitle ? <Text style={styles.timelineDetail}>{item.title}</Text> : null}
+          {item.note ? <Text style={styles.timelineNote}>{item.note}</Text> : null}
         </View>
-        {item.stage ? <Text style={styles.timelineStage}>{t(`brewStage.${item.stage}`)}</Text> : null}
-        {detail ? <Text style={styles.timelineDetail}>{detail}</Text> : null}
-        {showTitle ? <Text style={styles.timelineDetail}>{item.title}</Text> : null}
-        {item.note ? <Text style={styles.timelineNote}>{item.note}</Text> : null}
         {row.kind === "local" ? renderDelivery(row) : null}
       </>
     );
-    if (row.kind === "local" || !outbox || !brew) {
+    if (!pressable || !brew) {
       return <View style={[styles.timelineRow, row.kind === "local" && styles.timelineRowLocal]}>{content}</View>;
     }
     // Saved entries open the online edit screen.
@@ -287,7 +293,7 @@ export default function BrewScreen() {
       data={rows}
       keyExtractor={(row) => row.key}
       renderItem={renderTimelineRow}
-      ItemSeparatorComponent={() => <View style={styles.timelineSeparator} />}
+      ItemSeparatorComponent={TimelineSeparator}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       onRefresh={() => void brewQuery.refetch()}
@@ -478,7 +484,6 @@ function createStyles(colors: typeof colorThemes.light) {
     ingredientRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
     ingredientName: { color: colors.text, flex: 1, fontSize: typography.size.body },
     timelineHeader: { gap: spacing.lg, marginBottom: spacing.lg },
-    timelineSeparator: { height: spacing.sm },
     timelineRow: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
@@ -487,6 +492,7 @@ function createStyles(colors: typeof colorThemes.light) {
       gap: spacing.xs,
       padding: spacing.lg
     },
+    timelineSummary: { gap: spacing.xs },
     timelineTop: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm },
     timelineType: { color: colors.text, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     timelineDate: { color: colors.textMuted, fontSize: typography.size.caption },
@@ -538,4 +544,11 @@ function createStyles(colors: typeof colorThemes.light) {
     },
     deliveryButtonText: { color: colors.text, fontSize: typography.size.caption, fontWeight: typography.weight.bold }
   });
+}
+
+const separatorStyles = StyleSheet.create({ timeline: { height: spacing.sm } });
+
+// A stable component type, so separators are not remounted on every render.
+function TimelineSeparator() {
+  return <View style={separatorStyles.timeline} />;
 }

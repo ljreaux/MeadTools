@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, type TextStyle, View, type ViewStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { MeadToolsApiError } from "@meadtools/api-client";
@@ -89,6 +89,8 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
   const [message, setMessage] = useState("");
   const locked = useRef(false);
   const attempt = useRef<CreateBrewEntryRequestBody | null>(null);
+  // Mirrors `attempt` for rendering: a retry must resend the same request.
+  const [attemptPending, setAttemptPending] = useState(false);
 
   const premium = review?.context.can_manage === true;
   const meads = useQuery({
@@ -189,6 +191,7 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
           ...review.payload, type: "PACKAGING", inventory, bottling,
           client_entry_id: entry ? undefined : Crypto.randomUUID()
         };
+        setAttemptPending(true);
       }
       const { type: _type, client_entry_id: _id, ...update } = attempt.current;
       const result = !entry ? await api.createBrewEntry(brewId, attempt.current)
@@ -202,18 +205,14 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
       }
       router.back();
     } catch (error) {
-      if (error instanceof MeadToolsApiError && error.status >= 400 && error.status < 500) attempt.current = null;
+      if (error instanceof MeadToolsApiError && error.status >= 400 && error.status < 500) {
+        attempt.current = null;
+        setAttemptPending(false);
+      }
       setMessage(attempt.current ? t("mobileBrews.bottling.retrySame") : failure(error));
       locked.current = false;
       setBusy(false);
     }
-  }
-
-  function button(label: string, onPress: () => void, disabled = false, primary = false) {
-    return <Pressable accessibilityRole="button" accessibilityState={{ disabled }}
-      disabled={disabled} onPress={onPress} style={[styles.button, primary && styles.primary, disabled && styles.disabled]}>
-      <Text style={primary ? styles.primaryText : styles.body}>{label}</Text>
-    </Pressable>;
   }
 
   function field(label: string, value: string, onChangeText: (value: string) => void, inputMode: "text" | "numeric" | "decimal" = "text") {
@@ -256,27 +255,27 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
             [{ id: "ml", name: "mL" }, { id: "liter", name: "L" }, { id: "fl_oz", name: unitLabel("fl_oz") }, { id: "gallon", name: unitLabel("gal") }],
             (customUnit) => patchBottle(row.id, { customUnit }))}
         </> : null}
-        {button(t("mobileBrews.bottling.removeRow"), () => setDraft((current) => ({ ...current, bottles: current.bottles.filter((item) => item.id !== row.id) })))}
+        <ActionButton label={t("mobileBrews.bottling.removeRow")} onPress={() => setDraft((current) => ({ ...current, bottles: current.bottles.filter((item) => item.id !== row.id) }))} styles={styles} />
       </View>)}
-      {button(t("mobileBrews.bottling.addBottle"), () => setDraft((current) => ({ ...current, bottles: [...current.bottles, emptyBottle(Crypto.randomUUID())] })), draft.bottles.length >= 50)}
+      <ActionButton label={t("mobileBrews.bottling.addBottle")} onPress={() => setDraft((current) => ({ ...current, bottles: [...current.bottles, emptyBottle(Crypto.randomUUID())] }))} disabled={draft.bottles.length >= 50} styles={styles} />
       <Text accessibilityRole="header" style={styles.heading}>{t("mobileBrews.bottling.closures")}</Text>
       {draft.closures.map((row, index) => <View key={row.id} style={styles.card}>
         {field(t("mobileBrews.bottling.closureName", { index: index + 1 }), row.name,
           (name) => setDraft((current) => ({ ...current, closures: current.closures.map((item) => item.id === row.id ? { ...item, name } : item) })))}
         {field(t("mobileBrews.bottling.closureCount", { index: index + 1 }), row.quantity,
           (quantity) => setDraft((current) => ({ ...current, closures: current.closures.map((item) => item.id === row.id ? { ...item, quantity } : item) })), "numeric")}
-        {button(t("mobileBrews.bottling.removeRow"), () => setDraft((current) => ({ ...current, closures: current.closures.filter((item) => item.id !== row.id) })))}
+        <ActionButton label={t("mobileBrews.bottling.removeRow")} onPress={() => setDraft((current) => ({ ...current, closures: current.closures.filter((item) => item.id !== row.id) }))} styles={styles} />
       </View>)}
-      {button(t("mobileBrews.bottling.addClosure"), () => setDraft((current) => ({
+      <ActionButton label={t("mobileBrews.bottling.addClosure")} onPress={() => setDraft((current) => ({
         ...current, closures: [...current.closures, { id: Crypto.randomUUID(), name: "", quantity: "" }]
-      })), draft.closures.length >= 50)}
+      }))} disabled={draft.closures.length >= 50} styles={styles} />
       {field(t("mobileBrews.bottling.volume"), draft.volume, (volume) => setDraft((current) => ({ ...current, volume })), "decimal")}
       <Text style={styles.hint}>{t("mobileBrews.bottling.volumeHint")}</Text>
       {options(t("mobileBrews.addEntry.unitLabel"), draft.unit, [{ id: "L", name: "L" }, { id: "gal", name: unitLabel("gal") }],
         (unit) => setDraft((current) => ({ ...current, unit })))}
       {field(t("mobileBrews.addEntry.noteLabel"), draft.note, (note) => setDraft((current) => ({ ...current, note })))}
-      {button(t("bottlingInventory.title"), () => void startReview(false), busy || !online, true)}
-      {entry ? button(t("bottlingInventory.removeTitle"), () => void startReview(true), busy || !online) : null}
+      <ActionButton label={t("bottlingInventory.title")} onPress={() => void startReview(false)} disabled={busy || !online} primary styles={styles} />
+      {entry ? <ActionButton label={t("bottlingInventory.removeTitle")} onPress={() => void startReview(true)} disabled={busy || !online} styles={styles} /> : null}
     </>;
   }
 
@@ -311,7 +310,7 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
       <Text accessibilityRole="header" style={styles.heading}>{t(removal ? "bottlingInventory.removeTitle" : "bottlingInventory.title")}</Text>
       <Text style={styles.body}>{t(removal ? "bottlingInventory.removeHelp" : premium ? "bottlingInventory.help" : "mobileBrews.bottling.untracked")}</Text>
       {current.payload ? <Text style={styles.label}>{n.format(current.payload.data.displayValue ?? 0)} {unitLabel(current.payload.data.displayUnit ?? "L")}</Text> : null}
-      {attempt.current ? null : <>
+      {attemptPending ? null : <>
         {stockReview?.rows.map(({ line, options: stocks, selected }) => <View key={line.key} style={styles.card}>
           {options(`${line.name} · ${line.quantity.value}`, selected,
             [...stocks.map((stock) => ({ id: stock.id, name: `${stock.name} · ${n.format(stock.quantity.value)}` })),
@@ -351,10 +350,10 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
                     {options(t("bottlingInventory.addedLocation"), split.location, locations, (location) => patchSplit(split.id, { location }))}
                     {split.location ? field(t("mobileBrews.bottling.position"), split.position, (position) => patchSplit(split.id, { position })) : null}
                   </> : null}
-                  {button(t("bottlingInventory.removeSplit"), () => setSplits((current) => current.filter((item) => item.id !== split.id)))}
+                  <ActionButton label={t("bottlingInventory.removeSplit")} onPress={() => setSplits((current) => current.filter((item) => item.id !== split.id))} styles={styles} />
                 </View>)}
                 <Text style={remaining < 0 ? styles.error : styles.hint}>{t(remaining < 0 ? "bottlingInventory.overAssigned" : "bottlingInventory.untrackedCount", { count: Math.abs(remaining) })}</Text>
-                {button(t("bottlingInventory.split"), () => setSplits((current) => [...current, newSplit(row.id!, remaining > 0 ? String(remaining) : "")]), splits.length >= 100)}
+                <ActionButton label={t("bottlingInventory.split")} onPress={() => setSplits((current) => [...current, newSplit(row.id!, remaining > 0 ? String(remaining) : "")])} disabled={splits.length >= 100} styles={styles} />
               </View>;
             })}
           </> : null}
@@ -378,9 +377,8 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
             confirmed, () => setConfirmed(!confirmed)) : null}
         </> : null}
       </>}
-      {button(t(removal ? "mobileBrews.bottling.confirmRemoval" : "bottlingInventory.save"),
-        () => void saveReview(), attempt.current ? busy || !online : blocked, true)}
-      {attempt.current ? null : button(t("mobileBrews.addEntry.cancel"), () => { setReview(null); setMessage(""); }, busy)}
+      <ActionButton label={t(removal ? "mobileBrews.bottling.confirmRemoval" : "bottlingInventory.save")} onPress={() => void saveReview()} disabled={attemptPending ? busy || !online : blocked} primary styles={styles} />
+      {attemptPending ? null : <ActionButton label={t("mobileBrews.addEntry.cancel")} onPress={() => { setReview(null); setMessage(""); }} disabled={busy} styles={styles} />}
     </>;
   }
 
@@ -389,7 +387,7 @@ function BottlingForm({ brewId, name, entry, online }: { brewId: string; name: s
       <Text style={styles.heading}>{name}</Text>
       {!online ? <Text accessibilityRole="alert" style={styles.error}>{t("mobileBrews.bottling.offline")}</Text> : null}
       {online || review ? review ? renderReview(review) : renderDraft() : null}
-      {!review ? button(t("mobileBrews.addEntry.cancel"), () => router.back(), busy) : null}
+      {!review ? <ActionButton label={t("mobileBrews.addEntry.cancel")} onPress={() => router.back()} disabled={busy} styles={styles} /> : null}
       {busy ? <ActivityIndicator accessibilityLabel={t("mobileBrews.addEntry.saving")} color={colors.accent} /> : null}
       {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{message}</Text> : null}
     </ScrollView>
@@ -418,4 +416,15 @@ function createStyles(colors: typeof colorThemes.light) {
     primaryText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     disabled: { opacity: 0.5 }
   });
+}
+
+type ActionButtonStyles = Record<"button" | "disabled" | "primary", ViewStyle> & Record<"body" | "primaryText", TextStyle>;
+
+function ActionButton({ label, onPress, disabled = false, primary = false, styles }: {
+  label: string; onPress: () => void; disabled?: boolean; primary?: boolean; styles: ActionButtonStyles;
+}) {
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }}
+    disabled={disabled} onPress={onPress} style={[styles.button, primary && styles.primary, disabled && styles.disabled]}>
+    <Text style={primary ? styles.primaryText : styles.body}>{label}</Text>
+  </Pressable>;
 }

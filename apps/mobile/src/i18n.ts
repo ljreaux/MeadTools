@@ -1,4 +1,4 @@
-import i18n from "i18next";
+import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 import * as Localization from "expo-localization";
 
@@ -13,6 +13,10 @@ import {
 } from "@meadtools/i18n";
 
 import { loadTranslationResource } from "@meadtools/i18n/resources";
+
+// A dedicated instance; `use(initReactI18next)` below makes it the one
+// react-i18next hooks read.
+const i18n = createInstance();
 
 const supportedLocales = sharedSupportedLocales;
 const fallbackLocale = defaultLocale;

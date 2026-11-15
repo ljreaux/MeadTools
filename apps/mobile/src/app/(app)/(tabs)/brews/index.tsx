@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View
 } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -25,6 +26,8 @@ export default function BrewsScreen() {
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
   const { t, i18n } = useTranslation();
+  const { fontScale } = useWindowDimensions();
+  const stackHeading = fontScale >= LARGE_TEXT_SCALE;
   const apiClient = useApiClient();
   const { session, signOut } = useSession();
   const brewsQuery = useQuery({
@@ -108,11 +111,10 @@ export default function BrewsScreen() {
     return (
       <Link asChild href={{ pathname: "/brews/[id]", params: { id: brew.id } }}>
         <Pressable
-          accessibilityLabel={t("mobileBrews.openBrew", { name })}
           accessibilityRole="link"
           style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
         >
-          <View style={styles.cardHeading}>
+          <View style={[styles.cardHeading, stackHeading && styles.cardHeadingStacked]}>
             <Text numberOfLines={2} style={styles.brewName}>
               {name}
             </Text>
@@ -162,13 +164,6 @@ export default function BrewsScreen() {
                 </Text>
               ) : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void signOut()}
-              style={styles.signOutButton}
-            >
-              <Text style={styles.signOutText}>{t("account.logout")}</Text>
-            </Pressable>
           </View>
           {brews.length > 0 && brewsQuery.isError ? renderStatus() : null}
         </View>
@@ -180,6 +175,9 @@ export default function BrewsScreen() {
     />
   );
 }
+
+/** Font scale from which side-by-side text no longer fits a phone row. */
+const LARGE_TEXT_SCALE = 1.35;
 
 function createStyles(colors: typeof colorThemes.light) {
   return StyleSheet.create({
@@ -206,14 +204,6 @@ function createStyles(colors: typeof colorThemes.light) {
       fontSize: typography.size.caption,
       marginTop: spacing.xs
     },
-    signOutButton: {
-      borderColor: colors.border,
-      borderRadius: radii.md,
-      borderWidth: 1,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm
-    },
-    signOutText: { color: colors.text, fontSize: typography.size.caption },
     card: {
       borderColor: colors.border,
       borderRadius: radii.lg,
@@ -229,9 +219,12 @@ function createStyles(colors: typeof colorThemes.light) {
       justifyContent: "space-between",
       gap: spacing.md
     },
+    // Large text sizes leave no room beside the stage pill, so it moves below.
+    cardHeadingStacked: { flexDirection: "column", gap: spacing.sm },
     brewName: {
       color: colors.text,
-      flex: 1,
+      flexShrink: 1,
+      flexGrow: 1,
       fontSize: typography.size.action,
       fontWeight: typography.weight.bold
     },

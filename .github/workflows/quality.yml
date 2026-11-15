@@ -162,6 +162,9 @@ jobs:
       - name: Typecheck mobile app
         run: npm run mobile:typecheck
 
+      - name: Lint mobile app
+        run: npm run mobile:lint
+
       - name: Test mobile runtime configuration
         run: npm test --workspace @meadtools/mobile
 

@@ -2101,7 +2101,6 @@
     "notRecorded": "Not recorded",
     "offlineBody": "Check your connection, then try again.",
     "offlineTitle": "Connection unavailable",
-    "openBrew": "Open {{name}}",
     "overview": "Overview",
     "recipe": "Recipe: {{name}}",
     "recipeDetailsUnavailable": "Recipe details are unavailable for this brew.",
@@ -2145,6 +2144,21 @@
     },
     "untitled": "Untitled brew",
     "volume": "{{value}} L"
+  },
+  "mobileNav": {
+    "brews": "Brews",
+    "recipes": "Recipes",
+    "tools": "Tools",
+    "inventory": "Inventory",
+    "account": "Account",
+    "placeholder": {
+      "title": "Coming in a later update",
+      "recipes": "Browse your recipes and build new ones here.",
+      "tools": "Nutrient, stabilizer, ABV and other calculators will live here.",
+      "inventory": "Your stock, finished meads and equipment will appear here."
+    },
+    "signedInAs": "Signed in as",
+    "version": "Version {{version}}"
   },
   "mobileChartMessage": "Please use landscape or a larger device to view this chart.",
   "molasses": "Molasses",

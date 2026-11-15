@@ -29,6 +29,7 @@
     "dev:mobile": "npm run start --workspace @meadtools/mobile",
     "mobile:android": "npm run android --workspace @meadtools/mobile",
     "mobile:ios": "npm run ios --workspace @meadtools/mobile",
+    "mobile:lint": "npm run lint --workspace @meadtools/mobile",
     "mobile:typecheck": "npm run typecheck --workspace @meadtools/mobile",
     "build": "npm run build --workspace @meadtools/web",
     "build:webpack": "npm run build:webpack --workspace @meadtools/web",
