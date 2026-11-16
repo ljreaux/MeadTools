@@ -13,6 +13,7 @@ import {
   temperatureCorrectedGravity,
   sulfiteAddition,
   sorbateAddition,
+  SORBATE_MAX_ABV,
   primingSugarBase,
   primingBottleSizes,
   juiceLabelEstimate,
@@ -228,7 +229,7 @@ const scalarCalculatorTools = [
   tool(
     "calculate_sorbate",
     "Calculate standalone potassium sorbate grams from ABV and batch volume. Rejects ABV above 16%, where the web formula becomes negative.",
-    { volume, volumeUnit, abvPercent: n.min(0).max(16) },
+    { volume, volumeUnit, abvPercent: n.min(0).max(SORBATE_MAX_ABV) },
     (i) => ({
       values: {
         sorbateGrams: sorbateAddition(i.volume, i.volumeUnit, i.abvPercent)

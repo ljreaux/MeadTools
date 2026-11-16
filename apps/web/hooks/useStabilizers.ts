@@ -1,23 +1,12 @@
 import {
-  sulfiteAddition,
-  sorbateAddition,
-  sulfitePpmForPh
+  convertStabilizerVolume,
+  stabilizerAdditions
 } from "@meadtools/core/extra-calculators";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 type VolumeUnit = "gal" | "lit";
 export type StabilizerType = "kMeta" | "naMeta";
-
-function roundTo(n: number, decimals: number) {
-  const p = 10 ** decimals;
-  return Math.round(n * p) / p;
-}
-
-function toFixedString(n: number, decimals: number) {
-  // keep it simple + predictable for inputs
-  return String(roundTo(n, decimals));
-}
 
 const useStabilizers = () => {
   // inputs as STRINGS (so "12." can exist)
@@ -47,16 +36,14 @@ const useStabilizers = () => {
 
   // main calculations
   useEffect(() => {
-    setSorbate(sorbateAddition(volumeNum, volumeUnits, abvNum));
-
-    const ppm = sulfitePpmForPh(phNum);
-
-    const additions = sulfiteAddition(
-      volumeNum,
-      volumeUnits,
-      ppm,
-      stabilizerType
-    );
+    const additions = stabilizerAdditions({
+      volume: volumeNum,
+      unit: volumeUnits,
+      abv: abvNum,
+      ph: phNum,
+      type: stabilizerType
+    });
+    setSorbate(additions.sorbateGrams);
     setSulfite(additions.sulfiteGrams);
     setCampden(additions.campdenTablets);
   }, [abvNum, volumeNum, phNum, stabilizerType, volumeUnits]);
@@ -70,9 +57,8 @@ const useStabilizers = () => {
     }
 
     const v = parseNumber(volume || "0");
-    const converted = volumeUnits === "lit" ? v * 3.785 : v / 3.785;
-
-    setVolume(toFixedString(converted, 3));
+    const from = volumeUnits === "lit" ? "gal" : "lit";
+    setVolume(String(convertStabilizerVolume(v, from, volumeUnits)));
   }, [volumeUnits]); // intentionally only units
 
   return {

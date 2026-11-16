@@ -58,3 +58,11 @@ test("every tool route is under the Tools tab and the article link uses the app'
     "https://meadtools.com/woodlandbrew-abv-without-og"
   );
 });
+
+test("typed stabilizer volumes convert with the web's factor and rounding", async () => {
+  const { convertStabilizerVolumeText } = await import("../src/tools/calculator-input");
+  assert.equal(convertStabilizerVolumeText("en", "1", "gal", "lit"), "3.785");
+  assert.equal(convertStabilizerVolumeText("de", "5", "lit", "gal"), "1,321");
+  assert.equal(convertStabilizerVolumeText("en", "", "gal", "lit"), "");
+  assert.equal(convertStabilizerVolumeText("en", "2", "gal", "gal"), "2");
+});

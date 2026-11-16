@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
-import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { isImplausibleAbv } from "@meadtools/core/extra-calculators";
@@ -233,7 +233,7 @@ export function ResultCard({
           </View>
         ))}
       </View>
-      {note ? <Text style={styles.resultNote}>{note}</Text> : null}
+      {note ? <Text style={[styles.resultNote, tone === "error" && styles.resultNoteError]}>{note}</Text> : null}
     </View>
   );
 }
@@ -260,6 +260,35 @@ export function AbvResult({ abv }: { abv: { abvPercent: number; delle: number } 
         }
       ]}
     />
+  );
+}
+
+/** A labelled switch; the whole row toggles it for touch and screen readers. */
+export function CalculatorSwitch({
+  label,
+  value,
+  onValueChange
+}: {
+  label: string;
+  value: boolean;
+  onValueChange: (next: boolean) => void;
+}) {
+  const { styles } = useStyles();
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      onPress={() => onValueChange(!value)}
+      style={styles.switchRow}
+    >
+      <Text style={[styles.label, styles.grow]}>{label}</Text>
+      <Switch
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        onValueChange={onValueChange}
+        value={value}
+      />
+    </Pressable>
   );
 }
 
@@ -290,6 +319,7 @@ function createStyles(colors: Colors) {
     hint: { color: colors.textMuted, fontSize: typography.size.caption },
     warning: { color: colors.error, fontSize: typography.size.caption, fontWeight: typography.weight.bold },
     row: { alignItems: "stretch", flexDirection: "row", gap: spacing.md },
+    switchRow: { alignItems: "center", flexDirection: "row", gap: spacing.md, minHeight: 44 },
     grow: { flex: 1 },
     input: {
       backgroundColor: colors.surface,
@@ -348,7 +378,8 @@ function createStyles(colors: Colors) {
       fontWeight: typography.weight.bold
     },
     resultLabel: { color: colors.textMuted, fontSize: typography.size.caption, textAlign: "center" },
-    resultNote: { color: colors.error, fontSize: typography.size.caption, fontWeight: typography.weight.bold, textAlign: "center" },
+    resultNote: { color: colors.textMuted, fontSize: typography.size.caption, textAlign: "center" },
+    resultNoteError: { color: colors.error, fontWeight: typography.weight.bold },
     link: { justifyContent: "center", minHeight: 44 },
     linkText: {
       color: colors.text,

@@ -149,3 +149,38 @@ test("roundForDisplay matches the web display rounding", async () => {
   assert.equal(roundForDisplay(Number.NaN, 2), 0);
   assert.equal(roundForDisplay(12.5, 0), 13);
 });
+
+test("stabilizer helpers match the web stabilizer hook", async () => {
+  const {
+    convertStabilizerVolume,
+    DEFAULT_STABILIZER_PH,
+    SORBATE_MAX_ABV,
+    sorbateAddition,
+    stabilizerAdditions,
+    sulfiteAddition,
+    sulfitePpmForPh
+  } = await import("../src/extra-calculators");
+
+  assert.equal(convertStabilizerVolume(1, "gal", "lit"), 3.785);
+  assert.equal(convertStabilizerVolume(5, "lit", "gal"), 1.321);
+  assert.equal(convertStabilizerVolume(5, "lit", "lit"), 5);
+
+  // Web defaults: 1 gal, 12% ABV, no reading (pH 3.6), potassium.
+  const defaults = stabilizerAdditions({ volume: 1, unit: "gal", abv: 12, ph: null, type: "kMeta" });
+  assert.equal(defaults.sulfitePpm, sulfitePpmForPh(DEFAULT_STABILIZER_PH));
+  assert.equal(defaults.sulfitePpm, 50);
+  assert.equal(defaults.sorbateGrams, sorbateAddition(1, "gal", 12));
+  assert.deepEqual(
+    { sulfiteGrams: defaults.sulfiteGrams, campdenTablets: defaults.campdenTablets },
+    sulfiteAddition(1, "gal", 50, "kMeta")
+  );
+
+  const reading = stabilizerAdditions({ volume: 20, unit: "lit", abv: 14, ph: 3.34, type: "naMeta" });
+  assert.equal(reading.sulfitePpm, 26);
+  assert.deepEqual(
+    { sulfiteGrams: reading.sulfiteGrams, campdenTablets: reading.campdenTablets },
+    sulfiteAddition(20, "lit", 26, "naMeta")
+  );
+
+  assert.equal(sorbateAddition(1, "gal", SORBATE_MAX_ABV), 0);
+});

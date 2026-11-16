@@ -270,3 +270,45 @@ export function isImplausibleAbv(abvPercent: number) {
   const shown = Number(abvPercent.toFixed(2));
   return shown < 0 || shown > 23;
 }
+
+export type StabilizerVolumeUnit = "gal" | "lit";
+export type MetabisulfiteType = "kMeta" | "naMeta";
+
+/** pH the stabilizer calculator assumes when no reading is taken. */
+export const DEFAULT_STABILIZER_PH = 3.6;
+
+/** Above this ABV the sorbate formula gives zero or a negative amount. */
+export const SORBATE_MAX_ABV = 16;
+
+/**
+ * Converts a typed batch volume when its unit changes, with the stabilizer
+ * calculators' 3.785 L/gal factor and 3-decimal rounding.
+ */
+export function convertStabilizerVolume(
+  volume: number,
+  from: StabilizerVolumeUnit,
+  to: StabilizerVolumeUnit
+) {
+  if (from === to) return volume;
+  const converted = to === "lit" ? volume * 3.785 : volume / 3.785;
+  return Math.round(converted * 1000) / 1000;
+}
+
+/**
+ * The main stabilizer calculator: sorbate for the ABV, and sulfite for the
+ * pH (or the default pH when no reading is taken).
+ */
+export function stabilizerAdditions(input: {
+  volume: number;
+  unit: StabilizerVolumeUnit;
+  abv: number;
+  ph: number | null;
+  type: MetabisulfiteType;
+}) {
+  const sulfitePpm = sulfitePpmForPh(input.ph ?? DEFAULT_STABILIZER_PH);
+  return {
+    sorbateGrams: sorbateAddition(input.volume, input.unit, input.abv),
+    sulfitePpm,
+    ...sulfiteAddition(input.volume, input.unit, sulfitePpm, input.type)
+  };
+}

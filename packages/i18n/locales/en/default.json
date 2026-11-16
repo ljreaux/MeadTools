@@ -3685,7 +3685,8 @@
   },
   "mobileTools": {
     "groups": {
-      "gravity": "Gravity and ABV"
+      "gravity": "Gravity and ABV",
+      "stabilizers": "Stabilizers"
     },
     "inputs": {
       "og": "Original gravity",
@@ -3698,13 +3699,23 @@
       "currentTemp": "Current temperature",
       "calibrationTemp": "Calibration temperature",
       "hydrometerFg": "Hydrometer FG",
-      "refractometerFg": "Refractometer FG"
+      "refractometerFg": "Refractometer FG",
+      "batchSize": "Batch size",
+      "volumeUnit": "Volume unit",
+      "ppm": "Sulfite addition (ppm)",
+      "metabisulfite": "Metabisulfite",
+      "takingPhReading": "I have a pH reading",
+      "ph": "pH"
     },
     "result": {
       "unavailable": "enter numbers to see the result",
       "correctedFg": "Corrected FG",
       "correctedGravity": "Corrected gravity",
-      "estimatedOg": "Estimated OG"
+      "estimatedOg": "Estimated OG",
+      "sorbate": "Potassium sorbate",
+      "campden": "Campden tablets",
+      "sulfiteTarget": "Sulfite for {{ppm}} ppm",
+      "sulfiteEither": "Use the metabisulfite or the Campden tablets, not both. One tablet is counted as 75 ppm."
     },
     "refractometer": {
       "factorWarning": "Change this only if you have measured your refractometer's correction factor.",
@@ -3713,6 +3724,21 @@
     "estimatedOg": {
       "about": "Estimates the original gravity from a hydrometer and a refractometer reading of the finished mead, using Woodland Brewing Research's method.",
       "article": "Read the original article on the MeadTools website"
+    },
+    "tools": {
+      "stabilizers": "Stabilizers Calculator",
+      "sulfite": "Sulfite",
+      "sorbate": "Sorbate"
+    },
+    "metabisulfite": {
+      "kMeta": "Potassium",
+      "naMeta": "Sodium"
+    },
+    "sorbate": {
+      "highAbv": "Above {{abv}}% ABV this formula gives no sorbate amount."
+    },
+    "stabilizers": {
+      "defaultPh": "Without a reading, sulfite is calculated for pH {{ph}}."
     }
   }
 }

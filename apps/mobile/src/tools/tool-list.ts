@@ -9,5 +9,13 @@ export const toolGroups = [
       { href: "/tools/temperature", label: "calculators.extraCalcs.tempCorrection" },
       { href: "/tools/estimated-og", label: "calculators.extraCalcs.estOG" }
     ]
+  },
+  {
+    key: "stabilizers",
+    tools: [
+      { href: "/tools/stabilizers", label: "mobileTools.tools.stabilizers" },
+      { href: "/tools/sulfite", label: "mobileTools.tools.sulfite" },
+      { href: "/tools/sorbate", label: "mobileTools.tools.sorbate" }
+    ]
   }
 ] as const;
