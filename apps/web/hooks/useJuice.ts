@@ -1,4 +1,8 @@
-import { juiceLabelEstimate } from "@meadtools/core/extra-calculators";
+import {
+  convertJuiceServing,
+  convertJuiceSugar,
+  juiceLabelEstimate
+} from "@meadtools/core/extra-calculators";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
@@ -9,14 +13,15 @@ export default function useJuice() {
   const [servingSizeUnits, setServingSizeUnits] = useState("ml");
   const [servings, setServings] = useState("0");
 
-  // Safely convert a stored string by a multiplier, preserving invalid strings
-  const convertValue = useCallback((value: string, multiplier: number) => {
-    const num = parseNumber(value);
-    if (!Number.isFinite(num)) return value;
-
-    const next = Math.round(num * multiplier * 10000) / 10000;
-    return next.toString();
-  }, []);
+  // Safely convert a stored string, preserving invalid strings
+  const convertValue = useCallback(
+    (value: string, convert: (num: number) => number) => {
+      const num = parseNumber(value);
+      if (!Number.isFinite(num)) return value;
+      return convert(num).toString();
+    },
+    []
+  );
 
   const {
     brix,
@@ -37,14 +42,18 @@ export default function useJuice() {
   // Unit conversions – keep the same behavior, but safe
   useEffect(() => {
     // switching g → mg or mg → g
-    const multiplier = sugarUnits === "mg" ? 1000 : 0.001;
-    setSugar((prev) => convertValue(prev, multiplier));
+    const to = sugarUnits === "mg" ? "mg" : "g";
+    const from = to === "mg" ? "g" : "mg";
+    setSugar((prev) => convertValue(prev, (num) => convertJuiceSugar(num, from, to)));
   }, [sugarUnits, convertValue]);
 
   useEffect(() => {
     // switching ml → floz or floz → ml
-    const multiplier = servingSizeUnits === "floz" ? 0.033814 : 29.5735;
-    setServingSize((prev) => convertValue(prev, multiplier));
+    const to = servingSizeUnits === "floz" ? "floz" : "ml";
+    const from = to === "floz" ? "ml" : "floz";
+    setServingSize((prev) =>
+      convertValue(prev, (num) => convertJuiceServing(num, from, to))
+    );
   }, [servingSizeUnits, convertValue]);
 
   return {

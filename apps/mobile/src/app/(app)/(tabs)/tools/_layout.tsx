@@ -22,6 +22,8 @@ export default function ToolsLayout() {
       <Stack.Screen name="bench-trials" options={{ title: t("calculators.extraCalcs.benchTrials") }} />
       <Stack.Screen name="priming-sugar" options={{ title: t("primingSugarHeading") }} />
       <Stack.Screen name="bottling" options={{ title: t("calculators.extraCalcs.bottling") }} />
+      <Stack.Screen name="juice" options={{ title: t("juiceHeading") }} />
+      <Stack.Screen name="yeasts" options={{ title: t("YeastTable:title") }} />
     </Stack>
   );
 }

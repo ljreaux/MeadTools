@@ -26,5 +26,12 @@ export const toolGroups = [
       { href: "/tools/priming-sugar", label: "primingSugarHeading" },
       { href: "/tools/bottling", label: "calculators.extraCalcs.bottling" }
     ]
+  },
+  {
+    key: "ingredients",
+    tools: [
+      { href: "/tools/juice", label: "juiceHeading" },
+      { href: "/tools/yeasts", label: "YeastTable:title" }
+    ]
   }
 ] as const;

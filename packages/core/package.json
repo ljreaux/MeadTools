@@ -13,7 +13,8 @@
     "./numeric": "./src/numeric.ts",
     "./recipe": "./src/recipe.ts",
     "./temperature": "./src/temperature.ts",
-    "./extra-calculators": "./src/extra-calculators.ts"
+    "./extra-calculators": "./src/extra-calculators.ts",
+    "./yeasts": "./src/yeasts.ts"
   },
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",

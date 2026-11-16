@@ -3687,7 +3687,8 @@
     "groups": {
       "gravity": "Gravity and ABV",
       "stabilizers": "Stabilizers",
-      "finishing": "Finishing"
+      "finishing": "Finishing",
+      "ingredients": "Ingredients"
     },
     "inputs": {
       "og": "Original gravity",
@@ -3715,7 +3716,12 @@
       "meadTemperature": "Mead temperature",
       "co2Volumes": "CO2 volumes",
       "bottleSize": "Bottle size",
-      "bottleUnit": "Bottle size unit"
+      "bottleUnit": "Bottle size unit",
+      "sugarPerServing": "Sugar per serving",
+      "sugarUnit": "Sugar unit",
+      "servingSize": "Serving size",
+      "servingUnit": "Serving size unit",
+      "servingsPerContainer": "Servings per container"
     },
     "result": {
       "unavailable": "enter numbers to see the result",
@@ -3732,7 +3738,8 @@
       "ppm": "Concentration (ppm)",
       "perGallon": "Scaled per gallon",
       "perLiter": "Scaled per liter",
-      "wholeBatch": "Whole batch"
+      "wholeBatch": "Whole batch",
+      "sugarPerContainer": "Sugar per container"
     },
     "refractometer": {
       "factorWarning": "Change this only if you have measured your refractometer's correction factor.",
@@ -3779,6 +3786,19 @@
       "ofBatch": "of batch",
       "fill_one": "Use {{count}} bottle",
       "fill_other": "Use {{count}} bottles"
+    },
+    "juice": {
+      "note": "Estimated from the nutrition label, not a measured gravity."
+    },
+    "yeasts": {
+      "allBrands": "All brands",
+      "sortBy": "Sort by",
+      "tolerance": "{{value}}% tolerance",
+      "count_one": "{{count}} yeast",
+      "count_other": "{{count}} yeasts",
+      "noMatches": "No yeasts match your search.",
+      "showMore_one": "Show {{count}} more yeast",
+      "showMore_other": "Show {{count}} more yeasts"
     }
   }
 }

@@ -400,3 +400,15 @@ export function bottlesToFinish(input: {
   if (!Number.isFinite(input.perBottleLiters) || !(input.perBottleLiters > 0) || !(neededLiters > 0)) return 0;
   return bottlesToFill(neededLiters, input.perBottleLiters);
 }
+
+/** Converts sugar per serving when its unit changes (4 decimals, as on the web). */
+export function convertJuiceSugar(value: number, from: "g" | "mg", to: "g" | "mg") {
+  if (from === to) return value;
+  return Math.round(value * (to === "mg" ? 1000 : 0.001) * 10000) / 10000;
+}
+
+/** Converts a serving size when its unit changes (4 decimals, as on the web). */
+export function convertJuiceServing(value: number, from: "ml" | "floz", to: "ml" | "floz") {
+  if (from === to) return value;
+  return Math.round(value * (to === "floz" ? 0.033814 : 29.5735) * 10000) / 10000;
+}
