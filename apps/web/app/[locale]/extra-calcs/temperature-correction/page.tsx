@@ -14,7 +14,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { temperatureCorrection, toFahrenheit } from "@meadtools/core/temperature";
+import { temperatureCorrectedGravity } from "@meadtools/core/extra-calculators";
 import { useState } from "react";
 import { toBrix } from "@meadtools/core/gravity";
 import {
@@ -187,20 +187,12 @@ const useTempCorrection = () => {
     }));
   };
 
-  const result =
-    tempObj.tempUnits === "F"
-      ? temperatureCorrection(
-          parseNumber(tempObj.measured),
-          parseNumber(tempObj.curTemp),
-          parseNumber(tempObj.calTemp)
-        )
-      : temperatureCorrection(
-          parseNumber(tempObj.measured),
-          toFahrenheit(parseNumber(tempObj.curTemp)),
-          toFahrenheit(parseNumber(tempObj.calTemp))
-        );
-
-  const resultBrix = toBrix(result);
+  const { sg: result, brix: resultBrix } = temperatureCorrectedGravity({
+    measuredSg: parseNumber(tempObj.measured),
+    currentTemp: parseNumber(tempObj.curTemp),
+    calibrationTemp: parseNumber(tempObj.calTemp),
+    scale: tempObj.tempUnits === "C" ? "C" : "F"
+  });
 
   const setTempUnits = (str: string) => {
     setTempObj((prev) => ({ ...prev, tempUnits: str }));

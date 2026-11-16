@@ -2154,7 +2154,6 @@
     "placeholder": {
       "title": "Coming in a later update",
       "recipes": "Browse your recipes and build new ones here.",
-      "tools": "Nutrient, stabilizer, ABV and other calculators will live here.",
       "inventory": "Your stock, finished meads and equipment will appear here."
     },
     "signedInAs": "Signed in as",
@@ -3683,5 +3682,37 @@
     "includeUse": "Count in this brew",
     "includeUseNamed": "Count {{name}} in this brew again",
     "allExcluded": "Nothing to cost: every line is left out by your choice."
+  },
+  "mobileTools": {
+    "groups": {
+      "gravity": "Gravity and ABV"
+    },
+    "inputs": {
+      "og": "Original gravity",
+      "fg": "Final gravity",
+      "gravity": "Gravity",
+      "scale": "Scale",
+      "correctionFactor": "Correction factor",
+      "measuredSg": "Measured gravity",
+      "temperatureUnit": "Temperature unit",
+      "currentTemp": "Current temperature",
+      "calibrationTemp": "Calibration temperature",
+      "hydrometerFg": "Hydrometer FG",
+      "refractometerFg": "Refractometer FG"
+    },
+    "result": {
+      "unavailable": "enter numbers to see the result",
+      "correctedFg": "Corrected FG",
+      "correctedGravity": "Corrected gravity",
+      "estimatedOg": "Estimated OG"
+    },
+    "refractometer": {
+      "factorWarning": "Change this only if you have measured your refractometer's correction factor.",
+      "factorInvalid": "The correction factor must be greater than 0."
+    },
+    "estimatedOg": {
+      "about": "Estimates the original gravity from a hydrometer and a refractometer reading of the finished mead, using Woodland Brewing Research's method.",
+      "article": "Read the original article on the MeadTools website"
+    }
   }
 }

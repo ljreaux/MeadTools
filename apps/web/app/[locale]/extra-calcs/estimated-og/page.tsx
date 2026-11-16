@@ -7,14 +7,12 @@ import AbvLine from "@/components/extraCalcs/AbvLine";
 import Tooltip from "@/components/Tooltips";
 import { Separator } from "@/components/ui/separator";
 
-import { estimatedOriginalGravity } from "@meadtools/core/extra-calculators";
-import { toBrix } from "@meadtools/core/gravity";
+import { estimatedOriginalGravityResult } from "@meadtools/core/extra-calculators";
 import {
   isValidNumber,
   normalizeNumberString,
   parseNumber
 } from "@/lib/utils/validateInput";
-import useAbv from "@/hooks/useAbv";
 import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
 
 function EstimatedOG() {
@@ -26,15 +24,14 @@ function EstimatedOG() {
     fgr: "5" // refractometer FG (Brix)
   });
 
-  const estOG = estimatedOriginalGravity(
+  const estimate = estimatedOriginalGravityResult(
     parseNumber(gravity.fgh),
     parseNumber(gravity.fgr)
   );
+  const abv = { ABV: estimate.abvPercent, delle: estimate.delle };
 
-  const abv = useAbv(estOG.toString(), gravity.fgh.toString());
-
-  const estOgDisplay = normalizeNumberString(estOG, 3, currentLocale, true);
-  const estBrixDisplay = normalizeNumberString(toBrix(estOG), 2, currentLocale);
+  const estOgDisplay = normalizeNumberString(estimate.sg, 3, currentLocale, true);
+  const estBrixDisplay = normalizeNumberString(estimate.brix, 2, currentLocale);
 
   return (
     <div className="flex flex-col gap-8 h-full w-full max-w-3xl mx-auto">

@@ -6,11 +6,11 @@ import {
   standaloneAlcohol as alcohol,
   toBrix,
   toSG,
-  refractometerCorrectedSg,
-  temperatureCorrection,
   toFahrenheit,
   blendValues,
-  estimatedOriginalGravity,
+  estimatedOriginalGravityResult,
+  refractometerCorrection,
+  temperatureCorrectedGravity,
   sulfiteAddition,
   sorbateAddition,
   primingSugarBase,
@@ -167,15 +167,16 @@ const scalarCalculatorTools = [
     "Estimate missing OG from finished hydrometer SG and refractometer Brix. Distinct from calculate_gravity_target, which plans OG from target ABV.",
     { hydrometerFg: sg, refractometerFgBrix: brix },
     (i) => {
-      const originalGravity = estimatedOriginalGravity(
+      const estimate = estimatedOriginalGravityResult(
         i.hydrometerFg,
         i.refractometerFgBrix
       );
       return {
         values: {
-          originalGravity,
-          originalBrix: toBrix(originalGravity),
-          ...alcohol(originalGravity, i.hydrometerFg)
+          originalGravity: estimate.sg,
+          originalBrix: estimate.brix,
+          abvPercent: estimate.abvPercent,
+          delle: estimate.delle
         },
         units: { originalGravity: "SG", originalBrix: "Brix", ...alcoholUnits },
         assumptions: [
@@ -249,20 +250,19 @@ const scalarCalculatorTools = [
     },
     (i) => {
       if (i.originalUnit === "SG") sg.parse(i.originalReading);
-      const originalGravity =
-        i.originalUnit === "SG" ? i.originalReading : toSG(i.originalReading);
-      const correctedGravity = refractometerCorrectedSg(
-        i.originalUnit === "Brix"
-          ? i.originalReading
-          : toBrix(i.originalReading),
-        i.finalBrix,
-        i.correctionFactor
-      );
+      const result = refractometerCorrection({
+        originalGravity: i.originalReading,
+        originalGravityScale: i.originalUnit,
+        finalGravity: i.finalBrix,
+        finalGravityScale: "Brix",
+        correctionFactor: i.correctionFactor
+      });
       return {
         values: {
-          correctedGravity,
-          correctedBrix: toBrix(correctedGravity),
-          ...alcohol(originalGravity, correctedGravity)
+          correctedGravity: result.correctedSg,
+          correctedBrix: result.correctedBrix,
+          abvPercent: result.abvPercent,
+          delle: result.delle
         },
         units: {
           correctedGravity: "SG",
@@ -307,13 +307,17 @@ const scalarCalculatorTools = [
         throw new Error(
           "Measured and calibration temperatures must be between 32 and 212 F (0–100 C). Specify calibrationTemperature in the selected unit."
         );
-      const correctedGravity = temperatureCorrection(
-        i.specificGravity,
-        measured,
-        calibration
-      );
+      const corrected = temperatureCorrectedGravity({
+        measuredSg: i.specificGravity,
+        currentTemp: measured,
+        calibrationTemp: calibration,
+        scale: "F"
+      });
       return {
-        values: { correctedGravity, correctedBrix: toBrix(correctedGravity) },
+        values: {
+          correctedGravity: corrected.sg,
+          correctedBrix: corrected.brix
+        },
         units: { correctedGravity: "SG", correctedBrix: "Brix" },
         assumptions: [
           "Calibration temperature uses the selected temperature unit; specify 20 for a 20 C hydrometer."

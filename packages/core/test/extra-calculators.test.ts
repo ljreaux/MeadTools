@@ -72,3 +72,80 @@ test("juice rounding and all pH lookup thresholds remain compatible", () => {
     assert.equal(sulfitePpmForPh(ph), ppm);
   assert.equal(sulfitePpmForPh(3.76), 98);
 });
+
+test("gravity calculator helpers match the web pages' previous wiring", async () => {
+  const { refractometerCorrectedSg, toBrix, toSG } = await import("../src/gravity");
+  const { temperatureCorrection, toFahrenheit } = await import("../src/temperature");
+  const {
+    estimatedOriginalGravityResult,
+    gravityToBrix,
+    gravityToSg,
+    isImplausibleAbv,
+    refractometerCorrection,
+    standaloneAlcohol,
+    temperatureCorrectedGravity
+  } = await import("../src/extra-calculators");
+
+  assert.equal(gravityToSg(1.05, "SG"), 1.05);
+  assert.equal(gravityToSg(12, "Brix"), toSG(12));
+  assert.equal(gravityToBrix(12, "Brix"), 12);
+  assert.equal(gravityToBrix(1.05, "SG"), toBrix(1.05));
+
+  // Web defaults: OG 1.1 SG, FG 8.5 Brix, factor 1.
+  const refrac = refractometerCorrection({
+    originalGravity: 1.1,
+    originalGravityScale: "SG",
+    finalGravity: 8.5,
+    finalGravityScale: "Brix",
+    correctionFactor: 1
+  });
+  const expectedSg = refractometerCorrectedSg(toBrix(1.1), 8.5, 1);
+  assert.equal(refrac.correctedSg, expectedSg);
+  assert.equal(refrac.correctedBrix, toBrix(expectedSg));
+  assert.deepEqual(
+    { abvPercent: refrac.abvPercent, delle: refrac.delle },
+    standaloneAlcohol(1.1, expectedSg)
+  );
+
+  const brixOg = refractometerCorrection({
+    originalGravity: 24,
+    originalGravityScale: "Brix",
+    finalGravity: 1.01,
+    finalGravityScale: "SG",
+    correctionFactor: 1.04
+  });
+  assert.equal(brixOg.originalGravitySg, toSG(24));
+  assert.equal(brixOg.correctedSg, refractometerCorrectedSg(24, toBrix(1.01), 1.04));
+
+  // Web defaults: 1.1 measured at 90 °F, calibrated at 68 °F.
+  assert.equal(temperatureCorrectedGravity({ measuredSg: 1.1, currentTemp: 90, calibrationTemp: 68, scale: "F" }).sg,
+    temperatureCorrection(1.1, 90, 68));
+  const celsius = temperatureCorrectedGravity({ measuredSg: 1.05, currentTemp: 30, calibrationTemp: 20, scale: "C" });
+  assert.equal(celsius.sg, temperatureCorrection(1.05, toFahrenheit(30), toFahrenheit(20)));
+  assert.equal(celsius.brix, toBrix(celsius.sg));
+
+  // Web defaults: hydrometer 1.0, refractometer 5 Brix.
+  const est = estimatedOriginalGravityResult(1, 5);
+  assert.equal(est.sg, 1.054);
+  assert.equal(est.brix, toBrix(1.054));
+  assert.deepEqual({ abvPercent: est.abvPercent, delle: est.delle }, standaloneAlcohol(1.054, 1));
+  assert.deepEqual(
+    { abvPercent: estimatedOriginalGravityResult(Number.NaN, 5).abvPercent },
+    { abvPercent: 0 }
+  );
+
+  assert.equal(isImplausibleAbv(12), false);
+  assert.equal(isImplausibleAbv(23.004), false);
+  assert.equal(isImplausibleAbv(23.01), true);
+  assert.equal(isImplausibleAbv(-0.01), true);
+  assert.equal(isImplausibleAbv(-0.001), false);
+});
+
+test("roundForDisplay matches the web display rounding", async () => {
+  const { roundForDisplay } = await import("../src/numeric");
+  assert.equal(roundForDisplay(1.23456, 3), 1.235);
+  assert.equal(roundForDisplay(-0.0001, 2), 0);
+  assert.ok(Object.is(roundForDisplay(-0, 2), 0));
+  assert.equal(roundForDisplay(Number.NaN, 2), 0);
+  assert.equal(roundForDisplay(12.5, 0), 13);
+});

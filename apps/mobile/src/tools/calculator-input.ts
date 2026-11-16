@@ -1,0 +1,61 @@
+import { roundForDisplay } from "@meadtools/core/numeric";
+
+import { isIncompleteDecimal, parseDecimalInput } from "../outbox/gravity-entry-form";
+
+/**
+ * Reads a calculator field typed with `.` or `,` as the decimal separator.
+ * Empty, half-typed ("1.") or invalid text gives `null`, so a result shows as
+ * unavailable instead of the web's 0.
+ */
+export function readCalculatorNumber(text: string): number | null {
+  if (isIncompleteDecimal(text)) return null;
+  return parseDecimalInput(text);
+}
+
+/** Reads every field; `null` when any of them is not a number yet. */
+export function readCalculatorNumbers<T extends readonly string[]>(
+  texts: T
+): { [K in keyof T]: number } | null {
+  const values = texts.map(readCalculatorNumber);
+  return values.every((value): value is number => value !== null)
+    ? (values as { [K in keyof T]: number })
+    : null;
+}
+
+/**
+ * Formats a result with the web's display rounding. `fixed` keeps trailing
+ * zeros, as the web does for specific gravity (1.050).
+ */
+export function formatCalculatorResult(
+  locale: string,
+  value: number,
+  digits: number,
+  fixed = false
+): string {
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: fixed ? digits : 0
+  }).format(roundForDisplay(value, digits));
+}
+
+/** Text for a prefilled field, using the device locale's decimal separator. */
+export function calculatorInputText(locale: string, value: number, digits = 3): string {
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: digits,
+    useGrouping: false
+  }).format(value);
+}
+
+/** Converts a typed temperature when the scale changes (1 decimal place). */
+export function convertTemperatureText(
+  locale: string,
+  text: string,
+  from: "F" | "C",
+  to: "F" | "C"
+): string {
+  if (from === to) return text;
+  const value = readCalculatorNumber(text);
+  if (value === null) return text;
+  const converted = to === "C" ? (value - 32) * (5 / 9) : value * (9 / 5) + 32;
+  return calculatorInputText(locale, roundForDisplay(converted, 1), 1);
+}

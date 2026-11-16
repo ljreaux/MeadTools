@@ -1,4 +1,5 @@
-import { toSG, toBrix, calcABV } from "./gravity";
+import { toSG, toBrix, calcABV, refractometerCorrectedSg } from "./gravity";
+import { temperatureCorrection, toFahrenheit } from "./temperature";
 
 /** Standalone calculator math shared by the web UI and agent adapters.
  * Conversion constants intentionally match the original calculators.
@@ -192,4 +193,80 @@ export function standaloneAlcohol(
     abvPercent: normalize(rawAbv),
     delle: normalize(toBrix(finalGravity) + 4.5 * rawAbv)
   };
+}
+
+export type GravityScale = "SG" | "Brix";
+export type TemperatureScale = "F" | "C";
+
+/** Converts a reading on either scale to specific gravity. */
+export function gravityToSg(value: number, scale: GravityScale) {
+  return scale === "Brix" ? toSG(value) : value;
+}
+
+/** Converts a reading on either scale to Brix. */
+export function gravityToBrix(value: number, scale: GravityScale) {
+  return scale === "Brix" ? value : toBrix(value);
+}
+
+/** Refractometer correction calculator: corrected FG and the resulting ABV. */
+export function refractometerCorrection(input: {
+  originalGravity: number;
+  originalGravityScale: GravityScale;
+  finalGravity: number;
+  finalGravityScale: GravityScale;
+  correctionFactor: number;
+}) {
+  const ogBrix = gravityToBrix(input.originalGravity, input.originalGravityScale);
+  const fgBrix = gravityToBrix(input.finalGravity, input.finalGravityScale);
+  const correctedSg = refractometerCorrectedSg(
+    ogBrix,
+    fgBrix,
+    input.correctionFactor
+  );
+  const originalGravitySg = gravityToSg(
+    input.originalGravity,
+    input.originalGravityScale
+  );
+  return {
+    correctedSg,
+    correctedBrix: toBrix(correctedSg),
+    originalGravitySg,
+    ...standaloneAlcohol(originalGravitySg, correctedSg)
+  };
+}
+
+/** Hydrometer temperature correction with either temperature scale. */
+export function temperatureCorrectedGravity(input: {
+  measuredSg: number;
+  currentTemp: number;
+  calibrationTemp: number;
+  scale: TemperatureScale;
+}) {
+  const toF = (value: number) =>
+    input.scale === "C" ? toFahrenheit(value) : value;
+  const sg = temperatureCorrection(
+    input.measuredSg,
+    toF(input.currentTemp),
+    toF(input.calibrationTemp)
+  );
+  return { sg, brix: toBrix(sg) };
+}
+
+/** Estimated OG from hydrometer and refractometer final readings, with ABV. */
+export function estimatedOriginalGravityResult(
+  hydrometerFg: number,
+  refractometerFgBrix: number
+) {
+  const sg = estimatedOriginalGravity(hydrometerFg, refractometerFgBrix);
+  return {
+    sg,
+    brix: toBrix(sg),
+    ...standaloneAlcohol(sg, hydrometerFg)
+  };
+}
+
+/** The ABV result is outside what fermentation can produce (the web highlights it). */
+export function isImplausibleAbv(abvPercent: number) {
+  const shown = Number(abvPercent.toFixed(2));
+  return shown < 0 || shown > 23;
 }
