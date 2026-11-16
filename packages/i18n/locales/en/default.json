@@ -3739,6 +3739,12 @@
     },
     "stabilizers": {
       "defaultPh": "Without a reading, sulfite is calculated for pH {{ph}}."
+    },
+    "offline": {
+      "title": "Offline data",
+      "ready": "Yeasts, ingredients and nutrient presets are saved on this device for offline use (updated {{date}}).",
+      "loading": "Saving yeasts, ingredients and nutrient presets for offline use…",
+      "missing": "Connect to the internet once to save yeasts, ingredients and nutrient presets for offline use."
     }
   }
 }

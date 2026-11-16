@@ -10,6 +10,9 @@ import {
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   inventoryOverviewResponseSchema,
+  ingredientsResponseSchema,
+  nutrientPresetListResponseSchema,
+  yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
   updateBrewEntryResponseSchema,
   loginRequestBodySchema,
@@ -30,6 +33,9 @@ import {
   type DeleteBrewEntryRequestBody,
   type DeleteBrewEntrySuccessResponse,
   type InventoryOverviewResponse,
+  type IngredientsResponse,
+  type NutrientPresetListResponse,
+  type YeastsResponse,
   type UpdateBrewEntryRequestBody,
   type UpdateBrewEntryResponse,
   type LoginRequestBody,
@@ -354,6 +360,30 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const body = await request("/api/account/inventory/organization", { method: "GET" });
       const parsed = inventoryOrganizationResponseSchema.safeParse(body);
       if (!parsed.success) throw new MeadToolsContractError("Inventory organization does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    /** The public yeast catalog (no sign-in needed). */
+    async listYeasts(): Promise<YeastsResponse> {
+      const body = await request("/api/yeasts", { method: "GET" });
+      const parsed = yeastsResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Yeast list does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    /** The public ingredient catalog (no sign-in needed). */
+    async listIngredients(): Promise<IngredientsResponse> {
+      const body = await request("/api/ingredients", { method: "GET" });
+      const parsed = ingredientsResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Ingredient list does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    /** Curated presets for the nutrient calculator's Other nutrient (no sign-in needed). */
+    async listNutrientPresets(): Promise<NutrientPresetListResponse> {
+      const body = await request("/api/nutrient-presets", { method: "GET" });
+      const parsed = nutrientPresetListResponseSchema.safeParse(body);
+      if (!parsed.success) throw new MeadToolsContractError("Nutrient preset list does not match the MeadTools API contract", body);
       return parsed.data;
     },
 

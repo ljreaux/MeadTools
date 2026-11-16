@@ -8362,8 +8362,26 @@
           "error"
         ]
       },
-      "NutrientPresetListResponse": {},
-      "NutrientPresetFetchErrorResponse": {},
+      "NutrientPresetListResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NutrientPresetResponse"
+        }
+      },
+      "NutrientPresetFetchErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "Failed to fetch nutrient presets"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "PublicRecipeBrewResponse": {
         "type": "object",
         "properties": {
@@ -11693,6 +11711,34 @@
       },
       "LinkRecipeToHydrometerBrewResponse": {
         "$ref": "#/components/schemas/HydrometerBrewResponse"
+      },
+      "NutrientPresetResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "yan_ppm_per_gpl": {
+            "type": "number"
+          },
+          "max_gpl": {
+            "type": "number",
+            "nullable": true
+          },
+          "organic_multiplier": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "yan_ppm_per_gpl",
+          "max_gpl",
+          "organic_multiplier"
+        ]
       },
       "PublicBrewDetailResponse": {
         "type": "object",

@@ -309,6 +309,9 @@ import {
   nutrientDataResponseSchema,
   nutrientDerivedStateResponseSchema,
   nutrientInputsResponseSchema,
+  nutrientPresetFetchErrorResponseSchema,
+  nutrientPresetListResponseSchema,
+  nutrientPresetResponseSchema,
   nutrientScheduleTypeSchema,
   nutrientSelectedResponseSchema,
   nutrientSettingsResponseSchema,
@@ -787,6 +790,9 @@ export const NutrientAmountsByKeyResponse = nutrientAmountsByKeyResponseSchema;
 export const NutrientDataResponse = nutrientDataResponseSchema;
 export const NutrientDerivedStateResponse = nutrientDerivedStateResponseSchema;
 export const NutrientInputsResponse = nutrientInputsResponseSchema;
+export const NutrientPresetFetchErrorResponse = nutrientPresetFetchErrorResponseSchema;
+export const NutrientPresetListResponse = nutrientPresetListResponseSchema;
+export const NutrientPresetResponse = nutrientPresetResponseSchema;
 export const NutrientScheduleType = nutrientScheduleTypeSchema;
 export const NutrientSelectedResponse = nutrientSelectedResponseSchema;
 export const NutrientSettingsResponse = nutrientSettingsResponseSchema;

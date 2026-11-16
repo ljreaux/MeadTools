@@ -130,6 +130,11 @@ operation. The nutrient-preset update intentionally adds the
 additions before comparing against the pre-migration paths hash, proving all
 earlier endpoint documentation remains unchanged.
 
+The Mobile calculators update (#568) gives `GET /nutrient-presets` real
+`NutrientPresetListResponse` and `NutrientPresetFetchErrorResponse` schemas
+(previously empty) so the typed client can validate the list. The endpoint and
+its documented statuses are unchanged; only the reviewed document hash moves.
+
 The Mobile offline stage-change update (#520) adds optional `expected_stage`
 to `CreateBrewEntryRequestBody` and `BrewStageConflictErrorResponse` to the
 create-entry 409 union. A `STAGE_CHANGE` sent with `client_entry_id` is

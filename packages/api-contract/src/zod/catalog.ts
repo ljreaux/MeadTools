@@ -122,6 +122,18 @@ export const updateIngredientFailureErrorResponseSchema =
 export const deleteIngredientFailureErrorResponseSchema =
   apiErrorResponseSchema;
 
+export const nutrientPresetResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  yan_ppm_per_gpl: z.number(),
+  max_gpl: z.number().nullable(),
+  organic_multiplier: z.boolean()
+});
+export const nutrientPresetListResponseSchema =
+  z.array(nutrientPresetResponseSchema);
+export const nutrientPresetFetchErrorResponseSchema =
+  z.object({ error: z.literal("Failed to fetch nutrient presets") });
+
 export const yeastBrandResponseSchema = z.enum([
   "Lalvin",
   "Fermentis",

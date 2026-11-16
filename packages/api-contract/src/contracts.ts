@@ -310,6 +310,9 @@ import {
   nutrientDataResponseSchema,
   nutrientDerivedStateResponseSchema,
   nutrientInputsResponseSchema,
+  nutrientPresetFetchErrorResponseSchema,
+  nutrientPresetListResponseSchema,
+  nutrientPresetResponseSchema,
   nutrientScheduleTypeSchema,
   nutrientSelectedResponseSchema,
   nutrientSettingsResponseSchema,
@@ -788,6 +791,9 @@ export type NutrientAmountsByKeyResponse = z.infer<typeof nutrientAmountsByKeyRe
 export type NutrientDataResponse = z.infer<typeof nutrientDataResponseSchema>;
 export type NutrientDerivedStateResponse = z.infer<typeof nutrientDerivedStateResponseSchema>;
 export type NutrientInputsResponse = z.infer<typeof nutrientInputsResponseSchema>;
+export type NutrientPresetFetchErrorResponse = z.infer<typeof nutrientPresetFetchErrorResponseSchema>;
+export type NutrientPresetListResponse = z.infer<typeof nutrientPresetListResponseSchema>;
+export type NutrientPresetResponse = z.infer<typeof nutrientPresetResponseSchema>;
 export type NutrientScheduleType = z.infer<typeof nutrientScheduleTypeSchema>;
 export type NutrientSelectedResponse = z.infer<typeof nutrientSelectedResponseSchema>;
 export type NutrientSettingsResponse = z.infer<typeof nutrientSettingsResponseSchema>;

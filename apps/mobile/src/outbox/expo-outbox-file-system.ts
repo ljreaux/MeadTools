@@ -10,7 +10,12 @@ const OUTBOX_ROOT = "meadtools-outbox";
  * does not use SecureStore; credentials are never written here.
  */
 export function createExpoOutboxFileSystem(): OutboxFileSystem {
-  const root = () => new Directory(Paths.document, OUTBOX_ROOT);
+  return createExpoDocumentFileSystem(OUTBOX_ROOT);
+}
+
+/** The same file operations under another folder of the document directory. */
+export function createExpoDocumentFileSystem(rootName: string): OutboxFileSystem {
+  const root = () => new Directory(Paths.document, rootName);
   const file = (path: readonly string[]) => new File(root(), ...path);
   const parent = (path: readonly string[]) =>
     new Directory(root(), ...path.slice(0, -1));
