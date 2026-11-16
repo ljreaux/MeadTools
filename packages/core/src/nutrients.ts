@@ -381,3 +381,164 @@ export function calculateNutrientDerivedState(
     }
   };
 }
+
+/** The schedule implied by the selected nutrients (matches the web calculator). */
+export function scheduleFromSelected(selected: SelectedNutrients): NutrientScheduleType {
+  if (selected.other) return "other";
+  if (selected.fermO && selected.fermK && selected.dap) return "tbe";
+  if (selected.fermO && selected.fermK) return "oAndk";
+  if (selected.fermO && selected.dap) return "oAndDap";
+  if (selected.fermK && selected.dap) return "kAndDap";
+  if (selected.fermO) return "tosna";
+  if (selected.fermK) return "justK";
+  if (selected.dap) return "dap";
+  return "other";
+}
+
+/** Max g/L for a preset that has none. */
+export const DEFAULT_OTHER_NUTRIENT_MAX_GPL = "3";
+
+/** The catalog fields the calculator needs from a yeast. */
+export type NutrientYeastOption = {
+  id: number;
+  brand: string;
+  name: string;
+  nitrogen_requirement?: NitrogenRequirement;
+};
+
+/** The catalog fields the calculator needs from a nutrient preset. */
+export type NutrientPresetOption = {
+  name: string;
+  yan_ppm_per_gpl: number;
+  max_gpl: number | null;
+  organic_multiplier: boolean;
+};
+
+/** Every change a nutrient calculator can make, shared by the web and Mobile. */
+export type NutrientAction =
+  | { type: "setVolume"; value: string }
+  | { type: "setVolumeUnits"; value: NutrientVolumeUnit }
+  | { type: "setSg"; value: string }
+  | { type: "setOffsetPpm"; value: string }
+  | { type: "setNumberOfAdditions"; value: string }
+  | { type: "selectYeast"; yeast: NutrientYeastOption }
+  | { type: "setYeastBrand"; brand: string; yeasts: readonly NutrientYeastOption[] }
+  | { type: "setYeastStrain"; strain: string; yeasts: readonly NutrientYeastOption[] }
+  | { type: "setNitrogenRequirement"; value: NitrogenRequirement }
+  | { type: "toggleNutrient"; key: NutrientKey }
+  | { type: "setOtherNutrientName"; value: string }
+  | { type: "selectOtherNutrientPreset"; preset: NutrientPresetOption }
+  | { type: "setOtherUsesOrganicMultiplier"; value: boolean }
+  | { type: "setOtherYanContribution"; value: string }
+  | { type: "setMaxGpl"; key: NutrientKey; value: string }
+  | { type: "setYanContribution"; key: NutrientKey; value: string }
+  | { type: "setAdjustAllowed"; value: boolean }
+  | { type: "setProvidedYanPpm"; key: NutrientKey; value: string }
+  | { type: "setGoFermType"; value: GoFermType }
+  | { type: "setYeastAmountG"; value: string }
+  | { type: "resetYeastAmountAuto" };
+
+/**
+ * Applies one calculator change. Picking a brand selects its first strain,
+ * picking a strain or yeast syncs brand, id and nitrogen requirement, toggling
+ * a nutrient recomputes the schedule, and a preset fills the Other nutrient.
+ * Automatic fields are filled afterwards by `syncNutrientAutoFields`.
+ */
+export function applyNutrientAction(data: NutrientData, action: NutrientAction): NutrientData {
+  const inputs = (patch: Partial<NutrientData["inputs"]>) => ({ ...data, inputs: { ...data.inputs, ...patch } });
+  const selected = (patch: Partial<NutrientData["selected"]>) => ({ ...data, selected: { ...data.selected, ...patch } });
+  const settings = (patch: Partial<NutrientData["settings"]>) => ({ ...data, settings: { ...data.settings, ...patch } });
+  const adjustments = (patch: Partial<NutrientData["adjustments"]>) => ({
+    ...data,
+    adjustments: { ...data.adjustments, ...patch }
+  });
+  const fromYeast = (yeast: NutrientYeastOption | undefined, fallback: Partial<NutrientData["selected"]>) =>
+    selected({
+      ...fallback,
+      yeastId: yeast?.id ?? data.selected.yeastId,
+      nitrogenRequirement: yeast?.nitrogen_requirement ?? data.selected.nitrogenRequirement
+    });
+
+  switch (action.type) {
+    case "setVolume":
+      return inputs({ volume: action.value });
+    case "setVolumeUnits":
+      return inputs({ volumeUnits: action.value });
+    case "setSg":
+      return inputs({ sg: action.value });
+    case "setOffsetPpm":
+      return inputs({ offsetPpm: action.value });
+    case "setNumberOfAdditions":
+      return inputs({ numberOfAdditions: action.value });
+    case "selectYeast":
+      return fromYeast(action.yeast, { yeastBrand: action.yeast.brand, yeastStrain: action.yeast.name });
+    case "setYeastBrand": {
+      const first = action.yeasts.find((yeast) => yeast.brand === action.brand);
+      return fromYeast(first, { yeastBrand: action.brand, yeastStrain: first?.name ?? data.selected.yeastStrain });
+    }
+    case "setYeastStrain": {
+      const found = action.yeasts.find((yeast) => yeast.name === action.strain);
+      return fromYeast(found, { yeastStrain: action.strain, yeastBrand: found?.brand ?? data.selected.yeastBrand });
+    }
+    case "setNitrogenRequirement":
+      return selected({ nitrogenRequirement: action.value });
+    case "toggleNutrient": {
+      const selectedNutrients = {
+        ...data.selected.selectedNutrients,
+        [action.key]: !data.selected.selectedNutrients[action.key]
+      };
+      return selected({ selectedNutrients, schedule: scheduleFromSelected(selectedNutrients) });
+    }
+    case "setOtherNutrientName":
+      return settings({ other: { ...data.settings.other, name: action.value } });
+    case "selectOtherNutrientPreset":
+      return settings({
+        yanContribution: { ...data.settings.yanContribution, other: String(action.preset.yan_ppm_per_gpl) },
+        maxGpl: {
+          ...data.settings.maxGpl,
+          other: action.preset.max_gpl == null ? DEFAULT_OTHER_NUTRIENT_MAX_GPL : String(action.preset.max_gpl)
+        },
+        maxGplTouched: true,
+        other: { ...data.settings.other, name: action.preset.name, usesOrganicMultiplier: action.preset.organic_multiplier }
+      });
+    case "setOtherUsesOrganicMultiplier":
+      return settings({ other: { ...data.settings.other, usesOrganicMultiplier: action.value } });
+    case "setOtherYanContribution":
+      return settings({ yanContribution: { ...data.settings.yanContribution, other: action.value } });
+    case "setMaxGpl":
+      return settings({ maxGplTouched: true, maxGpl: { ...data.settings.maxGpl, [action.key]: action.value } });
+    case "setYanContribution":
+      return settings({ yanContribution: { ...data.settings.yanContribution, [action.key]: action.value } });
+    case "setAdjustAllowed":
+      return adjustments({ adjustAllowed: action.value });
+    case "setProvidedYanPpm":
+      return adjustments({ providedYanPpm: { ...data.adjustments.providedYanPpm, [action.key]: action.value } });
+    case "setGoFermType":
+      return inputs({ goFermType: action.value });
+    case "setYeastAmountG":
+      return inputs({ yeastAmountG: action.value, yeastAmountTouched: true });
+    case "resetYeastAmountAuto":
+      return inputs({ yeastAmountTouched: false });
+  }
+}
+
+const sameRecord = (a: Record<NutrientKey, string>, b: Record<NutrientKey, string>) =>
+  nutrientKeys.every((key) => a[key] === b[key]);
+
+/**
+ * Writes the automatic fields into the data, as the web calculator shows them:
+ * max g/L from the schedule (unless edited), the YAN split (unless adjusting)
+ * and the yeast amount (unless typed). Returns the same object when nothing
+ * changes, so callers can skip a state update.
+ */
+export function syncNutrientAutoFields(data: NutrientData): NutrientData {
+  const effective = calculateEffectiveNutrientData(data);
+  if (
+    sameRecord(effective.settings.maxGpl, data.settings.maxGpl) &&
+    sameRecord(effective.adjustments.providedYanPpm, data.adjustments.providedYanPpm) &&
+    effective.inputs.yeastAmountG === data.inputs.yeastAmountG
+  ) {
+    return data;
+  }
+  return effective;
+}

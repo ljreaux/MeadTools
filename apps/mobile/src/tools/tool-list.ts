@@ -1,6 +1,10 @@
 /** Calculators on the Tools tab, grouped like the web's calculator menus. */
 export const toolGroups = [
   {
+    key: "nutrients",
+    tools: [{ href: "/tools/nutrients", label: "calculators.nutes" }]
+  },
+  {
     key: "gravity",
     tools: [
       { href: "/tools/abv", label: "calculators.extraCalcs.abv" },

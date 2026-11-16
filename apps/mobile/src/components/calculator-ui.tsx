@@ -263,6 +263,58 @@ export function AbvResult({ abv }: { abv: { abvPercent: number; delle: number } 
   );
 }
 
+/** A horizontal row of choice chips, for options too long or many for a segmented control. */
+export function Chips<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  optionLabel
+}: {
+  label: string;
+  options: readonly T[];
+  value: T | null;
+  onChange: (next: T) => void;
+  optionLabel: (option: T) => string;
+}) {
+  const { styles } = useStyles();
+  return (
+    <ScrollView
+      accessibilityLabel={label}
+      accessibilityRole="radiogroup"
+      contentContainerStyle={styles.chips}
+      horizontal
+      keyboardShouldPersistTaps="handled"
+      showsHorizontalScrollIndicator={false}
+    >
+      {options.map((option) => {
+        const selected = option === value;
+        return (
+          <Pressable
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected }}
+            key={option}
+            onPress={() => onChange(option)}
+            style={[styles.chip, selected && styles.segmentSelected]}
+          >
+            <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>{optionLabel(option)}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/** A section heading inside a calculator. */
+export function CalculatorSection({ title }: { title: string }) {
+  const { styles } = useStyles();
+  return (
+    <Text accessibilityRole="header" style={styles.section}>
+      {title}
+    </Text>
+  );
+}
+
 /** A labelled switch; the whole row toggles it for touch and screen readers. */
 export function CalculatorSwitch({
   label,
@@ -320,6 +372,23 @@ function createStyles(colors: Colors) {
     warning: { color: colors.error, fontSize: typography.size.caption, fontWeight: typography.weight.bold },
     row: { alignItems: "stretch", flexDirection: "row", gap: spacing.md },
     switchRow: { alignItems: "center", flexDirection: "row", gap: spacing.md, minHeight: 44 },
+    chips: { gap: spacing.sm, paddingVertical: spacing.xs },
+    chip: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.round,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.lg
+    },
+    section: {
+      color: colors.textMuted,
+      fontSize: typography.size.caption,
+      fontWeight: typography.weight.bold,
+      paddingTop: spacing.sm,
+      textTransform: "uppercase"
+    },
     grow: { flex: 1 },
     input: {
       backgroundColor: colors.surface,

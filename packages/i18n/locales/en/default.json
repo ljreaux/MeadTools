@@ -3685,6 +3685,7 @@
   },
   "mobileTools": {
     "groups": {
+      "nutrients": "Nutrients",
       "gravity": "Gravity and ABV",
       "stabilizers": "Stabilizers",
       "finishing": "Finishing",
@@ -3799,6 +3800,22 @@
       "noMatches": "No yeasts match your search.",
       "showMore_one": "Show {{count}} more yeast",
       "showMore_other": "Show {{count}} more yeasts"
+    },
+    "nutrients": {
+      "strainSearch": "Search yeast strains",
+      "selectedYeast": "Selected: {{strain}} ({{brand}})",
+      "presets": "Presets",
+      "otherName": "Nutrient name",
+      "adjustYan": "Set provided YAN by hand",
+      "yeastAuto": "Calculated from volume and gravity: {{amount}} g. Type an amount to override it.",
+      "steps": {
+        "batch": "Batch and yeast",
+        "nutrients": "Nutrients",
+        "goFerm": "Go-Ferm",
+        "results": "Results"
+      },
+      "showResults": "Show results",
+      "stepOf": "Step {{step}} of {{total}}"
     }
   }
 }
