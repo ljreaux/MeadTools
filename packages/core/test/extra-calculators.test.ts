@@ -184,3 +184,74 @@ test("stabilizer helpers match the web stabilizer hook", async () => {
 
   assert.equal(sorbateAddition(1, "gal", SORBATE_MAX_ABV), 0);
 });
+
+test("priming sugar helpers match the web priming sugar hook", async () => {
+  const {
+    PRIMING_TEMPERATURE_RANGE,
+    primingBottleSizes,
+    primingSugarBase,
+    primingSugarOptions,
+    primingSugarTable
+  } = await import("../src/extra-calculators");
+  const { toFahrenheit } = await import("../src/temperature");
+
+  const options = primingSugarOptions([
+    { name: "Honey", sugar_content: "79.6", category: "sugar" },
+    { name: "Corn Sugar", sugar_content: "100", category: "sugar" },
+    { name: "Apple", sugar_content: "10", category: "fruit" },
+    { name: "Brown Sugar", sugar_content: "98.1", category: "sugar" },
+    { name: "Table Sugar", sugar_content: "99.8", category: "sugar" }
+  ]);
+  assert.deepEqual(options.map((option) => option.label), ["Corn Sugar", "Table Sugar", "Brown Sugar", "Honey"]);
+  assert.equal(options[0].amount, 1);
+  assert.equal(options[3].amount, 100 / 79.6);
+
+  const [corn] = primingSugarTable({
+    temperature: 68,
+    temperatureScale: "F",
+    co2Volumes: 2.4,
+    volume: 5,
+    volumeUnit: "gal",
+    sugars: options
+  });
+  const base = primingSugarBase(68, 2.4, 5);
+  assert.equal(corn.totalGrams, base);
+  assert.deepEqual(
+    corn.perBottle.map((bottle) => bottle.grams),
+    primingBottleSizes.map(({ size }) => base / (5 / size))
+  );
+
+  const [litersCelsius] = primingSugarTable({
+    temperature: 20,
+    temperatureScale: "C",
+    co2Volumes: 2.4,
+    volume: 18.92705,
+    volumeUnit: "lit",
+    sugars: options
+  });
+  assert.equal(litersCelsius.totalGrams, primingSugarBase(toFahrenheit(20), 2.4, 18.92705 / 3.78541));
+
+  const [empty] = primingSugarTable({ temperature: 68, temperatureScale: "F", co2Volumes: 2.4, volume: 0, volumeUnit: "gal", sugars: options });
+  assert.deepEqual(empty.perBottle.map((bottle) => bottle.grams), [0, 0, 0, 0, 0]);
+  assert.deepEqual(PRIMING_TEMPERATURE_RANGE.C, { min: 0, max: 44 });
+});
+
+test("bottling helpers match the web bottling calculator", async () => {
+  const { bottlesToFinish, bottlingStatus } = await import("../src/extra-calculators");
+
+  assert.equal(bottlingStatus(0.1), "ok");
+  assert.equal(bottlingStatus(-0.1), "ok");
+  assert.equal(bottlingStatus(0.11), "warn");
+  assert.equal(bottlingStatus(-0.11), "error");
+
+  // 5 gal batch, 10 x 750 ml already bottled in another row: 11.43 L left.
+  const target = 5 * 3.78541;
+  assert.equal(bottlesToFinish({ targetLiters: target, bottledLiters: 7.5, rowLiters: 0, perBottleLiters: 0.75 }), 16);
+  // The row's own bottles are not counted against it.
+  assert.equal(bottlesToFinish({ targetLiters: target, bottledLiters: 7.5 + 3, rowLiters: 3, perBottleLiters: 0.75 }), 16);
+  assert.equal(bottlesToFinish({ targetLiters: target, bottledLiters: 20, rowLiters: 0, perBottleLiters: 0.75 }), 0);
+  assert.equal(bottlesToFinish({ targetLiters: target, bottledLiters: 0, rowLiters: 0, perBottleLiters: 0 }), 0);
+  // An unreadable volume gives 0 bottles, not NaN.
+  assert.equal(bottlesToFinish({ targetLiters: Number.NaN, bottledLiters: 0, rowLiters: 0, perBottleLiters: 0.75 }), 0);
+  assert.equal(bottlesToFinish({ targetLiters: target, bottledLiters: 7.5, rowLiters: Number.NaN, perBottleLiters: 0.75 }), 0);
+});

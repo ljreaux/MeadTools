@@ -15,6 +15,8 @@ import {
   sorbateAddition,
   SORBATE_MAX_ABV,
   primingSugarBase,
+  PRIMING_CO2_RANGE,
+  PRIMING_TEMPERATURE_RANGE,
   primingBottleSizes,
   juiceLabelEstimate,
   sulfitePpmForPh,
@@ -360,18 +362,15 @@ const scalarCalculatorTools = [
         .optional()
         .describe("Temperature; defaults to 68 F / 20 C."),
       temperatureUnit,
-      co2Volumes: n.min(0).max(6).default(2.4),
+      co2Volumes: n.min(PRIMING_CO2_RANGE.min).max(PRIMING_CO2_RANGE.max).default(2.4),
       sugarContentPercent: n.positive().max(100).default(100)
     },
     (i) => {
+      const entered = i.temperature ?? (i.temperatureUnit === "C" ? 20 : 68);
+      const range = PRIMING_TEMPERATURE_RANGE[i.temperatureUnit];
       const temp =
-        i.temperatureUnit === "C"
-          ? toFahrenheit(i.temperature ?? 20)
-          : (i.temperature ?? 68);
-      if (
-        temp < 32 ||
-        temp > (i.temperatureUnit === "C" ? toFahrenheit(44) : 110)
-      )
+        i.temperatureUnit === "C" ? toFahrenheit(entered) : entered;
+      if (entered < range.min || entered > range.max)
         throw new Error(
           "Temperature must be 32–110 F or 0–44 C, matching the web calculator."
         );

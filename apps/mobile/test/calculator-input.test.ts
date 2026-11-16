@@ -66,3 +66,19 @@ test("typed stabilizer volumes convert with the web's factor and rounding", asyn
   assert.equal(convertStabilizerVolumeText("en", "", "gal", "lit"), "");
   assert.equal(convertStabilizerVolumeText("en", "2", "gal", "gal"), "2");
 });
+
+test("batch volumes convert with each calculator's factor", async () => {
+  const { convertVolumeText } = await import("../src/tools/calculator-input");
+  assert.equal(convertVolumeText("en", "5", "gal", "lit", 3.78541), "18.927");
+  assert.equal(convertVolumeText("de", "18,927", "lit", "gal", 3.78541), "5");
+  assert.equal(convertVolumeText("en", "1", "gal", "lit", 3.785), "3.785");
+  assert.equal(convertVolumeText("en", "", "gal", "lit", 3.785), "");
+});
+
+test("catalog names map to the web's camelCase translation keys", async () => {
+  const { catalogLabelKey } = await import("../src/tools/calculator-input");
+  assert.equal(catalogLabelKey("Table Sugar"), "tableSugar");
+  assert.equal(catalogLabelKey("Belgian Candi Syrup"), "belgianCandiSyrup");
+  assert.equal(catalogLabelKey("Honey"), "honey");
+  assert.equal(catalogLabelKey("Boiled Bread Yeast (BBY)"), "boiledBreadYeastBby");
+});

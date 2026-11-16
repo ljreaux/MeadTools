@@ -18,6 +18,10 @@ export default function ToolsLayout() {
       <Stack.Screen name="stabilizers" options={{ title: t("mobileTools.tools.stabilizers") }} />
       <Stack.Screen name="sulfite" options={{ title: t("mobileTools.tools.sulfite") }} />
       <Stack.Screen name="sorbate" options={{ title: t("mobileTools.tools.sorbate") }} />
+      <Stack.Screen name="blending" options={{ title: t("calculators.extraCalcs.blending") }} />
+      <Stack.Screen name="bench-trials" options={{ title: t("calculators.extraCalcs.benchTrials") }} />
+      <Stack.Screen name="priming-sugar" options={{ title: t("primingSugarHeading") }} />
+      <Stack.Screen name="bottling" options={{ title: t("calculators.extraCalcs.bottling") }} />
     </Stack>
   );
 }

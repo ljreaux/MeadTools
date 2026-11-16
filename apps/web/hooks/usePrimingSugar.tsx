@@ -1,49 +1,25 @@
 "use client";
 
 import {
-  primingSugarBase,
-  primingBottleSizes as bottleSizes
+  PRIMING_CO2_RANGE,
+  PRIMING_TEMPERATURE_RANGE,
+  primingSugarOptions,
+  primingSugarTable
 } from "@meadtools/core/extra-calculators";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toCelsius, toFahrenheit } from "@meadtools/core/temperature";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useIngredientsQuery } from "@/hooks/reactQuery/useIngredientsQuery";
-
-type Sugar =
-  | {
-      label: string;
-      amount: number;
-    }[]
-  | null;
-
-const calcAmountPerBottle = (numberOfBottles: number, totalSugar: number) =>
-  numberOfBottles > 0 ? totalSugar / numberOfBottles : 0;
 
 const usePrimingSugar = () => {
   // 🔁 Fetch sugar ingredients via React Query
   const { data: ingredientData, isLoading } = useIngredientsQuery("sugar");
 
   // Derived sugar definitions from ingredients
-  const sugars: Sugar = useMemo(() => {
-    if (!ingredientData) return null;
-
-    return ingredientData
-      .map((sugar) => ({
-        label: sugar.name,
-        amount: 100 / parseFloat(sugar.sugar_content)
-      }))
-      .sort((a, b) => {
-        const isPriority = (label: string) =>
-          label === "Table Sugar" || label === "Corn Sugar";
-
-        const aPri = isPriority(a.label);
-        const bPri = isPriority(b.label);
-
-        if (aPri && !bPri) return -1;
-        if (!aPri && bPri) return 1;
-        return a.label.localeCompare(b.label);
-      });
-  }, [ingredientData]);
+  const sugars = useMemo(
+    () => (ingredientData ? primingSugarOptions(ingredientData) : null),
+    [ingredientData]
+  );
 
   const [temp, setTemp] = useState("68");
   const [tempUnits, setTempUnits] = useState<"C" | "F">("F");
@@ -55,32 +31,10 @@ const usePrimingSugar = () => {
   const [volume, setVolume] = useState("0");
   const [volumeUnits, setVolumeUnits] = useState<"gal" | "lit">("gal");
 
-  const [primingSugar, setPrimingSugar] = useState({
-    sugar: 0,
-    parsedVolume: 0
-  });
-
-  const calcPrimingSugar = (temp: string, vols: string, volume: string) => {
-    const parsedVolume =
-      volumeUnits === "gal"
-        ? parseNumber(volume)
-        : parseNumber(volume) / 3.78541;
-
-    const parsedTemp =
-      tempUnits === "F" ? parseNumber(temp) : toFahrenheit(parseNumber(temp));
-
-    const sugar = primingSugarBase(parsedTemp, parseNumber(vols), parsedVolume);
-
-    return {
-      sugar,
-      parsedVolume
-    };
-  };
-
   const handleTempChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isValidNumber(e.target.value)) return;
-    const validRangeStart = tempUnits === "F" ? 32 : 0;
-    const validRangeEnd = tempUnits === "F" ? 110 : 44;
+    const { min: validRangeStart, max: validRangeEnd } =
+      PRIMING_TEMPERATURE_RANGE[tempUnits];
     const parsedTemp = parseNumber(e.target.value);
 
     if (parsedTemp < validRangeStart || parsedTemp > validRangeEnd) {
@@ -95,17 +49,13 @@ const usePrimingSugar = () => {
   const handleVolsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isValidNumber(e.target.value)) return;
     const parsedVols = parseNumber(e.target.value);
-    if (parsedVols < 0 || parsedVols > 6) {
+    if (parsedVols < PRIMING_CO2_RANGE.min || parsedVols > PRIMING_CO2_RANGE.max) {
       setVolsInvalid(true);
     } else {
       setVolsInvalid(false);
     }
     setVols(e.target.value);
   };
-
-  useEffect(() => {
-    setPrimingSugar(calcPrimingSugar(temp, vols, volume));
-  }, [temp, vols, volume, volumeUnits, tempUnits]);
 
   return {
     ingredientsLoading: isLoading,
@@ -150,22 +100,20 @@ const usePrimingSugar = () => {
       value: tempUnits
     },
 
-    primingSugarAmounts: sugars?.map((sugar) => {
-      const totalSugar = sugar.amount * primingSugar.sugar;
-
-      return {
-        ...sugar,
-        amount: totalSugar,
-        perBottle: bottleSizes.map(({ label, size }) => {
-          const numberOfBottles = primingSugar.parsedVolume / size;
-
-          return {
-            label,
-            amount: calcAmountPerBottle(numberOfBottles, totalSugar)
-          };
-        })
-      };
-    })
+    primingSugarAmounts: sugars
+      ? primingSugarTable({
+          temperature: parseNumber(temp),
+          temperatureScale: tempUnits,
+          co2Volumes: parseNumber(vols),
+          volume: parseNumber(volume),
+          volumeUnit: volumeUnits,
+          sugars
+        }).map((row) => ({
+          label: row.label,
+          amount: row.totalGrams,
+          perBottle: row.perBottle.map(({ label, grams }) => ({ label, amount: grams }))
+        }))
+      : undefined
   };
 };
 

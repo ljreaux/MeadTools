@@ -76,3 +76,31 @@ export function convertStabilizerVolumeText(
   if (value === null) return text;
   return calculatorInputText(locale, convertStabilizerVolume(value, from, to), 3);
 }
+
+/**
+ * Converts a typed batch volume between gallons and liters with a calculator's
+ * own factor (the web uses 3.785 for stabilizers and 3.78541 elsewhere).
+ */
+export function convertVolumeText(
+  locale: string,
+  text: string,
+  from: "gal" | "lit",
+  to: "gal" | "lit",
+  litersPerGallon: number
+): string {
+  if (from === to) return text;
+  const value = readCalculatorNumber(text);
+  if (value === null) return text;
+  const converted = to === "lit" ? value * litersPerGallon : value / litersPerGallon;
+  return calculatorInputText(locale, Math.round(converted * 1000) / 1000, 3);
+}
+
+/** The translation key the web uses for a catalog name ("Table Sugar" → "tableSugar"). */
+export function catalogLabelKey(name: string): string {
+  const words = name.match(/[A-Za-z0-9]+/g) ?? [];
+  return words
+    .map((word, index) =>
+      index === 0 ? word.toLowerCase() : word[0].toUpperCase() + word.slice(1).toLowerCase()
+    )
+    .join("");
+}

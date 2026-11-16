@@ -3686,7 +3686,8 @@
   "mobileTools": {
     "groups": {
       "gravity": "Gravity and ABV",
-      "stabilizers": "Stabilizers"
+      "stabilizers": "Stabilizers",
+      "finishing": "Finishing"
     },
     "inputs": {
       "og": "Original gravity",
@@ -3705,7 +3706,16 @@
       "ppm": "Sulfite addition (ppm)",
       "metabisulfite": "Metabisulfite",
       "takingPhReading": "I have a pH reading",
-      "ph": "pH"
+      "ph": "pH",
+      "value": "Value",
+      "volume": "Volume",
+      "sampleSize": "Sample size (ml)",
+      "stockConcentration": "Stock solution concentration (%)",
+      "stockVolume": "Stock solution (ml)",
+      "meadTemperature": "Mead temperature",
+      "co2Volumes": "CO2 volumes",
+      "bottleSize": "Bottle size",
+      "bottleUnit": "Bottle size unit"
     },
     "result": {
       "unavailable": "enter numbers to see the result",
@@ -3715,7 +3725,14 @@
       "sorbate": "Potassium sorbate",
       "campden": "Campden tablets",
       "sulfiteTarget": "Sulfite for {{ppm}} ppm",
-      "sulfiteEither": "Use the metabisulfite or the Campden tablets, not both. One tablet is counted as 75 ppm."
+      "sulfiteEither": "Use the metabisulfite or the Campden tablets, not both. One tablet is counted as 75 ppm.",
+      "blendedValue": "Blended value",
+      "totalVolume": "Total volume",
+      "adjunctInSample": "Adjunct in sample",
+      "ppm": "Concentration (ppm)",
+      "perGallon": "Scaled per gallon",
+      "perLiter": "Scaled per liter",
+      "wholeBatch": "Whole batch"
     },
     "refractometer": {
       "factorWarning": "Change this only if you have measured your refractometer's correction factor.",
@@ -3745,6 +3762,23 @@
       "ready": "Yeasts, ingredients and nutrient presets are saved on this device for offline use (updated {{date}}).",
       "loading": "Saving yeasts, ingredients and nutrient presets for offline use…",
       "missing": "Connect to the internet once to save yeasts, ingredients and nutrient presets for offline use."
+    },
+    "blending": {
+      "part": "Part {{number}}",
+      "hint": "Use the same unit for every value (for example SG or ABV) and the same unit for every volume."
+    },
+    "benchTrials": {
+      "trial": "Trial {{number}}"
+    },
+    "priming": {
+      "temperatureRange": "Enter {{min}} to {{max}} {{unit}}.",
+      "co2Range": "Enter {{min}} to {{max}} volumes of CO2.",
+      "belowResidual": "At this temperature the mead already holds at least this much CO2, so no priming sugar is needed."
+    },
+    "bottling": {
+      "ofBatch": "of batch",
+      "fill_one": "Use {{count}} bottle",
+      "fill_other": "Use {{count}} bottles"
     }
   }
 }

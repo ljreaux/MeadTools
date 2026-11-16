@@ -36,8 +36,11 @@ import {
   FL_OZ_PER_L,
   BOTTLE_SIZES_L,
   bottleVolumeLiters,
+  BOTTLING_TOLERANCE,
   bottlesToFill,
-  bottleTotals
+  bottlesToFinish,
+  bottleTotals,
+  bottlingStatus
 } from "@meadtools/core/extra-calculators";
 export { L_PER_GAL, FL_OZ_PER_L, BOTTLE_SIZES_L };
 
@@ -347,13 +350,8 @@ export function BottlingCalculator({
       ? state.remainingVolumeL / L_PER_GAL
       : state.remainingVolumeL;
 
-  const threshold = 0.1;
-
-  const status = React.useMemo(() => {
-    if (Math.abs(remainingDisplay) <= threshold) return "ok" as const;
-    if (remainingDisplay > 0) return "warn" as const;
-    return "error" as const;
-  }, [remainingDisplay]);
+  const threshold = BOTTLING_TOLERANCE;
+  const status = bottlingStatus(remainingDisplay);
 
   const statusCopy =
     status === "ok"
@@ -497,14 +495,12 @@ export function BottlingCalculator({
                   : t("bottlingCalculator.units.lShort");
               const perBottleL = state.getPerBottleLiters(row);
 
-              const bottledExcludingRow =
-                state.totalVolumeBottledL - row.totalVolumeL;
-              const neededL = state.totalTargetVolumeL - bottledExcludingRow;
-
-              const remainingBottles =
-                perBottleL > 0 && neededL > 0
-                  ? bottlesToFill(neededL, perBottleL)
-                  : 0;
+              const remainingBottles = bottlesToFinish({
+                targetLiters: state.totalTargetVolumeL,
+                bottledLiters: state.totalVolumeBottledL,
+                rowLiters: row.totalVolumeL,
+                perBottleLiters: perBottleL
+              });
               return (
                 <TableRow key={row.id}>
                   <TableCell>

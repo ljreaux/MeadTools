@@ -17,5 +17,14 @@ export const toolGroups = [
       { href: "/tools/sulfite", label: "mobileTools.tools.sulfite" },
       { href: "/tools/sorbate", label: "mobileTools.tools.sorbate" }
     ]
+  },
+  {
+    key: "finishing",
+    tools: [
+      { href: "/tools/blending", label: "calculators.extraCalcs.blending" },
+      { href: "/tools/bench-trials", label: "calculators.extraCalcs.benchTrials" },
+      { href: "/tools/priming-sugar", label: "primingSugarHeading" },
+      { href: "/tools/bottling", label: "calculators.extraCalcs.bottling" }
+    ]
   }
 ] as const;

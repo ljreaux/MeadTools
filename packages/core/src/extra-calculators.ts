@@ -312,3 +312,91 @@ export function stabilizerAdditions(input: {
     ...sulfiteAddition(input.volume, input.unit, sulfitePpm, input.type)
   };
 }
+
+/** Inputs the priming sugar calculator accepts without flagging them. */
+export const PRIMING_TEMPERATURE_RANGE = {
+  F: { min: 32, max: 110 },
+  C: { min: 0, max: 44 }
+} as const satisfies Record<TemperatureScale, { min: number; max: number }>;
+export const PRIMING_CO2_RANGE = { min: 0, max: 6 } as const;
+
+export type PrimingSugarOption = {
+  /** Ingredient name as stored (the web translates it by its camelCase key). */
+  label: string;
+  /** Grams of this ingredient per gram of fermentable sugar. */
+  amount: number;
+};
+
+/**
+ * Priming sugar choices from the ingredient catalog's `sugar` category:
+ * Table and Corn Sugar first, then the rest alphabetically.
+ */
+export function primingSugarOptions(
+  ingredients: readonly { name: string; sugar_content: string; category?: string }[]
+): PrimingSugarOption[] {
+  const isPriority = (label: string) => label === "Table Sugar" || label === "Corn Sugar";
+  return ingredients
+    .filter((ingredient) => ingredient.category === undefined || ingredient.category === "sugar")
+    .map((ingredient) => ({ label: ingredient.name, amount: 100 / parseFloat(ingredient.sugar_content) }))
+    .sort((a, b) => {
+      const aPri = isPriority(a.label);
+      const bPri = isPriority(b.label);
+      if (aPri && !bPri) return -1;
+      if (!aPri && bPri) return 1;
+      return a.label.localeCompare(b.label);
+    });
+}
+
+/**
+ * Grams of each sugar for the batch and per bottle, as in the web priming
+ * sugar table. Temperature and volume may use either unit.
+ */
+export function primingSugarTable(input: {
+  temperature: number;
+  temperatureScale: TemperatureScale;
+  co2Volumes: number;
+  volume: number;
+  volumeUnit: "gal" | "lit";
+  sugars: readonly PrimingSugarOption[];
+}) {
+  const volumeGallons = input.volumeUnit === "gal" ? input.volume : input.volume / L_PER_GAL;
+  const temperatureF = input.temperatureScale === "F" ? input.temperature : toFahrenheit(input.temperature);
+  const baseSugar = primingSugarBase(temperatureF, input.co2Volumes, volumeGallons);
+
+  return input.sugars.map((sugar) => {
+    const totalGrams = sugar.amount * baseSugar;
+    return {
+      label: sugar.label,
+      totalGrams,
+      perBottle: primingBottleSizes.map(({ label, size }) => {
+        const bottles = volumeGallons / size;
+        return { label, grams: bottles > 0 ? totalGrams / bottles : 0 };
+      })
+    };
+  });
+}
+
+/** Within this many gallons or liters of the target, a bottling plan is complete. */
+export const BOTTLING_TOLERANCE = 0.1;
+
+/** Status of a bottling plan from the remaining volume in the batch's unit. */
+export function bottlingStatus(remaining: number): "ok" | "warn" | "error" {
+  if (Math.abs(remaining) <= BOTTLING_TOLERANCE) return "ok";
+  return remaining > 0 ? "warn" : "error";
+}
+
+/**
+ * Bottles of one size still needed to reach the target, counting what the
+ * other rows already hold (0 when the target is met or the size is unusable).
+ */
+export function bottlesToFinish(input: {
+  targetLiters: number;
+  bottledLiters: number;
+  rowLiters: number;
+  perBottleLiters: number;
+}) {
+  const neededLiters = input.targetLiters - (input.bottledLiters - input.rowLiters);
+  // Written as "not greater than" so an unreadable (NaN) volume also gives 0.
+  if (!Number.isFinite(input.perBottleLiters) || !(input.perBottleLiters > 0) || !(neededLiters > 0)) return 0;
+  return bottlesToFill(neededLiters, input.perBottleLiters);
+}

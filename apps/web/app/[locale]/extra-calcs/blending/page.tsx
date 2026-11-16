@@ -47,7 +47,7 @@ function Blending() {
   );
   const totalVolumeDisplay = normalizeNumberString(
     totalVolume,
-    0,
+    3,
     currentLocale
   );
 
