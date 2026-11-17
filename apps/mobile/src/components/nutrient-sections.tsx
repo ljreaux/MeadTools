@@ -20,7 +20,7 @@ import {
   Segmented
 } from "@/components/calculator-ui";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import { calculatorInputText, convertVolumeText, formatCalculatorResult } from "@/tools/calculator-input";
+import { calculatorInputText, convertVolumeText, formatCalculatorResult, localizeDecimalText } from "@/tools/calculator-input";
 import { NUTRIENT_KEYS, type NutrientCalculator } from "@/tools/use-nutrient-calculator";
 import { useUnitSwitch } from "@/tools/use-unit-switch";
 
@@ -130,7 +130,7 @@ export function BatchFields({ calc }: Props) {
             <DecimalInput
               label={`${t("nuteVolume")}, ${t(data.inputs.volumeUnits === "gal" ? "units.gal" : "units.L")}`}
               onChangeText={(value) => dispatch({ type: "setVolume", value })}
-              value={data.inputs.volume}
+              value={localizeDecimalText(locale, data.inputs.volume)}
             />
           </Grow>
           <Segmented
@@ -154,10 +154,10 @@ export function BatchFields({ calc }: Props) {
         hint={Number.isFinite(sg) && sg > 0 ? `${t("nuteResults.sb")}: ${formatCalculatorResult(locale, calcSb(sg), 3, true)}` : null}
         label={t("nuteSgLabel")}
       >
-        <DecimalInput label={t("nuteSgLabel")} onChangeText={(value) => dispatch({ type: "setSg", value })} value={data.inputs.sg} />
+        <DecimalInput label={t("nuteSgLabel")} onChangeText={(value) => dispatch({ type: "setSg", value })} value={localizeDecimalText(locale, data.inputs.sg)} />
       </CalculatorField>
       <CalculatorField label={t("offset")}>
-        <DecimalInput label={t("offset")} onChangeText={(value) => dispatch({ type: "setOffsetPpm", value })} value={data.inputs.offsetPpm} />
+        <DecimalInput label={t("offset")} onChangeText={(value) => dispatch({ type: "setOffsetPpm", value })} value={localizeDecimalText(locale, data.inputs.offsetPpm)} />
       </CalculatorField>
     </>
   );
@@ -245,7 +245,7 @@ export function YeastFields({ calc }: Props) {
 }
 
 export function NutrientSelectionFields({ calc }: Props) {
-  const { t } = useFormat();
+  const { t, locale } = useFormat();
   const { colors, styles } = useStyles();
   const { data, dispatch, presetCatalog } = calc;
   return (
@@ -289,7 +289,7 @@ export function NutrientSelectionFields({ calc }: Props) {
             <DecimalInput
               label={t("other.yanContribution")}
               onChangeText={(value) => dispatch({ type: "setOtherYanContribution", value })}
-              value={data.settings.yanContribution.other}
+              value={localizeDecimalText(locale, data.settings.yanContribution.other)}
             />
           </CalculatorField>
           <CalculatorSwitch
@@ -326,7 +326,7 @@ export function NutrientSettingsFields({ calc }: Props) {
               <DecimalInput
                 label={`${nutrientName(key)}, ${t("nuteResults.sideLabels.maxGpl")}`}
                 onChangeText={(value) => dispatch({ type: "setMaxGpl", key, value })}
-                value={data.settings.maxGpl[key]}
+                value={localizeDecimalText(locale, data.settings.maxGpl[key])}
               />
             </Grow>
             <Grow>
@@ -334,7 +334,7 @@ export function NutrientSettingsFields({ calc }: Props) {
               <DecimalInput
                 label={`${nutrientName(key)}, ${t("other.yanContribution")}`}
                 onChangeText={(value) => dispatch({ type: "setYanContribution", key, value })}
-                value={data.settings.yanContribution[key]}
+                value={localizeDecimalText(locale, data.settings.yanContribution[key])}
               />
             </Grow>
           </InputRow>
@@ -343,7 +343,7 @@ export function NutrientSettingsFields({ calc }: Props) {
               <DecimalInput
                 label={`${nutrientName(key)}, ${t("other.settingsProvidedYan")}`}
                 onChangeText={(value) => dispatch({ type: "setProvidedYanPpm", key, value })}
-                value={data.adjustments.providedYanPpm[key]}
+                value={localizeDecimalText(locale, data.adjustments.providedYanPpm[key])}
               />
             </CalculatorField>
           ) : (
@@ -382,7 +382,7 @@ export function GoFermFields({ calc }: Props) {
         <DecimalInput
           label={t("yeastAmount")}
           onChangeText={(value) => dispatch({ type: "setYeastAmountG", value })}
-          value={data.inputs.yeastAmountG}
+          value={localizeDecimalText(locale, data.inputs.yeastAmountG)}
         />
       </CalculatorField>
       {data.inputs.yeastAmountTouched ? (

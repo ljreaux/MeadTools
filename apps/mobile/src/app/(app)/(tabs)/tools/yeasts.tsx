@@ -9,6 +9,7 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 import { useCatalog } from "@/catalogs/use-catalog";
 import { Segmented } from "@/components/calculator-ui";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { formatCalculatorResult } from "@/tools/calculator-input";
 
 const BRANDS = [
   { value: null, label: "mobileTools.yeasts.allBrands" },
@@ -31,7 +32,8 @@ const SCALES = ["F", "C"] as const;
 const PAGE_SIZE = 20;
 
 export default function YeastTableScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
   const catalog = useCatalog("yeasts");
@@ -145,7 +147,9 @@ export default function YeastTableScreen() {
       keyboardShouldPersistTaps="handled"
       renderItem={({ item }) => {
         const range = `${yeastTemperature(item.low_temp, scale)}–${yeastTemperature(item.high_temp, scale)} ${unit}`;
-        const tolerance = t("mobileTools.yeasts.tolerance", { value: item.tolerance });
+        const tolerance = t("mobileTools.yeasts.tolerance", {
+          value: formatCalculatorResult(locale, parseFloat(item.tolerance), 1)
+        });
         const nitrogenText = `${t("n2Requirement.label")}: ${nitrogen(item.nitrogen_requirement)}`;
         return (
           <View accessible accessibilityLabel={[item.name, item.brand, nitrogenText, tolerance, range].join(", ")} style={styles.row}>

@@ -51,7 +51,45 @@ calculator with the same inputs.
 | Reconnect saves the catalogs with no user action | Pass after fix: returning to the Tools list saved all three (see Findings) | Pass: saved about 15 s after airplane mode was turned off |
 | Cold launch offline with saved catalogs: yeast table and nutrient yeast picker load from the device | Pass | Pass |
 | Tools list shows the offline-data status with the saved date | Pass | Pass |
-| German layout | Waits for Weblate's German strings on `preview` | Waits for Weblate |
+| German layout (see below) | Pass after fixes | Pass after fixes |
+
+## German layout — November 16, 2026
+
+Weblate's German commits `a800d6da` and `5ad2f7b8` on `preview` cover every
+new Mobile string and the "Very Low" yeast label ("Sehr niedrig"). The iOS
+Simulator ran with the device language set to German and the Android emulator
+with the app language set to German (`cmd locale set-app-locales`).
+
+| Check | iOS Simulator | Android emulator |
+| --- | --- | --- |
+| Tools list, group headings and tab bar | Pass | Pass |
+| Gravity calculators (segments SG/Brix, °F/°C) | Pass | Pass |
+| Stabilizers, sulfite, sorbate (gal/L, Kalium/Natrium) | Pass after fix | Pass after fix |
+| Blending, bench trials, priming sugar (bottle sizes), bottling ("Verwende 54 Flaschen") | Pass | Pass |
+| Juice (g/mg, mL/fl oz) | Pass | Pass |
+| Yeast table (chips, "Sehr niedrig", cards) | Pass after fix | Pass after fix |
+| Nutrient steps: step header, pinned bar, Other preset chips, settings, Go-Ferm, "Ergebnisse anzeigen", results | Pass after fix | Pass |
+
+Fixed in this follow-up:
+
+- The ABV field read "% vol. (%)" because the label appended "(%)" to the
+  shared "ABV" word, which German translates as "% vol.". It now uses the
+  existing "ABV" field label ("Alkoholgehalt (%)").
+- Nutrient fields filled in from shared state showed a "." decimal in German
+  (Fermaid O max g/L "0.45"). They now show the locale separator through the
+  existing input formatter; typed text is unchanged.
+- Yeast tolerance printed the catalog value as is ("15.5% Toleranz"). Mobile
+  and the web yeast table now format it with the locale ("15,5%").
+
+Wording notes for Weblate (no layout problem): "Sulfite" and "Sorbate" are kept
+as tool names (the German words are "Sulfit" and "Sorbat"); "Bench Trials" and
+"1/3 Sugar Break" reuse web strings that German leaves in English; the web
+stabilizer pH picker still shows "No". The long priming sugar title fits the
+Android header; only the development tools button, which release builds do not
+have, overlaps it.
+
+On the web in German, the stabilizer pages show "Kein Sorbat nötig!" from 16%
+ABV and the yeast table shows "15,5%".
 
 ## Web regression check against `preview`
 
