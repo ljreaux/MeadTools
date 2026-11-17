@@ -3682,5 +3682,137 @@
         },
         "signedInAs": "Angemeldet als",
         "version": "Version {{version}}"
+    },
+    "mobileTools": {
+        "groups": {
+            "nutrients": "Nährstoffe",
+            "gravity": "Dichte und Alkoholgehalt",
+            "stabilizers": "Stabilisatoren",
+            "finishing": "Veredelung",
+            "ingredients": "Zutaten"
+        },
+        "inputs": {
+            "og": "Anfangsdichte",
+            "fg": "Enddichte",
+            "gravity": "Dichte",
+            "scale": "Skala",
+            "correctionFactor": "Korrekturfaktor",
+            "measuredSg": "Gemessene Dichte",
+            "temperatureUnit": "Temperatureinheit",
+            "currentTemp": "Aktuelle Temperatur",
+            "calibrationTemp": "Kalibrierungstemperatur",
+            "hydrometerFg": "Hydrometer Enddichte",
+            "refractometerFg": "Refraktometer Enddichte",
+            "batchSize": "Ansatzgröße",
+            "volumeUnit": "Volumeneinheit",
+            "ppm": "Sulfitzugabe (ppm)",
+            "metabisulfite": "Metabisulfite",
+            "takingPhReading": "Ich habe einen pH-Wert",
+            "ph": "pH",
+            "value": "Wert",
+            "volume": "Volumen",
+            "sampleSize": "Probenmenge (ml)",
+            "stockConcentration": "Konzentration der Stammlösung (%)",
+            "stockVolume": "Stammlösung (ml)",
+            "meadTemperature": "Met-Temperatur",
+            "co2Volumes": "CO2-Volumen",
+            "bottleSize": "Flaschengröße",
+            "bottleUnit": "Einheit der Flaschengröße",
+            "sugarPerServing": "Zucker pro Portion",
+            "sugarUnit": "Zucker-Einheit",
+            "servingSize": "Portionsgröße",
+            "servingUnit": "Einheit der Portionsgröße",
+            "servingsPerContainer": "Portionen pro Behälter"
+        },
+        "result": {
+            "unavailable": "gib zahlen ein, um das ergebnis zu sehen",
+            "correctedFg": "Korrigierte Enddichte",
+            "correctedGravity": "Korrigierte Dichte",
+            "estimatedOg": "Geschätzte Anfangsdichte",
+            "sorbate": "Kaliumsorbat",
+            "campden": "Campden-Tabletten",
+            "sulfiteTarget": "Sulfite für {{ppm}} ppm",
+            "sulfiteEither": "Verwende das Metabisulfit oder die Campden-Tabletten, nicht beides. Eine Tablette entspricht 75 ppm.",
+            "blendedValue": "Mischwert",
+            "totalVolume": "Gesamtvolumen",
+            "adjunctInSample": "Zusatzstoff in der Probe",
+            "ppm": "Konzentration (ppm)",
+            "perGallon": "Pro Gallone skaliert",
+            "perLiter": "Pro Liter skaliert",
+            "wholeBatch": "Gesamter Ansatz",
+            "sugarPerContainer": "Zucker pro Behälter"
+        },
+        "refractometer": {
+            "factorWarning": "Ändere dies nur, wenn du den Korrekturfaktor deines Refraktometers gemessen hast.",
+            "factorInvalid": "Der Korrekturfaktor muss größer als 0 sein."
+        },
+        "estimatedOg": {
+            "about": "Schätzt die Anfangsdichte anhand einer Hydrometer- und einer Refraktometermessung des fertigen Mets nach der Methode von Woodland Brewing Research.",
+            "article": "Lies den Originalartikel auf der MeadTools-Website"
+        },
+        "tools": {
+            "stabilizers": "Stabilisatoren-Rechner",
+            "sulfite": "Sulfite",
+            "sorbate": "Sorbate"
+        },
+        "metabisulfite": {
+            "kMeta": "Kalium",
+            "naMeta": "Natrium"
+        },
+        "stabilizers": {
+            "defaultPh": "Ohne Messwert wird Sulfit für pH {{ph}}."
+        },
+        "offline": {
+            "title": "Offline-Daten",
+            "ready": "Hefen, Zutaten und Nährstoff-Voreinstellungen sind auf diesem Gerät für die Offline-Nutzung gespeichert (aktualisiert {{date}}).",
+            "loading": "Speichere Hefen, Zutaten und Nährstoff-Voreinstellungen für die Offline-Nutzung…",
+            "missing": "Verbinde dich einmal mit dem Internet, um Hefen, Zutaten und Nährstoff-Voreinstellungen für die Offline-Nutzung zu speichern."
+        },
+        "blending": {
+            "part": "Teil {{number}}",
+            "hint": "Verwende für alle Werte dieselbe Einheit (z. B. spezifische Dichte oder Alkoholgehalt) und für alle Volumina dieselbe Einheit."
+        },
+        "benchTrials": {
+            "trial": "Probe {{number}}"
+        },
+        "priming": {
+            "temperatureRange": "Gib {{min}} bis {{max}} {{unit}} ein.",
+            "co2Range": "Gib {{min}} bis {{max}} Volumen CO2 ein.",
+            "belowResidual": "Bei dieser Temperatur enthält der Met bereits mindestens so viel CO2, daher ist kein Karbonisierungszucker nötig."
+        },
+        "bottling": {
+            "ofBatch": "des Ansatzes",
+            "fill_one": "Verwende {{count}} Flasche",
+            "fill_other": "Verwende {{count}} Flaschen"
+        },
+        "juice": {
+            "note": "Geschätzt anhand der Nährwertangaben, nicht an einer gemessenen Dichte."
+        },
+        "yeasts": {
+            "allBrands": "Alle Marken",
+            "sortBy": "Sortieren nach",
+            "tolerance": "{{value}}% Toleranz",
+            "count_one": "{{count}} Hefe",
+            "count_other": "{{count}} Hefen",
+            "noMatches": "Keine Hefen entsprechen deiner Suche.",
+            "showMore_one": "Zeige noch {{count}} weiteren Hefestamm",
+            "showMore_other": "Zeige noch {{count}} weitere Hefestämme"
+        },
+        "nutrients": {
+            "strainSearch": "Hefestämme suchen",
+            "selectedYeast": "Ausgewählt: {{strain}} ({{brand}})",
+            "presets": "Voreinstellungen",
+            "otherName": "Nährstoffname",
+            "adjustYan": "Angegebenen hefeverfügbaren Stickstoff manuell einstellen",
+            "yeastAuto": "Berechnet aus Volumen und Dichte: {{amount}} g. Gib eine Menge ein, um den Wert zu überschreiben.",
+            "steps": {
+                "batch": "Ansatz und Hefe",
+                "nutrients": "Nährstoffe",
+                "goFerm": "Go-Ferm",
+                "results": "Ergebnisse"
+            },
+            "showResults": "Ergebnisse anzeigen",
+            "stepOf": "Schritt {{step}} von {{total}}"
+        }
     }
 }
