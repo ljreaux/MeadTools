@@ -307,7 +307,9 @@ export function stabilizerAdditions(input: {
 }) {
   const sulfitePpm = sulfitePpmForPh(input.ph ?? DEFAULT_STABILIZER_PH);
   return {
-    sorbateGrams: sorbateAddition(input.volume, input.unit, input.abv),
+    // The dose reaches zero at 16% ABV; above that no sorbate is needed, so
+    // the result stays at 0 instead of going negative (as in the recipe builder).
+    sorbateGrams: Math.max(0, sorbateAddition(input.volume, input.unit, input.abv)),
     sulfitePpm,
     ...sulfiteAddition(input.volume, input.unit, sulfitePpm, input.type)
   };

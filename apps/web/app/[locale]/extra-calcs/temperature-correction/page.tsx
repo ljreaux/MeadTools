@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { temperatureCorrectedGravity } from "@meadtools/core/extra-calculators";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { switchUnitText, type UnitSwitch } from "@meadtools/core/numeric";
+import { convertTemperature } from "@meadtools/core/temperature";
 import { toBrix } from "@meadtools/core/gravity";
 import {
   isValidNumber,
@@ -194,8 +196,32 @@ const useTempCorrection = () => {
     scale: tempObj.tempUnits === "C" ? "C" : "F"
   });
 
+  // Switching the scale converts both typed temperatures; switching straight
+  // back restores what was typed.
+  type Scale = "F" | "C";
+  const lastSwitch = useRef<{
+    curTemp: UnitSwitch<Scale> | null;
+    calTemp: UnitSwitch<Scale> | null;
+  }>({ curTemp: null, calTemp: null });
   const setTempUnits = (str: string) => {
-    setTempObj((prev) => ({ ...prev, tempUnits: str }));
+    const to: Scale = str === "C" ? "C" : "F";
+    const from: Scale = tempObj.tempUnits === "C" ? "C" : "F";
+    if (to === from) return;
+    const convert = (text: string) => {
+      const value = parseNumber(text);
+      return Number.isFinite(value)
+        ? String(convertTemperature(value, from, to))
+        : text;
+    };
+    const cur = switchUnitText(tempObj.curTemp, from, to, convert, lastSwitch.current.curTemp);
+    const cal = switchUnitText(tempObj.calTemp, from, to, convert, lastSwitch.current.calTemp);
+    lastSwitch.current = { curTemp: cur.last, calTemp: cal.last };
+    setTempObj((prev) => ({
+      ...prev,
+      tempUnits: to,
+      curTemp: cur.text,
+      calTemp: cal.text
+    }));
   };
 
   return { tempObj, handleChange, result, resultBrix, setTempUnits };

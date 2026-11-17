@@ -113,6 +113,7 @@ export const columns: ColumnDef<Yeast>[] = [
     },
     cell: ({ row }) => {
       const keys: Record<string, string> = {
+        "Very Low": "veryLow",
         Low: "low",
         Medium: "medium",
         High: "high",

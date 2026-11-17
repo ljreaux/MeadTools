@@ -122,18 +122,30 @@ every step was compared.
   and for values of 1,000% or more (the old check read the displayed text);
   blending total volume shows up to 3 decimals; `GET /nutrient-presets` has
   real response schemas.
-- **Unchanged on `preview` (follow-ups, not caused by this branch):**
-  - Sorbate goes negative above 16% ABV on the web sorbate and stabilizers
-    pages (−0.315 g at 16.5%).
-  - In development only, the stabilizer and sorbate pages open with 0.264 gal
-    instead of 1: React's development double effect runs the unit-conversion
-    effect a second time. Production builds are not affected.
-  - Juice serving size drifts after a ml → fl oz → ml round trip
-    (240 → 240.0008).
-  - Temperature correction keeps the typed temperatures when switching °F to
-    °C instead of converting them.
-  - `YeastTable.json` has no "Very Low" label. No catalog yeast uses it locally
-    or in production.
+- **Existing `preview` issues, fixed in a follow-up commit on this branch:**
+  - Sorbate went negative above 16% ABV on the web sorbate and stabilizers
+    pages (−0.315 g at 16.5%). Core now keeps the stabilizer dose at 0, and web
+    and Mobile show the recipe builder's "No Sorbate Needed!" from 16% ABV.
+  - In development only, the stabilizer and sorbate pages opened with
+    0.264 gal instead of 1: React's development double effect ran the
+    unit-conversion effect a second time. The web juice and stabilizer hooks
+    now convert in the unit change handlers, not effects.
+  - Juice serving size drifted after a ml → fl oz → ml round trip
+    (240 → 240.0008). Core `switchUnitText` now restores the typed value when
+    a unit is switched straight back; web juice, stabilizers and temperature
+    correction and the Mobile volume, juice and temperature fields use it.
+  - Web temperature correction kept the typed temperatures when switching °F
+    to °C. It now converts them, to one decimal place, like Mobile (shared
+    core `convertTemperature`).
+  - `YeastTable.json` had no "Very Low" label. English is added; German waits
+    for Weblate.
+- **Follow-up checks — November 16, 2026:** on the branch web, juice
+  240 mL → 8.1154 fl oz → 240 mL and an edited value converts normally; the
+  stabilizer page loads at 1 gal and 0.505 g; 16% and 16.5% ABV show "No
+  Sorbate Needed!" with the sulfite result kept, 15.9% gives 0.013 g;
+  temperature correction converts 90/68 °F to 32.2/20 °C and back with the same
+  1.103 SG. On iOS, juice returns to 240 mL and sorbate at 16.5% shows 0 g with
+  "No Sorbate Needed!".
 
 ## Checks
 

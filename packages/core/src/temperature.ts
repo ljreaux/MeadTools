@@ -23,3 +23,13 @@ export function toFahrenheit(currentTemp: number) {
 export function toCelsius(currentTemp: number) {
   return (currentTemp - 32) * (5 / 9);
 }
+
+/**
+ * Converts a typed temperature when its scale changes, rounded to one decimal
+ * place as the calculators show it.
+ */
+export function convertTemperature(value: number, from: "F" | "C", to: "F" | "C") {
+  if (from === to) return value;
+  const converted = to === "C" ? toCelsius(value) : toFahrenheit(value);
+  return Math.round(converted * 10) / 10;
+}

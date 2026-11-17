@@ -18,6 +18,7 @@ import {
   readCalculatorNumber,
   readCalculatorNumbers
 } from "@/tools/calculator-input";
+import { useUnitSwitch } from "@/tools/use-unit-switch";
 
 const SCALES = ["F", "C"] as const;
 type Scale = (typeof SCALES)[number];
@@ -29,6 +30,8 @@ export default function TemperatureCorrectionScreen() {
   const [scale, setScale] = useState<Scale>("F");
   const [current, setCurrent] = useState(() => calculatorInputText(locale, 90));
   const [calibration, setCalibration] = useState(() => calculatorInputText(locale, 68));
+  const switchCurrent = useUnitSwitch<Scale>();
+  const switchCalibration = useUnitSwitch<Scale>();
 
   const values = readCalculatorNumbers([measured, current, calibration] as const);
   const result = values
@@ -61,8 +64,9 @@ export default function TemperatureCorrectionScreen() {
         <Segmented
           label={t("mobileTools.inputs.temperatureUnit")}
           onChange={(next) => {
-            setCurrent((text) => convertTemperatureText(locale, text, scale, next));
-            setCalibration((text) => convertTemperatureText(locale, text, scale, next));
+            const convert = (text: string) => convertTemperatureText(locale, text, scale, next);
+            setCurrent(switchCurrent(current, scale, next, convert));
+            setCalibration(switchCalibration(calibration, scale, next, convert));
             setScale(next);
           }}
           optionLabel={(option) => t(`units.${option}`)}

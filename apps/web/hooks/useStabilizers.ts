@@ -2,6 +2,7 @@ import {
   convertStabilizerVolume,
   stabilizerAdditions
 } from "@meadtools/core/extra-calculators";
+import { switchUnitText, type UnitSwitch } from "@meadtools/core/numeric";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
@@ -48,25 +49,32 @@ const useStabilizers = () => {
     setCampden(additions.campdenTablets);
   }, [abvNum, volumeNum, phNum, stabilizerType, volumeUnits]);
 
-  // convert the *string* volume when units change (skip first run)
-  const didInitUnits = useRef(false);
-  useEffect(() => {
-    if (!didInitUnits.current) {
-      didInitUnits.current = true;
-      return;
-    }
-
-    const v = parseNumber(volume || "0");
-    const from = volumeUnits === "lit" ? "gal" : "lit";
-    setVolume(String(convertStabilizerVolume(v, from, volumeUnits)));
-  }, [volumeUnits]); // intentionally only units
+  // Convert the typed volume when the unit changes. This runs in the change
+  // handler, not an effect, so React's development double effects cannot
+  // convert the default volume on load. Switching straight back restores what
+  // was typed.
+  const lastVolumeSwitch = useRef<UnitSwitch<VolumeUnit> | null>(null);
+  const changeVolumeUnits = (next: VolumeUnit) => {
+    if (next === volumeUnits) return;
+    const from = volumeUnits;
+    const result = switchUnitText(
+      volume,
+      from,
+      next,
+      (text) => String(convertStabilizerVolume(parseNumber(text || "0"), from, next)),
+      lastVolumeSwitch.current
+    );
+    lastVolumeSwitch.current = result.last;
+    setVolume(result.text);
+    setVolumeUnits(next);
+  };
 
   return {
     // inputs (strings)
     volume,
     setVolume,
     volumeUnits,
-    setVolumeUnits,
+    setVolumeUnits: changeVolumeUnits,
     abv,
     setAbv,
     phReading,

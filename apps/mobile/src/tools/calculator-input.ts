@@ -3,6 +3,7 @@ import {
   type StabilizerVolumeUnit
 } from "@meadtools/core/extra-calculators";
 import { roundForDisplay } from "@meadtools/core/numeric";
+import { convertTemperature } from "@meadtools/core/temperature";
 
 import { isIncompleteDecimal, parseDecimalInput } from "../outbox/gravity-entry-form";
 
@@ -60,8 +61,7 @@ export function convertTemperatureText(
   if (from === to) return text;
   const value = readCalculatorNumber(text);
   if (value === null) return text;
-  const converted = to === "C" ? (value - 32) * (5 / 9) : value * (9 / 5) + 32;
-  return calculatorInputText(locale, roundForDisplay(converted, 1), 1);
+  return calculatorInputText(locale, convertTemperature(value, from, to), 1);
 }
 
 /** Converts a typed stabilizer batch volume when its unit changes. */

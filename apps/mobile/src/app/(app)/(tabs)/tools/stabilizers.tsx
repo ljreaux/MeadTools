@@ -40,17 +40,18 @@ export default function StabilizersScreen() {
         type
       })
     : null;
-  const sorbateOutOfRange = values !== null && values[1] > SORBATE_MAX_ABV;
+  // At 16% ABV and above the dose is zero (core keeps it at 0): no sorbate is needed.
+  const noSorbate = values !== null && values[1] >= SORBATE_MAX_ABV;
   const grams = (value: number) => `${formatCalculatorResult(locale, value, 3)} ${t("units.g")}`;
 
   return (
     <CalculatorScreen>
       <ResultCard
-        note={sorbateOutOfRange ? t("mobileTools.sorbate.highAbv", { abv: SORBATE_MAX_ABV }) : null}
+        note={noSorbate ? t("noSorb") : null}
         values={[
           {
             label: t("mobileTools.result.sorbate"),
-            value: result && !sorbateOutOfRange ? grams(result.sorbateGrams) : null
+            value: result ? grams(result.sorbateGrams) : null
           }
         ]}
       />

@@ -22,6 +22,7 @@ import {
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { calculatorInputText, convertVolumeText, formatCalculatorResult } from "@/tools/calculator-input";
 import { NUTRIENT_KEYS, type NutrientCalculator } from "@/tools/use-nutrient-calculator";
+import { useUnitSwitch } from "@/tools/use-unit-switch";
 
 const NITROGEN = ["Very Low", "Low", "Medium", "High", "Very High"] as const satisfies readonly NitrogenRequirement[];
 export const NITROGEN_KEYS: Record<NitrogenRequirement, string> = {
@@ -119,6 +120,7 @@ export function GoFermResult({ calc }: Props) {
 export function BatchFields({ calc }: Props) {
   const { t, locale } = useFormat();
   const { data, dispatch } = calc;
+  const switchVolume = useUnitSwitch<"gal" | "lit">();
   const sg = parseNumber(data.inputs.sg);
   return (
     <>
@@ -136,7 +138,10 @@ export function BatchFields({ calc }: Props) {
             onChange={(next) => {
               const from = data.inputs.volumeUnits === "gal" ? "gal" : "lit";
               const to = next === "gal" ? "gal" : "lit";
-              dispatch({ type: "setVolume", value: convertVolumeText(locale, data.inputs.volume, from, to, L_PER_GAL) });
+              const value = switchVolume(data.inputs.volume, from, to, (text) =>
+                convertVolumeText(locale, text, from, to, L_PER_GAL)
+              );
+              dispatch({ type: "setVolume", value });
               dispatch({ type: "setVolumeUnits", value: next });
             }}
             optionLabel={(option) => t(option === "gal" ? "units.gal" : "units.L")}

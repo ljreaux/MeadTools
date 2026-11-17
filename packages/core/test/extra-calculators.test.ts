@@ -183,6 +183,9 @@ test("stabilizer helpers match the web stabilizer hook", async () => {
   );
 
   assert.equal(sorbateAddition(1, "gal", SORBATE_MAX_ABV), 0);
+  // Above 16% ABV no sorbate is needed: 0, never a negative dose.
+  assert.equal(stabilizerAdditions({ volume: 5, unit: "lit", abv: 16.5, ph: null, type: "kMeta" }).sorbateGrams, 0);
+  assert.ok(sorbateAddition(5, "lit", 16.5) < 0);
 });
 
 test("priming sugar helpers match the web priming sugar hook", async () => {

@@ -33,6 +33,7 @@ import {
   readCalculatorNumber,
   readCalculatorNumbers
 } from "@/tools/calculator-input";
+import { useUnitSwitch } from "@/tools/use-unit-switch";
 
 const TEMPERATURE_SCALES = ["F", "C"] as const;
 const BOTTLES = primingBottleSizes.map((bottle) => bottle.label);
@@ -47,6 +48,7 @@ export default function PrimingSugarScreen() {
   const [unit, setUnit] = useState<BatchVolumeUnit>("gal");
   const [temperature, setTemperature] = useState(() => calculatorInputText(locale, 68));
   const [scale, setScale] = useState<(typeof TEMPERATURE_SCALES)[number]>("F");
+  const switchTemperature = useUnitSwitch<(typeof TEMPERATURE_SCALES)[number]>();
   const [co2, setCo2] = useState(() => calculatorInputText(locale, 2.4));
   const [bottle, setBottle] = useState<string>(BOTTLES[0]);
 
@@ -104,7 +106,9 @@ export default function PrimingSugarScreen() {
           <Segmented
             label={t("mobileTools.inputs.temperatureUnit")}
             onChange={(next) => {
-              setTemperature((text) => convertTemperatureText(locale, text, scale, next));
+              setTemperature(
+                switchTemperature(temperature, scale, next, (text) => convertTemperatureText(locale, text, scale, next))
+              );
               setScale(next);
             }}
             optionLabel={(option) => t(`units.${option}`)}

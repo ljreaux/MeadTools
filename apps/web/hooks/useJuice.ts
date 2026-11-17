@@ -3,7 +3,8 @@ import {
   convertJuiceSugar,
   juiceLabelEstimate
 } from "@meadtools/core/extra-calculators";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { switchUnitText, type UnitSwitch } from "@meadtools/core/numeric";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 export default function useJuice() {
@@ -39,22 +40,42 @@ export default function useJuice() {
     [sugar, sugarUnits, servingSize, servingSizeUnits, servings]
   );
 
-  // Unit conversions – keep the same behavior, but safe
-  useEffect(() => {
-    // switching g → mg or mg → g
-    const to = sugarUnits === "mg" ? "mg" : "g";
-    const from = to === "mg" ? "g" : "mg";
-    setSugar((prev) => convertValue(prev, (num) => convertJuiceSugar(num, from, to)));
-  }, [sugarUnits, convertValue]);
-
-  useEffect(() => {
-    // switching ml → floz or floz → ml
-    const to = servingSizeUnits === "floz" ? "floz" : "ml";
-    const from = to === "floz" ? "ml" : "floz";
-    setServingSize((prev) =>
-      convertValue(prev, (num) => convertJuiceServing(num, from, to))
+  // Convert the typed values when a unit changes. This runs in the change
+  // handlers, not effects, so nothing converts on load. Switching straight back
+  // restores what was typed (240 ml → 8.1154 fl oz → 240 ml).
+  const lastSugarSwitch = useRef<UnitSwitch<"g" | "mg"> | null>(null);
+  const changeSugarUnits = (value: string) => {
+    const to = value === "mg" ? "mg" : "g";
+    const from = sugarUnits === "mg" ? "mg" : "g";
+    if (to === from) return;
+    const result = switchUnitText(
+      sugar,
+      from,
+      to,
+      (text) => convertValue(text, (num) => convertJuiceSugar(num, from, to)),
+      lastSugarSwitch.current
     );
-  }, [servingSizeUnits, convertValue]);
+    lastSugarSwitch.current = result.last;
+    setSugar(result.text);
+    setSugarUnits(to);
+  };
+
+  const lastServingSwitch = useRef<UnitSwitch<"ml" | "floz"> | null>(null);
+  const changeServingSizeUnits = (value: string) => {
+    const to = value === "floz" ? "floz" : "ml";
+    const from = servingSizeUnits === "floz" ? "floz" : "ml";
+    if (to === from) return;
+    const result = switchUnitText(
+      servingSize,
+      from,
+      to,
+      (text) => convertValue(text, (num) => convertJuiceServing(num, from, to)),
+      lastServingSwitch.current
+    );
+    lastServingSwitch.current = result.last;
+    setServingSize(result.text);
+    setServingSizeUnits(to);
+  };
 
   return {
     sugar,
@@ -65,8 +86,8 @@ export default function useJuice() {
     setSugar,
     setServingSize,
     setServings,
-    setSugarUnits,
-    setServingSizeUnits,
+    setSugarUnits: changeSugarUnits,
+    setServingSizeUnits: changeServingSizeUnits,
     brix,
     sg,
     totalSugar

@@ -3759,9 +3759,6 @@
       "kMeta": "Potassium",
       "naMeta": "Sodium"
     },
-    "sorbate": {
-      "highAbv": "Above {{abv}}% ABV this formula gives no sorbate amount."
-    },
     "stabilizers": {
       "defaultPh": "Without a reading, sulfite is calculated for pH {{ph}}."
     },

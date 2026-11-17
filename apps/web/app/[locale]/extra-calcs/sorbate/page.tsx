@@ -16,8 +16,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   isValidNumber,
-  normalizeNumberString
+  normalizeNumberString,
+  parseNumber
 } from "@/lib/utils/validateInput";
+import { SORBATE_MAX_ABV } from "@meadtools/core/extra-calculators";
 import { useTranslation } from "react-i18next";
 import useStabilizers from "@/hooks/useStabilizers";
 
@@ -107,14 +109,19 @@ function Sorbate() {
 
       {/* Result */}
       <div className="mt-auto flex justify-center">
-        <div className="text-center">
-          <p className="sm:text-2xl text-lg font-semibold tracking-tight">
-            {sorbateAmountDisplay} g
-          </p>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {t("kSorb")}
-          </p>
-        </div>
+        {/* At 16% ABV and above the dose is zero: no sorbate is needed. */}
+        {parseNumber(abv) >= SORBATE_MAX_ABV ? (
+          <p className="text-sm text-muted-foreground">{t("noSorb")}</p>
+        ) : (
+          <div className="text-center">
+            <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+              {sorbateAmountDisplay} g
+            </p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("kSorb")}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

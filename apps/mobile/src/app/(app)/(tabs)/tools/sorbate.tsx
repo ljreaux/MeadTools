@@ -19,13 +19,14 @@ export default function SorbateScreen() {
   const [abv, setAbv] = useState(() => calculatorInputText(locale, 12));
 
   const values = readCalculatorNumbers([volume, abv] as const);
-  const outOfRange = values !== null && values[1] > SORBATE_MAX_ABV;
-  const grams = values && !outOfRange ? sorbateAddition(values[0], unit, values[1]) : null;
+  // At 16% ABV and above the dose is zero: no sorbate is needed (as on the web).
+  const noSorbate = values !== null && values[1] >= SORBATE_MAX_ABV;
+  const grams = values ? (noSorbate ? 0 : sorbateAddition(values[0], unit, values[1])) : null;
 
   return (
     <CalculatorScreen>
       <ResultCard
-        note={outOfRange ? t("mobileTools.sorbate.highAbv", { abv: SORBATE_MAX_ABV }) : null}
+        note={noSorbate ? t("noSorb") : null}
         values={[
           {
             label: t("mobileTools.result.sorbate"),

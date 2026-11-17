@@ -14,6 +14,7 @@ import {
   Segmented
 } from "@/components/calculator-ui";
 import { calculatorInputText, formatCalculatorResult, readCalculatorNumber, readCalculatorNumbers } from "@/tools/calculator-input";
+import { useUnitSwitch } from "@/tools/use-unit-switch";
 
 const SUGAR_UNITS = ["g", "mg"] as const;
 const SERVING_UNITS = ["ml", "floz"] as const;
@@ -34,6 +35,8 @@ export default function JuiceScreen() {
   const [serving, setServing] = useState("");
   const [servingUnit, setServingUnit] = useState<ServingUnit>("ml");
   const [servings, setServings] = useState("");
+  const switchSugar = useUnitSwitch<SugarUnit>();
+  const switchServing = useUnitSwitch<ServingUnit>();
 
   const values = readCalculatorNumbers([sugar, serving, servings] as const);
   const result = values ? juiceLabelEstimate(values[0], sugarUnit, values[1], servingUnit, values[2]) : null;
@@ -64,7 +67,11 @@ export default function JuiceScreen() {
           <Segmented
             label={t("mobileTools.inputs.sugarUnit")}
             onChange={(next) => {
-              setSugar((text) => convertText(locale, text, (value) => convertJuiceSugar(value, sugarUnit, next)));
+              setSugar(
+                switchSugar(sugar, sugarUnit, next, (text) =>
+                  convertText(locale, text, (value) => convertJuiceSugar(value, sugarUnit, next))
+                )
+              );
               setSugarUnit(next);
             }}
             optionLabel={sugarLabel}
@@ -81,7 +88,11 @@ export default function JuiceScreen() {
           <Segmented
             label={t("mobileTools.inputs.servingUnit")}
             onChange={(next) => {
-              setServing((text) => convertText(locale, text, (value) => convertJuiceServing(value, servingUnit, next)));
+              setServing(
+                switchServing(serving, servingUnit, next, (text) =>
+                  convertText(locale, text, (value) => convertJuiceServing(value, servingUnit, next))
+                )
+              );
               setServingUnit(next);
             }}
             optionLabel={servingLabel}
