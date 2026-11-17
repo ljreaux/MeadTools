@@ -64,6 +64,19 @@ export function convertTemperatureText(
   return calculatorInputText(locale, convertTemperature(value, from, to), 1);
 }
 
+/**
+ * Shows a decimal from shared calculator state (written with ".", like
+ * "0.45") with the locale's separator, so filled-in values match what the
+ * user types. Text the user typed is returned unchanged: in "," locales it
+ * never contains ".", and "." locales keep the exact text so half-typed
+ * values like "1.50" are not reformatted.
+ */
+export function localizeDecimalText(locale: string, text: string): string {
+  if (!/^-?\d*\.\d+$/.test(text)) return text;
+  const localized = calculatorInputText(locale, Number(text), 15);
+  return localized.includes(".") ? text : localized;
+}
+
 /** Converts a typed stabilizer batch volume when its unit changes. */
 export function convertStabilizerVolumeText(
   locale: string,

@@ -5,6 +5,7 @@ import {
   yeastTemperature
 } from "@meadtools/core/yeasts";
 import Translate from "./Translate";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import {
@@ -151,9 +152,9 @@ export const columns: ColumnDef<Yeast>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => {
-      return <>{`${row.getValue("tolerance")}%`}</>;
-    }
+    cell: ({ row }) => (
+      <Tolerance value={row.getValue("tolerance") as string} />
+    )
   },
   {
     accessorKey: "low_temp",
@@ -208,3 +209,11 @@ export const columns: ColumnDef<Yeast>[] = [
     }
   }
 ];
+
+/** A catalog tolerance ("15.5") with the reader's decimal separator. */
+function Tolerance({ value }: { value: string }) {
+  const { i18n } = useTranslation();
+  const number = parseFloat(value);
+  if (!Number.isFinite(number)) return <>{`${value}%`}</>;
+  return <>{`${number.toLocaleString(i18n.resolvedLanguage)}%`}</>;
+}

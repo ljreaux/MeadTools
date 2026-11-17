@@ -67,8 +67,9 @@ export default function StabilizersScreen() {
         ]}
       />
       <StabilizerVolumeField onUnitChange={setUnit} onVolumeChange={setVolume} unit={unit} volume={volume} />
-      <CalculatorField label={`${t("ABV")} (%)`}>
-        <DecimalInput label={t("ABV")} onChangeText={setAbv} value={abv} />
+      {/* "ABV" is "% vol." in German, so the field uses the word form ("Alkoholgehalt"). */}
+      <CalculatorField label={`${t("brews.complete.abv")} (%)`}>
+        <DecimalInput label={t("brews.complete.abv")} onChangeText={setAbv} value={abv} />
       </CalculatorField>
       <CalculatorSwitch
         label={t("mobileTools.inputs.takingPhReading")}

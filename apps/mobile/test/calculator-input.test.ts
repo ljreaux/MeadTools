@@ -6,6 +6,7 @@ import {
   calculatorInputText,
   convertTemperatureText,
   formatCalculatorResult,
+  localizeDecimalText,
   readCalculatorNumber,
   readCalculatorNumbers
 } from "../src/tools/calculator-input";
@@ -81,4 +82,15 @@ test("catalog names map to the web's camelCase translation keys", async () => {
   assert.equal(catalogLabelKey("Belgian Candi Syrup"), "belgianCandiSyrup");
   assert.equal(catalogLabelKey("Honey"), "honey");
   assert.equal(catalogLabelKey("Boiled Bread Yeast (BBY)"), "boiledBreadYeastBby");
+});
+
+test("filled-in decimals use the locale's separator; typed text is unchanged", () => {
+  assert.equal(localizeDecimalText("de", "0.45"), "0,45");
+  assert.equal(localizeDecimalText("en", "0.45"), "0.45");
+  assert.equal(localizeDecimalText("en", "1.50"), "1.50");
+  assert.equal(localizeDecimalText("en", "1."), "1.");
+  assert.equal(localizeDecimalText("de", "13.33333333333333"), "13,33333333333333");
+  assert.equal(localizeDecimalText("de", "10"), "10");
+  assert.equal(localizeDecimalText("de", "1,5"), "1,5");
+  assert.equal(localizeDecimalText("de", ""), "");
 });
