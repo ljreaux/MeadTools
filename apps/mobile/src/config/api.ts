@@ -19,3 +19,8 @@ export function resolveApiBaseUrl(
 }
 
 export const apiBaseUrl = resolveApiBaseUrl();
+
+/** A MeadTools web page on the same server the app talks to. */
+export function webPageUrl(path: string, baseUrl = apiBaseUrl) {
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+}

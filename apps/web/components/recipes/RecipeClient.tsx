@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import OwnerRecipe from "@/components/recipes/OwnerRecipe";
 import PublicRecipe from "@/components/recipes/PublicRecipe";
 import Loading from "@/components/loading";
-// import SavedRecipeProvider from "../providers/SavedRecipeProvider";
 import { useRecipeQuery } from "@/hooks/reactQuery/useRecipeQuery";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { RecipeProvider } from "../providers/RecipeProvider";

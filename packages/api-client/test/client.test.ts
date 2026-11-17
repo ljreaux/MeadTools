@@ -301,3 +301,37 @@ test("reads the existing inventory context, finished meads, and locations for a 
     ["/api/account/inventory/organization", "GET", "Bearer test-access"]
   ]);
 });
+
+test("reads the public catalogs the calculators use and validates each list", async () => {
+  const bodies: Record<string, unknown> = {
+    "https://meadtools.test/api/yeasts": [
+      { id: 1, brand: "Lalvin", name: "71B", nitrogen_requirement: "Low", tolerance: "14", low_temp: "59", high_temp: "86" }
+    ],
+    "https://meadtools.test/api/ingredients": [
+      { id: 7, name: "Honey", sugar_content: "79.6", water_content: "15.5", category: "sugar" }
+    ],
+    "https://meadtools.test/api/nutrient-presets": [
+      { id: "0f6c1d0e-6a53-4a5e-9d0e-6f0f2c1b7a11", name: "Fermaid O", yan_ppm_per_gpl: 40, max_gpl: null, organic_multiplier: true }
+    ]
+  };
+  const requests: string[] = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push(`${init.method} ${url}`);
+      return { ok: true, status: 200, json: async () => bodies[url] };
+    }
+  });
+
+  assert.equal((await client.listYeasts())[0].name, "71B");
+  assert.equal((await client.listIngredients())[0].sugar_content, "79.6");
+  assert.equal((await client.listNutrientPresets())[0].max_gpl, null);
+  assert.deepEqual(requests, [
+    "GET https://meadtools.test/api/yeasts",
+    "GET https://meadtools.test/api/ingredients",
+    "GET https://meadtools.test/api/nutrient-presets"
+  ]);
+
+  bodies["https://meadtools.test/api/yeasts"] = { error: "not a list" };
+  await assert.rejects(client.listYeasts(), MeadToolsContractError);
+});

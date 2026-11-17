@@ -20,7 +20,8 @@
     "high": "High",
     "low": "Low",
     "medium": "Medium",
-    "veryHigh": "Very High"
+    "veryHigh": "Very High",
+    "veryLow": "Very Low"
   },
   "searchAll": "Search yeasts",
   "searchPlaceholder": "Filter by yeast name...",

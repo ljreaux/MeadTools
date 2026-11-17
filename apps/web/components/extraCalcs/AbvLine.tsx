@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { normalizeNumberString } from "@/lib/utils/validateInput";
 import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
+import { isImplausibleAbv } from "@meadtools/core/extra-calculators";
 
 export default function AbvLine({
   ABV,
@@ -23,7 +24,7 @@ export default function AbvLine({
       className={cn(
         "w-full max-w-3xl mx-auto flex items-center rounded-md p-2",
         {
-          "bg-destructive": Number(abvDisplay) < 0 || Number(abvDisplay) > 23
+          "bg-destructive": isImplausibleAbv(ABV)
         }
       )}
     >

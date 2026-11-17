@@ -106,3 +106,18 @@ test("catalog schemas reject contract mismatches", () => {
     false
   );
 });
+
+test("nutrient preset list matches the nutrient_presets table", async () => {
+  const { nutrientPresetListResponseSchema } = await import("../src/zod/catalog");
+  const preset = {
+    id: "0f6c1d0e-6a53-4a5e-9d0e-6f0f2c1b7a11",
+    name: "Fermaid O",
+    yan_ppm_per_gpl: 40,
+    max_gpl: null,
+    organic_multiplier: true
+  };
+  assert.equal(nutrientPresetListResponseSchema.safeParse([preset]).success, true);
+  assert.equal(nutrientPresetListResponseSchema.safeParse([{ ...preset, max_gpl: 1.5 }]).success, true);
+  assert.equal(nutrientPresetListResponseSchema.safeParse([{ ...preset, max_gpl: undefined }]).success, false);
+  assert.equal(nutrientPresetListResponseSchema.safeParse([{ ...preset, yan_ppm_per_gpl: "40" }]).success, false);
+});

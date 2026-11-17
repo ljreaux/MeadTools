@@ -1,23 +1,13 @@
 import {
-  sulfiteAddition,
-  sorbateAddition,
-  sulfitePpmForPh
+  convertStabilizerVolume,
+  stabilizerAdditions
 } from "@meadtools/core/extra-calculators";
+import { switchUnitText, type UnitSwitch } from "@meadtools/core/numeric";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 type VolumeUnit = "gal" | "lit";
 export type StabilizerType = "kMeta" | "naMeta";
-
-function roundTo(n: number, decimals: number) {
-  const p = 10 ** decimals;
-  return Math.round(n * p) / p;
-}
-
-function toFixedString(n: number, decimals: number) {
-  // keep it simple + predictable for inputs
-  return String(roundTo(n, decimals));
-}
 
 const useStabilizers = () => {
   // inputs as STRINGS (so "12." can exist)
@@ -47,40 +37,44 @@ const useStabilizers = () => {
 
   // main calculations
   useEffect(() => {
-    setSorbate(sorbateAddition(volumeNum, volumeUnits, abvNum));
-
-    const ppm = sulfitePpmForPh(phNum);
-
-    const additions = sulfiteAddition(
-      volumeNum,
-      volumeUnits,
-      ppm,
-      stabilizerType
-    );
+    const additions = stabilizerAdditions({
+      volume: volumeNum,
+      unit: volumeUnits,
+      abv: abvNum,
+      ph: phNum,
+      type: stabilizerType
+    });
+    setSorbate(additions.sorbateGrams);
     setSulfite(additions.sulfiteGrams);
     setCampden(additions.campdenTablets);
   }, [abvNum, volumeNum, phNum, stabilizerType, volumeUnits]);
 
-  // convert the *string* volume when units change (skip first run)
-  const didInitUnits = useRef(false);
-  useEffect(() => {
-    if (!didInitUnits.current) {
-      didInitUnits.current = true;
-      return;
-    }
-
-    const v = parseNumber(volume || "0");
-    const converted = volumeUnits === "lit" ? v * 3.785 : v / 3.785;
-
-    setVolume(toFixedString(converted, 3));
-  }, [volumeUnits]); // intentionally only units
+  // Convert the typed volume when the unit changes. This runs in the change
+  // handler, not an effect, so React's development double effects cannot
+  // convert the default volume on load. Switching straight back restores what
+  // was typed.
+  const lastVolumeSwitch = useRef<UnitSwitch<VolumeUnit> | null>(null);
+  const changeVolumeUnits = (next: VolumeUnit) => {
+    if (next === volumeUnits) return;
+    const from = volumeUnits;
+    const result = switchUnitText(
+      volume,
+      from,
+      next,
+      (text) => String(convertStabilizerVolume(parseNumber(text || "0"), from, next)),
+      lastVolumeSwitch.current
+    );
+    lastVolumeSwitch.current = result.last;
+    setVolume(result.text);
+    setVolumeUnits(next);
+  };
 
   return {
     // inputs (strings)
     volume,
     setVolume,
     volumeUnits,
-    setVolumeUnits,
+    setVolumeUnits: changeVolumeUnits,
     abv,
     setAbv,
     phReading,

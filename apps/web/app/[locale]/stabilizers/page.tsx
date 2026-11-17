@@ -17,8 +17,10 @@ import Tooltip from "@/components/Tooltips";
 import useStabilizers, { StabilizerType } from "@/hooks/useStabilizers";
 import {
   isValidNumber,
-  normalizeNumberString
+  normalizeNumberString,
+  parseNumber
 } from "@/lib/utils/validateInput";
+import { SORBATE_MAX_ABV } from "@meadtools/core/extra-calculators";
 import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
 import InputWithUnits from "@/components/nutrientCalc/InputWithUnits";
@@ -47,6 +49,7 @@ function Stabilizers() {
 
   // Displays
   const sorbateDisplay = normalizeNumberString(sorbate, 3, currentLocale);
+  const noSorbate = parseNumber(abv) >= SORBATE_MAX_ABV;
   const sulfiteDisplay = normalizeNumberString(sulfite, 3, currentLocale);
   const campdenDisplay = normalizeNumberString(
     Math.round(campden * 10) / 10,
@@ -159,21 +162,28 @@ function Stabilizers() {
       <div className="mt-2 w-full flex flex-col gap-6">
         {/* Sorbate line */}
         <div className="flex justify-center">
-          <div className="text-center">
-            <p className="sm:text-2xl text-lg font-semibold tracking-tight">
-              {sorbateDisplay}
-              <span className="ml-1">g</span>
-            </p>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t("kSorb")}
-            </p>
-          </div>
+          {/* At 16% ABV and above the dose is zero: no sorbate is needed. */}
+          {noSorbate ? (
+            <p className="text-sm text-muted-foreground">{t("noSorb")}</p>
+          ) : (
+            <div className="text-center">
+              <p className="sm:text-2xl text-lg font-semibold tracking-tight">
+                {sorbateDisplay}
+                <span className="ml-1">g</span>
+              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("kSorb")}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* --- NEW: AND label between sorbate and sulfite --- */}
-        <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
-          {t("AND")}
-        </p>
+        {/* AND label between sorbate and sulfite */}
+        {!noSorbate && (
+          <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
+            {t("AND")}
+          </p>
+        )}
 
         {/* Sulfite section – styled like the Sulfite calculator */}
         <div className="w-full max-w-3xl mx-auto">

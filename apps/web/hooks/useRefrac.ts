@@ -1,4 +1,5 @@
-import { refractometerCorrectedSg, toBrix, toSG } from "@meadtools/core/gravity";
+import { toBrix, toSG } from "@meadtools/core/gravity";
+import { refractometerCorrection } from "@meadtools/core/extra-calculators";
 import { isValidNumber, parseNumber } from "@/lib/utils/validateInput";
 import { useState } from "react";
 
@@ -9,10 +10,13 @@ const useRefrac = () => {
   const [fg, setFg] = useState("8.5");
   const [fgUnits, setFgUnits] = useState<"SG" | "Brix">("Brix");
 
-  const ogBrix = ogUnits === "Brix" ? parseNumber(og) : toBrix(parseNumber(og));
-  const fgBrix = fgUnits === "Brix" ? parseNumber(fg) : toBrix(parseNumber(fg));
-
-  const correctedFg = refractometerCorrectedSg(ogBrix, fgBrix, parseNumber(correctionFactor));
+  const result = refractometerCorrection({
+    originalGravity: parseNumber(og),
+    originalGravityScale: ogUnits,
+    finalGravity: parseNumber(fg),
+    finalGravityScale: fgUnits,
+    correctionFactor: parseNumber(correctionFactor)
+  });
 
   const changeOgUnits = () => {
     if (ogUnits === "SG") {
@@ -69,8 +73,9 @@ const useRefrac = () => {
         changeFgUnits();
       },
     },
-    correctedFg,
-    correctedBrix: toBrix(correctedFg),
+    correctedFg: result.correctedSg,
+    correctedBrix: result.correctedBrix,
+    abv: { ABV: result.abvPercent, delle: result.delle },
   };
 };
 

@@ -2154,7 +2154,6 @@
     "placeholder": {
       "title": "Coming in a later update",
       "recipes": "Browse your recipes and build new ones here.",
-      "tools": "Nutrient, stabilizer, ABV and other calculators will live here.",
       "inventory": "Your stock, finished meads and equipment will appear here."
     },
     "signedInAs": "Signed in as",
@@ -3683,5 +3682,137 @@
     "includeUse": "Count in this brew",
     "includeUseNamed": "Count {{name}} in this brew again",
     "allExcluded": "Nothing to cost: every line is left out by your choice."
+  },
+  "mobileTools": {
+    "groups": {
+      "nutrients": "Nutrients",
+      "gravity": "Gravity and ABV",
+      "stabilizers": "Stabilizers",
+      "finishing": "Finishing",
+      "ingredients": "Ingredients"
+    },
+    "inputs": {
+      "og": "Original gravity",
+      "fg": "Final gravity",
+      "gravity": "Gravity",
+      "scale": "Scale",
+      "correctionFactor": "Correction factor",
+      "measuredSg": "Measured gravity",
+      "temperatureUnit": "Temperature unit",
+      "currentTemp": "Current temperature",
+      "calibrationTemp": "Calibration temperature",
+      "hydrometerFg": "Hydrometer FG",
+      "refractometerFg": "Refractometer FG",
+      "batchSize": "Batch size",
+      "volumeUnit": "Volume unit",
+      "ppm": "Sulfite addition (ppm)",
+      "metabisulfite": "Metabisulfite",
+      "takingPhReading": "I have a pH reading",
+      "ph": "pH",
+      "value": "Value",
+      "volume": "Volume",
+      "sampleSize": "Sample size (ml)",
+      "stockConcentration": "Stock solution concentration (%)",
+      "stockVolume": "Stock solution (ml)",
+      "meadTemperature": "Mead temperature",
+      "co2Volumes": "CO2 volumes",
+      "bottleSize": "Bottle size",
+      "bottleUnit": "Bottle size unit",
+      "sugarPerServing": "Sugar per serving",
+      "sugarUnit": "Sugar unit",
+      "servingSize": "Serving size",
+      "servingUnit": "Serving size unit",
+      "servingsPerContainer": "Servings per container"
+    },
+    "result": {
+      "unavailable": "enter numbers to see the result",
+      "correctedFg": "Corrected FG",
+      "correctedGravity": "Corrected gravity",
+      "estimatedOg": "Estimated OG",
+      "sorbate": "Potassium sorbate",
+      "campden": "Campden tablets",
+      "sulfiteTarget": "Sulfite for {{ppm}} ppm",
+      "sulfiteEither": "Use the metabisulfite or the Campden tablets, not both. One tablet is counted as 75 ppm.",
+      "blendedValue": "Blended value",
+      "totalVolume": "Total volume",
+      "adjunctInSample": "Adjunct in sample",
+      "ppm": "Concentration (ppm)",
+      "perGallon": "Scaled per gallon",
+      "perLiter": "Scaled per liter",
+      "wholeBatch": "Whole batch",
+      "sugarPerContainer": "Sugar per container"
+    },
+    "refractometer": {
+      "factorWarning": "Change this only if you have measured your refractometer's correction factor.",
+      "factorInvalid": "The correction factor must be greater than 0."
+    },
+    "estimatedOg": {
+      "about": "Estimates the original gravity from a hydrometer and a refractometer reading of the finished mead, using Woodland Brewing Research's method.",
+      "article": "Read the original article on the MeadTools website"
+    },
+    "tools": {
+      "stabilizers": "Stabilizers Calculator",
+      "sulfite": "Sulfite",
+      "sorbate": "Sorbate"
+    },
+    "metabisulfite": {
+      "kMeta": "Potassium",
+      "naMeta": "Sodium"
+    },
+    "stabilizers": {
+      "defaultPh": "Without a reading, sulfite is calculated for pH {{ph}}."
+    },
+    "offline": {
+      "title": "Offline data",
+      "ready": "Yeasts, ingredients and nutrient presets are saved on this device for offline use (updated {{date}}).",
+      "loading": "Saving yeasts, ingredients and nutrient presets for offline use…",
+      "missing": "Connect to the internet once to save yeasts, ingredients and nutrient presets for offline use."
+    },
+    "blending": {
+      "part": "Part {{number}}",
+      "hint": "Use the same unit for every value (for example SG or ABV) and the same unit for every volume."
+    },
+    "benchTrials": {
+      "trial": "Trial {{number}}"
+    },
+    "priming": {
+      "temperatureRange": "Enter {{min}} to {{max}} {{unit}}.",
+      "co2Range": "Enter {{min}} to {{max}} volumes of CO2.",
+      "belowResidual": "At this temperature the mead already holds at least this much CO2, so no priming sugar is needed."
+    },
+    "bottling": {
+      "ofBatch": "of batch",
+      "fill_one": "Use {{count}} bottle",
+      "fill_other": "Use {{count}} bottles"
+    },
+    "juice": {
+      "note": "Estimated from the nutrition label, not a measured gravity."
+    },
+    "yeasts": {
+      "allBrands": "All brands",
+      "sortBy": "Sort by",
+      "tolerance": "{{value}}% tolerance",
+      "count_one": "{{count}} yeast",
+      "count_other": "{{count}} yeasts",
+      "noMatches": "No yeasts match your search.",
+      "showMore_one": "Show {{count}} more yeast",
+      "showMore_other": "Show {{count}} more yeasts"
+    },
+    "nutrients": {
+      "strainSearch": "Search yeast strains",
+      "selectedYeast": "Selected: {{strain}} ({{brand}})",
+      "presets": "Presets",
+      "otherName": "Nutrient name",
+      "adjustYan": "Set provided YAN by hand",
+      "yeastAuto": "Calculated from volume and gravity: {{amount}} g. Type an amount to override it.",
+      "steps": {
+        "batch": "Batch and yeast",
+        "nutrients": "Nutrients",
+        "goFerm": "Go-Ferm",
+        "results": "Results"
+      },
+      "showResults": "Show results",
+      "stepOf": "Step {{step}} of {{total}}"
+    }
   }
 }

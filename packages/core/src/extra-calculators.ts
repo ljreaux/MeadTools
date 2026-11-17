@@ -1,4 +1,5 @@
-import { toSG, toBrix, calcABV } from "./gravity";
+import { toSG, toBrix, calcABV, refractometerCorrectedSg } from "./gravity";
+import { temperatureCorrection, toFahrenheit } from "./temperature";
 
 /** Standalone calculator math shared by the web UI and agent adapters.
  * Conversion constants intentionally match the original calculators.
@@ -192,4 +193,224 @@ export function standaloneAlcohol(
     abvPercent: normalize(rawAbv),
     delle: normalize(toBrix(finalGravity) + 4.5 * rawAbv)
   };
+}
+
+export type GravityScale = "SG" | "Brix";
+export type TemperatureScale = "F" | "C";
+
+/** Converts a reading on either scale to specific gravity. */
+export function gravityToSg(value: number, scale: GravityScale) {
+  return scale === "Brix" ? toSG(value) : value;
+}
+
+/** Converts a reading on either scale to Brix. */
+export function gravityToBrix(value: number, scale: GravityScale) {
+  return scale === "Brix" ? value : toBrix(value);
+}
+
+/** Refractometer correction calculator: corrected FG and the resulting ABV. */
+export function refractometerCorrection(input: {
+  originalGravity: number;
+  originalGravityScale: GravityScale;
+  finalGravity: number;
+  finalGravityScale: GravityScale;
+  correctionFactor: number;
+}) {
+  const ogBrix = gravityToBrix(input.originalGravity, input.originalGravityScale);
+  const fgBrix = gravityToBrix(input.finalGravity, input.finalGravityScale);
+  const correctedSg = refractometerCorrectedSg(
+    ogBrix,
+    fgBrix,
+    input.correctionFactor
+  );
+  const originalGravitySg = gravityToSg(
+    input.originalGravity,
+    input.originalGravityScale
+  );
+  return {
+    correctedSg,
+    correctedBrix: toBrix(correctedSg),
+    originalGravitySg,
+    ...standaloneAlcohol(originalGravitySg, correctedSg)
+  };
+}
+
+/** Hydrometer temperature correction with either temperature scale. */
+export function temperatureCorrectedGravity(input: {
+  measuredSg: number;
+  currentTemp: number;
+  calibrationTemp: number;
+  scale: TemperatureScale;
+}) {
+  const toF = (value: number) =>
+    input.scale === "C" ? toFahrenheit(value) : value;
+  const sg = temperatureCorrection(
+    input.measuredSg,
+    toF(input.currentTemp),
+    toF(input.calibrationTemp)
+  );
+  return { sg, brix: toBrix(sg) };
+}
+
+/** Estimated OG from hydrometer and refractometer final readings, with ABV. */
+export function estimatedOriginalGravityResult(
+  hydrometerFg: number,
+  refractometerFgBrix: number
+) {
+  const sg = estimatedOriginalGravity(hydrometerFg, refractometerFgBrix);
+  return {
+    sg,
+    brix: toBrix(sg),
+    ...standaloneAlcohol(sg, hydrometerFg)
+  };
+}
+
+/** The ABV result is outside what fermentation can produce (the web highlights it). */
+export function isImplausibleAbv(abvPercent: number) {
+  const shown = Number(abvPercent.toFixed(2));
+  return shown < 0 || shown > 23;
+}
+
+export type StabilizerVolumeUnit = "gal" | "lit";
+export type MetabisulfiteType = "kMeta" | "naMeta";
+
+/** pH the stabilizer calculator assumes when no reading is taken. */
+export const DEFAULT_STABILIZER_PH = 3.6;
+
+/** Above this ABV the sorbate formula gives zero or a negative amount. */
+export const SORBATE_MAX_ABV = 16;
+
+/**
+ * Converts a typed batch volume when its unit changes, with the stabilizer
+ * calculators' 3.785 L/gal factor and 3-decimal rounding.
+ */
+export function convertStabilizerVolume(
+  volume: number,
+  from: StabilizerVolumeUnit,
+  to: StabilizerVolumeUnit
+) {
+  if (from === to) return volume;
+  const converted = to === "lit" ? volume * 3.785 : volume / 3.785;
+  return Math.round(converted * 1000) / 1000;
+}
+
+/**
+ * The main stabilizer calculator: sorbate for the ABV, and sulfite for the
+ * pH (or the default pH when no reading is taken).
+ */
+export function stabilizerAdditions(input: {
+  volume: number;
+  unit: StabilizerVolumeUnit;
+  abv: number;
+  ph: number | null;
+  type: MetabisulfiteType;
+}) {
+  const sulfitePpm = sulfitePpmForPh(input.ph ?? DEFAULT_STABILIZER_PH);
+  return {
+    // The dose reaches zero at 16% ABV; above that no sorbate is needed, so
+    // the result stays at 0 instead of going negative (as in the recipe builder).
+    sorbateGrams: Math.max(0, sorbateAddition(input.volume, input.unit, input.abv)),
+    sulfitePpm,
+    ...sulfiteAddition(input.volume, input.unit, sulfitePpm, input.type)
+  };
+}
+
+/** Inputs the priming sugar calculator accepts without flagging them. */
+export const PRIMING_TEMPERATURE_RANGE = {
+  F: { min: 32, max: 110 },
+  C: { min: 0, max: 44 }
+} as const satisfies Record<TemperatureScale, { min: number; max: number }>;
+export const PRIMING_CO2_RANGE = { min: 0, max: 6 } as const;
+
+export type PrimingSugarOption = {
+  /** Ingredient name as stored (the web translates it by its camelCase key). */
+  label: string;
+  /** Grams of this ingredient per gram of fermentable sugar. */
+  amount: number;
+};
+
+/**
+ * Priming sugar choices from the ingredient catalog's `sugar` category:
+ * Table and Corn Sugar first, then the rest alphabetically.
+ */
+export function primingSugarOptions(
+  ingredients: readonly { name: string; sugar_content: string; category?: string }[]
+): PrimingSugarOption[] {
+  const isPriority = (label: string) => label === "Table Sugar" || label === "Corn Sugar";
+  return ingredients
+    .filter((ingredient) => ingredient.category === undefined || ingredient.category === "sugar")
+    .map((ingredient) => ({ label: ingredient.name, amount: 100 / parseFloat(ingredient.sugar_content) }))
+    .sort((a, b) => {
+      const aPri = isPriority(a.label);
+      const bPri = isPriority(b.label);
+      if (aPri && !bPri) return -1;
+      if (!aPri && bPri) return 1;
+      return a.label.localeCompare(b.label);
+    });
+}
+
+/**
+ * Grams of each sugar for the batch and per bottle, as in the web priming
+ * sugar table. Temperature and volume may use either unit.
+ */
+export function primingSugarTable(input: {
+  temperature: number;
+  temperatureScale: TemperatureScale;
+  co2Volumes: number;
+  volume: number;
+  volumeUnit: "gal" | "lit";
+  sugars: readonly PrimingSugarOption[];
+}) {
+  const volumeGallons = input.volumeUnit === "gal" ? input.volume : input.volume / L_PER_GAL;
+  const temperatureF = input.temperatureScale === "F" ? input.temperature : toFahrenheit(input.temperature);
+  const baseSugar = primingSugarBase(temperatureF, input.co2Volumes, volumeGallons);
+
+  return input.sugars.map((sugar) => {
+    const totalGrams = sugar.amount * baseSugar;
+    return {
+      label: sugar.label,
+      totalGrams,
+      perBottle: primingBottleSizes.map(({ label, size }) => {
+        const bottles = volumeGallons / size;
+        return { label, grams: bottles > 0 ? totalGrams / bottles : 0 };
+      })
+    };
+  });
+}
+
+/** Within this many gallons or liters of the target, a bottling plan is complete. */
+export const BOTTLING_TOLERANCE = 0.1;
+
+/** Status of a bottling plan from the remaining volume in the batch's unit. */
+export function bottlingStatus(remaining: number): "ok" | "warn" | "error" {
+  if (Math.abs(remaining) <= BOTTLING_TOLERANCE) return "ok";
+  return remaining > 0 ? "warn" : "error";
+}
+
+/**
+ * Bottles of one size still needed to reach the target, counting what the
+ * other rows already hold (0 when the target is met or the size is unusable).
+ */
+export function bottlesToFinish(input: {
+  targetLiters: number;
+  bottledLiters: number;
+  rowLiters: number;
+  perBottleLiters: number;
+}) {
+  const neededLiters = input.targetLiters - (input.bottledLiters - input.rowLiters);
+  // Written as "not greater than" so an unreadable (NaN) volume also gives 0.
+  if (!Number.isFinite(input.perBottleLiters) || !(input.perBottleLiters > 0) || !(neededLiters > 0)) return 0;
+  return bottlesToFill(neededLiters, input.perBottleLiters);
+}
+
+/** Converts sugar per serving when its unit changes (4 decimals, as on the web). */
+export function convertJuiceSugar(value: number, from: "g" | "mg", to: "g" | "mg") {
+  if (from === to) return value;
+  return Math.round(value * (to === "mg" ? 1000 : 0.001) * 10000) / 10000;
+}
+
+/** Converts a serving size when its unit changes (4 decimals, as on the web). */
+export function convertJuiceServing(value: number, from: "ml" | "floz", to: "ml" | "floz") {
+  if (from === to) return value;
+  return Math.round(value * (to === "floz" ? 0.033814 : 29.5735) * 10000) / 10000;
 }

@@ -5,7 +5,7 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 
 import { useThemeColors } from "@/hooks/useThemeColors";
 
-export type PlaceholderSection = "inventory" | "recipes" | "tools";
+export type PlaceholderSection = "inventory" | "recipes";
 
 /**
  * Holds a tab's place until its parity area adds real screens. It names what

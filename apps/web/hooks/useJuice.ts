@@ -1,5 +1,10 @@
-import { juiceLabelEstimate } from "@meadtools/core/extra-calculators";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  convertJuiceServing,
+  convertJuiceSugar,
+  juiceLabelEstimate
+} from "@meadtools/core/extra-calculators";
+import { switchUnitText, type UnitSwitch } from "@meadtools/core/numeric";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { parseNumber } from "@/lib/utils/validateInput";
 
 export default function useJuice() {
@@ -9,14 +14,15 @@ export default function useJuice() {
   const [servingSizeUnits, setServingSizeUnits] = useState("ml");
   const [servings, setServings] = useState("0");
 
-  // Safely convert a stored string by a multiplier, preserving invalid strings
-  const convertValue = useCallback((value: string, multiplier: number) => {
-    const num = parseNumber(value);
-    if (!Number.isFinite(num)) return value;
-
-    const next = Math.round(num * multiplier * 10000) / 10000;
-    return next.toString();
-  }, []);
+  // Safely convert a stored string, preserving invalid strings
+  const convertValue = useCallback(
+    (value: string, convert: (num: number) => number) => {
+      const num = parseNumber(value);
+      if (!Number.isFinite(num)) return value;
+      return convert(num).toString();
+    },
+    []
+  );
 
   const {
     brix,
@@ -34,18 +40,42 @@ export default function useJuice() {
     [sugar, sugarUnits, servingSize, servingSizeUnits, servings]
   );
 
-  // Unit conversions – keep the same behavior, but safe
-  useEffect(() => {
-    // switching g → mg or mg → g
-    const multiplier = sugarUnits === "mg" ? 1000 : 0.001;
-    setSugar((prev) => convertValue(prev, multiplier));
-  }, [sugarUnits, convertValue]);
+  // Convert the typed values when a unit changes. This runs in the change
+  // handlers, not effects, so nothing converts on load. Switching straight back
+  // restores what was typed (240 ml → 8.1154 fl oz → 240 ml).
+  const lastSugarSwitch = useRef<UnitSwitch<"g" | "mg"> | null>(null);
+  const changeSugarUnits = (value: string) => {
+    const to = value === "mg" ? "mg" : "g";
+    const from = sugarUnits === "mg" ? "mg" : "g";
+    if (to === from) return;
+    const result = switchUnitText(
+      sugar,
+      from,
+      to,
+      (text) => convertValue(text, (num) => convertJuiceSugar(num, from, to)),
+      lastSugarSwitch.current
+    );
+    lastSugarSwitch.current = result.last;
+    setSugar(result.text);
+    setSugarUnits(to);
+  };
 
-  useEffect(() => {
-    // switching ml → floz or floz → ml
-    const multiplier = servingSizeUnits === "floz" ? 0.033814 : 29.5735;
-    setServingSize((prev) => convertValue(prev, multiplier));
-  }, [servingSizeUnits, convertValue]);
+  const lastServingSwitch = useRef<UnitSwitch<"ml" | "floz"> | null>(null);
+  const changeServingSizeUnits = (value: string) => {
+    const to = value === "floz" ? "floz" : "ml";
+    const from = servingSizeUnits === "floz" ? "floz" : "ml";
+    if (to === from) return;
+    const result = switchUnitText(
+      servingSize,
+      from,
+      to,
+      (text) => convertValue(text, (num) => convertJuiceServing(num, from, to)),
+      lastServingSwitch.current
+    );
+    lastServingSwitch.current = result.last;
+    setServingSize(result.text);
+    setServingSizeUnits(to);
+  };
 
   return {
     sugar,
@@ -56,8 +86,8 @@ export default function useJuice() {
     setSugar,
     setServingSize,
     setServings,
-    setSugarUnits,
-    setServingSizeUnits,
+    setSugarUnits: changeSugarUnits,
+    setServingSizeUnits: changeServingSizeUnits,
     brix,
     sg,
     totalSugar

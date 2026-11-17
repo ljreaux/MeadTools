@@ -1,7 +1,9 @@
 "use client";
 
-const listOrder = ["Low", "Medium", "High", "Very High"];
-
+import {
+  nitrogenRequirementRank,
+  yeastTemperature
+} from "@meadtools/core/yeasts";
 import Translate from "./Translate";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
@@ -105,12 +107,13 @@ export const columns: ColumnDef<Yeast>[] = [
     },
     sortingFn: (rowA, rowB) => {
       return (
-        listOrder.indexOf(rowA.original.nitrogen_requirement) -
-        listOrder.indexOf(rowB.original.nitrogen_requirement)
+        nitrogenRequirementRank(rowA.original.nitrogen_requirement) -
+        nitrogenRequirementRank(rowB.original.nitrogen_requirement)
       );
     },
     cell: ({ row }) => {
       const keys: Record<string, string> = {
+        "Very Low": "veryLow",
         Low: "low",
         Medium: "medium",
         High: "high",
@@ -173,10 +176,9 @@ export const columns: ColumnDef<Yeast>[] = [
     cell: ({ row, table }) => {
       const { unit } = table.options.meta as any;
       const value = row.getValue("low_temp") as string;
-      const celsius = Math.round((parseInt(value, 10) - 32) * (5 / 9));
 
       if (unit === "F") return <>{`${value}°F`}</>;
-      return <>{`${celsius}°C`}</>;
+      return <>{`${yeastTemperature(value, "C")}°C`}</>;
     }
   },
   {
@@ -200,10 +202,9 @@ export const columns: ColumnDef<Yeast>[] = [
     cell: ({ row, table }) => {
       const { unit } = table.options.meta as any;
       const value = row.getValue("high_temp") as string;
-      const celsius = Math.round((parseInt(value, 10) - 32) * (5 / 9));
 
       if (unit === "F") return <>{`${value}°F`}</>;
-      return <>{`${celsius}°C`}</>;
+      return <>{`${yeastTemperature(value, "C")}°C`}</>;
     }
   }
 ];

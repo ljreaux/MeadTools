@@ -6,14 +6,17 @@ import {
   standaloneAlcohol as alcohol,
   toBrix,
   toSG,
-  refractometerCorrectedSg,
-  temperatureCorrection,
   toFahrenheit,
   blendValues,
-  estimatedOriginalGravity,
+  estimatedOriginalGravityResult,
+  refractometerCorrection,
+  temperatureCorrectedGravity,
   sulfiteAddition,
   sorbateAddition,
+  SORBATE_MAX_ABV,
   primingSugarBase,
+  PRIMING_CO2_RANGE,
+  PRIMING_TEMPERATURE_RANGE,
   primingBottleSizes,
   juiceLabelEstimate,
   sulfitePpmForPh,
@@ -167,15 +170,16 @@ const scalarCalculatorTools = [
     "Estimate missing OG from finished hydrometer SG and refractometer Brix. Distinct from calculate_gravity_target, which plans OG from target ABV.",
     { hydrometerFg: sg, refractometerFgBrix: brix },
     (i) => {
-      const originalGravity = estimatedOriginalGravity(
+      const estimate = estimatedOriginalGravityResult(
         i.hydrometerFg,
         i.refractometerFgBrix
       );
       return {
         values: {
-          originalGravity,
-          originalBrix: toBrix(originalGravity),
-          ...alcohol(originalGravity, i.hydrometerFg)
+          originalGravity: estimate.sg,
+          originalBrix: estimate.brix,
+          abvPercent: estimate.abvPercent,
+          delle: estimate.delle
         },
         units: { originalGravity: "SG", originalBrix: "Brix", ...alcoholUnits },
         assumptions: [
@@ -227,7 +231,7 @@ const scalarCalculatorTools = [
   tool(
     "calculate_sorbate",
     "Calculate standalone potassium sorbate grams from ABV and batch volume. Rejects ABV above 16%, where the web formula becomes negative.",
-    { volume, volumeUnit, abvPercent: n.min(0).max(16) },
+    { volume, volumeUnit, abvPercent: n.min(0).max(SORBATE_MAX_ABV) },
     (i) => ({
       values: {
         sorbateGrams: sorbateAddition(i.volume, i.volumeUnit, i.abvPercent)
@@ -249,20 +253,19 @@ const scalarCalculatorTools = [
     },
     (i) => {
       if (i.originalUnit === "SG") sg.parse(i.originalReading);
-      const originalGravity =
-        i.originalUnit === "SG" ? i.originalReading : toSG(i.originalReading);
-      const correctedGravity = refractometerCorrectedSg(
-        i.originalUnit === "Brix"
-          ? i.originalReading
-          : toBrix(i.originalReading),
-        i.finalBrix,
-        i.correctionFactor
-      );
+      const result = refractometerCorrection({
+        originalGravity: i.originalReading,
+        originalGravityScale: i.originalUnit,
+        finalGravity: i.finalBrix,
+        finalGravityScale: "Brix",
+        correctionFactor: i.correctionFactor
+      });
       return {
         values: {
-          correctedGravity,
-          correctedBrix: toBrix(correctedGravity),
-          ...alcohol(originalGravity, correctedGravity)
+          correctedGravity: result.correctedSg,
+          correctedBrix: result.correctedBrix,
+          abvPercent: result.abvPercent,
+          delle: result.delle
         },
         units: {
           correctedGravity: "SG",
@@ -307,13 +310,17 @@ const scalarCalculatorTools = [
         throw new Error(
           "Measured and calibration temperatures must be between 32 and 212 F (0–100 C). Specify calibrationTemperature in the selected unit."
         );
-      const correctedGravity = temperatureCorrection(
-        i.specificGravity,
-        measured,
-        calibration
-      );
+      const corrected = temperatureCorrectedGravity({
+        measuredSg: i.specificGravity,
+        currentTemp: measured,
+        calibrationTemp: calibration,
+        scale: "F"
+      });
       return {
-        values: { correctedGravity, correctedBrix: toBrix(correctedGravity) },
+        values: {
+          correctedGravity: corrected.sg,
+          correctedBrix: corrected.brix
+        },
         units: { correctedGravity: "SG", correctedBrix: "Brix" },
         assumptions: [
           "Calibration temperature uses the selected temperature unit; specify 20 for a 20 C hydrometer."
@@ -355,18 +362,15 @@ const scalarCalculatorTools = [
         .optional()
         .describe("Temperature; defaults to 68 F / 20 C."),
       temperatureUnit,
-      co2Volumes: n.min(0).max(6).default(2.4),
+      co2Volumes: n.min(PRIMING_CO2_RANGE.min).max(PRIMING_CO2_RANGE.max).default(2.4),
       sugarContentPercent: n.positive().max(100).default(100)
     },
     (i) => {
+      const entered = i.temperature ?? (i.temperatureUnit === "C" ? 20 : 68);
+      const range = PRIMING_TEMPERATURE_RANGE[i.temperatureUnit];
       const temp =
-        i.temperatureUnit === "C"
-          ? toFahrenheit(i.temperature ?? 20)
-          : (i.temperature ?? 68);
-      if (
-        temp < 32 ||
-        temp > (i.temperatureUnit === "C" ? toFahrenheit(44) : 110)
-      )
+        i.temperatureUnit === "C" ? toFahrenheit(entered) : entered;
+      if (entered < range.min || entered > range.max)
         throw new Error(
           "Temperature must be 32–110 F or 0–44 C, matching the web calculator."
         );
