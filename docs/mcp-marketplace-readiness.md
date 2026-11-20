@@ -172,13 +172,16 @@ items are in [submission materials](mcp-marketplace-submission-materials.md#requ
    (permanent once submitted), category Education (optionally Data &
    Analytics), with the server favicon or the prepared 512 × 512 icon.
 5. **#509 public community tools ship in December — confirmed.** #509 is merged
-   into `preview` and present in this branch, so the stores will scan all 31
-   tools. Exercise the public search/detail/summary tools in the production
+   into `preview` and present in this branch. With #541's
+   `calculate_ingredient_volumes` and `evaluate_recipe` (merged November 15 in
+   #542), the stores will scan all 33 tools. Exercise the public search/detail/summary tools in the production
    checks (C.4), keep their `openWorldHint: true` (they return other users'
    public, untrusted content), and describe community discovery briefly in
    the listing copy. Do not show real users' public records in the recording.
 
 ### B. After November 9 activation (#474)
+
+Status (November 20): Larry has created the production reviewer accounts (B.1).
 
 1. Create one production reviewer account per store as specified in the
    [run sheet](mcp-marketplace-recording-run-sheet.md#2-production-reviewer-account-after-november-9-activation):
@@ -198,9 +201,10 @@ items are in [submission materials](mcp-marketplace-submission-materials.md#requ
    section is live signed out.
 3. Refresh the production ChatGPT and Claude connections; confirm every tool's
    title and hints and the server description.
-4. Claude: exercise **every** tool once through MCP Inspector and as a Claude
-   custom connector with the reviewer account (the portal asks you to confirm
-   this). Record pass/fail per tool without private data.
+4. Claude: exercise **every** tool (33, including `calculate_ingredient_volumes`
+   and `evaluate_recipe`) once through MCP Inspector and as a Claude custom
+   connector with the reviewer account (the portal asks you to confirm this).
+   Record pass/fail per tool without private data.
 5. Security spot checks on production: revoke then reconnect; basic-only
    connection cannot read owned records; a non-premium account is denied.
 6. Audit one response from each account-read tool for extraneous internal
@@ -271,6 +275,11 @@ levels through the SDK. Recipe-agent and Web typechecks, package-boundary checks
 and `git diff --check` passed. All 31 tools have titles; basic connections see
 24 and explicitly authorized account-read connections see 31. No live client or
 production recheck was performed in this slice.
+
+Update (November 20): #542 added `calculate_ingredient_volumes` and
+`evaluate_recipe`, both titled in the shared title map with the same read-only
+annotations. There are now 33 tools: basic connections see 26 and
+account-read connections see 33 (the 7 account-read tools are unchanged).
 
 Follow-up preparation: all 15 web MCP tests and the Web typecheck passed again
 after the public-annotation correction. The standalone ABV and recipe-draft
