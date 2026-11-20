@@ -318,7 +318,8 @@ the normal German translation workflow.
 
 The production code edits in this branch's uncommitted #475 diff are currently:
 
-1. Shared explicit human-readable titles (31 existing branch tool names) and one
+1. Shared explicit human-readable titles (31 existing branch tool names; 33
+   after #542 added `calculate_ingredient_volumes` and `evaluate_recipe`) and one
    `tools/list` title field in the web MCP adapter.
 2. A corrected server-card description for unsaved drafting and optional owned
    reads already supported in the established surface.
