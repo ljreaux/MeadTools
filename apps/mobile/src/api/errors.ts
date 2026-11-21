@@ -1,15 +1,17 @@
-import { MeadToolsApiError, MeadToolsContractError } from "@meadtools/api-client";
-
 /**
- * Whether a request failed before the server answered (offline, DNS, TLS,
- * aborted or timed out). `expo/fetch` reports these as its own `FetchError`,
- * not `TypeError`, so anything that is not an API or contract error counts,
- * as in the entry outbox.
+ * The request never got an answer from the server (offline, DNS, refused,
+ * TLS, aborted or timed out). The Mobile fetch transport throws this for
+ * every `expo/fetch` failure; code errors and server answers never are one.
+ * Extends TypeError, the standard fetch failure type, for older checks.
  */
+export class ConnectionError extends TypeError {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause));
+    this.name = "ConnectionError";
+    this.cause = cause;
+  }
+}
+
 export function isConnectionError(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    !(error instanceof MeadToolsApiError) &&
-    !(error instanceof MeadToolsContractError)
-  );
+  return error instanceof ConnectionError;
 }

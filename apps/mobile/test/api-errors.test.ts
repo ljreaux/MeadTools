@@ -3,15 +3,20 @@ import test from "node:test";
 
 import { MeadToolsApiError, MeadToolsContractError } from "@meadtools/api-client";
 
-import { isConnectionError } from "../src/api/errors";
+import { ConnectionError, isConnectionError } from "../src/api/errors";
 
 class FetchError extends Error {}
 
-test("transport failures count as connection errors; server answers do not", () => {
-  assert.equal(isConnectionError(new FetchError("Could not connect to the server.")), true);
-  assert.equal(isConnectionError(new TypeError("Network request failed")), true);
+test("only transport failures wrapped by the Mobile fetch count as connection errors", () => {
+  const wrapped = new ConnectionError(new FetchError("fetch failed: Could not connect to the server."));
+  assert.equal(isConnectionError(wrapped), true);
+  assert.equal(wrapped instanceof TypeError, true);
+  assert.equal(wrapped.message, "fetch failed: Could not connect to the server.");
+
+  assert.equal(isConnectionError(new FetchError("fetch failed")), false);
+  assert.equal(isConnectionError(new TypeError("undefined is not a function")), false);
+  assert.equal(isConnectionError(new Error("Unable to resolve module")), false);
   assert.equal(isConnectionError(new MeadToolsApiError(500, { error: "boom" })), false);
-  assert.equal(isConnectionError(new MeadToolsApiError(401, undefined)), false);
   assert.equal(isConnectionError(new MeadToolsContractError("bad shape", {})), false);
   assert.equal(isConnectionError(undefined), false);
 });
