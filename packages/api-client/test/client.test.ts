@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import { getRecipeResponseSchema } from "@meadtools/api-contract";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import type { RecipeDataV2Input } from "@meadtools/api-contract";
 import {
@@ -447,4 +449,67 @@ test("updates brew settings and validates the request and response", async () =>
 
   responseBody = { id: updated.id };
   await assert.rejects(client.updateBrew("brew-1", { public: true }), MeadToolsContractError);
+});
+
+test("reads a recipe and deletes a brew through the shared contract", async () => {
+  const recipe = {
+    id: 2,
+    user_id: 2,
+    name: "Key Lime Pie",
+    recipeData: "[]",
+    yanFromSource: null,
+    yanContribution: "[]",
+    nutrientData: "{}",
+    advanced: false,
+    nuteInfo: null,
+    primaryNotes: [],
+    secondaryNotes: [],
+    dataV2: null,
+    version: 2,
+    private: false,
+    lastActivityEmailAt: null,
+    activityEmailsEnabled: true,
+    users: { public_username: "MeadTools User", active: true },
+    ratings: [],
+    public_username: "MeadTools User",
+    averageRating: 4
+  };
+  const bodies: Record<string, unknown> = {
+    "GET https://meadtools.test/api/recipes/2": { recipe },
+    "DELETE https://meadtools.test/api/brews/brew%2F1": { message: "Brew deleted successfully." }
+  };
+  const requests: string[] = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push(`${init.method} ${url}`);
+      return { ok: true, status: 200, json: async () => bodies[`${init.method} ${url}`] };
+    }
+  });
+
+  assert.equal((await client.getRecipe(2)).name, "Key Lime Pie");
+
+  assert.deepEqual(await client.deleteBrew("brew/1"), { message: "Brew deleted successfully." });
+  assert.deepEqual(requests, [
+    "GET https://meadtools.test/api/recipes/2",
+    "DELETE https://meadtools.test/api/brews/brew%2F1"
+  ]);
+
+  // The plan comes back as stored. The contract parse would turn the seeded
+  // recipe's numeric YAN contributions into strings, which never matches a
+  // brew snapshot of the same plan.
+  const storedPlan = JSON.parse(
+    readFileSync(new URL("./fixtures/stored-recipe-plan.json", import.meta.url), "utf8")
+  );
+  bodies["GET https://meadtools.test/api/recipes/2"] = { recipe: { ...recipe, dataV2: storedPlan } };
+  assert.deepEqual((await client.getRecipe(2)).dataV2, storedPlan);
+  assert.notDeepEqual(
+    getRecipeResponseSchema.parse({ recipe: { ...recipe, dataV2: storedPlan } }).recipe.dataV2,
+    storedPlan
+  );
+
+  bodies["GET https://meadtools.test/api/recipes/2"] = { recipe: { id: 2 } };
+  await assert.rejects(client.getRecipe(2), MeadToolsContractError);
+  bodies["DELETE https://meadtools.test/api/brews/brew%2F1"] = { message: "ok" };
+  await assert.rejects(client.deleteBrew("brew/1"), MeadToolsContractError);
 });

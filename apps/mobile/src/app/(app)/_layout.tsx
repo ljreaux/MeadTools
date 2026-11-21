@@ -37,6 +37,10 @@ export default function AppLayout() {
         options={{ presentation: "modal", title: t("mobileBrews.settings.title") }}
       />
       <Stack.Screen
+        name="recipe-snapshot"
+        options={{ presentation: "modal", title: t("brews.snapshot.title") }}
+      />
+      <Stack.Screen
         name="change-stage"
         options={{
           presentation: "modal",

@@ -1912,6 +1912,23 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "snapshot": {
+      "offline": "Connect to check the recipe for changes.",
+      "needsConnection": "Updating the snapshot needs a connection. Connect to the internet and try again.",
+      "errors": {
+        "offline": "The snapshot could not be updated. Check your connection and try again.",
+        "session": "Your session expired. Sign in again to update the snapshot.",
+        "changed": "The recipe or the snapshot changed. Review the changes and try again."
+      }
+    },
+    "delete": {
+      "unsentEntries_one": "{{count}} entry saved on this device and not yet synced will also be removed.",
+      "unsentEntries_other": "{{count}} entries saved on this device and not yet synced will also be removed.",
+      "sending": "An entry for this brew is syncing. You can delete the brew once it finishes.",
+      "errors": {
+        "offline": "The brew could not be deleted. Check your connection and try again."
+      }
+    },
     "settings": {
       "action": "Brew settings",
       "title": "Brew settings",

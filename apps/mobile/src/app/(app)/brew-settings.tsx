@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
+  InteractionManager,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,8 +25,10 @@ import {
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
 import { isConnectionError } from "@/api/errors";
+import { brewDeleteOutboxState } from "@/brews/brew-delete";
 import { DateTimeField } from "@/components/date-time-field";
 import { useIsOnline } from "@/hooks/useIsOnline";
+import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "@/outbox/entry-outbox-provider";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
@@ -70,6 +74,11 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const inFlight = useRef(false);
 
+  const outbox = useBrewEntryOutbox();
+  const outboxState = brewDeleteOutboxState(useBrewEntryOutboxRecords(brewId));
+  const [deleteFailure, setDeleteFailure] = useState<SaveFailure | null>(null);
+  const remove = useMutation({ mutationFn: () => apiClient.deleteBrew(brewId) });
+
   const save = useMutation({
     mutationFn: (changes: Parameters<typeof apiClient.updateBrew>[1]) =>
       apiClient.updateBrew(brewId, changes)
@@ -91,7 +100,7 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
 
   const result = brewSettingsChanges(brew, draft);
   const hasChanges = result.ok && Object.keys(result.changes).length > 0;
-  const busy = save.isPending;
+  const busy = save.isPending || remove.isPending;
   const canSave = hasChanges && online && !busy;
   const visibilityEditable = canChangeBrewVisibility(brew);
   const update = (patch: Partial<BrewSettingsDraft>) => {
@@ -116,6 +125,51 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
       inFlight.current = false;
     }
   }
+
+  async function deleteBrew() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setDeleteFailure(null);
+    try {
+      await remove.mutateAsync();
+      // Entries that never reached the server would only fail against a deleted brew.
+      for (const id of outboxState.unsentIds) await outbox?.discard(id).catch(() => false);
+      await queryClient.invalidateQueries({ queryKey: ["brews", session?.id] });
+      // Drop the deleted brew's cache once its detail screen has unmounted;
+      // removing it while that screen is mounted makes it refetch (a 404).
+      InteractionManager.runAfterInteractions(() => {
+        queryClient.removeQueries({ queryKey: ["brew", session?.id, brewId] });
+      });
+      // Close this modal first; the brew list is in the Brews tab's own stack,
+      // which only becomes the focused navigator once the modal is gone.
+      router.dismiss();
+      router.dismissTo("/brews");
+    } catch (error) {
+      setDeleteFailure(failureFor(error));
+    } finally {
+      inFlight.current = false;
+    }
+  }
+
+  function confirmDelete() {
+    const name = brew!.name?.trim() || brew!.recipe_name || t("mobileBrews.untitled");
+    const unsent = outboxState.unsentIds.length;
+    Alert.alert(
+      t("brews.delete.title"),
+      [
+        t("brews.delete.description", { name }),
+        unsent > 0 ? t("mobileBrews.delete.unsentEntries", { count: unsent }) : null
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: t("brews.delete.confirm"), style: "destructive", onPress: () => void deleteBrew() }
+      ]
+    );
+  }
+
+  const canDelete = online && !busy && !outboxState.sending;
 
   return (
     <ScrollView
@@ -224,9 +278,40 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
       >
         {busy ? <ActivityIndicator color={colors.onAccent} /> : null}
         <Text style={styles.primaryButtonText}>
-          {busy ? t("mobileBrews.settings.saving") : t("mobileBrews.settings.save")}
+          {save.isPending ? t("mobileBrews.settings.saving") : t("mobileBrews.settings.save")}
         </Text>
       </Pressable>
+
+      <View style={styles.dangerZone}>
+        {outboxState.sending ? (
+          <Text style={styles.hint}>{t("mobileBrews.delete.sending")}</Text>
+        ) : null}
+        {deleteFailure ? (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {t(
+              deleteFailure === "offline"
+                ? "mobileBrews.delete.errors.offline"
+                : deleteFailure === "session"
+                  ? "mobileBrews.settings.errors.session"
+                  : deleteFailure === "notFound"
+                    ? "mobileBrews.settings.errors.notFound"
+                    : "brews.delete.error"
+            )}
+          </Text>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canDelete, busy: remove.isPending }}
+          disabled={!canDelete}
+          onPress={confirmDelete}
+          style={({ pressed }) => [styles.deleteButton, !canDelete && styles.buttonDisabled, pressed && styles.pressed]}
+        >
+          {remove.isPending ? <ActivityIndicator color={colors.error} /> : null}
+          <Text style={styles.deleteButtonText}>
+            {remove.isPending ? t("brews.delete.deleting") : t("brews.delete.confirm")}
+          </Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -343,6 +428,29 @@ function createStyles(colors: typeof colorThemes.light) {
       fontWeight: typography.weight.bold
     },
     buttonDisabled: { opacity: 0.5 },
+    dangerZone: {
+      borderTopColor: colors.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+      paddingTop: spacing.lg
+    },
+    deleteButton: {
+      alignItems: "center",
+      borderColor: colors.error,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      minHeight: 48,
+      paddingHorizontal: spacing.xl
+    },
+    deleteButtonText: {
+      color: colors.error,
+      fontSize: typography.size.body,
+      fontWeight: typography.weight.bold
+    },
     pressed: { opacity: 0.7 }
   });
 }

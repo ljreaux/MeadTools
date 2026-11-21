@@ -8,6 +8,7 @@
     "./brew-list": "./src/brew-list.ts",
     "./new-brew": "./src/new-brew.ts",
     "./brew-settings": "./src/brew-settings.ts",
+    "./recipe-snapshot-diff": "./src/recipe-snapshot-diff.ts",
     "./action-proposal": "./src/action-proposal.ts",
     "./entry-payload": "./src/entry-payload.ts",
     "./projection": "./src/projection.ts",

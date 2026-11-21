@@ -11,6 +11,8 @@ import {
   createBrewEntryResponseSchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
+  deleteBrewSuccessResponseSchema,
+  getRecipeResponseSchema,
   inventoryOverviewResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
@@ -40,6 +42,8 @@ import {
   type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
   type DeleteBrewEntrySuccessResponse,
+  type DeleteBrewSuccessResponse,
+  type GetRecipeResponse,
   type InventoryOverviewResponse,
   type IngredientsResponse,
   type NutrientPresetListResponse,
@@ -292,6 +296,45 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data.brews;
     },
 
+    /**
+     * A recipe the account owns, or any public recipe, exactly as stored.
+     * The response is validated against the contract, but its `dataV2` is
+     * returned unparsed: the contract normalizes nutrient settings (numbers to
+     * strings, defaults), and brew snapshots are compared against the stored
+     * plan, so a normalized copy would always look changed.
+     */
+    async getRecipe(recipeId: number): Promise<RecipeSource> {
+      const body = await request(`/api/recipes/${encodeURIComponent(String(recipeId))}`, {
+        method: "GET"
+      });
+      const parsed = getRecipeResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Recipe response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      const stored = (body as { recipe: { dataV2: unknown } }).recipe.dataV2;
+      return { ...parsed.data.recipe, dataV2: stored };
+    },
+
+    /** Permanently deletes an owned brew, its entries and its hydrometer logs. */
+    async deleteBrew(brewId: string): Promise<DeleteBrewSuccessResponse> {
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}`, {
+        method: "DELETE"
+      });
+      const parsed = deleteBrewSuccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew delete response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
+    },
+
     async getBrew(brewId: string): Promise<BrewResponse> {
       const body = await request(
         `/api/brews/${encodeURIComponent(brewId)}`,
@@ -499,5 +542,10 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
     }
   };
 }
+
+/** A recipe with its plan (`dataV2`) exactly as stored on the server. */
+export type RecipeSource = Omit<GetRecipeResponse["recipe"], "dataV2"> & {
+  dataV2: unknown;
+};
 
 export type MeadToolsApiClient = ReturnType<typeof createMeadToolsApiClient>;

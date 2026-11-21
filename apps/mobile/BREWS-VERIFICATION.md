@@ -111,3 +111,46 @@ Notes:
 - Tests: brew-domain 53, API client 16, API contract 77, Mobile 109, i18n 3,
   web typecheck. Typechecks and lint on the changed files (the web brew page's
   5 existing lint warnings are unchanged).
+
+## #579 Recipe snapshot and delete
+
+Recipe snapshot checks used "Settings Test Lime" (Key Lime Pie). The recipe's
+FG target was changed through the API to make the snapshot differ, and set back
+to the seeded 0.996 afterwards.
+
+| Check | iOS | Web |
+| --- | --- | --- |
+| The brew's Recipe card shows the snapshot date; "This brew uses the current saved recipe." when nothing changed | Pass | Pass |
+| After the recipe's FG target changes: "Update recipe snapshot", and the confirm screen lists only "Final gravity target" | Pass | Pass |
+| Updating replaces the snapshot (FG 0.998, new date) and keeps the old one in its history; both apps then say it's current | Pass | Pass |
+| The recipe changes again while the confirm screen is open: "The recipe or the snapshot changed…", nothing saved; trying again applies the newest recipe (FG 0.995) | Pass | — |
+| Delete asks for confirmation, names the brew and says it cannot be undone | Pass | — |
+| With an unsent entry on the device, the confirmation says it will also be removed; after deleting, that entry is never sent | Pass | — |
+| Server stopped: "The brew could not be deleted. Check your connection…", brew kept | Pass | — |
+| Deleting from the brew's settings returns to the Brews list (no back button to the deleted brew) and the list drops it | Pass | — |
+
+Records: "Rapsberry Cheesecake", "Delete test brew" and "Delete test brew 2"
+were deleted from Mobile. "Settings Test Lime" was left with a pending
+snapshot update (snapshot FG 0.995, recipe back to 0.996) so the update action
+can be seen on both apps.
+
+Notes:
+
+- The first snapshot check listed "Nutrients and yeast" as changed when only
+  the FG target had. The API contract's recipe parse normalizes nutrient
+  settings (numeric YAN contributions become strings, a missing
+  `usesOrganicMultiplier` becomes `false`), so a parsed recipe never matches a
+  snapshot of the same plan. `getRecipe` now validates the response but returns
+  `dataV2` exactly as stored; an API client test covers it with the seeded
+  recipe's plan.
+- The first delete pushed a second Brews list on top of the deleted brew's
+  screen (`dismissTo` ran against the modal's root stack). The modal now closes
+  first, then returns to the list in the Brews stack, and the deleted brew's
+  cache is cleared after the transition so its screen does not refetch it.
+- The snapshot comparison (`recipeSnapshotContentKey`, changed sections and the
+  "can update" rule) moved from the web app into
+  `@meadtools/brew-domain/recipe-snapshot-diff`. The server's snapshot update
+  check, the web dialog and Mobile all use it; its two web tests moved with it.
+- Tests: brew-domain 57, API client 17, API contract 77, Mobile 110, i18n 3,
+  web 261 (two tests moved to brew-domain), web typecheck and lint on the
+  changed files.
