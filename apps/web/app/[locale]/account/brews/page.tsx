@@ -49,16 +49,19 @@ import {
   type BrewListSortKey,
   type BrewListSortDirection
 } from "@/components/brews/BrewList";
+import {
+  BREW_LIST_SEARCH_KEYS,
+  brewListRecipeOptions,
+  compareBrewListDates,
+  filterBrewList,
+  nextBrewListSort,
+  type BrewListStageFilter
+} from "@meadtools/brew-domain/brew-list";
 
 const ALL_STAGES = "all";
 const ALL_RECIPES = "all";
 const NO_RECIPE = "none";
-
-function getDateTime(value: string | Date | null | undefined) {
-  if (!value) return null;
-  const time = new Date(value).getTime();
-  return Number.isNaN(time) ? null : time;
-}
+const SEARCH_KEYS = [...BREW_LIST_SEARCH_KEYS];
 
 export default function AccountBrews() {
   const { t } = useTranslation();
@@ -74,61 +77,24 @@ export default function AccountBrews() {
   } | null>(null);
   const [deletingBrewId, setDeletingBrewId] = useState<string | null>(null);
 
-  const recipeOptions = useMemo(() => {
-    const recipes = new Map<number, string>();
+  const recipeOptions = useMemo(() => brewListRecipeOptions(brews), [brews]);
 
-    brews.forEach((brew) => {
-      if (brew.recipe_id) {
-        recipes.set(
-          brew.recipe_id,
-          brew.recipe_name || String(brew.recipe_id)
-        );
-      }
-    });
+  const filteredBrews = useMemo(
+    () =>
+      filterBrewList(brews, {
+        stage: stageFilter as BrewListStageFilter,
+        recipe:
+          recipeFilter === ALL_RECIPES || recipeFilter === NO_RECIPE
+            ? recipeFilter
+            : Number(recipeFilter)
+      }),
+    [brews, recipeFilter, stageFilter]
+  );
 
-    return Array.from(recipes, ([id, name]) => ({ id, name })).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [brews]);
-
-  const filteredBrews = useMemo(() => {
-    return brews.filter((brew) => {
-      if (stageFilter !== ALL_STAGES && brew.stage !== stageFilter) {
-        return false;
-      }
-
-      if (recipeFilter === NO_RECIPE && brew.recipe_id) {
-        return false;
-      }
-
-      if (
-        recipeFilter !== ALL_RECIPES &&
-        recipeFilter !== NO_RECIPE &&
-        brew.recipe_id !== Number(recipeFilter)
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [brews, recipeFilter, stageFilter]);
-
-  const sortBy = useMemo(() => {
-    if (!sort) return undefined;
-
-    return [
-      (a: BrewListDisplayItem, b: BrewListDisplayItem) => {
-        const aTime = getDateTime(a[sort.key]);
-        const bTime = getDateTime(b[sort.key]);
-
-        if (aTime === null && bTime === null) return 0;
-        if (aTime === null) return sort.direction === "asc" ? 1 : -1;
-        if (bTime === null) return sort.direction === "asc" ? -1 : 1;
-
-        return sort.direction === "asc" ? aTime - bTime : bTime - aTime;
-      }
-    ];
-  }, [sort]);
+  const sortBy = useMemo(
+    () => (sort ? [compareBrewListDates(sort)] : undefined),
+    [sort]
+  );
 
   const clearFilters = () => {
     setStageFilter(ALL_STAGES);
@@ -139,16 +105,7 @@ export default function AccountBrews() {
     stageFilter !== ALL_STAGES || recipeFilter !== ALL_RECIPES;
 
   const handleSort = (key: BrewListSortKey) => {
-    setSort((current) => {
-      if (current?.key === key) {
-        return {
-          key,
-          direction: current.direction === "asc" ? "desc" : "asc"
-        };
-      }
-
-      return { key, direction: "desc" };
-    });
+    setSort((current) => nextBrewListSort(current, key));
   };
 
   const handleDeleteBrew = async (brew: BrewListDisplayItem) => {
@@ -183,7 +140,7 @@ export default function AccountBrews() {
   } = useFuzzySearch({
     data: filteredBrews,
     pageSize,
-    searchKey: ["name", "id", "recipe_name", "stage"],
+    searchKey: SEARCH_KEYS,
     sortBy
   });
 

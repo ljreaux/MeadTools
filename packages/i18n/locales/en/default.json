@@ -1912,6 +1912,33 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "list": {
+      "show": "Show brews",
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "all": "All"
+      },
+      "search": "Search brews",
+      "filtersCount": "Filters ({{count}})",
+      "sort": "Sort",
+      "sorts": {
+        "startAsc": "Oldest start",
+        "startDesc": "Newest start",
+        "endDesc": "Newest end",
+        "endAsc": "Oldest end"
+      },
+      "completedCount_one": "{{count}} completed brew",
+      "completedCount_other": "{{count}} completed brews",
+      "allCount_one": "{{count}} brew",
+      "allCount_other": "{{count}} brews",
+      "ended": "Ended {{date}}",
+      "noMatchesTitle": "No brews match",
+      "noMatchesBody": "Try another search or clear the filters.",
+      "emptyCompletedTitle": "No completed brews",
+      "emptyCompletedBody": "Brews you end or mark complete appear here.",
+      "emptyAllTitle": "No brews yet"
+    },
     "bottling": {
       "action": "Record bottling",
       "offline": "Connect to the internet to record, correct, or remove bottling.",
