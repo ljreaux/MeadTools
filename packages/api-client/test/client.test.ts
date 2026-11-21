@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import { getRecipeResponseSchema } from "@meadtools/api-contract";
 import { calculateRecipeDerivedApiResponse } from "@meadtools/core/derived";
 import type { RecipeDataV2Input } from "@meadtools/api-contract";
 import {
@@ -334,4 +336,180 @@ test("reads the public catalogs the calculators use and validates each list", as
 
   bodies["https://meadtools.test/api/yeasts"] = { error: "not a list" };
   await assert.rejects(client.listYeasts(), MeadToolsContractError);
+});
+
+test("starts a brew from a recipe and validates the created brew", async () => {
+  const created = {
+    id: "2b1f0a52-7c1e-4a43-9d6c-5d8e0f2a9b11",
+    name: "January batch",
+    start_date: "2026-11-21T02:27:00.561Z",
+    end_date: null,
+    stage: "PLANNED",
+    batch_number: 2,
+    current_volume_liters: null,
+    requested_email_alerts: false,
+    gravity_unit_preference: "SG",
+    public: false,
+    latest_gravity: null,
+    cover_image_id: null,
+    recipe_id: 4,
+    recipe_name: "Mead Wiki Simple Trad Metric",
+    recipe_private: false,
+    entry_count: 0
+  };
+  const requests: Array<{ url: string; method: string; body: unknown }> = [];
+  let responseBody: unknown = { brew: created };
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push({
+        url,
+        method: init.method,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: true, status: 201, json: async () => responseBody };
+    }
+  });
+
+  assert.deepEqual(
+    await client.createBrew({ recipe_id: 4, name: "January batch" }),
+    created
+  );
+  assert.deepEqual(requests, [
+    {
+      url: "https://meadtools.test/api/brews",
+      method: "POST",
+      body: { recipe_id: 4, name: "January batch" }
+    }
+  ]);
+
+  await assert.rejects(
+    client.createBrew({ recipe_id: "4" } as never),
+    MeadToolsContractError
+  );
+  assert.equal(requests.length, 1);
+
+  responseBody = { brew: { id: created.id } };
+  await assert.rejects(
+    client.createBrew({ recipe_id: 4 }),
+    MeadToolsContractError
+  );
+});
+
+test("updates brew settings and validates the request and response", async () => {
+  const updated = {
+    id: "2b1f0a52-7c1e-4a43-9d6c-5d8e0f2a9b11",
+    name: "Spring batch",
+    start_date: "2026-03-01T12:00:00.000Z",
+    end_date: null,
+    stage: "PLANNED",
+    batch_number: 3,
+    current_volume_liters: null,
+    requested_email_alerts: true,
+    gravity_unit_preference: "SG",
+    public: false,
+    latest_gravity: null,
+    cover_image_id: null,
+    recipe_id: 2,
+    recipe_name: "Key Lime Pie",
+    recipe_private: false
+  };
+  const requests: Array<{ url: string; method: string; body: unknown }> = [];
+  let responseBody: unknown = updated;
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push({
+        url,
+        method: init.method,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: true, status: 200, json: async () => responseBody };
+    }
+  });
+
+  const input = {
+    name: "Spring batch",
+    batch_number: 3,
+    start_date: "2026-03-01T12:00:00.000Z",
+    requested_email_alerts: true
+  };
+  assert.deepEqual(await client.updateBrew("brew/1", input), updated);
+  assert.deepEqual(requests, [
+    { url: "https://meadtools.test/api/brews/brew%2F1", method: "PATCH", body: input }
+  ]);
+
+  await client.updateBrew("brew-1", { batch_number: null });
+  assert.deepEqual(requests[1].body, { batch_number: null });
+
+  for (const invalid of [{ batch_number: 0 }, { batch_number: 1.5 }, { start_date: "March" }]) {
+    await assert.rejects(client.updateBrew("brew-1", invalid as never), MeadToolsContractError);
+  }
+  assert.equal(requests.length, 2);
+
+  responseBody = { id: updated.id };
+  await assert.rejects(client.updateBrew("brew-1", { public: true }), MeadToolsContractError);
+});
+
+test("reads a recipe and deletes a brew through the shared contract", async () => {
+  const recipe = {
+    id: 2,
+    user_id: 2,
+    name: "Key Lime Pie",
+    recipeData: "[]",
+    yanFromSource: null,
+    yanContribution: "[]",
+    nutrientData: "{}",
+    advanced: false,
+    nuteInfo: null,
+    primaryNotes: [],
+    secondaryNotes: [],
+    dataV2: null,
+    version: 2,
+    private: false,
+    lastActivityEmailAt: null,
+    activityEmailsEnabled: true,
+    users: { public_username: "MeadTools User", active: true },
+    ratings: [],
+    public_username: "MeadTools User",
+    averageRating: 4
+  };
+  const bodies: Record<string, unknown> = {
+    "GET https://meadtools.test/api/recipes/2": { recipe },
+    "DELETE https://meadtools.test/api/brews/brew%2F1": { message: "Brew deleted successfully." }
+  };
+  const requests: string[] = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push(`${init.method} ${url}`);
+      return { ok: true, status: 200, json: async () => bodies[`${init.method} ${url}`] };
+    }
+  });
+
+  assert.equal((await client.getRecipe(2)).name, "Key Lime Pie");
+
+  assert.deepEqual(await client.deleteBrew("brew/1"), { message: "Brew deleted successfully." });
+  assert.deepEqual(requests, [
+    "GET https://meadtools.test/api/recipes/2",
+    "DELETE https://meadtools.test/api/brews/brew%2F1"
+  ]);
+
+  // The plan comes back as stored. The contract parse would turn the seeded
+  // recipe's numeric YAN contributions into strings, which never matches a
+  // brew snapshot of the same plan.
+  const storedPlan = JSON.parse(
+    readFileSync(new URL("./fixtures/stored-recipe-plan.json", import.meta.url), "utf8")
+  );
+  bodies["GET https://meadtools.test/api/recipes/2"] = { recipe: { ...recipe, dataV2: storedPlan } };
+  assert.deepEqual((await client.getRecipe(2)).dataV2, storedPlan);
+  assert.notDeepEqual(
+    getRecipeResponseSchema.parse({ recipe: { ...recipe, dataV2: storedPlan } }).recipe.dataV2,
+    storedPlan
+  );
+
+  bodies["GET https://meadtools.test/api/recipes/2"] = { recipe: { id: 2 } };
+  await assert.rejects(client.getRecipe(2), MeadToolsContractError);
+  bodies["DELETE https://meadtools.test/api/brews/brew%2F1"] = { message: "ok" };
+  await assert.rejects(client.deleteBrew("brew/1"), MeadToolsContractError);
 });

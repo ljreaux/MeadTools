@@ -22,7 +22,7 @@ import {
   createBrewEntryIdempotently
 } from "@/lib/brews/createBrewEntryIdempotently";
 import { decideQueuedStageChange } from "@/lib/brews/queuedStageChange";
-import { recipeSnapshotContentKey } from "@/lib/brews/recipeSnapshot";
+import { recipeSnapshotContentKey } from "@meadtools/brew-domain/recipe-snapshot-diff";
 import { buildBrewRecipeStageData } from "@/lib/utils/buildBrewRecipeStageData";
 import type { BrewRecipeSnapshot } from "@/lib/utils/buildBrewRecipeStageData";
 import {

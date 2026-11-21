@@ -22,6 +22,8 @@ import {
 import { toBrix } from "@meadtools/core/gravity";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
+import { isConnectionError as isConnectionFailure } from "@/api/errors";
+import { RecipeSnapshotStatus } from "@/components/recipe-snapshot-status";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
 import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "@/outbox/entry-outbox-provider";
@@ -46,7 +48,7 @@ export default function BrewScreen() {
     enabled: Boolean(session && id)
   });
   const apiError = brewQuery.error instanceof MeadToolsApiError ? brewQuery.error : null;
-  const isConnectionError = brewQuery.error instanceof TypeError;
+  const isConnectionError = isConnectionFailure(brewQuery.error);
   const hideStaleBrew =
     brewQuery.isError &&
     apiError !== null &&
@@ -369,6 +371,13 @@ export default function BrewScreen() {
             <Text style={styles.stageButtonText}>{t("mobileBrews.changeStage.action")}</Text>
           </Pressable>
         ) : null}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/brew-settings", params: { brewId: brew.id } })}
+          style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.stageButtonText}>{t("mobileBrews.settings.action")}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.card}>
@@ -408,6 +417,7 @@ export default function BrewScreen() {
         ) : (
           <Text style={styles.muted}>{t("mobileBrews.recipeDetailsUnavailable")}</Text>
         )}
+        <RecipeSnapshotStatus brew={brew} />
       </View>
       {__DEV__ ? (
         <DevOutboxPanel

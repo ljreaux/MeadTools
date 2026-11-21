@@ -1912,6 +1912,88 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "snapshot": {
+      "offline": "Connect to check the recipe for changes.",
+      "needsConnection": "Updating the snapshot needs a connection. Connect to the internet and try again.",
+      "errors": {
+        "offline": "The snapshot could not be updated. Check your connection and try again.",
+        "session": "Your session expired. Sign in again to update the snapshot.",
+        "changed": "The recipe or the snapshot changed. Review the changes and try again."
+      }
+    },
+    "delete": {
+      "unsentEntries_one": "{{count}} entry saved on this device and not yet synced will also be removed.",
+      "unsentEntries_other": "{{count}} entries saved on this device and not yet synced will also be removed.",
+      "sending": "An entry for this brew is syncing. You can delete the brew once it finishes.",
+      "errors": {
+        "offline": "The brew could not be deleted. Check your connection and try again."
+      }
+    },
+    "settings": {
+      "action": "Brew settings",
+      "title": "Brew settings",
+      "nameHint": "Leave blank to show the recipe name.",
+      "batchLabel": "Batch number",
+      "batchHint": "Leave blank for no batch number.",
+      "batchInvalid": "Enter a whole number of 1 or more, or leave it blank.",
+      "startLabel": "Start date",
+      "emailAlertsHint": "Email me when a linked hydrometer reports the sugar break or final gravity.",
+      "publicLabel": "Public brew",
+      "offline": "Saving settings needs a connection. Connect to the internet and try again.",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "offline": "The settings could not be saved. Check your connection and try again.",
+        "session": "Your session expired. Sign in again to save these settings.",
+        "notFound": "This brew is no longer available.",
+        "failed": "Something went wrong saving these settings. Try again."
+      }
+    },
+    "newBrew": {
+      "search": "Search recipes",
+      "chooseHint": "Opens the start brew step for this recipe",
+      "loading": "Loading your recipes…",
+      "loadErrorTitle": "Could not load recipes",
+      "noRecipesTitle": "No recipes yet",
+      "noRecipesBody": "Create a recipe on the web, then start a brew from it here.",
+      "nameLabel": "Brew name",
+      "nameHint": "Leave blank to use the recipe name.",
+      "chooseAnother": "Choose another recipe",
+      "offline": "Starting a brew needs a connection. Connect to the internet and try again.",
+      "errors": {
+        "offline": "The brew could not be started. Check your connection and try again.",
+        "session": "Your session expired. Sign in again to start a brew.",
+        "notFound": "This recipe is no longer available.",
+        "failed": "Something went wrong starting this brew. Try again."
+      }
+    },
+    "list": {
+      "show": "Show brews",
+      "status": {
+        "active": "Active",
+        "completed": "Completed",
+        "all": "All"
+      },
+      "search": "Search brews",
+      "filtersCount": "Filters ({{count}})",
+      "sort": "Sort",
+      "sorts": {
+        "startAsc": "Oldest start",
+        "startDesc": "Newest start",
+        "endDesc": "Newest end",
+        "endAsc": "Oldest end"
+      },
+      "completedCount_one": "{{count}} completed brew",
+      "completedCount_other": "{{count}} completed brews",
+      "allCount_one": "{{count}} brew",
+      "allCount_other": "{{count}} brews",
+      "ended": "Ended {{date}}",
+      "noMatchesTitle": "No brews match",
+      "noMatchesBody": "Try another search or clear the filters.",
+      "emptyCompletedTitle": "No completed brews",
+      "emptyCompletedBody": "Brews you end or mark complete appear here.",
+      "emptyAllTitle": "No brews yet"
+    },
     "bottling": {
       "action": "Record bottling",
       "offline": "Connect to the internet to record, correct, or remove bottling.",
@@ -2087,7 +2169,7 @@
       "title": "Edit entry",
       "webReview": "Use the web app to review the stock changes for this entry."
     },
-    "emptyBody": "Start a brew on the web app, then refresh this list.",
+    "emptyBody": "Start a brew from one of your recipes with New Brew.",
     "emptyTitle": "No active brews",
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
