@@ -30,6 +30,7 @@ import {
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
 import { Chips, Segmented } from "@/components/calculator-ui";
+import { isConnectionError as isConnectionFailure } from "@/api/errors";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
@@ -74,7 +75,7 @@ export default function BrewsScreen() {
   const isSessionError =
     brewsQuery.error instanceof MeadToolsApiError &&
     brewsQuery.error.status === 401;
-  const isConnectionError = brewsQuery.error instanceof TypeError;
+  const isConnectionError = isConnectionFailure(brewsQuery.error);
   const allBrews = useMemo(
     () => (isSessionError ? [] : (brewsQuery.data ?? [])),
     [brewsQuery.data, isSessionError]

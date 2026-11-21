@@ -39,9 +39,11 @@ completed brew.
 
 Notes:
 
-- With the server stopped the banner reads "Could not load brews" rather than
-  "Connection unavailable". This comes from the existing error handling, not
-  this change.
+- With the server stopped the banner read "Could not load brews" rather than
+  "Connection unavailable": `expo/fetch` reports connection failures as its own
+  `FetchError`, and the list and detail screens only recognised `TypeError`.
+  Fixed during #577 (see below); both screens now show "Connection
+  unavailable".
 - Tests: brew-domain 45, Mobile 106, web 263, i18n 3. Typechecks and lint on
   the changed files.
 
@@ -57,6 +59,7 @@ Notes:
 | Same recipe on both: Mobile brew Batch 1, then the web brew Batch 2; both Planned with a recipe snapshot | Pass | Pass |
 | Server stopped: "The brew could not be started. Check your connection…", nothing created, stays on the step | Pass | — |
 | A quick double tap on Start creates one brew | Pass | — |
+| Brew list and detail with the server stopped show "Connection unavailable"; Try again recovers | Pass | — |
 
 Records kept for inspection (seeded user): "Simulator Key Lime" and
 "Rapsberry Cheesecake" started on Mobile, "Key Lime Pie" started on the web.

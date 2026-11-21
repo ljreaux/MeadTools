@@ -22,6 +22,7 @@ import {
 import { toBrix } from "@meadtools/core/gravity";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
+import { isConnectionError as isConnectionFailure } from "@/api/errors";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { DevOutboxPanel } from "@/outbox/dev-outbox-panel";
 import { useBrewEntryOutbox, useBrewEntryOutboxRecords } from "@/outbox/entry-outbox-provider";
@@ -46,7 +47,7 @@ export default function BrewScreen() {
     enabled: Boolean(session && id)
   });
   const apiError = brewQuery.error instanceof MeadToolsApiError ? brewQuery.error : null;
-  const isConnectionError = brewQuery.error instanceof TypeError;
+  const isConnectionError = isConnectionFailure(brewQuery.error);
   const hideStaleBrew =
     brewQuery.isError &&
     apiError !== null &&
