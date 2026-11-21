@@ -16,6 +16,8 @@ import {
   nutrientPresetListResponseSchema,
   yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
+  updateBrewRequestBodySchema,
+  updateBrewResponseSchema,
   updateBrewEntryResponseSchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
@@ -34,6 +36,8 @@ import {
   type CreateBrewEntryRequestBody,
   type CreateBrewRequestBody,
   type CreateBrewResponse,
+  type UpdateBrewRequestBody,
+  type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
   type DeleteBrewEntrySuccessResponse,
   type InventoryOverviewResponse,
@@ -328,6 +332,33 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.brew;
+    },
+
+    /** Updates brew metadata such as the name, batch, start date, alerts or visibility. */
+    async updateBrew(
+      brewId: string,
+      input: UpdateBrewRequestBody
+    ): Promise<UpdateBrewResponse> {
+      if (!updateBrewRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Brew update does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input)
+      });
+      const parsed = updateBrewResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Brew update response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data;
     },
 
     async createBrewEntry(

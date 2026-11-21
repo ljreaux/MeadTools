@@ -122,6 +122,8 @@ export const updateBrewRequestBodySchema = z.object({
   containers: brewContainerChangeSchema.optional(),
   stage_change_datetime: z.string().datetime().optional(),
   name: z.string().nullable().optional(),
+  batch_number: z.number().int().positive().nullable().optional(),
+  start_date: z.string().datetime().optional(),
   stage: brewStageResponseSchema.optional(),
   current_volume_liters: z.number().nullable().optional(),
   requested_email_alerts: z.boolean().optional(),

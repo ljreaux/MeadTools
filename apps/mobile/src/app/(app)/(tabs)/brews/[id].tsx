@@ -370,6 +370,13 @@ export default function BrewScreen() {
             <Text style={styles.stageButtonText}>{t("mobileBrews.changeStage.action")}</Text>
           </Pressable>
         ) : null}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/brew-settings", params: { brewId: brew.id } })}
+          style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.stageButtonText}>{t("mobileBrews.settings.action")}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.card}>

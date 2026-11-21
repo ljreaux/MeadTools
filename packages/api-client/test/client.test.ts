@@ -393,3 +393,58 @@ test("starts a brew from a recipe and validates the created brew", async () => {
     MeadToolsContractError
   );
 });
+
+test("updates brew settings and validates the request and response", async () => {
+  const updated = {
+    id: "2b1f0a52-7c1e-4a43-9d6c-5d8e0f2a9b11",
+    name: "Spring batch",
+    start_date: "2026-03-01T12:00:00.000Z",
+    end_date: null,
+    stage: "PLANNED",
+    batch_number: 3,
+    current_volume_liters: null,
+    requested_email_alerts: true,
+    gravity_unit_preference: "SG",
+    public: false,
+    latest_gravity: null,
+    cover_image_id: null,
+    recipe_id: 2,
+    recipe_name: "Key Lime Pie",
+    recipe_private: false
+  };
+  const requests: Array<{ url: string; method: string; body: unknown }> = [];
+  let responseBody: unknown = updated;
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push({
+        url,
+        method: init.method,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: true, status: 200, json: async () => responseBody };
+    }
+  });
+
+  const input = {
+    name: "Spring batch",
+    batch_number: 3,
+    start_date: "2026-03-01T12:00:00.000Z",
+    requested_email_alerts: true
+  };
+  assert.deepEqual(await client.updateBrew("brew/1", input), updated);
+  assert.deepEqual(requests, [
+    { url: "https://meadtools.test/api/brews/brew%2F1", method: "PATCH", body: input }
+  ]);
+
+  await client.updateBrew("brew-1", { batch_number: null });
+  assert.deepEqual(requests[1].body, { batch_number: null });
+
+  for (const invalid of [{ batch_number: 0 }, { batch_number: 1.5 }, { start_date: "March" }]) {
+    await assert.rejects(client.updateBrew("brew-1", invalid as never), MeadToolsContractError);
+  }
+  assert.equal(requests.length, 2);
+
+  responseBody = { id: updated.id };
+  await assert.rejects(client.updateBrew("brew-1", { public: true }), MeadToolsContractError);
+});

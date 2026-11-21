@@ -1912,6 +1912,26 @@
   "missingToken": "Missing or invalid reset token.",
   "ML": "ml",
   "mobileBrews": {
+    "settings": {
+      "action": "Brew settings",
+      "title": "Brew settings",
+      "nameHint": "Leave blank to show the recipe name.",
+      "batchLabel": "Batch number",
+      "batchHint": "Leave blank for no batch number.",
+      "batchInvalid": "Enter a whole number of 1 or more, or leave it blank.",
+      "startLabel": "Start date",
+      "emailAlertsHint": "Email me when a linked hydrometer reports the sugar break or final gravity.",
+      "publicLabel": "Public brew",
+      "offline": "Saving settings needs a connection. Connect to the internet and try again.",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "offline": "The settings could not be saved. Check your connection and try again.",
+        "session": "Your session expired. Sign in again to save these settings.",
+        "notFound": "This brew is no longer available.",
+        "failed": "Something went wrong saving these settings. Try again."
+      }
+    },
     "newBrew": {
       "search": "Search recipes",
       "chooseHint": "Opens the start brew step for this recipe",

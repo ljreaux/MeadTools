@@ -7162,6 +7162,15 @@
             "type": "string",
             "nullable": true
           },
+          "batch_number": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "nullable": true
+          },
+          "start_date": {
+            "type": "string"
+          },
           "stage": {
             "allOf": [
               {

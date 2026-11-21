@@ -75,3 +75,39 @@ Notes:
   behavior.
 - Tests: brew-domain 47, API client 15, Mobile 107, web typecheck. Typechecks
   and lint on the changed files.
+
+## #578 Brew settings
+
+Brew "Settings Test Lime" (seeded user; started on Mobile as "Simulator Key
+Lime", linked to the public Key Lime Pie recipe) and "Unlinked Test Brew".
+
+| Check | iOS | Web |
+| --- | --- | --- |
+| Brew settings opens with the saved name, batch, start date, alerts and visibility; Save stays disabled until something changes | Pass | — |
+| Batch "0" shows "Enter a whole number of 1 or more…" and keeps Save disabled | Pass | Pass (unchanged toast) |
+| Name, batch 7, start Nov 9 (time of day kept), email alerts on and public on save together; the database and the web page show the same values | Pass | Pass |
+| The web batch editor saves 8 through the shared parser; Mobile shows 8 after reopening | Pass | Pass |
+| A brew without a public recipe: visibility switch disabled with "Make the recipe public before sharing this brew." | Pass | Pass (unchanged) |
+| Server stopped: "The settings could not be saved. Check your connection…", nothing saved | Pass | — |
+| Opening another brew's settings by link starts from that brew's saved values | Pass | — |
+| Light and dark appearance, including the native date picker | Pass | — |
+
+Notes:
+
+- The start date uses SwiftUI's date and time picker on iOS (Expo UI). Android
+  shows the date and time as two buttons that open Material's date and time
+  dialogs; that path is typechecked and its day/time helpers are tested, but
+  not run on a device (no emulator on this machine).
+- The picker works in minutes, so saving a changed start date sets seconds to
+  zero, as the web's date-time field does.
+- `PATCH /brews/{brew_id}` already accepted `batch_number` and `start_date`
+  from the web; the contract and OpenAPI now document them (reviewed hash
+  updated, see `docs/domain/api-contract.md`).
+- Connection messages now come from a `ConnectionError` thrown by the Mobile
+  fetch transport only. Before this, any non-API error counted, so a Metro
+  module-resolution error during development showed "Check your connection".
+- Development note: after adding a new subpath export to a workspace package,
+  restart Metro; it keeps the old `exports` map and cannot resolve the import.
+- Tests: brew-domain 53, API client 16, API contract 77, Mobile 109, i18n 3,
+  web typecheck. Typechecks and lint on the changed files (the web brew page's
+  5 existing lint warnings are unchanged).

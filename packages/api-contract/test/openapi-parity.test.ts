@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const baselineCanonicalSha256 =
-  "7e2dfb63ecbe42979ae2d7617eb368b56543b4c5d7e53707af92738838f5ff30";
+  "34e707d74c7918b408fa0e76560b606fe921d9e1fc89a02dcfaee49fcac02d44";
 const retainedHistoricalPathsCanonicalSha256 =
   "04af6c89cd661d8d14053ee217d9121e02a835ba0241109c2bb55b21ec2d347e";
 
