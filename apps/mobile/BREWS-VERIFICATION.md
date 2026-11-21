@@ -44,3 +44,31 @@ Notes:
   this change.
 - Tests: brew-domain 45, Mobile 106, web 263, i18n 3. Typechecks and lint on
   the changed files.
+
+## #577 Start a brew from a recipe
+
+| Check | iOS | Web |
+| --- | --- | --- |
+| New Brew lists the account's recipes, in the same order as the web | Pass | Pass |
+| Recipe search is fuzzy ("rasberry" finds "Rapsberry Cheesecake") | Pass | — |
+| The confirm step prefills the recipe name; a renamed brew keeps the typed name | Pass | — |
+| A blank name uses the recipe name ("Key Lime Pie") | — | Pass |
+| Start opens the new brew; the list refreshes with it | Pass | Pass |
+| Same recipe on both: Mobile brew Batch 1, then the web brew Batch 2; both Planned with a recipe snapshot | Pass | Pass |
+| Server stopped: "The brew could not be started. Check your connection…", nothing created, stays on the step | Pass | — |
+| A quick double tap on Start creates one brew | Pass | — |
+
+Records kept for inspection (seeded user): "Simulator Key Lime" and
+"Rapsberry Cheesecake" started on Mobile, "Key Lime Pie" started on the web.
+The test account also has "Contract check brew", created through the API to
+capture the response shape.
+
+Notes:
+
+- In development builds the Expo dev-tools button sits over the right end of
+  the New Brew button and catches taps there; release builds have no such
+  overlay.
+- The web New Brew page now uses the shared blank-name rule with no change in
+  behavior.
+- Tests: brew-domain 47, API client 15, Mobile 107, web typecheck. Typechecks
+  and lint on the changed files.

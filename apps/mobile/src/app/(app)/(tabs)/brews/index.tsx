@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -389,6 +389,15 @@ export default function BrewsScreen() {
                 </Text>
               ) : null}
             </View>
+            {!isSessionError ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/new-brew")}
+                style={({ pressed }) => [styles.newButton, pressed && styles.cardPressed]}
+              >
+                <Text style={styles.newButtonText}>{t("brews.new")}</Text>
+              </Pressable>
+            ) : null}
           </View>
           {hasLoaded || allBrews.length > 0 ? renderListControls() : null}
           {brews.length > 0 && brewsQuery.isError ? renderStatus() : null}
@@ -425,6 +434,14 @@ function createStyles(colors: typeof colorThemes.light) {
       fontSize: typography.size.title,
       fontWeight: typography.weight.bold
     },
+    newButton: {
+      backgroundColor: colors.accent,
+      borderRadius: radii.md,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.lg
+    },
+    newButtonText: { color: colors.onAccent, fontWeight: typography.weight.bold },
     count: {
       color: colors.textMuted,
       fontSize: typography.size.caption,

@@ -335,3 +335,61 @@ test("reads the public catalogs the calculators use and validates each list", as
   bodies["https://meadtools.test/api/yeasts"] = { error: "not a list" };
   await assert.rejects(client.listYeasts(), MeadToolsContractError);
 });
+
+test("starts a brew from a recipe and validates the created brew", async () => {
+  const created = {
+    id: "2b1f0a52-7c1e-4a43-9d6c-5d8e0f2a9b11",
+    name: "January batch",
+    start_date: "2026-11-21T02:27:00.561Z",
+    end_date: null,
+    stage: "PLANNED",
+    batch_number: 2,
+    current_volume_liters: null,
+    requested_email_alerts: false,
+    gravity_unit_preference: "SG",
+    public: false,
+    latest_gravity: null,
+    cover_image_id: null,
+    recipe_id: 4,
+    recipe_name: "Mead Wiki Simple Trad Metric",
+    recipe_private: false,
+    entry_count: 0
+  };
+  const requests: Array<{ url: string; method: string; body: unknown }> = [];
+  let responseBody: unknown = { brew: created };
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    fetch: async (url, init) => {
+      requests.push({
+        url,
+        method: init.method,
+        body: init.body ? JSON.parse(init.body) : undefined
+      });
+      return { ok: true, status: 201, json: async () => responseBody };
+    }
+  });
+
+  assert.deepEqual(
+    await client.createBrew({ recipe_id: 4, name: "January batch" }),
+    created
+  );
+  assert.deepEqual(requests, [
+    {
+      url: "https://meadtools.test/api/brews",
+      method: "POST",
+      body: { recipe_id: 4, name: "January batch" }
+    }
+  ]);
+
+  await assert.rejects(
+    client.createBrew({ recipe_id: "4" } as never),
+    MeadToolsContractError
+  );
+  assert.equal(requests.length, 1);
+
+  responseBody = { brew: { id: created.id } };
+  await assert.rejects(
+    client.createBrew({ recipe_id: 4 }),
+    MeadToolsContractError
+  );
+});

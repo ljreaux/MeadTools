@@ -6,6 +6,8 @@ import {
   inventoryOrganizationResponseSchema,
   brewsResponseSchema,
   createBrewEntryRequestBodySchema,
+  createBrewRequestBodySchema,
+  createBrewResponseSchema,
   createBrewEntryResponseSchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
@@ -30,6 +32,8 @@ import {
   type FinishedMeadOverviewResponse,
   type InventoryOrganizationResponse,
   type CreateBrewEntryRequestBody,
+  type CreateBrewRequestBody,
+  type CreateBrewResponse,
   type DeleteBrewEntryRequestBody,
   type DeleteBrewEntrySuccessResponse,
   type InventoryOverviewResponse,
@@ -298,6 +302,32 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data;
+    },
+
+    /** Starts a private brew from an owned or public recipe and snapshots it. */
+    async createBrew(
+      input: CreateBrewRequestBody
+    ): Promise<CreateBrewResponse["brew"]> {
+      if (!createBrewRequestBodySchema.safeParse(input).success) {
+        throw new MeadToolsContractError(
+          "Brew does not match the MeadTools API contract",
+          input
+        );
+      }
+
+      const body = await request("/api/brews", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      const parsed = createBrewResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError(
+          "Created brew response does not match the MeadTools API contract",
+          body
+        );
+      }
+
+      return parsed.data.brew;
     },
 
     async createBrewEntry(

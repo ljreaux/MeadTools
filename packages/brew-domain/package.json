@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./brew-list": "./src/brew-list.ts",
+    "./new-brew": "./src/new-brew.ts",
     "./action-proposal": "./src/action-proposal.ts",
     "./entry-payload": "./src/entry-payload.ts",
     "./projection": "./src/projection.ts",
