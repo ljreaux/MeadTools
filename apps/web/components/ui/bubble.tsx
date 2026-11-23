@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const bubbleVariants = cva(
-  "relative flex w-fit max-w-[80%] min-w-0 flex-col gap-1 data-[align=end]:self-end data-[variant=ghost]:max-w-full",
+  "relative flex w-fit max-w-[92%] min-w-0 sm:max-w-[80%] flex-col gap-1 data-[align=end]:self-end data-[variant=ghost]:max-w-full",
   {
     variants: {
       variant: {
