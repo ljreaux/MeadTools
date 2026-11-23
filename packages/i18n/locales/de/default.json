@@ -2262,7 +2262,7 @@
         "detailError": "Konnte diesen Ansatz nicht laden.",
         "detailLoading": "Ansatz wird geladen…",
         "detailTitle": "Details zum Ansatz",
-        "emptyBody": "Starte einen Ansatz in der Web-App und aktualisiere dann diese Liste.",
+        "emptyBody": "Starte einen Ansatz aus einem deiner Rezepte mit 'Neuer Ansatz'.",
         "emptyTitle": "Keine aktiven Ansätze",
         "entries_one": "{{count}} Eintrag",
         "entries_other": "{{count}} Einträge",
@@ -2489,6 +2489,88 @@
             "save": "Änderungen speichern",
             "title": "Eintrag bearbeiten",
             "webReview": "Nutze die Web-App, um die Bestandsänderungen für diesen Eintrag zu prüfen."
+        },
+        "snapshot": {
+            "offline": "Verbinde dich, um das Rezept auf Änderungen zu prüfen.",
+            "needsConnection": "Zum Aktualisieren der Momentaufnahme wird eine Verbindung benötigt. Stelle eine Internetverbindung her und versuche es erneut.",
+            "errors": {
+                "offline": "Die Momentaufnahme konnte nicht aktualisiert werden. Prüfe deine Verbindung und versuche es erneut.",
+                "session": "Deine Sitzung ist abgelaufen. Melde dich erneut an, um die Momentaufnahme zu aktualisieren.",
+                "changed": "Das Rezept oder die Momentaufnahme hat sich geändert. Prüfe die Änderungen und versuche es erneut."
+            }
+        },
+        "delete": {
+            "unsentEntries_one": "{{count}} Eintrag, der auf diesem Gerät gespeichert und noch nicht synchronisiert wurde, wird ebenfalls entfernt.",
+            "unsentEntries_other": "{{count}} Einträge, die auf diesem Gerät gespeichert und noch nicht synchronisiert wurden, werden ebenfalls entfernt.",
+            "sending": "Ein Eintrag für diesen Ansatz wird synchronisiert. Du kannst den Ansatz löschen, sobald die Synchronisierung abgeschlossen ist.",
+            "errors": {
+                "offline": "Der Ansatz konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut."
+            }
+        },
+        "settings": {
+            "action": "Ansatz-Einstellungen",
+            "title": "Ansatz-Einstellungen",
+            "nameHint": "Lass es leer, um den Namen des Rezepts anzuzeigen.",
+            "batchLabel": "Ansatznummer",
+            "batchHint": "Lass es leer, wenn keine Ansatznummer vergeben werden soll.",
+            "batchInvalid": "Gib eine ganze Zahl von 1 oder größer ein, oder lass es leer.",
+            "startLabel": "Startdatum",
+            "emailAlertsHint": "Schicke mir eine E-Mail, wenn ein verbundenes Hydrometer den Zuckerbruch oder die Enddichte meldet.",
+            "publicLabel": "Öffentlicher Ansatz",
+            "offline": "Zum Speichern der Einstellungen ist eine Verbindung erforderlich. Stelle eine Internetverbindung her und versuche es erneut.",
+            "save": "Speichern",
+            "saving": "Speichere…",
+            "errors": {
+                "offline": "Die Einstellungen konnten nicht gespeichert werden. Überprüfe deine Verbindung und versuche es erneut.",
+                "session": "Deine Sitzung ist abgelaufen. Melde dich erneut an, um diese Einstellungen zu speichern.",
+                "notFound": "Dieser Ansatz ist nicht mehr verfügbar.",
+                "failed": "Beim Speichern dieser Einstellungen ist etwas schiefgelaufen. Versuche es erneut."
+            }
+        },
+        "newBrew": {
+            "search": "Rezepte durchsuchen",
+            "chooseHint": "Öffnet den Schritt 'Ansatz starten' für dieses Rezept",
+            "loading": "Lade deine Rezepte…",
+            "loadErrorTitle": "Rezepte konnten nicht geladen werden",
+            "noRecipesTitle": "Noch keine Rezepte",
+            "noRecipesBody": "Erstelle ein Rezept im Web und starte dann hier einen Ansatz daraus.",
+            "nameLabel": "Ansatzname",
+            "nameHint": "Lass es leer, um den Rezeptnamen zu verwenden.",
+            "chooseAnother": "Anderes Rezept wählen",
+            "offline": "Zum Starten eines Ansatzes wird eine Verbindung benötigt. Verbinde dich mit dem Internet und versuche es erneut.",
+            "errors": {
+                "offline": "Der Ansatz konnte nicht gestartet werden. Überprüfe deine Verbindung und versuche es erneut.",
+                "session": "Deine Sitzung ist abgelaufen. Melde dich erneut an, um einen Ansatz zu starten.",
+                "notFound": "Dieses Rezept ist nicht mehr verfügbar.",
+                "failed": "Beim Starten des Ansatzes ist etwas schiefgelaufen. Versuche es erneut."
+            }
+        },
+        "list": {
+            "show": "Ansätze anzeigen",
+            "status": {
+                "active": "Aktiv",
+                "completed": "Abgeschlossen",
+                "all": "Alle"
+            },
+            "search": "Ansätze durchsuchen",
+            "filtersCount": "Filter ({{count}})",
+            "sort": "Sortieren",
+            "sorts": {
+                "startAsc": "Ältester Start",
+                "startDesc": "Neuester Start",
+                "endDesc": "Neuestes Ende",
+                "endAsc": "Ältestes Ende"
+            },
+            "completedCount_one": "{{count}} abgeschlossenes Gebräu",
+            "completedCount_other": "{{count}} abgeschlossene Gebräue",
+            "allCount_one": "{{count}} Ansatz",
+            "allCount_other": "{{count}} Ansätze",
+            "ended": "Beendet {{date}}",
+            "noMatchesTitle": "Keine passenden Ansätze",
+            "noMatchesBody": "Versuche eine andere Suche oder setze die Filter zurück.",
+            "emptyCompletedTitle": "Keine abgeschlossenen Gebräue",
+            "emptyCompletedBody": "Hier erscheinen Gebräue, die du beendest oder als abgeschlossen markierst.",
+            "emptyAllTitle": "Noch keine Ansätze"
         }
     },
     "releaseNotes": {
