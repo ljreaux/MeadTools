@@ -2,6 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { getGoogleIosUrlScheme } from "../app.config";
+import appJson from "../app.json";
+
+test("Android back keeps working after the keyboard has been shown", () => {
+  // With the legacy back key path (enableOnBackInvokedCallback="false"), Gboard
+  // keeps the input connection of a text field after its screen is gone and
+  // swallows every later back press. Predictive back routes back through the
+  // app's own callback instead.
+  assert.equal(appJson.expo.android.predictiveBackGestureEnabled, true);
+});
 
 test("preview and simulator development can load without local Google OAuth", () => {
   assert.equal(
