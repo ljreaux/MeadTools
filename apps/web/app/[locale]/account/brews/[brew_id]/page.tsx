@@ -5,6 +5,7 @@ import { EditableCover } from "@/components/brews/RecordCover";
 import { BrewCostPanel } from "@/components/account/InventoryCostSummary";
 import { YeastPacketWeightField } from "@/components/brews/YeastPacketWeightField";
 import { loggedYeastAmountG } from "@meadtools/brew-domain";
+import { canChangeBrewVisibility, parseBatchNumber } from "@meadtools/brew-domain/brew-settings";
 import { BrewImages } from "@/components/brews/BrewImages";
 import { useBrewInventory } from "@/components/brews/BrewInventoryProvider";
 import { BrewQrDialog } from "@/components/brews/BrewQrDialog";
@@ -664,8 +665,8 @@ export default function BrewPageClient() {
 
   async function saveBatchNumber() {
     if (!brew) return;
-    const trimmed = batchValue.trim();
-    if (trimmed && (!Number.isInteger(Number(trimmed)) || Number(trimmed) < 1)) {
+    const batchNumber = parseBatchNumber(batchValue);
+    if (batchNumber === undefined) {
       toast({
         description: t("error", "Something went wrong."),
         variant: "destructive"
@@ -673,9 +674,7 @@ export default function BrewPageClient() {
       return;
     }
 
-    await saveMetadata({
-      batch_number: trimmed ? Number(trimmed) : null
-    });
+    await saveMetadata({ batch_number: batchNumber });
     setBatchEditable(false);
   }
 
@@ -1150,7 +1149,7 @@ export default function BrewPageClient() {
                     </div>
                     <Switch
                       checked={brew.public}
-                      disabled={brew.recipe_private !== false}
+                      disabled={!canChangeBrewVisibility(brew)}
                       onCheckedChange={async (checked) => {
                         await saveMetadata({ public: checked });
                       }}

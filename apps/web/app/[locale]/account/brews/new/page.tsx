@@ -9,6 +9,7 @@ import { Search, X } from "lucide-react";
 import { useAccountInfo } from "@/hooks/reactQuery/useAccountInfo";
 import { useCreateAccountBrew } from "@/hooks/reactQuery/useAccountBrews";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { newBrewName } from "@meadtools/brew-domain/new-brew";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -99,7 +100,7 @@ export default function NewBrewClient() {
     try {
       const brew = await createMutation.mutateAsync({
         recipe_id: selectedRecipe.id,
-        name: nameDraft.trim() ? nameDraft.trim() : selectedRecipe.name
+        name: newBrewName(nameDraft, selectedRecipe.name)
       });
 
       setSelectedRecipe(null);

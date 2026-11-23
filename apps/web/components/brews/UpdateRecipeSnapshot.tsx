@@ -6,7 +6,12 @@ import { useTranslation } from "react-i18next";
 import { useFetchWithAuth } from "@/hooks/auth/useFetchWithAuth";
 import { usePatchAccountBrewMetadata, type AccountBrew } from "@/hooks/reactQuery/useAccountBrews";
 import type { RecipeApiResponse } from "@/hooks/reactQuery/useRecipeQuery";
-import { recipeSnapshotContentKey } from "@/lib/brews/recipeSnapshot";
+import {
+  canUpdateRecipeSnapshot,
+  recipeSnapshotChanges,
+  recipeSnapshotContentKey,
+  recipeSnapshotDiffers
+} from "@meadtools/brew-domain/recipe-snapshot-diff";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,11 +21,6 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 
-const CONTENT_SECTIONS = [
-  "unitDefaults", "ingredients", "fg", "additives", "notes",
-  "nutrients", "stabilizers", "lossAdjustment"
-] as const;
-
 export function UpdateRecipeSnapshot({ brew }: { brew: AccountBrew }) {
   const { t, i18n } = useTranslation();
   const fetchWithAuth = useFetchWithAuth();
@@ -28,7 +28,7 @@ export function UpdateRecipeSnapshot({ brew }: { brew: AccountBrew }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const snapshot = brew.recipe_snapshot;
-  const canCheck = Boolean(brew.recipe_id && snapshot && !brew.end_date && brew.stage !== "COMPLETE");
+  const canCheck = canUpdateRecipeSnapshot(brew);
   const sourceQuery = useQuery({
     queryKey: ["brew-recipe-source", brew.recipe_id],
     enabled: canCheck,
@@ -40,21 +40,16 @@ export function UpdateRecipeSnapshot({ brew }: { brew: AccountBrew }) {
     staleTime: 0
   });
   const source = sourceQuery.data;
-  const differs = Boolean(
-    snapshot && source && recipeSnapshotContentKey(snapshot) !== recipeSnapshotContentKey(source)
+  const differs = Boolean(snapshot && source && recipeSnapshotDiffers(snapshot, source));
+  const changedSections = useMemo(
+    () =>
+      snapshot && source
+        ? recipeSnapshotChanges(snapshot, source).map((change) =>
+            t(change === "name" ? "brews.snapshot.name" : `brews.snapshot.sections.${change}`)
+          )
+        : [],
+    [snapshot, source, t]
   );
-  const changedSections = useMemo(() => {
-    if (!snapshot || !source) return [];
-    const sections = snapshot.name !== source.name ? [t("brews.snapshot.name")] : [];
-    for (const section of CONTENT_SECTIONS) {
-      const before = (snapshot.dataV2 as Record<string, unknown> | null)?.[section];
-      const after = (source.dataV2 as Record<string, unknown> | null)?.[section];
-      if (recipeSnapshotContentKey({ dataV2: before }) !== recipeSnapshotContentKey({ dataV2: after })) {
-        sections.push(t(`brews.snapshot.sections.${section}`));
-      }
-    }
-    return sections;
-  }, [snapshot, source, t]);
 
   const update = async () => {
     if (!source || !snapshot || patch.isPending) return;

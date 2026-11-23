@@ -6,8 +6,15 @@ import { fetch as expoFetch } from "expo/fetch";
 
 import { apiBaseUrl } from "@/config/api";
 
+import { ConnectionError } from "./errors";
+
 const nativeFetch: FetchTransport = async (url, init) => {
-  const response = await expoFetch(url, init);
+  let response: Awaited<ReturnType<typeof expoFetch>>;
+  try {
+    response = await expoFetch(url, init);
+  } catch (error) {
+    throw new ConnectionError(error);
+  }
 
   return {
     ok: response.ok,

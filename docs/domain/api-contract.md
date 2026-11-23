@@ -135,6 +135,12 @@ The Mobile calculators update (#568) gives `GET /nutrient-presets` real
 (previously empty) so the typed client can validate the list. The endpoint and
 its documented statuses are unchanged; only the reviewed document hash moves.
 
+The Mobile brew settings update (#578) documents optional `batch_number` (a
+positive integer, or `null` to clear it) and `start_date` (an ISO date-time) on
+`UpdateBrewRequestBody`. `PATCH /brews/{brew_id}` already accepted and
+validated both for the web brew page; the route and its statuses are
+unchanged, so only the reviewed document hash moves.
+
 The Mobile offline stage-change update (#520) adds optional `expected_stage`
 to `CreateBrewEntryRequestBody` and `BrewStageConflictErrorResponse` to the
 create-entry 409 union. A `STAGE_CHANGE` sent with `client_entry_id` is
