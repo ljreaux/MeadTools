@@ -266,6 +266,9 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
       ) : null}
 
       <Pressable
+        // An explicit label: on Android a Pressable without one keeps
+        // "busy" as its description after `busy` turns false.
+        accessibilityLabel={save.isPending ? t("mobileBrews.settings.saving") : t("mobileBrews.settings.save")}
         accessibilityRole="button"
         accessibilityState={{ disabled: !canSave, busy }}
         disabled={!canSave}
@@ -300,6 +303,7 @@ function BrewSettingsForm({ brewId }: { brewId: string }) {
           </Text>
         ) : null}
         <Pressable
+          accessibilityLabel={remove.isPending ? t("brews.delete.deleting") : t("brews.delete.confirm")}
           accessibilityRole="button"
           accessibilityState={{ disabled: !canDelete, busy: remove.isPending }}
           disabled={!canDelete}

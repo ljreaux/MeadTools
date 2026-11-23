@@ -5,7 +5,7 @@ import { DatePickerDialog, Host, TimePickerDialog } from "@expo/ui/jetpack-compo
 
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
-import { withPickedDay, withPickedTime } from "@/brews/date-part";
+import { pickerDayFor, withPickedDay, withPickedTime } from "@/brews/date-part";
 import { useThemeColors } from "@/hooks/useThemeColors";
 
 export type DateTimeFieldProps = {
@@ -50,7 +50,7 @@ export function DateTimeField({ label, value, onChange, disabled }: DateTimeFiel
           {open === "date" ? (
             <DatePickerDialog
               color={colors.accent}
-              initialDate={value.toISOString()}
+              initialDate={pickerDayFor(value).toISOString()}
               onDateSelected={(picked) => {
                 setOpen(null);
                 onChange(withPickedDay(picked, value));

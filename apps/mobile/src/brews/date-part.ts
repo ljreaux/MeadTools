@@ -1,4 +1,14 @@
 /**
+ * Android's Material date picker reads its starting date as a UTC calendar
+ * day, so pass the brew's local day as midnight UTC. Otherwise an evening
+ * start west of UTC (or an early-morning one east of it) opens on the wrong
+ * day.
+ */
+export function pickerDayFor(current: Date): Date {
+  return new Date(Date.UTC(current.getFullYear(), current.getMonth(), current.getDate()));
+}
+
+/**
  * Android's Material date picker reports the chosen day as midnight UTC.
  * Keep the brew's local time of day and move only the calendar day.
  */

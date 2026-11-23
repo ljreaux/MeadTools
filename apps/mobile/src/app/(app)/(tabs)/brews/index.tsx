@@ -426,6 +426,8 @@ function createStyles(colors: typeof colorThemes.light) {
     header: {
       alignItems: "flex-start",
       flexDirection: "row",
+      // At the largest text sizes New Brew moves below the heading.
+      flexWrap: "wrap",
       justifyContent: "space-between",
       gap: spacing.md,
       marginBottom: spacing.md

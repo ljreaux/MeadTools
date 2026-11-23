@@ -142,6 +142,9 @@ export default function NewBrewScreen() {
           </Text>
         ) : null}
         <Pressable
+          // An explicit label: on Android a Pressable without one keeps
+          // "busy" as its description after `busy` turns false.
+          accessibilityLabel={busy ? t("creating") : t("start")}
           accessibilityRole="button"
           accessibilityState={{ disabled, busy }}
           disabled={disabled}

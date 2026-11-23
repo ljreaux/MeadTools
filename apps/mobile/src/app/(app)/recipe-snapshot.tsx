@@ -145,6 +145,9 @@ function RecipeSnapshotUpdate({ brewId }: { brewId: string }) {
       ) : null}
 
       <Pressable
+        // An explicit label: on Android a Pressable without one keeps
+        // "busy" as its description after `busy` turns false.
+        accessibilityLabel={busy ? t("mobileBrews.settings.saving") : t("brews.snapshot.confirm")}
         accessibilityRole="button"
         accessibilityState={{ disabled: !canUpdate, busy }}
         disabled={!canUpdate}
