@@ -145,6 +145,34 @@ export function quoteCreditsForChatUsage(options: {
 }
 
 /** The only safe action for an interrupted provider-backed reservation. */
+/**
+ * The user message a brewer can resend in one tap: the latest user turn, when
+ * it failed or was cancelled and nothing answered it. Older failed turns are
+ * not offered, because resending them would append text out of context.
+ * A retry must use a new client message ID; the server returns the existing
+ * row for a repeated ID instead of running the turn again.
+ */
+export function latestRetryableUserMessageId(
+  messages: ReadonlyArray<{
+    id: string;
+    role: ChatMessageRole;
+    status?: ChatMessageStatus;
+  }>,
+): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === "assistant") {
+      if (message.status === undefined || message.status === "complete")
+        return undefined;
+      continue;
+    }
+    return message.status === "failed" || message.status === "cancelled"
+      ? message.id
+      : undefined;
+  }
+  return undefined;
+}
+
 export type FailedProviderReservationAction = "settle" | "reverse" | "hold";
 
 /**
