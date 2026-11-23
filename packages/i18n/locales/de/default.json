@@ -2144,7 +2144,7 @@
         "closeDialog": "Schließen",
         "description": "Entwirf Rezepte, stelle Fragen zum Brauen und nutze die Prozessanleitungen von MeadTools.",
         "emptyState": "Erstelle oder verfeinere ein Rezept, behebe Probleme bei einem Ansatz, frage nach einem MeadTools-Prozess oder finde den passenden Rechner.",
-        "emptyStateContext": "Du kannst ein gespeichertes Rezept oder einen gespeicherten Ansatz anhängen, um schreibgeschützte, ansatzspezifische Hinweise zu erhalten.",
+        "emptyStateContext": "Nenne ein gespeichertes Rezept oder einen Ansatz beim Namen, um Hinweise speziell für diesen Ansatz zu erhalten.",
         "emptyStateTitle": "Wobei soll ich dir beim Brauen helfen?",
         "externalLinkWarning": "Du wirst gleich eine externe Website aufrufen.",
         "errors": {
@@ -2246,7 +2246,8 @@
         "progressField_yeast": "Hefeauswahl",
         "progressField_nutrients": "Nährstoffplan",
         "progressField_ingredient_amount": "Zutatenmenge",
-        "progressField_additive_amount": "Zusatzstoffmenge"
+        "progressField_additive_amount": "Zusatzstoffmenge",
+        "attachmentsComingSoon": "Anhänge folgen in Kürze."
     },
     "chatbotPopup": {
         "collapse": "Zurück zur Popup-Größe",
