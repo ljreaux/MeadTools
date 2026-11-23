@@ -77,7 +77,14 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://meadtools.com"),
   title: "MeadTools",
   description: "The all in one mead, wine, and cider making calculator.",
-  icons: `${process.env.NEXT_PUBLIC_BASE_URL}/icon.png`,
+  icons: {
+    icon: [
+      { url: `${process.env.NEXT_PUBLIC_BASE_URL}/icon.png` },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    // iOS and Android home-screen shortcuts need a square, opaque icon.
+    apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+  },
   openGraph: {
     type: "website",
     title: "MeadTools",

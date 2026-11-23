@@ -35,6 +35,11 @@ import {
 } from "@/components/ui/select";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Message as ChatMessageRow,
   MessageContent as ChatMessageContent,
   MessageFooter,
@@ -47,7 +52,6 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import SearchableInput from "@/components/ui/SearchableInput";
 import Header from "@/components/account/header";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -99,6 +103,7 @@ import {
   Minimize2,
   MessageSquareText,
   MoreHorizontal,
+  Paperclip,
   Pencil,
   Plus,
   RotateCcw,
@@ -155,18 +160,6 @@ type ToolActivity = {
   status: "running" | "ok" | "error";
   detail?: ChatToolProgressDetail;
 };
-
-type ChatContextOption =
-  | { kind: "recipe"; id: number; name: string }
-  | {
-      kind: "brew";
-      id: string;
-      name: string;
-      stage: string;
-      recipeName: string | null;
-    };
-
-type ChatContextSelection = Pick<ChatContextOption, "kind" | "id">;
 
 type ChatConversation = {
   id: string;
@@ -250,12 +243,6 @@ export default function RecipeChat({
   const [activeRecipeData, setActiveRecipeData] = useState<RecipeDataV2>();
   const [recipeDraftInput, setRecipeDraftInput] =
     useState<BuildRecipeDraftInput>();
-  const [contextOptions, setContextOptions] = useState<ChatContextOption[]>([]);
-  const [selectedAccountContext, setSelectedAccountContext] =
-    useState<ChatContextSelection>();
-  const [contextQuery, setContextQuery] = useState("");
-  const [isLoadingContextOptions, setIsLoadingContextOptions] = useState(false);
-  const [contextOptionsError, setContextOptionsError] = useState<string>();
   const [model, setModel] = useState<string>();
   const [error, setError] = useState<string>();
   const [insufficientCredits, setInsufficientCredits] = useState<{
@@ -276,6 +263,8 @@ export default function RecipeChat({
   const tokenRef = useRef<string | null>(null);
   const conversationIdRef = useRef<string | undefined>(undefined);
   const clientMessageIdRef = useRef<string | undefined>(undefined);
+  /** "touch", "pen" or "mouse" from the last press on the message box. */
+  const inputPointerTypeRef = useRef<string | undefined>(undefined);
   const threadAtCapacityRef = useRef(false);
   const insufficientCreditsRef = useRef<
     | {
@@ -288,9 +277,6 @@ export default function RecipeChat({
   const tanStackMessagesRef = useRef<TanStackUIMessage[]>([]);
   const activeRecipeDataRef = useRef<RecipeDataV2 | undefined>(undefined);
   const recipeDraftInputRef = useRef<BuildRecipeDraftInput | undefined>(
-    undefined,
-  );
-  const selectedAccountContextRef = useRef<ChatContextSelection | undefined>(
     undefined,
   );
   const createRecipeMutation = useCreateRecipeMutation();
@@ -309,38 +295,6 @@ export default function RecipeChat({
   conversationIdRef.current = conversationId;
   activeRecipeDataRef.current = activeRecipeData;
   recipeDraftInputRef.current = recipeDraftInput;
-  selectedAccountContextRef.current = selectedAccountContext;
-
-  useEffect(() => {
-    if (!canUseChat) return;
-    let cancelled = false;
-    setIsLoadingContextOptions(true);
-    setContextOptionsError(undefined);
-    void fetch("/api/chat/context", {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    })
-      .then(async (response) => {
-        const payload = (await response.json().catch(() => null)) as {
-          contexts?: ChatContextOption[];
-          error?: string;
-        } | null;
-        if (!response.ok || !payload?.contexts) {
-          throw new Error(payload?.error || "Unable to load chat context.");
-        }
-        if (!cancelled) setContextOptions(payload.contexts);
-      })
-      .catch(() => {
-        if (!cancelled)
-          setContextOptionsError(t("chatbotTest.errors.contextFailed"));
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingContextOptions(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [canUseChat, t, token]);
-
   const connection = useMemo(
     () =>
       fetchServerSentEvents("/api/chat/recipe", () => ({
@@ -385,9 +339,6 @@ export default function RecipeChat({
             : {}),
           ...(recipeDraftInputRef.current
             ? { recipeDraftInput: recipeDraftInputRef.current }
-            : {}),
-          ...(selectedAccountContextRef.current
-            ? { selectedAccountContext: selectedAccountContextRef.current }
             : {}),
         },
       })),
@@ -645,8 +596,6 @@ export default function RecipeChat({
     setModel(undefined);
     setError(undefined);
     setInput("");
-    setSelectedAccountContext(undefined);
-    setContextQuery("");
     setHistoryQuery("");
     setThreadNextBeforeSequence(null);
     setThreadAtCapacity(false);
@@ -860,35 +809,26 @@ export default function RecipeChat({
   }
 
   function onInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      void submitMessage();
-    }
+    if (event.key !== "Enter" || event.shiftKey) return;
+    // Enter that confirms an IME composition (e.g. autocorrect or CJK input)
+    // must not send a half-finished message.
+    if (event.nativeEvent.isComposing) return;
+    // Phone and tablet keyboards use Return for a new line, like other chat
+    // apps; the Send button submits. A hardware keyboard with a mouse or
+    // trackpad keeps Enter-to-send. How the field was last tapped wins over
+    // the media query, which some touch devices (and the iOS Simulator)
+    // answer as if a mouse were present.
+    const lastPointer = inputPointerTypeRef.current;
+    const touchTyping = lastPointer ? lastPointer !== "mouse" : !hasFinePointer();
+    if (touchTyping) return;
+    event.preventDefault();
+    void submitMessage();
   }
 
   function cancelRequest() {
     stop();
     setAnswerPreview("");
     setToolActivity([]);
-  }
-
-  function selectAccountContext(value: string) {
-    const option = contextOptions.find(
-      (candidate) => contextOptionValue(candidate) === value,
-    );
-    if (!option) return;
-    setSelectedAccountContext({ kind: option.kind, id: option.id });
-    setContextQuery(contextOptionValue(option));
-  }
-
-  function setContextSearchQuery(value: string) {
-    setContextQuery(value);
-    if (
-      !selectedAccountContext ||
-      value !== contextSelectionValue(selectedAccountContext)
-    ) {
-      setSelectedAccountContext(undefined);
-    }
   }
 
   function openSaveDraft() {
@@ -1248,9 +1188,13 @@ export default function RecipeChat({
                                       message.role === "user" ? "end" : "start"
                                     }
                                     className="group/bubble"
-                                    variant="outline"
+                                    variant={
+                                      message.role === "user"
+                                        ? "default"
+                                        : "outline"
+                                    }
                                   >
-                                    <BubbleContent className="pr-10">
+                                    <BubbleContent className="pr-9">
                                       <MessageResponse>
                                         {message.content}
                                       </MessageResponse>
@@ -1371,54 +1315,14 @@ export default function RecipeChat({
                   className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"}
                   onSubmit={onSubmit}
                 >
-                  <details className="rounded-md border bg-muted/20 px-3 py-2">
-                    <summary className="cursor-pointer text-sm text-muted-foreground">
-                      {t("chatbotTest.attachContext")}
-                    </summary>
-                    <div
-                      className={
-                        popupLayout
-                          ? "mt-3 space-y-2"
-                          : "mt-3 grid gap-1.5 sm:grid-cols-[minmax(0,20rem)_1fr] sm:items-center"
-                      }
-                    >
-                      <label>
-                        <span className="sr-only">
-                          {t("chatbotTest.contextLabel")}
-                        </span>
-                        <SearchableInput
-                          // The picker sits at the bottom of every chat layout.
-                          // Always overlay upward so results cannot be clipped by
-                          // the transcript card or fall below the viewport.
-                          dropdownPlacement="above"
-                          dropdownPortal
-                          getLabel={contextOptionLabel}
-                          getValue={contextOptionValue}
-                          items={contextOptions}
-                          keyName="name"
-                          onSelect={(option) =>
-                            selectAccountContext(contextOptionValue(option))
-                          }
-                          placeholder={
-                            isLoadingContextOptions
-                              ? t("chatbotTest.contextLoading")
-                              : t("chatbotTest.contextPlaceholder")
-                          }
-                          query={contextQuery}
-                          setQuery={setContextSearchQuery}
-                        />
-                      </label>
-                      <p className="text-xs text-muted-foreground">
-                        {contextOptionsError ||
-                          t("chatbotTest.contextReadOnly")}
-                      </p>
-                    </div>
-                  </details>
                   <Textarea
                     aria-label={t("chatbotTest.inputLabel")}
                     disabled={isSubmitting}
                     onChange={(event) => setInput(event.currentTarget.value)}
                     onKeyDown={onInputKeyDown}
+                    onPointerDown={(event) => {
+                      inputPointerTypeRef.current = event.pointerType;
+                    }}
                     placeholder={t("chatbotTest.placeholder")}
                     value={input}
                   />
@@ -1436,28 +1340,54 @@ export default function RecipeChat({
                         t={t}
                       />
                     </div>
-                    {isSubmitting ? (
-                      <Button
-                        onClick={cancelRequest}
-                        type="button"
-                        variant="outline"
-                      >
-                        <X />
-                        {t("chatbotTest.stopStreaming")}
-                      </Button>
-                    ) : (
-                      <Button
-                        disabled={
-                          !input.trim() ||
-                          !canUseChat ||
-                          creditBalanceBelowPreauthorization
-                        }
-                        type="submit"
-                      >
-                        <Send />
-                        {t("chatbotTest.send")}
-                      </Button>
-                    )}
+                    <div className="flex shrink-0 items-center gap-2">
+                      {/* Placeholder until image attachments ship. It looks
+                          disabled but stays tappable, so phones can show why. */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            aria-disabled="true"
+                            aria-label={t("chatbotTest.attachmentsComingSoon")}
+                            className="text-muted-foreground opacity-50"
+                            size="icon"
+                            title={t("chatbotTest.attachmentsComingSoon")}
+                            type="button"
+                            variant="ghost"
+                          >
+                            <Paperclip />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="end"
+                          className="w-auto max-w-64 px-3 py-2 text-sm"
+                          side="top"
+                        >
+                          {t("chatbotTest.attachmentsComingSoon")}
+                        </PopoverContent>
+                      </Popover>
+                      {isSubmitting ? (
+                        <Button
+                          onClick={cancelRequest}
+                          type="button"
+                          variant="outline"
+                        >
+                          <X />
+                          {t("chatbotTest.stopStreaming")}
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled={
+                            !input.trim() ||
+                            !canUseChat ||
+                            creditBalanceBelowPreauthorization
+                          }
+                          type="submit"
+                        >
+                          <Send />
+                          {t("chatbotTest.send")}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </form>
               )}
@@ -1688,16 +1618,10 @@ export default function RecipeChat({
   );
 }
 
-function contextOptionValue(context: ChatContextOption): string {
-  return `${context.kind}:${context.id}`;
-}
-
-function contextOptionLabel(context: ChatContextOption): string {
-  return `${context.kind === "brew" ? "Brew" : "Recipe"}: ${context.name}`;
-}
-
-function contextSelectionValue(context: ChatContextSelection): string {
-  return `${context.kind}:${context.id}`;
+/** True when a mouse or trackpad is available, i.e. not a touch-only device. */
+function hasFinePointer(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return true;
+  return window.matchMedia("(any-pointer: fine)").matches;
 }
 
 function persistedMessagesToTanStack(
