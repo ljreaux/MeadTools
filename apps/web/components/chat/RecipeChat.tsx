@@ -62,6 +62,10 @@ import { useCreateBrewEntry } from "@/hooks/reactQuery/useCreateBrewEntry";
 import type { CreateBrewEntryInput } from "@/hooks/reactQuery/useAccountBrews";
 import { useCreateRecipeMutation } from "@/hooks/reactQuery/useRecipeQuery";
 import { useCreditAccount } from "@/hooks/reactQuery/useCreditAccount";
+import {
+  PHONE_MEDIA_QUERY,
+  useFullscreenChatViewport,
+} from "@/hooks/useFullscreenChatViewport";
 import { qk } from "@/lib/db/queryKeys";
 import { cn } from "@/lib/utils";
 import { isRecipeData } from "@/types/recipeData";
@@ -82,6 +86,7 @@ import {
   type ChatToolProgressDetail,
   CHAT_TURN_CREDIT_WARNING_CREDITS,
   CHAT_TURN_PREAUTHORIZATION_CREDITS,
+  latestRetryableUserMessageId,
 } from "@meadtools/chat-domain";
 import type { RecipeDataV2 } from "@meadtools/schemas";
 import type { BrewActionProposal } from "@meadtools/brew-domain/action-proposal";
@@ -121,6 +126,7 @@ import { useSession } from "next-auth/react";
 import {
   FormEvent,
   KeyboardEvent,
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -287,9 +293,17 @@ export default function RecipeChat({
     typeof availableCredits === "number" &&
     availableCredits < CHAT_TURN_PREAUTHORIZATION_CREDITS;
   const creditBalanceIsNegative = (availableCredits ?? 0) < 0;
+  /** Server statuses, plus "failed" for a live turn whose request errored. */
   const [persistedMessageStatuses, setPersistedMessageStatuses] = useState<
     Record<string, PersistedChatMessage["status"]>
   >({});
+  const rootRef = useRef<HTMLElement>(null);
+  // The popup's expanded mode covers the screen everywhere; the account page
+  // only becomes full screen on phones.
+  useFullscreenChatViewport(rootRef, {
+    enabled: fullscreen || embedded,
+    mediaQuery: fullscreen ? undefined : PHONE_MEDIA_QUERY,
+  });
 
   tokenRef.current = token;
   conversationIdRef.current = conversationId;
@@ -404,6 +418,7 @@ export default function RecipeChat({
     },
     onError: () => {
       setAnswerPreview("");
+      markLatestUserMessageFailed();
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
         return;
@@ -428,6 +443,26 @@ export default function RecipeChat({
     },
   });
   tanStackMessagesRef.current = tanStackMessages;
+
+  /**
+   * `sendMessage` resolves even when the request fails, and the server only
+   * marks the stored turn failed. Mirror that on the live message so it shows
+   * the failure and offers Retry without reloading the thread. A request can
+   * fail before React renders the new message, so the in-flight turn is found
+   * by the ID it was sent with rather than from the rendered messages.
+   */
+  function markLatestUserMessageFailed() {
+    const messageId =
+      clientMessageIdRef.current ??
+      [...tanStackMessagesRef.current]
+        .reverse()
+        .find((message) => message.role === "user")?.id;
+    if (!messageId) return;
+    setPersistedMessageStatuses((current) => ({
+      ...current,
+      [messageId]: "failed",
+    }));
+  }
 
   function showThreadCapacity() {
     setThreadAtCapacity(true);
@@ -759,8 +794,29 @@ export default function RecipeChat({
     activeConversation?.title ?? t("chatbotTest.newChat");
   const activeConversationArchived = activeConversation?.state === "archived";
 
-  async function submitMessage() {
-    const content = input.trim();
+  const retryableMessageId = useMemo(
+    () => latestRetryableUserMessageId(messages),
+    [messages],
+  );
+  const canRetry =
+    canUseChat &&
+    !isSubmitting &&
+    !isLoadingThread &&
+    !threadAtCapacity &&
+    !activeConversationArchived &&
+    !creditBalanceBelowPreauthorization;
+
+  function submitMessage() {
+    return sendChatText(input.trim(), "composer");
+  }
+
+  /** Resends a failed turn's text as a new turn with a new client message ID. */
+  function retryMessage(message: ChatMessage) {
+    if (!canRetry) return;
+    return sendChatText(message.content, "retry");
+  }
+
+  async function sendChatText(content: string, origin: "composer" | "retry") {
     if (!content || isSubmitting) return;
 
     if (!canUseChat) {
@@ -774,7 +830,7 @@ export default function RecipeChat({
       return;
     }
 
-    setInput("");
+    if (origin === "composer") setInput("");
     setError(undefined);
     setInsufficientCredits(undefined);
     insufficientCreditsRef.current = undefined;
@@ -783,14 +839,21 @@ export default function RecipeChat({
     capacityToastShownRef.current = false;
     setAnswerPreview("");
     setToolActivity([]);
+    let handedToChat = false;
     try {
       await ensureConversation();
-      clientMessageIdRef.current = crypto.randomUUID();
-      await sendMessage(content);
-      clientMessageIdRef.current = undefined;
+      const clientMessageId = crypto.randomUUID();
+      clientMessageIdRef.current = clientMessageId;
+      handedToChat = true;
+      // The live message shares the server's idempotency ID, so a failure
+      // can be pinned to exactly this turn.
+      await sendMessage({ content, id: clientMessageId });
       void loadRecentConversations().catch(() => undefined);
     } catch {
-      clientMessageIdRef.current = undefined;
+      // Nothing reached the transcript, so give the brewer their text back.
+      if (!handedToChat && origin === "composer") {
+        setInput((current) => (current.trim() ? current : content));
+      }
       if (threadAtCapacityRef.current) {
         showThreadCapacity();
       } else if (insufficientCreditsRef.current) {
@@ -800,6 +863,8 @@ export default function RecipeChat({
       } else {
         setError(t("chatbotTest.errors.requestFailed"));
       }
+    } finally {
+      clientMessageIdRef.current = undefined;
     }
   }
 
@@ -940,15 +1005,21 @@ export default function RecipeChat({
     <main
       className={
         fullscreen
-          ? "fixed inset-0 z-[1002] flex h-[100dvh] min-h-0 w-screen flex-col bg-background p-4 pt-24 pb-20 sm:p-6 sm:pt-24 sm:pb-20"
+          ? // Sits above the site navbar and footer and follows the keyboard.
+            "fixed inset-x-0 top-[var(--chat-viewport-top,0px)] z-[1002] flex h-[var(--chat-viewport-height,100dvh)] min-h-0 w-screen flex-col bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[100lvh] after:bg-background sm:p-6"
           : compact
             ? "flex h-[min(40rem,calc(100vh-6rem))] w-full min-w-0 flex-col rounded-xl bg-card p-3"
             : embedded
-              ? "w-full"
+              ? // On phones the account-page chat takes the whole screen, like
+                // the popup's expanded mode. The strip below it covers the
+                // site footer behind Safari's translucent keyboard toolbar.
+                "w-full max-sm:fixed max-sm:inset-x-0 max-sm:top-[var(--chat-viewport-top,0px)] max-sm:z-[1002] max-sm:flex max-sm:h-[var(--chat-viewport-height,100dvh)] max-sm:min-h-0 max-sm:flex-col max-sm:bg-background max-sm:px-3 max-sm:pt-2 max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:after:pointer-events-none max-sm:after:absolute max-sm:after:inset-x-0 max-sm:after:top-full max-sm:after:h-[100lvh] max-sm:after:bg-background"
               : "relative mx-auto mt-24 mb-24 w-11/12 max-w-5xl rounded-xl bg-background p-6 pt-16 sm:p-10 sm:pt-20"
       }
+      ref={rootRef}
     >
-      {!compact && !fullscreen ? <Header /> : null}
+      {/* The account page already renders the account header. */}
+      {!compact && !fullscreen && !embedded ? <Header /> : null}
       {popupLayout ? (
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
           <h2
@@ -1044,7 +1115,7 @@ export default function RecipeChat({
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4 max-sm:hidden">
             <div>
               <h1 className="text-3xl">{t("chatbotTest.title")}</h1>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
@@ -1071,14 +1142,14 @@ export default function RecipeChat({
         className={
           popupLayout
             ? "flex min-h-0 min-w-0 max-w-full flex-1 overflow-hidden"
-            : "mt-6 overflow-hidden"
+            : "mt-6 overflow-hidden max-sm:mt-0 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:shadow-none"
         }
       >
         <CardContent
           className={
             popupLayout
               ? "flex min-h-0 min-w-0 max-w-full flex-1 flex-col p-3"
-              : "p-4 sm:p-6"
+              : "p-4 sm:p-6 max-sm:flex max-sm:min-h-0 max-sm:min-w-0 max-sm:flex-1 max-sm:flex-col max-sm:p-0"
           }
         >
           {historyOpen ? (
@@ -1113,9 +1184,48 @@ export default function RecipeChat({
               {!popupLayout ? (
                 <ChatThreadHeader
                   disabled={isSubmitting || isLoadingThread}
+                  leadingPhoneAction={
+                    <Button
+                      aria-label={t("chatbotTest.backToAccount")}
+                      asChild
+                      size="icon-xs"
+                      title={t("chatbotTest.backToAccount")}
+                      variant="ghost"
+                    >
+                      <Link href="/account">
+                        <ArrowLeft />
+                      </Link>
+                    </Button>
+                  }
                   onHistory={() => setHistoryOpen((open) => !open)}
                   onNew={startNewConversation}
                   title={activeConversationTitle}
+                  trailingPhoneActions={
+                    <>
+                      <Button
+                        aria-label={t("chatbotTest.saveDraft")}
+                        disabled={!activeRecipeData}
+                        onClick={openSaveDraft}
+                        size="icon-xs"
+                        title={t("chatbotTest.saveDraft")}
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Save />
+                      </Button>
+                      <Button
+                        aria-label={t("chatbotTest.viewCredits")}
+                        asChild
+                        size="icon-xs"
+                        title={t("chatbotTest.viewCredits")}
+                        variant="ghost"
+                      >
+                        <Link href="/account/chat?tab=credits">
+                          <WalletCards />
+                        </Link>
+                      </Button>
+                    </>
+                  }
                   t={t}
                 />
               ) : null}
@@ -1124,7 +1234,7 @@ export default function RecipeChat({
                   className={
                     popupLayout
                       ? "min-h-0 flex-1 rounded-lg border bg-secondary p-2"
-                      : "h-[55vh] min-h-[18rem] rounded-lg border bg-secondary p-2"
+                      : "rounded-lg border bg-secondary p-2 max-sm:min-h-0 max-sm:flex-1 sm:h-[55vh] sm:min-h-[18rem]"
                   }
                 >
                   <MessageScrollerViewport>
@@ -1238,10 +1348,29 @@ export default function RecipeChat({
                                     </MessageFooter>
                                   ) : message.status === "failed" ||
                                     message.status === "cancelled" ? (
-                                    <MessageFooter>
+                                    <MessageFooter className="flex-wrap gap-x-2 gap-y-1">
                                       <span className="text-destructive">
                                         {t("chatbotTest.interruptedMessage")}
                                       </span>
+                                      {message.id === retryableMessageId ? (
+                                        <Button
+                                          aria-label={t(
+                                            "chatbotTest.retryMessage",
+                                          )}
+                                          className="h-7 px-2"
+                                          disabled={!canRetry}
+                                          onClick={() =>
+                                            void retryMessage(message)
+                                          }
+                                          size="sm"
+                                          title={t("chatbotTest.retryMessage")}
+                                          type="button"
+                                          variant="outline"
+                                        >
+                                          <RotateCcw />
+                                          {t("chatbotTest.retry")}
+                                        </Button>
+                                      ) : null}
                                     </MessageFooter>
                                   ) : null}
                                   {proposal ? (
@@ -1312,7 +1441,9 @@ export default function RecipeChat({
                 </div>
               ) : (
                 <form
-                  className={popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3"}
+                  className={
+                    popupLayout ? "mt-3 space-y-3" : "mt-5 space-y-3 max-sm:mt-2"
+                  }
                   onSubmit={onSubmit}
                 >
                   <Textarea
@@ -1329,7 +1460,7 @@ export default function RecipeChat({
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       {!popupLayout ? (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground max-sm:hidden">
                           {t("chatbotTest.localOnly")}
                         </p>
                       ) : null}
@@ -1440,7 +1571,7 @@ export default function RecipeChat({
       </Card>
 
       {!popupLayout && showAdminDiagnostics ? (
-        <details className="mt-4 rounded-lg border bg-card px-4 py-3">
+        <details className="mt-4 rounded-lg border bg-card px-4 py-3 max-sm:hidden">
           <summary className="cursor-pointer text-sm font-medium">
             {t("chatbotTest.evaluatorDetails")}
           </summary>
@@ -1689,23 +1820,35 @@ function creditErrorMessage(
     : t("chatbotTest.errors.insufficientCredits");
 }
 
+/**
+ * The thread title and actions above the account-page transcript. On phones,
+ * where that page is full screen, it is the top bar and also carries the way
+ * back to the account and the actions the page header would show.
+ */
 function ChatThreadHeader({
   disabled,
+  leadingPhoneAction,
   onHistory,
   onNew,
   title,
+  trailingPhoneActions,
   t,
 }: {
   disabled: boolean;
+  leadingPhoneAction?: ReactNode;
   onHistory: () => void;
   onNew: () => void;
   title: string;
+  trailingPhoneActions?: ReactNode;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   return (
-    <div className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2">
-      <div className="min-w-0">
-        <p className="text-xs text-muted-foreground">
+    <div className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2 max-sm:mb-2 max-sm:gap-1 max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:px-0 max-sm:py-0">
+      {leadingPhoneAction ? (
+        <div className="-ml-1 shrink-0 sm:hidden">{leadingPhoneAction}</div>
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground max-sm:hidden">
           {t("chatbotTest.currentChatLabel")}
         </p>
         <p className="truncate text-sm font-medium" title={title}>
@@ -1735,6 +1878,11 @@ function ChatThreadHeader({
         >
           <Plus />
         </Button>
+        {trailingPhoneActions ? (
+          <div className="flex items-center gap-1 sm:hidden">
+            {trailingPhoneActions}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -1801,7 +1949,7 @@ function ChatHistoryPanel({
       className={
         popupLayout
           ? "flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
-          : "flex h-[55vh] min-h-[18rem] flex-col"
+          : "flex flex-col max-sm:min-h-0 max-sm:flex-1 sm:h-[55vh] sm:min-h-[18rem]"
       }
     >
       <div className="border-b pb-3">
