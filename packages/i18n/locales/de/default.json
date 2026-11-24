@@ -2164,7 +2164,7 @@
         },
         "inputLabel": "Chatbot-Nachricht",
         "availableCredits": "Verfügbar: {{credits}} Credits.",
-        "interruptedMessage": "Diese Nachricht wurde nicht abgeschlossen. Sende sie erneut, um es noch einmal zu versuchen.",
+        "interruptedMessage": "Diese Nachricht wurde nicht vollständig gesendet.",
         "pendingMessage": "Diese Nachricht wird noch verarbeitet.",
         "paymentReviewDescription": "Der Chat ist vorübergehend nicht verfügbar, während eine Zahlungsanpassung geprüft wird.",
         "paymentReviewSupport": "Wenn du Hilfe bei einem Kauf oder einer Rückerstattung brauchst, kontaktiere bitte den MeadTools-Support.",
@@ -2247,7 +2247,10 @@
         "progressField_nutrients": "Nährstoffplan",
         "progressField_ingredient_amount": "Zutatenmenge",
         "progressField_additive_amount": "Zusatzstoffmenge",
-        "attachmentsComingSoon": "Anhänge folgen in Kürze."
+        "attachmentsComingSoon": "Anhänge folgen in Kürze.",
+        "retry": "Erneut versuchen",
+        "retryMessage": "Diese Nachricht erneut senden",
+        "backToAccount": "Zurück zum Konto"
     },
     "chatbotPopup": {
         "collapse": "Zurück zur Popup-Größe",
