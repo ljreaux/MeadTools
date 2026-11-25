@@ -40,3 +40,18 @@ The initial web report showed zero nutrient additions because it captured the
 plan before automatic fields had synced. The report now resolves the same
 effective inputs as Mobile. A regression test covers automatic calculation
 and preserves a manually selected zero dose.
+
+## Recipe covers ([#598](https://github.com/ljreaux/MeadTools/issues/598))
+
+November 25, 2026. Used the iPhone 18 Pro Simulator (iOS 27.0), the existing
+local test account and database, and a loopback fixture for the cover metadata
+and image response. Local object storage was unavailable.
+
+| Check | Result |
+| --- | --- |
+| Owned private recipe with a cover | Pass with fixture. Metric Traditional Test displayed its image above the estimates. The fixture checked recipe ownership against the local backend. |
+| Failed cover download | Pass with fixture. Key Lime Pie displayed a retry action and kept its recipe details readable. Retry requested a fresh image URL. |
+| Recipe without a cover | Pass. Mead Wiki Simple Trad Metric showed its estimates immediately after its visibility label. |
+| Real object storage and Android device | Pending. |
+
+The fixture wrote no recipes or images to the local database or object storage.

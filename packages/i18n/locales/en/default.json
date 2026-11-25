@@ -3652,6 +3652,7 @@
   },
   "coverImages": {
     "title": "Cover image",
+    "loadError": "Could not load the cover image.",
     "add": "Add cover image",
     "change": "Change cover image",
     "view": "View cover image",

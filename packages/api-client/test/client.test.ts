@@ -513,3 +513,49 @@ test("reads a recipe and deletes a brew through the shared contract", async () =
   bodies["DELETE https://meadtools.test/api/brews/brew%2F1"] = { message: "ok" };
   await assert.rejects(client.deleteBrew("brew/1"), MeadToolsContractError);
 });
+
+test("reads recipe covers and temporary photo access through authenticated endpoints", async () => {
+  const imageId = "20000000-0000-4000-8000-000000000001";
+  const image = {
+    id: imageId,
+    caption: "Recipe cover",
+    entry_id: null,
+    entry_title: null,
+    entry_datetime: null,
+    entry_hidden: false,
+    width: 800,
+    height: 450,
+    size_bytes: 1200,
+    created_at: "2026-11-25T00:00:00.000Z"
+  };
+  const access = {
+    url: "https://storage.example.test/cover.webp",
+    expires_at: "2026-11-25T00:01:00.000Z"
+  };
+  const paths: string[] = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      assert.equal(init.method, "GET");
+      const path = new URL(url).pathname + new URL(url).search;
+      paths.push(path);
+      const body = path === "/api/recipes/7/cover"
+        ? { image, can_set: false }
+        : path === "/api/recipes/8/cover"
+          ? { image: null, can_set: false }
+          : access;
+      return { ok: true, status: 200, json: async () => body };
+    }
+  });
+
+  assert.deepEqual(await client.getRecipeCover(7), image);
+  assert.equal(await client.getRecipeCover(8), null);
+  assert.deepEqual(await client.getRecipeImageAccess(7, imageId), access);
+  assert.deepEqual(paths, [
+    "/api/recipes/7/cover",
+    "/api/recipes/8/cover",
+    `/api/recipes/7/images/${imageId}`
+  ]);
+});

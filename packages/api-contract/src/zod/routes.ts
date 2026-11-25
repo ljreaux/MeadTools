@@ -120,6 +120,7 @@ export const recipeDetailResponseSchema = z.object({
   private: z.boolean(),
   lastActivityEmailAt: z.string().nullable(),
   activityEmailsEnabled: z.boolean(),
+  cover_image_id: z.string().uuid().nullable().optional(),
   users: recipeOwnerResponseSchema.nullable(),
   ratings: z.array(recipeRatingResponseSchema),
   public_username: z.string().nullable(),

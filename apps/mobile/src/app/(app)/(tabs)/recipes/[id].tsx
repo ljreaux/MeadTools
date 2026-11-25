@@ -7,6 +7,7 @@ import { calculateRecipeDerivedState, type RecipeDerivedState } from "@meadtools
 import { parseNumber } from "@meadtools/core/numeric";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 
+import { RecipeCover } from "@/components/recipe-cover";
 import { RecipePlan } from "@/components/recipe-plan";
 import { RecipeLoadStatus, useRecipeStyles } from "@/components/recipe-view";
 import { useApiClient, useSession } from "@/providers/app-providers";
@@ -47,6 +48,13 @@ export default function RecipeDetailScreen() {
           <Text style={styles.muted}>
             {t(ownedRecipe.private ? "brews.visibility.private" : "brews.visibility.public")}
           </Text>
+          {ownedRecipe.cover_image_id !== null ? (
+            <RecipeCover
+              key={`${ownedRecipe.id}:${ownedRecipe.cover_image_id ?? ""}`}
+              recipeId={ownedRecipe.id}
+              coverId={ownedRecipe.cover_image_id}
+            />
+          ) : null}
           <RecipeContents storedData={ownedRecipe.dataV2} />
         </>
       ) : (
