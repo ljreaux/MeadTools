@@ -2254,7 +2254,8 @@
     "finishedGravity": "Estimated finished gravity",
     "estimatedAbv": "Estimated ABV",
     "bottlingVolume": "Estimated bottling volume",
-    "unnamedIngredient": "Unnamed ingredient"
+    "unnamedIngredient": "Unnamed ingredient",
+    "nutrients": "Nutrients"
   },
   "mobileChartMessage": "Please use landscape or a larger device to view this chart.",
   "molasses": "Molasses",

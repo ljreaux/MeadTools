@@ -22,3 +22,21 @@ report in the desktop browser.
 
 Mobile lint, typecheck, and tests passed (112 tests). The issue records
 successful iOS and Android exports.
+
+## Nutrients, stabilizers, additives, and notes ([#597](https://github.com/ljreaux/MeadTools/issues/597))
+
+November 25, 2026. Used the native Expo development client on iPhone 18 Pro
+Simulator (iOS 27.0) and the existing local database. No new test records were
+needed.
+
+| Check | Result |
+| --- | --- |
+| Key Lime Pie nutrient plan | Pass. Mobile and the web report showed three TOSNA additions of 4.62 g Fermaid O each, 13.86 g total, and 0 ppm remaining YAN. Both also showed the same yeast and Go-Ferm quantities. |
+| Key Lime Pie stabilizers, additives, and notes | Pass. The sulfite, Campden alternative, and sorbate quantities matched, as did all five additives and the separate primary and secondary notes. |
+| Empty sections | Pass. Mead Wiki Simple Trad Metric omitted empty additive and secondary notes sections. |
+| Android device or emulator | Pending a later Android pass. |
+
+The initial web report showed zero nutrient additions because it captured the
+plan before automatic fields had synced. The report now resolves the same
+effective inputs as Mobile. A regression test covers automatic calculation
+and preserves a manually selected zero dose.

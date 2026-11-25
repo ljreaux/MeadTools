@@ -2,7 +2,11 @@ import type { TFunction, i18n as I18n } from "i18next";
 import lodash from "lodash";
 
 import { calcSb } from "@meadtools/core/gravity";
-import type { useNutrients } from "@/components/providers/NutrientProvider";
+import {
+  calculateEffectiveNutrientData,
+  calculateNutrientDerivedState,
+  type NutrientData
+} from "@meadtools/core/nutrients";
 import type { useRecipe } from "@/components/providers/RecipeProvider";
 import {
   formatSgAsBrixDisplay,
@@ -11,12 +15,17 @@ import {
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { ORDER, type NutrientKey } from "@/types/nutrientData";
 
-type RecipeState = ReturnType<typeof useRecipe>;
-type NutrientState = ReturnType<typeof useNutrients>;
+type RecipeContext = ReturnType<typeof useRecipe>;
+type RecipeState = Pick<RecipeContext, "data" | "derived"> & {
+  stabilizers: Pick<
+    RecipeContext["stabilizers"],
+    "addingStabilizers" | "stabilizerType" | "sulfite" | "campden" | "sorbate"
+  >;
+};
 
 type RecipePdfModelInput = {
   recipe: RecipeState;
-  nutrients: NutrientState;
+  nutrientData: NutrientData;
   yeast?: any;
   title?: string;
   publicUsername?: string;
@@ -127,7 +136,7 @@ export function formatRecipePdfNumber(
 
 export function createRecipePdfModel({
   recipe,
-  nutrients,
+  nutrientData,
   yeast,
   title,
   publicUsername,
@@ -136,6 +145,9 @@ export function createRecipePdfModel({
 }: RecipePdfModelInput): RecipePdfModel {
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const unitDefaults = recipe.data.unitDefaults;
+  // The PDF captures its first model before the provider syncs automatic fields.
+  const effectiveNutrients = calculateEffectiveNutrientData(nutrientData);
+  const derivedNutrients = calculateNutrientDerivedState(effectiveNutrients);
   const isMetric =
     unitDefaults.weight === "kg" ||
     unitDefaults.weight === "g" ||
@@ -174,11 +186,11 @@ export function createRecipePdfModel({
       ? `${t("PDF.tempRange")} ${lowTemp}-${highTemp}°${isMetric ? "C" : "F"}`
       : "";
 
-  const yeastName = yeast?.name ?? nutrients.data.selected.yeastStrain;
+  const yeastName = yeast?.name ?? effectiveNutrients.selected.yeastStrain;
   const yeastBrand =
-    nutrients.data.selected.yeastBrand &&
-    nutrients.data.selected.yeastBrand !== "Other"
-      ? nutrients.data.selected.yeastBrand
+    effectiveNutrients.selected.yeastBrand &&
+    effectiveNutrients.selected.yeastBrand !== "Other"
+      ? effectiveNutrients.selected.yeastBrand
       : "";
   const yeastDescription = [yeastBrand, yeastName].filter(Boolean).join(" ");
 
@@ -188,7 +200,7 @@ export function createRecipePdfModel({
     "sterol-flash": "nuteResults.gfTypes.gfSterol",
     none: "nuteResults.gfTypes.none"
   };
-  const goFermType = nutrients.data.inputs.goFermType;
+  const goFermType = effectiveNutrients.inputs.goFermType;
   const goFermLabel = t(goFermKeys[goFermType] ?? goFermType);
 
   const ingredientRows = (recipe.data.ingredients ?? [])
@@ -242,11 +254,11 @@ export function createRecipePdfModel({
       })
     );
 
-  const enabledNutrients = nutrients.data.selected.selectedNutrients;
-  const perAddition = nutrients.derived.nutrientAdditions.perAddition;
-  const totalGrams = nutrients.derived.nutrientAdditions.totalGrams;
+  const enabledNutrients = effectiveNutrients.selected.selectedNutrients;
+  const perAddition = derivedNutrients.nutrientAdditions.perAddition;
+  const totalGrams = derivedNutrients.nutrientAdditions.totalGrams;
   const otherName =
-    nutrients.data.settings.other?.name?.trim() || t("other.label");
+    effectiveNutrients.settings.other?.name?.trim() || t("other.label");
   const nutrientSuffix: Record<NutrientKey, string> = {
     fermO: "g Fermaid O",
     fermK: "g Fermaid K",
@@ -285,18 +297,18 @@ export function createRecipePdfModel({
     overview: {
       totalVolume: [
         `${formatQuantity(recipe.derived.totalVolume)} ${unitDefaults.volume}`,
-        nutrients.derived.goFerm.amount > 0
+        derivedNutrients.goFerm.amount > 0
           ? `${formatQuantity(
-              nutrients.derived.goFerm.amount,
+              derivedNutrients.goFerm.amount,
               2
             )}g ${goFermLabel} ${t("PDF.with")} ${formatQuantity(
-              nutrients.derived.goFerm.water,
+              derivedNutrients.goFerm.water,
               2
             )}ml ${t("water")}`
           : ""
       ],
       yeast: [
-        `${formatDose(nutrients.data.inputs.yeastAmountG || "0")}g ${t(
+        `${formatDose(effectiveNutrients.inputs.yeastAmountG || "0")}g ${t(
           "PDF.of"
         )} ${yeastDescription}`.trim(),
         temperatureRange
@@ -397,9 +409,9 @@ export function createRecipePdfModel({
       }
     ],
     nutrients: {
-      protocol: t(`nuteSchedules.${nutrients.data.selected.schedule}`),
+      protocol: t(`nuteSchedules.${effectiveNutrients.selected.schedule}`),
       numberOfAdditions: formatRecipePdfNumber(
-        nutrients.data.inputs.numberOfAdditions || "1",
+        effectiveNutrients.inputs.numberOfAdditions || "1",
         0,
         locale,
         { minimum: 1 }
@@ -409,7 +421,7 @@ export function createRecipePdfModel({
     },
     stabilizers,
     remainingYan: `${formatRecipePdfNumber(
-      nutrients.derived.remainingYanPpm,
+      derivedNutrients.remainingYanPpm,
       0,
       locale,
       { minimum: 0 }

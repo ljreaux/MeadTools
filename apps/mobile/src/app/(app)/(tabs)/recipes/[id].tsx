@@ -3,10 +3,11 @@ import { useLocalSearchParams } from "expo-router";
 import { ScrollView, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { calculateRecipeDerivedState } from "@meadtools/core/derived";
+import { calculateRecipeDerivedState, type RecipeDerivedState } from "@meadtools/core/derived";
 import { parseNumber } from "@meadtools/core/numeric";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 
+import { RecipePlan } from "@/components/recipe-plan";
 import { RecipeLoadStatus, useRecipeStyles } from "@/components/recipe-view";
 import { useApiClient, useSession } from "@/providers/app-providers";
 import {
@@ -73,9 +74,10 @@ function RecipeContents({ storedData }: { storedData: unknown }) {
   }
 
   const data = parsed.data;
+  const derived = calculateRecipeDerivedState(data);
   return (
     <>
-      <RecipeTargets data={data} />
+      <RecipeTargets data={data} derived={derived} />
       <RecipeListSection
         title={t("PDF.primary")}
         ingredients={data.ingredients.filter((line) => !line.secondary)}
@@ -84,14 +86,14 @@ function RecipeContents({ storedData }: { storedData: unknown }) {
         title={t("PDF.secondary")}
         ingredients={data.ingredients.filter((line) => line.secondary)}
       />
+      <RecipePlan data={data} recipe={derived} />
     </>
   );
 }
 
-function RecipeTargets({ data }: { data: RecipeDataV2 }) {
+function RecipeTargets({ data, derived }: { data: RecipeDataV2; derived: RecipeDerivedState }) {
   const { t, i18n } = useTranslation();
   const { styles } = useRecipeStyles();
-  const derived = calculateRecipeDerivedState(data);
   const fg = parseNumber(data.fg);
   const hasPrimaryVolume = Number.isFinite(derived.primaryVolumeL) && derived.primaryVolumeL > 0;
   const hasFinishedVolume = Number.isFinite(derived.bottlingVolume) && derived.bottlingVolume > 0;
