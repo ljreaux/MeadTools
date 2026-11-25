@@ -18,6 +18,8 @@ import {
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   getRecipeResponseSchema,
+  recipePdfResponseSchema,
+  type RecipePdfQueryParams,
   inventoryOverviewResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
@@ -286,6 +288,18 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.recipes;
+    },
+
+    async getRecipePdf(recipeId: number, locale: RecipePdfQueryParams["locale"]) {
+      const id = encodeURIComponent(String(recipeId));
+      const body = await request(`/api/recipes/${id}/pdf?locale=${encodeURIComponent(locale)}`, {
+        method: "GET"
+      });
+      const parsed = recipePdfResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe PDF response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
     },
 
     async getRecipeCosts(recipeId: number) {

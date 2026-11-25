@@ -126,6 +126,13 @@ export const recipeDetailResponseSchema = z.object({
   public_username: z.string().nullable(),
   averageRating: z.number().nullable(),
 });
+export const recipePdfQueryParamsSchema = z.object({
+  locale: z.enum(["en", "de"]).default("en"),
+});
+export const recipePdfResponseSchema = z.object({
+  filename: z.string().regex(/^[a-z0-9-]+\.pdf$/),
+  base64: z.string().min(1).base64(),
+});
 export const getRecipeResponseSchema = z.object({
   recipe: recipeDetailResponseSchema,
 });

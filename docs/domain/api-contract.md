@@ -83,6 +83,12 @@ Contract/OpenAPI generation and API-contract checks verify the route wiring.
 
 ## Public reference scope
 
+The Mobile recipe print and share flow uses the owner-only
+`GET /api/recipes/{id}/pdf?locale=en|de` route. It renders the saved recipe with
+the web report layout and returns a filename and base64 PDF for native file
+handling, including for privately saved recipes. The route is excluded from the
+public reference because the base64 transport serves the Mobile app.
+
 The public API reference loads `apps/web/public/openapi.json`.
 `apps/web/next.openapi.json` excludes staff administration, scheduled jobs,
 payment-provider webhooks, browser sign-in plumbing, hosted chat UI routes, and

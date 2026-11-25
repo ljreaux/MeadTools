@@ -127,6 +127,7 @@
     "/account/premium/stripe/*",
     "/account/premium/mcp/*",
     "/account/release-emails",
+    "/recipes/{id}/pdf",
     "/release-emails/unsubscribe"
   ],
   "debug": false

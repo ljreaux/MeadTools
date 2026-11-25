@@ -1,13 +1,14 @@
 import type { TFunction, i18n as I18n } from "i18next";
 import lodash from "lodash";
 
+import type { RecipeDerivedState, RecipeStabilizerResults } from "@meadtools/core/derived";
 import { calcSb } from "@meadtools/core/gravity";
+import type { RecipeDataV2 } from "@meadtools/schemas";
 import {
   calculateEffectiveNutrientData,
   calculateNutrientDerivedState,
   type NutrientData
 } from "@meadtools/core/nutrients";
-import type { useRecipe } from "@/components/providers/RecipeProvider";
 import {
   formatSgAsBrixDisplay,
   formatSgDisplay
@@ -15,18 +16,24 @@ import {
 import { normalizeNumberString, parseNumber } from "@/lib/utils/validateInput";
 import { ORDER, type NutrientKey } from "@/types/nutrientData";
 
-type RecipeContext = ReturnType<typeof useRecipe>;
-type RecipeState = Pick<RecipeContext, "data" | "derived"> & {
-  stabilizers: Pick<
-    RecipeContext["stabilizers"],
-    "addingStabilizers" | "stabilizerType" | "sulfite" | "campden" | "sorbate"
-  >;
+type RecipeState = {
+  data: Pick<RecipeDataV2, "unitDefaults" | "ingredients" | "fg" | "additives" | "notes" | "lossAdjustment">;
+  derived: RecipeDerivedState;
+  stabilizers: RecipeStabilizerResults & {
+    addingStabilizers: boolean;
+    stabilizerType: RecipeDataV2["stabilizers"]["type"];
+  };
 };
 
 type RecipePdfModelInput = {
   recipe: RecipeState;
   nutrientData: NutrientData;
-  yeast?: any;
+  yeast?: {
+    name: string;
+    low_temp?: unknown;
+    high_temp?: unknown;
+    tolerance?: unknown;
+  };
   title?: string;
   publicUsername?: string;
   t: TFunction;

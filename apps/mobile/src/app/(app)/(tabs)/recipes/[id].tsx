@@ -9,6 +9,7 @@ import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 
 import { RecipeCosts } from "@/components/recipe-costs";
 import { RecipeCover } from "@/components/recipe-cover";
+import { RecipePdfActions } from "@/components/recipe-pdf-actions";
 import { RecipePlan } from "@/components/recipe-plan";
 import { RecipeLoadStatus, useRecipeStyles } from "@/components/recipe-view";
 import { useApiClient, useSession } from "@/providers/app-providers";
@@ -86,6 +87,7 @@ function RecipeContents({ storedData, recipeId }: { storedData: unknown; recipeI
   const derived = calculateRecipeDerivedState(data);
   return (
     <>
+      <RecipePdfActions recipeId={recipeId} />
       <RecipeTargets data={data} derived={derived} />
       <RecipeListSection
         title={t("PDF.primary")}

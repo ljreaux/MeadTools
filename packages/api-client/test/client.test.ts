@@ -597,3 +597,23 @@ test("uses the signed-in recipe cost estimate and rejects a public summary respo
   assert.equal((await client.getRecipeCosts(42)).can_manage, false);
   await assert.rejects(() => client.getRecipeCosts(42), MeadToolsContractError);
 });
+
+test("downloads a saved recipe PDF with owner authentication and validates the filename", async () => {
+  const base64 = Buffer.from("%PDF-1.3\n").toString("base64");
+  const payloads = [
+    { filename: "key-lime-pie.pdf", base64 },
+    { filename: "../key-lime-pie.pdf", base64 }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(url, "https://meadtools.test/api/recipes/42/pdf?locale=de");
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      return { ok: true, status: 200, json: async () => payloads.shift() };
+    }
+  });
+  assert.deepEqual(await client.getRecipePdf(42, "de"), { filename: "key-lime-pie.pdf", base64 });
+  await assert.rejects(() => client.getRecipePdf(42, "de"), MeadToolsContractError);
+});

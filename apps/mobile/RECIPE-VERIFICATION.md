@@ -71,3 +71,19 @@ fixture changed only the access flag in the existing web API response.
 | Active Premium account and Android device | Pending. |
 
 The fixture wrote no stock, recipes, or billing data.
+
+## View, print, and share ([#600](https://github.com/ljreaux/MeadTools/issues/600))
+
+November 25, 2026. Rebuilt the iPhone 18 Pro Simulator development client
+(iOS 27.0) with the native PDF viewer and Expo Print and Sharing. Used the existing local account and
+database.
+
+| Check | Result |
+| --- | --- |
+| Saved recipe PDF | Pass. Rendered both pages of Metric Traditional Test. The report used the web layout, with separate fermentation and backsweetened gravities, ingredients grouped by stage, nutrients, stabilizers, additives, and notes. |
+| Owner-only access | Pass. The endpoint returned the PDF to the owner, 404 to a different account, and 401 without authentication. The recipe remained private. |
+| In-app PDF viewer | Pass. View PDF opened both pages. Scrolling reached the secondary ingredients and notes, double-tap zoomed the page, and Close returned to the three recipe actions. |
+| Native print | Pass. Print opened the iOS sheet with both pages visible. Dismissing it returned to the recipe and restored both actions without an error. No printer was selected. |
+| Native share | Pass. The iOS share sheet identified the 49 KB PDF by its filename and showed a page preview. Dismissing it restored both actions. No share destination was selected. |
+| iOS and Android JavaScript exports | Pass. |
+| Android device and hosted Preview | Pending. |

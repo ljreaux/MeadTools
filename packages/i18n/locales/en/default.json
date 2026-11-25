@@ -2255,7 +2255,13 @@
     "estimatedAbv": "Estimated ABV",
     "bottlingVolume": "Estimated bottling volume",
     "unnamedIngredient": "Unnamed ingredient",
-    "nutrients": "Nutrients"
+    "nutrients": "Nutrients",
+    "viewPdf": "View PDF",
+    "printPdf": "Print recipe",
+    "sharePdf": "Share PDF",
+    "sharePdfUnavailable": "File sharing is unavailable on this device.",
+    "printPdfError": "Could not print the recipe PDF.",
+    "sharePdfError": "Could not share the recipe PDF."
   },
   "mobileChartMessage": "Please use landscape or a larger device to view this chart.",
   "molasses": "Molasses",
@@ -2416,6 +2422,7 @@
     "loadingPreview": "Loading PDF preview",
     "previewErrorDescription": "The PDF is ready to download, but the preview could not be displayed.",
     "previewErrorTitle": "Could not display the PDF preview",
+    "closePreview": "Close",
     "remaining": "Remaining YAN:",
     "retry": "Try again",
     "secondary": "Secondary Ingredients",
