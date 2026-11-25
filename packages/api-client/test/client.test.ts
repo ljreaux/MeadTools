@@ -559,3 +559,41 @@ test("reads recipe covers and temporary photo access through authenticated endpo
     `/api/recipes/7/images/${imageId}`
   ]);
 });
+
+test("uses the signed-in recipe cost estimate and rejects a public summary response", async () => {
+  const estimate = {
+    basis: "recipe_estimate",
+    totals: [{ currency: "USD", amount: 8.75 }],
+    complete: false,
+    mixed_currencies: false,
+    per_liter: 2.5,
+    volume_liters: 3.5,
+    lines: [],
+    short_lines: 0,
+    excluded_lines: 0,
+    missing: { unpriced: 0, unmatched: 1, ambiguous: 0, incompatible: 0 }
+  };
+  const payloads = [
+    { can_manage: true, share_cost_summary: false, estimate },
+    { can_manage: false, share_cost_summary: false, estimate },
+    { summary: null }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(url, "https://meadtools.test/api/recipes/42/costs");
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      return { ok: true, status: 200, json: async () => payloads.shift() };
+    }
+  });
+
+  assert.deepEqual(await client.getRecipeCosts(42), {
+    can_manage: true,
+    share_cost_summary: false,
+    estimate
+  });
+  assert.equal((await client.getRecipeCosts(42)).can_manage, false);
+  await assert.rejects(() => client.getRecipeCosts(42), MeadToolsContractError);
+});

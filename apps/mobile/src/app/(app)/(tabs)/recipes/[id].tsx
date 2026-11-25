@@ -7,6 +7,7 @@ import { calculateRecipeDerivedState, type RecipeDerivedState } from "@meadtools
 import { parseNumber } from "@meadtools/core/numeric";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 
+import { RecipeCosts } from "@/components/recipe-costs";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipePlan } from "@/components/recipe-plan";
 import { RecipeLoadStatus, useRecipeStyles } from "@/components/recipe-view";
@@ -55,7 +56,7 @@ export default function RecipeDetailScreen() {
               coverId={ownedRecipe.cover_image_id}
             />
           ) : null}
-          <RecipeContents storedData={ownedRecipe.dataV2} />
+          <RecipeContents storedData={ownedRecipe.dataV2} recipeId={ownedRecipe.id} />
         </>
       ) : (
         <RecipeLoadStatus
@@ -69,7 +70,7 @@ export default function RecipeDetailScreen() {
   );
 }
 
-function RecipeContents({ storedData }: { storedData: unknown }) {
+function RecipeContents({ storedData, recipeId }: { storedData: unknown; recipeId: number }) {
   const { t } = useTranslation();
   const { styles } = useRecipeStyles();
   const parsed = recipeDataV2Schema.safeParse(storedData);
@@ -95,6 +96,7 @@ function RecipeContents({ storedData }: { storedData: unknown }) {
         ingredients={data.ingredients.filter((line) => line.secondary)}
       />
       <RecipePlan data={data} recipe={derived} />
+      <RecipeCosts recipeId={recipeId} />
     </>
   );
 }

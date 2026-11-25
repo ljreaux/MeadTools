@@ -55,3 +55,19 @@ and image response. Local object storage was unavailable.
 | Real object storage and Android device | Pending. |
 
 The fixture wrote no recipes or images to the local database or object storage.
+
+## Premium recipe costs ([#599](https://github.com/ljreaux/MeadTools/issues/599))
+
+November 25, 2026. Used the iPhone 18 Pro Simulator (iOS 27.0), the existing
+local test account, and the local development database. The test account
+lacked Premium access. To inspect the Premium view, a temporary loopback
+fixture changed only the access flag in the existing web API response.
+
+| Check | Result |
+| --- | --- |
+| Account without Premium | Pass. Key Lime Pie showed the Premium message and hid prices, even though the web service returned priced data. |
+| Complete estimate | Pass with fixture. Key Lime Pie showed $77.81, $3.71 per liter, and $14.05 per US gallon, matching the web service. |
+| Incomplete estimate | Pass with fixture. Metric Traditional Test showed a $22.26 partial total and explained that some ingredients had no price or match. The web service returned the same total and completeness. |
+| Active Premium account and Android device | Pending. |
+
+The fixture wrote no stock, recipes, or billing data.

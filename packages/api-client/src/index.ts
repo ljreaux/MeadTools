@@ -1,3 +1,4 @@
+import { recipeCostResponseSchema } from "@meadtools/api-contract/inventory-costs";
 import {
   brewImageAccessResponseSchema,
   coverImageResponseSchema
@@ -285,6 +286,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.recipes;
+    },
+
+    async getRecipeCosts(recipeId: number) {
+      const id = encodeURIComponent(String(recipeId));
+      const body = await request(`/api/recipes/${id}/costs`, { method: "GET" });
+      const parsed = recipeCostResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe cost response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
     },
 
     async getRecipeCover(recipeId: number) {
