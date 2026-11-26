@@ -2,6 +2,7 @@ import type {
   CreateInventoryStockRequestBody,
   InventoryStockHistoryResponse,
   InventoryStockItem,
+  InventoryStorageSource,
   UpdateInventoryStockRequestBody
 } from "@meadtools/api-contract";
 import {
@@ -23,6 +24,7 @@ export type StockDraft = {
   amount: string;
   notes: string;
   catalogReference: CatalogReference | null;
+  storageSource?: InventoryStorageSource;
 };
 
 export type StockCommand =
@@ -99,6 +101,9 @@ export function buildStockCommand(
   return {
     kind: "update",
     stockId: item.id,
-    input: { action, operation_id: operationId, quantity, expected_balance: item.quantity, note: notes }
+    input: {
+      action, operation_id: operationId, quantity, expected_balance: item.quantity, note: notes,
+      ...(action === "manual_use" && draft.storageSource !== undefined ? { storage_source: draft.storageSource } : {})
+    }
   };
 }

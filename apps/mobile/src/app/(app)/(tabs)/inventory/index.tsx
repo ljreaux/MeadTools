@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { CalculatorScreen } from "@/components/calculator-ui";
@@ -40,6 +40,10 @@ export default function InventoryScreen() {
         </StockCard>
       ) : data?.can_manage ? (
         <>
+          <View style={styles.row}>
+            <StockButton label={t("inventory.meads.title")} onPress={() => router.push("/inventory/meads")} />
+            <StockButton label={t("inventory.organization.manage")} onPress={() => router.push("/inventory/organization")} />
+          </View>
           <StockButton
             label={t("inventory.add")}
             onPress={() => router.push({ pathname: "/inventory/[stockId]", params: { stockId: "new" } })}

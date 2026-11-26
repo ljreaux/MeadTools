@@ -1,5 +1,13 @@
 import {
   accountInfoResponseSchema,
+  createFinishedMeadRequestBodySchema,
+  finishedMeadHistoryResponseSchema,
+  finishedMeadMutationResponseSchema,
+  inventoryOrganizationMutationResponseSchema,
+  inventoryStorageHistoryResponseSchema,
+  updateFinishedMeadRequestBodySchema,
+  updateInventoryOrganizationRequestBodySchema,
+  updateInventoryStorageRequestBodySchema,
   additivesResponseSchema,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
@@ -35,6 +43,14 @@ import {
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type CreateFinishedMeadRequestBody,
+  type FinishedMeadHistoryResponse,
+  type FinishedMeadMutationResponse,
+  type InventoryOrganizationMutationResponse,
+  type InventoryStorageHistoryResponse,
+  type UpdateFinishedMeadRequestBody,
+  type UpdateInventoryOrganizationRequestBody,
+  type UpdateInventoryStorageRequestBody,
   type AdditivesResponse,
   type BrewListItemResponse,
   type BrewResponse,
@@ -172,6 +188,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
     }
 
     return body;
+  }
+
+  function parseInventoryPayload<T>(
+    schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } },
+    value: unknown,
+    label: string
+  ): T {
+    const parsed = schema.safeParse(value);
+    if (!parsed.success) throw new MeadToolsContractError(`${label} does not match the MeadTools API contract`, value);
+    return parsed.data;
   }
 
   return {
@@ -522,6 +548,46 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const parsed = inventoryOrganizationResponseSchema.safeParse(body);
       if (!parsed.success) throw new MeadToolsContractError("Inventory organization does not match the MeadTools API contract", body);
       return parsed.data;
+    },
+
+    async getFinishedMead(meadId: string): Promise<FinishedMeadHistoryResponse> {
+      const body = await request(`/api/account/inventory/meads/${encodeURIComponent(meadId)}`, { method: "GET" });
+      return parseInventoryPayload(finishedMeadHistoryResponseSchema, body, "Finished mead history");
+    },
+
+    async createFinishedMead(input: CreateFinishedMeadRequestBody): Promise<FinishedMeadMutationResponse> {
+      const payload = parseInventoryPayload(createFinishedMeadRequestBodySchema, input, "New finished mead");
+      const body = await request("/api/account/inventory/meads", { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(finishedMeadMutationResponseSchema, body, "Finished mead creation response");
+    },
+
+    async updateFinishedMead(meadId: string, input: UpdateFinishedMeadRequestBody): Promise<FinishedMeadMutationResponse> {
+      const payload = parseInventoryPayload(updateFinishedMeadRequestBodySchema, input, "Finished mead update");
+      const body = await request(`/api/account/inventory/meads/${encodeURIComponent(meadId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(finishedMeadMutationResponseSchema, body, "Finished mead update response");
+    },
+
+    async updateInventoryOrganization(input: UpdateInventoryOrganizationRequestBody): Promise<InventoryOrganizationMutationResponse> {
+      const payload = parseInventoryPayload(updateInventoryOrganizationRequestBodySchema, input, "Inventory organization update");
+      const body = await request("/api/account/inventory/organization", { method: "PATCH", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory organization update response");
+    },
+
+    async getInventoryStorageHistory(stockId: string): Promise<InventoryStorageHistoryResponse> {
+      const body = await request(`/api/account/inventory/storage/${encodeURIComponent(stockId)}`, { method: "GET" });
+      return parseInventoryPayload(inventoryStorageHistoryResponseSchema, body, "Storage history");
+    },
+
+    async updateInventoryStorage(stockId: string, input: UpdateInventoryStorageRequestBody): Promise<InventoryOrganizationMutationResponse> {
+      const payload = parseInventoryPayload(updateInventoryStorageRequestBodySchema, input, "Inventory storage update");
+      const body = await request(`/api/account/inventory/storage/${encodeURIComponent(stockId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory storage update response");
     },
 
     /** The public yeast catalog (no sign-in needed). */

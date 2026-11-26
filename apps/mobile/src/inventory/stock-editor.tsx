@@ -8,6 +8,7 @@ import { quantityUnitSchema, stockInputSchema } from "@meadtools/inventory-domai
 
 import { CalculatorField, Chips } from "@/components/calculator-ui";
 
+import { StorageSourceField } from "./storage-source-field";
 import { StockCatalogField } from "./stock-catalog-field";
 import { buildStockCommand, type StockAction, type StockCommand, type StockDraft } from "./stock-draft";
 import { StockButton, StockCard, StockInput, StockText, useStockStyles } from "./stock-ui";
@@ -148,6 +149,10 @@ export function StockEditor({
             </View>
           ))}
         </StockCard>
+      ) : null}
+      {action === "manual_use" && item ? (
+        <StorageSourceField stockId={item.id} value={draft.storageSource} disabled={disabled}
+          onChange={(storageSource) => setDraft({ ...draft, storageSource })} />
       ) : null}
       <CalculatorField label={notesLabel}>
         <StockInput

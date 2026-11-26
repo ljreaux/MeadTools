@@ -184,6 +184,9 @@ export default function InventoryStockScreen() {
                   disabled={busy || history.isFetching}
                 />
               ))}
+              <StockButton label={t("inventory.organization.organize")}
+                onPress={() => router.push({ pathname: "/inventory/organize/[targetId]", params: { targetId: item.id, kind: "stock", name: item.name } })}
+                disabled={busy} />
               <StockButton label={t("mobileInventory.archive")} onPress={confirmArchive} disabled={busy || history.isFetching} destructive />
             </View>
           )}

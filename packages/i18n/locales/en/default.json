@@ -2227,6 +2227,10 @@
     "archive": "Archive stock",
     "catalogSearch": "Search catalog",
     "catalogLinked": "Catalog item linked",
+    "newBottleSize": "New size",
+    "noCategories": "No categories assigned.",
+    "editCategories": "Edit categories",
+    "editStorage": "Edit storage",
     "retrySame": "The save could not be confirmed. Retry to check or finish the same change."
   },
   "mobileNav": {
