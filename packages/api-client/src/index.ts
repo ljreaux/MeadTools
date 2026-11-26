@@ -10,6 +10,7 @@ import {
   createBrewRequestBodySchema,
   createBrewResponseSchema,
   createBrewEntryResponseSchema,
+  creditBalanceResponseSchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
@@ -17,6 +18,7 @@ import {
   inventoryOverviewResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
+  premiumAccessResponseSchema,
   yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
   updateAccountProfileInputSchema,
@@ -44,6 +46,7 @@ import {
   type CreateBrewEntryRequestBody,
   type CreateBrewRequestBody,
   type CreateBrewResponse,
+  type CreditBalanceResponse,
   type UpdateBrewRequestBody,
   type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
@@ -53,6 +56,7 @@ import {
   type InventoryOverviewResponse,
   type IngredientsResponse,
   type NutrientPresetListResponse,
+  type PremiumAccessResponse,
   type YeastsResponse,
   type UpdateBrewEntryRequestBody,
   type UpdateBrewEntryResponse,
@@ -64,6 +68,17 @@ import {
   type RefreshTokenSuccessResponse,
   type VerifyTokenSuccessResponse
 } from "@meadtools/api-contract";
+
+const premiumStatusFields = {
+  entitled: true,
+  membershipExpired: true,
+  premiumEnabled: true,
+  paidThrough: true,
+  paymentRestricted: true
+} as const;
+
+const premiumStatusSchema = premiumAccessResponseSchema.pick(premiumStatusFields);
+type PremiumStatus = Pick<PremiumAccessResponse, keyof typeof premiumStatusFields>;
 
 export type ApiRequestInit = {
   method: string;
@@ -297,6 +312,26 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const parsed = updateAccountProfileResultSchema.safeParse(body);
       if (!parsed.success) {
         throw new MeadToolsContractError("Invalid account profile update response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getPremiumStatus(): Promise<PremiumStatus> {
+      const body = await request("/api/account/premium", { method: "GET" });
+      const parsed = premiumStatusSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid Premium status response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getCreditBalance(): Promise<CreditBalanceResponse> {
+      const body = await request("/api/account/credits", { method: "GET" });
+      const parsed = creditBalanceResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid credit balance response", parsed.error.issues);
       }
 
       return parsed.data;

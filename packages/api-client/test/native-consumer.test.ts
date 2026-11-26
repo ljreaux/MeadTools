@@ -10,6 +10,57 @@ import {
 
 const clientEntryId = "00000000-0000-4000-8000-000000000001";
 
+test("reads display-only Premium status and prompt credits", async () => {
+  const paidThrough = "2026-12-25T00:00:00.000Z";
+  const free = {
+    entitled: false,
+    membershipExpired: false,
+    premiumEnabled: false,
+    paidThrough: null,
+    paymentRestricted: false
+  };
+  const active = { ...free, entitled: true, premiumEnabled: true, paidThrough };
+  const expired = { ...free, membershipExpired: true };
+  const { membershipExpired: _expiry, ...legacy } = free;
+  const responses = [
+    { path: "/api/account/premium", body: active },
+    { path: "/api/account/premium", body: expired },
+    { path: "/api/account/premium", body: free },
+    { path: "/api/account/premium", body: legacy },
+    { path: "/api/account/premium", body: { ...free, membershipExpired: "yes" } },
+    { path: "/api/account/credits", body: { availableCredits: -17 } },
+    { path: "/api/account/credits", body: { availableCredits: 0 } },
+    { path: "/api/account/credits", body: { availableCredits: 1.5 } }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.example",
+    getAccessToken: () => "access-token",
+    fetch: async (url, init) => {
+      const next = responses.shift();
+      assert.ok(next);
+      assert.equal(url, `https://meadtools.example${next.path}`);
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.authorization, "Bearer access-token");
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ...next.body, monthlyPriceCents: 500, kofiJoinUrl: "https://ko-fi.com/meadtools"
+        })
+      };
+    }
+  });
+
+  for (const status of [active, expired, free, legacy]) {
+    assert.deepEqual(await client.getPremiumStatus(), status);
+  }
+  await assert.rejects(client.getPremiumStatus(), MeadToolsContractError);
+  assert.deepEqual(await client.getCreditBalance(), { availableCredits: -17 });
+  assert.deepEqual(await client.getCreditBalance(), { availableCredits: 0 });
+  await assert.rejects(client.getCreditBalance(), MeadToolsContractError);
+  assert.equal(responses.length, 0);
+});
+
 test("account profile reads only profile fields and patches username and avatar independently", async () => {
   const requests: ApiRequestInit[] = [];
   const user = {

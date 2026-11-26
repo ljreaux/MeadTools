@@ -20,3 +20,27 @@ Mobile tests, lint, and typecheck passed, along with shared API client and API
 contract tests and typechecks and i18n tests. Regenerating the contracts and
 OpenAPI updated the generated types and aliases. The published OpenAPI spec
 stayed the same.
+
+## Premium and credit status (#603) — November 25, 2026
+
+Tested on the iPhone 18 Pro simulator (iOS 27.0) with the Expo development
+client and seeded user in the existing local database. The local web server
+was restarted with Premium access enabled to exercise the active state.
+
+| Check | Result |
+| --- | --- |
+| Active | The restored manual membership showed its local access-through date. |
+| Expired | After temporarily moving the membership end date into the past, **Refresh account status** showed **Your Premium access has expired.** |
+| Free | The same refresh showed **Free account** while the membership was temporarily marked revoked. |
+| Membership recorded, access disabled | Before enabling Premium on the local server, the app showed that benefits were currently unavailable. |
+| Prompt credits | The seeded balance of **1,000** remained visible in every state. The card exposed a refresh action and displayed no prices or purchase controls. |
+| Android device | Pending. |
+
+The seeded membership's original end date and revocation state were restored.
+The credit ledger required no test changes.
+
+Mobile tests, lint, and typecheck passed. Web tests and typecheck passed. The
+API client and contract tests and typechecks, i18n tests, and Premium domain
+tests passed. Contract and OpenAPI
+regeneration produced no file changes. The Premium and credit endpoints remain
+excluded from the public API reference.

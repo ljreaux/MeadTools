@@ -2223,7 +2223,14 @@
     "volume": "{{value}} L"
   },
   "mobileAccount": {
+    "creditsLoadFailed": "Could not load your credit balance.",
     "loading": "Loading profile…",
+    "loadingCredits": "Loading credits…",
+    "loadingPremium": "Loading Premium status…",
+    "premiumExpired": "Your Premium access has expired.",
+    "premiumFree": "Free account",
+    "premiumUnavailable": "Your membership is recorded. Premium benefits are currently unavailable.",
+    "refreshStatus": "Refresh account status",
     "retry": "Try again",
     "saveUsername": "Save username",
     "usernameRequired": "Enter a public username."

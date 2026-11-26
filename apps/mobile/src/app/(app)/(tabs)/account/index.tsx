@@ -34,7 +34,10 @@ export default function AccountScreen() {
       style={styles.screen}
     >
       {session ? (
-        <ProfileSettings key={session.id} userId={session.id} email={session.email} />
+        <View key={session.id} style={styles.accountSections}>
+          <ProfileSettings userId={session.id} email={session.email} />
+          <AccountStatus userId={session.id} />
+        </View>
       ) : null}
       <Pressable
         accessibilityRole="button"
@@ -47,6 +50,78 @@ export default function AccountScreen() {
         <Text style={styles.version}>{t("mobileNav.version", { version })}</Text>
       ) : null}
     </ScrollView>
+  );
+}
+
+function AccountStatus({ userId }: { userId: number }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t, i18n } = useTranslation();
+  const apiClient = useApiClient();
+  const premium = useQuery({
+    queryKey: ["account-premium", userId],
+    queryFn: () => apiClient.getPremiumStatus()
+  });
+  const credits = useQuery({
+    queryKey: ["account-credits", userId],
+    queryFn: () => apiClient.getCreditBalance()
+  });
+  const refreshing = premium.isFetching || credits.isFetching;
+  const status = premium.data;
+  let premiumLabel: string | undefined;
+
+  if (status?.paymentRestricted) {
+    premiumLabel = t("premium.restricted");
+  } else if (status?.premiumEnabled && status.paidThrough) {
+    const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" })
+      .format(new Date(status.paidThrough));
+    premiumLabel = t("premium.active", { date });
+  } else if (status?.entitled) {
+    premiumLabel = t("mobileAccount.premiumUnavailable");
+  } else if (status?.membershipExpired) {
+    premiumLabel = t("mobileAccount.premiumExpired");
+  } else if (status) {
+    premiumLabel = status.membershipExpired === false
+      ? t("mobileAccount.premiumFree")
+      : t("premium.inactive");
+  }
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.field}>
+        <Text accessibilityRole="header" style={styles.email}>{t("premium.title")}</Text>
+        {premium.isPending ? (
+          <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingPremium")} color={colors.accent} />
+        ) : null}
+        {premiumLabel ? <Text style={styles.label}>{premiumLabel}</Text> : null}
+        {premium.isError ? (
+          <Text accessibilityRole="alert" style={styles.error}>{t("premium.loadFailed")}</Text>
+        ) : null}
+      </View>
+      <View style={styles.field}>
+        <Text accessibilityRole="header" style={styles.email}>{t("credits.available")}</Text>
+        {credits.isPending ? (
+          <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingCredits")} color={colors.accent} />
+        ) : null}
+        {credits.data ? (
+          <Text style={styles.label}>
+            {new Intl.NumberFormat(i18n.language).format(credits.data.availableCredits)}
+          </Text>
+        ) : null}
+        {credits.isError ? (
+          <Text accessibilityRole="alert" style={styles.error}>{t("mobileAccount.creditsLoadFailed")}</Text>
+        ) : null}
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ busy: refreshing, disabled: refreshing }}
+        disabled={refreshing}
+        onPress={() => void Promise.all([premium.refetch(), credits.refetch()])}
+        style={({ pressed }) => [styles.signOutButton, (pressed || refreshing) && styles.pressed]}
+      >
+        <Text style={styles.signOutText}>{t("mobileAccount.refreshStatus")}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -210,6 +285,7 @@ function createStyles(colors: typeof colorThemes.light) {
   return StyleSheet.create({
     screen: { backgroundColor: colors.background },
     content: { gap: spacing.lg, padding: spacing.xl },
+    accountSections: { gap: spacing.lg },
     card: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
