@@ -42,6 +42,7 @@ export default function InventoryScreen() {
         <>
           <View style={styles.row}>
             <StockButton label={t("inventory.meads.title")} onPress={() => router.push("/inventory/meads")} />
+            <StockButton label={t("equipment.title")} onPress={() => router.push("/inventory/equipment")} />
             <StockButton label={t("inventory.organization.manage")} onPress={() => router.push("/inventory/organization")} />
           </View>
           <StockButton

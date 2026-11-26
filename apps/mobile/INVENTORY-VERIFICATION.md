@@ -19,3 +19,11 @@ The test records remain in the normal local development database.
 | Local database | Confirmed six bottles on hand, two stored at A1, the assigned category, and a recorded movement event. The test mead, category, and locations remain in the normal local database. |
 | Android | Preview-profile JavaScript export passed. Runtime verification remains pending because no local Android SDK or emulator was available. |
 | Remaining device checks | Movement history rendering, archived locations and finished meads, adjustments against a selected storage position, expired Premium, and retries after a lost response. Automated checks cover bottle sizes and counts, allocation limits, nesting rules, and the revision and operation IDs sent to the server. |
+
+## Equipment and vessel assignments (#609) · November 26, 2026
+
+| Check | Result |
+| --- | --- |
+| iOS runtime | The Equipment screen opened on the iPhone 18 Pro simulator (iOS 27.0) and displayed existing equipment from the local Premium account. The simulator window could not be controlled through Device Hub, so creating, editing, assigning, reassigning, releasing and archiving equipment remain pending on device. No test records were created. |
+| Automated | Mobile tests cover optional capacity, grouped quantity and the reviewed assignment sent when a container is assigned, reassigned or released. API client tests confirm the existing routes and preservation of the server's assignment conflict. |
+| Android | Preview-profile JavaScript export passed. Runtime verification remains pending because no local Android SDK or emulator was available. |

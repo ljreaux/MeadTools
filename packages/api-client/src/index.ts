@@ -1,5 +1,9 @@
 import {
   accountInfoResponseSchema,
+  createEquipmentRequestBodySchema,
+  equipmentMutationResponseSchema,
+  equipmentOverviewResponseSchema,
+  updateEquipmentRequestBodySchema,
   createFinishedMeadRequestBodySchema,
   finishedMeadHistoryResponseSchema,
   finishedMeadMutationResponseSchema,
@@ -43,6 +47,10 @@ import {
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type CreateEquipmentRequestBody,
+  type EquipmentMutationResponse,
+  type EquipmentOverviewResponse,
+  type UpdateEquipmentRequestBody,
   type CreateFinishedMeadRequestBody,
   type FinishedMeadHistoryResponse,
   type FinishedMeadMutationResponse,
@@ -588,6 +596,26 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
         body: JSON.stringify(payload)
       });
       return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory storage update response");
+    },
+
+    async getEquipment(): Promise<EquipmentOverviewResponse> {
+      const body = await request("/api/account/equipment", { method: "GET" });
+      return parseInventoryPayload(equipmentOverviewResponseSchema, body, "Equipment overview");
+    },
+
+    async createEquipment(input: CreateEquipmentRequestBody): Promise<EquipmentMutationResponse> {
+      const payload = parseInventoryPayload(createEquipmentRequestBodySchema, input, "New equipment");
+      const body = await request("/api/account/equipment", { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(equipmentMutationResponseSchema, body, "Equipment creation response");
+    },
+
+    async updateEquipment(id: string, input: UpdateEquipmentRequestBody): Promise<EquipmentMutationResponse> {
+      const payload = parseInventoryPayload(updateEquipmentRequestBodySchema, input, "Equipment update");
+      const body = await request(`/api/account/equipment/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(equipmentMutationResponseSchema, body, "Equipment update response");
     },
 
     /** The public yeast catalog (no sign-in needed). */

@@ -6,9 +6,14 @@ import { MeadToolsApiError } from "@meadtools/api-client";
 
 import { useSession } from "@/providers/app-providers";
 
-const reloadCodes = new Set(["STALE_STOCK", "ORGANIZATION_CHANGED", "STOCK_ARCHIVED", "NOT_FOUND", "PREMIUM_REQUIRED", "OPERATION_CONFLICT"]);
+const reloadCodes = new Set([
+  "STALE_STOCK", "ORGANIZATION_CHANGED", "STOCK_ARCHIVED", "NOT_FOUND",
+  "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "ASSIGNMENT_CHANGED", "BREW_COMPLETE", "VESSEL_OCCUPIED"
+]);
+const collectionKeys = ["inventory", "inventory-stock", "finished-meads", "finished-mead", "inventory-organization", "inventory-storage"];
+const equipmentKeys = ["equipment", "brew", "brews"];
 
-export function useInventoryChange(errorGroup: "meads" | "organization") {
+export function useInventoryChange(errorGroup: "meads" | "organization" | "equipment") {
   const queryClient = useQueryClient();
   const { session } = useSession();
   const { t } = useTranslation();
@@ -25,8 +30,8 @@ export function useInventoryChange(errorGroup: "meads" | "organization") {
   }
 
   function reload() {
-    void Promise.all(["inventory", "inventory-stock", "finished-meads", "finished-mead", "inventory-organization", "inventory-storage"].map((key) =>
-      queryClient.invalidateQueries({ queryKey: [key, session?.id] })));
+    const keys = errorGroup === "equipment" ? equipmentKeys : collectionKeys;
+    void Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key, session?.id] })));
   }
 
   async function save(
@@ -55,8 +60,10 @@ export function useInventoryChange(errorGroup: "meads" | "organization") {
           onStale();
           reload();
         }
-        setError(t(`inventory.${errorGroup}.errors.${code}`, {
-          defaultValue: t(`inventory.errors.${code}`, { defaultValue: t("inventory.saveError") })
+        const namespace = errorGroup === "equipment" ? errorGroup : `inventory.${errorGroup}`;
+        setError(t(`${namespace}.errors.${code}`, {
+          defaultValue: errorGroup === "equipment" ? t("equipment.saveError") :
+            t(`inventory.errors.${code}`, { defaultValue: t("inventory.saveError") })
         }));
       } else {
         setRetryOnly(true);
