@@ -6,6 +6,7 @@ import {
   accountInfoNotFoundErrorResponseSchema,
   accountInfoResponseSchema,
   accountInfoUnauthorizedErrorResponseSchema,
+  accountProfileResponseSchema,
   accountRecipeOwnerResponseSchema,
   accountRecipeResponseSchema,
   accountUserResponseSchema,
@@ -345,6 +346,7 @@ import {
   publicRecipesFetchErrorResponseSchema,
   publicRecipesPageResponseSchema,
   publicRecipesQueryParamsSchema,
+  publicUsernameInputSchema,
   raptPillCloudErrorResponseSchema,
   raptPillCloudIngestRequestBodySchema,
   raptPillRegisterErrorResponseSchema,
@@ -423,6 +425,8 @@ import {
   updateAccountInfoRequestBodySchema,
   updateAccountInfoResponseSchema,
   updateAccountInfoValidationErrorResponseSchema,
+  updateAccountProfileInputSchema,
+  updateAccountProfileResultSchema,
   updateAdditiveFailureErrorResponseSchema,
   updateAdditiveRequestBodySchema,
   updateAdminUserRequestBodySchema,
@@ -487,6 +491,7 @@ export type AccountInfoFetchErrorResponse = z.infer<typeof accountInfoFetchError
 export type AccountInfoNotFoundErrorResponse = z.infer<typeof accountInfoNotFoundErrorResponseSchema>;
 export type AccountInfoResponse = z.infer<typeof accountInfoResponseSchema>;
 export type AccountInfoUnauthorizedErrorResponse = z.infer<typeof accountInfoUnauthorizedErrorResponseSchema>;
+export type AccountProfileResponse = z.infer<typeof accountProfileResponseSchema>;
 export type AccountRecipeOwnerResponse = z.infer<typeof accountRecipeOwnerResponseSchema>;
 export type AccountRecipeResponse = z.infer<typeof accountRecipeResponseSchema>;
 export type AccountUserResponse = z.infer<typeof accountUserResponseSchema>;
@@ -826,6 +831,7 @@ export type PublicRecipeOwnerResponse = z.infer<typeof publicRecipeOwnerResponse
 export type PublicRecipesFetchErrorResponse = z.infer<typeof publicRecipesFetchErrorResponseSchema>;
 export type PublicRecipesPageResponse = z.infer<typeof publicRecipesPageResponseSchema>;
 export type PublicRecipesQueryParams = z.infer<typeof publicRecipesQueryParamsSchema>;
+export type PublicUsernameInput = z.infer<typeof publicUsernameInputSchema>;
 export type RaptPillCloudErrorResponse = z.infer<typeof raptPillCloudErrorResponseSchema>;
 export type RaptPillCloudIngestRequestBody = z.infer<typeof raptPillCloudIngestRequestBodySchema>;
 export type RaptPillRegisterErrorResponse = z.infer<typeof raptPillRegisterErrorResponseSchema>;
@@ -904,6 +910,8 @@ export type UpdateAccountInfoErrorResponse = z.infer<typeof updateAccountInfoErr
 export type UpdateAccountInfoRequestBody = z.infer<typeof updateAccountInfoRequestBodySchema>;
 export type UpdateAccountInfoResponse = z.infer<typeof updateAccountInfoResponseSchema>;
 export type UpdateAccountInfoValidationErrorResponse = z.infer<typeof updateAccountInfoValidationErrorResponseSchema>;
+export type UpdateAccountProfileInput = z.infer<typeof updateAccountProfileInputSchema>;
+export type UpdateAccountProfileResult = z.infer<typeof updateAccountProfileResultSchema>;
 export type UpdateAdditiveFailureErrorResponse = z.infer<typeof updateAdditiveFailureErrorResponseSchema>;
 export type UpdateAdditiveRequestBody = z.infer<typeof updateAdditiveRequestBodySchema>;
 export type UpdateAdminUserRequestBody = z.infer<typeof updateAdminUserRequestBodySchema>;

@@ -1,5 +1,6 @@
 import {
   accountInfoResponseSchema,
+  accountProfileResponseSchema,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
   finishedMeadOverviewResponseSchema,
@@ -18,6 +19,8 @@ import {
   nutrientPresetListResponseSchema,
   yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
+  updateAccountProfileInputSchema,
+  updateAccountProfileResultSchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateBrewEntryResponseSchema,
@@ -30,6 +33,9 @@ import {
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type AccountProfile,
+  type UpdateAccountProfileInput,
+  type UpdateAccountProfileResult,
   type BrewListItemResponse,
   type BrewResponse,
   type BrewInventoryContextResponse,
@@ -263,6 +269,34 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
           "Response does not match the MeadTools API contract",
           body
         );
+      }
+
+      return parsed.data;
+    },
+
+    async getAccountProfile(): Promise<AccountProfile> {
+      const body = await request("/api/auth/account-info", { method: "GET" });
+      const parsed = accountProfileResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile response", parsed.error.issues);
+      }
+
+      return parsed.data.user;
+    },
+
+    async updateAccountProfile(input: UpdateAccountProfileInput): Promise<UpdateAccountProfileResult> {
+      const update = updateAccountProfileInputSchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid account profile update", update.error.issues);
+      }
+
+      const body = await request("/api/auth/account-info", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = updateAccountProfileResultSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile update response", parsed.error.issues);
       }
 
       return parsed.data;

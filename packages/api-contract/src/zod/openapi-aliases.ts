@@ -5,6 +5,7 @@ import {
   accountInfoNotFoundErrorResponseSchema,
   accountInfoResponseSchema,
   accountInfoUnauthorizedErrorResponseSchema,
+  accountProfileResponseSchema,
   accountRecipeOwnerResponseSchema,
   accountRecipeResponseSchema,
   accountUserResponseSchema,
@@ -344,6 +345,7 @@ import {
   publicRecipesFetchErrorResponseSchema,
   publicRecipesPageResponseSchema,
   publicRecipesQueryParamsSchema,
+  publicUsernameInputSchema,
   raptPillCloudErrorResponseSchema,
   raptPillCloudIngestRequestBodySchema,
   raptPillRegisterErrorResponseSchema,
@@ -422,6 +424,8 @@ import {
   updateAccountInfoRequestBodySchema,
   updateAccountInfoResponseSchema,
   updateAccountInfoValidationErrorResponseSchema,
+  updateAccountProfileInputSchema,
+  updateAccountProfileResultSchema,
   updateAdditiveFailureErrorResponseSchema,
   updateAdditiveRequestBodySchema,
   updateAdminUserRequestBodySchema,
@@ -486,6 +490,7 @@ export const AccountInfoFetchErrorResponse = accountInfoFetchErrorResponseSchema
 export const AccountInfoNotFoundErrorResponse = accountInfoNotFoundErrorResponseSchema;
 export const AccountInfoResponse = accountInfoResponseSchema;
 export const AccountInfoUnauthorizedErrorResponse = accountInfoUnauthorizedErrorResponseSchema;
+export const AccountProfileResponse = accountProfileResponseSchema;
 export const AccountRecipeOwnerResponse = accountRecipeOwnerResponseSchema;
 export const AccountRecipeResponse = accountRecipeResponseSchema;
 export const AccountUserResponse = accountUserResponseSchema;
@@ -825,6 +830,7 @@ export const PublicRecipeOwnerResponse = publicRecipeOwnerResponseSchema;
 export const PublicRecipesFetchErrorResponse = publicRecipesFetchErrorResponseSchema;
 export const PublicRecipesPageResponse = publicRecipesPageResponseSchema;
 export const PublicRecipesQueryParams = publicRecipesQueryParamsSchema;
+export const PublicUsernameInput = publicUsernameInputSchema;
 export const RaptPillCloudErrorResponse = raptPillCloudErrorResponseSchema;
 export const RaptPillCloudIngestRequestBody = raptPillCloudIngestRequestBodySchema;
 export const RaptPillRegisterErrorResponse = raptPillRegisterErrorResponseSchema;
@@ -903,6 +909,8 @@ export const UpdateAccountInfoErrorResponse = updateAccountInfoErrorResponseSche
 export const UpdateAccountInfoRequestBody = updateAccountInfoRequestBodySchema;
 export const UpdateAccountInfoResponse = updateAccountInfoResponseSchema;
 export const UpdateAccountInfoValidationErrorResponse = updateAccountInfoValidationErrorResponseSchema;
+export const UpdateAccountProfileInput = updateAccountProfileInputSchema;
+export const UpdateAccountProfileResult = updateAccountProfileResultSchema;
 export const UpdateAdditiveFailureErrorResponse = updateAdditiveFailureErrorResponseSchema;
 export const UpdateAdditiveRequestBody = updateAdditiveRequestBodySchema;
 export const UpdateAdminUserRequestBody = updateAdminUserRequestBodySchema;

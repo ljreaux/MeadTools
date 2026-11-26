@@ -2222,6 +2222,12 @@
     "untitled": "Untitled brew",
     "volume": "{{value}} L"
   },
+  "mobileAccount": {
+    "loading": "Loading profile…",
+    "retry": "Try again",
+    "saveUsername": "Save username",
+    "usernameRequired": "Enter a public username."
+  },
   "mobileNav": {
     "brews": "Brews",
     "recipes": "Recipes",

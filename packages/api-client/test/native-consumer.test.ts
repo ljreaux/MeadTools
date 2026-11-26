@@ -10,6 +10,49 @@ import {
 
 const clientEntryId = "00000000-0000-4000-8000-000000000001";
 
+test("account profile reads only profile fields and patches username and avatar independently", async () => {
+  const requests: ApiRequestInit[] = [];
+  const user = {
+    email: "maker@example.com",
+    isGoogleUser: true,
+    public_username: null,
+    google_avatar_url: "https://example.com/avatar.png",
+    show_google_avatar: false
+  };
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.example",
+    getAccessToken: () => "access-token",
+    fetch: async (url, init) => {
+      assert.equal(url, "https://meadtools.example/api/auth/account-info");
+      assert.equal(init.headers.authorization, "Bearer access-token");
+      requests.push(init);
+      const extra = { hydro_token: "private", google_id: "provider-id" };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => init.method === "GET"
+          ? { user: { ...user, ...extra }, recipes: [] }
+          : { ...user, ...extra, ...JSON.parse(init.body ?? "{}") }
+      };
+    }
+  });
+
+  assert.deepEqual(await client.getAccountProfile(), user);
+  assert.deepEqual(await client.updateAccountProfile({ public_username: "  Maker  " }), {
+    public_username: "Maker", show_google_avatar: false
+  });
+  assert.deepEqual(await client.updateAccountProfile({ show_google_avatar: false }), {
+    public_username: null, show_google_avatar: false
+  });
+  await assert.rejects(client.updateAccountProfile({ public_username: "  " }), MeadToolsContractError);
+  await assert.rejects(client.updateAccountProfile({}), MeadToolsContractError);
+  assert.deepEqual(requests.map(({ method, body }) => [method, body]), [
+    ["GET", undefined],
+    ["PATCH", '{"public_username":"Maker"}'],
+    ["PATCH", '{"show_google_avatar":false}']
+  ]);
+});
+
 const accountRecipe = {
   id: 12,
   user_id: 7,

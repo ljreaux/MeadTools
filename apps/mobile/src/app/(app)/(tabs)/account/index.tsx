@@ -1,11 +1,22 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Constants from "expo-constants";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { useState } from "react";
+import {
+  ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text,
+  TextInput, View
+} from "react-native";
 import { useTranslation } from "react-i18next";
 
+import {
+  publicUsernameInputSchema,
+  type AccountProfile,
+  type UpdateAccountProfileInput
+} from "@meadtools/api-contract";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
 import { useThemeColors } from "@/hooks/useThemeColors";
-import { useSession } from "@/providers/app-providers";
+import { useApiClient, useSession } from "@/providers/app-providers";
 
 export default function AccountScreen() {
   const { colors } = useThemeColors();
@@ -16,16 +27,15 @@ export default function AccountScreen() {
 
   return (
     <ScrollView
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
       style={styles.screen}
     >
-      <View accessible style={styles.card}>
-        <Text style={styles.label}>{t("mobileNav.signedInAs")}</Text>
-        <Text selectable style={styles.email}>
-          {session?.email}
-        </Text>
-      </View>
+      {session ? (
+        <ProfileSettings key={session.id} userId={session.id} email={session.email} />
+      ) : null}
       <Pressable
         accessibilityRole="button"
         onPress={() => void signOut()}
@@ -40,6 +50,162 @@ export default function AccountScreen() {
   );
 }
 
+function ProfileSettings({ userId, email }: { userId: number; email: string }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  const queryKey = ["account-profile", userId] as const;
+  const profile = useQuery({
+    queryKey,
+    queryFn: () => apiClient.getAccountProfile()
+  });
+  const [draft, setDraft] = useState<string | null>(null);
+  const [invalidUsername, setInvalidUsername] = useState(false);
+  const update = useMutation({
+    mutationFn: (input: UpdateAccountProfileInput) => apiClient.updateAccountProfile(input),
+    onSuccess: async (saved, input) => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<AccountProfile>(queryKey, (current) =>
+        current ? { ...current, ...saved } : current
+      );
+      if (input.public_username !== undefined) setDraft(null);
+    }
+  });
+
+  const savedUsername = profile.data?.public_username ?? "";
+  const username = draft ?? savedUsername;
+  const saveDisabled = update.isPending || username === savedUsername;
+  const avatarUrl = profile.data?.isGoogleUser && profile.data.show_google_avatar
+    ? profile.data.google_avatar_url
+    : null;
+
+  function saveUsername() {
+    if (saveDisabled) return;
+
+    const parsed = publicUsernameInputSchema.safeParse(username);
+    setInvalidUsername(!parsed.success);
+    if (!parsed.success) return;
+
+    Keyboard.dismiss();
+    if (parsed.data === savedUsername) {
+      setDraft(null);
+      return;
+    }
+    update.mutate({ public_username: parsed.data });
+  }
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.profileHeader}>
+        {avatarUrl ? <Image source={avatarUrl} style={styles.avatar} /> : null}
+        <View style={styles.identity}>
+          <Text style={styles.label}>{t("mobileNav.signedInAs")}</Text>
+          <Text selectable style={styles.email}>{profile.data?.email ?? email}</Text>
+        </View>
+      </View>
+      {profile.isPending ? (
+        <ActivityIndicator accessibilityLabel={t("mobileAccount.loading")} color={colors.accent} />
+      ) : null}
+      {profile.isLoadingError ? (
+        <View style={styles.field}>
+          <Text accessibilityRole="alert" style={styles.error}>{t("accountPage.error")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={profile.isFetching}
+            onPress={() => void profile.refetch()}
+            style={styles.signOutButton}
+          >
+            <Text style={styles.signOutText}>{t("mobileAccount.retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {profile.data ? (
+        <>
+          <View style={styles.field}>
+            <Text style={styles.label}>{t("publicUsername.label")}</Text>
+            <TextInput
+              accessibilityLabel={t("publicUsername.label")}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!update.isPending}
+              onChangeText={(value) => {
+                setDraft(value);
+                setInvalidUsername(false);
+                if (!update.isIdle) update.reset();
+              }}
+              onSubmitEditing={saveUsername}
+              placeholder={t("publicUsername.placeholder")}
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
+              style={styles.input}
+              value={username}
+            />
+            {invalidUsername ? (
+              <Text accessibilityRole="alert" style={styles.error}>
+                {t("mobileAccount.usernameRequired")}
+              </Text>
+            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saveDisabled, busy: update.isPending && update.variables?.public_username !== undefined }}
+              disabled={saveDisabled}
+              onPress={saveUsername}
+              style={({ pressed }) => [styles.saveButton, (pressed || saveDisabled) && styles.pressed]}
+            >
+              <Text style={styles.saveText}>{t("mobileAccount.saveUsername")}</Text>
+            </Pressable>
+            {update.variables?.public_username !== undefined ? (
+              <ProfileUpdateFeedback success={update.isSuccess} error={update.isError} setting="username" />
+            ) : null}
+          </View>
+          {profile.data.isGoogleUser ? (
+            <View style={styles.field}>
+              <View style={styles.avatarSetting}>
+                <Text style={[styles.label, styles.identity]}>{t("accountPage.googleAvatar.title")}</Text>
+                <Switch
+                  accessibilityLabel={t("accountPage.googleAvatar.label")}
+                  disabled={update.isPending}
+                  onValueChange={(show_google_avatar) => update.mutate({ show_google_avatar })}
+                  value={profile.data.show_google_avatar}
+                />
+              </View>
+              <Text style={styles.label}>{t("accountPage.googleAvatar.description")}</Text>
+              {update.variables?.show_google_avatar !== undefined ? (
+                <ProfileUpdateFeedback success={update.isSuccess} error={update.isError} setting="avatar" />
+              ) : null}
+            </View>
+          ) : null}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function ProfileUpdateFeedback({ success, error, setting }: {
+  success: boolean;
+  error: boolean;
+  setting: "username" | "avatar";
+}) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  if (!success && !error) return null;
+
+  return (
+    <Text
+      accessibilityLiveRegion="polite"
+      accessibilityRole={error ? "alert" : undefined}
+      style={error ? styles.error : styles.label}
+    >
+      {error
+        ? t(setting === "username" ? "auth.username.error.description" : "auth.avatar.error.description")
+        : t(setting === "username" ? "auth.username.success.description" : "auth.avatar.success.description")}
+    </Text>
+  );
+}
+
 function createStyles(colors: typeof colorThemes.light) {
   return StyleSheet.create({
     screen: { backgroundColor: colors.background },
@@ -49,10 +215,36 @@ function createStyles(colors: typeof colorThemes.light) {
       borderColor: colors.border,
       borderRadius: radii.lg,
       borderWidth: 1,
-      gap: spacing.xs,
+      gap: spacing.lg,
       padding: spacing.lg
     },
+    profileHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    identity: { flex: 1, gap: spacing.xs },
+    avatar: { width: 48, height: 48, borderRadius: 24 },
+    avatarSetting: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    field: { gap: spacing.sm },
     label: { color: colors.textMuted, fontSize: typography.size.caption },
+    error: { color: colors.error, fontSize: typography.size.caption },
+    input: {
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: typography.size.body,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm
+    },
+    saveButton: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderRadius: radii.md,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm
+    },
+    saveText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     email: {
       color: colors.text,
       fontSize: typography.size.action,
