@@ -1,5 +1,6 @@
 import {
   accountInfoResponseSchema,
+  additivesResponseSchema,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
   finishedMeadOverviewResponseSchema,
@@ -9,11 +10,14 @@ import {
   createBrewRequestBodySchema,
   createBrewResponseSchema,
   createBrewEntryResponseSchema,
+  createInventoryStockRequestBodySchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   getRecipeResponseSchema,
   inventoryOverviewResponseSchema,
+  inventoryStockHistoryResponseSchema,
+  inventoryStockMutationResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
   yeastsResponseSchema,
@@ -21,6 +25,7 @@ import {
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateBrewEntryResponseSchema,
+  updateInventoryStockRequestBodySchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
   recipeDataV2Schema,
@@ -30,6 +35,7 @@ import {
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type AdditivesResponse,
   type BrewListItemResponse,
   type BrewResponse,
   type BrewInventoryContextResponse,
@@ -38,6 +44,7 @@ import {
   type CreateBrewEntryRequestBody,
   type CreateBrewRequestBody,
   type CreateBrewResponse,
+  type CreateInventoryStockRequestBody,
   type UpdateBrewRequestBody,
   type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
@@ -45,11 +52,14 @@ import {
   type DeleteBrewSuccessResponse,
   type GetRecipeResponse,
   type InventoryOverviewResponse,
+  type InventoryStockHistoryResponse,
+  type InventoryStockMutationResponse,
   type IngredientsResponse,
   type NutrientPresetListResponse,
   type YeastsResponse,
   type UpdateBrewEntryRequestBody,
   type UpdateBrewEntryResponse,
+  type UpdateInventoryStockRequestBody,
   type LoginRequestBody,
   type LoginSuccessResponse,
   type RecipeDataV2Input,
@@ -446,6 +456,53 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data;
     },
 
+    async getInventoryStock(stockId: string): Promise<InventoryStockHistoryResponse> {
+      const body = await request(
+        `/api/account/inventory/${encodeURIComponent(stockId)}`,
+        { method: "GET" }
+      );
+      const parsed = inventoryStockHistoryResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock history does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async createInventoryStock(input: CreateInventoryStockRequestBody): Promise<InventoryStockMutationResponse> {
+      const payload = createInventoryStockRequestBodySchema.safeParse(input);
+      if (!payload.success) {
+        throw new MeadToolsContractError("New stock does not match the MeadTools API contract", input);
+      }
+      const body = await request("/api/account/inventory", {
+        method: "POST",
+        body: JSON.stringify(payload.data)
+      });
+      const parsed = inventoryStockMutationResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock creation response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async updateInventoryStock(
+      stockId: string,
+      input: UpdateInventoryStockRequestBody
+    ): Promise<InventoryStockMutationResponse> {
+      const payload = updateInventoryStockRequestBodySchema.safeParse(input);
+      if (!payload.success) {
+        throw new MeadToolsContractError("Stock update does not match the MeadTools API contract", input);
+      }
+      const body = await request(
+        `/api/account/inventory/${encodeURIComponent(stockId)}`,
+        { method: "PATCH", body: JSON.stringify(payload.data) }
+      );
+      const parsed = inventoryStockMutationResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock update response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
     async getBrewInventory(brewId: string): Promise<BrewInventoryContextResponse> {
       const body = await request(`/api/brews/${encodeURIComponent(brewId)}/inventory`, { method: "GET" });
       const parsed = brewInventoryContextResponseSchema.safeParse(body);
@@ -480,6 +537,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const body = await request("/api/ingredients", { method: "GET" });
       const parsed = ingredientsResponseSchema.safeParse(body);
       if (!parsed.success) throw new MeadToolsContractError("Ingredient list does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    /** The public additive catalog (no sign-in needed). */
+    async listAdditives(): Promise<AdditivesResponse> {
+      const body = await request("/api/additives", { method: "GET" });
+      const parsed = additivesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Additive list does not match the MeadTools API contract", body);
+      }
       return parsed.data;
     },
 

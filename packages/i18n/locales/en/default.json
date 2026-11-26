@@ -2222,6 +2222,13 @@
     "untitled": "Untitled brew",
     "volume": "{{value}} L"
   },
+  "mobileInventory": {
+    "premium": "Inventory is available with Premium.",
+    "archive": "Archive stock",
+    "catalogSearch": "Search catalog",
+    "catalogLinked": "Catalog item linked",
+    "retrySame": "The save could not be confirmed. Retry to check or finish the same change."
+  },
   "mobileNav": {
     "brews": "Brews",
     "recipes": "Recipes",
