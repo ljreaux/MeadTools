@@ -59,3 +59,16 @@ rechecked after removing all-device sign-out.
 Seeded sign-in and the existing release-email GET and PATCH passed against
 the local backend. Mobile tests, lint and typecheck and API client, API
 contract and i18n checks passed.
+
+## Account deletion request draft (#605) — November 26, 2026
+
+| Check | Result |
+| --- | --- |
+| iOS Simulator | Cancel dismissed the account dialog. Continuing opened the local MeadTools request form in Safari. |
+| Web form | With the contact endpoint stubbed locally, a failed request showed an error and kept both fields available for retry. A successful retry showed confirmation and cleared the fields. The stub checked the expected request payload both times. |
+| Form before JavaScript loads | The fallback uses POST so the browser keeps the name and email out of the URL. |
+| Android device | Pending. |
+
+The test used synthetic contact details. The stub sent no email and no
+account was deleted. Support inbox delivery and whole-account erasure were
+outside this check.

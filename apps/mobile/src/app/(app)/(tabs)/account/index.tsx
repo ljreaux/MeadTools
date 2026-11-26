@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
+import { openURL } from "expo-linking";
 import { useState } from "react";
 import {
-  ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text,
+  ActivityIndicator, Alert, Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text,
   TextInput, View
 } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,7 @@ import {
 } from "@meadtools/api-contract";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
+import { webPageUrl } from "@/config/api";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
@@ -24,6 +26,24 @@ export default function AccountScreen() {
   const { t } = useTranslation();
   const { session, signOut } = useSession();
   const version = Constants.expoConfig?.version;
+
+  function requestAccountDeletion() {
+    Alert.alert(
+      t("mobileAccount.deletionRequest"),
+      t("mobileAccount.deletionRequestDescription"),
+      [
+        { text: t("cancel"), style: "cancel" },
+        {
+          text: t("mobileAccount.deletionRequestOpen"),
+          onPress: () => {
+            void openURL(webPageUrl("/account-deletion")).catch(() => {
+              Alert.alert(t("mobileAccount.deletionRequestOpenError"));
+            });
+          }
+        }
+      ]
+    );
+  }
 
   return (
     <ScrollView
@@ -47,6 +67,15 @@ export default function AccountScreen() {
       >
         <Text style={styles.signOutText}>{t("account.logout")}</Text>
       </Pressable>
+      {session ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={requestAccountDeletion}
+          style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.signOutText}>{t("mobileAccount.deletionRequest")}</Text>
+        </Pressable>
+      ) : null}
       {version ? (
         <Text style={styles.version}>{t("mobileNav.version", { version })}</Text>
       ) : null}
