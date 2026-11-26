@@ -10,6 +10,32 @@ import {
 
 const clientEntryId = "00000000-0000-4000-8000-000000000001";
 
+test("reads and updates release email consent", async () => {
+  const requests: Array<[string, string, string | undefined]> = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.example",
+    getAccessToken: () => "access-token",
+    fetch: async (url, init) => {
+      assert.equal(init.headers.authorization, "Bearer access-token");
+      requests.push([new URL(url).pathname, init.method, init.body]);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ optedIn: false, prompted: init.method === "PATCH" })
+      };
+    }
+  });
+
+  assert.deepEqual(await client.getReleaseEmailPreferences(), { optedIn: false, prompted: false });
+  assert.deepEqual(await client.updateReleaseEmailPreferences({ optedIn: false }), {
+    optedIn: false, prompted: true
+  });
+  assert.deepEqual(requests, [
+    ["/api/account/release-emails", "GET", undefined],
+    ["/api/account/release-emails", "PATCH", '{"optedIn":false}']
+  ]);
+});
+
 test("reads display-only Premium status and prompt credits", async () => {
   const paidThrough = "2026-12-25T00:00:00.000Z";
   const free = {

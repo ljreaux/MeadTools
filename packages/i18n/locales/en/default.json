@@ -2226,6 +2226,7 @@
     "creditsLoadFailed": "Could not load your credit balance.",
     "loading": "Loading profile…",
     "loadingCredits": "Loading credits…",
+    "loadingEmailPreference": "Loading email preference…",
     "loadingPremium": "Loading Premium status…",
     "premiumExpired": "Your Premium access has expired.",
     "premiumFree": "Free account",

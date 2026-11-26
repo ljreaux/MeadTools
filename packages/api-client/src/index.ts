@@ -32,6 +32,8 @@ import {
   recipeDerivedStateResponseBodySchema,
   refreshTokenRequestBodySchema,
   refreshTokenSuccessResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
@@ -66,6 +68,8 @@ import {
   type RecipeDerivedStateResponseBody,
   type RefreshTokenRequestBody,
   type RefreshTokenSuccessResponse,
+  type ReleaseEmailPreferencesResponse,
+  type ReleaseEmailPreferencesUpdateBody,
   type VerifyTokenSuccessResponse
 } from "@meadtools/api-contract";
 
@@ -334,6 +338,33 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
         throw new MeadToolsContractError("Invalid credit balance response", parsed.error.issues);
       }
 
+      return parsed.data;
+    },
+
+    async getReleaseEmailPreferences(): Promise<ReleaseEmailPreferencesResponse> {
+      const body = await request("/api/account/release-emails", { method: "GET" });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
+      return parsed.data;
+    },
+
+    async updateReleaseEmailPreferences(
+      input: ReleaseEmailPreferencesUpdateBody
+    ): Promise<ReleaseEmailPreferencesResponse> {
+      const update = releaseEmailPreferencesUpdateBodySchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid release email preference update", update.error.issues);
+      }
+      const body = await request("/api/account/release-emails", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
       return parsed.data;
     },
 

@@ -44,3 +44,18 @@ API client and contract tests and typechecks, i18n tests, and Premium domain
 tests passed. Contract and OpenAPI
 regeneration produced no file changes. The Premium and credit endpoints remain
 excluded from the public API reference.
+
+## Product-update email preferences (#604) — November 25, 2026
+
+Tested on the iPhone 18 Pro simulator (iOS 27.0) against the seeded account
+in the existing local development database. The final email-only build was
+rechecked after removing all-device sign-out.
+
+| Check | Result |
+| --- | --- |
+| Product-update email preference | Opt-in and opt-out each showed save confirmation. The existing account API and database confirmed both changes. The seeded account was returned to its original opted-out setting. |
+| Android device | Pending. |
+
+Seeded sign-in and the existing release-email GET and PATCH passed against
+the local backend. Mobile tests, lint and typecheck and API client, API
+contract and i18n checks passed.

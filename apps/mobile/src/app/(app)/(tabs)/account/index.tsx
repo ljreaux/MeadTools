@@ -37,6 +37,7 @@ export default function AccountScreen() {
         <View key={session.id} style={styles.accountSections}>
           <ProfileSettings userId={session.id} email={session.email} />
           <AccountStatus userId={session.id} />
+          <EmailPreferences userId={session.id} />
         </View>
       ) : null}
       <Pressable
@@ -50,6 +51,92 @@ export default function AccountScreen() {
         <Text style={styles.version}>{t("mobileNav.version", { version })}</Text>
       ) : null}
     </ScrollView>
+  );
+}
+
+function EmailPreferences({ userId }: { userId: number }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  const queryKey = ["account-release-email", userId] as const;
+  const [draft, setDraft] = useState<boolean | null>(null);
+  const preference = useQuery({
+    queryKey,
+    queryFn: () => apiClient.getReleaseEmailPreferences()
+  });
+  const save = useMutation({
+    mutationFn: (optedIn: boolean) => apiClient.updateReleaseEmailPreferences({ optedIn }),
+    onSuccess: async (result) => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData(queryKey, result);
+      setDraft(null);
+    }
+  });
+
+  const optedIn = draft ?? preference.data?.optedIn ?? false;
+  const saveDisabled =
+    save.isPending || !preference.data ||
+    (preference.data.prompted && optedIn === preference.data.optedIn);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.field}>
+        <Text accessibilityRole="header" style={styles.email}>{t("releaseEmails.title")}</Text>
+        <Text style={styles.label}>{t("releaseEmails.settingsDescription")}</Text>
+      </View>
+      {preference.isPending ? (
+        <ActivityIndicator
+          color={colors.accent}
+          accessibilityLabel={t("mobileAccount.loadingEmailPreference")}
+        />
+      ) : null}
+      {preference.isLoadingError ? (
+        <View style={styles.field}>
+          <Text accessibilityRole="alert" style={styles.error}>{t("releaseEmails.loadError")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={preference.isFetching}
+            onPress={() => void preference.refetch()}
+            style={styles.signOutButton}
+          >
+            <Text style={styles.signOutText}>{t("mobileAccount.retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {preference.data ? (
+        <View style={styles.field}>
+          <View style={styles.avatarSetting}>
+            <Text style={[styles.label, styles.identity]}>{t("releaseEmails.optIn")}</Text>
+            <Switch
+              accessibilityLabel={t("releaseEmails.optIn")}
+              disabled={save.isPending}
+              value={optedIn}
+              onValueChange={(value) => {
+                setDraft(value);
+                save.reset();
+              }}
+            />
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy: save.isPending, disabled: saveDisabled }}
+            disabled={saveDisabled}
+            onPress={() => save.mutate(optedIn)}
+            style={({ pressed }) => [styles.saveButton, (pressed || saveDisabled) && styles.pressed]}
+          >
+            <Text style={styles.saveText}>{t("releaseEmails.save")}</Text>
+          </Pressable>
+          {save.isSuccess ? (
+            <Text accessibilityLiveRegion="polite" style={styles.label}>{t("releaseEmails.saved")}</Text>
+          ) : null}
+          {save.isError ? (
+            <Text accessibilityRole="alert" style={styles.error}>{t("releaseEmails.saveError")}</Text>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
