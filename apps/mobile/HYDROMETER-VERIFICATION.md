@@ -7,7 +7,7 @@ Parent: #556. First child: #612 (linked devices and read-only device details).
 - #612: reviewed and approved for commit on November 27, 2026.
 - #613: reviewed and approved for commit on November 27, 2026.
 - #614: reviewed and approved for commit on November 27, 2026.
-- #615: setup, tokens and device management — not started.
+- #615: reviewed and approved for commit on November 27, 2026.
 - Parent PR to `preview`: include `- [ ] UI review on iOS and Android before merging`.
   No separate review chat is needed.
 
@@ -230,3 +230,65 @@ shared-domain tests, rather than deliberately interrupting live writes.
 The final parent PR retains the unchecked iOS/Android UI-review requirement.
 Complete screen-reader, enlarged-text, offline-transport and cross-area interaction
 checks remain part of that pass. #615 setup/token/device management is still pending.
+
+
+## #615 — setup, tokens and device management
+
+Reviewed and approved for commit on November 27, 2026. No web/server,
+authentication, database or generated API-contract changes are included.
+
+### Behavior
+
+- Tools → Hydrometers → Hydrometer setup has iSpindel, Tilt and RAPT Pill guidance,
+  server/path information, and complete token-bearing Tilt/RAPT Cloud configuration
+  text only after deliberate reveal. Text can be selected for copying.
+- Token reads and generation use existing endpoints, outside query/mutation caches
+  and persistent storage. Setup HTTP/contract errors discard response bodies.
+  Generation requires confirmation that ALL integrations need the replacement token.
+- Hiding, leaving setup, or backgrounding clears the in-memory token. Late responses
+  cannot reveal it again after leaving; simultaneous generation requests are blocked.
+- RAPT Cloud guidance matches the existing Custom stream/default-payload workflow.
+  Bluetooth setup has a labeled web handoff to the desktop application instructions.
+  Mobile does not add Bluetooth scanning or a new integration.
+- Device details offer the web's four-term cubic iSpindel calibration and confirmed
+  removal. Signed decimals and scientific notation are accepted; incomplete/nonfinite
+  values are rejected. Calibration affects future readings through the existing API.
+- Removal explains that unassigned readings are permanently removed, while readings
+  associated with brews remain without a device link. Online-only mutation handling,
+  duplicate-submission protection and cache refresh reuse #614's implementation.
+
+### iOS and Android verification
+
+Verified on iPhone 17 Pro / iOS 26.2 and Medium Phone / Android API 36.1 using
+the normal local backend and the authorized ADB workflow:
+
+- Setup initially shows Token hidden. Device-specific guidance is readable and the
+  web handoff opens the system browser (Safari on iOS, Chrome on Android).
+- Created **Hydrometer parity 615 verification** through the existing local RAPT
+  registration endpoint to test calibration without changing seeded devices.
+- iOS rejected an incomplete coefficient, then saved all four values. Android loaded
+  those persisted values after refresh, rejected a lone minus sign, and saved a change
+  to the constant. The retained device now has coefficients
+  `[0.000001, -0.0002, 0.01, 1.0001]` and no linked brew.
+- Both removal confirmations named this test device and explained the data effects.
+  Cancelled on both platforms and verified that the device remained available.
+- Temporary fake token responses checked reveal/hide, token-generation confirmation
+  and result, RAPT Cloud URL rendering, and clearing after background/resume on iOS
+  and Android. These overrides are removed from the delivered source.
+- Android initially retained an older bundle during the fixture check and revealed
+  the existing token. Hid it, reloaded the client and verified the fake response before
+  testing generation. No real token was generated, rotated or copied.
+
+### Checks and remaining review
+
+- Mobile: 121 tests; API client: 29; brew domain: 70; API contract: 77;
+  web: 264; i18n: 3. All pass.
+- Mobile lint and Mobile/API-client/brew-domain typechecks pass.
+- Both preview-profile JavaScript exports pass.
+- Only English source translations changed; German follows Weblate after merge.
+
+No devices, brews or readings were deleted. Token-generation transport and device
+removal are covered by deterministic API-client tests; actual permanent removal
+and credential rotation were not performed in the normal local account. Physical
+hydrometer delivery, full screen-reader/enlarged-text navigation and the combined
+feature UI pass remain for the parent PR's unchecked iOS/Android review item.

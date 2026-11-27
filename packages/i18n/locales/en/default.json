@@ -4004,6 +4004,33 @@
         "renamed": "Brew renamed.",
         "recipeLinked": "Recipe linked."
       }
+    },
+    "setup": {
+      "title": "Hydrometer setup",
+      "deviceType": "Hydrometer type",
+      "token": "Private hydrometer token",
+      "tokenHint": "Use this token only in your hydrometer or logging integration. It is hidden again when you leave this screen or background the app. Select visible text to copy it.",
+      "hidden": "Token hidden.",
+      "noToken": "No hydrometer token has been generated.",
+      "reveal": "Show setup token",
+      "hide": "Hide token",
+      "failed": "Could not load the setup token. Check your connection and sign-in, then try again.",
+      "generateConfirm": "Generating a token replaces any existing token. Update ALL connected hydrometers and logging integrations afterward to keep receiving readings. Continue?",
+      "revealUrl": "Show your setup token to display the complete Cloud URL.",
+      "iSpindel": "Give each iSpindel a unique name and enter your MeadTools token in its configuration. Configure the server and path below. Readings create the device automatically.",
+      "raptCloud": "In RAPT Brew → My Integrations, create a Custom data stream for your Pill. Use the complete Cloud URL with POST and the default telemetry payload. Save the stream before sending a test.",
+      "raptBluetooth": "Bluetooth logging uses the MeadTools Pill desktop application on a nearby computer. Open web setup for desktop downloads and complete setup instructions. Mobile does not scan for Bluetooth devices.",
+      "openWeb": "Open full setup on the web",
+      "handoffFailed": "Could not open web setup. Try again.",
+      "calibrationHint": "For iSpindel only. Enter all four coefficients from your calibration. These apply to future readings; existing readings are kept.",
+      "formula": "Gravity = a × angle³ + b × angle² + c × angle + d",
+      "coefficient0": "a — angle³",
+      "coefficient1": "b — angle²",
+      "coefficient2": "c — angle",
+      "coefficient3": "d — constant",
+      "invalidCoefficients": "Enter four complete numbers. Negative values and scientific notation are supported.",
+      "calibrationSaved": "Calibration coefficients saved.",
+      "removeConfirm": "Remove {{device}}? This permanently deletes its unassigned readings and removes the device link from readings associated with brews. The brews and their readings are kept. This cannot be undone."
     }
   }
 }

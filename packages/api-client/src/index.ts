@@ -1,6 +1,9 @@
 import {
   accountInfoResponseSchema,
   hydrometerAccountResponseSchema,
+  hydrometerTokenResponseSchema,
+  hydrometerDeviceResponseSchema,
+  deleteHydrometerDeviceResponseSchema,
   hydrometerBrewsResponseSchema,
   hydrometerBrewResponseSchema,
   startHydrometerBrewRequestBodySchema,
@@ -187,6 +190,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
     return body;
   }
 
+  // Setup responses may contain a private device token. Keep response bodies out of errors.
+  async function secretRequest(path: string, method: string) {
+    try {
+      return await request(path, { method });
+    } catch (error) {
+      if (error instanceof MeadToolsApiError) throw new MeadToolsApiError(error.status, undefined);
+      throw new Error("Hydrometer setup request failed");
+    }
+  }
+
   return {
     /** Lists owned devices without retaining the account's setup token in caches. */
     async listHydrometerDevices(): Promise<HydrometerDeviceResponse[]> {
@@ -200,6 +213,30 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
         );
       }
       return parsed.data.devices;
+    },
+
+    /** Deliberate, uncached setup read. Call only after the user requests the token. */
+    async getHydrometerSetupToken(): Promise<string | null> {
+      const result = hydrometerAccountResponseSchema.safeParse(await secretRequest("/api/hydrometer", "GET"));
+      if (!result.success) throw new MeadToolsContractError("Invalid hydrometer setup response", undefined);
+      return result.data.hydro_token;
+    },
+
+    /** Replaces the existing token; callers must explain that devices need updating. */
+    async generateHydrometerSetupToken(): Promise<string> {
+      const result = hydrometerTokenResponseSchema.safeParse(await secretRequest("/api/hydrometer/token", "POST"));
+      if (!result.success || !result.data.token) throw new MeadToolsContractError("Invalid hydrometer token response", undefined);
+      return result.data.token;
+    },
+
+    async updateHydrometerCoefficients(deviceId: string, coefficients: readonly number[]) {
+      if (!deviceId || coefficients.length !== 4 || !coefficients.every(Number.isFinite)) throw new MeadToolsContractError("Four finite calibration coefficients are required", undefined);
+      return parseHydrometerResponse(hydrometerDeviceResponseSchema, await request(`/api/hydrometer/device/${encodeURIComponent(deviceId)}`, { method: "PATCH", body: JSON.stringify({ coefficients }) }));
+    },
+
+    async deleteHydrometerDevice(deviceId: string) {
+      if (!deviceId) throw new MeadToolsContractError("A device is required", undefined);
+      return parseHydrometerResponse(deleteHydrometerDeviceResponseSchema, await request(`/api/hydrometer/device/${encodeURIComponent(deviceId)}`, { method: "DELETE" }));
     },
 
     async listHydrometerBrews(): Promise<HydrometerBrewResponse[]> {

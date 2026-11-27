@@ -9,6 +9,7 @@ import { colorThemes, radii, spacing, typography } from "@meadtools/design-token
 
 import { isConnectionError } from "@/api/errors";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { HydrometerDeviceManagement } from "./device-management";
 import { HydrometerDeviceActions } from "./device-actions";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
@@ -83,6 +84,7 @@ export function HydrometerDeviceScreen({ deviceId }: { deviceId?: string }) {
         <Text selectable style={styles.body}>
           {item.coefficients.length ? item.coefficients.map((value) => number.format(value)).join("; ") : t("mobileHydrometers.noCoefficients")}
         </Text>
+        <HydrometerDeviceManagement key={`manage-${item.id}`} device={item} />
       </View>
     );
   }
@@ -93,7 +95,7 @@ export function HydrometerDeviceScreen({ deviceId }: { deviceId?: string }) {
       contentInsetAdjustmentBehavior="automatic"
       data={deviceId === undefined ? devices : device ? [device] : []}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={deviceId === undefined ? <View style={{ gap: spacing.md }}><Text style={styles.body}>{t("mobileHydrometers.intro")}</Text><Link href="/tools/hydrometers/brews" style={styles.link}>{t("mobileHydrometers.lifecycle.brews")}</Link></View> : null}
+      ListHeaderComponent={deviceId === undefined ? <View style={{ gap: spacing.md }}><Text style={styles.body}>{t("mobileHydrometers.intro")}</Text><Link href="/tools/hydrometers/setup" style={styles.link}>{t("mobileHydrometers.setup.title")}</Link><Link href="/tools/hydrometers/brews" style={styles.link}>{t("mobileHydrometers.lifecycle.brews")}</Link></View> : null}
       ListEmptyComponent={status()}
       onRefresh={() => void query.refetch()}
       refreshing={query.isRefetching}

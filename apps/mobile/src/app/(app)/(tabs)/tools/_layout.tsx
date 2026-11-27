@@ -10,6 +10,7 @@ export default function ToolsLayout() {
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal" }}>
       <Stack.Screen name="index" options={{ title: t("mobileNav.tools") }} />
+      <Stack.Screen name="hydrometers/setup" options={{ title: t("mobileHydrometers.setup.title") }} />
       <Stack.Screen name="hydrometers/index" options={{ title: t("mobileHydrometers.title") }} />
       <Stack.Screen name="hydrometers/brews/index" options={{ title: t("mobileHydrometers.lifecycle.brews") }} />
       <Stack.Screen name="hydrometers/brews/[brewId]" options={{ title: t("mobileHydrometers.lifecycle.manageBrew") }} />

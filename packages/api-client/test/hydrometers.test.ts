@@ -131,3 +131,40 @@ test("recipe and alert updates send only the intended branch, including false fo
   await assert.rejects(client.linkHydrometerBrewRecipe("brew", 0), MeadToolsContractError);
   assert.equal(bodies.length, 2);
 });
+
+test("setup token methods use the existing account/token routes and redact malformed responses and HTTP errors", async () => {
+  const calls: Array<{ url: string; method: string }> = [];
+  let response: unknown = { hydro_token: "setup-test-only", devices: [device] };
+  let status = 200;
+  const client = createMeadToolsApiClient({ baseUrl: "https://meadtools.test", fetch: async (url, init) => {
+    calls.push({ url, method: init.method });
+    return { ok: status === 200, status, json: async () => response };
+  }});
+  assert.equal(await client.getHydrometerSetupToken(), "setup-test-only");
+  response = { token: "generated-test-only" };
+  assert.equal(await client.generateHydrometerSetupToken(), "generated-test-only");
+  assert.deepEqual(calls.map((call) => [new URL(call.url).pathname, call.method]), [["/api/hydrometer", "GET"], ["/api/hydrometer/token", "POST"]]);
+  response = { hydro_token: "private-test-only", devices: "invalid" };
+  await assert.rejects(client.getHydrometerSetupToken(), (error: unknown) => error instanceof MeadToolsContractError && error.value === undefined);
+  response = { token: "private-test-only", unexpected: true }; status = 401;
+  await assert.rejects(client.generateHydrometerSetupToken(), (error: unknown) => error instanceof MeadToolsApiError && error.status === 401 && error.body === undefined && !error.message.includes("private-test-only"));
+  status = 200; response = { token: "" };
+  await assert.rejects(client.generateHydrometerSetupToken(), MeadToolsContractError);
+});
+test("device calibration requires four finite coefficients and removal targets only the encoded device", async () => {
+  const calls: Array<{ url: string; method: string; body?: string }> = [];
+  const coefficients = [1e-7, -0.003, 0.25, 1];
+  const client = createMeadToolsApiClient({ baseUrl: "https://meadtools.test", fetch: async (url, init) => {
+    calls.push({ url, ...init });
+    return { ok: true, status: 200, json: async () => init.method === "PATCH" ? { ...device, coefficients } : { message: "Deleted" } };
+  }});
+  await assert.rejects(client.updateHydrometerCoefficients("device", []), MeadToolsContractError);
+  await assert.rejects(client.updateHydrometerCoefficients("device", [0, Infinity, 0, 1]), MeadToolsContractError);
+  assert.equal(calls.length, 0);
+  assert.deepEqual((await client.updateHydrometerCoefficients("device/1", coefficients)).coefficients, coefficients);
+  assert.match(calls[0].url, /device\/device%2F1$/);
+  assert.deepEqual(JSON.parse(calls[0].body!), { coefficients });
+  await client.deleteHydrometerDevice("device/1");
+  assert.equal(calls[1].method, "DELETE");
+  assert.equal(calls[1].url, calls[0].url);
+});
