@@ -1,4 +1,5 @@
 import { randomUUID } from "expo-crypto";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -7,6 +8,10 @@ import type { InventoryStockHistoryResponse } from "@meadtools/api-contract";
 import { quantityUnitSchema, stockInputSchema } from "@meadtools/inventory-domain";
 
 import { CalculatorField, Chips } from "@/components/calculator-ui";
+import { parseDecimalInput } from "@/outbox/gravity-entry-form";
+
+import { parseStockPrice, priceUnits, type PriceDraft } from "./price-draft";
+import { StockPriceFields } from "./price-fields";
 
 import { StorageSourceField } from "./storage-source-field";
 import { StockCatalogField } from "./stock-catalog-field";
@@ -18,6 +23,7 @@ const categories = stockInputSchema.shape.category.options;
 export function StockEditor({
   action,
   review,
+  currency,
   busy,
   retryOnly,
   error,
@@ -26,6 +32,7 @@ export function StockEditor({
 }: {
   action: StockAction;
   review?: InventoryStockHistoryResponse;
+  currency: string | null;
   busy: boolean;
   retryOnly: boolean;
   error: string | null;
@@ -34,6 +41,7 @@ export function StockEditor({
 }) {
   const { t, i18n } = useTranslation();
   const styles = useStockStyles();
+  const router = useRouter();
   // Keep the balance and linked uses the user actually opened the form with.
   const [snapshot] = useState(review);
   const item = snapshot?.stock;
@@ -47,7 +55,13 @@ export function StockEditor({
     notes: action === "details" ? item?.notes ?? "" : "",
     catalogReference: item?.catalogReference ?? null
   });
-  const [invalid, setInvalid] = useState(false);
+  const valuation = action === "set_unit_cost";
+  const pricing = action === "add" || action === "receipt" || valuation;
+  const [priceDraft, setPriceDraft] = useState<PriceDraft>(() => ({
+    amount: "", perAmount: valuation ? "1" : "", perUnit: item?.quantity.unit ?? "kg"
+  }));
+  const [priceCurrency, setPriceCurrency] = useState<string | null>(null);
+  const [invalid, setInvalid] = useState<"price" | "stock" | "currency" | null>(null);
   const disabled = busy || retryOnly;
   const count = action === "correction" || action === "reconcile";
   const amountLabel = t(count ? "inventory.actualQuantity" : "inventory.quantity");
@@ -57,9 +71,28 @@ export function StockEditor({
     `${new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }).format(quantity.value)} ${t(`inventory.units.${quantity.unit}`)}`;
 
   function submit() {
-    const command = retryOnly ? null : buildStockCommand(action, draft, snapshot, randomUUID());
-    setInvalid(!retryOnly && !command);
-    if (retryOnly || command) onSave(command);
+    if (retryOnly) { onSave(null); return; }
+    if (pricing && priceDraft.amount.trim() && currency !== priceCurrency) {
+      setInvalid("currency");
+      return;
+    }
+    const value = parseDecimalInput(draft.amount);
+    const price = pricing ? parseStockPrice(priceDraft, currency, draft.unit,
+      valuation || value === null ? null : { value, unit: draft.unit }) : null;
+    if (price === "invalid" || (valuation && price === null)) {
+      setInvalid("price");
+      return;
+    }
+    const command = buildStockCommand(action, draft, snapshot, randomUUID(), price);
+    setInvalid(command ? null : "stock");
+    if (command) onSave(command);
+  }
+
+  function resetIncompatiblePriceUnit(unit: StockDraft["unit"]) {
+    const compatible: readonly StockDraft["unit"][] = priceUnits(unit);
+    if (!compatible.includes(priceDraft.perUnit)) {
+      setPriceDraft({ ...priceDraft, perUnit: unit, perAmount: "" });
+    }
   }
 
   return (
@@ -88,10 +121,12 @@ export function StockEditor({
             optionLabel={(value) => t(`inventory.categories.${value}`)}
             onChange={(category) => {
               if (disabled || category === draft.category) return;
+              const unit = category === "packaging" ? "units" : draft.category === "packaging" ? "kg" : draft.unit;
+              resetIncompatiblePriceUnit(unit);
               setDraft({
                 ...draft,
                 category,
-                unit: category === "packaging" ? "units" : draft.category === "packaging" ? "kg" : draft.unit,
+                unit,
                 catalogReference: null
               });
             }}
@@ -107,7 +142,7 @@ export function StockEditor({
           disabled={disabled}
         />
       )}
-      {action !== "details" && (
+      {action !== "details" && !valuation && (
         <CalculatorField label={amountLabel} hint={
           action === "reconcile" ? t("inventory.reconcile.countHelp") :
           action === "correction" ? t("inventory.correctionHelp") :
@@ -126,7 +161,9 @@ export function StockEditor({
               options={quantityUnitSchema.options}
               optionLabel={(value) => t(`inventory.units.${value}`)}
               onChange={(unit) => {
-                if (!disabled) setDraft({ ...draft, unit });
+                if (disabled) return;
+                resetIncompatiblePriceUnit(unit);
+                setDraft({ ...draft, unit });
               }}
               value={draft.unit}
             />
@@ -164,15 +201,23 @@ export function StockEditor({
           value={draft.notes}
         />
       </CalculatorField>
-      {action === "receipt" && item?.cost.unit_cost != null ? (
+      {pricing ? (
+        <StockPriceFields currency={currency} stockUnit={draft.unit} draft={priceDraft} required={valuation}
+          disabled={disabled} onChange={(next) => {
+            if (next.amount !== priceDraft.amount) setPriceCurrency(currency);
+            setPriceDraft(next);
+          }} onCurrency={() => router.push("/inventory/costs")} />
+      ) : null}
+      {action === "receipt" && item?.cost.unit_cost != null && !priceDraft.amount.trim() ? (
         <StockText>{t("inventoryCosts.unpricedReceiptWarning")}</StockText>
       ) : null}
-      {invalid || error ? <StockText kind="error">{invalid ? t("inventory.invalid") : error}</StockText> : null}
+      {invalid || error ? <StockText kind="error">{invalid === "currency" ? t("mobileInventory.currencyChanged") :
+        invalid === "price" ? t("mobileInventory.invalidPrice") : invalid ? t("inventory.invalid") : error}</StockText> : null}
       <View style={styles.row}>
         <StockButton
           label={retryOnly ? t("equipment.retry") : t(action === "reconcile" ? "inventory.reconcile.confirm" : "inventory.save")}
           onPress={submit}
-          disabled={busy}
+          disabled={busy || (valuation && !currency && !retryOnly)}
           primary
         />
         <StockButton label={t("cancel")} onPress={onCancel} disabled={busy} />

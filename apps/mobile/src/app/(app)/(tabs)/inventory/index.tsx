@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { CalculatorScreen } from "@/components/calculator-ui";
+import { useStockCostLabel } from "@/inventory/stock-costs";
 import { StockButton, StockCard, StockInput, StockText, useStockStyles } from "@/inventory/stock-ui";
 import { useStockOverview } from "@/inventory/use-stock";
 
@@ -11,6 +12,7 @@ export default function InventoryScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const styles = useStockStyles();
+  const costLabel = useStockCostLabel();
   const { data, error, isPending, refetch } = useStockOverview();
   const [search, setSearch] = useState("");
 
@@ -44,7 +46,11 @@ export default function InventoryScreen() {
             <StockButton label={t("inventory.meads.title")} onPress={() => router.push("/inventory/meads")} />
             <StockButton label={t("equipment.title")} onPress={() => router.push("/inventory/equipment")} />
             <StockButton label={t("inventory.organization.manage")} onPress={() => router.push("/inventory/organization")} />
+            <StockButton label={t("mobileInventory.costs")} onPress={() => router.push("/inventory/costs")} />
           </View>
+          <StockText kind="muted">{data.currency
+            ? t("inventoryCosts.currencyCurrent", { currency: data.currency })
+            : t("inventoryCosts.currencyUnset")}</StockText>
           <StockButton
             label={t("inventory.add")}
             onPress={() => router.push({ pathname: "/inventory/[stockId]", params: { stockId: "new" } })}
@@ -76,6 +82,7 @@ export default function InventoryScreen() {
                 {number.format(item.quantity.value)} {t(`inventory.units.${item.quantity.unit}`)}
               </StockText>
               <StockText kind="muted">{t(`inventory.categories.${item.category}`)}</StockText>
+              {item.cost.unit_cost !== null ? <StockText kind="muted">{costLabel(item)}</StockText> : null}
               {item.reconciliation_required ? (
                 <StockText kind="error">{t("inventory.reconcile.title")}</StockText>
               ) : null}

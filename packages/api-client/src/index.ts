@@ -1,5 +1,12 @@
 import {
   accountInfoResponseSchema,
+  brewCostResponseSchema,
+  inventoryCostExclusionsResponseSchema,
+  inventoryCurrencyResponseSchema,
+  recipeCostResponseSchema,
+  updateBrewCostRequestBodySchema,
+  updateInventoryCostExclusionsRequestBodySchema,
+  updateInventoryCurrencyRequestBodySchema,
   createEquipmentRequestBodySchema,
   equipmentMutationResponseSchema,
   equipmentOverviewResponseSchema,
@@ -47,6 +54,13 @@ import {
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type BrewCostResponse,
+  type InventoryCostExclusionsResponse,
+  type InventoryCurrencyResponse,
+  type RecipeCostResponse,
+  type UpdateBrewCostRequestBody,
+  type UpdateInventoryCostExclusionsRequestBody,
+  type UpdateInventoryCurrencyRequestBody,
   type CreateEquipmentRequestBody,
   type EquipmentMutationResponse,
   type EquipmentOverviewResponse,
@@ -596,6 +610,39 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
         body: JSON.stringify(payload)
       });
       return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory storage update response");
+    },
+
+    async updateInventoryCurrency(input: UpdateInventoryCurrencyRequestBody): Promise<InventoryCurrencyResponse> {
+      const payload = parseInventoryPayload(updateInventoryCurrencyRequestBodySchema, input, "Inventory currency");
+      const body = await request("/api/account/inventory/currency", { method: "PUT", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryCurrencyResponseSchema, body, "Inventory currency response");
+    },
+
+    async getInventoryCostExclusions(): Promise<InventoryCostExclusionsResponse> {
+      const body = await request("/api/account/inventory/cost-exclusions", { method: "GET" });
+      return parseInventoryPayload(inventoryCostExclusionsResponseSchema, body, "Cost exclusions");
+    },
+
+    async updateInventoryCostExclusions(input: UpdateInventoryCostExclusionsRequestBody): Promise<InventoryCostExclusionsResponse> {
+      const payload = parseInventoryPayload(updateInventoryCostExclusionsRequestBodySchema, input, "Cost exclusions update");
+      const body = await request("/api/account/inventory/cost-exclusions", { method: "PATCH", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryCostExclusionsResponseSchema, body, "Cost exclusions response");
+    },
+
+    async getBrewCosts(brewId: string): Promise<BrewCostResponse> {
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/costs`, { method: "GET" });
+      return parseInventoryPayload(brewCostResponseSchema, body, "Brew costs");
+    },
+
+    async updateBrewCosts(brewId: string, input: UpdateBrewCostRequestBody): Promise<BrewCostResponse> {
+      const payload = parseInventoryPayload(updateBrewCostRequestBodySchema, input, "Brew costs update");
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/costs`, { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(brewCostResponseSchema, body, "Brew costs response");
+    },
+
+    async getRecipeCosts(recipeId: number): Promise<RecipeCostResponse> {
+      const body = await request(`/api/recipes/${encodeURIComponent(recipeId)}/costs`, { method: "GET" });
+      return parseInventoryPayload(recipeCostResponseSchema, body, "Recipe cost estimate");
     },
 
     async getEquipment(): Promise<EquipmentOverviewResponse> {

@@ -27,3 +27,12 @@ The test records remain in the normal local development database.
 | iOS runtime | The Equipment screen opened on the iPhone 18 Pro simulator (iOS 27.0) and displayed existing equipment from the local Premium account. The simulator window could not be controlled through Device Hub, so creating, editing, assigning, reassigning, releasing and archiving equipment remain pending on device. No test records were created. |
 | Automated | Mobile tests cover optional capacity, grouped quantity and the reviewed assignment sent when a container is assigned, reassigned or released. API client tests confirm the existing routes and preservation of the server's assignment conflict. |
 | Android | Preview-profile JavaScript export passed. Runtime verification remains pending because no local Android SDK or emulator was available. |
+
+## Costs and currency (#610) · November 26, 2026
+
+| Check | Result |
+| --- | --- |
+| iOS runtime | The iPhone 18 Pro simulator (iOS 27.0) loaded the local account's USD currency and Water exclusion. Key Lime Juice displayed its recorded USD 0.1838 per US fl oz average and price history. The Key Lime Pie recipe displayed a USD 77.81 estimate with Water excluded. The brew view loaded the recorded-usage empty state for a brew without deductions. |
+| Automated | Tests cover blank versus zero prices, receipt and valuation payloads, currency validation on native engines without `Intl.supportedValuesOf`, owner-only cost summaries, separate mixed-currency totals, and cost exclusion routes. |
+| Android | The preview-profile JavaScript export passed. Runtime verification remains pending because no local Android SDK or emulator was available. |
+| Remaining device checks | Changing currency, saving receipts and valuations, editing exclusions, and checking totals for a brew with recorded uses. Device Hub did not expose a controllable simulator window. No local data was changed for this slice. |

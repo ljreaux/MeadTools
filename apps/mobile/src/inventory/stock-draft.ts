@@ -9,12 +9,13 @@ import {
   stockInputSchema,
   validateStockQuantity,
   type CatalogReference,
+  type PurchasePrice,
   type QuantityUnit
 } from "@meadtools/inventory-domain";
 
 import { parseDecimalInput } from "../outbox/gravity-entry-form";
 
-export type StockAction = "add" | "details" | "receipt" | "manual_use" | "correction" | "reconcile";
+export type StockAction = "add" | "details" | "receipt" | "manual_use" | "correction" | "reconcile" | "set_unit_cost";
 export type StockCategory = InventoryStockItem["category"];
 
 export type StockDraft = {
@@ -35,10 +36,15 @@ export function buildStockCommand(
   action: StockAction,
   draft: StockDraft,
   review: InventoryStockHistoryResponse | undefined,
-  operationId: string
+  operationId: string,
+  price: PurchasePrice | null = null
 ): StockCommand | null {
   const item = review?.stock;
   const notes = draft.notes.trim() || null;
+  if (action === "set_unit_cost") return item && price ? {
+    kind: "update", stockId: item.id,
+    input: { action, operation_id: operationId, price, note: notes }
+  } : null;
   if (action === "details") {
     const name = stockInputSchema.shape.name.safeParse(draft.name);
     return item && name.success
@@ -79,7 +85,7 @@ export function buildStockCommand(
       catalogReference: draft.catalogReference
     });
     return stock.success
-      ? { kind: "create", input: { stock: stock.data, price: null, operation_id: operationId } }
+      ? { kind: "create", input: { stock: stock.data, price, operation_id: operationId } }
       : null;
   }
   if (!item) return null;
@@ -103,7 +109,8 @@ export function buildStockCommand(
     stockId: item.id,
     input: {
       action, operation_id: operationId, quantity, expected_balance: item.quantity, note: notes,
-      ...(action === "manual_use" && draft.storageSource !== undefined ? { storage_source: draft.storageSource } : {})
+      ...(action === "manual_use" && draft.storageSource !== undefined ? { storage_source: draft.storageSource } : {}),
+      ...(action === "receipt" && price ? { price } : {})
     }
   };
 }

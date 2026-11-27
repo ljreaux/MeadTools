@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { MeadToolsApiError } from "@meadtools/api-client";
 
 import { CalculatorScreen } from "@/components/calculator-ui";
+import { StockPriceHistory, useStockCostLabel } from "@/inventory/stock-costs";
 import type { StockAction, StockCommand } from "@/inventory/stock-draft";
 import { StockEditor } from "@/inventory/stock-editor";
 import { StockButton, StockCard, StockText, useStockStyles } from "@/inventory/stock-ui";
@@ -29,6 +30,7 @@ export default function InventoryStockScreen() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   const overview = useStockOverview();
+  const costLabel = useStockCostLabel();
   const adding = stockId === "new";
   const allowed = overview.data?.can_manage === true && !overview.isError;
   const history = useQuery({
@@ -51,7 +53,7 @@ export default function InventoryStockScreen() {
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" });
 
   function refreshInventory() {
-    void Promise.all(["inventory", "inventory-stock", "inventory-organization"].map((key) =>
+    void Promise.all(["inventory", "inventory-stock", "inventory-organization", "brew-costs", "recipe-costs"].map((key) =>
       queryClient.invalidateQueries({ queryKey: [key, session?.id] })));
   }
 
@@ -83,6 +85,7 @@ export default function InventoryStockScreen() {
           if (!adding) setAction(null);
           refreshInventory();
         }
+        if (code === "CURRENCY_REQUIRED" || code === "CURRENCY_MISMATCH") void overview.refetch();
         setError(t(`inventory.errors.${code}`, { defaultValue: t("inventory.saveError") }));
       } else {
         setRetryOnly(true);
@@ -148,6 +151,7 @@ export default function InventoryStockScreen() {
           key={action}
           action={action}
           review={history.data}
+          currency={overview.data?.currency ?? null}
           busy={busy}
           retryOnly={retryOnly}
           error={error}
@@ -160,6 +164,7 @@ export default function InventoryStockScreen() {
             <StockText kind="heading">{t("inventory.actualQuantity")}</StockText>
             <StockText>{number.format(item.quantity.value)} {units}</StockText>
             <StockText kind="muted">{t(`inventory.categories.${item.category}`)}</StockText>
+            <StockText>{costLabel(item)}</StockText>
             {item.notes ? <StockText>{item.notes}</StockText> : null}
             {item.reconciliation_required ? <StockText kind="error">{t("inventory.needsReview")}</StockText> : null}
           </StockCard>
@@ -184,6 +189,8 @@ export default function InventoryStockScreen() {
                   disabled={busy || history.isFetching}
                 />
               ))}
+              <StockButton label={t("inventory.actions.set_unit_cost")} onPress={() => openEditor("set_unit_cost")}
+                disabled={busy || history.isFetching} />
               <StockButton label={t("inventory.organization.organize")}
                 onPress={() => router.push({ pathname: "/inventory/organize/[targetId]", params: { targetId: item.id, kind: "stock", name: item.name } })}
                 disabled={busy} />
@@ -206,6 +213,7 @@ export default function InventoryStockScreen() {
             );
           })}
           {history.data.has_more ? <StockText kind="muted">{t("inventory.recentHistory")}</StockText> : null}
+          <StockPriceHistory history={history.data} />
         </>
       ) : null}
     </CalculatorScreen>

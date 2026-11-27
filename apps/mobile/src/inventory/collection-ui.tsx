@@ -28,13 +28,14 @@ export function CollectionGate({ pending, error, allowed, retry, children }: {
   return children;
 }
 
-export function CollectionSave({ busy, retryOnly, error, label, onSave, onCancel }: {
+export function CollectionSave({ busy, retryOnly, error, label, onSave, onCancel, saveDisabled }: {
   busy: boolean;
   retryOnly: boolean;
   error: string | null;
   label: string;
   onSave: () => void;
   onCancel?: () => void;
+  saveDisabled?: boolean;
 }) {
   const { t } = useTranslation();
   const styles = useStockStyles();
@@ -42,7 +43,7 @@ export function CollectionSave({ busy, retryOnly, error, label, onSave, onCancel
     <>
       {error ? <StockText kind="error">{error}</StockText> : null}
       <View style={styles.row}>
-        <StockButton label={t(busy ? "equipment.saving" : retryOnly ? "equipment.retry" : label)} onPress={onSave} disabled={busy} primary />
+        <StockButton label={t(busy ? "equipment.saving" : retryOnly ? "equipment.retry" : label)} onPress={onSave} disabled={busy || saveDisabled} primary />
         {onCancel ? <StockButton label={t("cancel")} onPress={onCancel} disabled={busy} /> : null}
       </View>
     </>

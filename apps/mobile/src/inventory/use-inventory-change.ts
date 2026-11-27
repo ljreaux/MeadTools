@@ -11,9 +11,10 @@ const reloadCodes = new Set([
   "PREMIUM_REQUIRED", "OPERATION_CONFLICT", "ASSIGNMENT_CHANGED", "BREW_COMPLETE", "VESSEL_OCCUPIED"
 ]);
 const collectionKeys = ["inventory", "inventory-stock", "finished-meads", "finished-mead", "inventory-organization", "inventory-storage"];
+const costKeys = ["inventory", "inventory-stock", "inventory-cost-exclusions", "brew-costs", "recipe-costs"];
 const equipmentKeys = ["equipment", "brew", "brews"];
 
-export function useInventoryChange(errorGroup: "meads" | "organization" | "equipment") {
+export function useInventoryChange(errorGroup: "meads" | "organization" | "equipment" | "costs") {
   const queryClient = useQueryClient();
   const { session } = useSession();
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export function useInventoryChange(errorGroup: "meads" | "organization" | "equip
   }
 
   function reload() {
-    const keys = errorGroup === "equipment" ? equipmentKeys : collectionKeys;
+    const keys = errorGroup === "equipment" ? equipmentKeys : errorGroup === "costs" ? costKeys : collectionKeys;
     void Promise.all(keys.map((key) => queryClient.invalidateQueries({ queryKey: [key, session?.id] })));
   }
 
@@ -60,7 +61,7 @@ export function useInventoryChange(errorGroup: "meads" | "organization" | "equip
           onStale();
           reload();
         }
-        const namespace = errorGroup === "equipment" ? errorGroup : `inventory.${errorGroup}`;
+        const namespace = errorGroup === "costs" ? "inventory" : errorGroup === "equipment" ? errorGroup : `inventory.${errorGroup}`;
         setError(t(`${namespace}.errors.${code}`, {
           defaultValue: errorGroup === "equipment" ? t("equipment.saveError") :
             t(`inventory.errors.${code}`, { defaultValue: t("inventory.saveError") })
