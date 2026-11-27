@@ -84,3 +84,50 @@ test("range deletion preserves its exact reviewed bounds", async () => {
   }});
   await client.deleteHydrometerLogsInRange({ deviceId: "device", startDate: "2026-11-01T00:00:00Z", endDate: "2026-11-27T00:00:00Z" });
 });
+
+const brew = { id: "brew/1", name: "Test brew", start_date: "2026-11-27T00:00:00Z", end_date: null, user_id: 1, latest_gravity: null, recipe_id: null, requested_email_alerts: false, sb_alert_sent: false, fg_alert_sent: false, stage: "PLANNED", batch_number: null, current_volume_liters: null, recipe_snapshot: null };
+test("lifecycle methods preserve start, rename, unlink and end endpoint semantics", async () => {
+  const calls: Array<{ url: string; init: import("../src/index").ApiRequestInit }> = [];
+  const client = createMeadToolsApiClient({ baseUrl: "https://meadtools.test", fetch: async (url, init) => {
+    calls.push({ url, init });
+    const payload = init.body ? JSON.parse(init.body) : {};
+    return { ok: true, status: 200, json: async () => init.method === "GET" ? [brew] : payload.brew_name && init.method === "PATCH" ? { ...brew, name: payload.brew_name } : [brew, device] };
+  }});
+  assert.deepEqual(await client.listHydrometerBrews(), [brew]);
+  await assert.rejects(client.startHydrometerBrew("device", "   "), MeadToolsContractError);
+  await assert.rejects(client.renameHydrometerBrew("brew", " \t"), MeadToolsContractError);
+  assert.equal(calls.length, 1);
+  await client.startHydrometerBrew("device", " New brew ");
+  assert.equal(JSON.parse(calls[1].init.body!).brew_name, "New brew");
+  await client.renameHydrometerBrew("brew/1", " Renamed ");
+  assert.deepEqual(JSON.parse(calls[2].init.body!), { brew_id: "brew/1", brew_name: "Renamed" });
+  await client.unlinkHydrometerDevice("brew/1", "device");
+  assert.equal(new URL(calls[3].url).pathname, "/api/brews");
+  await client.endHydrometerBrew("brew/1", "device");
+  assert.equal(new URL(calls[4].url).pathname, "/api/hydrometer/brew");
+  assert.deepEqual(JSON.parse(calls[4].init.body!), { brew_id: "brew/1", device_id: "device" });
+});
+test("attachment and import never force reassignment or move another brew's historical logs", async () => {
+  const calls: Array<{ url: string; body: unknown }> = [];
+  const client = createMeadToolsApiClient({ baseUrl: "https://meadtools.test", fetch: async (url, init) => {
+    const body = JSON.parse(init.body!); calls.push({ url, body });
+    return { ok: true, status: 200, json: async () => url.endsWith("attach-device") ? { message: "Device attached", device_id: "device", brew_id: "brew/1" } : { message: "Logs adopted", device_id: "device", brew_id: "brew/1", adopted_count: 2 } };
+  }});
+  await client.attachHydrometerDevice("brew/1", "device");
+  await client.importUnassignedHydrometerLogs("brew/1", "device");
+  assert.match(calls[0].url, /brew%2F1\/attach-device$/);
+  assert.deepEqual(calls[0].body, { device_id: "device" });
+  assert.deepEqual(calls[1].body, { device_id: "device" });
+});
+test("recipe and alert updates send only the intended branch, including false for opt-out", async () => {
+  const bodies: unknown[] = [];
+  const client = createMeadToolsApiClient({ baseUrl: "https://meadtools.test", fetch: async (_url, init) => {
+    const body = JSON.parse(init.body!); bodies.push(body);
+    return { ok: true, status: 200, json: async () => body.recipe_id ? { ...brew, recipe_id: body.recipe_id } : { message: "Updated" } };
+  }});
+  await client.linkHydrometerBrewRecipe("brew", 4);
+  await client.setHydrometerBrewAlerts("brew", false);
+  assert.deepEqual(bodies, [{ recipe_id: 4 }, { requested_email_alerts: false }]);
+  await assert.rejects(client.linkHydrometerBrewRecipe("brew", 0), MeadToolsContractError);
+  assert.equal(bodies.length, 2);
+});

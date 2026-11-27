@@ -6,7 +6,7 @@ Parent: #556. First child: #612 (linked devices and read-only device details).
 
 - #612: reviewed and approved for commit on November 27, 2026.
 - #613: reviewed and approved for commit on November 27, 2026.
-- #614: brew linking and lifecycle — not started.
+- #614: reviewed and approved for commit on November 27, 2026.
 - #615: setup, tokens and device management — not started.
 - Parent PR to `preview`: include `- [ ] UI review on iOS and Android before merging`.
   No separate review chat is needed.
@@ -164,3 +164,69 @@ checks cover single and range deletion requests; device checks cover the native
 confirmation and cancellation. New physical-device telemetry arrival, complete
 screen-reader navigation and the combined-area UI pass remain for final review.
 The parent PR must keep its unchecked iOS/Android UI-review item before merging.
+
+
+## #614 — brew linking and lifecycle
+
+Reviewed and approved for commit on November 27, 2026. This slice
+uses existing HTTP routes and response schemas. No web, server, authentication,
+database or generated API-contract files changed.
+
+### Behavior
+
+- Start a named brew from an unassigned hydrometer; blank names cannot be saved.
+- Browse and search active/completed/all brews; open brew details and readings.
+- Rename a brew, link an owned recipe (with snapshot-replacement confirmation),
+  and update its email-alert preference.
+- Attach an available hydrometer and import only its unassigned readings.
+  Hydrometers assigned elsewhere are excluded; the current attachment is disabled.
+- Unlinking preserves the brew, its active status and its readings. Ending a brew
+  records its end date and detaches the selected hydrometer. Both require confirmation.
+- Online-only writes have immediate duplicate-submission protection and no automatic
+  retries. A completed attachment followed by a failed import is reported separately,
+  with an explicit import retry. Device, brew and reading caches refresh after writes,
+  including failed requests whose response may have been lost.
+
+### iOS and Android verification
+
+Verified against the normal local backend on iPhone 17 Pro / iOS 26.2 and
+Medium Phone / Android API 36.1 (authorized ADB input/screenshots):
+
+- Empty-name Save disabled; create, rename, recipe selection/confirmation and
+  email alerts on/off saved successfully. Alerts were left off.
+- Unlink kept the test brew active; relink imported unassigned history and restored
+  its device card. Ending the test brew showed an end date and no linked device.
+- Existing assignments to Active Test Brew and Planning Test Brew were excluded
+  from available-device choices. The current device was disabled in the iOS picker.
+- The active/completed list filters displayed the expected records on both platforms.
+  iOS search narrowed the completed list to the two 614 test records; opening a result
+  returned to its completed brew details.
+- Fixed an Expo Router restriction found in native testing: the new list's Link
+  child now receives a flattened style. Rechecked the corrected list on both platforms.
+- Android rapid ADB text containing repeated R keys triggered the development
+  client's reload shortcut; entering the test name without that shortcut worked.
+  No production input workaround or application setting was added.
+
+Kept these completed local test records for inspection:
+
+- **Hydrometer parity 614 iOS checked**, created using Available Test Hydrometer.
+- **Test 614 Android checked**, created using Completed Test Hydrometer.
+
+Both are linked to Mead Wiki Simple Trad Metric and have alerts off. Both devices
+are unassigned again. No brew or reading was deleted; existing assigned histories
+were not moved. Import failure and attachment conflict are covered by deterministic
+shared-domain tests, rather than deliberately interrupting live writes.
+
+### Checks and remaining review
+
+- Mobile: 118 tests; lint and TypeScript pass.
+- API client: 27 tests and TypeScript pass. New checks cover blank-name rejection,
+  distinct rename/unlink/end operations, unassigned-only import, and alert opt-out.
+- Brew domain: 67 tests and TypeScript pass, including successful attachment with
+  failed import and attachment-conflict handling.
+- API contract: 77 tests; web: 264 tests; i18n: 3 tests pass.
+- Both preview-profile JavaScript exports pass.
+
+The final parent PR retains the unchecked iOS/Android UI-review requirement.
+Complete screen-reader, enlarged-text, offline-transport and cross-area interaction
+checks remain part of that pass. #615 setup/token/device management is still pending.

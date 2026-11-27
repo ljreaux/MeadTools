@@ -22,7 +22,8 @@
     "./links": "./src/links.ts",
     "./qr": "./src/qr.ts",
     "./images": "./src/images.ts",
-    "./hydrometer": "./src/hydrometer.ts"
+    "./hydrometer": "./src/hydrometer.ts",
+    "./hydrometer-lifecycle": "./src/hydrometer-lifecycle.ts"
   },
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",

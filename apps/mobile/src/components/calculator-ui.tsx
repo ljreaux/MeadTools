@@ -319,17 +319,20 @@ export function CalculatorSection({ title }: { title: string }) {
 export function CalculatorSwitch({
   label,
   value,
-  onValueChange
+  onValueChange,
+  disabled = false
 }: {
   label: string;
   value: boolean;
   onValueChange: (next: boolean) => void;
+  disabled?: boolean;
 }) {
   const { styles } = useStyles();
   return (
     <Pressable
       accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
+      accessibilityState={{ checked: value, disabled }}
+      disabled={disabled}
       onPress={() => onValueChange(!value)}
       style={styles.switchRow}
     >
@@ -337,6 +340,7 @@ export function CalculatorSwitch({
       <Switch
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
+        disabled={disabled}
         onValueChange={onValueChange}
         value={value}
       />
