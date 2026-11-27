@@ -42,7 +42,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { BREW_ENTRY_TYPE } from "@/lib/brewEnums";
-import { calcABV } from "@meadtools/core/gravity";
+import { buildWirelessHydrometerChartData } from "@meadtools/brew-domain/hydrometer";
+export { buildWirelessHydrometerChartData } from "@meadtools/brew-domain/hydrometer";
 import { L_TO_VOLUME } from "@meadtools/core/recipe";
 import type { VolumeUnit } from "@/types/recipeData";
 import type { BrewViewEntry, BrewViewLog } from "@/types/brewView";
@@ -172,53 +173,6 @@ export function buildManualBrewChartData(
         isFiniteNumber(point.temperature) ||
         isFiniteNumber(point.ph) ||
         isFiniteNumber(point.volume)
-    )
-    .sort((a, b) => getTime(a.date) - getTime(b.date));
-}
-
-export function buildWirelessHydrometerChartData(
-  logs: WirelessLog[]
-): HydrometerChartData[] {
-  const points: HydrometerChartData[] = [];
-  const sortedLogs = [...logs].sort(
-    (a, b) => getTime(a.datetime) - getTime(b.datetime)
-  );
-  const deviceOriginalGravity = sortedLogs
-    .map((log) =>
-      isFiniteNumber(log.calculated_gravity)
-        ? log.calculated_gravity
-        : log.gravity
-    )
-    .find(isFiniteNumber);
-
-  for (const log of sortedLogs) {
-    if (!log.datetime || !getTime(log.datetime)) continue;
-
-    const gravity = isFiniteNumber(log.calculated_gravity)
-      ? log.calculated_gravity
-      : log.gravity;
-    const abv =
-      isFiniteNumber(deviceOriginalGravity) && isFiniteNumber(gravity)
-        ? Math.round(calcABV(deviceOriginalGravity, gravity) * 1000) / 1000
-        : null;
-
-    points.push({
-      date: log.datetime,
-      gravity: isFiniteNumber(gravity) ? gravity : undefined,
-      temperature: isFiniteNumber(log.temperature)
-        ? log.temperature
-        : undefined,
-      battery: isFiniteNumber(log.battery) ? log.battery : undefined,
-      ...(isFiniteNumber(abv) ? { abv: Math.max(abv, 0) } : {})
-    });
-  }
-
-  return points
-    .filter(
-      (point) =>
-        isFiniteNumber(point.gravity) ||
-        isFiniteNumber(point.temperature) ||
-        isFiniteNumber(point.battery)
     )
     .sort((a, b) => getTime(a.date) - getTime(b.date));
 }

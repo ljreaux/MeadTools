@@ -74,6 +74,9 @@ export function HydrometerDeviceScreen({ deviceId }: { deviceId?: string }) {
             </Pressable>
           </Link>
         ) : null}
+        <Link asChild href={{ pathname: "/tools/hydrometers/readings", params: { deviceId: item.id } }}>
+          <Pressable accessibilityRole="link" style={styles.button}><Text style={styles.buttonText}>{t("mobileHydrometers.readings")}</Text></Pressable>
+        </Link>
         <Text style={styles.label}>{t("mobileHydrometers.coefficients")}</Text>
         <Text selectable style={styles.body}>
           {item.coefficients.length ? item.coefficients.map((value) => number.format(value)).join("; ") : t("mobileHydrometers.noCoefficients")}
