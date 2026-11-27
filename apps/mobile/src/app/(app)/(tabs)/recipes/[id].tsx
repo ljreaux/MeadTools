@@ -5,14 +5,22 @@ import { useTranslation } from "react-i18next";
 
 import { calculateRecipeDerivedState, type RecipeDerivedState } from "@meadtools/core/derived";
 import { parseNumber } from "@meadtools/core/numeric";
+import { spacing } from "@meadtools/design-tokens";
 import { recipeDataV2Schema, type RecipeDataV2 } from "@meadtools/schemas";
 
 import { RecipeCosts } from "@/components/recipe-costs";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipePdfActions } from "@/components/recipe-pdf-actions";
 import { RecipePlan } from "@/components/recipe-plan";
-import { RecipeLoadStatus, useRecipeStyles } from "@/components/recipe-view";
+import {
+  RecipeLoadStatus,
+  RecipeRow,
+  RecipeSection,
+  RecipeStatGrid,
+  useRecipeStyles
+} from "@/components/recipe-view";
 import { useApiClient, useSession } from "@/providers/app-providers";
+import { summarizeDerivedRecipe } from "@/recipes/recipe-summary";
 import {
   catalogLabelKey,
   formatCalculatorResult,
@@ -44,12 +52,14 @@ export default function RecipeDetailScreen() {
     >
       {ownedRecipe ? (
         <>
-          <Text accessibilityRole="header" style={styles.title}>
-            {ownedRecipe.name.trim() || t("untitledRecipe")}
-          </Text>
-          <Text style={styles.muted}>
-            {t(ownedRecipe.private ? "brews.visibility.private" : "brews.visibility.public")}
-          </Text>
+          <View style={{ gap: spacing.sm }}>
+            <Text accessibilityRole="header" style={styles.title}>
+              {ownedRecipe.name.trim() || t("untitledRecipe")}
+            </Text>
+            <Text style={[styles.pill, ownedRecipe.private && styles.pillPrivate]}>
+              {t(ownedRecipe.private ? "brews.visibility.private" : "brews.visibility.public")}
+            </Text>
+          </View>
           {ownedRecipe.cover_image_id !== null ? (
             <RecipeCover
               key={`${ownedRecipe.id}:${ownedRecipe.cover_image_id ?? ""}`}
@@ -105,38 +115,37 @@ function RecipeContents({ storedData, recipeId }: { storedData: unknown; recipeI
 
 function RecipeTargets({ data, derived }: { data: RecipeDataV2; derived: RecipeDerivedState }) {
   const { t, i18n } = useTranslation();
-  const { styles } = useRecipeStyles();
-  const fg = parseNumber(data.fg);
-  const hasPrimaryVolume = Number.isFinite(derived.primaryVolumeL) && derived.primaryVolumeL > 0;
-  const hasFinishedVolume = Number.isFinite(derived.bottlingVolume) && derived.bottlingVolume > 0;
-  const formatGravity = (value: number) =>
-    Number.isFinite(value) && value > 0 ? formatCalculatorResult(i18n.language, value, 3, true) : null;
-  const abv = hasPrimaryVolume && fg > 0 && Number.isFinite(derived.abv)
-    ? new Intl.NumberFormat(i18n.language, { style: "percent", maximumFractionDigits: 2 })
-      .format(derived.abv / 100)
-    : null;
-  const unit = t(`units.${derived.volumeUnit}`, { defaultValue: derived.volumeUnit });
-  const bottlingVolume = hasFinishedVolume
-    ? `${formatCalculatorResult(i18n.language, derived.bottlingVolume, 3)} ${unit}`
-    : null;
-  const values = [
-    ["estimatedOg", hasPrimaryVolume ? formatGravity(derived.ogPrimary) : null],
-    ["fermentationFg", formatGravity(fg)],
-    ["finishedGravity", hasFinishedVolume && fg > 0 ? formatGravity(derived.backsweetenedFg) : null],
-    ["estimatedAbv", abv],
-    ["bottlingVolume", bottlingVolume]
-  ] as const;
+  const summary = summarizeDerivedRecipe(data, derived);
+  const gravity = (value: number | null) =>
+    value === null ? null : formatCalculatorResult(i18n.language, value, 3, true);
+  const unit = t(`units.${summary.volumeUnit}`, { defaultValue: summary.volumeUnit });
 
   return (
-    <View style={styles.card}>
-      <Text accessibilityRole="header" style={styles.heading}>{t("mobileRecipes.targets")}</Text>
-      {values.map(([key, value]) => (
-        <View key={key}>
-          <Text style={styles.muted}>{t(`mobileRecipes.${key}`)}</Text>
-          <Text style={styles.body}>{value ?? t("mobileRecipes.estimateUnavailable")}</Text>
-        </View>
-      ))}
-    </View>
+    <RecipeSection title={t("mobileRecipes.targets")}>
+      <RecipeStatGrid
+        unavailable={t("mobileRecipes.estimateUnavailable")}
+        stats={[
+          { key: "og", label: t("mobileRecipes.estimatedOg"), value: gravity(summary.og) },
+          { key: "fg", label: t("mobileRecipes.fermentationFg"), value: gravity(summary.fg) },
+          {
+            key: "abv",
+            label: t("mobileRecipes.estimatedAbv"),
+            value: summary.abv === null ? null : new Intl.NumberFormat(i18n.language, {
+              style: "percent",
+              maximumFractionDigits: 2
+            }).format(summary.abv / 100)
+          },
+          { key: "finished", label: t("mobileRecipes.finishedGravity"), value: gravity(summary.finishedGravity) },
+          {
+            key: "volume",
+            label: t("mobileRecipes.bottlingVolume"),
+            value: summary.bottlingVolume === null
+              ? null
+              : `${formatCalculatorResult(i18n.language, summary.bottlingVolume, 3)} ${unit}`
+          }
+        ]}
+      />
+    </RecipeSection>
   );
 }
 
@@ -148,28 +157,35 @@ function RecipeListSection({
   ingredients: RecipeDataV2["ingredients"];
 }) {
   const { t, i18n } = useTranslation();
-  const { styles } = useRecipeStyles();
   if (ingredients.length === 0) return null;
+  // Converted amounts can be stored as 0.1171875; round like the PDF does.
+  const formatAmount = (value: string) => {
+    const amount = parseNumber(value);
+    return Number.isFinite(amount)
+      ? formatCalculatorResult(i18n.language, amount, 3)
+      : localizeDecimalText(i18n.language, value);
+  };
 
   return (
-    <View style={styles.card}>
-      <Text accessibilityRole="header" style={styles.heading}>{title}</Text>
-      {ingredients.map((ingredient) => {
-        const { unit, value } = ingredient.amounts[ingredient.amounts.basis];
-        const name = ingredient.ref.kind === "catalog"
-          ? t(catalogLabelKey(ingredient.name), { defaultValue: ingredient.name })
-          : ingredient.name;
-        return (
-          <View key={ingredient.lineId}>
-            <Text style={styles.body}>{name || t("mobileRecipes.unnamedIngredient")}</Text>
-            {value.trim() ? (
-              <Text style={styles.muted}>
-                {localizeDecimalText(i18n.language, value)} {t(`units.${unit}`, { defaultValue: unit })}
-              </Text>
-            ) : null}
-          </View>
-        );
-      })}
-    </View>
+    <RecipeSection title={title} count={ingredients.length}>
+      <View>
+        {ingredients.map((ingredient, index) => {
+          const { unit, value } = ingredient.amounts[ingredient.amounts.basis];
+          const name = ingredient.ref.kind === "catalog"
+            ? t(catalogLabelKey(ingredient.name), { defaultValue: ingredient.name })
+            : ingredient.name;
+          return (
+            <RecipeRow
+              key={ingredient.lineId}
+              first={index === 0}
+              label={name || t("mobileRecipes.unnamedIngredient")}
+              value={value.trim()
+                ? `${formatAmount(value)} ${t(`units.${unit}`, { defaultValue: unit })}`
+                : null}
+            />
+          );
+        })}
+      </View>
+    </RecipeSection>
   );
 }

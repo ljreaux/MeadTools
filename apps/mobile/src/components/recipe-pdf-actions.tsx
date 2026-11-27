@@ -5,7 +5,7 @@ import { useNavigation } from "expo-router";
 import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { spacing } from "@meadtools/design-tokens";
+import { radii, spacing } from "@meadtools/design-tokens";
 
 import { useRecipeStyles } from "@/components/recipe-view";
 import { useApiClient } from "@/providers/app-providers";
@@ -112,7 +112,7 @@ export function RecipePdfActions({ recipeId }: { recipeId: number }) {
   }
 
   return (
-    <View>
+    <View style={pdfStyles.container}>
       <View style={pdfStyles.actions}>
         {(["view", "share", "print"] as const).map((action) => (
           <Pressable
@@ -121,10 +121,18 @@ export function RecipePdfActions({ recipeId }: { recipeId: number }) {
             accessibilityState={{ busy: running === action, disabled: running !== null }}
             disabled={running !== null}
             onPress={() => void run(action)}
-            style={[styles.action, pdfStyles.button]}
+            style={({ pressed }) => [
+              pdfStyles.button,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              pressed && styles.pressed
+            ]}
           >
             {running === action ? <ActivityIndicator color={colors.accent} /> : null}
-            <Text style={[styles.heading, { color: running ? colors.textMuted : colors.accent }]}>
+            <Text
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              style={[styles.heading, { color: running ? colors.textMuted : colors.accent }]}
+            >
               {t(labels[action])}
             </Text>
           </Pressable>
@@ -163,8 +171,20 @@ export function RecipePdfActions({ recipeId }: { recipeId: number }) {
 }
 
 const pdfStyles = StyleSheet.create({
-  actions: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.lg },
-  button: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  container: { gap: spacing.sm },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  button: {
+    alignItems: "center",
+    borderRadius: radii.md,
+    borderWidth: 1,
+    flexBasis: "30%",
+    flexDirection: "row",
+    flexGrow: 1,
+    gap: spacing.xs,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.md
+  },
   viewer: { flex: 1 },
   toolbar: {
     flexDirection: "row",

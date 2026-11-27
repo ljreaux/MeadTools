@@ -2261,7 +2261,20 @@
     "sharePdf": "Share PDF",
     "sharePdfUnavailable": "File sharing is unavailable on this device.",
     "printPdfError": "Could not print the recipe PDF.",
-    "sharePdfError": "Could not share the recipe PDF."
+    "sharePdfError": "Could not share the recipe PDF.",
+    "count_one": "{{count}} recipe",
+    "count_other": "{{count}} recipes",
+    "searchCount": "{{shown}} of {{total}} recipes",
+    "sort": "Sort recipes",
+    "sorts": {
+      "newest": "Newest",
+      "name": "A–Z"
+    },
+    "clearSearch": "Clear search",
+    "rowOg": "OG {{value}}",
+    "rowAbv": "{{value}} ABV",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "mobileChartMessage": "Please use landscape or a larger device to view this chart.",
   "molasses": "Molasses",

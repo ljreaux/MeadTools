@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -52,6 +53,80 @@ export function RecipeLoadStatus({
   );
 }
 
+/** A titled card for one part of a recipe, with an optional item count. */
+export function RecipeSection({
+  title,
+  count,
+  children
+}: {
+  title: string;
+  count?: number;
+  children: ReactNode;
+}) {
+  const { styles } = useRecipeStyles();
+  const { i18n } = useTranslation();
+  return (
+    <View style={styles.card}>
+      <View style={styles.sectionHeader}>
+        <Text accessibilityRole="header" style={[styles.heading, styles.flexText]}>{title}</Text>
+        {count !== undefined ? (
+          <Text style={styles.caption}>{new Intl.NumberFormat(i18n.language).format(count)}</Text>
+        ) : null}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * One line of a recipe: the item on the left and its amount on the right, so a
+ * long list stays one row per item. Wraps below the label when space runs out.
+ */
+export function RecipeRow({
+  label,
+  value,
+  detail,
+  first = false
+}: {
+  label: string;
+  value?: string | null;
+  detail?: string | null;
+  first?: boolean;
+}) {
+  const { styles } = useRecipeStyles();
+  return (
+    <View accessible style={[styles.row, !first && styles.rowDivider]}>
+      <View style={styles.rowLabel}>
+        <Text style={styles.body}>{label}</Text>
+        {detail ? <Text style={styles.caption}>{detail}</Text> : null}
+      </View>
+      {value ? <Text style={styles.rowValue}>{value}</Text> : null}
+    </View>
+  );
+}
+
+export type RecipeStat = { key: string; label: string; value: string | null };
+
+/** Headline estimates as a grid of tiles, readable at a glance. */
+export function RecipeStatGrid({ stats, unavailable }: { stats: readonly RecipeStat[]; unavailable: string }) {
+  const { styles } = useRecipeStyles();
+  return (
+    <View style={styles.statGrid}>
+      {stats.map(({ key, label, value }) => (
+        <View
+          accessible
+          accessibilityLabel={`${label}: ${value ?? unavailable}`}
+          key={key}
+          style={styles.stat}
+        >
+          <Text adjustsFontSizeToFit numberOfLines={1} style={styles.statValue}>{value ?? "—"}</Text>
+          <Text style={styles.caption}>{label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function useRecipeStyles() {
   const { colors } = useThemeColors();
   const styles = StyleSheet.create({
@@ -65,10 +140,67 @@ export function useRecipeStyles() {
       gap: spacing.sm,
       padding: spacing.lg
     },
-    pressed: { borderColor: colors.accent },
+    pressed: { opacity: 0.7 },
+    sectionHeader: { alignItems: "baseline", flexDirection: "row", gap: spacing.sm },
+    flexText: { flex: 1 },
+    caption: { color: colors.textMuted, fontSize: typography.size.caption },
+    row: {
+      alignItems: "flex-start",
+      columnGap: spacing.md,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      paddingVertical: spacing.sm
+    },
+    rowDivider: { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
+    rowLabel: { flexBasis: "55%", flexGrow: 1, flexShrink: 1, gap: 2 },
+    rowValue: {
+      color: colors.text,
+      flexShrink: 0,
+      fontSize: typography.size.body,
+      fontVariant: ["tabular-nums"],
+      fontWeight: typography.weight.bold,
+      marginLeft: "auto",
+      textAlign: "right"
+    },
+    statGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    stat: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      flexBasis: "30%",
+      flexGrow: 1,
+      gap: 2,
+      minWidth: 96,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm
+    },
+    statValue: {
+      color: colors.text,
+      fontSize: typography.size.action + 3,
+      fontVariant: ["tabular-nums"],
+      fontWeight: typography.weight.bold
+    },
+    pill: {
+      alignSelf: "flex-start",
+      borderColor: colors.border,
+      borderRadius: radii.round,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: typography.size.caption,
+      overflow: "hidden",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2
+    },
+    pillPrivate: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
+      color: colors.onAccent
+    },
     title: {
       color: colors.text,
-      fontSize: typography.size.action,
+      fontSize: typography.size.title - 4,
       fontWeight: typography.weight.bold
     },
     heading: {
