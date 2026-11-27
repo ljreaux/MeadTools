@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { InventoryStockHistoryResponse, InventoryStockItem } from "@meadtools/api-contract";
 
 import { useCostFormat } from "./cost-format";
-import { StockCard, StockText } from "./stock-ui";
+import { StockCard, StockHistoryRow, StockText } from "./stock-ui";
 
 export function useStockCostLabel() {
   const { t } = useTranslation();
@@ -28,21 +28,27 @@ export function StockPriceHistory({ history }: { history: InventoryStockHistoryR
   return (
     <>
       <StockText kind="heading">{t("inventoryCosts.priceHistory")}</StockText>
-      {history.cost_events.map((event) => (
-        <StockCard key={event.id}>
-          <StockText kind="heading">{t(event.kind === "valuation" ? "inventoryCosts.events.valuation" :
-            event.price ? "inventoryCosts.events.pricedReceipt" : "inventoryCosts.events.unpricedReceipt")}</StockText>
-          {event.price ? <StockText>{t("inventoryCosts.events.price", {
-            amount: money(event.price.amount, event.price.currency),
-            quantity: number(event.price.per.value), unit: t(`inventory.units.${event.price.per.unit}`)
-          })}</StockText> : null}
-          <StockText>{t(unit === "units" ? "inventoryCosts.events.averageEach" : "inventoryCosts.events.average", {
-            before: average(event.before), after: average(event.after), unit: t(`inventory.units.${unit}`)
-          })}</StockText>
-          <StockText kind="muted">{date.format(new Date(event.created_at))}</StockText>
-          {event.note ? <StockText>{event.note}</StockText> : null}
-        </StockCard>
-      ))}
+      <StockCard>
+        {history.cost_events.map((event, index) => (
+          <StockHistoryRow
+            key={event.id}
+            first={index === 0}
+            title={t(event.kind === "valuation" ? "inventoryCosts.events.valuation" :
+              event.price ? "inventoryCosts.events.pricedReceipt" : "inventoryCosts.events.unpricedReceipt")}
+            details={[
+              event.price ? t("inventoryCosts.events.price", {
+                amount: money(event.price.amount, event.price.currency),
+                quantity: number(event.price.per.value), unit: t(`inventory.units.${event.price.per.unit}`)
+              }) : null,
+              t(unit === "units" ? "inventoryCosts.events.averageEach" : "inventoryCosts.events.average", {
+                before: average(event.before), after: average(event.after), unit: t(`inventory.units.${unit}`)
+              }),
+              date.format(new Date(event.created_at))
+            ]}
+            note={event.note}
+          />
+        ))}
+      </StockCard>
     </>
   );
 }

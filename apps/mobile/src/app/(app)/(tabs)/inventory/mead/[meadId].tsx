@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { CalculatorScreen } from "@/components/calculator-ui";
 import { CollectionGate, CollectionSave, useBottleLabel } from "@/inventory/collection-ui";
 import { MeadEditor, type MeadAction, type MeadChange } from "@/inventory/mead-editor";
-import { StockButton, StockCard, StockText, useStockStyles } from "@/inventory/stock-ui";
+import { StockButton, StockCard, StockHistoryRow, StockText, useStockStyles } from "@/inventory/stock-ui";
 import { useFinishedMeads } from "@/inventory/use-collections";
 import { useInventoryChange } from "@/inventory/use-inventory-change";
 import { useApiClient, useSession } from "@/providers/app-providers";
@@ -87,30 +87,39 @@ export default function FinishedMeadScreen() {
               <>
                 {change.error ? <StockText kind="error">{change.error}</StockText> : null}
                 <View style={styles.row}>
-                  <StockButton label={t("inventory.meads.actions.details")} onPress={() => open("details")} disabled={history.isFetching || change.busy} />
+                  <StockButton grow label={t("inventory.meads.actions.details")} onPress={() => open("details")} disabled={history.isFetching || change.busy} />
                   {amountActions.map((next) => (
-                    <StockButton key={next} label={t(`inventory.meads.actions.${next}`)} onPress={() => open(next)}
+                    <StockButton grow key={next} label={t(`inventory.meads.actions.${next}`)} onPress={() => open(next)}
                       disabled={history.isFetching || change.busy || (next !== "receipt" && !mead.bottles.length)} />
                   ))}
-                  <StockButton label={t("inventory.organization.organize")}
+                  <StockButton grow label={t("inventory.organization.organize")}
                     onPress={() => router.push({ pathname: "/inventory/organize/[targetId]", params: { targetId: mead.id, kind: "mead", name: mead.name } })}
                     disabled={change.busy} />
-                  <StockButton label={t("inventory.meads.archive")} onPress={() => archive()} disabled={history.isFetching || change.busy} destructive />
+                  <StockButton grow label={t("inventory.meads.archive")} onPress={() => archive()} disabled={history.isFetching || change.busy} destructive />
                 </View>
               </>
             )}
             <StockText kind="heading">{t("inventory.history")}</StockText>
             {!history.data.adjustments.length ? <StockText>{t("inventory.noHistory")}</StockText> : null}
-            {history.data.adjustments.map((entry) => (
-              <StockCard key={entry.id}>
-                <StockText kind="heading">{t(`inventory.meads.kinds.${entry.kind}`, { defaultValue: t("inventory.stockChange") })}</StockText>
-                <StockText>{label(entry)} · {t("inventory.meads.bottleDelta", { count: Math.abs(entry.delta), amount: delta.format(entry.delta) })}</StockText>
-                <StockText kind="muted">{t("inventory.meads.balanceAfter", { count: entry.balance_after })}</StockText>
-                <StockText kind="muted">{date.format(new Date(entry.created_at))}</StockText>
-                {entry.source ? <StockText>{entry.source.name}</StockText> : null}
-                {entry.note ? <StockText>{entry.note}</StockText> : null}
+            {history.data.adjustments.length ? (
+              <StockCard>
+                {history.data.adjustments.map((entry, index) => (
+                  <StockHistoryRow
+                    key={entry.id}
+                    first={index === 0}
+                    title={t(`inventory.meads.kinds.${entry.kind}`, { defaultValue: t("inventory.stockChange") })}
+                    value={t("inventory.meads.bottleDelta", { count: Math.abs(entry.delta), amount: delta.format(entry.delta) })}
+                    details={[
+                      label(entry),
+                      t("mobileInventory.bottlesLeft", { count: entry.balance_after }),
+                      date.format(new Date(entry.created_at)),
+                      entry.source?.name
+                    ]}
+                    note={entry.note}
+                  />
+                ))}
               </StockCard>
-            ))}
+            ) : null}
             {history.data.has_more ? <StockText kind="muted">{t("inventory.recentHistory")}</StockText> : null}
           </>
         ) : null}

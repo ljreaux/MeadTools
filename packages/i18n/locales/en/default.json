@@ -2255,7 +2255,17 @@
     "noOngoingBrews": "There are no ongoing brews.",
     "noMatchingBrews": "No brews match your search.",
     "chooseDifferentBrew": "Choose a different brew or select Unassigned.",
-    "retrySame": "The save could not be confirmed. Retry to check or finish the same change."
+    "retrySame": "The save could not be confirmed. Retry to check or finish the same change.",
+    "filter": "Filter stock",
+    "filterAll": "All",
+    "stockCount_one": "{{count}} item",
+    "stockCount_other": "{{count}} items",
+    "stockShown": "{{shown}} of {{total}} items",
+    "clearFilters": "Clear search and filters",
+    "recipeLimit": "Showing {{shown}} of {{total}} recipes. Search to find others.",
+    "afterChange": "After: {{value}} {{unit}}",
+    "bottlesLeft_one": "{{count}} left",
+    "bottlesLeft_other": "{{count}} left"
   },
   "mobileNav": {
     "brews": "Brews",

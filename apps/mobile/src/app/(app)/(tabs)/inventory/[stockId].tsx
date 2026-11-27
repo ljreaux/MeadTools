@@ -11,7 +11,7 @@ import { CalculatorScreen } from "@/components/calculator-ui";
 import { StockPriceHistory, useStockCostLabel } from "@/inventory/stock-costs";
 import type { StockAction, StockCommand } from "@/inventory/stock-draft";
 import { StockEditor } from "@/inventory/stock-editor";
-import { StockButton, StockCard, StockText, useStockStyles } from "@/inventory/stock-ui";
+import { StockButton, StockCard, StockHistoryRow, StockText, useStockStyles } from "@/inventory/stock-ui";
 import { useStockOverview } from "@/inventory/use-stock";
 import { useApiClient, useSession } from "@/providers/app-providers";
 
@@ -173,45 +173,53 @@ export default function InventoryStockScreen() {
             <StockButton label={t("equipment.retry")} onPress={() => void save(null)} disabled={busy} primary />
           ) : (
             <View style={styles.row}>
-              <StockButton label={t("inventory.actions.details")} onPress={() => openEditor("details")} disabled={busy || history.isFetching} />
+              <StockButton grow label={t("inventory.actions.details")} onPress={() => openEditor("details")} disabled={busy || history.isFetching} />
               {item.reconciliation_required ? (
-                <StockButton
+                <StockButton grow
                   label={t("inventory.reconcile.title")}
                   onPress={() => openEditor("reconcile")}
                   disabled={busy || history.isFetching || !history.data.reconciliation}
                   primary
                 />
               ) : adjustmentActions.map((change) => (
-                <StockButton
+                <StockButton grow
                   key={change}
                   label={t(`inventory.actions.${change}`)}
                   onPress={() => openEditor(change)}
                   disabled={busy || history.isFetching}
                 />
               ))}
-              <StockButton label={t("inventory.actions.set_unit_cost")} onPress={() => openEditor("set_unit_cost")}
+              <StockButton grow label={t("inventory.actions.set_unit_cost")} onPress={() => openEditor("set_unit_cost")}
                 disabled={busy || history.isFetching} />
-              <StockButton label={t("inventory.organization.organize")}
+              <StockButton grow label={t("inventory.organization.organize")}
                 onPress={() => router.push({ pathname: "/inventory/organize/[targetId]", params: { targetId: item.id, kind: "stock", name: item.name } })}
                 disabled={busy} />
-              <StockButton label={t("mobileInventory.archive")} onPress={confirmArchive} disabled={busy || history.isFetching} destructive />
+              <StockButton grow label={t("mobileInventory.archive")} onPress={confirmArchive} disabled={busy || history.isFetching} destructive />
             </View>
           )}
           <StockText kind="heading">{t("inventory.history")}</StockText>
           {history.data.adjustments.length === 0 ? <StockText>{t("inventory.noHistory")}</StockText> : null}
-          {history.data.adjustments.map((change) => {
-            const balance = change.balance_after;
-            const balanceUnit = t(`inventory.units.${balance.unit}`);
-            return (
-              <StockCard key={change.id}>
-                <StockText kind="heading">{t(`inventory.kinds.${change.kind}`, { defaultValue: t("inventory.stockChange") })}</StockText>
-                <StockText>{delta.format(change.delta)} {balanceUnit}</StockText>
-                <StockText kind="muted">{t("inventory.balanceAfter", { value: number.format(balance.value), unit: balanceUnit })}</StockText>
-                <StockText kind="muted">{date.format(new Date(change.created_at))}</StockText>
-                {change.note ? <StockText>{change.note}</StockText> : null}
-              </StockCard>
-            );
-          })}
+          {history.data.adjustments.length ? (
+            <StockCard>
+              {history.data.adjustments.map((change, index) => {
+                const balance = change.balance_after;
+                const balanceUnit = t(`inventory.units.${balance.unit}`);
+                return (
+                  <StockHistoryRow
+                    key={change.id}
+                    first={index === 0}
+                    title={t(`inventory.kinds.${change.kind}`, { defaultValue: t("inventory.stockChange") })}
+                    value={`${delta.format(change.delta)} ${balanceUnit}`}
+                    details={[
+                      t("mobileInventory.afterChange", { value: number.format(balance.value), unit: balanceUnit }),
+                      date.format(new Date(change.created_at))
+                    ]}
+                    note={change.note}
+                  />
+                );
+              })}
+            </StockCard>
+          ) : null}
           {history.data.has_more ? <StockText kind="muted">{t("inventory.recentHistory")}</StockText> : null}
           <StockPriceHistory history={history.data} />
         </>

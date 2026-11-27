@@ -9,11 +9,14 @@ import type { UpdateInventoryCostExclusionsRequestBody } from "@meadtools/api-co
 import { CalculatorField, CalculatorScreen } from "@/components/calculator-ui";
 import { CollectionGate, CollectionSave } from "@/inventory/collection-ui";
 import { CurrencyPicker } from "@/inventory/price-fields";
-import { StockButton, StockCard, StockInput, StockText, useStockStyles } from "@/inventory/stock-ui";
+import { StockButton, StockCard, StockInput, StockLinkRow, StockText, useStockStyles } from "@/inventory/stock-ui";
 import { useCostExclusions } from "@/inventory/use-cost-exclusions";
 import { useInventoryChange } from "@/inventory/use-inventory-change";
 import { useStockOverview } from "@/inventory/use-stock";
 import { useApiClient, useSession } from "@/providers/app-providers";
+
+/** The picker renders inside a scroll view, so it shows the first matches and asks for a search to narrow the rest. */
+const RECIPE_LIMIT = 25;
 
 export default function InventoryCostsScreen() {
   const { t, i18n } = useTranslation();
@@ -76,8 +79,9 @@ export default function InventoryCostsScreen() {
             <StockButton label={t("equipment.retry")} onPress={() => void exclusions.refetch()} />
           ) : exclusions.data?.exclusions.map(({ id, name }) => (
             <View style={styles.row} key={id}>
-              <StockText>{name}</StockText>
-              <StockButton label={t("inventoryCosts.includeNamed", { name })} disabled={disabled || editingCurrency}
+              <View style={styles.rowName}><StockText>{name}</StockText></View>
+              <StockButton label={t("inventoryCosts.include")} accessibilityLabel={t("inventoryCosts.includeNamed", { name })}
+                disabled={disabled || editingCurrency}
                 onPress={() => changeExclusion({ action: "include", id })} />
             </View>
           ))}
@@ -101,9 +105,17 @@ export default function InventoryCostsScreen() {
                 <>
                   <StockInput accessibilityLabel={t("mobileInventory.findRecipe")} placeholder={t("mobileInventory.findRecipe")}
                     value={search} onChangeText={setSearch} autoCorrect={false} />
-                  {matches?.map((recipe) => <StockButton key={recipe.id} label={recipe.name || t("untitledRecipe")}
-                    onPress={() => router.push({ pathname: "/cost-summary", params: { recipeId: String(recipe.id), name: recipe.name } })} />)}
-                  {!matches?.length ? <StockText kind="muted">{t("mobileInventory.noRecipeEstimates")}</StockText> : null}
+                  {matches?.length ? (
+                    <View>
+                      {matches.slice(0, RECIPE_LIMIT).map((recipe, index) => (
+                        <StockLinkRow key={recipe.id} first={index === 0} label={recipe.name || t("untitledRecipe")}
+                          onPress={() => router.push({ pathname: "/cost-summary", params: { recipeId: String(recipe.id), name: recipe.name } })} />
+                      ))}
+                    </View>
+                  ) : <StockText kind="muted">{t("mobileInventory.noRecipeEstimates")}</StockText>}
+                  {matches && matches.length > RECIPE_LIMIT ? (
+                    <StockText kind="muted">{t("mobileInventory.recipeLimit", { shown: RECIPE_LIMIT, total: matches.length })}</StockText>
+                  ) : null}
                 </>
               )}
             </>

@@ -78,9 +78,11 @@ export default function InventoryOrganizationScreen() {
               {!data?.labels.length ? <StockText kind="muted">{t("inventory.organization.empty_label")}</StockText> : null}
               {data?.labels.map((item) => (
                 <View key={item.id} style={styles.row}>
-                  <StockText>{item.name}</StockText>
-                  <StockButton label={t("inventory.organization.editNamed", { name: item.name })} onPress={() => open({ kind: "label", item })} disabled={change.busy || change.retryOnly || overview.isFetching} />
-                  <StockButton label={t("inventory.organization.archiveNamed", { name: item.name })} onPress={() => archive("label", item)} disabled={change.busy || change.retryOnly || overview.isFetching} destructive />
+                  <View style={styles.rowName}><StockText>{item.name}</StockText></View>
+                  <StockButton label={t("equipment.edit")} accessibilityLabel={t("inventory.organization.editNamed", { name: item.name })}
+                    onPress={() => open({ kind: "label", item })} disabled={change.busy || change.retryOnly || overview.isFetching} />
+                  <StockButton label={t("inventory.meads.archive")} accessibilityLabel={t("inventory.organization.archiveNamed", { name: item.name })}
+                    onPress={() => archive("label", item)} disabled={change.busy || change.retryOnly || overview.isFetching} destructive />
                 </View>
               ))}
               <StockButton label={t("inventory.organization.add_label")} onPress={() => open({ kind: "label" })} disabled={change.busy || change.retryOnly} />
@@ -90,9 +92,11 @@ export default function InventoryOrganizationScreen() {
               {!data?.locations.length ? <StockText kind="muted">{t("inventory.organization.empty_location")}</StockText> : null}
               {data?.locations.map((item) => (
                 <View key={item.id} style={styles.row}>
-                  <StockText>{item.path}</StockText>
-                  <StockButton label={t("inventory.organization.editNamed", { name: item.name })} onPress={() => open({ kind: "location", item })} disabled={change.busy || change.retryOnly || overview.isFetching} />
-                  <StockButton label={t("inventory.organization.archiveNamed", { name: item.name })} onPress={() => archive("location", item)} disabled={change.busy || change.retryOnly || overview.isFetching} destructive />
+                  <View style={styles.rowName}><StockText>{item.path}</StockText></View>
+                  <StockButton label={t("equipment.edit")} accessibilityLabel={t("inventory.organization.editNamed", { name: item.name })}
+                    onPress={() => open({ kind: "location", item })} disabled={change.busy || change.retryOnly || overview.isFetching} />
+                  <StockButton label={t("inventory.meads.archive")} accessibilityLabel={t("inventory.organization.archiveNamed", { name: item.name })}
+                    onPress={() => archive("location", item)} disabled={change.busy || change.retryOnly || overview.isFetching} destructive />
                 </View>
               ))}
               <StockButton label={t("inventory.organization.add_location")} onPress={() => open({ kind: "location" })} disabled={change.busy || change.retryOnly} />

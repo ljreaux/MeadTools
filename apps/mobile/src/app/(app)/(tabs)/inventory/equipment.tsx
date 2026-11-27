@@ -141,9 +141,9 @@ export default function EquipmentScreen() {
                     ))
                   ) : null}
                   <View style={styles.row}>
-                    <StockButton label={t("equipment.editNamed", { name: item.name })} disabled={disabled}
+                    <StockButton label={t("equipment.edit")} accessibilityLabel={t("equipment.editNamed", { name: item.name })} disabled={disabled}
                       onPress={() => open({ mode: "details", item, total, occupied })} />
-                    {occupied === 0 ? <StockButton label={t("equipment.removeNamed", { name: item.name })} disabled={disabled} destructive
+                    {occupied === 0 ? <StockButton label={t("equipment.remove")} accessibilityLabel={t("equipment.removeNamed", { name: item.name })} disabled={disabled} destructive
                       onPress={() => archive(item, item.name, total > 1)} /> : null}
                     {total > 1 ? <StockButton label={t(showUnits ? "mobileInventory.hideEquipmentUnits" : "mobileInventory.showEquipmentUnits")}
                       onPress={() => setExpanded(showUnits ? null : id)} /> : null}
@@ -165,7 +165,7 @@ export default function EquipmentScreen() {
                           ) : null}
                           {total > 1 || unit.label ? <StockButton label={t("mobileInventory.editUnitLabel")} disabled={disabled}
                             onPress={() => open({ mode: "label", item: unit, name })} /> : null}
-                          {total > 1 && !unit.brew ? <StockButton label={t("equipment.removeNamed", { name })} disabled={disabled}
+                          {total > 1 && !unit.brew ? <StockButton label={t("equipment.remove")} accessibilityLabel={t("equipment.removeNamed", { name })} disabled={disabled}
                             onPress={() => archive(unit, name, false)} destructive /> : null}
                         </View>
                       </StockCard>
