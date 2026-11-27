@@ -1,5 +1,7 @@
 import {
   accountInfoResponseSchema,
+  hydrometerAccountResponseSchema,
+  type HydrometerDeviceResponse,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
   finishedMeadOverviewResponseSchema,
@@ -165,6 +167,20 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
   }
 
   return {
+    /** Lists owned devices without retaining the account's setup token in caches. */
+    async listHydrometerDevices(): Promise<HydrometerDeviceResponse[]> {
+      const body = await request("/api/hydrometer", { method: "GET" });
+      const parsed = hydrometerAccountResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        // The response contains a setup token. Do not attach it to an error.
+        throw new MeadToolsContractError(
+          "Hydrometer response does not match the MeadTools API contract",
+          undefined
+        );
+      }
+      return parsed.data.devices;
+    },
+
     async login(input: LoginRequestBody): Promise<LoginSuccessResponse> {
       if (!loginRequestBodySchema.safeParse(input).success) {
         throw new MeadToolsContractError(

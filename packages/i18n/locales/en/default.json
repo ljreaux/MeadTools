@@ -3766,7 +3766,8 @@
       "gravity": "Gravity and ABV",
       "stabilizers": "Stabilizers",
       "finishing": "Finishing",
-      "ingredients": "Ingredients"
+      "ingredients": "Ingredients",
+      "devices": "Devices"
     },
     "inputs": {
       "og": "Original gravity",
@@ -3891,5 +3892,29 @@
       "showResults": "Show results",
       "stepOf": "Step {{step}} of {{total}}"
     }
+  },
+  "mobileHydrometers": {
+    "title": "Hydrometers",
+    "deviceTitle": "Device details",
+    "intro": "View your linked digital hydrometers and their current brews.",
+    "loading": "Loading hydrometers…",
+    "emptyTitle": "No linked hydrometers",
+    "emptyBody": "Devices appear here after they send readings to your MeadTools account.",
+    "unnamedDevice": "Unnamed device",
+    "noBrew": "No active brew",
+    "unnamedBrew": "Untitled brew",
+    "deviceId": "Device ID",
+    "attachedBrew": "Active brew",
+    "openBrew": "Open brew",
+    "coefficients": "Calibration coefficients",
+    "noCoefficients": "No calibration coefficients saved.",
+    "missingTitle": "Device unavailable",
+    "missingBody": "This device is no longer linked to your account.",
+    "errorTitle": "Could not load hydrometers",
+    "errorBody": "Try refreshing the device list.",
+    "offlineBody": "Connect to the internet to load your hydrometers.",
+    "backToDevices": "Back to hydrometers",
+    "refresh": "Refresh",
+    "sessionExpiredBody": "Sign in again to see your hydrometers."
   }
 }

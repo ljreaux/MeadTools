@@ -10,6 +10,8 @@ export default function ToolsLayout() {
   return (
     <Stack screenOptions={{ headerBackButtonDisplayMode: "minimal" }}>
       <Stack.Screen name="index" options={{ title: t("mobileNav.tools") }} />
+      <Stack.Screen name="hydrometers/index" options={{ title: t("mobileHydrometers.title") }} />
+      <Stack.Screen name="hydrometers/[deviceId]" options={{ title: t("mobileHydrometers.deviceTitle") }} />
       <Stack.Screen name="nutrients" options={{ title: t("calculators.nutes") }} />
       <Stack.Screen name="abv" options={{ title: t("calculators.extraCalcs.abv") }} />
       <Stack.Screen name="brix" options={{ title: t("calculators.extraCalcs.brix") }} />
