@@ -4,8 +4,8 @@ import { Image } from "expo-image";
 import { openURL } from "expo-linking";
 import { useState } from "react";
 import {
-  ActivityIndicator, Alert, Keyboard, Pressable, ScrollView, StyleSheet, Switch, Text,
-  TextInput, View
+  ActivityIndicator, Alert, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Switch,
+  Text, TextInput, View
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -25,7 +25,21 @@ export default function AccountScreen() {
   const styles = createStyles(colors);
   const { t } = useTranslation();
   const { session, signOut } = useSession();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const version = Constants.expoConfig?.version;
+
+  async function refresh() {
+    if (!session) return;
+    setRefreshing(true);
+    try {
+      await Promise.all(
+        accountQueryKeys.map((key) => queryClient.refetchQueries({ queryKey: [key, session.id] }))
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function requestAccountDeletion() {
     Alert.alert(
@@ -51,6 +65,9 @@ export default function AccountScreen() {
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      refreshControl={
+        session ? <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} /> : undefined
+      }
       style={styles.screen}
     >
       {session ? (
@@ -71,9 +88,9 @@ export default function AccountScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={requestAccountDeletion}
-          style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.destructiveLink, pressed && styles.pressed]}
         >
-          <Text style={styles.signOutText}>{t("mobileAccount.deletionRequest")}</Text>
+          <Text style={styles.destructiveText}>{t("mobileAccount.deletionRequest")}</Text>
         </Pressable>
       ) : null}
       {version ? (
@@ -83,6 +100,14 @@ export default function AccountScreen() {
   );
 }
 
+/** Every account query, refetched together by pull to refresh. */
+const accountQueryKeys = [
+  "account-profile",
+  "account-premium",
+  "account-credits",
+  "account-release-email"
+] as const;
+
 function EmailPreferences({ userId }: { userId: number }) {
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
@@ -90,24 +115,20 @@ function EmailPreferences({ userId }: { userId: number }) {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const queryKey = ["account-release-email", userId] as const;
-  const [draft, setDraft] = useState<boolean | null>(null);
   const preference = useQuery({
     queryKey,
     queryFn: () => apiClient.getReleaseEmailPreferences()
   });
+  // The switch saves as soon as it changes, like the avatar setting.
   const save = useMutation({
     mutationFn: (optedIn: boolean) => apiClient.updateReleaseEmailPreferences({ optedIn }),
     onSuccess: async (result) => {
       await queryClient.cancelQueries({ queryKey });
       queryClient.setQueryData(queryKey, result);
-      setDraft(null);
     }
   });
 
-  const optedIn = draft ?? preference.data?.optedIn ?? false;
-  const saveDisabled =
-    save.isPending || !preference.data ||
-    (preference.data.prompted && optedIn === preference.data.optedIn);
+  const optedIn = save.isPending ? save.variables : preference.data?.optedIn ?? false;
 
   return (
     <View style={styles.card}>
@@ -137,26 +158,15 @@ function EmailPreferences({ userId }: { userId: number }) {
       {preference.data ? (
         <View style={styles.field}>
           <View style={styles.avatarSetting}>
-            <Text style={[styles.label, styles.identity]}>{t("releaseEmails.optIn")}</Text>
+            <Text style={[styles.settingLabel, styles.identity]}>{t("releaseEmails.optIn")}</Text>
+            {save.isPending ? <ActivityIndicator color={colors.accent} /> : null}
             <Switch
               accessibilityLabel={t("releaseEmails.optIn")}
               disabled={save.isPending}
               value={optedIn}
-              onValueChange={(value) => {
-                setDraft(value);
-                save.reset();
-              }}
+              onValueChange={(value) => save.mutate(value)}
             />
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ busy: save.isPending, disabled: saveDisabled }}
-            disabled={saveDisabled}
-            onPress={() => save.mutate(optedIn)}
-            style={({ pressed }) => [styles.saveButton, (pressed || saveDisabled) && styles.pressed]}
-          >
-            <Text style={styles.saveText}>{t("releaseEmails.save")}</Text>
-          </Pressable>
           {save.isSuccess ? (
             <Text accessibilityLiveRegion="polite" style={styles.label}>{t("releaseEmails.saved")}</Text>
           ) : null}
@@ -182,7 +192,6 @@ function AccountStatus({ userId }: { userId: number }) {
     queryKey: ["account-credits", userId],
     queryFn: () => apiClient.getCreditBalance()
   });
-  const refreshing = premium.isFetching || credits.isFetching;
   const status = premium.data;
   let premiumLabel: string | undefined;
 
@@ -209,34 +218,25 @@ function AccountStatus({ userId }: { userId: number }) {
         {premium.isPending ? (
           <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingPremium")} color={colors.accent} />
         ) : null}
-        {premiumLabel ? <Text style={styles.label}>{premiumLabel}</Text> : null}
+        {premiumLabel ? <Text style={styles.settingLabel}>{premiumLabel}</Text> : null}
         {premium.isError ? (
           <Text accessibilityRole="alert" style={styles.error}>{t("premium.loadFailed")}</Text>
         ) : null}
       </View>
-      <View style={styles.field}>
-        <Text accessibilityRole="header" style={styles.email}>{t("credits.available")}</Text>
+      <View accessible style={[styles.statRow, styles.divider]}>
+        <Text style={[styles.settingLabel, styles.identity]}>{t("credits.available")}</Text>
         {credits.isPending ? (
           <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingCredits")} color={colors.accent} />
         ) : null}
         {credits.data ? (
-          <Text style={styles.label}>
+          <Text style={styles.statValue}>
             {new Intl.NumberFormat(i18n.language).format(credits.data.availableCredits)}
           </Text>
         ) : null}
-        {credits.isError ? (
-          <Text accessibilityRole="alert" style={styles.error}>{t("mobileAccount.creditsLoadFailed")}</Text>
-        ) : null}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ busy: refreshing, disabled: refreshing }}
-        disabled={refreshing}
-        onPress={() => void Promise.all([premium.refetch(), credits.refetch()])}
-        style={({ pressed }) => [styles.signOutButton, (pressed || refreshing) && styles.pressed]}
-      >
-        <Text style={styles.signOutText}>{t("mobileAccount.refreshStatus")}</Text>
-      </Pressable>
+      {credits.isError ? (
+        <Text accessibilityRole="alert" style={styles.error}>{t("mobileAccount.creditsLoadFailed")}</Text>
+      ) : null}
     </View>
   );
 }
@@ -343,9 +343,15 @@ function ProfileSettings({ userId, email }: { userId: number; email: string }) {
               accessibilityState={{ disabled: saveDisabled, busy: update.isPending && update.variables?.public_username !== undefined }}
               disabled={saveDisabled}
               onPress={saveUsername}
-              style={({ pressed }) => [styles.saveButton, (pressed || saveDisabled) && styles.pressed]}
+              style={({ pressed }) => [
+                styles.saveButton,
+                saveDisabled && styles.saveButtonDisabled,
+                pressed && styles.pressed
+              ]}
             >
-              <Text style={styles.saveText}>{t("mobileAccount.saveUsername")}</Text>
+              <Text style={[styles.saveText, saveDisabled && styles.saveTextDisabled]}>
+                {t("mobileAccount.saveUsername")}
+              </Text>
             </Pressable>
             {update.variables?.public_username !== undefined ? (
               <ProfileUpdateFeedback success={update.isSuccess} error={update.isError} setting="username" />
@@ -354,7 +360,7 @@ function ProfileSettings({ userId, email }: { userId: number; email: string }) {
           {profile.data.isGoogleUser ? (
             <View style={styles.field}>
               <View style={styles.avatarSetting}>
-                <Text style={[styles.label, styles.identity]}>{t("accountPage.googleAvatar.title")}</Text>
+                <Text style={[styles.settingLabel, styles.identity]}>{t("accountPage.googleAvatar.title")}</Text>
                 <Switch
                   accessibilityLabel={t("accountPage.googleAvatar.label")}
                   disabled={update.isPending}
@@ -436,7 +442,20 @@ function createStyles(colors: typeof colorThemes.light) {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm
     },
+    saveButtonDisabled: { backgroundColor: "transparent", borderColor: colors.border, borderWidth: 1 },
     saveText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    saveTextDisabled: { color: colors.textMuted },
+    settingLabel: { color: colors.text, fontSize: typography.size.body },
+    statRow: { alignItems: "center", flexDirection: "row", gap: spacing.md, paddingTop: spacing.md },
+    divider: { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
+    statValue: {
+      color: colors.text,
+      fontSize: typography.size.title - 4,
+      fontVariant: ["tabular-nums"],
+      fontWeight: typography.weight.bold
+    },
+    destructiveLink: { alignItems: "center", justifyContent: "center", minHeight: 44 },
+    destructiveText: { color: colors.error, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     email: {
       color: colors.text,
       fontSize: typography.size.action,
