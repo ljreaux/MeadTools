@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "expo-router";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Link, type Href } from "expo-router";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, type TextStyle, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { MeadToolsApiError } from "@meadtools/api-client";
@@ -54,7 +54,7 @@ export function HydrometerDeviceScreen({ deviceId }: { deviceId?: string }) {
           <Text style={styles.buttonText}>{t(sessionExpired ? "mobileBrews.signInAgain" : "mobileHydrometers.refresh")}</Text>
         </Pressable>
         {missing && !sessionExpired ? (
-          <Link href="/tools/hydrometers" style={styles.link}>{t("mobileHydrometers.backToDevices")}</Link>
+          <TextLink href="/tools/hydrometers" label={t("mobileHydrometers.backToDevices")} style={styles.link} />
         ) : null}
       </View>
     );
@@ -95,7 +95,7 @@ export function HydrometerDeviceScreen({ deviceId }: { deviceId?: string }) {
       contentInsetAdjustmentBehavior="automatic"
       data={deviceId === undefined ? devices : device ? [device] : []}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={deviceId === undefined ? <View style={{ gap: spacing.md }}><Text style={styles.body}>{t("mobileHydrometers.intro")}</Text><Link href="/tools/hydrometers/setup" style={styles.link}>{t("mobileHydrometers.setup.title")}</Link><Link href="/tools/hydrometers/brews" style={styles.link}>{t("mobileHydrometers.lifecycle.brews")}</Link></View> : null}
+      ListHeaderComponent={deviceId === undefined ? <View style={{ gap: spacing.md }}><Text style={styles.body}>{t("mobileHydrometers.intro")}</Text><TextLink href="/tools/hydrometers/setup" label={t("mobileHydrometers.setup.title")} style={styles.link} /><TextLink href="/tools/hydrometers/brews" label={t("mobileHydrometers.lifecycle.brews")} style={styles.link} /></View> : null}
       ListEmptyComponent={status()}
       onRefresh={() => void query.refetch()}
       refreshing={query.isRefetching}
@@ -126,4 +126,16 @@ function createStyles(colors: typeof colorThemes.light) {
     link: { color: colors.accent, fontSize: typography.size.body, minHeight: 44, paddingVertical: spacing.sm },
     pressed: { opacity: 0.7 }
   });
+}
+
+// A bare <Link> renders as text that Android does not expose as clickable, so
+// screen readers miss it. Wrap the label like the screen's other links.
+function TextLink({ href, label, style }: { href: Href; label: string; style: TextStyle }) {
+  return (
+    <Link asChild href={href}>
+      <Pressable accessibilityRole="link" style={{ minHeight: style.minHeight, paddingVertical: style.paddingVertical, justifyContent: "center" }}>
+        <Text style={{ color: style.color, fontSize: style.fontSize }}>{label}</Text>
+      </Pressable>
+    </Link>
+  );
 }

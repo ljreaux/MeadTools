@@ -30,8 +30,11 @@ export function TimeSeriesChart({
   const { colors } = useThemeColors();
   const { t, i18n } = useTranslation();
   const { fontScale } = useWindowDimensions();
-  const axisWidth = Math.min(100, 62 * fontScale);
-  const axisHeadingHeight = 44 * fontScale;
+  // Axis labels sit in fixed columns beside the plot, so they stop growing at
+  // AXIS_MAX_SCALE. The summaries below the chart give every value at full size.
+  const axisScale = Math.min(fontScale, AXIS_MAX_SCALE);
+  const axisWidth = Math.min(100, 62 * axisScale);
+  const axisHeadingHeight = 44 * axisScale;
   const [width, setWidth] = useState(200);
   const [hidden, setHidden] = useState(
     () => new Set(series.filter((item) => item.initiallyVisible === false).map((item) => item.key))
@@ -84,7 +87,10 @@ export function TimeSeriesChart({
         accessibilityLabel={`${config.label}: ${format(line.geometry.low, config)} – ${format(line.geometry.high, config)}`}
         style={{ width: axisWidth }}
       >
-        <Text style={[styles.axis, { color: config.color, height: axisHeadingHeight }]}>
+        <Text
+          {...axisTextProps}
+          style={[styles.axis, { color: config.color, height: axisHeadingHeight }]}
+        >
           {config.unit || config.label}
         </Text>
         <View style={{ height: 210 }}>
@@ -95,9 +101,15 @@ export function TimeSeriesChart({
           ].map((value, i) => (
             <Text
               key={i}
+              {...axisTextProps}
               style={[
                 styles.axis,
-                { position: "absolute", top: i * 105 - 8 * fontScale, color: config.color }
+                {
+                  position: "absolute",
+                  top: i * 105 - 8 * axisScale,
+                  width: axisWidth,
+                  color: config.color
+                }
               ]}
             >
               {new Intl.NumberFormat(i18n.language, {
@@ -152,7 +164,7 @@ export function TimeSeriesChart({
         </Text>
       ) : (
         <>
-          <View style={[styles.plotRow, { marginBottom: 8 * fontScale }]}>
+          <View style={[styles.plotRow, { marginBottom: 12 * axisScale }]}>
             {scale(0)}
             <View
               style={[styles.plot, { paddingTop: axisHeadingHeight }]}
@@ -235,7 +247,8 @@ export function TimeSeriesChart({
             </View>
             {scale(1)}
           </View>
-          <View style={styles.dates}>
+          {/* Side-by-side dates break mid-number at large text sizes, so stack them. */}
+          <View style={[styles.dates, fontScale > AXIS_MAX_SCALE && styles.datesStacked]}>
             <Text style={[styles.date, { color: colors.textMuted }]}>
               {date.format(new Date(geometry.from))}
             </Text>
@@ -313,6 +326,15 @@ export function TimeSeriesChart({
     </View>
   );
 }
+const AXIS_MAX_SCALE = 1.5;
+// One line per axis label: a wrapped number such as "1.1 / 1" reads as two values.
+const axisTextProps = {
+  numberOfLines: 1,
+  adjustsFontSizeToFit: true,
+  minimumFontScale: 0.6,
+  maxFontSizeMultiplier: AXIS_MAX_SCALE
+} as const;
+
 const styles = StyleSheet.create({
   card: { gap: spacing.md, paddingVertical: spacing.md },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
@@ -332,7 +354,8 @@ const styles = StyleSheet.create({
   scale: { width: 62, minHeight: 252, justifyContent: "space-between" },
   axis: { fontSize: typography.size.caption, fontVariant: ["tabular-nums"] },
   dates: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
-  date: { flex: 1, fontSize: typography.size.caption },
+  datesStacked: { flexDirection: "column", gap: spacing.xs },
+  date: { flexGrow: 1, flexShrink: 1, fontSize: typography.size.caption },
   readout: { gap: spacing.xs },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   button: {

@@ -292,3 +292,20 @@ removal are covered by deterministic API-client tests; actual permanent removal
 and credential rotation were not performed in the normal local account. Physical
 hydrometer delivery, full screen-reader/enlarged-text navigation and the combined
 feature UI pass remain for the parent PR's unchecked iOS/Android review item.
+
+## Parent PR UI review — November 27, 2026
+
+Reviewed the combined hydrometer area on the iPhone 17 Pro simulator (iOS 26.2) and the Medium Phone emulator (Android API 36.1) against the normal local backend, with the branch merged up to date with `preview`. The Android development client was rebuilt from this branch with `react-native-svg`. Device appearance and text size were restored afterward: light mode, default text size, and Android font scale 1.0.
+
+| Check | Result |
+| --- | --- |
+| Light mode, default text | Pass on both platforms. Hydrometer list, device details, readings with all 673 logs and the overlaid gravity and temperature chart, hydrometer brews, Manage brew and Setup rendered without clipping. |
+| Dark mode | Pass on both platforms. Chart lines, axes, legend and summaries keep their colors and contrast. |
+| Largest text sizes | Fixed, then pass. At the largest iOS accessibility size, the chart's axis labels wrapped mid-number ("1.1 / 1", "21. / 78") and overlapped the date range, and the two dates broke mid-number. Axis labels now stay on one line, shrink to fit, and stop growing past 1.5× in their fixed columns. The dates stack at larger sizes. The summaries below the chart still give every value at full size. Rechecked in dark mode at iOS AX5 and at Android font scale 2.0. Lists, device details, date pickers and logs wrapped acceptably. Android's shared tab-bar labels truncate at 2.0. That is outside this PR. |
+| Screen-reader structure | Fixed, then pass. The Android accessibility tree, the data TalkBack reads, was audited on every hydrometer screen. Headers, buttons, links, segmented radio groups, chart-series checkboxes, the email-alert switch and the labeled search and coefficient fields expose names and checked or disabled states. The raw chart is hidden in favor of text summaries and a live reading readout. The bare "Hydrometer setup", "Hydrometer brews" and "Back to hydrometers" text links were not exposed as clickable. They now use the screen's existing pressable link pattern and still navigate on both platforms. |
+| Screen-reader gestures | Not exercised. TalkBack was enabled, but injected swipes did not register as TalkBack gestures, and its first-run notification prompt kept returning. The prompt was declined, and TalkBack was turned off again. VoiceOver cannot be driven in the simulator. |
+| Offline | Fixed, then pass, using Android airplane mode. Device details show "Connect to the internet to load your hydrometers." with Refresh and Back. Manage brew and the hydrometer brews list showed the generic "Try refreshing the device list." They now show a connection-specific message. With data already loaded, every write action is disabled and the screen explains that changes need a connection. After reconnecting, Refresh reloaded the brew. |
+| Combined flows | Pass. Hydrometer brews → Manage brew → Open brew opened the brew on the Brews tab and returned. Device details link to readings and the brew. The Setup link opens with the token hidden. |
+| Note | The reading log list shows each reading in its recorded units (always SG, and the device's temperature unit), independent of the chart's unit toggles. This matches the web log table. |
+
+Checks after the fixes: Mobile 143 tests, typecheck and lint; brew domain and i18n tests; iOS and Android preview-profile exports. One English string was added: `mobileHydrometers.lifecycle.offlineBody`. German follows Weblate. No hydrometer records were created, changed or deleted.

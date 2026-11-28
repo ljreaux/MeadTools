@@ -19,6 +19,7 @@ import {
   searchHydrometerChoices
 } from "@meadtools/brew-domain/hydrometer-lifecycle";
 import { radii, spacing, typography } from "@meadtools/design-tokens";
+import { isConnectionError } from "@/api/errors";
 import { CalculatorSwitch, Segmented } from "@/components/calculator-ui";
 import { useApiClient, useSession } from "@/providers/app-providers";
 import { useThemeColors } from "@/hooks/useThemeColors";
@@ -107,9 +108,11 @@ export function HydrometerBrewsScreen({ brewId }: { brewId?: string }) {
             {t(
               expired
                 ? "mobileHydrometers.sessionExpiredBody"
-                : brews.isError
-                  ? "mobileHydrometers.errorBody"
-                  : "mobileHydrometers.lifecycle.brewUnavailable"
+                : isConnectionError(brews.error)
+                  ? "mobileHydrometers.lifecycle.offlineBody"
+                  : brews.isError
+                    ? "mobileHydrometers.errorBody"
+                    : "mobileHydrometers.lifecycle.brewUnavailable"
             )}
           </Text>
           <HydrometerActionButton

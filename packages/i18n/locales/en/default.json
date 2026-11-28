@@ -4094,6 +4094,7 @@
       "noChoices": "No matching choices.",
       "alreadyLinked": "Already linked here",
       "brewUnavailable": "This brew is no longer available.",
+      "offlineBody": "Connect to the internet to load your hydrometer brews.",
       "active": "Active session",
       "completed": "Ended session",
       "linkConfirm": "Link this hydrometer and import its unassigned readings? Readings already assigned to other brews stay there.",
