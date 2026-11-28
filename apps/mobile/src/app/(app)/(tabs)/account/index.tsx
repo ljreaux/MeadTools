@@ -339,6 +339,8 @@ function ProfileSettings({ userId, email }: { userId: number; email: string }) {
               </Text>
             ) : null}
             <Pressable
+              // Without a label, Android keeps "busy" as the description after saving.
+              accessibilityLabel={t("mobileAccount.saveUsername")}
               accessibilityRole="button"
               accessibilityState={{ disabled: saveDisabled, busy: update.isPending && update.variables?.public_username !== undefined }}
               disabled={saveDisabled}
