@@ -4,6 +4,26 @@ import {
 } from "@meadtools/api-contract/brew-images";
 import {
   accountInfoResponseSchema,
+  hydrometerAccountResponseSchema,
+  hydrometerTokenResponseSchema,
+  hydrometerDeviceResponseSchema,
+  deleteHydrometerDeviceResponseSchema,
+  hydrometerBrewsResponseSchema,
+  hydrometerBrewResponseSchema,
+  startHydrometerBrewRequestBodySchema,
+  startHydrometerBrewResponseSchema,
+  endHydrometerBrewResponseSchema,
+  hydrometerBrewAlertResponseSchema,
+  attachDeviceToBrewResponseSchema,
+  adoptLogsForBrewResponseSchema,
+  type HydrometerBrewResponse,
+  hydrometerLogsResponseSchema,
+  hydrometerLogResponseSchema,
+  updateHydrometerLogRequestBodySchema,
+  deleteHydrometerLogsInRangeResponseSchema,
+  type HydrometerLogResponse,
+  type UpdateHydrometerLogRequestBody,
+  type HydrometerDeviceResponse,
   brewCostResponseSchema,
   inventoryCostExclusionsResponseSchema,
   inventoryCurrencyResponseSchema,
@@ -226,6 +246,12 @@ async function requestHeaders(options: MeadToolsApiClientOptions) {
   return headers;
 }
 
+function parseHydrometerResponse<T>(schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } }, value: unknown): T {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) throw new MeadToolsContractError("Hydrometer response does not match the MeadTools API contract", value);
+  return parsed.data;
+}
+
 export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
 
@@ -243,6 +269,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
     return body;
   }
 
+  // Setup responses may contain a private device token. Keep response bodies out of errors.
+  async function secretRequest(path: string, method: string) {
+    try {
+      return await request(path, { method });
+    } catch (error) {
+      if (error instanceof MeadToolsApiError) throw new MeadToolsApiError(error.status, undefined);
+      throw new Error("Hydrometer setup request failed");
+    }
+  }
+
   function parseInventoryPayload<T>(
     schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } },
     value: unknown,
@@ -254,6 +290,127 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
   }
 
   return {
+    /** Lists owned devices without retaining the account's setup token in caches. */
+    async listHydrometerDevices(): Promise<HydrometerDeviceResponse[]> {
+      const body = await request("/api/hydrometer", { method: "GET" });
+      const parsed = hydrometerAccountResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        // The response contains a setup token. Do not attach it to an error.
+        throw new MeadToolsContractError(
+          "Hydrometer response does not match the MeadTools API contract",
+          undefined
+        );
+      }
+      return parsed.data.devices;
+    },
+
+    /** Deliberate, uncached setup read. Call only after the user requests the token. */
+    async getHydrometerSetupToken(): Promise<string | null> {
+      const result = hydrometerAccountResponseSchema.safeParse(await secretRequest("/api/hydrometer", "GET"));
+      if (!result.success) throw new MeadToolsContractError("Invalid hydrometer setup response", undefined);
+      return result.data.hydro_token;
+    },
+
+    /** Replaces the existing token; callers must explain that devices need updating. */
+    async generateHydrometerSetupToken(): Promise<string> {
+      const result = hydrometerTokenResponseSchema.safeParse(await secretRequest("/api/hydrometer/token", "POST"));
+      if (!result.success || !result.data.token) throw new MeadToolsContractError("Invalid hydrometer token response", undefined);
+      return result.data.token;
+    },
+
+    async updateHydrometerCoefficients(deviceId: string, coefficients: readonly number[]) {
+      if (!deviceId || coefficients.length !== 4 || !coefficients.every(Number.isFinite)) throw new MeadToolsContractError("Four finite calibration coefficients are required", undefined);
+      return parseHydrometerResponse(hydrometerDeviceResponseSchema, await request(`/api/hydrometer/device/${encodeURIComponent(deviceId)}`, { method: "PATCH", body: JSON.stringify({ coefficients }) }));
+    },
+
+    async deleteHydrometerDevice(deviceId: string) {
+      if (!deviceId) throw new MeadToolsContractError("A device is required", undefined);
+      return parseHydrometerResponse(deleteHydrometerDeviceResponseSchema, await request(`/api/hydrometer/device/${encodeURIComponent(deviceId)}`, { method: "DELETE" }));
+    },
+
+    async listHydrometerBrews(): Promise<HydrometerBrewResponse[]> {
+      return parseHydrometerResponse(hydrometerBrewsResponseSchema, await request("/api/hydrometer/brew", { method: "GET" }));
+    },
+
+    async startHydrometerBrew(deviceId: string, name: string): Promise<HydrometerBrewResponse> {
+      const input = { device_id: deviceId, brew_name: name.trim() };
+      if (!input.device_id || !input.brew_name || !startHydrometerBrewRequestBodySchema.safeParse(input).success) throw new MeadToolsContractError("A device and brew name are required", undefined);
+      const pair = parseHydrometerResponse(startHydrometerBrewResponseSchema, await request("/api/hydrometer/brew", { method: "POST", body: JSON.stringify(input) }));
+      const brew = pair.find((item): item is HydrometerBrewResponse => "start_date" in item);
+      if (!brew) throw new MeadToolsContractError("Started brew missing from response", undefined);
+      return brew;
+    },
+
+    async renameHydrometerBrew(brewId: string, name: string): Promise<HydrometerBrewResponse> {
+      if (!brewId || !name.trim()) throw new MeadToolsContractError("A brew and non-empty name are required", undefined);
+      return parseHydrometerResponse(hydrometerBrewResponseSchema, await request("/api/hydrometer/brew", { method: "PATCH", body: JSON.stringify({ brew_id: brewId, brew_name: name.trim() }) }));
+    },
+
+    async endHydrometerBrew(brewId: string, deviceId: string): Promise<HydrometerBrewResponse> {
+      if (!brewId || !deviceId) throw new MeadToolsContractError("A brew and device are required", undefined);
+      const pair = parseHydrometerResponse(endHydrometerBrewResponseSchema, await request("/api/hydrometer/brew", { method: "PATCH", body: JSON.stringify({ brew_id: brewId, device_id: deviceId }) }));
+      const brew = pair.find((item): item is HydrometerBrewResponse => "start_date" in item);
+      if (!brew) throw new MeadToolsContractError("Ended brew missing from response", undefined);
+      return brew;
+    },
+
+    async unlinkHydrometerDevice(brewId: string, deviceId: string) {
+      if (!brewId || !deviceId) throw new MeadToolsContractError("A brew and device are required", undefined);
+      return parseHydrometerResponse(endHydrometerBrewResponseSchema, await request("/api/brews", { method: "PATCH", body: JSON.stringify({ brew_id: brewId, device_id: deviceId }) }));
+    },
+
+    async attachHydrometerDevice(brewId: string, deviceId: string) {
+      if (!brewId || !deviceId) throw new MeadToolsContractError("A brew and device are required", undefined);
+      return parseHydrometerResponse(attachDeviceToBrewResponseSchema, await request(`/api/brews/${encodeURIComponent(brewId)}/attach-device`, { method: "POST", body: JSON.stringify({ device_id: deviceId }) }));
+    },
+
+    async importUnassignedHydrometerLogs(brewId: string, deviceId: string) {
+      if (!brewId || !deviceId) throw new MeadToolsContractError("A brew and device are required", undefined);
+      return parseHydrometerResponse(adoptLogsForBrewResponseSchema, await request(`/api/brews/${encodeURIComponent(brewId)}/adopt-logs`, { method: "POST", body: JSON.stringify({ device_id: deviceId }) }));
+    },
+
+    async linkHydrometerBrewRecipe(brewId: string, recipeId: number): Promise<HydrometerBrewResponse> {
+      if (!brewId || !Number.isSafeInteger(recipeId) || recipeId <= 0) throw new MeadToolsContractError("A brew and recipe are required", undefined);
+      return parseHydrometerResponse(hydrometerBrewResponseSchema, await request(`/api/hydrometer/brew/${encodeURIComponent(brewId)}`, { method: "PATCH", body: JSON.stringify({ recipe_id: recipeId }) }));
+    },
+
+    async setHydrometerBrewAlerts(brewId: string, enabled: boolean) {
+      if (!brewId) throw new MeadToolsContractError("A brew is required", undefined);
+      return parseHydrometerResponse(hydrometerBrewAlertResponseSchema, await request(`/api/hydrometer/brew/${encodeURIComponent(brewId)}`, { method: "PATCH", body: JSON.stringify({ requested_email_alerts: enabled }) }));
+    },
+
+    async listHydrometerLogs(input: { deviceId: string; startDate: string; endDate: string }): Promise<HydrometerLogResponse[]> {
+      const start = Date.parse(input.startDate);
+      const end = Date.parse(input.endDate);
+      if (!input.deviceId || !Number.isFinite(start) || !Number.isFinite(end) || start > end) {
+        throw new MeadToolsContractError("Invalid hydrometer log range", undefined);
+      }
+      const query = new URLSearchParams({ device_id: input.deviceId, start_date: input.startDate, end_date: input.endDate });
+      return parseHydrometerResponse(hydrometerLogsResponseSchema, await request(`/api/hydrometer/logs?${query}`, { method: "GET" }));
+    },
+
+    async listBrewHydrometerLogs(brewId: string): Promise<HydrometerLogResponse[]> {
+      return parseHydrometerResponse(hydrometerLogsResponseSchema, await request(`/api/hydrometer/logs/${encodeURIComponent(brewId)}`, { method: "GET" }));
+    },
+
+    async updateHydrometerLog(logId: string, deviceId: string, input: UpdateHydrometerLogRequestBody): Promise<HydrometerLogResponse> {
+      const parsed = updateHydrometerLogRequestBodySchema.safeParse(input);
+      if (!parsed.success) throw new MeadToolsContractError("Invalid hydrometer log update", input);
+      return parseHydrometerResponse(hydrometerLogResponseSchema, await request(`/api/hydrometer/logs/${encodeURIComponent(logId)}?device_id=${encodeURIComponent(deviceId)}`, { method: "PATCH", body: JSON.stringify(parsed.data) }));
+    },
+
+    async deleteHydrometerLog(logId: string, deviceId: string): Promise<HydrometerLogResponse> {
+      return parseHydrometerResponse(hydrometerLogResponseSchema, await request(`/api/hydrometer/logs/${encodeURIComponent(logId)}?device_id=${encodeURIComponent(deviceId)}`, { method: "DELETE" }));
+    },
+
+    async deleteHydrometerLogsInRange(input: { deviceId: string; startDate: string; endDate: string }) {
+      const start = Date.parse(input.startDate);
+      const end = Date.parse(input.endDate);
+      if (!input.deviceId || !Number.isFinite(start) || !Number.isFinite(end) || start > end) throw new MeadToolsContractError("Invalid hydrometer log range", undefined);
+      const query = new URLSearchParams({ device_id: input.deviceId, start_date: input.startDate, end_date: input.endDate });
+      return parseHydrometerResponse(deleteHydrometerLogsInRangeResponseSchema, await request(`/api/hydrometer/logs/range?${query}`, { method: "DELETE" }));
+    },
+
     async login(input: LoginRequestBody): Promise<LoginSuccessResponse> {
       if (!loginRequestBodySchema.safeParse(input).success) {
         throw new MeadToolsContractError(

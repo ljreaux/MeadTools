@@ -10,6 +10,7 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="hydrometer-readings" options={{ title: t("mobileHydrometers.readings"), presentation: "modal" }} />
       <Stack.Screen
         name="add-entry"
         options={{

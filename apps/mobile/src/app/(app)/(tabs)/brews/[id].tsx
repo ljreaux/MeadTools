@@ -318,6 +318,9 @@ export default function BrewScreen() {
           </Pressable>
         </View>
       ) : null}
+      <Pressable accessibilityRole="button" style={styles.stageButton} onPress={() => router.push({ pathname: "/hydrometer-readings", params: { brewId: brew.id } })}>
+        <Text style={styles.stageButtonText}>{t("mobileHydrometers.readings")}</Text>
+      </Pressable>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.heading}>{name}</Text>
         <View style={styles.stageRow}>

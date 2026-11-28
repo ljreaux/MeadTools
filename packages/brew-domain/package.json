@@ -21,7 +21,10 @@
     "./scaling": "./src/scaling.ts",
     "./links": "./src/links.ts",
     "./qr": "./src/qr.ts",
-    "./images": "./src/images.ts"
+    "./images": "./src/images.ts",
+    "./hydrometer": "./src/hydrometer.ts",
+    "./hydrometer-lifecycle": "./src/hydrometer-lifecycle.ts",
+    "./hydrometer-setup": "./src/hydrometer-setup.ts"
   },
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",

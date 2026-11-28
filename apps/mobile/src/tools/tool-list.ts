@@ -1,6 +1,10 @@
 /** Calculators on the Tools tab, grouped like the web's calculator menus. */
 export const toolGroups = [
   {
+    key: "devices",
+    tools: [{ href: "/tools/hydrometers", label: "mobileHydrometers.title" }]
+  },
+  {
     key: "nutrients",
     tools: [{ href: "/tools/nutrients", label: "calculators.nutes" }]
   },
