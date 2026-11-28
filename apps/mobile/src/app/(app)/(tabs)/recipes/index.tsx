@@ -65,6 +65,9 @@ export default function RecipesScreen() {
       onRefresh={() => void recipes.refetch()}
       // Long recipe lists keep search and sort in reach while scrolling.
       stickyHeaderIndices={total ? [0] : undefined}
+      // Android's default clipping detaches every row beneath a sticky header,
+      // leaving the list blank.
+      removeClippedSubviews={false}
       initialNumToRender={12}
       windowSize={9}
       ListHeaderComponent={total ? (

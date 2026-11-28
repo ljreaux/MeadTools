@@ -117,6 +117,8 @@ export function RecipePdfActions({ recipeId }: { recipeId: number }) {
         {(["view", "share", "print"] as const).map((action) => (
           <Pressable
             key={action}
+            // Without a label, Android keeps "busy" as the description after the action finishes.
+            accessibilityLabel={t(labels[action])}
             accessibilityRole="button"
             accessibilityState={{ busy: running === action, disabled: running !== null }}
             disabled={running !== null}
