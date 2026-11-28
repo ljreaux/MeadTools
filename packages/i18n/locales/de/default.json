@@ -2446,7 +2446,7 @@
             "confirmCompleteBody": "Das Abschließen des Ansatzes setzt dessen Enddatum. Die Änderung wird automatisch synchronisiert, auch wenn du offline bist.",
             "confirmTitle": "In {{stage}} verschieben?",
             "current": "Aktuell",
-            "equipmentNote": "Gerätezuweisungen werden hier nicht geändert. Verwende die Web-App, um einen Ansatz in andere Behälter zu verschieben.",
+            "equipmentNote": "Behälterzuweisungen im Inventar verwalten.",
             "needs": "Benötigt: {{items}}",
             "pending": "Wartet auf Synchronisierung",
             "saveFailed": "Diese Änderung konnte auf diesem Gerät nicht gespeichert werden. Versuche es erneut.",
