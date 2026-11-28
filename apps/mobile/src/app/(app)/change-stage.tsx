@@ -158,7 +158,9 @@ export default function ChangeStageScreen() {
         })}
       </View>
 
-      <Text style={styles.hint}>{t("mobileBrews.changeStage.equipmentNote")}</Text>
+      <Pressable accessibilityRole="link" onPress={() => router.push("/inventory/equipment")} disabled={saving !== null}>
+        <Text style={styles.hint}>{t("mobileBrews.changeStage.equipmentNote")}</Text>
+      </Pressable>
     </ScrollView>
   );
 }

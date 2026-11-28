@@ -418,6 +418,11 @@ export default function BrewScreen() {
           <Text style={styles.muted}>{t("mobileBrews.recipeDetailsUnavailable")}</Text>
         )}
         <RecipeSnapshotStatus brew={brew} />
+        <Pressable accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/cost-summary", params: { brewId: brew.id, name } })}
+          style={({ pressed }) => [styles.stageButton, pressed && styles.pressed]}>
+          <Text style={styles.stageButtonText}>{t("inventoryCosts.brewTitle")}</Text>
+        </Pressable>
       </View>
       {__DEV__ ? (
         <DevOutboxPanel
