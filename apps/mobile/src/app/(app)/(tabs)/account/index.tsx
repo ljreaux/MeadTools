@@ -1,31 +1,82 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Constants from "expo-constants";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { openURL } from "expo-linking";
+import { useState } from "react";
+import {
+  ActivityIndicator, Alert, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Switch,
+  Text, TextInput, View
+} from "react-native";
 import { useTranslation } from "react-i18next";
 
+import {
+  publicUsernameInputSchema,
+  type AccountProfile,
+  type UpdateAccountProfileInput
+} from "@meadtools/api-contract";
 import { colorThemes, radii, spacing, typography } from "@meadtools/design-tokens";
 
+import { webPageUrl } from "@/config/api";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import { useSession } from "@/providers/app-providers";
+import { useApiClient, useSession } from "@/providers/app-providers";
 
 export default function AccountScreen() {
   const { colors } = useThemeColors();
   const styles = createStyles(colors);
   const { t } = useTranslation();
   const { session, signOut } = useSession();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const version = Constants.expoConfig?.version;
+
+  async function refresh() {
+    if (!session) return;
+    setRefreshing(true);
+    try {
+      await Promise.all(
+        accountQueryKeys.map((key) => queryClient.refetchQueries({ queryKey: [key, session.id] }))
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  function requestAccountDeletion() {
+    Alert.alert(
+      t("mobileAccount.deletionRequest"),
+      t("mobileAccount.deletionRequestDescription"),
+      [
+        { text: t("cancel"), style: "cancel" },
+        {
+          text: t("mobileAccount.deletionRequestOpen"),
+          onPress: () => {
+            void openURL(webPageUrl("/account-deletion")).catch(() => {
+              Alert.alert(t("mobileAccount.deletionRequestOpenError"));
+            });
+          }
+        }
+      ]
+    );
+  }
 
   return (
     <ScrollView
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      refreshControl={
+        session ? <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} /> : undefined
+      }
       style={styles.screen}
     >
-      <View accessible style={styles.card}>
-        <Text style={styles.label}>{t("mobileNav.signedInAs")}</Text>
-        <Text selectable style={styles.email}>
-          {session?.email}
-        </Text>
-      </View>
+      {session ? (
+        <View key={session.id} style={styles.accountSections}>
+          <ProfileSettings userId={session.id} email={session.email} />
+          <AccountStatus userId={session.id} />
+          <EmailPreferences userId={session.id} />
+        </View>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         onPress={() => void signOut()}
@@ -33,6 +84,15 @@ export default function AccountScreen() {
       >
         <Text style={styles.signOutText}>{t("account.logout")}</Text>
       </Pressable>
+      {session ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={requestAccountDeletion}
+          style={({ pressed }) => [styles.destructiveLink, pressed && styles.pressed]}
+        >
+          <Text style={styles.destructiveText}>{t("mobileAccount.deletionRequest")}</Text>
+        </Pressable>
+      ) : null}
       {version ? (
         <Text style={styles.version}>{t("mobileNav.version", { version })}</Text>
       ) : null}
@@ -40,19 +100,364 @@ export default function AccountScreen() {
   );
 }
 
+/** Every account query, refetched together by pull to refresh. */
+const accountQueryKeys = [
+  "account-profile",
+  "account-premium",
+  "account-credits",
+  "account-release-email"
+] as const;
+
+function EmailPreferences({ userId }: { userId: number }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  const queryKey = ["account-release-email", userId] as const;
+  const preference = useQuery({
+    queryKey,
+    queryFn: () => apiClient.getReleaseEmailPreferences()
+  });
+  // The switch saves as soon as it changes, like the avatar setting.
+  const save = useMutation({
+    mutationFn: (optedIn: boolean) => apiClient.updateReleaseEmailPreferences({ optedIn }),
+    onSuccess: async (result) => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData(queryKey, result);
+    }
+  });
+
+  const optedIn = save.isPending ? save.variables : preference.data?.optedIn ?? false;
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.field}>
+        <Text accessibilityRole="header" style={styles.email}>{t("releaseEmails.title")}</Text>
+        <Text style={styles.label}>{t("releaseEmails.settingsDescription")}</Text>
+      </View>
+      {preference.isPending ? (
+        <ActivityIndicator
+          color={colors.accent}
+          accessibilityLabel={t("mobileAccount.loadingEmailPreference")}
+        />
+      ) : null}
+      {preference.isLoadingError ? (
+        <View style={styles.field}>
+          <Text accessibilityRole="alert" style={styles.error}>{t("releaseEmails.loadError")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={preference.isFetching}
+            onPress={() => void preference.refetch()}
+            style={styles.signOutButton}
+          >
+            <Text style={styles.signOutText}>{t("mobileAccount.retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {preference.data ? (
+        <View style={styles.field}>
+          <View style={styles.avatarSetting}>
+            <Text style={[styles.settingLabel, styles.identity]}>{t("releaseEmails.optIn")}</Text>
+            {save.isPending ? <ActivityIndicator color={colors.accent} /> : null}
+            <Switch
+              accessibilityLabel={t("releaseEmails.optIn")}
+              disabled={save.isPending}
+              value={optedIn}
+              onValueChange={(value) => save.mutate(value)}
+            />
+          </View>
+          {save.isSuccess ? (
+            <Text accessibilityLiveRegion="polite" style={styles.label}>{t("releaseEmails.saved")}</Text>
+          ) : null}
+          {save.isError ? (
+            <Text accessibilityRole="alert" style={styles.error}>{t("releaseEmails.saveError")}</Text>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function AccountStatus({ userId }: { userId: number }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t, i18n } = useTranslation();
+  const apiClient = useApiClient();
+  const premium = useQuery({
+    queryKey: ["account-premium", userId],
+    queryFn: () => apiClient.getPremiumStatus()
+  });
+  const credits = useQuery({
+    queryKey: ["account-credits", userId],
+    queryFn: () => apiClient.getCreditBalance()
+  });
+  const status = premium.data;
+  let premiumLabel: string | undefined;
+
+  if (status?.paymentRestricted) {
+    premiumLabel = t("premium.restricted");
+  } else if (status?.premiumEnabled && status.paidThrough) {
+    const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" })
+      .format(new Date(status.paidThrough));
+    premiumLabel = t("premium.active", { date });
+  } else if (status?.entitled) {
+    premiumLabel = t("mobileAccount.premiumUnavailable");
+  } else if (status?.membershipExpired) {
+    premiumLabel = t("mobileAccount.premiumExpired");
+  } else if (status) {
+    premiumLabel = status.membershipExpired === false
+      ? t("mobileAccount.premiumFree")
+      : t("premium.inactive");
+  }
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.field}>
+        <Text accessibilityRole="header" style={styles.email}>{t("premium.title")}</Text>
+        {premium.isPending ? (
+          <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingPremium")} color={colors.accent} />
+        ) : null}
+        {premiumLabel ? <Text style={styles.settingLabel}>{premiumLabel}</Text> : null}
+        {premium.isError ? (
+          <Text accessibilityRole="alert" style={styles.error}>{t("premium.loadFailed")}</Text>
+        ) : null}
+      </View>
+      <View accessible style={[styles.statRow, styles.divider]}>
+        <Text style={[styles.settingLabel, styles.identity]}>{t("credits.available")}</Text>
+        {credits.isPending ? (
+          <ActivityIndicator accessibilityLabel={t("mobileAccount.loadingCredits")} color={colors.accent} />
+        ) : null}
+        {credits.data ? (
+          <Text style={styles.statValue}>
+            {new Intl.NumberFormat(i18n.language).format(credits.data.availableCredits)}
+          </Text>
+        ) : null}
+      </View>
+      {credits.isError ? (
+        <Text accessibilityRole="alert" style={styles.error}>{t("mobileAccount.creditsLoadFailed")}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+function ProfileSettings({ userId, email }: { userId: number; email: string }) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  const queryKey = ["account-profile", userId] as const;
+  const profile = useQuery({
+    queryKey,
+    queryFn: () => apiClient.getAccountProfile()
+  });
+  const [draft, setDraft] = useState<string | null>(null);
+  const [invalidUsername, setInvalidUsername] = useState(false);
+  const update = useMutation({
+    mutationFn: (input: UpdateAccountProfileInput) => apiClient.updateAccountProfile(input),
+    onSuccess: async (saved, input) => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<AccountProfile>(queryKey, (current) =>
+        current ? { ...current, ...saved } : current
+      );
+      if (input.public_username !== undefined) setDraft(null);
+    }
+  });
+
+  const savedUsername = profile.data?.public_username ?? "";
+  const username = draft ?? savedUsername;
+  const saveDisabled = update.isPending || username === savedUsername;
+  const avatarUrl = profile.data?.isGoogleUser && profile.data.show_google_avatar
+    ? profile.data.google_avatar_url
+    : null;
+
+  function saveUsername() {
+    if (saveDisabled) return;
+
+    const parsed = publicUsernameInputSchema.safeParse(username);
+    setInvalidUsername(!parsed.success);
+    if (!parsed.success) return;
+
+    Keyboard.dismiss();
+    if (parsed.data === savedUsername) {
+      setDraft(null);
+      return;
+    }
+    update.mutate({ public_username: parsed.data });
+  }
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.profileHeader}>
+        {avatarUrl ? <Image source={avatarUrl} style={styles.avatar} /> : null}
+        <View style={styles.identity}>
+          <Text style={styles.label}>{t("mobileNav.signedInAs")}</Text>
+          <Text selectable style={styles.email}>{profile.data?.email ?? email}</Text>
+        </View>
+      </View>
+      {profile.isPending ? (
+        <ActivityIndicator accessibilityLabel={t("mobileAccount.loading")} color={colors.accent} />
+      ) : null}
+      {profile.isLoadingError ? (
+        <View style={styles.field}>
+          <Text accessibilityRole="alert" style={styles.error}>{t("accountPage.error")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={profile.isFetching}
+            onPress={() => void profile.refetch()}
+            style={styles.signOutButton}
+          >
+            <Text style={styles.signOutText}>{t("mobileAccount.retry")}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {profile.data ? (
+        <>
+          <View style={styles.field}>
+            <Text style={styles.label}>{t("publicUsername.label")}</Text>
+            <TextInput
+              accessibilityLabel={t("publicUsername.label")}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!update.isPending}
+              onChangeText={(value) => {
+                setDraft(value);
+                setInvalidUsername(false);
+                if (!update.isIdle) update.reset();
+              }}
+              onSubmitEditing={saveUsername}
+              placeholder={t("publicUsername.placeholder")}
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
+              style={styles.input}
+              value={username}
+            />
+            {invalidUsername ? (
+              <Text accessibilityRole="alert" style={styles.error}>
+                {t("mobileAccount.usernameRequired")}
+              </Text>
+            ) : null}
+            <Pressable
+              // Without a label, Android keeps "busy" as the description after saving.
+              accessibilityLabel={t("mobileAccount.saveUsername")}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saveDisabled, busy: update.isPending && update.variables?.public_username !== undefined }}
+              disabled={saveDisabled}
+              onPress={saveUsername}
+              style={({ pressed }) => [
+                styles.saveButton,
+                saveDisabled && styles.saveButtonDisabled,
+                pressed && styles.pressed
+              ]}
+            >
+              <Text style={[styles.saveText, saveDisabled && styles.saveTextDisabled]}>
+                {t("mobileAccount.saveUsername")}
+              </Text>
+            </Pressable>
+            {update.variables?.public_username !== undefined ? (
+              <ProfileUpdateFeedback success={update.isSuccess} error={update.isError} setting="username" />
+            ) : null}
+          </View>
+          {profile.data.isGoogleUser ? (
+            <View style={styles.field}>
+              <View style={styles.avatarSetting}>
+                <Text style={[styles.settingLabel, styles.identity]}>{t("accountPage.googleAvatar.title")}</Text>
+                <Switch
+                  accessibilityLabel={t("accountPage.googleAvatar.label")}
+                  disabled={update.isPending}
+                  onValueChange={(show_google_avatar) => update.mutate({ show_google_avatar })}
+                  value={profile.data.show_google_avatar}
+                />
+              </View>
+              <Text style={styles.label}>{t("accountPage.googleAvatar.description")}</Text>
+              {update.variables?.show_google_avatar !== undefined ? (
+                <ProfileUpdateFeedback success={update.isSuccess} error={update.isError} setting="avatar" />
+              ) : null}
+            </View>
+          ) : null}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function ProfileUpdateFeedback({ success, error, setting }: {
+  success: boolean;
+  error: boolean;
+  setting: "username" | "avatar";
+}) {
+  const { colors } = useThemeColors();
+  const styles = createStyles(colors);
+  const { t } = useTranslation();
+  if (!success && !error) return null;
+
+  return (
+    <Text
+      accessibilityLiveRegion="polite"
+      accessibilityRole={error ? "alert" : undefined}
+      style={error ? styles.error : styles.label}
+    >
+      {error
+        ? t(setting === "username" ? "auth.username.error.description" : "auth.avatar.error.description")
+        : t(setting === "username" ? "auth.username.success.description" : "auth.avatar.success.description")}
+    </Text>
+  );
+}
+
 function createStyles(colors: typeof colorThemes.light) {
   return StyleSheet.create({
     screen: { backgroundColor: colors.background },
     content: { gap: spacing.lg, padding: spacing.xl },
+    accountSections: { gap: spacing.lg },
     card: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
       borderRadius: radii.lg,
       borderWidth: 1,
-      gap: spacing.xs,
+      gap: spacing.lg,
       padding: spacing.lg
     },
+    profileHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    identity: { flex: 1, gap: spacing.xs },
+    avatar: { width: 48, height: 48, borderRadius: 24 },
+    avatarSetting: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    field: { gap: spacing.sm },
     label: { color: colors.textMuted, fontSize: typography.size.caption },
+    error: { color: colors.error, fontSize: typography.size.caption },
+    input: {
+      borderColor: colors.border,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontSize: typography.size.body,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm
+    },
+    saveButton: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderRadius: radii.md,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm
+    },
+    saveButtonDisabled: { backgroundColor: "transparent", borderColor: colors.border, borderWidth: 1 },
+    saveText: { color: colors.onAccent, fontSize: typography.size.body, fontWeight: typography.weight.bold },
+    saveTextDisabled: { color: colors.textMuted },
+    settingLabel: { color: colors.text, fontSize: typography.size.body },
+    statRow: { alignItems: "center", flexDirection: "row", gap: spacing.md, paddingTop: spacing.md },
+    divider: { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
+    statValue: {
+      color: colors.text,
+      fontSize: typography.size.title - 4,
+      fontVariant: ["tabular-nums"],
+      fontWeight: typography.weight.bold
+    },
+    destructiveLink: { alignItems: "center", justifyContent: "center", minHeight: 44 },
+    destructiveText: { color: colors.error, fontSize: typography.size.body, fontWeight: typography.weight.bold },
     email: {
       color: colors.text,
       fontSize: typography.size.action,

@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     premiumAccessResponseSchema.parse({
       entitled: status.entitled,
+      membershipExpired: status.membershipExpired,
       premiumEnabled: status.premiumEnabled,
       source: status.source,
       paidThrough: status.paidThrough?.toISOString() ?? null,

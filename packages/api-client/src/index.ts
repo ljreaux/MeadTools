@@ -1,4 +1,8 @@
 import {
+  brewImageAccessResponseSchema,
+  coverImageResponseSchema
+} from "@meadtools/api-contract/brew-images";
+import {
   accountInfoResponseSchema,
   brewCostResponseSchema,
   inventoryCostExclusionsResponseSchema,
@@ -20,6 +24,7 @@ import {
   updateInventoryOrganizationRequestBodySchema,
   updateInventoryStorageRequestBodySchema,
   additivesResponseSchema,
+  accountProfileResponseSchema,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
   finishedMeadOverviewResponseSchema,
@@ -30,17 +35,23 @@ import {
   createBrewResponseSchema,
   createBrewEntryResponseSchema,
   createInventoryStockRequestBodySchema,
+  creditBalanceResponseSchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   getRecipeResponseSchema,
+  recipePdfResponseSchema,
+  type RecipePdfQueryParams,
   inventoryOverviewResponseSchema,
   inventoryStockHistoryResponseSchema,
   inventoryStockMutationResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
+  premiumAccessResponseSchema,
   yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
+  updateAccountProfileInputSchema,
+  updateAccountProfileResultSchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateBrewEntryResponseSchema,
@@ -51,6 +62,8 @@ import {
   recipeDerivedStateResponseBodySchema,
   refreshTokenRequestBodySchema,
   refreshTokenSuccessResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
@@ -74,6 +87,9 @@ import {
   type UpdateInventoryOrganizationRequestBody,
   type UpdateInventoryStorageRequestBody,
   type AdditivesResponse,
+  type AccountProfile,
+  type UpdateAccountProfileInput,
+  type UpdateAccountProfileResult,
   type BrewListItemResponse,
   type BrewResponse,
   type BrewInventoryContextResponse,
@@ -83,6 +99,7 @@ import {
   type CreateBrewRequestBody,
   type CreateBrewResponse,
   type CreateInventoryStockRequestBody,
+  type CreditBalanceResponse,
   type UpdateBrewRequestBody,
   type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
@@ -94,6 +111,7 @@ import {
   type InventoryStockMutationResponse,
   type IngredientsResponse,
   type NutrientPresetListResponse,
+  type PremiumAccessResponse,
   type YeastsResponse,
   type UpdateBrewEntryRequestBody,
   type UpdateBrewEntryResponse,
@@ -104,8 +122,21 @@ import {
   type RecipeDerivedStateResponseBody,
   type RefreshTokenRequestBody,
   type RefreshTokenSuccessResponse,
+  type ReleaseEmailPreferencesResponse,
+  type ReleaseEmailPreferencesUpdateBody,
   type VerifyTokenSuccessResponse
 } from "@meadtools/api-contract";
+
+const premiumStatusFields = {
+  entitled: true,
+  membershipExpired: true,
+  premiumEnabled: true,
+  paidThrough: true,
+  paymentRestricted: true
+} as const;
+
+const premiumStatusSchema = premiumAccessResponseSchema.pick(premiumStatusFields);
+type PremiumStatus = Pick<PremiumAccessResponse, keyof typeof premiumStatusFields>;
 
 export type ApiRequestInit = {
   method: string;
@@ -326,6 +357,81 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data;
     },
 
+    async getAccountProfile(): Promise<AccountProfile> {
+      const body = await request("/api/auth/account-info", { method: "GET" });
+      const parsed = accountProfileResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile response", parsed.error.issues);
+      }
+
+      return parsed.data.user;
+    },
+
+    async updateAccountProfile(input: UpdateAccountProfileInput): Promise<UpdateAccountProfileResult> {
+      const update = updateAccountProfileInputSchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid account profile update", update.error.issues);
+      }
+
+      const body = await request("/api/auth/account-info", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = updateAccountProfileResultSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile update response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getPremiumStatus(): Promise<PremiumStatus> {
+      const body = await request("/api/account/premium", { method: "GET" });
+      const parsed = premiumStatusSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid Premium status response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getCreditBalance(): Promise<CreditBalanceResponse> {
+      const body = await request("/api/account/credits", { method: "GET" });
+      const parsed = creditBalanceResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid credit balance response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getReleaseEmailPreferences(): Promise<ReleaseEmailPreferencesResponse> {
+      const body = await request("/api/account/release-emails", { method: "GET" });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
+      return parsed.data;
+    },
+
+    async updateReleaseEmailPreferences(
+      input: ReleaseEmailPreferencesUpdateBody
+    ): Promise<ReleaseEmailPreferencesResponse> {
+      const update = releaseEmailPreferencesUpdateBodySchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid release email preference update", update.error.issues);
+      }
+      const body = await request("/api/account/release-emails", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
+      return parsed.data;
+    },
+
     async listRecipes(): Promise<AccountRecipeResponse[]> {
       const body = await request("/api/auth/account-info", {
         method: "GET"
@@ -339,6 +445,40 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.recipes;
+    },
+
+    async getRecipePdf(recipeId: number, locale: RecipePdfQueryParams["locale"]) {
+      const id = encodeURIComponent(String(recipeId));
+      const body = await request(`/api/recipes/${id}/pdf?locale=${encodeURIComponent(locale)}`, {
+        method: "GET"
+      });
+      const parsed = recipePdfResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe PDF response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async getRecipeCover(recipeId: number) {
+      const body = await request(`/api/recipes/${encodeURIComponent(String(recipeId))}/cover`, {
+        method: "GET"
+      });
+      const parsed = coverImageResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe cover response does not match the MeadTools API contract", body);
+      }
+      return parsed.data.image;
+    },
+
+    async getRecipeImageAccess(recipeId: number, imageId: string) {
+      const id = encodeURIComponent(String(recipeId));
+      const image = encodeURIComponent(imageId);
+      const body = await request(`/api/recipes/${id}/images/${image}`, { method: "GET" });
+      const parsed = brewImageAccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe image access response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
     },
 
     async listBrews(): Promise<BrewListItemResponse[]> {

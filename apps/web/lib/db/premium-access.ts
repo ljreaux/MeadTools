@@ -20,21 +20,23 @@ export async function getPremiumAccessStatus(
       },
     },
   });
-  const membership = resolvePremiumAccess(
-    (user?.premium_memberships ?? [])
-      .filter((item) =>
-        item.source === "kofi" || item.source === "stripe" || item.source === "manual",
-      )
-      .map((item) => ({
-        source: item.source as "kofi" | "stripe" | "manual",
-        paidThrough: item.paid_through,
-        revokedAt: item.revoked_at,
-      })),
-    now,
+  const memberships = (user?.premium_memberships ?? [])
+    .filter((item) =>
+      item.source === "kofi" || item.source === "stripe" || item.source === "manual",
+    )
+    .map((item) => ({
+      source: item.source as "kofi" | "stripe" | "manual",
+      paidThrough: item.paid_through,
+      revokedAt: item.revoked_at,
+    }));
+  const membership = resolvePremiumAccess(memberships, now);
+  const membershipExpired = !membership.entitled && memberships.some(
+    (item) => item.revokedAt === null && item.paidThrough <= now,
   );
   const paymentRestricted = Boolean(user?.credit_account?.payment_restricted_at);
   return {
     ...membership,
+    membershipExpired,
     activeUser: Boolean(user?.active),
     paymentRestricted,
     premiumEnabled:

@@ -166,7 +166,8 @@ Mostly shared math in `@meadtools/core`; available offline.
 
 - Profile, username and avatar settings
 - Premium and credit status (read-only)
-- Email preferences, sign out on all devices, account deletion request
+- Product-update email preferences
+- Account deletion request
 
 ## Localization direction
 

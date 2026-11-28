@@ -97,7 +97,7 @@ test("only a production deployment enables the Sentry build wrapper and public f
   }
 });
 
-test("browser monitoring initializes only when enabled, with reduced replay and trace sampling", () => {
+test("browser monitoring enables feedback and trace sampling without recording sessions", () => {
   for (const enabled of ["true", "false", undefined]) {
     const fake = fakeSdk();
     const { exports } = evaluate("instrumentation-client.ts", {
@@ -106,12 +106,13 @@ test("browser monitoring initializes only when enabled, with reduced replay and 
     exports.onRouterTransitionStart("/account", "push");
     assert.equal(fake.initialized.length, enabled === "true" ? 1 : 0);
     assert.equal(fake.captures.length, enabled === "true" ? 1 : 0);
-    assert.equal(fake.integrations.length, enabled === "true" ? 2 : 0);
+    assert.deepEqual(fake.integrations, enabled === "true" ? ["feedback"] : []);
     if (enabled === "true") {
       const options = fake.initialized[0];
       assert.equal(options.tracesSampleRate, 0.1);
-      assert.equal(options.replaysSessionSampleRate, 0.01);
-      assert.equal(options.replaysOnErrorSampleRate, 0.25);
+      assert.deepEqual(Array.from(options.integrations), ["feedback"]);
+      assert.equal(options.replaysSessionSampleRate, undefined);
+      assert.equal(options.replaysOnErrorSampleRate, undefined);
       assert.equal(options.sampleRate ?? 1, 1);
       assert.ok(options.dsn);
     }
