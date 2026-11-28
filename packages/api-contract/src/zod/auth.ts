@@ -165,6 +165,35 @@ export const updateAccountInfoRequestBodySchema =
   });
 export const updateAccountInfoResponseSchema =
   accountUserResponseObjectSchema.omit({ isGoogleUser: true });
+
+// The profile consumes a subset of the existing account-info endpoint.
+const accountProfileFields = {
+  public_username: true,
+  show_google_avatar: true
+} as const;
+export const accountProfileResponseSchema = accountInfoResponseSchema.pick({
+  user: true
+}).extend({
+  user: accountUserResponseSchema.pick({
+    ...accountProfileFields,
+    email: true,
+    google_avatar_url: true,
+    isGoogleUser: true
+  })
+});
+export const publicUsernameInputSchema =
+  updateAccountInfoRequestBodySchema.shape.public_username.unwrap().trim().min(1);
+export const updateAccountProfileInputSchema = updateAccountInfoRequestBodySchema
+  .pick(accountProfileFields)
+  .extend({ public_username: publicUsernameInputSchema.optional() })
+  .refine((update) =>
+    update.public_username !== undefined || update.show_google_avatar !== undefined
+  );
+export const updateAccountProfileResultSchema =
+  updateAccountInfoResponseSchema.pick(accountProfileFields);
+
+export type AccountProfile = z.infer<typeof accountProfileResponseSchema>["user"];
+
 export const updateAccountInfoValidationErrorResponseSchema =
   z.object({ error: z.literal("Invalid account update") });
 export const updateAccountInfoErrorResponseSchema =

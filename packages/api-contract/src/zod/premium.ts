@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const premiumAccessResponseSchema = z.object({
   entitled: z.boolean(),
+  membershipExpired: z.boolean().optional(),
   premiumEnabled: z.boolean(),
   source: z.enum(["kofi", "stripe", "manual"]).nullable(),
   paidThrough: z.string().datetime().nullable(),

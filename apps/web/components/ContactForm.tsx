@@ -9,10 +9,11 @@ import { Button } from "./ui/button";
 import { Spinner } from "./ui/spinner";
 import { useMutation } from "@tanstack/react-query";
 
-const ContactUs = () => {
+const ContactUs = ({ purpose = "contact" }: { purpose?: "contact" | "account-deletion" }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement | null>(null);
+  const deletingAccount = purpose === "account-deletion";
 
   // --- React Query Mutation ---
   const sendMessage = useMutation({
@@ -37,13 +38,13 @@ const ContactUs = () => {
     },
 
     onSuccess: () => {
-      toast({ description: t("success") });
+      if (!deletingAccount) toast({ description: t("success") });
       formRef.current?.reset();
     },
 
-    onError: (err: any) => {
+    onError: (err) => {
       toast({
-        description: err.message || t("error"),
+        description: deletingAccount ? t("accountDeletion.sendError") : err.message || t("error"),
         variant: "destructive"
       });
     }
@@ -58,12 +59,12 @@ const ContactUs = () => {
     sendMessage.mutate({
       user_name: formData.get("user_name") as string,
       user_email: formData.get("user_email") as string,
-      message: formData.get("message") as string
+      message: deletingAccount ? "Request to delete my MeadTools account and associated data." : formData.get("message") as string
     });
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="grid w-full gap-4">
+    <form method="post" ref={formRef} onSubmit={handleSubmit} className="grid w-full gap-4">
       {/* Name */}
 
       <label
@@ -85,7 +86,7 @@ const ContactUs = () => {
         htmlFor="user_email"
         className="font-medium text-sm text-foreground"
       >
-        {t("email")}
+        {t(deletingAccount ? "accountDeletion.accountEmail" : "email")}
         <Input
           id="user_email"
           name="user_email"
@@ -95,7 +96,7 @@ const ContactUs = () => {
         />
       </label>
 
-      <label htmlFor="message" className="font-medium text-sm text-foreground">
+      {deletingAccount ? null : <label htmlFor="message" className="font-medium text-sm text-foreground">
         {t("message")}
         <Textarea
           id="message"
@@ -103,7 +104,7 @@ const ContactUs = () => {
           required
           disabled={sendMessage.isPending}
         />
-      </label>
+      </label>}
 
       {/* Submit Button */}
 
@@ -112,8 +113,11 @@ const ContactUs = () => {
         type="submit"
         disabled={sendMessage.isPending}
       >
-        {sendMessage.isPending ? <Spinner /> : t("send")}
+        {sendMessage.isPending ? <Spinner /> : t(deletingAccount ? "accountDeletion.submit" : "send")}
       </Button>
+      {deletingAccount && sendMessage.isSuccess ? (
+        <p role="status" className="text-sm text-foreground">{t("accountDeletion.submitted")}</p>
+      ) : null}
     </form>
   );
 };

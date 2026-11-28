@@ -1,4 +1,3 @@
-import { recipeCostResponseSchema } from "@meadtools/api-contract/inventory-costs";
 import {
   brewImageAccessResponseSchema,
   coverImageResponseSchema
@@ -25,6 +24,27 @@ import {
   type HydrometerLogResponse,
   type UpdateHydrometerLogRequestBody,
   type HydrometerDeviceResponse,
+  brewCostResponseSchema,
+  inventoryCostExclusionsResponseSchema,
+  inventoryCurrencyResponseSchema,
+  recipeCostResponseSchema,
+  updateBrewCostRequestBodySchema,
+  updateInventoryCostExclusionsRequestBodySchema,
+  updateInventoryCurrencyRequestBodySchema,
+  createEquipmentRequestBodySchema,
+  equipmentMutationResponseSchema,
+  equipmentOverviewResponseSchema,
+  updateEquipmentRequestBodySchema,
+  createFinishedMeadRequestBodySchema,
+  finishedMeadHistoryResponseSchema,
+  finishedMeadMutationResponseSchema,
+  inventoryOrganizationMutationResponseSchema,
+  inventoryStorageHistoryResponseSchema,
+  updateFinishedMeadRequestBodySchema,
+  updateInventoryOrganizationRequestBodySchema,
+  updateInventoryStorageRequestBodySchema,
+  additivesResponseSchema,
+  accountProfileResponseSchema,
   brewResponseSchema,
   brewInventoryContextResponseSchema,
   finishedMeadOverviewResponseSchema,
@@ -34,6 +54,8 @@ import {
   createBrewRequestBodySchema,
   createBrewResponseSchema,
   createBrewEntryResponseSchema,
+  createInventoryStockRequestBodySchema,
+  creditBalanceResponseSchema,
   deleteBrewEntryRequestBodySchema,
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
@@ -41,22 +63,53 @@ import {
   recipePdfResponseSchema,
   type RecipePdfQueryParams,
   inventoryOverviewResponseSchema,
+  inventoryStockHistoryResponseSchema,
+  inventoryStockMutationResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
+  premiumAccessResponseSchema,
   yeastsResponseSchema,
   updateBrewEntryRequestBodySchema,
+  updateAccountProfileInputSchema,
+  updateAccountProfileResultSchema,
   updateBrewRequestBodySchema,
   updateBrewResponseSchema,
   updateBrewEntryResponseSchema,
+  updateInventoryStockRequestBodySchema,
   loginRequestBodySchema,
   loginSuccessResponseSchema,
   recipeDataV2Schema,
   recipeDerivedStateResponseBodySchema,
   refreshTokenRequestBodySchema,
   refreshTokenSuccessResponseSchema,
+  releaseEmailPreferencesResponseSchema,
+  releaseEmailPreferencesUpdateBodySchema,
   verifyTokenRequestBodySchema,
   verifyTokenSuccessResponseSchema,
   type AccountRecipeResponse,
+  type BrewCostResponse,
+  type InventoryCostExclusionsResponse,
+  type InventoryCurrencyResponse,
+  type RecipeCostResponse,
+  type UpdateBrewCostRequestBody,
+  type UpdateInventoryCostExclusionsRequestBody,
+  type UpdateInventoryCurrencyRequestBody,
+  type CreateEquipmentRequestBody,
+  type EquipmentMutationResponse,
+  type EquipmentOverviewResponse,
+  type UpdateEquipmentRequestBody,
+  type CreateFinishedMeadRequestBody,
+  type FinishedMeadHistoryResponse,
+  type FinishedMeadMutationResponse,
+  type InventoryOrganizationMutationResponse,
+  type InventoryStorageHistoryResponse,
+  type UpdateFinishedMeadRequestBody,
+  type UpdateInventoryOrganizationRequestBody,
+  type UpdateInventoryStorageRequestBody,
+  type AdditivesResponse,
+  type AccountProfile,
+  type UpdateAccountProfileInput,
+  type UpdateAccountProfileResult,
   type BrewListItemResponse,
   type BrewResponse,
   type BrewInventoryContextResponse,
@@ -65,6 +118,8 @@ import {
   type CreateBrewEntryRequestBody,
   type CreateBrewRequestBody,
   type CreateBrewResponse,
+  type CreateInventoryStockRequestBody,
+  type CreditBalanceResponse,
   type UpdateBrewRequestBody,
   type UpdateBrewResponse,
   type DeleteBrewEntryRequestBody,
@@ -72,19 +127,36 @@ import {
   type DeleteBrewSuccessResponse,
   type GetRecipeResponse,
   type InventoryOverviewResponse,
+  type InventoryStockHistoryResponse,
+  type InventoryStockMutationResponse,
   type IngredientsResponse,
   type NutrientPresetListResponse,
+  type PremiumAccessResponse,
   type YeastsResponse,
   type UpdateBrewEntryRequestBody,
   type UpdateBrewEntryResponse,
+  type UpdateInventoryStockRequestBody,
   type LoginRequestBody,
   type LoginSuccessResponse,
   type RecipeDataV2Input,
   type RecipeDerivedStateResponseBody,
   type RefreshTokenRequestBody,
   type RefreshTokenSuccessResponse,
+  type ReleaseEmailPreferencesResponse,
+  type ReleaseEmailPreferencesUpdateBody,
   type VerifyTokenSuccessResponse
 } from "@meadtools/api-contract";
+
+const premiumStatusFields = {
+  entitled: true,
+  membershipExpired: true,
+  premiumEnabled: true,
+  paidThrough: true,
+  paymentRestricted: true
+} as const;
+
+const premiumStatusSchema = premiumAccessResponseSchema.pick(premiumStatusFields);
+type PremiumStatus = Pick<PremiumAccessResponse, keyof typeof premiumStatusFields>;
 
 export type ApiRequestInit = {
   method: string;
@@ -205,6 +277,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       if (error instanceof MeadToolsApiError) throw new MeadToolsApiError(error.status, undefined);
       throw new Error("Hydrometer setup request failed");
     }
+  }
+
+  function parseInventoryPayload<T>(
+    schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } },
+    value: unknown,
+    label: string
+  ): T {
+    const parsed = schema.safeParse(value);
+    if (!parsed.success) throw new MeadToolsContractError(`${label} does not match the MeadTools API contract`, value);
+    return parsed.data;
   }
 
   return {
@@ -432,6 +514,81 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data;
     },
 
+    async getAccountProfile(): Promise<AccountProfile> {
+      const body = await request("/api/auth/account-info", { method: "GET" });
+      const parsed = accountProfileResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile response", parsed.error.issues);
+      }
+
+      return parsed.data.user;
+    },
+
+    async updateAccountProfile(input: UpdateAccountProfileInput): Promise<UpdateAccountProfileResult> {
+      const update = updateAccountProfileInputSchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid account profile update", update.error.issues);
+      }
+
+      const body = await request("/api/auth/account-info", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = updateAccountProfileResultSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid account profile update response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getPremiumStatus(): Promise<PremiumStatus> {
+      const body = await request("/api/account/premium", { method: "GET" });
+      const parsed = premiumStatusSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid Premium status response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getCreditBalance(): Promise<CreditBalanceResponse> {
+      const body = await request("/api/account/credits", { method: "GET" });
+      const parsed = creditBalanceResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid credit balance response", parsed.error.issues);
+      }
+
+      return parsed.data;
+    },
+
+    async getReleaseEmailPreferences(): Promise<ReleaseEmailPreferencesResponse> {
+      const body = await request("/api/account/release-emails", { method: "GET" });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
+      return parsed.data;
+    },
+
+    async updateReleaseEmailPreferences(
+      input: ReleaseEmailPreferencesUpdateBody
+    ): Promise<ReleaseEmailPreferencesResponse> {
+      const update = releaseEmailPreferencesUpdateBodySchema.safeParse(input);
+      if (!update.success) {
+        throw new MeadToolsContractError("Invalid release email preference update", update.error.issues);
+      }
+      const body = await request("/api/account/release-emails", {
+        method: "PATCH",
+        body: JSON.stringify(update.data)
+      });
+      const parsed = releaseEmailPreferencesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Invalid release email preferences", parsed.error.issues);
+      }
+      return parsed.data;
+    },
+
     async listRecipes(): Promise<AccountRecipeResponse[]> {
       const body = await request("/api/auth/account-info", {
         method: "GET"
@@ -455,16 +612,6 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const parsed = recipePdfResponseSchema.safeParse(body);
       if (!parsed.success) {
         throw new MeadToolsContractError("Recipe PDF response does not match the MeadTools API contract", body);
-      }
-      return parsed.data;
-    },
-
-    async getRecipeCosts(recipeId: number) {
-      const id = encodeURIComponent(String(recipeId));
-      const body = await request(`/api/recipes/${id}/costs`, { method: "GET" });
-      const parsed = recipeCostResponseSchema.safeParse(body);
-      if (!parsed.success) {
-        throw new MeadToolsContractError("Recipe cost response does not match the MeadTools API contract", body);
       }
       return parsed.data;
     },
@@ -654,6 +801,53 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data;
     },
 
+    async getInventoryStock(stockId: string): Promise<InventoryStockHistoryResponse> {
+      const body = await request(
+        `/api/account/inventory/${encodeURIComponent(stockId)}`,
+        { method: "GET" }
+      );
+      const parsed = inventoryStockHistoryResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock history does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async createInventoryStock(input: CreateInventoryStockRequestBody): Promise<InventoryStockMutationResponse> {
+      const payload = createInventoryStockRequestBodySchema.safeParse(input);
+      if (!payload.success) {
+        throw new MeadToolsContractError("New stock does not match the MeadTools API contract", input);
+      }
+      const body = await request("/api/account/inventory", {
+        method: "POST",
+        body: JSON.stringify(payload.data)
+      });
+      const parsed = inventoryStockMutationResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock creation response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async updateInventoryStock(
+      stockId: string,
+      input: UpdateInventoryStockRequestBody
+    ): Promise<InventoryStockMutationResponse> {
+      const payload = updateInventoryStockRequestBodySchema.safeParse(input);
+      if (!payload.success) {
+        throw new MeadToolsContractError("Stock update does not match the MeadTools API contract", input);
+      }
+      const body = await request(
+        `/api/account/inventory/${encodeURIComponent(stockId)}`,
+        { method: "PATCH", body: JSON.stringify(payload.data) }
+      );
+      const parsed = inventoryStockMutationResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Stock update response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
     async getBrewInventory(brewId: string): Promise<BrewInventoryContextResponse> {
       const body = await request(`/api/brews/${encodeURIComponent(brewId)}/inventory`, { method: "GET" });
       const parsed = brewInventoryContextResponseSchema.safeParse(body);
@@ -675,6 +869,99 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       return parsed.data;
     },
 
+    async getFinishedMead(meadId: string): Promise<FinishedMeadHistoryResponse> {
+      const body = await request(`/api/account/inventory/meads/${encodeURIComponent(meadId)}`, { method: "GET" });
+      return parseInventoryPayload(finishedMeadHistoryResponseSchema, body, "Finished mead history");
+    },
+
+    async createFinishedMead(input: CreateFinishedMeadRequestBody): Promise<FinishedMeadMutationResponse> {
+      const payload = parseInventoryPayload(createFinishedMeadRequestBodySchema, input, "New finished mead");
+      const body = await request("/api/account/inventory/meads", { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(finishedMeadMutationResponseSchema, body, "Finished mead creation response");
+    },
+
+    async updateFinishedMead(meadId: string, input: UpdateFinishedMeadRequestBody): Promise<FinishedMeadMutationResponse> {
+      const payload = parseInventoryPayload(updateFinishedMeadRequestBodySchema, input, "Finished mead update");
+      const body = await request(`/api/account/inventory/meads/${encodeURIComponent(meadId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(finishedMeadMutationResponseSchema, body, "Finished mead update response");
+    },
+
+    async updateInventoryOrganization(input: UpdateInventoryOrganizationRequestBody): Promise<InventoryOrganizationMutationResponse> {
+      const payload = parseInventoryPayload(updateInventoryOrganizationRequestBodySchema, input, "Inventory organization update");
+      const body = await request("/api/account/inventory/organization", { method: "PATCH", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory organization update response");
+    },
+
+    async getInventoryStorageHistory(stockId: string): Promise<InventoryStorageHistoryResponse> {
+      const body = await request(`/api/account/inventory/storage/${encodeURIComponent(stockId)}`, { method: "GET" });
+      return parseInventoryPayload(inventoryStorageHistoryResponseSchema, body, "Storage history");
+    },
+
+    async updateInventoryStorage(stockId: string, input: UpdateInventoryStorageRequestBody): Promise<InventoryOrganizationMutationResponse> {
+      const payload = parseInventoryPayload(updateInventoryStorageRequestBodySchema, input, "Inventory storage update");
+      const body = await request(`/api/account/inventory/storage/${encodeURIComponent(stockId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(inventoryOrganizationMutationResponseSchema, body, "Inventory storage update response");
+    },
+
+    async updateInventoryCurrency(input: UpdateInventoryCurrencyRequestBody): Promise<InventoryCurrencyResponse> {
+      const payload = parseInventoryPayload(updateInventoryCurrencyRequestBodySchema, input, "Inventory currency");
+      const body = await request("/api/account/inventory/currency", { method: "PUT", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryCurrencyResponseSchema, body, "Inventory currency response");
+    },
+
+    async getInventoryCostExclusions(): Promise<InventoryCostExclusionsResponse> {
+      const body = await request("/api/account/inventory/cost-exclusions", { method: "GET" });
+      return parseInventoryPayload(inventoryCostExclusionsResponseSchema, body, "Cost exclusions");
+    },
+
+    async updateInventoryCostExclusions(input: UpdateInventoryCostExclusionsRequestBody): Promise<InventoryCostExclusionsResponse> {
+      const payload = parseInventoryPayload(updateInventoryCostExclusionsRequestBodySchema, input, "Cost exclusions update");
+      const body = await request("/api/account/inventory/cost-exclusions", { method: "PATCH", body: JSON.stringify(payload) });
+      return parseInventoryPayload(inventoryCostExclusionsResponseSchema, body, "Cost exclusions response");
+    },
+
+    async getBrewCosts(brewId: string): Promise<BrewCostResponse> {
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/costs`, { method: "GET" });
+      return parseInventoryPayload(brewCostResponseSchema, body, "Brew costs");
+    },
+
+    async updateBrewCosts(brewId: string, input: UpdateBrewCostRequestBody): Promise<BrewCostResponse> {
+      const payload = parseInventoryPayload(updateBrewCostRequestBodySchema, input, "Brew costs update");
+      const body = await request(`/api/brews/${encodeURIComponent(brewId)}/costs`, { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(brewCostResponseSchema, body, "Brew costs response");
+    },
+
+    async getRecipeCosts(recipeId: number): Promise<RecipeCostResponse> {
+      const body = await request(`/api/recipes/${encodeURIComponent(recipeId)}/costs`, { method: "GET" });
+      return parseInventoryPayload(recipeCostResponseSchema, body, "Recipe cost estimate");
+    },
+
+    async getEquipment(): Promise<EquipmentOverviewResponse> {
+      const body = await request("/api/account/equipment", { method: "GET" });
+      return parseInventoryPayload(equipmentOverviewResponseSchema, body, "Equipment overview");
+    },
+
+    async createEquipment(input: CreateEquipmentRequestBody): Promise<EquipmentMutationResponse> {
+      const payload = parseInventoryPayload(createEquipmentRequestBodySchema, input, "New equipment");
+      const body = await request("/api/account/equipment", { method: "POST", body: JSON.stringify(payload) });
+      return parseInventoryPayload(equipmentMutationResponseSchema, body, "Equipment creation response");
+    },
+
+    async updateEquipment(id: string, input: UpdateEquipmentRequestBody): Promise<EquipmentMutationResponse> {
+      const payload = parseInventoryPayload(updateEquipmentRequestBodySchema, input, "Equipment update");
+      const body = await request(`/api/account/equipment/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      return parseInventoryPayload(equipmentMutationResponseSchema, body, "Equipment update response");
+    },
+
     /** The public yeast catalog (no sign-in needed). */
     async listYeasts(): Promise<YeastsResponse> {
       const body = await request("/api/yeasts", { method: "GET" });
@@ -688,6 +975,16 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       const body = await request("/api/ingredients", { method: "GET" });
       const parsed = ingredientsResponseSchema.safeParse(body);
       if (!parsed.success) throw new MeadToolsContractError("Ingredient list does not match the MeadTools API contract", body);
+      return parsed.data;
+    },
+
+    /** The public additive catalog (no sign-in needed). */
+    async listAdditives(): Promise<AdditivesResponse> {
+      const body = await request("/api/additives", { method: "GET" });
+      const parsed = additivesResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Additive list does not match the MeadTools API contract", body);
+      }
       return parsed.data;
     },
 

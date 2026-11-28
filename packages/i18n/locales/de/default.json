@@ -865,7 +865,8 @@
         "zoomOut": "Verkleinern",
         "zoomPercent": "PDF-Zoom in %",
         "estimatedTotalVolume": "Geschätztes Gesamtvolumen",
-        "memberName": "MeadTools-Mitglied"
+        "memberName": "MeadTools-Mitglied",
+        "closePreview": "Schließen"
     },
     "peaches": "Pfirsiche",
     "pear": "Birne",
@@ -2445,7 +2446,7 @@
             "confirmCompleteBody": "Das Abschließen des Ansatzes setzt dessen Enddatum. Die Änderung wird automatisch synchronisiert, auch wenn du offline bist.",
             "confirmTitle": "In {{stage}} verschieben?",
             "current": "Aktuell",
-            "equipmentNote": "Gerätezuweisungen werden hier nicht geändert. Verwende die Web-App, um einen Ansatz in andere Behälter zu verschieben.",
+            "equipmentNote": "Behälterzuweisungen im Inventar verwalten.",
             "needs": "Benötigt: {{items}}",
             "pending": "Wartet auf Synchronisierung",
             "saveFailed": "Diese Änderung konnte auf diesem Gerät nicht gespeichert werden. Versuche es erneut.",
@@ -3642,7 +3643,8 @@
         "recipePhoto": "Rezeptfoto",
         "recipeLimits": "JPEG, PNG oder WebP, bis zu 20 MiB. Fotos werden automatisch skaliert. Bis zu 20 Fotos pro Rezept.",
         "recipeLimit": "Dieses Rezept hat bereits 20 Fotos, inklusive Uploads oder Fotos, die auf Bereinigung warten.",
-        "recipeRemoveDescription": "Das Foto wird aus diesem Rezept entfernt. Dies kann nicht rückgängig gemacht werden."
+        "recipeRemoveDescription": "Das Foto wird aus diesem Rezept entfernt. Dies kann nicht rückgängig gemacht werden.",
+        "loadError": "Das Titelbild konnte nicht geladen werden."
     },
     "inventoryCosts": {
         "brewTitle": "Zutatenkosten",
@@ -3900,5 +3902,71 @@
             "showResults": "Ergebnisse anzeigen",
             "stepOf": "Schritt {{step}} von {{total}}"
         }
+    },
+    "mobileRecipes": {
+        "search": "Rezepte suchen",
+        "loading": "Rezepte werden geladen…",
+        "empty": "Du hast noch keine gespeicherten Rezepte.",
+        "noMatches": "Keine Rezepte passen zu deiner Suche.",
+        "listError": "Deine Rezepte konnten nicht geladen werden.",
+        "detailTitle": "Rezeptdetails",
+        "detailError": "Die Rezeptdetails konnten nicht geladen werden.",
+        "unavailable": "Dieses Rezept ist in deinen gespeicherten Rezepten nicht mehr verfügbar.",
+        "sessionExpired": "Deine Sitzung ist abgelaufen. Melde dich erneut an, um deine Rezepte anzusehen.",
+        "offline": "Verbindung fehlgeschlagen. Überprüfe deine Verbindung und versuche es erneut.",
+        "targets": "Rezeptschätzungen",
+        "estimateUnavailable": "Nicht verfügbar",
+        "estimatedOg": "Geschätzte Anfangsdichte",
+        "fermentationFg": "Ziel-Enddichte (Gärung)",
+        "finishedGravity": "Geschätzte Enddichte",
+        "estimatedAbv": "Geschätzter Alkoholgehalt",
+        "bottlingVolume": "Geschätztes Abfüllvolumen",
+        "unnamedIngredient": "Unbenannte Zutat",
+        "nutrients": "Nährstoffe",
+        "viewPdf": "PDF anzeigen",
+        "printPdf": "Rezept drucken",
+        "sharePdf": "PDF teilen",
+        "sharePdfUnavailable": "Dateifreigabe ist auf diesem Gerät nicht verfügbar.",
+        "printPdfError": "Das Rezept-PDF konnte nicht gedruckt werden.",
+        "sharePdfError": "Das Rezept-PDF konnte nicht geteilt werden.",
+        "count_one": "{{count}} Rezept",
+        "count_other": "{{count}} Rezepte",
+        "searchCount": "{{shown}} von {{total}} Rezepten",
+        "sort": "Rezepte sortieren",
+        "sorts": {
+            "newest": "Neueste",
+            "name": "A–Z"
+        },
+        "clearSearch": "Suche löschen",
+        "rowOg": "Anfangsdichte {{value}}",
+        "rowAbv": "{{value}} Alkoholgehalt",
+        "showMore": "Mehr anzeigen",
+        "showLess": "Weniger anzeigen"
+    },
+    "accountDeletion": {
+        "accountEmail": "E-Mail deines MeadTools-Kontos",
+        "sendError": "Deine Anfrage zur Löschung des Kontos konnte nicht gesendet werden. Versuche es erneut.",
+        "submit": "Löschanfrage senden",
+        "submitted": "Anfrage eingegangen. Schau in dein E-Mail-Postfach für den nächsten Schritt zur Bestätigung.",
+        "timing": "Verifizierte Anfragen werden innerhalb von 30 Tagen bearbeitet. Wir können Aufzeichnungen aufbewahren, die für rechtliche Verpflichtungen, Streitigkeiten oder die Verhinderung von Missbrauch erforderlich sind.",
+        "title": "Löschung deines MeadTools-Kontos anfordern",
+        "verification": "Verwende die E-Mail-Adresse deines MeadTools-Kontos. Wir kontaktieren dich dort, um deine Anfrage zu verifizieren, bevor wir dein Konto und die zugehörigen Daten löschen."
+    },
+    "mobileAccount": {
+        "creditsLoadFailed": "Dein Guthaben konnte nicht geladen werden.",
+        "deletionRequest": "Löschung des Kontos anfordern",
+        "deletionRequestDescription": "Nutze das Datenschutzformular von MeadTools in deinem Browser, um die Löschung deines Kontos und der zugehörigen Daten zu beantragen. MeadTools wird deine Anfrage vor der Bearbeitung verifizieren.",
+        "deletionRequestOpen": "Anfrageformular öffnen",
+        "deletionRequestOpenError": "Das Formular zur Löschung des Kontos konnte nicht geöffnet werden. Versuche es erneut.",
+        "loading": "Profil wird geladen…",
+        "loadingCredits": "Guthaben wird geladen…",
+        "loadingEmailPreference": "E-Mail-Einstellung wird geladen…",
+        "loadingPremium": "Premium-Status wird geladen…",
+        "premiumExpired": "Dein Premium-Zugang ist abgelaufen.",
+        "premiumFree": "Kostenloses Konto",
+        "premiumUnavailable": "Deine Mitgliedschaft ist vermerkt. Premium-Vorteile sind derzeit nicht verfügbar.",
+        "retry": "Erneut versuchen",
+        "saveUsername": "Benutzernamen speichern",
+        "usernameRequired": "Gib einen öffentlichen Benutzernamen ein."
     }
 }
