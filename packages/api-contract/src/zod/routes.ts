@@ -120,10 +120,18 @@ export const recipeDetailResponseSchema = z.object({
   private: z.boolean(),
   lastActivityEmailAt: z.string().nullable(),
   activityEmailsEnabled: z.boolean(),
+  cover_image_id: z.string().uuid().nullable().optional(),
   users: recipeOwnerResponseSchema.nullable(),
   ratings: z.array(recipeRatingResponseSchema),
   public_username: z.string().nullable(),
   averageRating: z.number().nullable(),
+});
+export const recipePdfQueryParamsSchema = z.object({
+  locale: z.enum(["en", "de"]).default("en"),
+});
+export const recipePdfResponseSchema = z.object({
+  filename: z.string().regex(/^[a-z0-9-]+\.pdf$/),
+  base64: z.string().min(1).base64(),
 });
 export const getRecipeResponseSchema = z.object({
   recipe: recipeDetailResponseSchema,

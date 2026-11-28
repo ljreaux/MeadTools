@@ -149,17 +149,24 @@ export function Segmented<T extends string>({
   options,
   value,
   onChange,
-  optionLabel
+  optionLabel,
+  compact = false
 }: {
   label: string;
   options: readonly T[];
   value: T;
   onChange: (next: T) => void;
   optionLabel: (option: T) => string;
+  /** A shorter control for toolbars, such as a list's sort order. */
+  compact?: boolean;
 }) {
   const { styles } = useStyles();
   return (
-    <View accessibilityLabel={label} accessibilityRole="radiogroup" style={styles.segments}>
+    <View
+      accessibilityLabel={label}
+      accessibilityRole="radiogroup"
+      style={[styles.segments, compact && styles.segmentsCompact]}
+    >
       {options.map((option) => {
         const selected = option === value;
         return (
@@ -175,7 +182,11 @@ export function Segmented<T extends string>({
               adjustsFontSizeToFit
               minimumFontScale={0.75}
               numberOfLines={1}
-              style={[styles.segmentText, selected && styles.segmentTextSelected]}
+              style={[
+              styles.segmentText,
+              compact && styles.segmentTextCompact,
+              selected && styles.segmentTextSelected
+            ]}
             >
               {optionLabel(option)}
             </Text>
@@ -415,6 +426,8 @@ function createStyles(colors: Colors) {
       minHeight: 52,
       overflow: "hidden"
     },
+    segmentsCompact: { borderRadius: radii.md, minHeight: 36 },
+    segmentTextCompact: { fontSize: typography.size.caption },
     segment: {
       alignItems: "center",
       backgroundColor: colors.surface,

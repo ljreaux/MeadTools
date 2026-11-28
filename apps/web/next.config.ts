@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  outputFileTracingIncludes: {
+    "/api/recipes/*/pdf": ["./public/pdf-logo.png"],
+  },
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   pageExtensions: ["md", "mdx", "ts", "tsx"],
   transpilePackages: [
