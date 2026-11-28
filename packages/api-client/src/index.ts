@@ -1,3 +1,8 @@
+import { recipeCostResponseSchema } from "@meadtools/api-contract/inventory-costs";
+import {
+  brewImageAccessResponseSchema,
+  coverImageResponseSchema
+} from "@meadtools/api-contract/brew-images";
 import {
   accountInfoResponseSchema,
   brewResponseSchema,
@@ -13,6 +18,8 @@ import {
   deleteBrewEntrySuccessResponseSchema,
   deleteBrewSuccessResponseSchema,
   getRecipeResponseSchema,
+  recipePdfResponseSchema,
+  type RecipePdfQueryParams,
   inventoryOverviewResponseSchema,
   ingredientsResponseSchema,
   nutrientPresetListResponseSchema,
@@ -281,6 +288,50 @@ export function createMeadToolsApiClient(options: MeadToolsApiClientOptions) {
       }
 
       return parsed.data.recipes;
+    },
+
+    async getRecipePdf(recipeId: number, locale: RecipePdfQueryParams["locale"]) {
+      const id = encodeURIComponent(String(recipeId));
+      const body = await request(`/api/recipes/${id}/pdf?locale=${encodeURIComponent(locale)}`, {
+        method: "GET"
+      });
+      const parsed = recipePdfResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe PDF response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async getRecipeCosts(recipeId: number) {
+      const id = encodeURIComponent(String(recipeId));
+      const body = await request(`/api/recipes/${id}/costs`, { method: "GET" });
+      const parsed = recipeCostResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe cost response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
+    },
+
+    async getRecipeCover(recipeId: number) {
+      const body = await request(`/api/recipes/${encodeURIComponent(String(recipeId))}/cover`, {
+        method: "GET"
+      });
+      const parsed = coverImageResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe cover response does not match the MeadTools API contract", body);
+      }
+      return parsed.data.image;
+    },
+
+    async getRecipeImageAccess(recipeId: number, imageId: string) {
+      const id = encodeURIComponent(String(recipeId));
+      const image = encodeURIComponent(imageId);
+      const body = await request(`/api/recipes/${id}/images/${image}`, { method: "GET" });
+      const parsed = brewImageAccessResponseSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new MeadToolsContractError("Recipe image access response does not match the MeadTools API contract", body);
+      }
+      return parsed.data;
     },
 
     async listBrews(): Promise<BrewListItemResponse[]> {

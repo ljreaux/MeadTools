@@ -513,3 +513,107 @@ test("reads a recipe and deletes a brew through the shared contract", async () =
   bodies["DELETE https://meadtools.test/api/brews/brew%2F1"] = { message: "ok" };
   await assert.rejects(client.deleteBrew("brew/1"), MeadToolsContractError);
 });
+
+test("reads recipe covers and temporary photo access through authenticated endpoints", async () => {
+  const imageId = "20000000-0000-4000-8000-000000000001";
+  const image = {
+    id: imageId,
+    caption: "Recipe cover",
+    entry_id: null,
+    entry_title: null,
+    entry_datetime: null,
+    entry_hidden: false,
+    width: 800,
+    height: 450,
+    size_bytes: 1200,
+    created_at: "2026-11-25T00:00:00.000Z"
+  };
+  const access = {
+    url: "https://storage.example.test/cover.webp",
+    expires_at: "2026-11-25T00:01:00.000Z"
+  };
+  const paths: string[] = [];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      assert.equal(init.method, "GET");
+      const path = new URL(url).pathname + new URL(url).search;
+      paths.push(path);
+      const body = path === "/api/recipes/7/cover"
+        ? { image, can_set: false }
+        : path === "/api/recipes/8/cover"
+          ? { image: null, can_set: false }
+          : access;
+      return { ok: true, status: 200, json: async () => body };
+    }
+  });
+
+  assert.deepEqual(await client.getRecipeCover(7), image);
+  assert.equal(await client.getRecipeCover(8), null);
+  assert.deepEqual(await client.getRecipeImageAccess(7, imageId), access);
+  assert.deepEqual(paths, [
+    "/api/recipes/7/cover",
+    "/api/recipes/8/cover",
+    `/api/recipes/7/images/${imageId}`
+  ]);
+});
+
+test("uses the signed-in recipe cost estimate and rejects a public summary response", async () => {
+  const estimate = {
+    basis: "recipe_estimate",
+    totals: [{ currency: "USD", amount: 8.75 }],
+    complete: false,
+    mixed_currencies: false,
+    per_liter: 2.5,
+    volume_liters: 3.5,
+    lines: [],
+    short_lines: 0,
+    excluded_lines: 0,
+    missing: { unpriced: 0, unmatched: 1, ambiguous: 0, incompatible: 0 }
+  };
+  const payloads = [
+    { can_manage: true, share_cost_summary: false, estimate },
+    { can_manage: false, share_cost_summary: false, estimate },
+    { summary: null }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(url, "https://meadtools.test/api/recipes/42/costs");
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      return { ok: true, status: 200, json: async () => payloads.shift() };
+    }
+  });
+
+  assert.deepEqual(await client.getRecipeCosts(42), {
+    can_manage: true,
+    share_cost_summary: false,
+    estimate
+  });
+  assert.equal((await client.getRecipeCosts(42)).can_manage, false);
+  await assert.rejects(() => client.getRecipeCosts(42), MeadToolsContractError);
+});
+
+test("downloads a saved recipe PDF with owner authentication and validates the filename", async () => {
+  const base64 = Buffer.from("%PDF-1.3\n").toString("base64");
+  const payloads = [
+    { filename: "key-lime-pie.pdf", base64 },
+    { filename: "../key-lime-pie.pdf", base64 }
+  ];
+  const client = createMeadToolsApiClient({
+    baseUrl: "https://meadtools.test",
+    getAccessToken: () => "test-token",
+    fetch: async (url, init) => {
+      assert.equal(url, "https://meadtools.test/api/recipes/42/pdf?locale=de");
+      assert.equal(init.method, "GET");
+      assert.equal(init.headers.authorization, "Bearer test-token");
+      return { ok: true, status: 200, json: async () => payloads.shift() };
+    }
+  });
+  assert.deepEqual(await client.getRecipePdf(42, "de"), { filename: "key-lime-pie.pdf", base64 });
+  await assert.rejects(() => client.getRecipePdf(42, "de"), MeadToolsContractError);
+});

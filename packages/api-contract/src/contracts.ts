@@ -381,6 +381,8 @@ import {
   recipeNotFoundErrorResponseSchema,
   recipeOwnerResponseSchema,
   recipePathParamsSchema,
+  recipePdfQueryParamsSchema,
+  recipePdfResponseSchema,
   recipeRatingAggregateResponseSchema,
   recipeRatingResponseSchema,
   recipeStabilizerResultsResponseSchema,
@@ -862,6 +864,8 @@ export type RecipeImagesPathParams = z.infer<typeof recipeImagesPathParamsSchema
 export type RecipeNotFoundErrorResponse = z.infer<typeof recipeNotFoundErrorResponseSchema>;
 export type RecipeOwnerResponse = z.infer<typeof recipeOwnerResponseSchema>;
 export type RecipePathParams = z.infer<typeof recipePathParamsSchema>;
+export type RecipePdfQueryParams = z.infer<typeof recipePdfQueryParamsSchema>;
+export type RecipePdfResponse = z.infer<typeof recipePdfResponseSchema>;
 export type RecipeRatingAggregateResponse = z.infer<typeof recipeRatingAggregateResponseSchema>;
 export type RecipeRatingResponse = z.infer<typeof recipeRatingResponseSchema>;
 export type RecipeStabilizerResultsResponse = z.infer<typeof recipeStabilizerResultsResponseSchema>;
