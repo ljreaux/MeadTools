@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -317,47 +317,48 @@ export default function BrewsScreen() {
     const volume = brew.current_volume_liters;
 
     return (
-      <Link asChild href={{ pathname: "/brews/[id]", params: { id: brew.id } }}>
-        <Pressable
-          accessibilityRole="link"
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-        >
-          <View style={[styles.cardHeading, stackHeading && styles.cardHeadingStacked]}>
-            <Text numberOfLines={2} style={styles.brewName}>
-              {name}
+      // A style function on a Pressable inside <Link asChild> is dropped, so
+      // navigate directly to keep the card style and press feedback.
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => router.push({ pathname: "/brews/[id]", params: { id: brew.id } })}
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      >
+        <View style={[styles.cardHeading, stackHeading && styles.cardHeadingStacked]}>
+          <Text numberOfLines={2} style={styles.brewName}>
+            {name}
+          </Text>
+          <Text style={styles.stage}>{t(`brewStage.${brew.stage}`)}</Text>
+        </View>
+        {brew.recipe_name && brew.recipe_name !== name ? (
+          <Text numberOfLines={1} style={styles.detailText}>
+            {brew.recipe_name}
+          </Text>
+        ) : null}
+        <View style={styles.metadata}>
+          {brew.end_date ? (
+            <Text style={styles.detailText}>
+              {t("mobileBrews.list.ended", { date: formatDate(brew.end_date) })}
             </Text>
-            <Text style={styles.stage}>{t(`brewStage.${brew.stage}`)}</Text>
-          </View>
-          {brew.recipe_name && brew.recipe_name !== name ? (
-            <Text numberOfLines={1} style={styles.detailText}>
-              {brew.recipe_name}
+          ) : (
+            <Text style={styles.detailText}>
+              {t("mobileBrews.started", { date: formatDate(brew.start_date) })}
+            </Text>
+          )}
+          {volume !== null ? (
+            <Text style={styles.detailText}>
+              {t("mobileBrews.volume", {
+                value: new Intl.NumberFormat(i18n.language, {
+                  maximumFractionDigits: 1
+                }).format(volume)
+              })}
             </Text>
           ) : null}
-          <View style={styles.metadata}>
-            {brew.end_date ? (
-              <Text style={styles.detailText}>
-                {t("mobileBrews.list.ended", { date: formatDate(brew.end_date) })}
-              </Text>
-            ) : (
-              <Text style={styles.detailText}>
-                {t("mobileBrews.started", { date: formatDate(brew.start_date) })}
-              </Text>
-            )}
-            {volume !== null ? (
-              <Text style={styles.detailText}>
-                {t("mobileBrews.volume", {
-                  value: new Intl.NumberFormat(i18n.language, {
-                    maximumFractionDigits: 1
-                  }).format(volume)
-                })}
-              </Text>
-            ) : null}
-            <Text style={styles.detailText}>
-              {t("mobileBrews.entries", { count: brew.entry_count })}
-            </Text>
-          </View>
-        </Pressable>
-      </Link>
+          <Text style={styles.detailText}>
+            {t("mobileBrews.entries", { count: brew.entry_count })}
+          </Text>
+        </View>
+      </Pressable>
     );
   }
 

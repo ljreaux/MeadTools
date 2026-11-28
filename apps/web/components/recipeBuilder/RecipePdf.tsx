@@ -102,14 +102,14 @@ export default function RecipePdf({ title, publicUsername }: Props) {
     () =>
       createRecipePdfModel({
         recipe,
-        nutrients,
+        nutrientData: nutrients.data,
         yeast,
         title,
         publicUsername,
         t,
         i18n
       }),
-    [i18n, nutrients, publicUsername, recipe, t, title, yeast]
+    [i18n, nutrients.data, publicUsername, recipe, t, title, yeast]
   );
   const [modelSnapshot] = useState(model);
   const [downloadFilename] = useState(() => getRecipePdfFilename(title));

@@ -382,6 +382,8 @@ import {
   recipeNotFoundErrorResponseSchema,
   recipeOwnerResponseSchema,
   recipePathParamsSchema,
+  recipePdfQueryParamsSchema,
+  recipePdfResponseSchema,
   recipeRatingAggregateResponseSchema,
   recipeRatingResponseSchema,
   recipeStabilizerResultsResponseSchema,
@@ -867,6 +869,8 @@ export const RecipeImagesPathParams = recipeImagesPathParamsSchema;
 export const RecipeNotFoundErrorResponse = recipeNotFoundErrorResponseSchema;
 export const RecipeOwnerResponse = recipeOwnerResponseSchema;
 export const RecipePathParams = recipePathParamsSchema;
+export const RecipePdfQueryParams = recipePdfQueryParamsSchema;
+export const RecipePdfResponse = recipePdfResponseSchema;
 export const RecipeRatingAggregateResponse = recipeRatingAggregateResponseSchema;
 export const RecipeRatingResponse = recipeRatingResponseSchema;
 export const RecipeStabilizerResultsResponse = recipeStabilizerResultsResponseSchema;
