@@ -79,5 +79,24 @@ Brew has a new Clover honey 200 g addition entry, and the QA honey has a web
 
 Mobile tests (127) passed on this branch. This pass changed no code.
 
-The iOS equipment and pricing mutations remain pending. Simulator control was
-unavailable in this session.
+## iOS spot check · November 27, 2026
+
+Tested on the iPhone 17 Pro simulator with the native debug client from this
+branch's native dependencies, Metro, the local backend, and the same test
+account. The temporary manual membership was briefly restored for this check
+and then deleted. This covered the iOS-specific risks left after the Android
+pass (native dialogs, the brew picker, form scrolling with the floating tab
+bar, and keyboard entry). The shared logic was already covered on Android.
+
+| Check | Result |
+| --- | --- |
+| Assign and release | Pass. Assigned **Mobile QA 611 Android Carboy** to Active Test Brew from the scrolling brew picker. Save assignment scrolled clear of the floating tab bar. The card showed the current brew, and Remove was hidden while the carboy was assigned. Choosing Unassigned changed the action to Release container, and releasing it returned the carboy to available. The database recorded both events. |
+| Create and archive | Pass. Created **Mobile QA 611 iOS Archive Tool** as a tool. Remove opened the native iOS alert, “Remove equipment?”, and confirming archived the tool and removed it from the list. |
+| Priced receipt | Pass. Created **Mobile QA 611 iOS Orange** with 1 kg and USD 12 total paid, giving USD 12.00 per kg. Price history listed the priced purchase. |
+| Valuation | Pass. Set unit cost of USD 5 for 500 g changed the average from USD 12.00 to USD 10.00 per kg. |
+| Simulator note | Simulator text entry sometimes dropped the end of a long string. The QA stock name was kept as typed. This was not an app issue. |
+
+Currency, exclusions and brew totals were not repeated on iOS. They use the
+same screens and shared logic that passed on Android. Reconciliation of flagged
+stock is waived for this PR, because the test account has no flagged item and
+this PR did not change that flow beyond what the automated tests cover.
