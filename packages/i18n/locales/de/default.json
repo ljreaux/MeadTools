@@ -3968,5 +3968,30 @@
         "retry": "Erneut versuchen",
         "saveUsername": "Benutzernamen speichern",
         "usernameRequired": "Gib einen öffentlichen Benutzernamen ein."
+    },
+    "mobileInventory": {
+        "equipmentCount_one": "{{count}} Einheit",
+        "equipmentCount_other": "{{count}} Einheiten",
+        "equipmentCurrentBrew": "Aktueller Ansatz: {{name}}",
+        "showEquipmentUnits": "Einzelne Einheiten anzeigen",
+        "hideEquipmentUnits": "Einzelne Einheiten ausblenden",
+        "editUnitLabel": "Bezeichnung der Einheit bearbeiten",
+        "changeAssignment": "Zuweisung ändern",
+        "releaseVessel": "Gefäß freigeben",
+        "searchBrews": "Nach laufenden Ansätzen suchen",
+        "noOngoingBrews": "Es gibt keine laufenden Ansätze.",
+        "noMatchingBrews": "Keine Ansätze entsprechen deiner Suche.",
+        "chooseDifferentBrew": "Wähle einen anderen Ansatz oder wähle 'Unassigned'.",
+        "retrySame": "Das Speichern konnte nicht bestätigt werden. Versuche es erneut, um dies zu prüfen oder die Änderung abzuschließen.",
+        "filter": "Bestand filtern",
+        "filterAll": "Alle",
+        "stockCount_one": "{{count}} Artikel",
+        "stockCount_other": "{{count}} Artikel",
+        "stockShown": "{{shown}} von {{total}} Einheiten",
+        "clearFilters": "Suche und Filter löschen",
+        "recipeLimit": "Zeige {{shown}} von {{total}} Rezepten. Suche, um weitere zu finden.",
+        "afterChange": "Nach: {{value}} {{unit}}",
+        "bottlesLeft_one": "{{count}} übrig",
+        "bottlesLeft_other": "{{count}} übrig"
     }
 }
