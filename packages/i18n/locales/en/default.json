@@ -87,6 +87,15 @@
     "noRecipes": "You currently do not have any saved recipes.",
     "updateUsername": "Update public username"
   },
+  "accountDeletion": {
+    "accountEmail": "Email on your MeadTools account",
+    "sendError": "Could not send your account deletion request. Try again.",
+    "submit": "Submit deletion request",
+    "submitted": "Request received. Check your email for the next step to verify it.",
+    "timing": "Verified requests are processed within 30 days. We may retain records needed for legal obligations, disputes, or abuse prevention.",
+    "title": "Request deletion of your MeadTools account",
+    "verification": "Use the email address on your MeadTools account. We’ll contact you there to verify your request before deleting your account and associated data."
+  },
   "accountPage": {
     "buttonMessage": {
       "forgotPassword": "Forgot your password?",
@@ -2221,6 +2230,23 @@
     },
     "untitled": "Untitled brew",
     "volume": "{{value}} L"
+  },
+  "mobileAccount": {
+    "creditsLoadFailed": "Could not load your credit balance.",
+    "deletionRequest": "Request account deletion",
+    "deletionRequestDescription": "Use the MeadTools privacy form in your browser to request deletion of your account and associated data. MeadTools will verify your request before processing it.",
+    "deletionRequestOpen": "Open request form",
+    "deletionRequestOpenError": "Could not open the account deletion form. Try again.",
+    "loading": "Loading profile…",
+    "loadingCredits": "Loading credits…",
+    "loadingEmailPreference": "Loading email preference…",
+    "loadingPremium": "Loading Premium status…",
+    "premiumExpired": "Your Premium access has expired.",
+    "premiumFree": "Free account",
+    "premiumUnavailable": "Your membership is recorded. Premium benefits are currently unavailable.",
+    "retry": "Try again",
+    "saveUsername": "Save username",
+    "usernameRequired": "Enter a public username."
   },
   "mobileNav": {
     "brews": "Brews",
